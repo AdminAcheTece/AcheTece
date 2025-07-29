@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastrar Malharia</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #fff;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+            position: relative;
+        }
+
+        .logo img {
+            max-height: 60px;
+            height: auto;
+            width: auto;
+        }
+
+        .icone-home {
+            position: absolute;
+            right: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 60px auto;
+            background: #fff;
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1.titulo {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 24px;
+        }
+
+        .formulario label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .formulario input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 16px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .formulario button.botao-salvar {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background-color: #003bb3;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .formulario button.botao-salvar:hover {
+            background-color: #003bb3;
+        }
+
+        .mensagem-erro {
+            background-color: #ffe6e6;
+            color: #b30000;
+            border: 1px solid #ff4d4d;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            animation: aparecer 0.4s ease-in-out;
+        }
+
+        .mensagem-erro .icone {
+            font-size: 30px;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .mensagem-erro .botao-voltar {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 20px;
+            background-color: #003bb3;
+            color: #fff;
+            font-weight: bold;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+        }
+
+        .mensagem-erro .botao-voltar:hover {
+            background-color: #003bb3;
+        }
+
+        @keyframes aparecer {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">
+            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
+        </div>
+        <a href="/" class="icone-home" title="Página Inicial">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="#003bb3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-home">
+                <path d="M3 9L12 2l9 7v11a2 2 0 0 1-2 2h-3a1 1 0 0 1-1-1v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V9z"/>
+            </svg>
+        </a>
+    </header>
+
+    <div class="container">
+        <h1 class="titulo">Cadastrar Malharia</h1>
+
+        {% if erro %}
+        <div class="mensagem-erro">
+            <div class="icone">⚠️</div>
+            <p><strong>Erro:</strong> {{ erro }}</p>
+            <a href="#formulario" class="botao-voltar">← Corrigir dados</a>
+        </div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('cadastrar_empresa') }}" class="formulario" id="formulario" autocomplete="off">
+            <label for="nome">Nome da Empresa:</label>
+            <input type="text" id="nome" name="nome">
+
+            <label for="apelido">Apelido da Empresa:</label>
+            <input type="text" id="apelido" name="apelido">
+
+            <label for="cidade">Cidade:</label>
+            <input type="text" id="cidade" name="cidade">
+
+            <label for="estado">Estado:</label>
+            <input type="text" id="estado" name="estado">
+
+            <label for="telefone">Telefone:</label>
+            <input type="tel" id="telefone" name="telefone"
+                   pattern="[0-9]{10,13}"
+                   placeholder="47999991234"
+                   required
+                   title="Digite apenas números, ex: 47999991234">
+
+            <label for="email">E-mail:</label>
+            <input type="email" id="email" name="email">
+
+            <label for="senha">Senha:</label>
+            <input type="password" id="senha" name="senha" autocomplete="new-password">
+
+            <button type="submit" class="botao-salvar">Salvar Empresa</button>
+        </form>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Link inválido</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: auto;
+            background: #fff;
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .erro {
+            color: #d8000c;
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 16px;
+        }
+
+        .mensagem {
+            color: #444;
+            font-size: 15px;
+            margin-bottom: 24px;
+        }
+
+        .botao {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #003bb3;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .botao:hover {
+            background-color: #002a80;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="erro">❌ Link inválido ou expirado</div>
+        <div class="mensagem">
+            O link de redefinição de senha não é mais válido.<br>
+            Isso pode acontecer se ele já foi utilizado ou se passou o tempo de validade (1 hora).
+        </div>
+        <a class="botao" href="{{ url_for('esqueci_senha') }}">Solicitar novo link</a>
+    </div>
+</body>
+</html>

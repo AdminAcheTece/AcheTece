@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Como Funciona - AcheTece para Malharias</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+
+        header {
+            background-color: #fff;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+            position: relative;
+        }
+
+        .logo img {
+            max-height: 60px;
+        }
+
+        .icone-home {
+            position: absolute;
+            right: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 24px;
+            text-align: center;
+            color: #333;
+        }
+
+        p {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #444;
+            margin-bottom: 20px;
+        }
+
+        ul {
+            margin-bottom: 24px;
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        .botao-cadastrar {
+            display: block;
+            width: 100%;
+            text-align: center;
+            background-color: #003bb3;
+            color: white;
+            font-weight: bold;
+            padding: 14px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        .botao-cadastrar:hover {
+            background-color: #003bb3;
+        }
+
+        .valor {
+            font-size: 20px;
+            font-weight: bold;
+            color: #003bb3;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">
+        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
+    </div>
+    <a href="/" class="icone-home" title="Página Inicial">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="#003bb3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-home">
+            <path d="M3 9L12 2l9 7v11a2 2 0 0 1-2 2h-3a1 1 0 0 1-1-1v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V9z"/>
+        </svg>
+    </a>
+</header>
+
+<div class="container">
+    <h1>Seja uma Malharia Parceira do AcheTece</h1>
+
+    <p>O <strong>AcheTece</strong> é uma plataforma que conecta empresas que precisam de serviços de tecelagem com malharias que possuem teares circulares disponíveis.</p>
+
+    <p>Como malharia, <strong>ao se cadastrar você poderá:</strong></p>
+    <ul>
+        <li>Ser encontrada por potenciais clientes interessados em serviços de tecelagem;</li>
+        <li>Apresentar seus teares e características técnicas na plataforma;</li>
+        <li>Receber contatos diretos por telefone ou e-mail, sem intermediação;</li>
+        <li>Atualizar suas informações a qualquer momento via painel da malharia.</li>
+    </ul>
+
+    <p class="valor">Plano mensal: R$ 49,90</p>
+
+    <p><strong>O processo é simples:</strong></p>
+    <ul>
+        <li>1. Cadastre sua malharia</li>
+        <li>2. Realize o pagamento da mensalidade</li>
+        <li>3. Seu perfil é ativado e aparecerá nas buscas</li>
+    </ul>
+
+    <a href="{{ url_for('cadastrar_empresa') }}" class="botao-cadastrar">Quero cadastrar minha malharia</a>
+</div>
+
+</body>
+</html>

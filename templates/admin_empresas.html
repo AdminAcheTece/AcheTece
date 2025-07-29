@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel Administrativo - AcheTece</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f2f2f2;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 10px 20px 0 20px; /* top | right | bottom | left */
+        }
+
+        h2 {
+            text-align: center;
+            margin: 10px 0 30px 0; /* top right bottom left */
+            color: #003bb3;
+        }
+
+        form.formulario {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px 32px;
+            margin-bottom: 30px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+        }
+
+        .campo {
+            flex: 1 1 220px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-weight: bold;
+            color: #003bb3;
+        }
+
+        select, input[type="date"] {
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            min-width: 180px;
+        }
+
+        .botoes {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            margin-top: 0;
+        }
+
+        button {
+            background-color: #003bb3;
+            color: white;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            height: 40px;
+        }
+
+        .botao-cancelar {
+            background-color: #444;
+            text-decoration: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            color: white;
+            font-weight: bold;
+            display: inline-block;
+            height: 40px;
+            line-height: 20px;
+        }
+
+        .tabela-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #ccc;
+        }
+
+        th {
+            background-color: #eee;
+            color: #003bb3;
+        }
+
+        .exportar {
+            margin-top: 10px;
+            padding-bottom: 30px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .exportar a {
+            background-color: #444;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .btn-editar {
+            background-color: #e67e22;
+            padding: 6px 12px;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .paginacao {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .paginacao a {
+            margin: 0 10px;
+            text-decoration: none;
+            color: #003bb3;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Painel Administrativo - Empresas</h2>
+
+        <form method="POST" class="formulario">
+            <div class="campo">
+                <label for="status">Status:</label>
+                <select name="status" id="status">
+                    <option value="">Todos</option>
+                    <option value="ativo">Ativo</option>
+                    <option value="pendente">Pendente</option>
+                </select>
+            </div>
+
+            <div class="campo">
+                <label for="data_inicio">Data início:</label>
+                <input type="date" name="data_inicio" id="data_inicio">
+            </div>
+
+            <div class="campo">
+                <label for="data_fim">Data fim:</label>
+                <input type="date" name="data_fim" id="data_fim">
+            </div>
+
+            <div class="botoes">
+                <button type="submit">Filtrar</button>
+                <a href="/admin/empresas" class="botao-cancelar">Limpar</a>
+            </div>
+        </form>
+
+        <div class="tabela-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Apelido</th>
+                        <th>Email</th>
+                        <th>Status</th>
+                        <th>Data Pagamento</th>
+                        <th>Cidade</th>
+                        <th>Estado</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for empresa in empresas %}
+                    <tr>
+                        <td>{{ empresa.nome }}</td>
+                        <td>{{ empresa.apelido }}</td>
+                        <td>{{ empresa.email }}</td>
+                        <td>{{ empresa.status_pagamento }}</td>
+                        <td>{{ empresa.data_pagamento.strftime('%Y-%m-%d %H:%M') if empresa.data_pagamento else '' }}</td>
+                        <td>{{ empresa.cidade }}</td>
+                        <td>{{ empresa.estado }}</td>
+                        <td>
+                            <form action="/admin/editar_status/{{ empresa.id }}" method="post" style="display:inline-block">
+                                <button class="btn-editar" type="submit">Alterar Status</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="paginacao">
+            {% if pagina > 1 %}
+                <a href="?pagina={{ pagina - 1 }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}">← Anterior</a>
+            {% endif %}
+            Página {{ pagina }} de {{ total_paginas }}
+            {% if pagina < total_paginas %}
+                <a href="?pagina={{ pagina + 1 }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}">Próxima →</a>
+            {% endif %}
+        </div>
+
+        <div class="exportar">
+            <a href="/admin/exportar_empresas">Exportar CSV</a>
+        </div>
+    </div>
+</body>
+</html>

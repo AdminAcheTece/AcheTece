@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Planos - AcheTece</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 60px auto;
+            background: #fff;
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        p {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+
+        .botao-pagamento {
+            background-color: #003bb3;
+            color: white;
+            padding: 14px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+            display: inline-block;
+        }
+
+        .botao-pagamento:hover {
+            background-color: #003bb3;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo img {
+            max-height: 80px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
+        </div>
+
+        <h1>Assinatura não concluída</h1>
+
+        {% if empresa %}
+            <p>Olá, {{ empresa.apelido or empresa.nome }}, identificamos que sua assinatura não foi finalizada.</p>
+        {% else %}
+            <p>Olá! Identificamos que sua assinatura não foi finalizada.</p>
+        {% endif %}
+
+        <p>Para acessar todos os recursos da plataforma, é necessário concluir o pagamento da sua assinatura.</p>
+
+        <a href="{{ url_for('checkout') }}" class="botao-pagamento">Tentar novamente o pagamento</a>
+    </div>
+
+</body>
+</html>

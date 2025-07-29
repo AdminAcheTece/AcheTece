@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>AcheTece - Portal de Malharias</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Fonte Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- CSS principal -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <!-- Estilo adicional com azul padronizado -->
+    <style>
+        :root {
+            --azul-principal: #003bb3;
+        }
+
+        .texto-visitante {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 18px;
+            color: #333;
+            margin-bottom: -6px;
+        }
+
+        .link-login {
+            font-size: 14px;
+            color: var(--azul-principal);
+            text-decoration: underline;
+        }
+
+        .btn-principal {
+            display: inline-block;
+            background-color: var(--azul-principal);
+            color: white;
+            padding: 10px 24px;
+            font-size: 15px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-principal:hover {
+            background-color: var(--azul-principal);
+        }
+
+        .botao-buscar-topo {
+            background-color: var(--azul-principal);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .botao-buscar-topo:hover {
+            background-color: var(--azul-principal);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Cabeçalho -->
+    <header class="navbar">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
+        </div>
+        <ul class="nav-links">
+            <li><span class="texto-visitante">Conecte-se com quem tece sua malha</span></li>
+            <li><a href="/busca" class="botao-buscar-topo">Buscar Tear</a></li>
+        </ul>
+    </header>
+
+    <!-- Seção de destaque -->
+    <main class="hero">
+        <img src="{{ url_for('static', filename='imagem_teares.jpg') }}" alt="Imagem de teares">
+        <h1>Busque. Conecte. Produza.</h1>
+        <p>
+            Facilitamos a conexão entre empresas que procuram teares de malharia disponíveis para produção e empresas que têm teares com capacidade ociosa.
+        </p>
+
+        <!-- Bloco para cadastro de malharias -->
+        <div class="area-cadastro">
+            <p class="frase-cadastro">É malharia? Cadastre-se!</p>
+
+            <!-- Botão azul estilizado -->
+            <a href="{{ url_for('malharia_info') }}" class="btn-principal">Saiba Mais</a>
+            <a href="/login" class="link-login">Já sou cadastrado</a>
+        </div>
+    </main>
+
+</body>
+</html>

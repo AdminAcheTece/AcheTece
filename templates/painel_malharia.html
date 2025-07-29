@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel da Malharia</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        th, td {
+            text-align: center;
+        }
+
+        .painel-acoes {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn-azul-medio, .btn-azul-forte, .btn-cinza {
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn-azul-medio {
+            background-color: #003bb3;
+            color: white;
+        }
+
+        .btn-azul-medio:hover {
+            background-color: #003bb3;
+        }
+
+        .btn-azul-forte {
+            background-color: #003bb3;
+            color: white;
+        }
+
+        .btn-azul-forte:hover {
+            background-color: #002f80;
+        }
+
+        .btn-cinza {
+            background-color: #ddd;
+            color: #333;
+        }
+
+        .btn-cinza:hover {
+            background-color: #bbb;
+        }
+
+        .botao-editar {
+            background-color: #003bb3;
+            color: white;
+            padding: 6px 12px;
+            font-size: 13px;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .botao-editar:hover {
+            background-color: #003bb3;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #fff;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+
+        .logo {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .logo img {
+            max-height: 80px;
+        }
+
+        h1.titulo {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            margin-top: 40px;
+            text-align: center;
+        }
+
+        /* Novo botão administrativo */
+        .botao-admin {
+            background-color: #003bb3;
+            color: white;
+            padding: 10px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .botao-admin:hover {
+            background-color: #002f80;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Cabeçalho -->
+    <header>
+        <div class="logo">
+            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
+        </div>
+    </header>
+
+    <!-- Conteúdo principal -->
+    <div class="container">
+        <h1 class="titulo">Painel da Malharia</h1>
+        <p>Bem-vindo(a), {{ empresa.nome }}!</p>
+
+        <!-- Botões alinhados -->
+        <div class="painel-acoes">
+            <a href="{{ url_for('editar_empresa') }}" class="btn-azul-medio">Editar Dados da Empresa</a>
+            <a href="{{ url_for('cadastrar_teares') }}" class="btn-azul-forte">+ Cadastrar Novo Tear</a>
+            <a href="{{ url_for('logout') }}" class="btn-cinza">Logout</a>
+
+            {% if session.get('admin') %}
+                <a href="/admin/empresas" class="botao-admin">Painel Administrativo</a>
+            {% endif %}
+        </div>
+
+        <h2>Teares Cadastrados:</h2>
+
+        {% if empresa.teares %}
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Marca</th>
+                        <th>Modelo</th>
+                        <th>Tipo</th>
+                        <th>Finura</th>
+                        <th>Diâmetro</th>
+                        <th>Alimentadores</th>
+                        <th>Elastano</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tear in empresa.teares %}
+                    <tr>
+                        <td>{{ tear.marca }}</td>
+                        <td>{{ tear.modelo }}</td>
+                        <td>{{ tear.tipo }}</td>
+                        <td>{{ tear.finura }}</td>
+                        <td>{{ tear.diametro }}</td>
+                        <td>{{ tear.alimentadores }}</td>
+                        <td>{{ tear.elastano }}</td>
+                        <td>
+                            <a href="{{ url_for('editar_tear', id=tear.id) }}" class="botao-editar">Editar Tear</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <p style="margin-top: 20px;">Nenhum tear cadastrado ainda.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
