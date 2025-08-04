@@ -135,6 +135,12 @@ def logout():
 
 @app.route('/cadastrar_empresa', methods=['GET', 'POST'])
 def cadastrar_empresa():
+    estados = ['AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG',
+               'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR',
+               'RS', 'SC', 'SE', 'SP', 'TO']
+
+    cidades = ['Blumenau', 'Brusque', 'Gaspar', 'Joinville', 'São Paulo', 'Rio de Janeiro', 'Jaraguá do Sul']
+
     if request.method == 'POST':
         nome = request.form['nome']
         apelido = request.form['apelido']
@@ -144,16 +150,45 @@ def cadastrar_empresa():
         estado = request.form['estado']
         telefone = request.form['telefone']
 
+        dados = {
+            'nome': nome,
+            'apelido': apelido,
+            'email': email,
+            'cidade': cidade,
+            'estado': estado,
+            'telefone': telefone
+        }
+
+        erros = {}
         telefone_limpo = re.sub(r'\D', '', telefone)
+
         if len(telefone_limpo) < 10 or len(telefone_limpo) > 13:
-            return render_template('cadastrar_empresa.html', erro='Telefone inválido. Use apenas números com DDD. Ex: 47999991234')
+            erros['telefone'] = 'Telefone inválido. Use apenas números com DDD. Ex: 47999991234'
 
         if Empresa.query.filter_by(nome=nome).first():
-            return render_template('cadastrar_empresa.html', erro='Nome da empresa já existe.')
+            erros['nome'] = 'Nome da empresa já existe.'
+
         if Empresa.query.filter_by(apelido=apelido).first():
-            return render_template('cadastrar_empresa.html', erro='Apelido já está em uso.')
+            erros['apelido'] = 'Apelido já está em uso.'
+
         if Empresa.query.filter_by(email=email).first():
-            return render_template('cadastrar_empresa.html', erro='E-mail já cadastrado.')
+            erros['email'] = 'E-mail já cadastrado.'
+
+        if estado not in estados:
+            erros['estado'] = 'Estado inválido.'
+
+        if cidade not in cidades:
+            erros['cidade'] = 'Cidade inválida.'
+
+        if erros:
+            return render_template(
+                'cadastrar_empresa.html',
+                erro='Corrija os campos destacados abaixo.',
+                erros=erros,
+                estados=estados,
+                cidades=cidades,
+                **dados
+            )
 
         nova_empresa = Empresa(
             nome=nome,
@@ -168,12 +203,10 @@ def cadastrar_empresa():
         db.session.add(nova_empresa)
         db.session.commit()
 
-        # Define a sessão e redireciona para o checkout de pagamento
         session['empresa_id'] = nova_empresa.id
         return redirect(url_for('checkout'))
 
-    # Se for método GET (acesso normal à tela), apenas exibe o formulário limpo
-    return render_template('cadastrar_empresa.html')
+    return render_template('cadastrar_empresa.html', estados=estados, cidades=cidades)
 
 @app.route('/checkout')
 def checkout():
