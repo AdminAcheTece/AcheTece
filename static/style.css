@@ -481,4 +481,40 @@ thead tr {
         top: 50%;
         transform: translateY(-50%);
     }
+
+    .erro-campo {
+        border: 2px solid red;
+        background-color: #fff5f5;
+    }
+
+    .mensagem-campo {
+        color: red;
+        font-size: 13px;
+        margin-top: -10px;
+        margin-bottom: 12px;
+    }
+
+    .plano-box {
+        background-color: #e6f0ff;
+        border: 2px solid #003bb3;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 30px auto;
+        text-align: center;
+        max-width: 300px;
+    }
+
+    .plano-titulo {
+        font-size: 18px;
+        color: #003bb3;
+        margin-bottom: 6px;
+        font-weight: 600;
+    }
+
+    .plano-preco {
+        font-size: 28px;
+        font-weight: bold;
+        color: #003bb3;
+    }
+
 }
