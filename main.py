@@ -357,10 +357,10 @@ def webhook():
                     db.session.commit()
                     print(f"✅ Pagamento confirmado para {email}")
 
-                    # Envia e-mail de boas-vindas
+                    # Envia e-mail de boas-vindas com link de acesso
                     try:
                         msg = Message(
-                            subject="Acesso liberado - AcheTece",
+                            subject="Seu acesso está liberado - AcheTece",
                             sender=app.config['MAIL_USERNAME'],
                             recipients=[email]
                         )
@@ -369,12 +369,14 @@ Olá {empresa.nome},
 
 Recebemos a confirmação do seu pagamento e sua malharia foi liberada com sucesso no AcheTece!
 
-Agora você já pode acessar o painel da sua empresa e cadastrar seus teares.
+Agora você já pode acessar sua conta clicando no link abaixo:
+🔗 https://achetece.replit.app/login
 
-Acesse: https://seu-site.repl.co/login
+Após fazer login, acesse o painel da sua empresa e cadastre seus teares.
 
 Qualquer dúvida, estamos à disposição.
 
+Abraços,
 Equipe AcheTece
 '''
                         mail.send(msg)
