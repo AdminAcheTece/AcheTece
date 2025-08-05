@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Pagamento Pendente - AcheTece</title>
+    <title>Pagamento Aprovado - AcheTece</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
@@ -24,7 +24,7 @@
         }
 
         h1 {
-            color: #ff9800;
+            color: #2e7d32; /* verde escuro */
             margin-bottom: 20px;
         }
 
@@ -59,6 +59,12 @@
         .logo img {
             max-height: 80px;
         }
+
+        .icone {
+            font-size: 60px;
+            color: #2e7d32;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -68,17 +74,13 @@
             <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
         </div>
 
-        <h1>Pagamento Pendente</h1>
+        <div class="icone">✅</div>
 
-        {% if empresa %}
-            <p>Olá, {{ empresa.apelido or empresa.nome }}, ainda não identificamos o pagamento da sua assinatura.</p>
-        {% else %}
-            <p>Olá! Ainda não identificamos o pagamento da sua assinatura.</p>
-        {% endif %}
+        <h1>Pagamento Aprovado</h1>
 
-        <p>Assim que ele for confirmado, seu acesso será liberado automaticamente.</p>
+        <p>Seu pagamento foi confirmado com sucesso!<br>Você já pode acessar a plataforma normalmente.</p>
 
-        <a href="{{ url_for('pagar') }}" class="botao-acao">Tentar pagar novamente</a>
+        <a href="{{ url_for('login') }}" class="botao-acao">Ir para o login</a>
     </div>
 
 </body>

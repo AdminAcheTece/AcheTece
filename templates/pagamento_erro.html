@@ -2,13 +2,13 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Pagamento Pendente - AcheTece</title>
+    <title>Pagamento Recusado - AcheTece</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
+            background-color: #fff0f0;
             margin: 0;
             padding: 0;
         }
@@ -24,7 +24,7 @@
         }
 
         h1 {
-            color: #ff9800;
+            color: #dc3545;
             margin-bottom: 20px;
         }
 
@@ -59,6 +59,12 @@
         .logo img {
             max-height: 80px;
         }
+
+        .icone {
+            font-size: 60px;
+            color: #dc3545;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -68,15 +74,11 @@
             <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
         </div>
 
-        <h1>Pagamento Pendente</h1>
+        <div class="icone">❌</div>
 
-        {% if empresa %}
-            <p>Olá, {{ empresa.apelido or empresa.nome }}, ainda não identificamos o pagamento da sua assinatura.</p>
-        {% else %}
-            <p>Olá! Ainda não identificamos o pagamento da sua assinatura.</p>
-        {% endif %}
+        <h1>Pagamento Recusado</h1>
 
-        <p>Assim que ele for confirmado, seu acesso será liberado automaticamente.</p>
+        <p>Ocorreu uma falha ao processar seu pagamento.<br>Tente novamente com outro método ou verifique os dados do seu cartão.</p>
 
         <a href="{{ url_for('pagar') }}" class="botao-acao">Tentar pagar novamente</a>
     </div>

@@ -699,6 +699,47 @@ def redefinir_senha(token):
     # Exibe o formulário para redefinir senha
     return render_template('redefinir_senha.html', token_valido=True)
 
+@app.route('/pagar', methods=['GET'])
+def pagar():
+    try:
+        preference_data = {
+            "items": [
+                {
+                    "title": "Plano Mensal AcheTece",
+                    "quantity": 1,
+                    "unit_price": 49.90,
+                    "currency_id": "BRL"
+                }
+            ],
+            "back_urls": {
+                "success": "https://achetece.replit.app/pagamento_sucesso",
+                "failure": "https://achetece.replit.app/pagamento_erro",
+                "pending": "https://achetece.replit.app/pagamento_pendente"
+            },
+            "auto_return": "approved"
+        }
+
+        preference_response = sdk.preference().create(preference_data)
+        preference = preference_response["response"]
+
+        return redirect(preference["init_point"])
+
+    except Exception as e:
+        print(f"Erro ao gerar preferência de pagamento: {e}")
+        return render_template("erro_pagamento.html")
+
+@app.route('/pagamento_sucesso')
+def pagamento_sucesso():
+    return render_template("pagamento_sucesso.html")
+
+@app.route('/pagamento_erro')
+def pagamento_erro():
+    return render_template("pagamento_erro.html")
+
+@app.route('/pagamento_pendente')
+def pagamento_pendente():
+    return render_template("pagamento_pendente.html")
+
 @app.route('/rota-teste')
 def rota_teste():
     return "✅ A rota funciona!"
