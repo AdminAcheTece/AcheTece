@@ -707,7 +707,7 @@ def pagar():
                 {
                     "title": "Plano Mensal AcheTece",
                     "quantity": 1,
-                    "unit_price": 49.90,
+                    "unit_price": 2.00,
                     "currency_id": "BRL"
                 }
             ],

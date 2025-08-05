@@ -1,9 +1,27 @@
 <!DOCTYPE html>
 <html>
-<head><title>Painel da Malharia</title></head>
+<head>
+  <title>Painel da Malharia</title>
+  <style>
+    .botao-pagar {
+      display: inline-block;
+      background-color: #007BFF;
+      color: white;
+      padding: 10px 20px;
+      text-decoration: none;
+      border-radius: 6px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
 <body>
   <h2>Bem-vindo, {{ empresa.nome }}</h2>
   <p>Seu pagamento está ativo desde: {{ empresa.data_pagamento }}</p>
+
+  <!-- Botão de pagamento -->
+  <a href="{{ url_for('pagar') }}" class="botao-pagar">Pagar mensalidade</a>
+
+  <br><br>
   <a href="/logout">Sair</a>
 </body>
 </html>
