@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Pagamento Aprovado - AcheTece</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 60px auto;
+            background: #fff;
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h1 {
+            color: #2e7d32;
+            margin-bottom: 20px;
+        }
+
+        p {
+            color: #555;
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+
+        .botao-acao {
+            background-color: #003bb3;
+            color: white;
+            padding: 14px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+            display: inline-block;
+        }
+
+        .botao-acao:hover {
+            background-color: #002f91;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo img {
+            max-height: 80px;
+        }
+
+        .icone {
+            font-size: 60px;
+            color: #2e7d32;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
+        </div>
+
+        <div class="icone">✅</div>
+
+        <h1>Pagamento Aprovado</h1>
+
+        <p>Seu pagamento foi confirmado com sucesso!<br>
+        Agora você já pode acessar seu painel e cadastrar seus teares.</p>
+
+        <a href="{{ url_for('login') }}" class="botao-acao">Ir para o login</a>
+    </div>
+
+</body>
+</html>

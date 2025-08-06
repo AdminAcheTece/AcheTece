@@ -383,6 +383,9 @@ Recebemos a confirmação do seu pagamento e sua malharia foi liberada com suces
 Agora você já pode acessar sua conta clicando no link abaixo:
 🔗 https://achetece.replit.app/login
 
+Ou, se preferir, você pode ser redirecionado automaticamente para a página abaixo:
+✅ https://achetece.replit.app/pagamento_aprovado
+
 Após fazer login, acesse o painel da sua empresa e cadastre seus teares.
 
 Qualquer dúvida, estamos à disposição.
@@ -754,6 +757,15 @@ def admin_logout():
 @app.route('/pagar', methods=['GET'])
 def pagar():
     try:
+        if 'empresa_id' not in session:
+            flash('Você precisa estar logado para realizar o pagamento.', 'error')
+            return redirect(url_for('login'))
+
+        empresa = Empresa.query.get(session['empresa_id'])
+        if not empresa:
+            flash('Empresa não encontrada.', 'error')
+            return redirect(url_for('login'))
+
         preference_data = {
             "items": [
                 {
@@ -763,8 +775,11 @@ def pagar():
                     "currency_id": "BRL"
                 }
             ],
+            "payer": {
+                "email": empresa.email
+            },
             "back_urls": {
-                "success": "https://achetece.replit.app/pagamento_sucesso",
+                "success": "https://achetece.replit.app/pagamento_aprovado",
                 "failure": "https://achetece.replit.app/pagamento_erro",
                 "pending": "https://achetece.replit.app/pagamento_pendente"
             },
@@ -779,6 +794,10 @@ def pagar():
     except Exception as e:
         print(f"Erro ao gerar preferência de pagamento: {e}")
         return render_template("erro_pagamento.html")
+
+@app.route('/pagamento_aprovado')
+def pagamento_aprovado():
+    return render_template('pagamento_aprovado.html')
 
 @app.route('/pagamento_sucesso')
 def pagamento_sucesso():
