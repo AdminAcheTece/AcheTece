@@ -18,12 +18,12 @@
         .container {
             max-width: 1200px;
             margin: 30px auto;
-            padding: 10px 20px 0 20px; /* top | right | bottom | left */
+            padding: 10px 20px 0 20px;
         }
 
         h2 {
             text-align: center;
-            margin: 10px 0 30px 0; /* top right bottom left */
+            margin: 10px 0 30px 0;
             color: #003bb3;
         }
 
@@ -135,6 +135,16 @@
             cursor: pointer;
         }
 
+        .btn-excluir {
+            background-color: #c0392b;
+            padding: 6px 12px;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-left: 6px;
+        }
+
         .paginacao {
             margin-top: 20px;
             text-align: center;
@@ -149,6 +159,17 @@
     </style>
 </head>
 <body>
+    <header>
+        <div class="logo">
+            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
+        </div>
+        <a href="/" class="icone-home" title="Página Inicial">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-home">
+                <path d="M3 9L12 2l9 7v11a2 2 0 0 1-2 2h-3a1 1 0 0 1-1-1v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V9z"/>
+            </svg>
+        </a>
+    </header>
+
     <div class="container">
         <h2>Painel Administrativo - Empresas</h2>
 
@@ -206,6 +227,9 @@
                             <form action="/admin/editar_status/{{ empresa.id }}" method="post" style="display:inline-block">
                                 <button class="btn-editar" type="submit">Alterar Status</button>
                             </form>
+                            <form action="/admin/excluir_empresa/{{ empresa.id }}" method="post" style="display:inline-block" onsubmit="return confirmarExclusao('{{ empresa.razao_social or empresa.nome }}')">
+                                <button class="btn-excluir" type="submit">Excluir</button>
+                            </form>
                         </td>
                     </tr>
                     {% endfor %}
@@ -215,11 +239,11 @@
 
         <div class="paginacao">
             {% if pagina > 1 %}
-                <a href="?pagina={{ pagina - 1 }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}">← Anterior</a>
+                <a href="?pagina={{ pagina - 1 }}{% if status %}&status={{ status }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}">← Anterior</a>
             {% endif %}
             Página {{ pagina }} de {{ total_paginas }}
             {% if pagina < total_paginas %}
-                <a href="?pagina={{ pagina + 1 }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}">Próxima →</a>
+                <a href="?pagina={{ pagina + 1 }}{% if status %}&status={{ status }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}">Próxima →</a>
             {% endif %}
         </div>
 
@@ -227,5 +251,11 @@
             <a href="/admin/exportar_empresas">Exportar CSV</a>
         </div>
     </div>
+
+    <script>
+        function confirmarExclusao(nomeEmpresa) {
+            return confirm(`Tem certeza que deseja excluir a empresa "${nomeEmpresa}"?\nEsta ação não poderá ser desfeita.`);
+        }
+    </script>
 </body>
 </html>

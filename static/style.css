@@ -517,4 +517,20 @@ thead tr {
         color: #003bb3;
     }
 
+    .flash-message {
+        text-align: center;
+        font-size: 16px;
+        margin-bottom: 20px;
+        font-weight: bold;
+    }
+
+    .flash-message.error {
+        color: red;
+    }
+
+    .flash-message.success {
+        color: green;
+    }
+
+
 }

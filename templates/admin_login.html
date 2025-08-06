@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Login Administrativo - AcheTece</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+        }
+
+        header {
+            background-color: #fff;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+            position: relative;
+        }
+
+        .logo {
+            text-align: center;
+        }
+
+        .logo img {
+            max-height: 60px;
+            height: auto;
+            width: auto;
+        }
+
+        .icone-home {
+            position: absolute;
+            right: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: #444;
+            padding: 8px;
+            border-radius: 6px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease;
+        }
+
+        .icone-home:hover {
+            background-color: #000;
+        }
+
+        .icone-home svg {
+            stroke: white;
+        }
+
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: calc(100vh - 90px);
+        }
+
+        .login-box {
+            background-color: #fff;
+            padding: 30px 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #003bb3;
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-weight: bold;
+            color: #003bb3;
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0 20px 0;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            background-color: #003bb3;
+            color: white;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .flash-message {
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .flash-message.success {
+            color: green;
+        }
+
+        .flash-message.error {
+            color: red;
+        }
+
+        @media (max-width: 600px) {
+            .icone-home {
+                padding: 6px;
+                right: 12px;
+            }
+
+            .icone-home svg {
+                width: 20px;
+                height: 20px;
+            }
+
+            .logo img {
+                max-height: 50px;
+            }
+
+            .login-box {
+                padding: 24px;
+                margin: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Cabeçalho com logo e casinha -->
+<header>
+    <div class="logo">
+        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
+    </div>
+    <a href="/" class="icone-home" title="Voltar à página inicial">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9L12 2l9 7v11a2 2 0 0 1-2 2h-3a1 1 0 0 1-1-1v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V9z"/>
+        </svg>
+    </a>
+</header>
+
+<!-- Formulário -->
+<div class="login-container">
+    <div class="login-box">
+        <h2>Login do Administrador</h2>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              {% if category == 'error' %}
+                <div class="flash-message error">{{ message }}</div>
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+        <form method="POST">
+            <label for="email">Email:</label>
+            <input type="email" name="email" required>
+
+            <label for="senha">Senha:</label>
+            <input type="password" name="senha" required>
+
+            <button type="submit">Entrar</button>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

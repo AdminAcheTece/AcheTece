@@ -11,6 +11,17 @@ import re
 import mercadopago
 from datetime import datetime
 
+from functools import wraps
+
+def login_admin_requerido(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get('admin_email') != 'gestao.achetece@gmail.com':
+            flash('Acesso não autorizado.')
+            return redirect(url_for('admin_login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 app = Flask(__name__)
 app.secret_key = 'S3cr3t_K3y_AcheTece_2025_test#flask!'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///banco.db'
@@ -621,6 +632,7 @@ def malharia_info():
     return render_template('malharia_info.html')
 
 @app.route('/admin/empresas', methods=['GET', 'POST'])
+@login_admin_requerido
 def admin_empresas():
     pagina = int(request.args.get('pagina', 1))
     por_pagina = 10
@@ -666,6 +678,23 @@ def admin_empresas():
         data_fim=data_fim
     )
 
+@app.route('/admin/excluir_empresa/<int:empresa_id>', methods=['POST'])
+@login_admin_requerido
+def excluir_empresa(empresa_id):
+    if not session.get('admin_email') == 'gestao.achetece@gmail.com':
+        flash('Acesso não autorizado.')
+        return redirect(url_for('login'))
+
+    empresa = Empresa.query.get_or_404(empresa_id)
+
+    # Se quiser, adicione lógica para apagar os teares vinculados:
+    # Tear.query.filter_by(empresa_id=empresa.id).delete()
+
+    db.session.delete(empresa)
+    db.session.commit()
+    flash(f'Empresa "{empresa.razao_social}" excluída com sucesso!')
+    return redirect(url_for('admin_empresas'))
+
 @app.route('/redefinir_senha/<token>', methods=['GET', 'POST'])
 def redefinir_senha(token):
     print(f"[DEBUG] Token recebido na rota: {token}")
@@ -700,6 +729,27 @@ def redefinir_senha(token):
 
     # Exibe o formulário para redefinir senha
     return render_template('redefinir_senha.html', token_valido=True)
+
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        senha = request.form.get('senha')
+
+        if email == 'gestao.achetece@gmail.com' and senha == '123adm@achetece':
+            session['admin_email'] = email
+            flash('Login de administrador realizado com sucesso.', 'success')  # ✅
+            return redirect(url_for('admin_empresas'))
+        else:
+            flash('Email ou Senha incorreta.', 'error')  # ✅
+            return redirect(url_for('admin_login'))
+    return render_template('admin_login.html')
+
+@app.route('/admin/logout', methods=['POST'])
+def admin_logout():
+    session.pop('admin_email', None)
+    flash('Você saiu do painel administrativo.')
+    return redirect(url_for('index'))  # Altere 'index' conforme o nome da rota da sua página inicial
 
 @app.route('/pagar', methods=['GET'])
 def pagar():
