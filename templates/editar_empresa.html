@@ -2,53 +2,137 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Editar Dados da Empresa</title>
+    <title>Editar Dados da Malharia</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f9f9f9; margin: 0; padding: 0; }
+        header {
+            background-color: #fff; padding: 16px 24px; display: flex; justify-content: center; align-items: center;
+            border-bottom: 1px solid #ddd; position: relative;
+        }
+        .logo img { max-height: 60px; height: auto; width: auto; }
+        .icone-home { position: absolute; right: 24px; top: 50%; transform: translateY(-50%); }
+        .container {
+            max-width: 500px; margin: 60px auto; background: #fff; padding: 32px; border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1.titulo { text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 24px; }
+        .formulario label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 14px; }
+        .formulario input, .formulario select {
+            width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px;
+        }
+        .formulario button.botao-salvar {
+            width: 100%; padding: 12px; border: none; border-radius: 8px; background-color: #003bb3; color: white;
+            font-weight: bold; font-size: 14px; cursor: pointer;
+        }
+        .formulario button.botao-salvar:hover { background-color: #003bb3; }
+        .mensagem-erro {
+            background-color: #ffe6e6; color: #b30000; border: 1px solid #ff4d4d; padding: 20px; border-radius: 10px;
+            margin-bottom: 20px; text-align: center; animation: aparecer 0.4s ease-in-out;
+        }
+        .mensagem-erro .icone { font-size: 30px; display: block; margin-bottom: 10px; }
+        .mensagem-erro .botao-voltar {
+            display: inline-block; margin-top: 15px; padding: 10px 20px; background-color: #003bb3; color: #fff;
+            font-weight: bold; border-radius: 8px; text-decoration: none; transition: background-color 0.2s ease; cursor: pointer;
+        }
+        .mensagem-erro .botao-voltar:hover { background-color: #003bb3; }
+        .erro-campo { border: 2px solid red; background-color: #fff5f5; }
+        .mensagem-campo { color: red; font-size: 13px; margin-top: -10px; margin-bottom: 12px; }
+        @keyframes aparecer { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+        /* Banner simples de sucesso, só aparece se ok=1 na URL */
+        .mensagem-sucesso {
+            background-color: #e8f5e9; color: #1b5e20; border: 1px solid #81c784; padding: 16px; border-radius: 10px;
+            margin-bottom: 20px; text-align: center; animation: aparecer 0.4s ease-in-out;
+        }
+    </style>
 </head>
 <body>
 
-    <!-- Cabeçalho com logo -->
-    <header>
-        <div class="logo" style="text-align: center; padding: 20px;">
-            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece" style="max-height: 80px;">
-        </div>
-    </header>
-
-    <div class="container">
-        <h1 class="titulo">Editar Dados da Empresa</h1>
-
-        {% if erro %}
-            <p style="color: red;">{{ erro }}</p>
-        {% endif %}
-
-        {% if mensagem %}
-            <p style="color: green;">{{ mensagem }}</p>
-        {% endif %}
-
-        <form method="POST" class="formulario">
-            <label for="nome">Nome:</label>
-            <input type="text" id="nome" name="nome" value="{{ empresa.nome }}" required>
-
-            <label for="apelido">Apelido:</label>
-            <input type="text" id="apelido" name="apelido" value="{{ empresa.apelido }}" required>
-
-            <label for="email">E-mail:</label>
-            <input type="email" id="email" name="email" value="{{ empresa.email }}" required>
-
-            <label for="cidade">Cidade:</label>
-            <input type="text" id="cidade" name="cidade" value="{{ empresa.cidade }}" required>
-
-            <label for="estado">Estado:</label>
-            <input type="text" id="estado" name="estado" maxlength="2" value="{{ empresa.estado }}" required>
-
-            <label for="telefone">Telefone:</label>
-            <input type="text" id="telefone" name="telefone" value="{{ empresa.telefone }}" required placeholder="Ex: 47999991234">
-
-            <button type="submit" class="botao-salvar">Salvar Alterações</button>
-        </form>
-
-        <a class="voltar-link" href="{{ url_for('painel_malharia') }}">← Voltar ao Painel</a>
+<header>
+    <div class="logo">
+        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
     </div>
+    <a href="/" class="icone-home" title="Página Inicial">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="#003bb3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-home">
+            <path d="M3 9L12 2l9 7v11a2 2 0 0 1-2 2h-3a1 1 0 0 1-1-1v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V9z"/>
+        </svg>
+    </a>
+</header>
+
+<div class="container">
+    <h1 class="titulo">Editar Dados da Malharia</h1>
+
+    {% if request.args.get('ok') == '1' %}
+    <div class="mensagem-sucesso">Alterações salvas com sucesso!</div>
+    {% endif %}
+
+    {% if erro %}
+    <div class="mensagem-erro">
+        <div class="icone">⚠️</div>
+        <p><strong>Erro:</strong> {{ erro }}</p>
+        <a href="#formulario" class="botao-voltar">← Corrigir dados</a>
+    </div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('editar_empresa') }}" class="formulario" id="formulario" autocomplete="off">
+        <label for="nome">Nome da Empresa:</label>
+        <input type="text" id="nome" name="nome" value="{{ nome or '' }}" class="{% if erros and erros.get('nome') %}erro-campo{% endif %}">
+        {% if erros and erros.get('nome') %}<div class="mensagem-campo">{{ erros.get('nome') }}</div>{% endif %}
+
+        <label for="apelido">Apelido da Empresa:</label>
+        <input type="text" id="apelido" name="apelido" value="{{ apelido or '' }}" class="{% if erros and erros.get('apelido') %}erro-campo{% endif %}">
+        {% if erros and erros.get('apelido') %}<div class="mensagem-campo">{{ erros.get('apelido') }}</div>{% endif %}
+
+        <!-- Nome do responsável (usado no payer.first_name) -->
+        <label for="responsavel_nome">Nome do responsável *</label>
+        <input type="text" id="responsavel_nome" name="responsavel_nome"
+               value="{{ responsavel_nome or '' }}" placeholder="Ex.: Maria"
+               class="{% if erros and erros.get('responsavel_nome') %}erro-campo{% endif %}">
+        {% if erros and erros.get('responsavel_nome') %}<div class="mensagem-campo">{{ erros.get('responsavel_nome') }}</div>{% endif %}
+
+        <label for="responsavel_sobrenome">Sobrenome do responsável (opcional)</label>
+        <input type="text" id="responsavel_sobrenome" name="responsavel_sobrenome"
+               value="{{ responsavel_sobrenome or '' }}" placeholder="Ex.: Silva"
+               class="{% if erros and erros.get('responsavel_sobrenome') %}erro-campo{% endif %}">
+        {% if erros and erros.get('responsavel_sobrenome') %}<div class="mensagem-campo">{{ erros.get('responsavel_sobrenome') }}</div>{% endif %}
+
+        <label for="estado">Estado:</label>
+        <select id="estado" name="estado" class="{% if erros and erros.get('estado') %}erro-campo{% endif %}">
+            <option value="">Selecione o estado</option>
+            {% for uf in estados %}
+                <option value="{{ uf }}" {% if estado == uf %}selected{% endif %}>{{ uf }}</option>
+            {% endfor %}
+        </select>
+        {% if erros and erros.get('estado') %}<div class="mensagem-campo">{{ erros.get('estado') }}</div>{% endif %}
+
+        <label for="cidade">Cidade:</label>
+        <select id="cidade" name="cidade" class="{% if erros and erros.get('cidade') %}erro-campo{% endif %}">
+            <option value="">Selecione a cidade</option>
+            {% for c in cidades %}
+                <option value="{{ c }}" {% if cidade == c %}selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+        </select>
+        {% if erros and erros.get('cidade') %}<div class="mensagem-campo">{{ erros.get('cidade') }}</div>{% endif %}
+
+        <label for="telefone">Telefone:</label>
+        <input type="tel" id="telefone" name="telefone"
+               pattern="[0-9]{10,13}" placeholder="47999991234" title="Digite apenas números, ex: 47999991234"
+               value="{{ telefone or '' }}" class="{% if erros and erros.get('telefone') %}erro-campo{% endif %}">
+        {% if erros and erros.get('telefone') %}<div class="mensagem-campo">{{ erros.get('telefone') }}</div>{% endif %}
+
+        <label for="email">E-mail:</label>
+        <input type="email" id="email" name="email" value="{{ email or '' }}" class="{% if erros and erros.get('email') %}erro-campo{% endif %}">
+        {% if erros and erros.get('email') %}<div class="mensagem-campo">{{ erros.get('email') }}</div>{% endif %}
+
+        <!-- Senha: deixar em branco para manter -->
+        <label for="senha">Nova Senha (opcional)</label>
+        <input type="password" id="senha" name="senha" autocomplete="new-password" placeholder="Deixe em branco para manter a atual">
+
+        <button type="submit" class="botao-salvar">Salvar Alterações</button>
+    </form>
+</div>
+
 </body>
 </html>

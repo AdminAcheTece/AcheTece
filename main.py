@@ -12,6 +12,7 @@ import mercadopago
 from datetime import datetime
 from functools import wraps
 from sqlalchemy import or_
+from sqlalchemy import text
 
 def login_admin_requerido(f):
     @wraps(f)
@@ -79,6 +80,8 @@ class Empresa(db.Model):
     status_pagamento = db.Column(db.String(20), default='pendente')
     data_pagamento = db.Column(db.DateTime)
     teares = db.relationship('Tear', backref='empresa', lazy=True)
+    responsavel_nome = db.Column(db.String(120))        # novo
+    responsavel_sobrenome = db.Column(db.String(120))   # novo (opcional)
 
 class Tear(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -154,6 +157,9 @@ def cadastrar_empresa():
         cidade = request.form['cidade']
         estado = request.form['estado']
         telefone = request.form['telefone']
+        # 🔹 Novos campos
+        responsavel_nome = (request.form.get('responsavel_nome') or '').strip()
+        responsavel_sobrenome = (request.form.get('responsavel_sobrenome') or '').strip()
 
         dados = {
             'nome': nome,
@@ -161,7 +167,10 @@ def cadastrar_empresa():
             'email': email,
             'cidade': cidade,
             'estado': estado,
-            'telefone': telefone
+            'telefone': telefone,
+            # mantém preenchido no template em caso de erro
+            'responsavel_nome': responsavel_nome,
+            'responsavel_sobrenome': responsavel_sobrenome
         }
 
         erros = {}
@@ -185,6 +194,10 @@ def cadastrar_empresa():
         if cidade not in cidades:
             erros['cidade'] = 'Cidade inválida.'
 
+        # 🔹 Validação mínima do nome do responsável (requisito para o payer.first_name)
+        if not responsavel_nome or len(re.sub(r'[^A-Za-zÀ-ÿ]', '', responsavel_nome)) < 2:
+            erros['responsavel_nome'] = 'Informe ao menos o primeiro nome do responsável.'
+
         if erros:
             return render_template(
                 'cadastrar_empresa.html',
@@ -199,11 +212,14 @@ def cadastrar_empresa():
             nome=nome,
             apelido=apelido,
             email=email,
-            senha=generate_password_hash(senha),
+            senha=generate_password_hash(senha),  # mantém sua convenção
             cidade=cidade,
             estado=estado,
             telefone=telefone_limpo,
-            status_pagamento='pendente'
+            status_pagamento='pendente',
+            # 🔹 Novos campos
+            responsavel_nome=responsavel_nome,
+            responsavel_sobrenome=responsavel_sobrenome or None
         )
         db.session.add(nova_empresa)
         db.session.commit()
@@ -236,6 +252,11 @@ def checkout():
     # external_reference único por preferência (requisito MP)
     ext_ref = f"achetece:{empresa.id}:{uuid.uuid4().hex}"
 
+    # 🔹 first_name exigido pelo MP (fallback: parte antes do @ do e‑mail)
+    first_name = (getattr(empresa, 'responsavel_nome', '') or '').strip()
+    if not first_name:
+        first_name = empresa.email.split('@')[0]
+
     preference_data = {
         "items": [{
             "title": "Assinatura mensal AcheTece",
@@ -243,7 +264,10 @@ def checkout():
             "currency_id": "BRL",
             "unit_price": 2.00
         }],
-        "payer": {"email": empresa.email},
+        "payer": {
+            "first_name": first_name,
+            "email": empresa.email
+        },
         "back_urls": {
             "success": success_url,
             "failure": failure_url,
@@ -319,26 +343,106 @@ def editar_empresa():
         return redirect(url_for('login'))
 
     empresa = Empresa.query.get(session['empresa_id'])
+    if not empresa:
+        session.pop('empresa_id', None)
+        return redirect(url_for('login'))
 
-    if request.method == 'POST':
-        empresa.nome = request.form['nome']
-        empresa.apelido = request.form['apelido']
-        empresa.email = request.form['email']
-        empresa.cidade = request.form['cidade']
-        empresa.estado = request.form['estado']
-        telefone = request.form['telefone']
+    estados = ['AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG',
+               'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR',
+               'RS', 'SC', 'SE', 'SP', 'TO']
 
-        telefone_limpo = re.sub(r'\D', '', telefone)
-        if len(telefone_limpo) < 10 or len(telefone_limpo) > 13:
-            return render_template('editar_empresa.html', empresa=empresa, erro='Telefone inválido. Use apenas números com DDD. Ex: 47999991234')
+    cidades = ['Blumenau', 'Brusque', 'Gaspar', 'Joinville', 'São Paulo', 'Rio de Janeiro', 'Jaraguá do Sul']
 
-        empresa.telefone = telefone_limpo
-        db.session.commit()
+    if request.method == 'GET':
+        return render_template(
+            'editar_empresa.html',
+            estados=estados,
+            cidades=cidades,
+            nome=empresa.nome or '',
+            apelido=empresa.apelido or '',
+            email=empresa.email or '',
+            cidade=empresa.cidade or '',
+            estado=empresa.estado or '',
+            telefone=empresa.telefone or '',
+            responsavel_nome=(getattr(empresa, 'responsavel_nome', '') or ''),
+            responsavel_sobrenome=(getattr(empresa, 'responsavel_sobrenome', '') or '')
+        )
 
-        flash('Alterações salvas com sucesso!')
-        return redirect(url_for('painel_malharia'))
+    # -------- POST ----------
+    nome = request.form.get('nome', '').strip()
+    apelido = request.form.get('apelido', '').strip()
+    email = request.form.get('email', '').strip().lower()
+    senha = request.form.get('senha', '').strip()  # opcional
+    cidade = request.form.get('cidade', '').strip()
+    estado = request.form.get('estado', '').strip()
+    telefone = request.form.get('telefone', '').strip()
+    responsavel_nome = (request.form.get('responsavel_nome') or '').strip()
+    responsavel_sobrenome = (request.form.get('responsavel_sobrenome') or '').strip()
 
-    return render_template('editar_empresa.html', empresa=empresa)
+    dados = {
+        'nome': nome, 'apelido': apelido, 'email': email, 'cidade': cidade,
+        'estado': estado, 'telefone': telefone,
+        'responsavel_nome': responsavel_nome, 'responsavel_sobrenome': responsavel_sobrenome
+    }
+
+    erros = {}
+    telefone_limpo = re.sub(r'\D', '', telefone) if telefone else ''
+
+    if telefone and (len(telefone_limpo) < 10 or len(telefone_limpo) > 13):
+        erros['telefone'] = 'Telefone inválido. Use apenas números com DDD. Ex: 47999991234'
+
+    # Unicidade somente se alterou
+    if nome and nome != (empresa.nome or '') and Empresa.query.filter_by(nome=nome).first():
+        erros['nome'] = 'Nome da empresa já existe.'
+    if apelido and apelido != (empresa.apelido or '') and Empresa.query.filter_by(apelido=apelido).first():
+        erros['apelido'] = 'Apelido já está em uso.'
+    if email and email != (empresa.email or '') and Empresa.query.filter_by(email=email).first():
+        erros['email'] = 'E-mail já cadastrado.'
+
+    if estado and estado not in estados:
+        erros['estado'] = 'Estado inválido.'
+    if cidade and cidade not in cidades:
+        erros['cidade'] = 'Cidade inválida.'
+
+    # Validação do nome do responsável (exigido para o payer.first_name)
+    if not responsavel_nome or len(re.sub(r'[^A-Za-zÀ-ÿ]', '', responsavel_nome)) < 2:
+        erros['responsavel_nome'] = 'Informe ao menos o primeiro nome do responsável.'
+
+    # Validação de e-mail básico (se quiser manter igual ao cadastro)
+    if not email or not re.fullmatch(r'[^@]+@[^@]+\.[^@]+', email):
+        erros['email'] = 'E-mail inválido.'
+
+    # Senha: se informou, exigir mínimo 6
+    if senha and len(senha) < 6:
+        erros['senha'] = 'A nova senha deve ter pelo menos 6 caracteres.'
+
+    if erros:
+        return render_template(
+            'editar_empresa.html',
+            erro='Corrija os campos destacados abaixo.',
+            erros=erros,
+            estados=estados,
+            cidades=cidades,
+            **dados
+        )
+
+    # ---- Persistência ----
+    empresa.nome = nome or None
+    empresa.apelido = apelido or None
+    empresa.email = email or empresa.email
+    empresa.cidade = cidade or None
+    empresa.estado = estado or None
+    empresa.telefone = telefone_limpo or None
+    empresa.responsavel_nome = responsavel_nome
+    empresa.responsavel_sobrenome = responsavel_sobrenome or None
+
+    if senha:
+        empresa.senha = generate_password_hash(senha)  # mantém sua convenção do cadastro
+
+    db.session.commit()
+
+    # Redireciona com ok=1 para mostrar banner de sucesso no template
+    return redirect(url_for('editar_empresa', ok=1))
 
 @app.route('/painel_malharia')
 def painel_malharia():

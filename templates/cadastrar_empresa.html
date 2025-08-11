@@ -162,8 +162,9 @@
         {% endif %}
 
         <form method="POST" action="{{ url_for('cadastrar_empresa') }}" class="formulario" id="formulario" autocomplete="off">
-            <label for="nome">Nome da Empresa:</label>
-            <input type="text" id="nome" name="nome" value="{{ nome or '' }}" class="{% if erros and erros.get('nome') %}erro-campo{% endif %}">
+            <label for="nome">Nome da Empresa <span style="color:#d00000">*</span></label>
+            <input type="text" id="nome" name="nome" required
+                   value="{{ nome or '' }}" class="{% if erros and erros.get('nome') %}erro-campo{% endif %}">
             {% if erros and erros.get('nome') %}
                 <div class="mensagem-campo">{{ erros.get('nome') }}</div>
             {% endif %}
@@ -174,8 +175,28 @@
                 <div class="mensagem-campo">{{ erros.get('apelido') }}</div>
             {% endif %}
 
-            <label for="estado">Estado:</label>
-            <select id="estado" name="estado" class="{% if erros and erros.get('estado') %}erro-campo{% endif %}">
+            <!-- 🔹 NOVO: Nome do responsável (utilizado no payer.first_name) -->
+            <label for="responsavel_nome">Nome do responsável <span style="color:#d00000">*</span></label>
+            <input type="text" id="responsavel_nome" name="responsavel_nome" autocomplete="given-name" required
+                   placeholder="Ex.: Maria"
+                   value="{{ responsavel_nome or '' }}"
+                   class="{% if erros and erros.get('responsavel_nome') %}erro-campo{% endif %}">
+            {% if erros and erros.get('responsavel_nome') %}
+                <div class="mensagem-campo">{{ erros.get('responsavel_nome') }}</div>
+            {% endif %}
+
+            <!-- 🔹 NOVO: Sobrenome (opcional) -->
+            <label for="responsavel_sobrenome">Sobrenome do responsável (opcional)</label>
+            <input type="text" id="responsavel_sobrenome" name="responsavel_sobrenome" autocomplete="family-name"
+                   placeholder="Ex.: Silva"
+                   value="{{ responsavel_sobrenome or '' }}"
+                   class="{% if erros and erros.get('responsavel_sobrenome') %}erro-campo{% endif %}">
+            {% if erros and erros.get('responsavel_sobrenome') %}
+                <div class="mensagem-campo">{{ erros.get('responsavel_sobrenome') }}</div>
+            {% endif %}
+
+            <label for="estado">Estado <span style="color:#d00000">*</span></label>
+            <select id="estado" name="estado" required class="{% if erros and erros.get('estado') %}erro-campo{% endif %}">
                 <option value="">Selecione o estado</option>
                 {% for uf in estados %}
                     <option value="{{ uf }}" {% if estado == uf %}selected{% endif %}>{{ uf }}</option>
@@ -185,8 +206,8 @@
                 <div class="mensagem-campo">{{ erros.get('estado') }}</div>
             {% endif %}
 
-            <label for="cidade">Cidade:</label>
-            <select id="cidade" name="cidade" class="{% if erros and erros.get('cidade') %}erro-campo{% endif %}">
+            <label for="cidade">Cidade <span style="color:#d00000">*</span></label>
+            <select id="cidade" name="cidade" required class="{% if erros and erros.get('cidade') %}erro-campo{% endif %}">
                 <option value="">Selecione a cidade</option>
                 {% for c in cidades %}
                     <option value="{{ c }}" {% if cidade == c %}selected{% endif %}>{{ c }}</option>
@@ -196,26 +217,25 @@
                 <div class="mensagem-campo">{{ erros.get('cidade') }}</div>
             {% endif %}
 
-            <label for="telefone">Telefone:</label>
+            <label for="telefone">Telefone <span style="color:#d00000">*</span></label>
             <input type="tel" id="telefone" name="telefone"
-                   pattern="[0-9]{10,13}"
-                   placeholder="47999991234"
+                   pattern="[0-9]{10,13}" placeholder="47999991234"
                    title="Digite apenas números, ex: 47999991234"
-                   value="{{ telefone or '' }}"
-                   required
+                   value="{{ telefone or '' }}" required
                    class="{% if erros and erros.get('telefone') %}erro-campo{% endif %}">
             {% if erros and erros.get('telefone') %}
                 <div class="mensagem-campo">{{ erros.get('telefone') }}</div>
             {% endif %}
 
-            <label for="email">E-mail:</label>
-            <input type="email" id="email" name="email" value="{{ email or '' }}" class="{% if erros and erros.get('email') %}erro-campo{% endif %}">
+            <label for="email">E-mail <span style="color:#d00000">*</span></label>
+            <input type="email" id="email" name="email" value="{{ email or '' }}" required
+                   class="{% if erros and erros.get('email') %}erro-campo{% endif %}">
             {% if erros and erros.get('email') %}
                 <div class="mensagem-campo">{{ erros.get('email') }}</div>
             {% endif %}
 
-            <label for="senha">Senha:</label>
-            <input type="password" id="senha" name="senha" autocomplete="new-password">
+            <label for="senha">Senha <span style="color:#d00000">*</span></label>
+            <input type="password" id="senha" name="senha" autocomplete="new-password" required>
 
             <button type="submit" class="botao-salvar">Salvar Empresa</button>
         </form>
