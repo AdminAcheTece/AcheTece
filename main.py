@@ -252,10 +252,13 @@ def checkout():
     # external_reference único por preferência (requisito MP)
     ext_ref = f"achetece:{empresa.id}:{uuid.uuid4().hex}"
 
-    # 🔹 first_name exigido pelo MP (fallback: parte antes do @ do e‑mail)
+    # 🔹 first_name exigido (fallback: parte antes do @ do e‑mail)
     first_name = (getattr(empresa, 'responsavel_nome', '') or '').strip()
     if not first_name:
         first_name = empresa.email.split('@')[0]
+
+    # opcional (apenas para preencher "sobrenome" quando houver)
+    last_name = (getattr(empresa, 'responsavel_sobrenome', '') or '').strip()
 
     preference_data = {
         "items": [{
@@ -264,8 +267,12 @@ def checkout():
             "currency_id": "BRL",
             "unit_price": 2.00
         }],
+        # 👇 Enviamos os dois formatos: name/surname (Checkout Pro) e first/last (payments)
         "payer": {
-            "first_name": first_name,
+            "name": first_name,         # usado por Preferências (Checkout Pro)
+            "surname": last_name,       # usado por Preferências (Checkout Pro)
+            "first_name": first_name,   # usado por /v1/payments
+            "last_name": last_name,     # usado por /v1/payments
             "email": empresa.email
         },
         "back_urls": {
@@ -280,11 +287,8 @@ def checkout():
 
     try:
         print("🧾 Criando nova preferência de pagamento para:", empresa.email)
-        print("↪️ success_url:", success_url)
-        print("↪️ failure_url:", failure_url)
-        print("↪️ pending_url:", pending_url)
-        print("🔔 notify_url:", notify_url)
-        print("🆔 external_reference:", ext_ref)
+        print("👤 payer enviado:", preference_data.get("payer"))  # <— confira no log
+        print("🔔 notify_url:", notify_url, "| 🆔 external_reference:", ext_ref)
 
         preference_response = sdk.preference().create(preference_data)
         preference = preference_response.get("response", {})
