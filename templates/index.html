@@ -15,6 +15,7 @@
     <style>
         :root {
             --azul-principal: #003bb3;
+            --azul-hover: #336be3;
         }
 
         .texto-visitante {
@@ -31,7 +32,8 @@
             text-decoration: underline;
         }
 
-        .btn-principal {
+        .btn-principal,
+        .botao-buscar-topo {
             display: inline-block;
             background-color: var(--azul-principal);
             color: white;
@@ -40,25 +42,14 @@
             border-radius: 10px;
             text-decoration: none;
             font-weight: bold;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
         }
 
-        .btn-principal:hover {
-            background-color: var(--azul-principal);
-        }
-
-        .botao-buscar-topo {
-            background-color: var(--azul-principal);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 6px;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 14px;
-        }
-
+        .btn-principal:hover,
         .botao-buscar-topo:hover {
-            background-color: var(--azul-principal);
+            background-color: var(--azul-hover);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
         }
     </style>
 </head>
@@ -88,7 +79,7 @@
             <p class="frase-cadastro">É malharia? Cadastre-se!</p>
 
             <!-- Botão azul estilizado -->
-            <a href="{{ url_for('malharia_info') }}" class="btn-principal">Saiba Mais</a>
+            <a href="{{ url_for('malharia_info') }}" class="btn-principal">Cadastrar Malharia</a>
             <a href="/login" class="link-login">Já sou cadastrado</a>
         </div>
     </main>

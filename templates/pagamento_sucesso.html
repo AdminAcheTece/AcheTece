@@ -5,6 +5,13 @@
     <title>Pagamento Aprovado - AcheTece</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Open Graph para compartilhamento -->
+    <meta property="og:title" content="Pagamento confirmado - AcheTece">
+    <meta property="og:description" content="Seu pagamento foi aprovado. Acesse a plataforma e comece a divulgar seus teares.">
+    <meta property="og:image" content="{{ url_for('static', filename='logo.jpg', _external=True) }}">
+    <meta property="og:url" content="{{ url_for('pagamento_sucesso', _external=True) }}">
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -31,7 +38,8 @@
         p {
             color: #555;
             font-size: 16px;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
+            line-height: 1.6;
         }
 
         .botao-acao {
@@ -65,6 +73,21 @@
             color: #2e7d32;
             margin-bottom: 10px;
         }
+
+        .suporte {
+            font-size: 14px;
+            color: #888;
+            margin-top: 20px;
+        }
+
+        .suporte a {
+            color: #003bb3;
+            text-decoration: none;
+        }
+
+        .suporte a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -78,9 +101,18 @@
 
         <h1>Pagamento Aprovado</h1>
 
-        <p>Seu pagamento foi confirmado com sucesso!<br>Você já pode acessar a plataforma normalmente.</p>
+        <p>
+            Seu pagamento foi confirmado com sucesso!<br>
+            Agora você pode acessar a plataforma normalmente.<br><br>
+            📬 Você receberá um e-mail com mais informações em instantes.
+        </p>
 
         <a href="{{ url_for('login') }}" class="botao-acao">Ir para o login</a>
+
+        <p class="suporte">
+            Caso não receba o e-mail em até 5 minutos,<br>
+            verifique sua caixa de spam ou <a href="https://wa.me/5547999999999" target="_blank">fale com nosso suporte</a>.
+        </p>
     </div>
 
 </body>

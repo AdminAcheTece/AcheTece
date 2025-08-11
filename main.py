@@ -1,8 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, render_template_string
+from flask import Flask, render_template, request, redirect, url_for, flash, session, render_template_string, send_file, jsonify
 from flask_mail import Mail, Message
 from flask_sqlalchemy import SQLAlchemy
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
-import os  # ✅ Adicione aqui
+import os
 from werkzeug.security import generate_password_hash, check_password_hash
 import csv
 import io
@@ -10,8 +10,8 @@ import math
 import re
 import mercadopago
 from datetime import datetime
-
 from functools import wraps
+from sqlalchemy import or_
 
 def login_admin_requerido(f):
     @wraps(f)
@@ -22,12 +22,13 @@ def login_admin_requerido(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# Configurações iniciais
 app = Flask(__name__)
 app.secret_key = 'S3cr3t_K3y_AcheTece_2025_test#flask!'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///banco.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Configurações de envio de e-mail
+# E-mail
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
@@ -36,7 +37,9 @@ app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 
 mail = Mail(app)
 db = SQLAlchemy(app)
+sdk = mercadopago.SDK(os.getenv("MERCADO_PAGO_TOKEN"))
 
+# Token de recuperação de senha
 def gerar_token(email):
     serializer = URLSafeTimedSerializer(app.secret_key)
     return serializer.dumps(email, salt='recupera-senha')
@@ -54,25 +57,16 @@ def enviar_email_recuperacao(email):
 Olá,
 
 Recebemos uma solicitação para redefinir sua senha.
-
 Clique no link abaixo para criar uma nova senha:
 {link}
 
 Este link é válido por 1 hora.
-
 Se você não solicitou isso, ignore este e-mail.
-
 Equipe AcheTece
 """
     mail.send(msg)
 
-
-# SDK Mercado Pago
-import os
-sdk = mercadopago.SDK(os.getenv("MERCADO_PAGO_TOKEN"))
-
 # MODELOS
-
 class Empresa(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(100), nullable=False, unique=True)
@@ -230,10 +224,10 @@ def checkout():
         session.pop('empresa_id', None)
         return redirect(url_for('login'))
 
-    success_url = "https://achetece.replit.app/painel_malharia"
-    failure_url = "https://achetece.replit.app/planos"
-    pending_url = "https://achetece.replit.app/painel_malharia"
-    notify_url = "https://achetece.replit.app/webhook"
+    success_url = "https://achetece.replit.app/pagamento_aprovado"
+    failure_url = "https://achetece.replit.app/pagamento_erro"
+    pending_url = "https://achetece.replit.app/pagamento_pendente"
+    notify_url  = "https://achetece.replit.app/webhook"
 
     preference_data = {
         "items": [{
@@ -255,6 +249,8 @@ def checkout():
     }
 
     try:
+        print("🧾 Criando nova preferência de pagamento para:", empresa.email)
+        
         preference_response = sdk.preference().create(preference_data)
         preference = preference_response.get("response", {})
         init_point = preference.get("init_point")
@@ -344,9 +340,11 @@ from flask_mail import Message
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
+    from flask import render_template_string
+
     data = request.get_json()
     print("📡 Webhook recebido:")
-    print(data)  # 🔍 Mostra o conteúdo bruto recebido
+    print(data)
 
     if data and data.get("type") == "payment":
         payment_id = data["data"]["id"]
@@ -357,57 +355,148 @@ def webhook():
             print("📄 Dados do pagamento:", payment)
 
             email = payment["payer"]["email"]
+            status = payment["status"]
             print(f"👤 E-mail do pagador: {email}")
-            print(f"💳 Status do pagamento: {payment['status']}")
+            print(f"💳 Status do pagamento: {status}")
 
-            if payment["status"] in ["approved", "authorized"]:
+            if status in ["approved", "authorized"]:
                 empresa = Empresa.query.filter_by(email=email).first()
+
                 if empresa:
                     empresa.status_pagamento = "ativo"
                     empresa.data_pagamento = datetime.now()
                     db.session.commit()
                     print(f"✅ Pagamento confirmado para {email}")
 
-                    # Envia e-mail de boas-vindas com link de acesso
+                    # Envia e-mail de boas-vindas com HTML profissional
                     try:
+                        apelido = empresa.apelido or empresa.nome
                         msg = Message(
-                            subject="Seu acesso está liberado - AcheTece",
+                            subject="✅ Pagamento aprovado! Acesse seu painel no AcheTece",
                             sender=app.config['MAIL_USERNAME'],
                             recipients=[email]
                         )
-                        msg.body = f'''
-Olá {empresa.nome},
+                        msg.html = render_template_string("""
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Pagamento confirmado</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f2f2f2;
+      padding: 0;
+      margin: 0;
+    }
 
-Recebemos a confirmação do seu pagamento e sua malharia foi liberada com sucesso no AcheTece!
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background-color: #ffffff;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
 
-Agora você já pode acessar sua conta clicando no link abaixo:
-🔗 https://achetece.replit.app/login
+    .logo {
+      text-align: center;
+      margin-bottom: 30px;
+    }
 
-Ou, se preferir, você pode ser redirecionado automaticamente para a página abaixo:
-✅ https://achetece.replit.app/pagamento_aprovado
+    .logo img {
+      max-height: 70px;
+    }
 
-Após fazer login, acesse o painel da sua empresa e cadastre seus teares.
+    h2 {
+      color: #003bb3;
+      text-align: center;
+    }
 
-Qualquer dúvida, estamos à disposição.
+    p {
+      font-size: 16px;
+      color: #444;
+      line-height: 1.6;
+      margin: 20px 0;
+    }
 
-Abraços,
-Equipe AcheTece
-'''
+    .botao {
+      display: block;
+      width: max-content;
+      margin: 30px auto;
+      padding: 14px 28px;
+      background-color: #003bb3;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 13px;
+      color: #999;
+      margin-top: 30px;
+    }
+
+    .footer a {
+      color: #666;
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="logo">
+      <img src="https://achetece.replit.app/static/logo-email.png" alt="AcheTece">
+    </div>
+
+    <h2>✅ Pagamento confirmado com sucesso!</h2>
+
+    <p>Olá <strong>{{ apelido }}</strong>,</p>
+
+    <p>
+      Seu pagamento foi aprovado com sucesso e agora você tem acesso completo à nossa plataforma.
+    </p>
+
+    <p>
+      Acesse o painel da sua malharia para cadastrar seus teares e começar a receber contatos de clientes interessados.
+    </p>
+
+    <a class="botao" href="https://achetece.replit.app/login" target="_blank">Ir para o painel</a>
+
+    <p style="text-align: center; font-size: 14px; color: #777;">
+      Em caso de dúvidas, entre em contato pelo WhatsApp:<br>
+      <a href="https://wa.me/5547991120670" target="_blank">Clique aqui para falar com a equipe AcheTece</a>
+    </p>
+
+    <div class="footer">
+      AcheTece © 2025 – Todos os direitos reservados.<br>
+      <a href="https://achetece.replit.app">www.achetece.com</a>
+    </div>
+  </div>
+
+</body>
+</html>
+""", apelido=apelido)
+
                         mail.send(msg)
-                        print("📩 E-mail de confirmação enviado com sucesso.")
+                        print("📬 E-mail HTML enviado com sucesso.")
+
                     except Exception as e:
-                        print("❌ Erro ao enviar e-mail:", e)
+                        print("❌ Erro ao enviar e-mail:", str(e))
                 else:
-                    print(f"⚠️ Empresa não encontrada para e-mail: {email}")
-            else:
-                print(f"⚠️ Pagamento com status: {payment['status']} para {email}")
+                    print("❌ Empresa não encontrada com e-mail:", email)
 
         except Exception as e:
-            print(f"❌ Erro ao processar webhook: {e}")
-    else:
-        print("⚠️ Webhook recebido sem tipo 'payment'.")
+            print("❌ Erro ao consultar pagamento:", str(e))
 
-    return jsonify({"status": "ok"}), 200
+    return "ok", 200
 
 @app.route('/cadastrar_teares', methods=['GET', 'POST'])
 def cadastrar_teares():
@@ -818,6 +907,121 @@ def rota_teste():
 @app.route('/reset/<token>', methods=['GET', 'POST'])
 def redefinir_token_test(token):
     return f"Token recebido: {token}"
+
+@app.route('/teste_email_pagamento')
+def teste_email_pagamento():
+    from flask import render_template_string
+
+    html_email = render_template_string("""
+    <!DOCTYPE html>
+    <html lang="pt-br">
+    <head>
+      <meta charset="UTF-8">
+      <title>Pagamento confirmado</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          background-color: #f2f2f2;
+          padding: 0;
+          margin: 0;
+        }
+
+        .container {
+          max-width: 600px;
+          margin: 40px auto;
+          background-color: #ffffff;
+          border-radius: 8px;
+          padding: 30px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .logo {
+          text-align: center;
+          margin-bottom: 30px;
+        }
+
+        .logo img {
+          max-height: 70px;
+        }
+
+        h2 {
+          color: #003bb3;
+          text-align: center;
+        }
+
+        p {
+          font-size: 16px;
+          color: #444;
+          line-height: 1.6;
+          margin: 20px 0;
+        }
+
+        .botao {
+          display: block;
+          width: max-content;
+          margin: 30px auto;
+          padding: 14px 28px;
+          background-color: #003bb3;
+          color: #fff;
+          text-decoration: none;
+          border-radius: 8px;
+          font-weight: bold;
+        }
+
+        .footer {
+          text-align: center;
+          font-size: 13px;
+          color: #999;
+          margin-top: 30px;
+        }
+
+        .footer a {
+          color: #666;
+          text-decoration: none;
+        }
+
+        .footer a:hover {
+          text-decoration: underline;
+        }
+      </style>
+    </head>
+    <body>
+
+      <div class="container">
+        <div class="logo">
+          <img src="https://achetece.replit.app/static/logo-email.png" alt="AcheTece">
+        </div>
+
+        <h2>✅ Pagamento confirmado com sucesso!</h2>
+
+        <p>Olá <strong>Tecelagem Estrela</strong>,</p>
+
+        <p>
+          Seu pagamento foi aprovado com sucesso e agora você tem acesso completo à nossa plataforma.
+        </p>
+
+        <p>
+          Acesse o painel da sua malharia para cadastrar seus teares e começar a receber contatos de clientes interessados.
+        </p>
+
+        <a class="botao" href="https://achetece.replit.app/login" target="_blank">Ir para o painel</a>
+
+        <p style="text-align: center; font-size: 14px; color: #777;">
+          Em caso de dúvidas, entre em contato pelo WhatsApp:<br>
+          <a href="https://wa.me/5547991120670" target="_blank">Clique aqui para falar com a equipe AcheTece</a>
+        </p>
+
+        <div class="footer">
+          AcheTece © 2025 – Todos os direitos reservados.<br>
+          <a href="https://achetece.replit.app">www.achetece.com</a>
+        </div>
+      </div>
+
+    </body>
+    </html>
+    """)
+
+    return html_email
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
