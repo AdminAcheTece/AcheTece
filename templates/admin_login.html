@@ -85,9 +85,23 @@
         input[type="password"] {
             width: 100%;
             padding: 10px;
-            margin: 10px 0 20px 0;
+            margin: 10px 0 6px 0; /* aproxima o link do campo senha */
             border-radius: 6px;
             border: 1px solid #ccc;
+        }
+
+        /* Link "Esqueci a senha" — igual ao login.html (alinhado à direita, discreto) */
+        .link-esqueci-senha {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+        .link-esqueci-senha a {
+            color: #003bb3;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .link-esqueci-senha a:hover {
+            text-decoration: underline;
         }
 
         button {
@@ -146,7 +160,7 @@
     </div>
     <a href="/" class="icone-home" title="Voltar à página inicial">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 9L12 2l9 7v11a2 2 0 0 1-2 2h-3a1 1 0 0 1-1-1v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V9z"/>
+            <path d="M3 9L12 2l9 7v11a2 2 0 0 1-2 2h-3a1 1 0 0 1-1-1v-4a2 2 0 0 0-2-2h-2a 2 2 0 0 0-2 2v4a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V9z"/>
         </svg>
     </a>
 </header>
@@ -170,6 +184,11 @@
 
             <label for="senha">Senha:</label>
             <input type="password" name="senha" required>
+
+            <!-- Link Esqueci a senha (abaixo do campo senha, alinhado à direita) -->
+            <div class="link-esqueci-senha">
+                <a href="{{ url_for('esqueci_senha') }}">Esqueci a senha</a>
+            </div>
 
             <button type="submit">Entrar</button>
         </form>

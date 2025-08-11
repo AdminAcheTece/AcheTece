@@ -215,19 +215,28 @@ def cadastrar_empresa():
 
 @app.route('/checkout')
 def checkout():
+    import uuid  # import local para não interferir no restante
+
     if 'empresa_id' not in session:
         return redirect(url_for('login'))
 
     empresa = Empresa.query.get(session['empresa_id'])
-
     if not empresa:
         session.pop('empresa_id', None)
         return redirect(url_for('login'))
 
-    success_url = "https://achetece.replit.app/pagamento_aprovado"
-    failure_url = "https://achetece.replit.app/pagamento_erro"
-    pending_url = "https://achetece.replit.app/pagamento_pendente"
-    notify_url  = "https://achetece.replit.app/webhook"
+    # Base URL centralizada (Render). Pode definir APP_BASE_URL no Render,
+    # ex: APP_BASE_URL=https://hetece.onrender.com
+    base_url = os.getenv('APP_BASE_URL', 'https://hetece.onrender.com')
+
+    # URLs de retorno e webhook
+    success_url = f"{base_url}/pagamento_aprovado"
+    failure_url = f"{base_url}/pagamento_erro"
+    pending_url = f"{base_url}/pagamento_pendente"
+    notify_url  = f"{base_url}/webhook"
+
+    # external_reference único por preferência (requisito de conciliação do MP)
+    ext_ref = f"achetece:{empresa.id}:{uuid.uuid4().hex}"
 
     preference_data = {
         "items": [{
@@ -244,16 +253,38 @@ def checkout():
             "failure": failure_url,
             "pending": pending_url
         },
-        "auto_return": "approved",  # ✅ ESSENCIAL
-        "notification_url": notify_url
+        "auto_return": "approved",
+        "notification_url": notify_url,
+        "external_reference": ext_ref  # 🔑 único por transação
     }
 
     try:
         print("🧾 Criando nova preferência de pagamento para:", empresa.email)
-        
+        print("↪️ success_url:", success_url)
+        print("↪️ failure_url:", failure_url)
+        print("↪️ pending_url:", pending_url)
+        print("🔔 notify_url:", notify_url)
+        print("🆔 external_reference:", ext_ref)
+
         preference_response = sdk.preference().create(preference_data)
         preference = preference_response.get("response", {})
         init_point = preference.get("init_point")
+        pref_id = preference.get("id")
+        print("🧾 preference_id:", pref_id)
+
+        # (OPCIONAL) Persistir conciliação, se existir a model Pagamento
+        try:
+            if 'Pagamento' in globals():
+                p = Pagamento(
+                    empresa_id=empresa.id,
+                    external_reference=ext_ref,
+                    mp_preference_id=pref_id,
+                    status="init"
+                )
+                db.session.add(p)
+                db.session.commit()
+        except Exception as e:
+            print("⚠️ Falha ao registrar conciliação (opcional):", str(e))
 
         if not init_point:
             return f"<h2>Erro: 'init_point' ausente na resposta.<br><br>Detalhes: {preference}</h2>", 500
@@ -261,6 +292,7 @@ def checkout():
         return redirect(init_point)
 
     except Exception as e:
+        print("❌ Erro ao iniciar pagamento:", str(e))
         return f"<h2>Erro ao iniciar pagamento: {e}</h2>", 500
 
 # ✅ ROTA /PLANOS – EXIBIDA EM CASO DE FALHA NO PAGAMENTO
@@ -338,163 +370,152 @@ from datetime import datetime
 from flask import request, jsonify
 from flask_mail import Message
 
-@app.route('/webhook', methods=['POST'])
+@app.route('/webhook', methods=['POST', 'GET'])
 def webhook():
     from flask import render_template_string
 
-    data = request.get_json()
-    print("📡 Webhook recebido:")
-    print(data)
+    base_url = os.getenv('APP_BASE_URL', 'https://hetece.onrender.com')
 
-    if data and data.get("type") == "payment":
-        payment_id = data["data"]["id"]
-        print(f"🔍 Verificando pagamento ID: {payment_id}")
+    # 1) Captura payload em qualquer formato enviado pelo MP
+    data = None
+    try:
+        data = request.get_json(silent=True)
+    except Exception as e:
+        print("⚠️ get_json falhou:", e)
 
-        try:
-            payment = sdk.payment().get(payment_id)["response"]
-            print("📄 Dados do pagamento:", payment)
+    topic = None
+    payment_id = None
 
-            email = payment["payer"]["email"]
-            status = payment["status"]
-            print(f"👤 E-mail do pagador: {email}")
-            print(f"💳 Status do pagamento: {status}")
+    if data and isinstance(data, dict):
+        topic = data.get('type') or data.get('topic')
+        if isinstance(data.get('data'), dict):
+            payment_id = data['data'].get('id')
+        payment_id = payment_id or data.get('id')
+    else:
+        topic = request.args.get('topic') or request.form.get('topic') or request.args.get('type')
+        payment_id = request.args.get('id') or request.form.get('id')
 
-            if status in ["approved", "authorized"]:
-                empresa = Empresa.query.filter_by(email=email).first()
+    print("📡 Webhook recebido | topic:", topic, "| payment_id:", payment_id, "| raw:", data)
 
-                if empresa:
-                    empresa.status_pagamento = "ativo"
-                    empresa.data_pagamento = datetime.now()
-                    db.session.commit()
-                    print(f"✅ Pagamento confirmado para {email}")
+    if not payment_id or str(topic).lower() != 'payment':
+        print("⚠️ Notificação ignorada (sem topic=payment ou sem id).")
+        return "ok", 200
 
-                    # Envia e-mail de boas-vindas com HTML profissional
-                    try:
-                        apelido = empresa.apelido or empresa.nome
-                        msg = Message(
-                            subject="✅ Pagamento aprovado! Acesse seu painel no AcheTece",
-                            sender=app.config['MAIL_USERNAME'],
-                            recipients=[email]
-                        )
-                        msg.html = render_template_string("""
+    # 2) Consulta pagamento no MP
+    try:
+        payment = sdk.payment().get(payment_id)["response"]
+        print("📄 Payment:", payment)
+    except Exception as e:
+        print("❌ Erro ao consultar pagamento:", str(e))
+        return "ok", 200  # responde 200 para evitar repetição agressiva
+
+    status = (payment or {}).get("status")
+    payer_email = ((payment or {}).get("payer") or {}).get("email")
+    external_reference = (payment or {}).get("external_reference")
+    mp_payment_id = str((payment or {}).get("id"))
+
+    print(f"💳 status={status} | payer_email={payer_email} | external_reference={external_reference} | payment_id={mp_payment_id}")
+
+    if status not in ["approved", "authorized"]:
+        return "ok", 200
+
+    # 3) Identifica a empresa:
+    #    Prioriza external_reference no formato achetece:<empresa_id>:<uuid>
+    empresa = None
+    empresa_id_from_ext = None
+    if external_reference and isinstance(external_reference, str) and external_reference.startswith("achetece:"):
+        parts = external_reference.split(":")
+        if len(parts) >= 3:
+            try:
+                empresa_id_from_ext = int(parts[1])
+                empresa = Empresa.query.get(empresa_id_from_ext)
+            except Exception as e:
+                print("⚠️ external_reference inválido:", external_reference, e)
+
+    if not empresa and payer_email:
+        empresa = Empresa.query.filter_by(email=payer_email).first()
+
+    if not empresa:
+        print("❌ Empresa não encontrada por external_reference ou e-mail.")
+        return "ok", 200
+
+    # 4) Atualiza status e data (idempotente)
+    if empresa.status_pagamento != "ativo":
+        empresa.status_pagamento = "ativo"
+        empresa.data_pagamento = datetime.now()
+        db.session.commit()
+        print(f"✅ Empresa ativada: {empresa.email}")
+
+    # (OPCIONAL) Atualiza conciliação se a model Pagamento existir
+    try:
+        if 'Pagamento' in globals() and external_reference:
+            p = Pagamento.query.filter_by(external_reference=external_reference).first()
+            if not p:
+                p = Pagamento(external_reference=external_reference, empresa_id=empresa.id)
+                db.session.add(p)
+            p.mp_payment_id = mp_payment_id
+            p.status = status
+            td = (payment.get("transaction_details") or {})
+            p.amount = td.get("total_paid_amount")
+            p.received_at = datetime.now()
+            db.session.commit()
+    except Exception as e:
+        print("⚠️ Falha ao atualizar conciliação (opcional):", str(e))
+
+    # 5) Envia e-mail HTML de confirmação (semelhante ao que você já tinha)
+    try:
+        apelido = empresa.apelido or empresa.nome
+        msg = Message(
+            subject="✅ Pagamento aprovado! Acesse seu painel no AcheTece",
+            sender=app.config['MAIL_USERNAME'],
+            recipients=[empresa.email]
+        )
+        msg.html = render_template_string("""
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
   <title>Pagamento confirmado</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f2f2f2;
-      padding: 0;
-      margin: 0;
-    }
-
-    .container {
-      max-width: 600px;
-      margin: 40px auto;
-      background-color: #ffffff;
-      border-radius: 8px;
-      padding: 30px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-
-    .logo {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-
-    .logo img {
-      max-height: 70px;
-    }
-
-    h2 {
-      color: #003bb3;
-      text-align: center;
-    }
-
-    p {
-      font-size: 16px;
-      color: #444;
-      line-height: 1.6;
-      margin: 20px 0;
-    }
-
-    .botao {
-      display: block;
-      width: max-content;
-      margin: 30px auto;
-      padding: 14px 28px;
-      background-color: #003bb3;
-      color: #fff;
-      text-decoration: none;
-      border-radius: 8px;
-      font-weight: bold;
-    }
-
-    .footer {
-      text-align: center;
-      font-size: 13px;
-      color: #999;
-      margin-top: 30px;
-    }
-
-    .footer a {
-      color: #666;
-      text-decoration: none;
-    }
-
-    .footer a:hover {
-      text-decoration: underline;
-    }
+    body { font-family: Arial, sans-serif; background-color: #f2f2f2; padding:0; margin:0; }
+    .container { max-width:600px; margin:40px auto; background:#fff; border-radius:8px; padding:30px; box-shadow:0 2px 8px rgba(0,0,0,.05); }
+    .logo { text-align:center; margin-bottom:30px; }
+    .logo img { max-height:70px; }
+    h2 { color:#003bb3; text-align:center; }
+    p { font-size:16px; color:#444; line-height:1.6; margin:20px 0; }
+    .botao { display:block; width:max-content; margin:30px auto; padding:14px 28px; background:#003bb3; color:#fff; text-decoration:none; border-radius:8px; font-weight:bold; }
+    .footer { text-align:center; font-size:13px; color:#999; margin-top:30px; }
+    .footer a { color:#666; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
   </style>
 </head>
 <body>
-
   <div class="container">
     <div class="logo">
-      <img src="https://achetece.replit.app/static/logo-email.png" alt="AcheTece">
+      <img src="{{ base_url }}/static/logo-email.png" alt="AcheTece">
     </div>
-
     <h2>✅ Pagamento confirmado com sucesso!</h2>
-
     <p>Olá <strong>{{ apelido }}</strong>,</p>
-
-    <p>
-      Seu pagamento foi aprovado com sucesso e agora você tem acesso completo à nossa plataforma.
+    <p>Seu pagamento foi aprovado com sucesso e agora você tem acesso completo à nossa plataforma.</p>
+    <p>Acesse o painel da sua malharia para cadastrar seus teares e começar a receber contatos de clientes interessados.</p>
+    <a class="botao" href="{{ base_url }}/login" target="_blank">Ir para o painel</a>
+    <p style="text-align:center; font-size:14px; color:#777;">
+      Em caso de dúvidas, fale conosco no WhatsApp:
+      <br><a href="https://wa.me/5547991120670" target="_blank">Clique aqui para falar com a equipe AcheTece</a>
     </p>
-
-    <p>
-      Acesse o painel da sua malharia para cadastrar seus teares e começar a receber contatos de clientes interessados.
-    </p>
-
-    <a class="botao" href="https://achetece.replit.app/login" target="_blank">Ir para o painel</a>
-
-    <p style="text-align: center; font-size: 14px; color: #777;">
-      Em caso de dúvidas, entre em contato pelo WhatsApp:<br>
-      <a href="https://wa.me/5547991120670" target="_blank">Clique aqui para falar com a equipe AcheTece</a>
-    </p>
-
     <div class="footer">
-      AcheTece © 2025 – Todos os direitos reservados.<br>
-      <a href="https://achetece.replit.app">www.achetece.com</a>
+      AcheTece © {{ ano }} – Todos os direitos reservados.
+      <br><a href="{{ base_url }}">www.achetece.com</a>
     </div>
   </div>
-
 </body>
 </html>
-""", apelido=apelido)
+        """, apelido=apelido, ano=datetime.now().year, base_url=base_url)
 
-                        mail.send(msg)
-                        print("📬 E-mail HTML enviado com sucesso.")
-
-                    except Exception as e:
-                        print("❌ Erro ao enviar e-mail:", str(e))
-                else:
-                    print("❌ Empresa não encontrada com e-mail:", email)
-
-        except Exception as e:
-            print("❌ Erro ao consultar pagamento:", str(e))
+        mail.send(msg)
+        print("📬 E-mail HTML enviado com sucesso para:", empresa.email)
+    except Exception as e:
+        print("❌ Erro ao enviar e-mail:", str(e))
 
     return "ok", 200
 
