@@ -215,7 +215,7 @@ def cadastrar_empresa():
 
 @app.route('/checkout')
 def checkout():
-    import uuid  # import local para não interferir no restante
+    import uuid
 
     if 'empresa_id' not in session:
         return redirect(url_for('login'))
@@ -225,17 +225,15 @@ def checkout():
         session.pop('empresa_id', None)
         return redirect(url_for('login'))
 
-    # Base URL centralizada (Render). Pode definir APP_BASE_URL no Render,
-    # ex: APP_BASE_URL=https://hetece.onrender.com
-    base_url = os.getenv('APP_BASE_URL', 'https://hetece.onrender.com')
+    # ✅ base URL centralizada (ajuste APP_BASE_URL no Render se quiser)
+    base_url = os.getenv('APP_BASE_URL', 'https://achetece.onrender.com')
 
-    # URLs de retorno e webhook
     success_url = f"{base_url}/pagamento_aprovado"
     failure_url = f"{base_url}/pagamento_erro"
     pending_url = f"{base_url}/pagamento_pendente"
     notify_url  = f"{base_url}/webhook"
 
-    # external_reference único por preferência (requisito de conciliação do MP)
+    # external_reference único por preferência (requisito MP)
     ext_ref = f"achetece:{empresa.id}:{uuid.uuid4().hex}"
 
     preference_data = {
@@ -245,9 +243,7 @@ def checkout():
             "currency_id": "BRL",
             "unit_price": 2.00
         }],
-        "payer": {
-            "email": empresa.email
-        },
+        "payer": {"email": empresa.email},
         "back_urls": {
             "success": success_url,
             "failure": failure_url,
@@ -255,7 +251,7 @@ def checkout():
         },
         "auto_return": "approved",
         "notification_url": notify_url,
-        "external_reference": ext_ref  # 🔑 único por transação
+        "external_reference": ext_ref
     }
 
     try:
@@ -272,7 +268,7 @@ def checkout():
         pref_id = preference.get("id")
         print("🧾 preference_id:", pref_id)
 
-        # (OPCIONAL) Persistir conciliação, se existir a model Pagamento
+        # (opcional) persistir conciliação se existir a model Pagamento
         try:
             if 'Pagamento' in globals():
                 p = Pagamento(
@@ -374,7 +370,7 @@ from flask_mail import Message
 def webhook():
     from flask import render_template_string
 
-    base_url = os.getenv('APP_BASE_URL', 'https://hetece.onrender.com')
+    base_url = os.getenv('APP_BASE_URL', 'https://achetece.onrender.com')
 
     # 1) Captura payload em qualquer formato enviado pelo MP
     data = None
@@ -419,10 +415,8 @@ def webhook():
     if status not in ["approved", "authorized"]:
         return "ok", 200
 
-    # 3) Identifica a empresa:
-    #    Prioriza external_reference no formato achetece:<empresa_id>:<uuid>
+    # 3) Identifica a empresa
     empresa = None
-    empresa_id_from_ext = None
     if external_reference and isinstance(external_reference, str) and external_reference.startswith("achetece:"):
         parts = external_reference.split(":")
         if len(parts) >= 3:
@@ -446,7 +440,7 @@ def webhook():
         db.session.commit()
         print(f"✅ Empresa ativada: {empresa.email}")
 
-    # (OPCIONAL) Atualiza conciliação se a model Pagamento existir
+    # (opcional) atualizar conciliação se a model Pagamento existir
     try:
         if 'Pagamento' in globals() and external_reference:
             p = Pagamento.query.filter_by(external_reference=external_reference).first()
@@ -462,7 +456,7 @@ def webhook():
     except Exception as e:
         print("⚠️ Falha ao atualizar conciliação (opcional):", str(e))
 
-    # 5) Envia e-mail HTML de confirmação (semelhante ao que você já tinha)
+    # 5) Envia e-mail HTML
     try:
         apelido = empresa.apelido or empresa.nome
         msg = Message(
