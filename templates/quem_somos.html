@@ -24,13 +24,54 @@
 
       <!-- Dropdown -->
       <nav class="menu-dropdown" id="menu-lateral">
-        <a href="{{ url_for('buscar_teares') }}" class="menu-link">Buscar Tear</a>
-        <div class="menu-sep"></div>
-        <a href="{{ url_for('malharia_info') }}" class="menu-link">Como Funciona</a>
-        <a href="{{ url_for('login') }}" class="botao-login">Já sou cadastrado</a>
-        <div class="menu-sep"></div>
-        <a href="{{ url_for('quem_somos') }}" class="botao-login">Quem Somos</a>
-      </nav>
+  <div class="menu-header">
+    <span>Menu</span>
+    <button type="button" class="menu-close" aria-label="Fechar menu">
+      <!-- X -->
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+      </svg>
+    </button>
+  </div>
+
+  <a href="{{ url_for('buscar_teares') }}" class="menu-item">
+    <!-- lupa -->
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" fill="none"/>
+      <line x1="16.65" y1="16.65" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <span>Buscar Tear</span>
+  </a>
+
+  <a href="{{ url_for('malharia_info') }}" class="menu-item">
+    <!-- interrogação -->
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
+      <path d="M9.5 9a2.5 2.5 0 1 1 4.1 2 3 3 0 0 0-1.6 2.6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <circle cx="12" cy="17" r="1.2" fill="currentColor"/>
+    </svg>
+    <span>Como Funciona</span>
+  </a>
+
+  <a href="{{ url_for('login') }}" class="menu-item">
+    <!-- usuário -->
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2" fill="none"/>
+      <path d="M4 20a8 8 0 0 1 16 0" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span>Já sou cadastrado</span>
+  </a>
+
+  <a href="{{ url_for('quem_somos') }}" class="menu-item">
+    <!-- info -->
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
+      <circle cx="12" cy="8" r="1.5" fill="currentColor"/>
+      <path d="M11 11h2v6h-2z" fill="currentColor"/>
+    </svg>
+    <span>Quem Somos</span>
+  </a>
+</nav>
     </div>
   </header>
 
