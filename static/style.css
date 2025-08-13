@@ -806,17 +806,106 @@ thead tr {
   margin-top: 0 !important;
 }
 
-/* ===== Dropdown mais clean ===== */
+/* ===== Dropdown: limpo e FECHADO por padrão (override final) ===== */
 
-/* Estrutura: usa coluna + gap p/ espaçar igualmente */
-.menu-dropdown {
-  display: flex !important;
+/* Ancoragem do dropdown ao botão */
+.menu-wrap {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+/* FECHADO por padrão */
+.menu-wrap .menu-dropdown {
+  position: absolute !important;
+  top: calc(100% + 8px) !important;   /* logo abaixo do botão */
+  right: 0 !important;
+  left: auto !important;
+  z-index: 1000 !important;
+
+  display: none !important;           /* <-- fecha por padrão */
   flex-direction: column !important;
-  gap: 10px !important;          /* distância igual entre os botões */
+  gap: 10px !important;
+
+  min-width: 260px !important;
   padding: 12px !important;
+  background: #fff !important;
   border: 1px solid #e6e6e6 !important;
   border-radius: 12px !important;
   box-shadow: 0 12px 24px rgba(0,0,0,.08) !important;
+}
+
+/* ABERTO quando tem a classe .open */
+.menu-wrap .menu-dropdown.open { 
+  display: flex !important;
+}
+
+/* Itens do menu: mesma largura, borda fina e discreta */
+.menu-dropdown .menu-link,
+.menu-dropdown .botao-login {
+  display: block !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  padding: 12px 18px !important;
+  text-align: center !important;
+  font-weight: 700 !important;
+  text-decoration: none !important;
+
+  background: #fff !important;
+  color: #333 !important;
+  border: 1px solid #cfcfcf !important;    /* borda fininha e clean */
+  border-radius: 10px !important;
+
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease !important;
+}
+
+/* Hover cinza bem claro */
+.menu-dropdown .menu-link:hover,
+.menu-dropdown .botao-login:hover {
+  background: #f5f5f5 !important;
+  color: #111 !important;
+  border-color: #bfbfbf !important;
+}
+
+/* Some com separadores antigos */
+.menu-dropdown .menu-sep { 
+  display: none !important; 
+}
+
+/* Botão sanduíche cinza escuro */
+.hamburger {
+  border-color: #444 !important;
+  background: #fff !important;
+}
+.hamburger span {
+  background: #444 !important;
+}
+.hamburger:hover {
+  background: #f2f2f2 !important;
+  border-color: #000 !important;
+}
+
+/* Fora do menu: "Já sou cadastrado" com borda azul e hover preenchido */
+.cta-botoes a.botao-login,
+.area-cadastro a.botao-login,
+.hero a.botao-login {
+  background: #fff !important;
+  color: var(--azul-principal) !important;
+  border: 1px solid var(--azul-principal) !important; /* linha fina azul */
+  border-radius: 10px !important;
+  padding: 12px 24px !important;
+  font-weight: 700 !important;
+  text-decoration: none !important;
+  transition: background-color .2s ease, color .2s ease, border-color .2s ease, box-shadow .2s ease !important;
+}
+.cta-botoes a.botao-login:hover,
+.area-cadastro a.botao-login:hover,
+.hero a.botao-login:hover {
+  background: var(--azul-principal) !important;
+  color: #fff !important;
+  border-color: var(--azul-principal) !important;
+  box-shadow: 0 4px 10px rgba(0,0,0,.12) !important;
 }
 
 /* some com o separador antigo */
