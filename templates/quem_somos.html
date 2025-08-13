@@ -12,11 +12,7 @@
 
   <!-- Cabeçalho com logo + menu -->
   <header class="navbar">
-    <div class="logo">
-      <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
-    </div>
-
-    <div class="header-right">
+    <div class="header-left">
       <div class="menu-wrap">
         <!-- Botão sanduíche -->
         <button class="hamburger" id="hamburger" aria-label="Abrir menu" aria-controls="menu-lateral" aria-expanded="false">
@@ -28,7 +24,6 @@
           <div class="menu-header">
             <span>Menu</span>
             <button type="button" class="menu-close" aria-label="Fechar menu">
-              <!-- X -->
               <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
                 <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
               </svg>
@@ -36,44 +31,51 @@
           </div>
 
           <a href="{{ url_for('buscar_teares') }}" class="menu-item">
-            <!-- lupa -->
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" fill="none"/>
-              <line x1="16.65" y1="16.65" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="11" cy="11" r="7"></circle>
+              <line x1="16.65" y1="16.65" x2="21" y2="21"></line>
             </svg>
             <span>Buscar Tear</span>
           </a>
 
           <a href="{{ url_for('malharia_info') }}" class="menu-item">
-            <!-- interrogação -->
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
-              <path d="M9.5 9a2.5 2.5 0 1 1 4.1 2 3 3 0 0 0-1.6 2.6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
-              <circle cx="12" cy="17" r="1.2" fill="currentColor"/>
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M9.5 9a2.5 2.5 0 1 1 4.1 2A3 3 0 0 0 12 13.6"></path>
+              <circle cx="12" cy="17" r="1.2" fill="currentColor"></circle>
             </svg>
             <span>Como Funciona</span>
           </a>
 
           <a href="{{ url_for('login') }}" class="menu-item">
-            <!-- usuário -->
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2" fill="none"/>
-              <path d="M4 20a8 8 0 0 1 16 0" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <circle cx="12" cy="8" r="4"></circle>
+              <path d="M4 20a8 8 0 0 1 16 0"></path>
             </svg>
             <span>Já sou cadastrado</span>
           </a>
 
           <a href="{{ url_for('quem_somos') }}" class="menu-item">
-            <!-- info -->
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
-              <circle cx="12" cy="8" r="1.5" fill="currentColor"/>
-              <path d="M11 11h2v6h-2z" fill="currentColor"/>
+              <circle cx="12" cy="12" r="10"></circle>
+              <circle cx="12" cy="8" r="1.5" fill="currentColor"></circle>
+              <path d="M11 11h2v6h-2z" fill="currentColor"></path>
             </svg>
             <span>Quem Somos</span>
           </a>
         </nav>
       </div>
+
+      <!-- Logo -->
+      <div class="logo">
+        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
+      </div>
+    </div>
+
+    <div class="header-right">
+      <ul class="nav-links">
+        <li><a href="{{ url_for('buscar_teares') }}" class="botao-buscar-topo">Buscar Tear</a></li>
+      </ul>
     </div>
   </header>
 
@@ -104,53 +106,42 @@
     </div>
   </section>
 
-  <!-- Script do menu -->
+  <!-- Script do menu (multi-instância, fecha no X/fora/ESC) -->
   <script>
     (function () {
-      const wrap = document.querySelector('.menu-wrap');
-      if (!wrap) return;
-
-      const btn   = wrap.querySelector('#hamburger');
-      const menu  = wrap.querySelector('#menu-lateral');
-      const xBtn  = wrap.querySelector('.menu-close');
-
-      if (!btn || !menu) return;
-
-      function closeMenu() {
-        menu.classList.remove('open');
-        btn.setAttribute('aria-expanded', 'false');
-      }
-      function openMenu() {
-        menu.classList.add('open');
-        btn.setAttribute('aria-expanded', 'true');
-      }
-
-      // Abre/fecha no clique do botão
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        menu.classList.contains('open') ? closeMenu() : openMenu();
-      });
-
-      // Fechar pelo X
-      if (xBtn) {
-        xBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          closeMenu();
+      function closeAll() {
+        document.querySelectorAll('.menu-wrap .menu-dropdown.open').forEach(m => {
+          m.classList.remove('open');
+          const b = m.closest('.menu-wrap')?.querySelector('.hamburger');
+          if (b) b.setAttribute('aria-expanded', 'false');
         });
       }
 
-      // Clique fora fecha
-      document.addEventListener('click', (e) => {
-        if (!wrap.contains(e.target)) closeMenu();
+      document.querySelectorAll('.menu-wrap').forEach(wrap => {
+        const btn  = wrap.querySelector('#hamburger');
+        const menu = wrap.querySelector('#menu-lateral');
+        const xBtn = wrap.querySelector('.menu-close');
+        if (!btn || !menu) return;
+
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const willOpen = !menu.classList.contains('open');
+          closeAll();
+          menu.classList.toggle('open', willOpen);
+          btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        });
+
+        xBtn?.addEventListener('click', e => {
+          e.stopPropagation();
+          menu.classList.remove('open');
+          btn.setAttribute('aria-expanded', 'false');
+        });
+
+        menu.addEventListener('click', e => e.stopPropagation());
       });
 
-      // ESC fecha
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeMenu();
-      });
-
-      // Clique dentro do menu não propaga
-      menu.addEventListener('click', (e) => e.stopPropagation());
+      document.addEventListener('click', closeAll);
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
     })();
   </script>
 </body>
