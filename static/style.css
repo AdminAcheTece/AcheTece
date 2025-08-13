@@ -746,3 +746,46 @@ thead tr {
 @media (max-width: 640px) {
   .nav-links li:first-child { display: none; }
 }
+
+/* === FORA DO MENU: "Já sou cadastrado" com borda azul e hover preenchido === */
+.cta-botoes a.botao-login,
+.area-cadastro a.botao-login,
+.hero a.botao-login {
+  background: #fff !important;
+  color: var(--azul-principal) !important;
+  border: 2px solid var(--azul-principal) !important;
+  border-radius: 10px;
+  padding: 12px 24px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background-color .2s ease, color .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+
+.cta-botoes a.botao-login:hover,
+.area-cadastro a.botao-login:hover,
+.hero a.botao-login:hover {
+  background: var(--azul-principal) !important;
+  color: #fff !important;
+  border-color: var(--azul-principal) !important;
+  box-shadow: 0 4px 10px rgba(0,0,0,.12);
+}
+
+/* === DENTRO DO MENU: mantém cinza escuro com mesma largura === */
+.menu-dropdown .botao-login {
+  background: #fff !important;
+  color: #444 !important;
+  border: 2px solid #444 !important;
+  border-radius: 10px;
+  padding: 12px 16px;
+  width: 100%;
+  box-sizing: border-box;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+}
+.menu-dropdown .botao-login:hover {
+  background: #f4f4f4 !important;
+  color: #000 !important;
+  border-color: #000 !important;
+}
