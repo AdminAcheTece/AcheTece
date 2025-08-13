@@ -674,6 +674,74 @@ thead tr {
   outline-offset: 2px;
 }
 
+/* ===========================
+   AJUSTES SOLICITADOS (final do style.css)
+   =========================== */
+
+/* 1) CTA "Já sou cadastrado" (fora do menu): borda azul */
+.cta-botoes .botao-login,
+.botao-login {
+  background: #fff;
+  color: var(--azul-principal);
+  border: 2px solid var(--azul-principal);
+  border-radius: 10px;
+  padding: 12px 24px;
+  font-weight: bold;
+  text-decoration: none;
+  transition: background-color .25s ease, color .25s ease, border-color .25s ease, box-shadow .25s ease;
+}
+
+.cta-botoes .botao-login:hover,
+.botao-login:hover {
+  background: var(--azul-principal);
+  color: #fff;
+  border-color: var(--azul-principal);
+  box-shadow: 0 4px 10px rgba(0,0,0,.12);
+}
+
+/* 2) Botão sanduíche: cinza escuro */
+.hamburger {
+  border-color: #444 !important;
+  background: #fff;
+}
+.hamburger span {
+  background: #444 !important;
+}
+.hamburger:hover {
+  background: #f2f2f2;
+  border-color: #000;
+}
+
+/* 3) Itens dentro do MENU: mesma largura + borda cinza escuro */
+.menu-dropdown .menu-link,
+.menu-dropdown .botao-login {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  background: #fff;
+  color: #444;
+  border: 2px solid #444;
+  border-radius: 10px;
+  padding: 12px 16px;
+  text-align: center;
+  font-weight: 700;
+  text-decoration: none;
+  margin-bottom: 8px;
+  box-shadow: none;
+  transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+}
+
+.menu-dropdown .menu-link:hover,
+.menu-dropdown .botao-login:hover {
+  background: #f4f4f4;
+  color: #000;
+  border-color: #000;
+}
+
+/* (opcional) pequenos ajustes visuais do dropdown */
+.menu-sep { background: #e0e0e0; }
+.menu-dropdown { border-color: #ddd; }
+
 /* Responsivo: esconde a frase longa ao lado da logo em telas pequenas */
 @media (max-width: 640px) {
   .nav-links li:first-child { display: none; }
