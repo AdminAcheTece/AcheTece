@@ -621,6 +621,10 @@ def webhook():
 
     return "ok", 200
 
+@app.route("/quem-somos")
+def quem_somos():
+    return render_template("quem_somos.html")
+
 @app.route('/cadastrar_teares', methods=['GET', 'POST'])
 def cadastrar_teares():
     if 'empresa_id' not in session:
