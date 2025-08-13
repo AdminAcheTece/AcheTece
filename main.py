@@ -1,18 +1,24 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, render_template_string, send_file, jsonify
+from flask import (
+    Flask, render_template, request, redirect, url_for, flash, session,
+    render_template_string, send_file, jsonify
+)
 from flask_mail import Mail, Message
 from flask_sqlalchemy import SQLAlchemy
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
-import os
 from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
+from datetime import datetime
+import mercadopago
+import os
 import csv
 import io
 import math
 import re
-import mercadopago
-from datetime import datetime
-from functools import wraps
-from sqlalchemy import or_
-from sqlalchemy import text
+import uuid
+
+# ---------------------------
+# Helpers e Configurações
+# ---------------------------
 
 def login_admin_requerido(f):
     @wraps(f)
@@ -23,51 +29,89 @@ def login_admin_requerido(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# Configurações iniciais
+def base_url():
+    """Retorna a URL base preferindo APP_BASE_URL (Render)."""
+    # Ex.: https://achetece.onrender.com
+    env_url = os.getenv('APP_BASE_URL')
+    if env_url:
+        return env_url.rstrip('/')
+    # fallback: derivar do request (em runtime HTTP)
+    try:
+        return request.url_root.rstrip('/')
+    except Exception:
+        # fallback final se chamado fora de contexto
+        return "http://localhost:5000"
+
+# App
 app = Flask(__name__)
-app.secret_key = 'S3cr3t_K3y_AcheTece_2025_test#flask!'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///banco.db'
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-unsafe')
+
+# DB (SQLite local por padrão; use DATABASE_URL no Render se quiser Postgres)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///banco.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# E-mail
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
+# E-mail (ajuste no Render)
+app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
+app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'true').lower() == 'true'
 app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
 app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 
 mail = Mail(app)
 db = SQLAlchemy(app)
-sdk = mercadopago.SDK(os.getenv("MERCADO_PAGO_TOKEN"))
 
-# Token de recuperação de senha
+# Mercado Pago SDK
+MP_ACCESS_TOKEN = os.getenv("MP_ACCESS_TOKEN") or os.getenv("MERCADO_PAGO_TOKEN", "")
+sdk = mercadopago.SDK(MP_ACCESS_TOKEN)
+
+# Preço do plano (opcional via env; default 2.00 para teste)
+PLAN_MONTHLY = float(os.getenv("PLAN_MONTHLY", "2.00"))  # coloque "49.90" no Render quando quiser
+
+# ---------------------------
+# Utilitários
+# ---------------------------
+
 def gerar_token(email):
-    serializer = URLSafeTimedSerializer(app.secret_key)
+    serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
     return serializer.dumps(email, salt='recupera-senha')
 
-def enviar_email_recuperacao(email):
+def enviar_email_recuperacao(email, nome_empresa=""):
     token = gerar_token(email)
-    link = url_for('redefinir_senha', token=token, _external=True)
+    # Força domínio correto
+    link = f"{base_url()}{url_for('redefinir_senha', token=token)}"
 
     msg = Message(
         subject="Redefinição de Senha - AcheTece",
         sender=app.config['MAIL_USERNAME'],
         recipients=[email]
     )
-    msg.body = f"""
-Olá,
+    msg.html = render_template_string("""
+    <html>
+      <body style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px;">
+        <div style="max-width: 600px; margin: auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
+          <h2 style="color: #003bb3;">Redefinição de Senha</h2>
+          <p>Olá {{ nome }},</p>
+          <p>Recebemos uma solicitação para redefinir a senha da sua conta no AcheTece.</p>
+          <p>Para criar uma nova senha, clique no botão abaixo:</p>
 
-Recebemos uma solicitação para redefinir sua senha.
-Clique no link abaixo para criar uma nova senha:
-{link}
+          <p style="text-align: center; margin: 30px 0;">
+            <a href="{{ link }}" target="_blank" style="background-color: #003bb3; color: #ffffff; text-decoration: none; padding: 14px 24px; border-radius: 6px; display: inline-block; font-weight: bold;">Redefinir Senha</a>
+          </p>
 
-Este link é válido por 1 hora.
-Se você não solicitou isso, ignore este e-mail.
-Equipe AcheTece
-"""
+          <p>Este link é válido por 1 hora. Se você não solicitou isso, pode ignorar este e-mail.</p>
+
+          <p style="margin-top: 40px;">Atenciosamente,<br>Equipe AcheTece</p>
+        </div>
+      </body>
+    </html>
+    """, nome=nome_empresa or email, link=link)
+
     mail.send(msg)
 
-# MODELOS
+# ---------------------------
+# Modelos
+# ---------------------------
+
 class Empresa(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(100), nullable=False, unique=True)
@@ -80,8 +124,8 @@ class Empresa(db.Model):
     status_pagamento = db.Column(db.String(20), default='pendente')
     data_pagamento = db.Column(db.DateTime)
     teares = db.relationship('Tear', backref='empresa', lazy=True)
-    responsavel_nome = db.Column(db.String(120))        # novo
-    responsavel_sobrenome = db.Column(db.String(120))   # novo (opcional)
+    responsavel_nome = db.Column(db.String(120))
+    responsavel_sobrenome = db.Column(db.String(120))
 
 class Tear(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -94,36 +138,30 @@ class Tear(db.Model):
     elastano = db.Column(db.String(10), nullable=False)
     empresa_id = db.Column(db.Integer, db.ForeignKey('empresa.id'), nullable=False)
 
+# ---------------------------
+# Rotas
+# ---------------------------
+
 @app.route('/')
 def index():
     teares = Tear.query.all()
     return render_template('index.html', teares=teares)
 
-from werkzeug.security import check_password_hash
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form.get('email', '').strip()
+        email = request.form.get('email', '').strip().lower()
         senha = request.form.get('senha', '')
 
-        # Remove sessões anteriores
+        # Limpa sessões anteriores
         session.pop('empresa_id', None)
         session.pop('admin', None)
 
         empresa = Empresa.query.filter_by(email=email).first()
-
         if empresa and check_password_hash(empresa.senha, senha):
             session['empresa_id'] = empresa.id
-
-            # Verifica se é admin pelo e-mail
-            if empresa.email == "gestao.achetece@gmail.com": # <--- altere aqui
-                session['admin'] = True
-            else:
-                session['admin'] = False
-
+            session['admin'] = (empresa.email == "gestao.achetece@gmail.com")
             return redirect(url_for('painel_malharia'))
-
         else:
             erro = "E-mail ou senha incorretos. Tente novamente."
             return render_template('login.html', erro=erro)
@@ -132,92 +170,64 @@ def login():
 
 @app.route('/logout')
 def logout():
-    # Remove a sessão do usuário (malharia)
     session.pop('empresa_id', None)
-
-    # Opcional: limpa toda a sessão (se quiser zerar tudo)
-    # session.clear()
-
-    # Redireciona para a página inicial (ou login, se preferir)
     return redirect(url_for('index'))
 
 @app.route('/cadastrar_empresa', methods=['GET', 'POST'])
 def cadastrar_empresa():
-    estados = ['AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG',
-               'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR',
-               'RS', 'SC', 'SE', 'SP', 'TO']
-
-    cidades = ['Blumenau', 'Brusque', 'Gaspar', 'Joinville', 'São Paulo', 'Rio de Janeiro', 'Jaraguá do Sul']
+    estados = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT',
+               'PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO']
+    cidades = ['Blumenau','Brusque','Gaspar','Joinville','São Paulo','Rio de Janeiro','Jaraguá do Sul']
 
     if request.method == 'POST':
         nome = request.form['nome']
         apelido = request.form['apelido']
-        email = request.form['email']
+        email = request.form['email'].lower().strip()
         senha = request.form['senha']
         cidade = request.form['cidade']
         estado = request.form['estado']
         telefone = request.form['telefone']
-        # 🔹 Novos campos
         responsavel_nome = (request.form.get('responsavel_nome') or '').strip()
         responsavel_sobrenome = (request.form.get('responsavel_sobrenome') or '').strip()
 
         dados = {
-            'nome': nome,
-            'apelido': apelido,
-            'email': email,
-            'cidade': cidade,
-            'estado': estado,
-            'telefone': telefone,
-            # mantém preenchido no template em caso de erro
-            'responsavel_nome': responsavel_nome,
-            'responsavel_sobrenome': responsavel_sobrenome
+            'nome': nome, 'apelido': apelido, 'email': email,
+            'cidade': cidade, 'estado': estado, 'telefone': telefone,
+            'responsavel_nome': responsavel_nome, 'responsavel_sobrenome': responsavel_sobrenome
         }
 
         erros = {}
-        telefone_limpo = re.sub(r'\D', '', telefone)
+        telefone_limpo = re.sub(r'\D', '', telefone or '')
 
         if len(telefone_limpo) < 10 or len(telefone_limpo) > 13:
             erros['telefone'] = 'Telefone inválido. Use apenas números com DDD. Ex: 47999991234'
-
         if Empresa.query.filter_by(nome=nome).first():
             erros['nome'] = 'Nome da empresa já existe.'
-
         if Empresa.query.filter_by(apelido=apelido).first():
             erros['apelido'] = 'Apelido já está em uso.'
-
         if Empresa.query.filter_by(email=email).first():
             erros['email'] = 'E-mail já cadastrado.'
-
         if estado not in estados:
             erros['estado'] = 'Estado inválido.'
-
         if cidade not in cidades:
             erros['cidade'] = 'Cidade inválida.'
-
-        # 🔹 Validação mínima do nome do responsável (requisito para o payer.first_name)
         if not responsavel_nome or len(re.sub(r'[^A-Za-zÀ-ÿ]', '', responsavel_nome)) < 2:
             erros['responsavel_nome'] = 'Informe ao menos o primeiro nome do responsável.'
 
         if erros:
-            return render_template(
-                'cadastrar_empresa.html',
-                erro='Corrija os campos destacados abaixo.',
-                erros=erros,
-                estados=estados,
-                cidades=cidades,
-                **dados
-            )
+            return render_template('cadastrar_empresa.html',
+                                   erro='Corrija os campos destacados abaixo.',
+                                   erros=erros, estados=estados, cidades=cidades, **dados)
 
         nova_empresa = Empresa(
             nome=nome,
             apelido=apelido,
             email=email,
-            senha=generate_password_hash(senha),  # mantém sua convenção
+            senha=generate_password_hash(senha),
             cidade=cidade,
             estado=estado,
             telefone=telefone_limpo,
             status_pagamento='pendente',
-            # 🔹 Novos campos
             responsavel_nome=responsavel_nome,
             responsavel_sobrenome=responsavel_sobrenome or None
         )
@@ -231,8 +241,6 @@ def cadastrar_empresa():
 
 @app.route('/checkout')
 def checkout():
-    import uuid
-
     if 'empresa_id' not in session:
         return redirect(url_for('login'))
 
@@ -241,38 +249,28 @@ def checkout():
         session.pop('empresa_id', None)
         return redirect(url_for('login'))
 
-    # ✅ base URL centralizada (ajuste APP_BASE_URL no Render se quiser)
-    base_url = os.getenv('APP_BASE_URL', 'https://achetece.onrender.com')
+    success_url = f"{base_url()}/pagamento_aprovado"
+    failure_url = f"{base_url()}/pagamento_erro"
+    pending_url = f"{base_url()}/pagamento_pendente"
+    notify_url  = f"{base_url()}/webhook"
 
-    success_url = f"{base_url}/pagamento_aprovado"
-    failure_url = f"{base_url}/pagamento_erro"
-    pending_url = f"{base_url}/pagamento_pendente"
-    notify_url  = f"{base_url}/webhook"
-
-    # external_reference único por preferência (requisito MP)
     ext_ref = f"achetece:{empresa.id}:{uuid.uuid4().hex}"
 
-    # 🔹 first_name exigido (fallback: parte antes do @ do e‑mail)
-    first_name = (getattr(empresa, 'responsavel_nome', '') or '').strip()
-    if not first_name:
-        first_name = empresa.email.split('@')[0]
-
-    # opcional (apenas para preencher "sobrenome" quando houver)
-    last_name = (getattr(empresa, 'responsavel_sobrenome', '') or '').strip()
+    first_name = (getattr(empresa, 'responsavel_nome', '') or '').strip() or empresa.email.split('@')[0]
+    last_name  = (getattr(empresa, 'responsavel_sobrenome', '') or '').strip()
 
     preference_data = {
         "items": [{
             "title": "Assinatura mensal AcheTece",
             "quantity": 1,
             "currency_id": "BRL",
-            "unit_price": 2.00
+            "unit_price": float(PLAN_MONTHLY)
         }],
-        # 👇 Enviamos os dois formatos: name/surname (Checkout Pro) e first/last (payments)
         "payer": {
-            "name": first_name,         # usado por Preferências (Checkout Pro)
-            "surname": last_name,       # usado por Preferências (Checkout Pro)
-            "first_name": first_name,   # usado por /v1/payments
-            "last_name": last_name,     # usado por /v1/payments
+            "name": first_name,
+            "surname": last_name,
+            "first_name": first_name,
+            "last_name": last_name,
             "email": empresa.email
         },
         "back_urls": {
@@ -286,45 +284,20 @@ def checkout():
     }
 
     try:
-        print("🧾 Criando nova preferência de pagamento para:", empresa.email)
-        print("👤 payer enviado:", preference_data.get("payer"))  # <— confira no log
-        print("🔔 notify_url:", notify_url, "| 🆔 external_reference:", ext_ref)
-
+        app.logger.info(f"Criando preferência para {empresa.email} | notify={notify_url} | ext={ext_ref}")
         preference_response = sdk.preference().create(preference_data)
         preference = preference_response.get("response", {})
         init_point = preference.get("init_point")
-        pref_id = preference.get("id")
-        print("🧾 preference_id:", pref_id)
-
-        # (opcional) persistir conciliação se existir a model Pagamento
-        try:
-            if 'Pagamento' in globals():
-                p = Pagamento(
-                    empresa_id=empresa.id,
-                    external_reference=ext_ref,
-                    mp_preference_id=pref_id,
-                    status="init"
-                )
-                db.session.add(p)
-                db.session.commit()
-        except Exception as e:
-            print("⚠️ Falha ao registrar conciliação (opcional):", str(e))
-
         if not init_point:
             return f"<h2>Erro: 'init_point' ausente na resposta.<br><br>Detalhes: {preference}</h2>", 500
-
         return redirect(init_point)
-
     except Exception as e:
-        print("❌ Erro ao iniciar pagamento:", str(e))
+        app.logger.exception(f"Erro ao iniciar pagamento: {e}")
         return f"<h2>Erro ao iniciar pagamento: {e}</h2>", 500
 
-# ✅ ROTA /PLANOS – EXIBIDA EM CASO DE FALHA NO PAGAMENTO
 @app.route('/planos')
 def planos():
-    empresa = None
-    if 'empresa_id' in session:
-        empresa = Empresa.query.get(session['empresa_id'])
+    empresa = Empresa.query.get(session['empresa_id']) if 'empresa_id' in session else None
     return render_template('planos.html', empresa=empresa)
 
 @app.route('/teste_email')
@@ -332,9 +305,9 @@ def teste_email():
     try:
         msg = Message(
             subject="Teste de envio - AcheTece",
-            sender=os.getenv('MAIL_USERNAME'),
-            recipients=["seu_email_destino@gmail.com"],  # pode usar o mesmo que cadastrou
-            body="Este é um teste de envio de e-mail usando Flask-Mail e Replit Secrets."
+            sender=app.config['MAIL_USERNAME'],
+            recipients=[os.getenv('TEST_EMAIL', 'seu_email_destino@gmail.com')],
+            body=f"Teste de e-mail do AcheTece ({base_url()})."
         )
         mail.send(msg)
         return "<h2>E-mail enviado com sucesso!</h2>"
@@ -351,43 +324,33 @@ def editar_empresa():
         session.pop('empresa_id', None)
         return redirect(url_for('login'))
 
-    estados = ['AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG',
-               'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR',
-               'RS', 'SC', 'SE', 'SP', 'TO']
-
-    cidades = ['Blumenau', 'Brusque', 'Gaspar', 'Joinville', 'São Paulo', 'Rio de Janeiro', 'Jaraguá do Sul']
+    estados = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT',
+               'PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO']
+    cidades = ['Blumenau','Brusque','Gaspar','Joinville','São Paulo','Rio de Janeiro','Jaraguá do Sul']
 
     if request.method == 'GET':
-        return render_template(
-            'editar_empresa.html',
-            estados=estados,
-            cidades=cidades,
-            nome=empresa.nome or '',
-            apelido=empresa.apelido or '',
-            email=empresa.email or '',
-            cidade=empresa.cidade or '',
-            estado=empresa.estado or '',
-            telefone=empresa.telefone or '',
-            responsavel_nome=(getattr(empresa, 'responsavel_nome', '') or ''),
-            responsavel_sobrenome=(getattr(empresa, 'responsavel_sobrenome', '') or '')
-        )
+        return render_template('editar_empresa.html',
+                               estados=estados, cidades=cidades,
+                               nome=empresa.nome or '', apelido=empresa.apelido or '',
+                               email=empresa.email or '', cidade=empresa.cidade or '',
+                               estado=empresa.estado or '', telefone=empresa.telefone or '',
+                               responsavel_nome=(empresa.responsavel_nome or ''),
+                               responsavel_sobrenome=(empresa.responsavel_sobrenome or ''))
 
-    # -------- POST ----------
+    # POST
     nome = request.form.get('nome', '').strip()
     apelido = request.form.get('apelido', '').strip()
     email = request.form.get('email', '').strip().lower()
-    senha = request.form.get('senha', '').strip()  # opcional
+    senha = request.form.get('senha', '').strip()
     cidade = request.form.get('cidade', '').strip()
     estado = request.form.get('estado', '').strip()
     telefone = request.form.get('telefone', '').strip()
     responsavel_nome = (request.form.get('responsavel_nome') or '').strip()
     responsavel_sobrenome = (request.form.get('responsavel_sobrenome') or '').strip()
 
-    dados = {
-        'nome': nome, 'apelido': apelido, 'email': email, 'cidade': cidade,
-        'estado': estado, 'telefone': telefone,
-        'responsavel_nome': responsavel_nome, 'responsavel_sobrenome': responsavel_sobrenome
-    }
+    dados = {'nome': nome, 'apelido': apelido, 'email': email, 'cidade': cidade,
+             'estado': estado, 'telefone': telefone,
+             'responsavel_nome': responsavel_nome, 'responsavel_sobrenome': responsavel_sobrenome}
 
     erros = {}
     telefone_limpo = re.sub(r'\D', '', telefone) if telefone else ''
@@ -395,7 +358,6 @@ def editar_empresa():
     if telefone and (len(telefone_limpo) < 10 or len(telefone_limpo) > 13):
         erros['telefone'] = 'Telefone inválido. Use apenas números com DDD. Ex: 47999991234'
 
-    # Unicidade somente se alterou
     if nome and nome != (empresa.nome or '') and Empresa.query.filter_by(nome=nome).first():
         erros['nome'] = 'Nome da empresa já existe.'
     if apelido and apelido != (empresa.apelido or '') and Empresa.query.filter_by(apelido=apelido).first():
@@ -408,84 +370,57 @@ def editar_empresa():
     if cidade and cidade not in cidades:
         erros['cidade'] = 'Cidade inválida.'
 
-    # Validação do nome do responsável (exigido para o payer.first_name)
     if not responsavel_nome or len(re.sub(r'[^A-Za-zÀ-ÿ]', '', responsavel_nome)) < 2:
         erros['responsavel_nome'] = 'Informe ao menos o primeiro nome do responsável.'
-
-    # Validação de e-mail básico (se quiser manter igual ao cadastro)
     if not email or not re.fullmatch(r'[^@]+@[^@]+\.[^@]+', email):
         erros['email'] = 'E-mail inválido.'
-
-    # Senha: se informou, exigir mínimo 6
     if senha and len(senha) < 6:
         erros['senha'] = 'A nova senha deve ter pelo menos 6 caracteres.'
 
     if erros:
-        return render_template(
-            'editar_empresa.html',
-            erro='Corrija os campos destacados abaixo.',
-            erros=erros,
-            estados=estados,
-            cidades=cidades,
-            **dados
-        )
+        return render_template('editar_empresa.html',
+                               erro='Corrija os campos destacados abaixo.',
+                               erros=erros, estados=estados, cidades=cidades, **dados)
 
-    # ---- Persistência ----
-    empresa.nome = nome or None
-    empresa.apelido = apelido or None
+    empresa.nome = nome or empresa.nome
+    empresa.apelido = apelido or empresa.apelido
     empresa.email = email or empresa.email
-    empresa.cidade = cidade or None
-    empresa.estado = estado or None
-    empresa.telefone = telefone_limpo or None
-    empresa.responsavel_nome = responsavel_nome
+    empresa.cidade = cidade or empresa.cidade
+    empresa.estado = estado or empresa.estado
+    empresa.telefone = telefone_limpo or empresa.telefone
+    empresa.responsavel_nome = responsavel_nome or empresa.responsavel_nome
     empresa.responsavel_sobrenome = responsavel_sobrenome or None
 
     if senha:
-        empresa.senha = generate_password_hash(senha)  # mantém sua convenção do cadastro
+        empresa.senha = generate_password_hash(senha)
 
     db.session.commit()
-
-    # Redireciona com ok=1 para mostrar banner de sucesso no template
     return redirect(url_for('editar_empresa', ok=1))
 
 @app.route('/painel_malharia')
 def painel_malharia():
-    # Garante que o usuário está autenticado
     if 'empresa_id' not in session:
         return redirect(url_for('login'))
 
     empresa = Empresa.query.get(session['empresa_id'])
-
-    # Verifica se a empresa existe
     if not empresa:
         session.pop('empresa_id', None)
         return redirect(url_for('login'))
 
-    # Verifica se o pagamento está ativo
     if empresa.status_pagamento != 'ativo':
         return render_template('pagamento_pendente.html', empresa=empresa)
 
-    # Carrega os teares vinculados à empresa, se houver
     teares = Tear.query.filter_by(empresa_id=empresa.id).all()
-
     return render_template('painel_malharia.html', empresa=empresa, teares=teares)
-
-from datetime import datetime
-from flask import request, jsonify
-from flask_mail import Message
 
 @app.route('/webhook', methods=['POST', 'GET'])
 def webhook():
-    from flask import render_template_string
-
-    base_url = os.getenv('APP_BASE_URL', 'https://achetece.onrender.com')
-
-    # 1) Captura payload em qualquer formato enviado pelo MP
+    # Aceita POST (webhook) e GET (alguns fluxos/retentativas)
     data = None
     try:
         data = request.get_json(silent=True)
     except Exception as e:
-        print("⚠️ get_json falhou:", e)
+        app.logger.warning(f"get_json falhou: {e}")
 
     topic = None
     payment_id = None
@@ -499,31 +434,29 @@ def webhook():
         topic = request.args.get('topic') or request.form.get('topic') or request.args.get('type')
         payment_id = request.args.get('id') or request.form.get('id')
 
-    print("📡 Webhook recebido | topic:", topic, "| payment_id:", payment_id, "| raw:", data)
+    app.logger.info(f"Webhook | topic={topic} | payment_id={payment_id} | raw={data}")
 
     if not payment_id or str(topic).lower() != 'payment':
-        print("⚠️ Notificação ignorada (sem topic=payment ou sem id).")
+        app.logger.info("Notificação ignorada (sem topic=payment ou sem id).")
         return "ok", 200
 
-    # 2) Consulta pagamento no MP
     try:
         payment = sdk.payment().get(payment_id)["response"]
-        print("📄 Payment:", payment)
+        app.logger.info(f"Payment: {payment}")
     except Exception as e:
-        print("❌ Erro ao consultar pagamento:", str(e))
-        return "ok", 200  # responde 200 para evitar repetição agressiva
+        app.logger.exception(f"Erro ao consultar pagamento: {e}")
+        return "ok", 200
 
     status = (payment or {}).get("status")
     payer_email = ((payment or {}).get("payer") or {}).get("email")
     external_reference = (payment or {}).get("external_reference")
     mp_payment_id = str((payment or {}).get("id"))
 
-    print(f"💳 status={status} | payer_email={payer_email} | external_reference={external_reference} | payment_id={mp_payment_id}")
+    app.logger.info(f"status={status} | payer={payer_email} | ext_ref={external_reference} | mp_id={mp_payment_id}")
 
     if status not in ["approved", "authorized"]:
         return "ok", 200
 
-    # 3) Identifica a empresa
     empresa = None
     if external_reference and isinstance(external_reference, str) and external_reference.startswith("achetece:"):
         parts = external_reference.split(":")
@@ -532,39 +465,22 @@ def webhook():
                 empresa_id_from_ext = int(parts[1])
                 empresa = Empresa.query.get(empresa_id_from_ext)
             except Exception as e:
-                print("⚠️ external_reference inválido:", external_reference, e)
+                app.logger.warning(f"external_reference inválido: {external_reference} | {e}")
 
     if not empresa and payer_email:
         empresa = Empresa.query.filter_by(email=payer_email).first()
 
     if not empresa:
-        print("❌ Empresa não encontrada por external_reference ou e-mail.")
+        app.logger.error("Empresa não encontrada por external_reference ou e-mail.")
         return "ok", 200
 
-    # 4) Atualiza status e data (idempotente)
     if empresa.status_pagamento != "ativo":
         empresa.status_pagamento = "ativo"
-        empresa.data_pagamento = datetime.now()
+        empresa.data_pagamento = datetime.utcnow()
         db.session.commit()
-        print(f"✅ Empresa ativada: {empresa.email}")
+        app.logger.info(f"Empresa ativada: {empresa.email}")
 
-    # (opcional) atualizar conciliação se a model Pagamento existir
-    try:
-        if 'Pagamento' in globals() and external_reference:
-            p = Pagamento.query.filter_by(external_reference=external_reference).first()
-            if not p:
-                p = Pagamento(external_reference=external_reference, empresa_id=empresa.id)
-                db.session.add(p)
-            p.mp_payment_id = mp_payment_id
-            p.status = status
-            td = (payment.get("transaction_details") or {})
-            p.amount = td.get("total_paid_amount")
-            p.received_at = datetime.now()
-            db.session.commit()
-    except Exception as e:
-        print("⚠️ Falha ao atualizar conciliação (opcional):", str(e))
-
-    # 5) Envia e-mail HTML
+    # E-mail de confirmação (HTML)
     try:
         apelido = empresa.apelido or empresa.nome
         msg = Message(
@@ -580,12 +496,14 @@ def webhook():
   <title>Pagamento confirmado</title>
   <style>
     body { font-family: Arial, sans-serif; background-color: #f2f2f2; padding:0; margin:0; }
-    .container { max-width:600px; margin:40px auto; background:#fff; border-radius:8px; padding:30px; box-shadow:0 2px 8px rgba(0,0,0,.05); }
+    .container { max-width:600px; margin:40px auto; background:#fff; border-radius:8px; padding:30px;
+                 box-shadow:0 2px 8px rgba(0,0,0,.05); }
     .logo { text-align:center; margin-bottom:30px; }
     .logo img { max-height:70px; }
     h2 { color:#003bb3; text-align:center; }
     p { font-size:16px; color:#444; line-height:1.6; margin:20px 0; }
-    .botao { display:block; width:max-content; margin:30px auto; padding:14px 28px; background:#003bb3; color:#fff; text-decoration:none; border-radius:8px; font-weight:bold; }
+    .botao { display:block; width:max-content; margin:30px auto; padding:14px 28px; background:#003bb3; color:#fff;
+             text-decoration:none; border-radius:8px; font-weight:bold; }
     .footer { text-align:center; font-size:13px; color:#999; margin-top:30px; }
     .footer a { color:#666; text-decoration:none; }
     .footer a:hover { text-decoration:underline; }
@@ -594,30 +512,29 @@ def webhook():
 <body>
   <div class="container">
     <div class="logo">
-      <img src="{{ base_url }}/static/logo-email.png" alt="AcheTece">
+      <img src="{{ base }}/static/logo-email.png" alt="AcheTece">
     </div>
     <h2>✅ Pagamento confirmado com sucesso!</h2>
     <p>Olá <strong>{{ apelido }}</strong>,</p>
     <p>Seu pagamento foi aprovado com sucesso e agora você tem acesso completo à nossa plataforma.</p>
     <p>Acesse o painel da sua malharia para cadastrar seus teares e começar a receber contatos de clientes interessados.</p>
-    <a class="botao" href="{{ base_url }}/login" target="_blank">Ir para o painel</a>
+    <a class="botao" href="{{ base }}/login" target="_blank">Ir para o painel</a>
     <p style="text-align:center; font-size:14px; color:#777;">
-      Em caso de dúvidas, fale conosco no WhatsApp:
-      <br><a href="https://wa.me/5547991120670" target="_blank">Clique aqui para falar com a equipe AcheTece</a>
+      Em caso de dúvidas, fale conosco no WhatsApp:<br>
+      <a href="https://wa.me/5547991120670" target="_blank">Clique aqui para falar com a equipe AcheTece</a>
     </p>
     <div class="footer">
       AcheTece © {{ ano }} – Todos os direitos reservados.
-      <br><a href="{{ base_url }}">www.achetece.com</a>
+      <br><a href="{{ base }}">www.achetece.com</a>
     </div>
   </div>
 </body>
 </html>
-        """, apelido=apelido, ano=datetime.now().year, base_url=base_url)
-
+        """, apelido=apelido, ano=datetime.utcnow().year, base=base_url())
         mail.send(msg)
-        print("📬 E-mail HTML enviado com sucesso para:", empresa.email)
+        app.logger.info(f"E-mail HTML enviado para {empresa.email}")
     except Exception as e:
-        print("❌ Erro ao enviar e-mail:", str(e))
+        app.logger.exception(f"Erro ao enviar e-mail: {e}")
 
     return "ok", 200
 
@@ -630,22 +547,14 @@ def cadastrar_teares():
     if 'empresa_id' not in session:
         return redirect(url_for('login'))
     if request.method == 'POST':
-        marca = request.form['marca']
-        modelo = request.form['modelo']
-        tipo = request.form['tipo']
-        finura = request.form['finura']
-        diametro = request.form['diametro']
-        alimentadores = request.form['alimentadores']
-        elastano = request.form['elastano']
-
         novo_tear = Tear(
-            marca=marca,
-            modelo=modelo,
-            tipo=tipo,
-            finura=finura,
-            diametro=diametro,
-            alimentadores=alimentadores,
-            elastano=elastano,
+            marca=request.form['marca'],
+            modelo=request.form['modelo'],
+            tipo=request.form['tipo'],
+            finura=request.form['finura'],
+            diametro=request.form['diametro'],
+            alimentadores=request.form['alimentadores'],
+            elastano=request.form['elastano'],
             empresa_id=session['empresa_id']
         )
         db.session.add(novo_tear)
@@ -685,57 +594,18 @@ def excluir_tear(id):
 @app.route('/esqueci_senha', methods=['GET', 'POST'])
 def esqueci_senha():
     if request.method == 'POST':
-        email = request.form.get('email')
+        email = (request.form.get('email') or '').strip().lower()
         empresa = Empresa.query.filter_by(email=email).first()
-
         if empresa:
             try:
-                # Gera token e link com domínio fixo
-                token = gerar_token(email)
-                dominio = os.getenv('APP_DOMAIN', 'achetece.replit.app')  # fallback
-                link = url_for('redefinir_senha', token=token, _external=True)
-
-                # 🔍 Debug no console
-                print(f"[DEBUG] Link de redefinição gerado: {link}")
-
-                msg = Message(
-                    subject='Recuperação de Senha - AcheTece',
-                    sender=app.config['MAIL_USERNAME'],
-                    recipients=[email]
-                )
-
-                msg.html = render_template_string("""
-                <html>
-                  <body style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px;">
-                    <div style="max-width: 600px; margin: auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
-                      <h2 style="color: #003bb3;">Redefinição de Senha</h2>
-                      <p>Olá {{ nome }},</p>
-                      <p>Recebemos uma solicitação para redefinir a senha da sua conta no AcheTece.</p>
-                      <p>Para criar uma nova senha, clique no botão abaixo:</p>
-
-                      <p style="text-align: center; margin: 30px 0;">
-                        <a href="{{ link }}" target="_blank" style="background-color: #003bb3; color: #ffffff; text-decoration: none; padding: 14px 24px; border-radius: 6px; display: inline-block; font-weight: bold;">Redefinir Senha</a>
-                      </p>
-
-                      <p>Este link é válido por 1 hora. Se você não solicitou isso, pode ignorar este e-mail.</p>
-
-                      <p style="margin-top: 40px;">Atenciosamente,<br>Equipe AcheTece</p>
-                    </div>
-                  </body>
-                </html>
-                """, nome=empresa.nome, link=link)
-
-                mail.send(msg)
+                enviar_email_recuperacao(email, empresa.nome)
                 return render_template('esqueci_senha.html', mensagem='📧 Instruções enviadas para seu e-mail.')
-
             except Exception as e:
-                print("[ERRO ao enviar e-mail]", e)
+                app.logger.exception(f"Erro ao enviar e-mail de recuperação: {e}")
                 return render_template('esqueci_senha.html', erro='Erro ao enviar e-mail. Verifique as configurações.')
-
         return render_template('esqueci_senha.html', erro='E-mail não encontrado no sistema.')
-
     return render_template('esqueci_senha.html')
-  
+
 @app.route('/busca', methods=['GET', 'POST'])
 def buscar_teares():
     filtros = {'tipo': '', 'diâmetro': '', 'galga': '', 'estado': '', 'cidade': ''}
@@ -784,8 +654,7 @@ def buscar_teares():
     resultados = []
     for tear in teares_paginados:
         numero_telefone = re.sub(r'\D', '', tear.empresa.telefone or '')
-        mensagem = f"Olá, encontrei seu tear no AcheTece e tenho demanda para esse tipo de máquina. Gostaria de conversar sobre possíveis serviços de tecelagem."
-
+        mensagem = "Olá, encontrei seu tear no AcheTece e tenho demanda para esse tipo de máquina. Gostaria de conversar sobre possíveis serviços de tecelagem."
         resultados.append({
             'Empresa': tear.empresa.apelido,
             'Tipo': tear.tipo,
@@ -798,7 +667,8 @@ def buscar_teares():
             'Mensagem': mensagem
         })
 
-    return render_template('busca.html', opcoes=opcoes, filtros=filtros, resultados=resultados, pagina=pagina, total_paginas=total_paginas)
+    return render_template('busca.html', opcoes=opcoes, filtros=filtros,
+                           resultados=resultados, pagina=pagina, total_paginas=total_paginas)
 
 @app.route('/exportar')
 def exportar():
@@ -844,8 +714,6 @@ def exportar():
                      as_attachment=True,
                      download_name='teares_filtrados.csv')
 
-from sqlalchemy import or_
-
 @app.route('/malharia-info')
 def malharia_info():
     return render_template('malharia_info.html')
@@ -856,7 +724,6 @@ def admin_empresas():
     pagina = int(request.args.get('pagina', 1))
     por_pagina = 10
 
-    # Inicializa variáveis
     status = ''
     data_inicio = ''
     data_fim = ''
@@ -866,10 +733,8 @@ def admin_empresas():
         status = request.form.get('status', '')
         data_inicio = request.form.get('data_inicio', '')
         data_fim = request.form.get('data_fim', '')
-        # Redireciona para GET com os filtros como parâmetros na URL
         return redirect(url_for('admin_empresas', pagina=1, status=status, data_inicio=data_inicio, data_fim=data_fim))
     else:
-        # Requisição GET
         status = request.args.get('status', '')
         data_inicio = request.args.get('data_inicio', '')
         data_fim = request.args.get('data_fim', '')
@@ -887,15 +752,9 @@ def admin_empresas():
     empresas = query.order_by(Empresa.nome).offset((pagina - 1) * por_pagina).limit(por_pagina).all()
     total_paginas = (total + por_pagina - 1) // por_pagina
 
-    return render_template(
-        'admin_empresas.html',
-        empresas=empresas,
-        pagina=pagina,
-        total_paginas=total_paginas,
-        status=status,
-        data_inicio=data_inicio,
-        data_fim=data_fim
-    )
+    return render_template('admin_empresas.html',
+                           empresas=empresas, pagina=pagina, total_paginas=total_paginas,
+                           status=status, data_inicio=data_inicio, data_fim=data_fim)
 
 @app.route('/admin/excluir_empresa/<int:empresa_id>', methods=['POST'])
 @login_admin_requerido
@@ -905,38 +764,28 @@ def excluir_empresa(empresa_id):
         return redirect(url_for('login'))
 
     empresa = Empresa.query.get_or_404(empresa_id)
-
-    # Se quiser, adicione lógica para apagar os teares vinculados:
-    # Tear.query.filter_by(empresa_id=empresa.id).delete()
-
     db.session.delete(empresa)
     db.session.commit()
-    flash(f'Empresa "{empresa.razao_social}" excluída com sucesso!')
+    flash(f'Empresa "{empresa.nome}" excluída com sucesso!')
     return redirect(url_for('admin_empresas'))
 
 @app.route('/redefinir_senha/<token>', methods=['GET', 'POST'])
 def redefinir_senha(token):
-    print(f"[DEBUG] Token recebido na rota: {token}")
-
-    serializer = URLSafeTimedSerializer(app.secret_key)
+    app.logger.info(f"Token recebido: {token}")
+    serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
     try:
-        # Valida o token e extrai o e-mail
-        email = serializer.loads(token, salt='recupera-senha')
-        print(f"[DEBUG] E-mail extraído do token: {email}")
-    except SignatureExpired as e:
-        print("[ERRO] Token expirado:", e)
+        email = serializer.loads(token, salt='recupera-senha', max_age=3600)  # 1h
+        app.logger.info(f"E-mail do token: {email}")
+    except SignatureExpired:
         flash("⏰ O link expirou. Solicite um novo.")
         return render_template("erro_token.html")
-    except BadSignature as e:
-        print("[ERRO] Token inválido:", e)
+    except BadSignature:
         flash("⚠️ O link é inválido ou já foi utilizado.")
         return render_template("erro_token.html")
 
-    # Verifica se o e-mail extraído existe no banco
     empresa = Empresa.query.filter_by(email=email).first()
     if not empresa:
-        print("[ERRO] Empresa não encontrada com o e-mail:", email)
         return "❌ Usuário não encontrado.", 404
 
     if request.method == 'POST':
@@ -946,7 +795,6 @@ def redefinir_senha(token):
         flash('✅ Senha redefinida com sucesso! Faça login com a nova senha.')
         return redirect(url_for('login'))
 
-    # Exibe o formulário para redefinir senha
     return render_template('redefinir_senha.html', token_valido=True)
 
 @app.route('/admin/login', methods=['GET', 'POST'])
@@ -957,10 +805,10 @@ def admin_login():
 
         if email == 'gestao.achetece@gmail.com' and senha == '123adm@achetece':
             session['admin_email'] = email
-            flash('Login de administrador realizado com sucesso.', 'success')  # ✅
+            flash('Login de administrador realizado com sucesso.', 'success')
             return redirect(url_for('admin_empresas'))
         else:
-            flash('Email ou Senha incorreta.', 'error')  # ✅
+            flash('Email ou Senha incorreta.', 'error')
             return redirect(url_for('admin_login'))
     return render_template('admin_login.html')
 
@@ -968,48 +816,12 @@ def admin_login():
 def admin_logout():
     session.pop('admin_email', None)
     flash('Você saiu do painel administrativo.')
-    return redirect(url_for('index'))  # Altere 'index' conforme o nome da rota da sua página inicial
+    return redirect(url_for('index'))
 
 @app.route('/pagar', methods=['GET'])
 def pagar():
-    try:
-        if 'empresa_id' not in session:
-            flash('Você precisa estar logado para realizar o pagamento.', 'error')
-            return redirect(url_for('login'))
-
-        empresa = Empresa.query.get(session['empresa_id'])
-        if not empresa:
-            flash('Empresa não encontrada.', 'error')
-            return redirect(url_for('login'))
-
-        preference_data = {
-            "items": [
-                {
-                    "title": "Plano Mensal AcheTece",
-                    "quantity": 1,
-                    "unit_price": 2.00,
-                    "currency_id": "BRL"
-                }
-            ],
-            "payer": {
-                "email": empresa.email
-            },
-            "back_urls": {
-                "success": "https://achetece.replit.app/pagamento_aprovado",
-                "failure": "https://achetece.replit.app/pagamento_erro",
-                "pending": "https://achetece.replit.app/pagamento_pendente"
-            },
-            "auto_return": "approved"
-        }
-
-        preference_response = sdk.preference().create(preference_data)
-        preference = preference_response["response"]
-
-        return redirect(preference["init_point"])
-
-    except Exception as e:
-        print(f"Erro ao gerar preferência de pagamento: {e}")
-        return render_template("erro_pagamento.html")
+    # Rota antiga mantida por compatibilidade: redireciona para /checkout
+    return redirect(url_for('checkout'))
 
 @app.route('/pagamento_aprovado')
 def pagamento_aprovado():
@@ -1031,14 +843,8 @@ def pagamento_pendente():
 def rota_teste():
     return "✅ A rota funciona!"
 
-@app.route('/reset/<token>', methods=['GET', 'POST'])
-def redefinir_token_test(token):
-    return f"Token recebido: {token}"
-
 @app.route('/teste_email_pagamento')
 def teste_email_pagamento():
-    from flask import render_template_string
-
     html_email = render_template_string("""
     <!DOCTYPE html>
     <html lang="pt-br">
@@ -1046,108 +852,42 @@ def teste_email_pagamento():
       <meta charset="UTF-8">
       <title>Pagamento confirmado</title>
       <style>
-        body {
-          font-family: Arial, sans-serif;
-          background-color: #f2f2f2;
-          padding: 0;
-          margin: 0;
-        }
-
-        .container {
-          max-width: 600px;
-          margin: 40px auto;
-          background-color: #ffffff;
-          border-radius: 8px;
-          padding: 30px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
-        .logo {
-          text-align: center;
-          margin-bottom: 30px;
-        }
-
-        .logo img {
-          max-height: 70px;
-        }
-
-        h2 {
-          color: #003bb3;
-          text-align: center;
-        }
-
-        p {
-          font-size: 16px;
-          color: #444;
-          line-height: 1.6;
-          margin: 20px 0;
-        }
-
-        .botao {
-          display: block;
-          width: max-content;
-          margin: 30px auto;
-          padding: 14px 28px;
-          background-color: #003bb3;
-          color: #fff;
-          text-decoration: none;
-          border-radius: 8px;
-          font-weight: bold;
-        }
-
-        .footer {
-          text-align: center;
-          font-size: 13px;
-          color: #999;
-          margin-top: 30px;
-        }
-
-        .footer a {
-          color: #666;
-          text-decoration: none;
-        }
-
-        .footer a:hover {
-          text-decoration: underline;
-        }
+        body { font-family: Arial, sans-serif; background-color: #f2f2f2; padding:0; margin:0; }
+        .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 8px;
+                     padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .logo { text-align: center; margin-bottom: 30px; }
+        .logo img { max-height: 70px; }
+        h2 { color: #003bb3; text-align: center; }
+        p { font-size: 16px; color: #444; line-height: 1.6; margin: 20px 0; }
+        .botao { display: block; width: max-content; margin: 30px auto; padding: 14px 28px;
+                 background-color: #003bb3; color: #fff; text-decoration: none; border-radius: 8px; font-weight: bold; }
+        .footer { text-align: center; font-size: 13px; color: #999; margin-top: 30px; }
+        .footer a { color: #666; text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
       </style>
     </head>
     <body>
-
       <div class="container">
         <div class="logo">
-          <img src="https://achetece.replit.app/static/logo-email.png" alt="AcheTece">
+          <img src="{{ base }}/static/logo-email.png" alt="AcheTece">
         </div>
-
         <h2>✅ Pagamento confirmado com sucesso!</h2>
-
         <p>Olá <strong>Tecelagem Estrela</strong>,</p>
-
-        <p>
-          Seu pagamento foi aprovado com sucesso e agora você tem acesso completo à nossa plataforma.
-        </p>
-
-        <p>
-          Acesse o painel da sua malharia para cadastrar seus teares e começar a receber contatos de clientes interessados.
-        </p>
-
-        <a class="botao" href="https://achetece.replit.app/login" target="_blank">Ir para o painel</a>
-
+        <p>Seu pagamento foi aprovado com sucesso e agora você tem acesso completo à nossa plataforma.</p>
+        <p>Acesse o painel da sua malharia para cadastrar seus teares e começar a receber contatos de clientes interessados.</p>
+        <a class="botao" href="{{ base }}/login" target="_blank">Ir para o painel</a>
         <p style="text-align: center; font-size: 14px; color: #777;">
           Em caso de dúvidas, entre em contato pelo WhatsApp:<br>
           <a href="https://wa.me/5547991120670" target="_blank">Clique aqui para falar com a equipe AcheTece</a>
         </p>
-
         <div class="footer">
           AcheTece © 2025 – Todos os direitos reservados.<br>
-          <a href="https://achetece.replit.app">www.achetece.com</a>
+          <a href="{{ base }}">www.achetece.com</a>
         </div>
       </div>
-
     </body>
     </html>
-    """)
-
+    """, base=base_url())
     return html_email
 
 if __name__ == '__main__':
