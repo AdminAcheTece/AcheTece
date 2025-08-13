@@ -12,8 +12,63 @@
 
   <!-- Cabeçalho -->
   <header class="navbar">
-    <div class="logo">
-      <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
+    <div class="header-left">
+      <!-- Menu sanduíche + dropdown -->
+      <div class="menu-wrap">
+        <button class="hamburger" id="hamburger" aria-label="Abrir menu" aria-controls="menu-lateral" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+
+        <nav class="menu-dropdown" id="menu-lateral">
+          <div class="menu-header">
+            <span>Menu</span>
+            <button type="button" class="menu-close" aria-label="Fechar menu">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+              </svg>
+            </button>
+          </div>
+
+          <a href="{{ url_for('buscar_teares') }}" class="menu-item">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"></circle>
+              <line x1="16.65" y1="16.65" x2="21" y2="21"></line>
+            </svg>
+            <span>Buscar Tear</span>
+          </a>
+
+          <a href="{{ url_for('malharia_info') }}" class="menu-item">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M9.5 9a2.5 2.5 0 1 1 4.1 2A3 3 0 0 0 12 13.6"></path>
+              <circle cx="12" cy="17" r="1.2" fill="currentColor"></circle>
+            </svg>
+            <span>Como Funciona</span>
+          </a>
+
+          <a href="{{ url_for('login') }}" class="menu-item">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="8" r="4"></circle>
+              <path d="M4 20a8 8 0 0 1 16 0"></path>
+            </svg>
+            <span>Já sou cadastrado</span>
+          </a>
+
+          <a href="{{ url_for('quem_somos') }}" class="menu-item">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <circle cx="12" cy="8" r="1.5" fill="currentColor"></circle>
+              <path d="M11 11h2v6h-2z" fill="currentColor"></path>
+            </svg>
+            <span>Quem Somos</span>
+          </a>
+        </nav>
+      </div>
+
+      <!-- Logo -->
+      <div class="logo">
+        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
+      </div>
     </div>
 
     <div class="header-right">
@@ -21,24 +76,7 @@
         <li><span class="texto-visitante">Conecte-se com quem tece sua malha</span></li>
         <li><a href="{{ url_for('buscar_teares') }}" class="botao-buscar-topo">Buscar Tear</a></li>
       </ul>
-
-      <div class="menu-wrap">
-        <!-- Botão sanduíche -->
-        <button class="hamburger" id="hamburger" aria-label="Abrir menu" aria-controls="menu-lateral" aria-expanded="false">
-          <span></span><span></span><span></span>
-        </button>
-
-        <!-- Dropdown -->
-        <nav class="menu-dropdown" id="menu-lateral">
-          <a href="{{ url_for('buscar_teares') }}" class="menu-link">Buscar Tear</a>
-          <div class="menu-sep"></div>
-          <a href="{{ url_for('malharia_info') }}" class="menu-link">Como Funciona</a>
-          <a href="{{ url_for('login') }}" class="botao-login">Já sou cadastrado</a>
-          <div class="menu-sep"></div>
-          <a href="{{ url_for('quem_somos') }}" class="botao-login">Quem Somos</a>
-        </nav>
-      </div>
-    </div> <!-- FECHA .header-right -->
+    </div>
   </header>
 
   <!-- Seção de destaque -->
@@ -60,42 +98,42 @@
     </div>
   </main>
 
-  <!-- Script do menu -->
+  <!-- Script do menu (multi-instância, fecha no X/fora/ESC) -->
   <script>
     (function () {
-      const wrap = document.querySelector('.menu-wrap');
-      if (!wrap) return;
+      function closeAll() {
+        document.querySelectorAll('.menu-wrap .menu-dropdown.open').forEach(m => {
+          m.classList.remove('open');
+          const b = m.closest('.menu-wrap')?.querySelector('.hamburger');
+          if (b) b.setAttribute('aria-expanded', 'false');
+        });
+      }
 
-      const btn  = wrap.querySelector('#hamburger');
-      const menu = wrap.querySelector('#menu-lateral');
-      if (!btn || !menu) return;
+      document.querySelectorAll('.menu-wrap').forEach(wrap => {
+        const btn  = wrap.querySelector('#hamburger');
+        const menu = wrap.querySelector('#menu-lateral');
+        const xBtn = wrap.querySelector('.menu-close');
+        if (!btn || !menu) return;
 
-      // abre/fecha no clique do botão
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const willOpen = !menu.classList.contains('open');
-        // fecha outros (se existirem)
-        document.querySelectorAll('.menu-dropdown.open').forEach(m => m.classList.remove('open'));
-        menu.classList.toggle('open', willOpen);
-        btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-      });
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const willOpen = !menu.classList.contains('open');
+          closeAll();
+          menu.classList.toggle('open', willOpen);
+          btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        });
 
-      // clique fora fecha
-      document.addEventListener('click', () => {
-        menu.classList.remove('open');
-        btn.setAttribute('aria-expanded', 'false');
-      });
-
-      // ESC fecha
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
+        xBtn?.addEventListener('click', e => {
+          e.stopPropagation();
           menu.classList.remove('open');
           btn.setAttribute('aria-expanded', 'false');
-        }
+        });
+
+        menu.addEventListener('click', e => e.stopPropagation());
       });
 
-      // clique dentro do menu não fecha
-      menu.addEventListener('click', (e) => e.stopPropagation());
+      document.addEventListener('click', closeAll);
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
     })();
   </script>
 </body>
