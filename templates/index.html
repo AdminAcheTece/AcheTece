@@ -22,22 +22,23 @@
         <li><a href="{{ url_for('buscar_teares') }}" class="botao-buscar-topo">Buscar Tear</a></li>
       </ul>
 
-    <div class="menu-wrap">  
-      <!-- Botão sanduíche -->
-      <button class="hamburger" id="hamburger" aria-label="Abrir menu" aria-controls="menu-lateral" aria-expanded="false">
-        <span></span><span></span><span></span>
-      </button>
+      <div class="menu-wrap">
+        <!-- Botão sanduíche -->
+        <button class="hamburger" id="hamburger" aria-label="Abrir menu" aria-controls="menu-lateral" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
 
-      <!-- Dropdown -->
-      <nav class="menu-dropdown" id="menu-lateral">
-        <a href="{{ url_for('buscar_teares') }}" class="menu-link">Buscar Tear</a>
-        <div class="menu-sep"></div>
-        <a href="{{ url_for('malharia_info') }}" class="menu-link">Como Funciona</a>
-        <a href="{{ url_for('login') }}" class="botao-login">Já sou cadastrado</a>
-        <div class="menu-sep"></div>
-        <a href="{{ url_for('quem_somos') }}" class="botao-login">Quem Somos</a>
-      </nav>
-    </div>
+        <!-- Dropdown -->
+        <nav class="menu-dropdown" id="menu-lateral">
+          <a href="{{ url_for('buscar_teares') }}" class="menu-link">Buscar Tear</a>
+          <div class="menu-sep"></div>
+          <a href="{{ url_for('malharia_info') }}" class="menu-link">Como Funciona</a>
+          <a href="{{ url_for('login') }}" class="botao-login">Já sou cadastrado</a>
+          <div class="menu-sep"></div>
+          <a href="{{ url_for('quem_somos') }}" class="botao-login">Quem Somos</a>
+        </nav>
+      </div>
+    </div> <!-- FECHA .header-right -->
   </header>
 
   <!-- Seção de destaque -->
@@ -59,30 +60,43 @@
     </div>
   </main>
 
-  <!-- Script do menu (pode virar static/menu.js depois) -->
+  <!-- Script do menu -->
   <script>
-    const btn = document.getElementById('hamburger');
-    const menu = document.getElementById('menu-lateral');
-    if (xBtn) xBtn.addEventListener('click', e => { e.stopPropagation(); menu.classList.remove('open'); btn.setAttribute('aria-expanded','false'); });
+    (function () {
+      const wrap = document.querySelector('.menu-wrap');
+      if (!wrap) return;
 
-    btn.addEventListener('click', () => {
-      const opened = menu.classList.toggle('open');
-      btn.setAttribute('aria-expanded', opened ? 'true' : 'false');
-    });
+      const btn  = wrap.querySelector('#hamburger');
+      const menu = wrap.querySelector('#menu-lateral');
+      if (!btn || !menu) return;
 
-    document.addEventListener('click', (e) => {
-      if (!menu.contains(e.target) && !btn.contains(e.target)) {
+      // abre/fecha no clique do botão
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const willOpen = !menu.classList.contains('open');
+        // fecha outros (se existirem)
+        document.querySelectorAll('.menu-dropdown.open').forEach(m => m.classList.remove('open'));
+        menu.classList.toggle('open', willOpen);
+        btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+      });
+
+      // clique fora fecha
+      document.addEventListener('click', () => {
         menu.classList.remove('open');
         btn.setAttribute('aria-expanded', 'false');
-      }
-    });
+      });
 
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        menu.classList.remove('open');
-        btn.setAttribute('aria-expanded', 'false');
-      }
-    });
+      // ESC fecha
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          menu.classList.remove('open');
+          btn.setAttribute('aria-expanded', 'false');
+        }
+      });
+
+      // clique dentro do menu não fecha
+      menu.addEventListener('click', (e) => e.stopPropagation());
+    })();
   </script>
 </body>
 </html>
