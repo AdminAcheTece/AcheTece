@@ -52,7 +52,7 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
         }
 
-        /* === Novo: linha com os dois CTAs lado a lado === */
+        /* === Linha com os dois CTAs lado a lado === */
         .cta-botoes{
             display:flex;
             gap:12px;
@@ -61,28 +61,35 @@
             flex-wrap:wrap;            /* quebra no mobile */
             margin-top:12px;
         }
-        /* Mesmo tamanho e aparência para os dois botões desta área */
+        /* Mesmo tamanho e altura para ambos */
         .cta-botoes .btn-principal,
         .cta-botoes .botao-login{
             min-width:260px;
             text-align:center;
-            padding:12px 24px;         /* mesma altura dos dois */
+            padding:12px 24px;
         }
 
-        /* Botão "Já sou cadastrado" com o mesmo estilo do principal */
+        /* Botão secundário: fundo branco, borda azul; no hover, preenche azul */
         .botao-login{
             display:inline-block;
-            background-color: var(--azul-principal);
-            color:#fff;
-            font-weight:bold;
+            background-color:#fff;
+            color: var(--azul-principal);
+            border:2px solid var(--azul-principal);
             border-radius:10px;
+            font-weight:bold;
             text-decoration:none;
-            transition: background-color .3s ease, box-shadow .3s ease;
-            box-shadow: 0 2px 6px rgba(0,0,0,.1);
+            transition: background-color .25s ease, color .25s ease, box-shadow .25s ease, border-color .25s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,.06);
         }
         .botao-login:hover{
-            background-color: var(--azul-hover);
-            box-shadow: 0 4px 10px rgba(0,0,0,.15);
+            background-color: var(--azul-principal);
+            color:#fff;
+            border-color: var(--azul-principal);
+            box-shadow: 0 4px 10px rgba(0,0,0,.12);
+        }
+        .botao-login:focus-visible{
+            outline: 3px solid rgba(0,59,179,.25);
+            outline-offset: 2px;
         }
     </style>
 </head>
@@ -111,7 +118,7 @@
         <div class="area-cadastro">
             <p class="frase-cadastro">É malharia? Cadastre-se!</p>
 
-            <!-- Dois botões lado a lado, idênticos em tamanho e cor -->
+            <!-- Dois botões lado a lado -->
             <div class="cta-botoes">
                 <a href="{{ url_for('malharia_info') }}" class="btn-principal">Cadastrar Malharia</a>
                 <a href="{{ url_for('login') }}" class="botao-login">Já sou cadastrado</a>
