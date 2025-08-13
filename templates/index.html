@@ -63,6 +63,7 @@
   <script>
     const btn = document.getElementById('hamburger');
     const menu = document.getElementById('menu-lateral');
+    if (xBtn) xBtn.addEventListener('click', e => { e.stopPropagation(); menu.classList.remove('open'); btn.setAttribute('aria-expanded','false'); });
 
     btn.addEventListener('click', () => {
       const opened = menu.classList.toggle('open');
