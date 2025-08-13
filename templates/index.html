@@ -11,7 +11,7 @@
     <!-- CSS principal -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
-    <!-- Estilo adicional com azul padronizado -->
+    <!-- Estilo adicional com azul padronizado + menu -->
     <style>
         :root {
             --azul-principal: #003bb3;
@@ -32,7 +32,7 @@
             text-decoration: underline;
         }
 
-        /* Botões padrão do site */
+        /* Botões padrão do site já existentes */
         .btn-principal,
         .botao-buscar-topo {
             display: inline-block;
@@ -52,24 +52,7 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
         }
 
-        /* === Linha com os dois CTAs lado a lado === */
-        .cta-botoes{
-            display:flex;
-            gap:12px;
-            justify-content:center;
-            align-items:center;
-            flex-wrap:wrap;            /* quebra no mobile */
-            margin-top:12px;
-        }
-        /* Mesmo tamanho e altura para ambos */
-        .cta-botoes .btn-principal,
-        .cta-botoes .botao-login{
-            min-width:260px;
-            text-align:center;
-            padding:12px 24px;
-        }
-
-        /* Botão secundário: fundo branco, borda azul; no hover, preenche azul */
+        /* === Botão secundário (outline branco/azul) já usado no CTA === */
         .botao-login{
             display:inline-block;
             background-color:#fff;
@@ -80,6 +63,7 @@
             text-decoration:none;
             transition: background-color .25s ease, color .25s ease, box-shadow .25s ease, border-color .25s ease;
             box-shadow: 0 2px 6px rgba(0,0,0,.06);
+            padding: 12px 24px;
         }
         .botao-login:hover{
             background-color: var(--azul-principal);
@@ -87,9 +71,108 @@
             border-color: var(--azul-principal);
             box-shadow: 0 4px 10px rgba(0,0,0,.12);
         }
-        .botao-login:focus-visible{
-            outline: 3px solid rgba(0,59,179,.25);
-            outline-offset: 2px;
+
+        /* === Linha com os dois CTAs lado a lado (já existente) === */
+        .cta-botoes{
+            display:flex;
+            gap:12px;
+            justify-content:center;
+            align-items:center;
+            flex-wrap:wrap;
+            margin-top:12px;
+        }
+        .cta-botoes .btn-principal,
+        .cta-botoes .botao-login{
+            min-width:260px;
+            text-align:center;
+        }
+
+        /* ======= NOVO: Header em linha + hamburger direito ======= */
+        .navbar{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;   /* logo à esquerda, itens à direita */
+            padding: 10px 20px;
+            background:#fff;
+            position: relative;
+        }
+        .header-right{
+            display:flex;
+            align-items:center;
+            gap:12px;
+        }
+
+        /* Botão Hamburger */
+        .hamburger{
+            width:44px;
+            height:40px;
+            border:2px solid var(--azul-principal);
+            border-radius:10px;
+            background:#fff;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+            gap:5px;
+            padding:8px;
+            cursor:pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,.06);
+        }
+        .hamburger span{
+            display:block;
+            height:2px;
+            width:100%;
+            background: var(--azul-principal);
+            border-radius:2px;
+        }
+        .hamburger:hover{
+            background:#f4f7ff;
+            border-color: var(--azul-hover);
+        }
+
+        /* Dropdown do menu */
+        .menu-dropdown{
+            position:absolute;
+            top:100%;
+            right:20px;
+            background:#fff;
+            border:1px solid #e5e7eb;
+            border-radius:12px;
+            padding:12px;
+            margin-top:10px;
+            box-shadow: 0 12px 24px rgba(0,0,0,.12);
+            min-width:260px;
+            display:none;                 /* escondido por padrão */
+            z-index:1000;
+        }
+        .menu-dropdown.open{ display:block; }
+
+        /* Itens dentro do dropdown: reutilizando estilos dos botões */
+        .menu-dropdown .btn-principal,
+        .menu-dropdown .botao-login{
+            display:block;
+            width:100%;
+            text-align:center;
+            margin-bottom:8px;
+        }
+        .menu-sep{ height:1px; background:#e5e7eb; margin:8px 0; }
+        .menu-link{
+            display:block;
+            width:100%;
+            text-align:center;
+            padding:12px 16px;
+            border-radius:10px;
+            text-decoration:none;
+            font-weight:bold;
+            color:#fff;
+            background: var(--azul-principal);
+            transition: background-color .25s ease, box-shadow .25s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,.06);
+        }
+        .menu-link:hover{ background: var(--azul-hover); }
+
+        /* Responsivo: se a tela for pequena, a frase some para caber a logo + menu */
+        @media (max-width: 640px){
+            .nav-links li:first-child{ display:none; } /* esconde "Conecte-se..." */
         }
     </style>
 </head>
@@ -100,10 +183,29 @@
         <div class="logo">
             <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
         </div>
-        <ul class="nav-links">
-            <li><span class="texto-visitante">Conecte-se com quem tece sua malha</span></li>
-            <li><a href="/busca" class="botao-buscar-topo">Buscar Tear</a></li>
-        </ul>
+
+        <div class="header-right">
+            <ul class="nav-links">
+                <li><span class="texto-visitante">Conecte-se com quem tece sua malha</span></li>
+                <li><a href="/busca" class="botao-buscar-topo">Buscar Tear</a></li>
+            </ul>
+
+            <!-- Botão sanduíche -->
+            <button class="hamburger" id="hamburger" aria-label="Abrir menu" aria-controls="menu-lateral" aria-expanded="false">
+                <span></span><span></span><span></span>
+            </button>
+
+            <!-- Dropdown do menu -->
+            <nav class="menu-dropdown" id="menu-lateral">
+                <a href="/busca" class="menu-link">Buscar Tear</a>
+                <div class="menu-sep"></div>
+                <a href="{{ url_for('malharia_info') }}" class="btn-principal">Cadastrar Malharia</a>
+                <a href="{{ url_for('login') }}" class="botao-login">Já sou cadastrado</a>
+                <div class="menu-sep"></div>
+                <!-- Ajuste a rota abaixo se preferir url_for('quem_somos') -->
+                <a href="/quem-somos" class="botao-login">Quem Somos</a>
+            </nav>
+        </div>
     </header>
 
     <!-- Seção de destaque -->
@@ -126,5 +228,31 @@
         </div>
     </main>
 
+    <!-- Script do menu -->
+    <script>
+        const btn = document.getElementById('hamburger');
+        const menu = document.getElementById('menu-lateral');
+
+        btn.addEventListener('click', () => {
+            const opened = menu.classList.toggle('open');
+            btn.setAttribute('aria-expanded', opened ? 'true' : 'false');
+        });
+
+        // Fecha ao clicar fora
+        document.addEventListener('click', (e) => {
+            if (!menu.contains(e.target) && !btn.contains(e.target)) {
+                menu.classList.remove('open');
+                btn.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        // Fecha com ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                menu.classList.remove('open');
+                btn.setAttribute('aria-expanded', 'false');
+            }
+        });
+    </script>
 </body>
 </html>
