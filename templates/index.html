@@ -32,6 +32,7 @@
             text-decoration: underline;
         }
 
+        /* Botões padrão do site */
         .btn-principal,
         .botao-buscar-topo {
             display: inline-block;
@@ -45,11 +46,43 @@
             transition: background-color 0.3s ease, box-shadow 0.3s ease;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
         }
-
         .btn-principal:hover,
         .botao-buscar-topo:hover {
             background-color: var(--azul-hover);
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        /* === Novo: linha com os dois CTAs lado a lado === */
+        .cta-botoes{
+            display:flex;
+            gap:12px;
+            justify-content:center;
+            align-items:center;
+            flex-wrap:wrap;            /* quebra no mobile */
+            margin-top:12px;
+        }
+        /* Mesmo tamanho e aparência para os dois botões desta área */
+        .cta-botoes .btn-principal,
+        .cta-botoes .botao-login{
+            min-width:260px;
+            text-align:center;
+            padding:12px 24px;         /* mesma altura dos dois */
+        }
+
+        /* Botão "Já sou cadastrado" com o mesmo estilo do principal */
+        .botao-login{
+            display:inline-block;
+            background-color: var(--azul-principal);
+            color:#fff;
+            font-weight:bold;
+            border-radius:10px;
+            text-decoration:none;
+            transition: background-color .3s ease, box-shadow .3s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,.1);
+        }
+        .botao-login:hover{
+            background-color: var(--azul-hover);
+            box-shadow: 0 4px 10px rgba(0,0,0,.15);
         }
     </style>
 </head>
@@ -78,9 +111,11 @@
         <div class="area-cadastro">
             <p class="frase-cadastro">É malharia? Cadastre-se!</p>
 
-            <!-- Botão azul estilizado -->
-            <a href="{{ url_for('malharia_info') }}" class="btn-principal">Cadastrar Malharia</a>
-            <a href="/login" class="link-login">Já sou cadastrado</a>
+            <!-- Dois botões lado a lado, idênticos em tamanho e cor -->
+            <div class="cta-botoes">
+                <a href="{{ url_for('malharia_info') }}" class="btn-principal">Cadastrar Malharia</a>
+                <a href="{{ url_for('login') }}" class="botao-login">Já sou cadastrado</a>
+            </div>
         </div>
     </main>
 
