@@ -963,3 +963,58 @@ thead tr {
   outline: 2px solid rgba(0,0,0,.15);
   outline-offset: 2px;
 }
+
+/* ===== Dropdown cabeçalho (cinza claro + botão X) ===== */
+.menu-dropdown .menu-header{
+  display:flex; align-items:center; justify-content:space-between;
+  background:#f5f5f6; color:#555;
+  padding:8px 10px; border-radius:10px; margin-bottom:10px;
+  font-weight:600;
+}
+.menu-dropdown .menu-close{
+  background:transparent; border:0; cursor:pointer;
+  width:32px; height:32px; border-radius:8px; color:#666;
+  display:inline-flex; align-items:center; justify-content:center;
+}
+.menu-dropdown .menu-close:hover{ background:#ebebed; color:#333; }
+
+/* ===== Itens do menu: clean (sem borda/fundo), todos iguais ===== */
+.menu-dropdown{
+  display:none; /* fecha por padrão (controle via .open no JS) */
+  flex-direction:column; gap:10px;
+  min-width:260px; padding:12px;
+  background:#fff; border:1px solid #e6e6e6; border-radius:12px;
+  box-shadow:0 12px 24px rgba(0,0,0,.08);
+}
+.menu-dropdown.open{ display:flex; }
+
+.menu-dropdown .menu-item{
+  display:flex; align-items:center; gap:10px;
+  width:100%; box-sizing:border-box;
+  padding:12px 14px; border-radius:10px;
+  text-decoration:none; font-weight:700;
+  background:transparent; border:none; /* <- sem borda */
+  color:#333; box-shadow:none;
+  transition: background-color .15s ease, color .15s ease;
+}
+.menu-dropdown .menu-item:hover{
+  background:#f3f3f4;               /* cinza claro no hover */
+  color:#111;
+}
+
+/* Ícones no mesmo tom do texto */
+.menu-dropdown .menu-item .icon{
+  width:18px; height:18px; flex:0 0 18px;
+  color: currentColor;
+  stroke: currentColor; fill: none;
+  stroke-width: 2;
+}
+
+/* Ancoragem: abre logo abaixo do botão */
+.menu-wrap{ position:relative; display:inline-flex; align-items:center; }
+.menu-wrap .menu-dropdown{ position:absolute; top:calc(100% + 8px); right:0; left:auto; z-index:1000; }
+
+/* Botão sanduíche (borda fina cinza claro) */
+.hamburger{ border:1px solid #d6d6d6; border-radius:10px; background:#fff; }
+.hamburger span{ background:#444; }
+.hamburger:hover{ background:#f7f7f7; border-color:#bfbfbf; }
