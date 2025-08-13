@@ -945,3 +945,21 @@ thead tr {
   outline: 2px solid rgba(0,0,0,.15);
   outline-offset: 2px;
 }
+
+/* === Botão sanduíche: borda cinza CLARO e fina === */
+.hamburger {
+  border: 1px solid #d6d6d6 !important;  /* fino + claro */
+  border-radius: 10px !important;
+  background: #fff !important;
+}
+.hamburger span {
+  background: #444 !important;           /* tracinhos continuam em cinza escuro */
+}
+.hamburger:hover {
+  background: #f7f7f7 !important;        /* hover bem leve */
+  border-color: #bfbfbf !important;      /* um tom mais forte no hover */
+}
+.hamburger:focus-visible {
+  outline: 2px solid rgba(0,0,0,.15);
+  outline-offset: 2px;
+}
