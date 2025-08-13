@@ -789,3 +789,19 @@ thead tr {
   color: #000 !important;
   border-color: #000 !important;
 }
+
+/* Ancorar o dropdown no botão */
+.menu-wrap {
+  position: relative;
+  display: inline-flex;      /* mantém o tamanho compacto ao redor do botão */
+  align-items: center;
+}
+
+/* Abrir logo abaixo do botão (override do right:20px anterior) */
+.menu-wrap .menu-dropdown {
+  position: absolute;
+  top: calc(100% + 8px) !important;  /* 8px de respiro abaixo do botão */
+  right: 0 !important;               /* alinhado à borda direita do botão */
+  left: auto !important;
+  margin-top: 0 !important;
+}
