@@ -1083,3 +1083,23 @@ thead tr {
   background:var(--azul-principal); color:#fff; border-color:var(--azul-principal);
   box-shadow:0 4px 10px rgba(0,0,0,.12);
 }
+
+/* --- CTA: centralizado no desktop, empilhado no mobile --- */
+/* coloca esta parte no FINAL do seu <style> (ou em style.css) */
+
+.cta-bar{
+  justify-content: center;   /* centraliza o conjunto (texto + botão) */
+  text-align: center;        /* centraliza os textos */
+  gap: 12px;                 /* espacinhos entre texto e botão */
+}
+
+/* mobile: empilha */
+@media (max-width: 720px){
+  .cta-bar{
+    flex-direction: column;  /* um embaixo do outro */
+    align-items: center;     /* garante alinhamento no centro */
+  }
+  .cta-btn{
+    margin-top: 6px;         /* respiro entre texto e botão */
+  }
+}
