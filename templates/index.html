@@ -11,7 +11,7 @@
   <style>
     /* —— Faixa preta (CTA) acima do rodapé —— */
     .cta-bar {
-      background:#0f0714;            /* preto/roxo bem escuro (como no mock) */
+      background:#0f0714;
       color:#fff;
       padding:20px 16px;
       display:flex;
@@ -20,6 +20,7 @@
       gap:16px;
       flex-wrap:wrap;
       border-top:1px solid rgba(255,255,255,0.06);
+      margin-top:32px;
     }
     .cta-text h3{
       margin:0 0 4px 0;
@@ -66,7 +67,7 @@
       align-items:start;
     }
     .footer-brand img{
-      height:44px;       /* ajuste conforme o arquivo da sua logo-símbolo */
+      height:44px;
       width:auto;
       display:block;
     }
@@ -157,6 +158,24 @@
             </svg>
             <span>Quem Somos</span>
           </a>
+
+          <!-- Novos itens -->
+          <a href="{{ url_for('contato') }}" class="menu-item">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 4h16v12H4z"></path>
+              <path d="M22 20H2"></path>
+              <path d="M22 8l-10 6L2 8" fill="none"></path>
+            </svg>
+            <span>Fale conosco</span>
+          </a>
+
+          <a href="{{ url_for('termos') }}" class="menu-item">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+              <path d="M8 8h8M8 12h8M8 16h5"></path>
+            </svg>
+            <span>Termos e Políticas</span>
+          </a>
         </nav>
       </div>
 
@@ -245,7 +264,6 @@
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-brand">
-        <!-- Substitua o nome do arquivo abaixo pelo da SUA logo-símbolo -->
         <img src="{{ url_for('static', filename='logo_simbolo.png') }}" alt="AcheTece">
       </div>
 
@@ -255,13 +273,11 @@
           <ul>
             <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
             <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
-            <!-- Se ainda não existem rotas/URLs para contato e termos, troque por '#' -->
-            <li><a href="#">Fale conosco</a></li>
-            <li><a href="#">Termos e Políticas</a></li>
+            <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
+            <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
           </ul>
         </div>
 
-        <!-- Caso deseje, pode adicionar outra coluna aqui (contatos, redes, etc.) -->
         <div class="footer-col">
           <h4>&nbsp;</h4>
           <ul>
