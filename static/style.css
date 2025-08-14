@@ -1383,3 +1383,61 @@ thead tr {
 }
 .menu-dropdown .menu-close:hover{ background:#e9ebee; }
 .menu-dropdown .menu-close:active{ background:#e3e5e9; }
+
+/* ========== HEADER — alinhamento na mesma linha ========== */
+.navbar{
+  display:flex;
+  align-items:center;          /* centra verticalmente TUDO */
+  gap:16px;
+  padding:12px 16px;
+}
+.header-left,
+.header-right{ display:flex; align-items:center; }
+.header-right{ margin-left:auto; gap:20px; }  /* empurra links + hambúrguer p/ direita */
+
+/* Logo: tamanho consistente no desktop */
+.logo img{
+  display:block;
+  height:48px;                 /* ajuste fino do desktop */
+  width:auto;
+}
+
+/* Links de topo: não “esticam” o header */
+.top-nav{ display:flex; align-items:center; gap:24px; }
+.top-nav a{ line-height:1; }   /* evita desalinhamento vertical */
+
+/* ========== Botão sanduíche — tamanho e proporções ========== */
+.hamburger{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:40px;
+  height:40px;
+  background:#fff;
+  border:1px solid #e6e6e9;
+  border-radius:10px;
+  cursor:pointer;
+}
+.hamburger span{
+  display:block;
+  width:20px;
+  height:2px;
+  background:#1c1b22;
+  border-radius:2px;
+}
+.hamburger span + span{ margin-top:4px; }
+
+/* ========== MOBILE — logo maior e hambúrguer menor ========== */
+@media (max-width: 768px){
+  .logo img{ height:56px; }        /* aumenta a logo no celular */
+  .hamburger{
+    width:28px;                    /* diminui o sanduíche no celular */
+    height:28px;
+    border-radius:8px;
+  }
+  .hamburger span{
+    width:16px;
+    height:2px;
+  }
+  .hamburger span + span{ margin-top:3px; }
+}
