@@ -71,42 +71,84 @@
     }
 
     /* ===========================================================
-       MENU SUSPENSO — FIX ROBUSTO (desktop ancorado; mobile centralizado)
+       MENU SUSPENSO — FIX (desktop ancorado; mobile centralizado)
        =========================================================== */
 
-    .navbar{ overflow: visible; }
+    .navbar{ overflow: visible; }          /* evita corte do painel */
     .menu-wrap{ position: relative; }
+    .hamburger{ position: relative; z-index: 10002; }
 
+    /* Painel: visibilidade via opacity/pointer-events (melhor p/ mobile) */
     .menu-dropdown{
-      display: none;
       background:#fff;
       border:1px solid #eaeaea;
       border-radius:12px;
       box-shadow:0 16px 38px rgba(0,0,0,.18);
-      z-index: 10000;
+      z-index: 10001;
       max-height: 80vh;
-      overflow:auto;
-    }
-    .menu-dropdown.open{ display:block; }
+      overflow: auto;
 
-    .menu-dropdown .menu-header span{ display:none; }
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px) scale(.98);
+      transition: opacity .18s ease, transform .18s ease;
+    }
+    .menu-dropdown.open{
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+    }
+
+    /* Cabeçalho do painel: só o X com fundo cinza */
     .menu-dropdown .menu-header{
-      display:flex; justify-content:flex-end; align-items:center;
+      display:flex;
+      justify-content:flex-end;
+      align-items:center;
       padding:8px 10px;
+      background: transparent;          /* sem fundo no header */
     }
+    .menu-dropdown .menu-header span{ display:none; }
+    .menu-dropdown .menu-close{
+      display:inline-flex;
+      align-items:center; justify-content:center;
+      width: 36px; height: 36px;
+      background:#f0f2f5;               /* fundo cinza só no X */
+      border:0; border-radius:10px;
+      cursor:pointer;
+    }
+    .menu-dropdown .menu-close:hover{ background:#e9ebee; }
+    .menu-dropdown .menu-close:active{ background:#e3e5e9; }
 
+    /* DESKTOP: ancorado ao botão (direita, abaixo do hambúrguer) */
     @media (min-width:769px){
       .menu-dropdown{
         position: absolute;
         top: calc(100% + 8px);
         right: 0; left: auto;
         width: 300px;
+        transform-origin: top right;
       }
-      .hamburger{ position: relative; z-index: 10001; }
     }
 
+    /* MOBILE: centralizado na tela, logo abaixo do header */
     @media (max-width:768px){
-      .menu-dropdown{ border-radius:14px; }
+      .menu-wrap{ position: static; }    /* remove âncora local */
+      .menu-dropdown{
+        position: fixed;
+        top: calc(var(--nav-h, 64px) + 8px);
+        left: 50%; right: auto;
+        width: min(92vw, 380px);
+        max-height: calc(100vh - var(--nav-h, 64px) - 24px);
+        transform: translate(-50%, 8px) scale(.98);
+        transform-origin: top center;
+        -webkit-overflow-scrolling: touch;
+        border-radius: 14px;
+      }
+      .menu-dropdown.open{
+        transform: translate(-50%, 0) scale(1);
+      }
+
+      /* opcional: empurra o hambúrguer um pouco à esquerda */
       .hamburger{ margin-left: 8px; }
     }
   </style>
@@ -199,7 +241,7 @@
     </div>
 
     <div class="header-right">
-      <!-- mantive vazio; se quiser uma frase curta podemos recolocar aqui -->
+      <!-- espaço livre; pode voltar com a frase se quiser -->
     </div>
   </header>
 
@@ -210,11 +252,10 @@
     <p>
       Facilitamos a conexão entre empresas que procuram teares de malharia disponíveis para produção e empresas que têm teares com capacidade ociosa.
     </p>
-
-    <!-- removidos os botões da home (foram para o cabeçalho) -->
+    <!-- (os botões foram movidos para a top-nav) -->
   </main>
 
-  <!-- Script do menu (fecha no X/fora/ESC + posicionamento robusto) -->
+  <!-- Script do menu (fecha no X/fora/ESC original) -->
   <script>
     (function () {
       function closeAll() {
@@ -223,39 +264,6 @@
           const b = m.closest('.menu-wrap')?.querySelector('.hamburger');
           if (b) b.setAttribute('aria-expanded', 'false');
         });
-      }
-
-      function positionMenu(btn, menu){
-        const isMobile = window.matchMedia('(max-width: 768px)').matches;
-
-        if (isMobile) {
-          const nav = document.querySelector('.navbar');
-          const top = (nav ? nav.offsetHeight : 64) + 8;
-          const vw = window.innerWidth, vh = window.innerHeight;
-          const menuWidth = Math.min(380, Math.max(260, Math.round(vw * 0.92)));
-          const left = Math.round((vw - menuWidth) / 2);
-
-          Object.assign(menu.style, {
-            position: 'fixed',
-            top: top + 'px',
-            left: left + 'px',
-            right: 'auto',
-            width: menuWidth + 'px',
-            maxHeight: (vh - top - 16) + 'px',
-            overflow: 'auto',
-            WebkitOverflowScrolling: 'touch'
-          });
-        } else {
-          Object.assign(menu.style, {
-            position: 'absolute',
-            top: 'calc(100% + 8px)',
-            right: '0',
-            left: 'auto',
-            width: '300px',
-            maxHeight: '80vh',
-            overflow: 'auto'
-          });
-        }
       }
 
       document.querySelectorAll('.menu-wrap').forEach(wrap => {
@@ -268,7 +276,6 @@
           e.stopPropagation();
           const willOpen = !menu.classList.contains('open');
           closeAll();
-          if (willOpen) positionMenu(btn, menu);
           menu.classList.toggle('open', willOpen);
           btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
         });
@@ -280,13 +287,60 @@
         });
 
         menu.addEventListener('click', e => e.stopPropagation());
-        window.addEventListener('resize', () => {
-          if (menu.classList.contains('open')) positionMenu(btn, menu);
-        });
       });
 
       document.addEventListener('click', closeAll);
       document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
+    })();
+  </script>
+
+  <!-- 2) JS EXTRA — mede header + garante posicionamento/abertura no mobile -->
+  <script>
+    // mede a altura do header p/ posicionar o menu no mobile
+    (function(){
+      function setNavH(){
+        const nav = document.querySelector('.navbar');
+        if (nav) document.documentElement.style.setProperty('--nav-h', nav.offsetHeight + 'px');
+      }
+      setNavH();
+      window.addEventListener('resize', setNavH);
+    })();
+
+    // re-posiciona e garante visibilidade (desktop e mobile)
+    (function () {
+      function positionMenu(btn, menu){
+        const isMobile = window.matchMedia('(max-width: 768px)').matches;
+        if (isMobile) {
+          const nav = document.querySelector('.navbar');
+          const top = (nav ? nav.offsetHeight : 64) + 8;
+          menu.style.top = top + 'px';
+          // centralização horizontal está 100% no CSS (left:50% + translateX(-50%))
+        } else {
+          // desktop: CSS já alinha com right:0/top:calc(...)
+          menu.style.top = '';
+          menu.style.left = '';
+          menu.style.right = '';
+          menu.style.position = '';
+        }
+      }
+
+      const wrap = document.querySelector('.menu-wrap');
+      if (!wrap) return;
+      const btn  = wrap.querySelector('#hamburger');
+      const menu = wrap.querySelector('#menu-lateral');
+      if (!btn || !menu) return;
+
+      // Reposiciona ao abrir
+      btn.addEventListener('click', () => {
+        const willOpen = !menu.classList.contains('open');
+        if (willOpen) positionMenu(btn, menu);
+        // (a classe .open é aplicada pelo script anterior)
+      });
+
+      // Reposiciona ao redimensionar/girar tela com menu aberto
+      window.addEventListener('resize', () => {
+        if (menu.classList.contains('open')) positionMenu(btn, menu);
+      });
     })();
   </script>
 
