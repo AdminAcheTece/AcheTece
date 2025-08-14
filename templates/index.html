@@ -9,56 +9,97 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
 
   <style>
-    /* Estilo do rodapé */
-    .rodape {
-      background-color: #000; /* Faixa preta */
-      color: #fff;
-      text-align: center;
-      padding: 20px 10px;
-      margin-top: 40px;
+    /* —— Faixa preta (CTA) acima do rodapé —— */
+    .cta-bar {
+      background:#0f0714;            /* preto/roxo bem escuro (como no mock) */
+      color:#fff;
+      padding:20px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      flex-wrap:wrap;
+      border-top:1px solid rgba(255,255,255,0.06);
+    }
+    .cta-text h3{
+      margin:0 0 4px 0;
+      font-size:18px;
+      font-weight:700;
+      line-height:1.2;
+    }
+    .cta-text p{
+      margin:0;
+      font-size:15px;
+      opacity:.9;
+    }
+    .cta-btn{
+      display:inline-block;
+      background:#fff;
+      color:#2a2535;
+      text-decoration:none;
+      padding:10px 18px;
+      border-radius:10px;
+      font-weight:600;
+      box-shadow:0 1px 0 rgba(0,0,0,.08);
+      transition:transform .12s ease, background .2s ease, box-shadow .2s ease;
+      white-space:nowrap;
+    }
+    .cta-btn:hover{
+      background:#f2f2f5;
+      transform:translateY(-1px);
+      box-shadow:0 3px 10px rgba(0,0,0,.12);
     }
 
-    .rodape p {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 12px;
+    /* —— Rodapé branco com logo + links —— */
+    .site-footer{
+      background:#fff;
+      color:#211a2a;
+      border-top:1px solid #eee;
+      padding:18px 16px 28px;
     }
-
-    .botoes-rodape {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      flex-wrap: wrap;
+    .footer-inner{
+      max-width:1180px;
+      margin:0 auto;
+      display:grid;
+      grid-template-columns:auto 1fr;
+      gap:20px 28px;
+      align-items:start;
     }
-
-    .btn {
-      padding: 10px 20px;
-      border-radius: 8px;
-      font-weight: 600;
-      text-decoration: none;
-      transition: background 0.3s, color 0.3s;
+    .footer-brand img{
+      height:44px;       /* ajuste conforme o arquivo da sua logo-símbolo */
+      width:auto;
+      display:block;
     }
-
-    /* Botão azul */
-    .btn-cadastrar {
-      background-color: #003bb3;
-      color: #fff;
+    .footer-cols{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(180px, 240px));
+      gap:12px 28px;
     }
-
-    .btn-cadastrar:hover {
-      background-color: #336be3;
+    .footer-col h4{
+      margin:0 0 8px 0;
+      font-size:14px;
+      font-weight:700;
+      color:#251c33;
     }
-
-    /* Botão branco */
-    .btn-login {
-      background-color: #fff;
-      color: #000;
-      border: 2px solid #003bb3;
+    .footer-col ul{
+      list-style:none;
+      margin:0;
+      padding:0;
     }
+    .footer-col li+li{ margin-top:6px; }
+    .footer-col a{
+      color:#2a2535;
+      text-decoration:none;
+      font-size:14px;
+    }
+    .footer-col a:hover{ text-decoration:underline; }
 
-    .btn-login:hover {
-      background-color: #003bb3;
-      color: #fff;
+    /* —— Responsividade —— */
+    @media (max-width: 720px){
+      .footer-inner{ grid-template-columns:1fr; }
+      .footer-cols{ grid-template-columns:1fr; }
+      .cta-text h3{ font-size:16px; }
+      .cta-text p{ font-size:14px; }
     }
   </style>
 </head>
@@ -152,7 +193,7 @@
     </div>
   </main>
 
-  <!-- Script do menu -->
+  <!-- Script do menu (fecha no X/fora/ESC) -->
   <script>
     (function () {
       function closeAll() {
@@ -191,12 +232,43 @@
     })();
   </script>
 
-  <!-- Rodapé -->
-  <footer class="rodape">
-    <p>É malharia? Cadastre-se!</p>
-    <div class="botoes-rodape">
-      <a href="{{ url_for('malharia_info') }}" class="btn btn-cadastrar">Cadastrar Malharia</a>
-      <a href="{{ url_for('login') }}" class="btn btn-login">Já sou cadastrado</a>
+  <!-- —— Faixa preta (CTA) —— -->
+  <section class="cta-bar">
+    <div class="cta-text">
+      <h3>É proprietário de uma malharia?</h3>
+      <p>Cadastre sua malharia e comece a receber novos pedidos.</p>
+    </div>
+    <a href="{{ url_for('malharia_info') }}" class="cta-btn">Cadastrar</a>
+  </section>
+
+  <!-- —— Rodapé branco com logo-símbolo + links —— -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <!-- Substitua o nome do arquivo abaixo pelo da SUA logo-símbolo -->
+        <img src="{{ url_for('static', filename='logo_simbolo.png') }}" alt="AcheTece">
+      </div>
+
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h4>Sobre nós</h4>
+          <ul>
+            <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
+            <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
+            <!-- Se ainda não existem rotas/URLs para contato e termos, troque por '#' -->
+            <li><a href="#">Fale conosco</a></li>
+            <li><a href="#">Termos e Políticas</a></li>
+          </ul>
+        </div>
+
+        <!-- Caso deseje, pode adicionar outra coluna aqui (contatos, redes, etc.) -->
+        <div class="footer-col">
+          <h4>&nbsp;</h4>
+          <ul>
+            <li>&nbsp;</li>
+          </ul>
+        </div>
+      </div>
     </div>
   </footer>
 
