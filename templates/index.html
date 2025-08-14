@@ -9,6 +9,30 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
 
   <style>
+    /* —— Layout do topo: garante alinhamento esquerda/direita —— */
+    .navbar{ overflow: visible; }
+    .header-left, .header-right{ display:flex; align-items:center; }
+    .header-right{ margin-left:auto; gap:20px; } /* empurra para a direita */
+
+    /* —— Links de topo ao lado da logo —— */
+    .top-nav{
+      display:flex;
+      gap:24px;
+      align-items:center;
+    }
+    .top-nav a{
+      color:#17161a;
+      text-decoration:none;
+      font-weight:600;
+      padding:8px 0;
+    }
+    .top-nav a:hover{ color:#003bb3; text-decoration:underline; }
+
+    /* esconder nav de topo no mobile (usa menu sanduíche) */
+    @media (max-width: 900px){
+      .top-nav{ display:none; }
+    }
+
     /* —— Faixa preta (CTA) acima do rodapé —— */
     .cta-bar {
       background:#0f0714;
@@ -42,26 +66,6 @@
     .footer-col a{ color:#2a2535; text-decoration:none; font-size:14px; }
     .footer-col a:hover{ text-decoration:underline; }
 
-    /* —— NAV DE TOPO (links ao lado da logo) —— */
-    .top-nav{
-      display:flex;
-      gap:24px;
-      align-items:center;
-      padding-left:16px;
-    }
-    .top-nav a{
-      color:#17161a;
-      text-decoration:none;
-      font-weight:600;
-      padding:8px 0;
-    }
-    .top-nav a:hover{ color:#003bb3; text-decoration:underline; }
-
-    /* esconder nav de topo no mobile (usa menu sanduíche) */
-    @media (max-width: 900px){
-      .top-nav{ display:none; }
-    }
-
     /* —— Responsividade geral —— */
     @media (max-width: 720px){
       .footer-inner{ grid-template-columns:1fr; }
@@ -71,14 +75,12 @@
     }
 
     /* ===========================================================
-       MENU SUSPENSO — FIX (desktop ancorado; mobile centralizado)
+       MENU SUSPENSO — desktop ancorado; mobile centralizado
        =========================================================== */
-
-    .navbar{ overflow: visible; }          /* evita corte do painel */
     .menu-wrap{ position: relative; }
     .hamburger{ position: relative; z-index: 10002; }
 
-    /* Painel: visibilidade via opacity/pointer-events (melhor p/ mobile) */
+    /* Painel: visibilidade via opacity/pointer-events (bom para mobile) */
     .menu-dropdown{
       background:#fff;
       border:1px solid #eaeaea;
@@ -119,25 +121,30 @@
     .menu-dropdown .menu-close:hover{ background:#e9ebee; }
     .menu-dropdown .menu-close:active{ background:#e3e5e9; }
 
-    /* DESKTOP: ancorado ao botão (direita, abaixo do hambúrguer) */
+    /* DESKTOP: ancorado ao botão (à direita) e mais estreito */
     @media (min-width:769px){
       .menu-dropdown{
         position: absolute;
         top: calc(100% + 8px);
         right: 0; left: auto;
-        width: 300px;
+
+        /* estreito, dimensiona pelo conteúdo */
+        width: auto;
+        min-width: 220px;
+        max-width: 320px;   /* não deixa muito largo */
+        padding-right: 2px; /* pequeno respiro p/ evitar quebra de linha do ícone */
         transform-origin: top right;
       }
     }
 
-    /* MOBILE: centralizado na tela, logo abaixo do header */
+    /* MOBILE: centralizado abaixo do header e um pouco mais estreito */
     @media (max-width:768px){
       .menu-wrap{ position: static; }    /* remove âncora local */
       .menu-dropdown{
         position: fixed;
         top: calc(var(--nav-h, 64px) + 8px);
         left: 50%; right: auto;
-        width: min(92vw, 380px);
+        width: min(88vw, 320px);         /* <- mais estreito que antes */
         max-height: calc(100vh - var(--nav-h, 64px) - 24px);
         transform: translate(-50%, 8px) scale(.98);
         transform-origin: top center;
@@ -147,9 +154,6 @@
       .menu-dropdown.open{
         transform: translate(-50%, 0) scale(1);
       }
-
-      /* opcional: empurra o hambúrguer um pouco à esquerda */
-      .hamburger{ margin-left: 8px; }
     }
   </style>
 </head>
@@ -158,7 +162,21 @@
   <!-- Cabeçalho -->
   <header class="navbar">
     <div class="header-left">
-      <!-- Menu sanduíche + dropdown -->
+      <!-- Logo à esquerda -->
+      <div class="logo">
+        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
+      </div>
+    </div>
+
+    <div class="header-right">
+      <!-- LINKS AO LADO DA LOGO (desktop) -->
+      <nav class="top-nav">
+        <a href="{{ url_for('buscar_teares') }}">Buscar Tear</a>
+        <a href="{{ url_for('malharia_info') }}">Cadastrar Malharia</a>
+        <a href="{{ url_for('login') }}">Já sou cadastrado</a>
+      </nav>
+
+      <!-- Menu sanduíche à direita, colado nos links -->
       <div class="menu-wrap">
         <button class="hamburger" id="hamburger" aria-label="Abrir menu" aria-controls="menu-lateral" aria-expanded="false">
           <span></span><span></span><span></span>
@@ -226,22 +244,6 @@
           </a>
         </nav>
       </div>
-
-      <!-- Logo -->
-      <div class="logo">
-        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
-      </div>
-
-      <!-- LINKS AO LADO DA LOGO (desktop) -->
-      <nav class="top-nav">
-        <a href="{{ url_for('buscar_teares') }}">Buscar Tear</a>
-        <a href="{{ url_for('malharia_info') }}">Cadastrar Malharia</a>
-        <a href="{{ url_for('login') }}">Já sou cadastrado</a>
-      </nav>
-    </div>
-
-    <div class="header-right">
-      <!-- espaço livre; pode voltar com a frase se quiser -->
     </div>
   </header>
 
@@ -255,7 +257,7 @@
     <!-- (os botões foram movidos para a top-nav) -->
   </main>
 
-  <!-- Script do menu (fecha no X/fora/ESC original) -->
+  <!-- Script do menu (fecha no X/fora/ESC) -->
   <script>
     (function () {
       function closeAll() {
@@ -294,9 +296,8 @@
     })();
   </script>
 
-  <!-- 2) JS EXTRA — mede header + garante posicionamento/abertura no mobile -->
+  <!-- Mede altura do header (para posicionar o menu no mobile) e ajusta em resize -->
   <script>
-    // mede a altura do header p/ posicionar o menu no mobile
     (function(){
       function setNavH(){
         const nav = document.querySelector('.navbar');
@@ -304,43 +305,6 @@
       }
       setNavH();
       window.addEventListener('resize', setNavH);
-    })();
-
-    // re-posiciona e garante visibilidade (desktop e mobile)
-    (function () {
-      function positionMenu(btn, menu){
-        const isMobile = window.matchMedia('(max-width: 768px)').matches;
-        if (isMobile) {
-          const nav = document.querySelector('.navbar');
-          const top = (nav ? nav.offsetHeight : 64) + 8;
-          menu.style.top = top + 'px';
-          // centralização horizontal está 100% no CSS (left:50% + translateX(-50%))
-        } else {
-          // desktop: CSS já alinha com right:0/top:calc(...)
-          menu.style.top = '';
-          menu.style.left = '';
-          menu.style.right = '';
-          menu.style.position = '';
-        }
-      }
-
-      const wrap = document.querySelector('.menu-wrap');
-      if (!wrap) return;
-      const btn  = wrap.querySelector('#hamburger');
-      const menu = wrap.querySelector('#menu-lateral');
-      if (!btn || !menu) return;
-
-      // Reposiciona ao abrir
-      btn.addEventListener('click', () => {
-        const willOpen = !menu.classList.contains('open');
-        if (willOpen) positionMenu(btn, menu);
-        // (a classe .open é aplicada pelo script anterior)
-      });
-
-      // Reposiciona ao redimensionar/girar tela com menu aberto
-      window.addEventListener('resize', () => {
-        if (menu.classList.contains('open')) positionMenu(btn, menu);
-      });
     })();
   </script>
 
