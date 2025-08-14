@@ -839,6 +839,35 @@ def pagamento_erro():
 def pagamento_pendente():
     return render_template("pagamento_pendente.html")
 
+@app.route("/contato", methods=["GET", "POST"])
+def contato():
+    enviado = False
+    erro = None
+    if request.method == "POST":
+        nome = (request.form.get("nome") or "").strip()
+        email = (request.form.get("email") or "").strip()
+        mensagem = (request.form.get("mensagem") or "").strip()
+        if not (nome and email and mensagem):
+            erro = "Preencha todos os campos."
+        else:
+            try:
+                msg = Message(
+                    subject=f"[AcheTece] Novo contato — {nome}",
+                    recipients=[os.getenv("CONTACT_TO", app.config.get("MAIL_USERNAME") or "")],
+                )
+                    # opcional: msg.sender vem de MAIL_DEFAULT_SENDER/MAIL_USERNAME
+                msg.reply_to = email
+                msg.body = f"Nome: {nome}\nE-mail: {email}\n\nMensagem:\n{mensagem}"
+                mail.send(msg)
+                enviado = True
+            except Exception as e:
+                erro = f"Falha ao enviar: {e}"
+    return render_template("fale_conosco.html", enviado=enviado, erro=erro)
+
+@app.route("/termos")
+def termos():
+    return render_template("termos_politicas.html")
+
 @app.route('/rota-teste')
 def rota_teste():
     return "✅ A rota funciona!"
