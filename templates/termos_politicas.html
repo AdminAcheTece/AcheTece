@@ -1,1 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Termos e Políticas - AcheTece</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .container-termos{
+      max-width: 940px; margin: 24px auto; padding: 16px;
+      background:#fff; border:1px solid #eee; border-radius: 10px;
+    }
+    .container-termos h1{ font-size:22px; margin:0 0 14px 0 }
+    .container-termos h2{ font-size:18px; margin:18px 0 8px 0 }
+    .container-termos p{ margin:8px 0; color:#444; line-height:1.6 }
+
+    /* Rodapés iguais à home */
+    .cta-bar{ background:#0f0714;color:#fff;padding:20px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,0.06);margin-top:32px; }
+    .cta-text h3{ margin:0 0 4px 0;font-size:18px;font-weight:700;line-height:1.2; }
+    .cta-text p{ margin:0;font-size:15px;opacity:.9; }
+    .cta-btn{ display:inline-block;background:#fff;color:#2a2535;text-decoration:none;padding:10px 18px;border-radius:10px;font-weight:600;box-shadow:0 1px 0 rgba(0,0,0,.08);transition:transform .12s ease, background .2s ease, box-shadow .2s ease;white-space:nowrap; }
+    .cta-btn:hover{ background:#f2f2f5;transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.12); }
+
+    .site-footer{ background:#fff;color:#211a2a;border-top:1px solid #eee;padding:18px 16px 28px; }
+    .footer-inner{ max-width:1180px;margin:0 auto;display:grid;grid-template-columns:auto 1fr;gap:20px 28px;align-items:start; }
+    .footer-brand img{ height:44px;width:auto;display:block; }
+    .footer-cols{ display:grid;grid-template-columns: repeat(2, minmax(180px, 240px));gap:12px 28px; }
+    .footer-col h4{ margin:0 0 8px 0;font-size:14px;font-weight:700;color:#251c33; }
+    .footer-col ul{ list-style:none;margin:0;padding:0; }
+    .footer-col li+li{ margin-top:6px; }
+    .footer-col a{ color:#2a2535;text-decoration:none;font-size:14px; }
+    .footer-col a:hover{ text-decoration:underline; }
+    @media (max-width: 720px){
+      .footer-inner{ grid-template-columns:1fr; }
+      .footer-cols{ grid-template-columns:1fr; }
+      .cta-text h3{ font-size:16px; }
+      .cta-text p{ font-size:14px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container-termos">
+    <h1>Termos e Políticas</h1>
+
+    <h2>1. Introdução</h2>
+    <p>Este documento apresenta os termos de uso e a política de privacidade do AcheTece.</p>
+
+    <h2>2. Uso da plataforma</h2>
+    <p>Ao utilizar o AcheTece, você concorda em fornecer informações verdadeiras e cumprir as regras de uso.</p>
+
+    <h2>3. Privacidade e dados</h2>
+    <p>Coletamos dados necessários para o funcionamento do serviço e os tratamos conforme a legislação aplicável.</p>
+
+    <h2>4. Contato</h2>
+    <p>Para dúvidas sobre estes termos, utilize a página <a href="{{ url_for('contato') }}">Fale conosco</a>.</p>
+  </div>
+
+  <!-- Faixa preta CTA -->
+  <section class="cta-bar">
+    <div class="cta-text">
+      <h3>É proprietário de uma malharia?</h3>
+      <p>Cadastre sua malharia e comece a receber novos pedidos.</p>
+    </div>
+    <a href="{{ url_for('malharia_info') }}" class="cta-btn">Cadastrar</a>
+  </section>
+
+  <!-- Rodapé branco -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="{{ url_for('static', filename='logo_simbolo.png') }}" alt="AcheTece">
+      </div>
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h4>Sobre nós</h4>
+          <ul>
+            <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
+            <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
+            <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
+            <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
+          </ul>
+        </div>
+        <div class="footer-col"><h4>&nbsp;</h4><ul><li>&nbsp;</li></ul></div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
 
