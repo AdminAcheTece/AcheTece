@@ -7,6 +7,60 @@
   <!-- CSS principal -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* Estilo do rodapé */
+    .rodape {
+      background-color: #000; /* Faixa preta */
+      color: #fff;
+      text-align: center;
+      padding: 20px 10px;
+      margin-top: 40px;
+    }
+
+    .rodape p {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .botoes-rodape {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    /* Botão azul */
+    .btn-cadastrar {
+      background-color: #003bb3;
+      color: #fff;
+    }
+
+    .btn-cadastrar:hover {
+      background-color: #336be3;
+    }
+
+    /* Botão branco */
+    .btn-login {
+      background-color: #fff;
+      color: #000;
+      border: 2px solid #003bb3;
+    }
+
+    .btn-login:hover {
+      background-color: #003bb3;
+      color: #fff;
+    }
+  </style>
 </head>
 <body>
 
@@ -98,7 +152,7 @@
     </div>
   </main>
 
-  <!-- Script do menu (multi-instância, fecha no X/fora/ESC) -->
+  <!-- Script do menu -->
   <script>
     (function () {
       function closeAll() {
@@ -138,12 +192,13 @@
   </script>
 
   <!-- Rodapé -->
-<footer class="rodape">
-  <p>É malharia? Cadastre-se!</p>
-  <div class="botoes-rodape">
-    <a href="/cadastro" class="btn btn-cadastrar">Cadastrar Malharia</a>
-    <a href="/login" class="btn btn-login">Já sou cadastrado</a>
-  </div>
-</footer>
+  <footer class="rodape">
+    <p>É malharia? Cadastre-se!</p>
+    <div class="botoes-rodape">
+      <a href="{{ url_for('malharia_info') }}" class="btn btn-cadastrar">Cadastrar Malharia</a>
+      <a href="{{ url_for('login') }}" class="btn btn-login">Já sou cadastrado</a>
+    </div>
+  </footer>
+
 </body>
 </html>
