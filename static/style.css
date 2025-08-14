@@ -1103,3 +1103,53 @@ thead tr {
     margin-top: 6px;         /* respiro entre texto e botão */
   }
 }
+
+/* Esconde o texto "Menu" no cabeçalho do dropdown */
+.menu-dropdown .menu-header span{
+  display: none;
+}
+
+/* Alinha o X à direita */
+.menu-dropdown .menu-header{
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 8px 10px;
+}
+
+/* Garante um contexto de posicionamento para o dropdown */
+.menu-wrap{ position: relative; }
+
+/* Padrão (desktop): dropdown alinhado ao botão, à direita */
+.menu-dropdown{
+  position: absolute;
+  top: calc(100% + 8px);   /* logo abaixo do botão */
+  right: 0;                /* gruda na direita do .menu-wrap (onde está o hambúrguer) */
+  left: auto;              /* evita empurrar pra esquerda */
+  min-width: 260px;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.14);
+  z-index: 9999;
+
+  /* animação/visibilidade, caso use classe .open */
+  opacity: 0; visibility: hidden; transform: translateY(8px) scale(.98);
+  transition: opacity .18s ease, transform .18s ease, visibility .18s;
+}
+.menu-dropdown.open{
+  opacity: 1; visibility: visible; transform: translateY(0) scale(1);
+}
+
+/* Garante que o botão fique clicável por cima do dropdown */
+.hamburger{ position: relative; z-index: 10000; }
+
+/* Mobile: usa uma largura confortável e continua alinhado ao botão */
+@media (max-width: 720px){
+  .menu-dropdown{
+    width: min(86vw, 320px); /* ocupa a tela sem sair pra fora */
+    right: 0;
+    left: auto;              /* assegura que não vá pra esquerda */
+    top: calc(100% + 8px);
+  }
+}
