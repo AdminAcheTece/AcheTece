@@ -4,14 +4,120 @@
   <meta charset="UTF-8">
   <title>Fale conosco - AcheTece</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Usa seu CSS principal -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
   <style>
-    .container-contato{
-      max-width: 940px; margin: 24px auto; padding: 16px;
-      background: #fff; border: 1px solid #eee; border-radius: 10px;
+    /* ===== Barra fixa no topo (atalhos) ===== */
+    .topbar-fixa{
+      position: sticky; /* fixa no topo ao rolar */
+      top: 0;
+      z-index: 999;
+      background: #0f0714;
+      color: #fff;
+      padding: 8px 12px;
+      border-bottom: 1px solid rgba(255,255,255,.1);
     }
-    .container-contato h1{ font-size: 22px; margin: 0 0 12px 0 }
-    .container-contato p.desc{ margin: 0 0 16px 0; color:#555 }
+    .topbar-wrap{
+      max-width: 1180px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+    .topbar-fixa a{
+      text-decoration: none;
+      font-weight: 600;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: #fff;
+      color: #1e1930;
+      transition: transform .12s ease, background .2s ease, box-shadow .2s ease;
+      box-shadow: 0 1px 0 rgba(0,0,0,.08);
+      white-space: nowrap;
+    }
+    .topbar-fixa a:hover{
+      background: #f2f2f5;
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(0,0,0,.12);
+    }
+
+    /* ===== Container principal ===== */
+    .page-wrap{
+      max-width: 1180px;
+      margin: 18px auto;
+      padding: 0 16px 16px;
+    }
+    .titulo{
+      margin: 8px 0 2px 0;
+      font-size: 22px;
+      font-weight: 700;
+    }
+    .sub{
+      margin: 0 0 20px 0;
+      color: #555;
+    }
+
+    /* ===== Grid: Mapa + Informações + Form ===== */
+    .grid-contato{
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 18px;
+    }
+    .mapa{
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .mapa iframe{
+      width: 100%;
+      height: 360px; /* ajuste conforme quiser */
+      border: 0;
+      display: block;
+    }
+
+    .infos{
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .info-item + .info-item{ margin-top: 12px; }
+    .info-item h4{
+      margin: 0 0 4px 0;
+      font-size: 16px;
+      font-weight: 700;
+      color: #251c33;
+    }
+    .info-item p{
+      margin: 0;
+      color: #444;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+    .infos a{
+      color: #003bb3;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .infos a:hover{ text-decoration: underline; }
+
+    /* ===== Bloco do formulário ===== */
+    .box-form{
+      margin-top: 18px;
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .box-form h3{
+      margin: 0 0 10px 0;
+      font-size: 18px;
+      font-weight: 700;
+    }
     form.contato label{ display:block; font-weight:600; margin:12px 0 6px }
     form.contato input, form.contato textarea{
       width:100%; padding:12px; border:1px solid #ddd; border-radius:8px;
@@ -33,7 +139,7 @@
       background:#ffe8e8; border:1px solid #ffc7c7; color:#8a1f1f; font-size:14px;
     }
 
-    /* Reuso rápido dos rodapés (mesmo estilo da home) */
+    /* ===== Faixa preta (CTA) + rodapé branco (iguais à home) ===== */
     .cta-bar{ background:#0f0714;color:#fff;padding:20px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,0.06);margin-top:32px; }
     .cta-text h3{ margin:0 0 4px 0;font-size:18px;font-weight:700;line-height:1.2; }
     .cta-text p{ margin:0;font-size:15px;opacity:.9; }
@@ -49,6 +155,12 @@
     .footer-col li+li{ margin-top:6px; }
     .footer-col a{ color:#2a2535;text-decoration:none;font-size:14px; }
     .footer-col a:hover{ text-decoration:underline; }
+
+    /* ===== Responsividade ===== */
+    @media (max-width: 900px){
+      .grid-contato{ grid-template-columns: 1fr; }
+      .mapa iframe{ height: 300px; }
+    }
     @media (max-width: 720px){
       .footer-inner{ grid-template-columns:1fr; }
       .footer-cols{ grid-template-columns:1fr; }
@@ -59,33 +171,84 @@
 </head>
 <body>
 
-  <div class="container-contato">
-    <h1>Fale conosco</h1>
-    <p class="desc">Envie sua mensagem e retornaremos em breve.</p>
-
-    {% if enviado %}
-      <div class="msg-ok">Mensagem enviada com sucesso! Obrigado pelo contato.</div>
-    {% elif erro %}
-      <div class="msg-erro">Não foi possível enviar sua mensagem: {{ erro }}</div>
-    {% endif %}
-
-    <form class="contato" method="post" action="{{ url_for('contato') }}">
-      <label for="nome">Nome</label>
-      <input id="nome" name="nome" type="text" required>
-
-      <label for="email">E-mail</label>
-      <input id="email" name="email" type="email" required>
-
-      <label for="mensagem">Mensagem</label>
-      <textarea id="mensagem" name="mensagem" required></textarea>
-
-      <div class="acoes">
-        <button type="submit" class="btn-enviar">Enviar</button>
-      </div>
-    </form>
+  <!-- Barra fixa no topo com atalhos -->
+  <div class="topbar-fixa">
+    <div class="topbar-wrap">
+      <!-- Substitua pelos seus contatos -->
+      <a href="tel:+5547999990000">Ligar: (47) 99999‑0000</a>
+      <a href="https://wa.me/5547999990000?text=Olá,%20quero%20falar%20com%20a%20AcheTece" target="_blank" rel="noopener">WhatsApp</a>
+      <a href="mailto:contato@achetece.com">E‑mail</a>
+    </div>
   </div>
 
-  <!-- Faixa preta CTA -->
+  <div class="page-wrap">
+    <h1 class="titulo">Fale conosco</h1>
+    <p class="sub">Use os atalhos acima ou preencha o formulário abaixo.</p>
+
+    <div class="grid-contato">
+      <!-- Coluna: Mapa -->
+      <section class="mapa" aria-label="Localização no mapa">
+        <!-- 🔁 TROQUE O IFRAME PELO SEU EMBED DO GOOGLE MAPS -->
+        <!-- Vá ao Google Maps > pesquise seu endereço > Compartilhar > Incorporar um mapa > Copiar HTML -->
+        <iframe 
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3675.999999999!2d-48.650000!3d-22.900000!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0000000000000000!2sSeu%20Endere%C3%A7o!5e0!3m2!1spt-BR!2sBR!4v0000000000000"
+          loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen>
+        </iframe>
+      </section>
+
+      <!-- Coluna: Informações -->
+      <aside class="infos">
+        <div class="info-item">
+          <h4>Telefone</h4>
+          <p><a href="tel:+5547999990000">(47) 99999‑0000</a></p>
+        </div>
+        <div class="info-item">
+          <h4>WhatsApp</h4>
+          <p><a href="https://wa.me/5547999990000?text=Olá,%20quero%20falar%20com%20a%20AcheTece" target="_blank" rel="noopener">Enviar mensagem</a></p>
+        </div>
+        <div class="info-item">
+          <h4>E‑mail</h4>
+          <p><a href="mailto:contato@achetece.com">contato@achetece.com</a></p>
+        </div>
+        <div class="info-item">
+          <h4>Horário de atendimento</h4>
+          <p>Segunda a sexta, 08:00–18:00</p>
+        </div>
+        <div class="info-item">
+          <h4>Endereço</h4>
+          <p>Rua Exemplo, 123 — Centro, Sua Cidade/UF</p>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Formulário -->
+    <section class="box-form">
+      <h3>Envie sua mensagem</h3>
+
+      {% if enviado %}
+        <div class="msg-ok">Mensagem enviada com sucesso! Obrigado pelo contato.</div>
+      {% elif erro %}
+        <div class="msg-erro">Não foi possível enviar sua mensagem: {{ erro }}</div>
+      {% endif %}
+
+      <form class="contato" method="post" action="{{ url_for('contato') }}">
+        <label for="nome">Nome</label>
+        <input id="nome" name="nome" type="text" required>
+
+        <label for="email">E‑mail</label>
+        <input id="email" name="email" type="email" required>
+
+        <label for="mensagem">Mensagem</label>
+        <textarea id="mensagem" name="mensagem" required></textarea>
+
+        <div class="acoes">
+          <button type="submit" class="btn-enviar">Enviar</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <!-- Faixa preta (CTA) -->
   <section class="cta-bar">
     <div class="cta-text">
       <h3>É proprietário de uma malharia?</h3>
@@ -94,7 +257,7 @@
     <a href="{{ url_for('malharia_info') }}" class="cta-btn">Cadastrar</a>
   </section>
 
-  <!-- Rodapé branco -->
+  <!-- Rodapé branco com logo + links -->
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-brand">
@@ -117,4 +280,3 @@
 
 </body>
 </html>
-
