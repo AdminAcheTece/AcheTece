@@ -22,77 +22,24 @@
       border-top:1px solid rgba(255,255,255,0.06);
       margin-top:32px;
     }
-    .cta-text h3{
-      margin:0 0 4px 0;
-      font-size:18px;
-      font-weight:700;
-      line-height:1.2;
-    }
-    .cta-text p{
-      margin:0;
-      font-size:15px;
-      opacity:.9;
-    }
+    .cta-text h3{ margin:0 0 4px 0; font-size:18px; font-weight:700; line-height:1.2; }
+    .cta-text p{ margin:0; font-size:15px; opacity:.9; }
     .cta-btn{
-      display:inline-block;
-      background:#fff;
-      color:#2a2535;
-      text-decoration:none;
-      padding:10px 18px;
-      border-radius:10px;
-      font-weight:600;
-      box-shadow:0 1px 0 rgba(0,0,0,.08);
-      transition:transform .12s ease, background .2s ease, box-shadow .2s ease;
-      white-space:nowrap;
+      display:inline-block; background:#fff; color:#2a2535; text-decoration:none;
+      padding:10px 18px; border-radius:10px; font-weight:600; box-shadow:0 1px 0 rgba(0,0,0,.08);
+      transition:transform .12s ease, background .2s ease, box-shadow .2s ease; white-space:nowrap;
     }
-    .cta-btn:hover{
-      background:#f2f2f5;
-      transform:translateY(-1px);
-      box-shadow:0 3px 10px rgba(0,0,0,.12);
-    }
+    .cta-btn:hover{ background:#f2f2f5; transform:translateY(-1px); box-shadow:0 3px 10px rgba(0,0,0,.12); }
 
     /* —— Rodapé branco com logo + links —— */
-    .site-footer{
-      background:#fff;
-      color:#211a2a;
-      border-top:1px solid #eee;
-      padding:18px 16px 28px;
-    }
-    .footer-inner{
-      max-width:1180px;
-      margin:0 auto;
-      display:grid;
-      grid-template-columns:auto 1fr;
-      gap:20px 28px;
-      align-items:start;
-    }
-    .footer-brand img{
-      height:44px;
-      width:auto;
-      display:block;
-    }
-    .footer-cols{
-      display:grid;
-      grid-template-columns: repeat(2, minmax(180px, 240px));
-      gap:12px 28px;
-    }
-    .footer-col h4{
-      margin:0 0 8px 0;
-      font-size:14px;
-      font-weight:700;
-      color:#251c33;
-    }
-    .footer-col ul{
-      list-style:none;
-      margin:0;
-      padding:0;
-    }
+    .site-footer{ background:#fff; color:#211a2a; border-top:1px solid #eee; padding:18px 16px 28px; }
+    .footer-inner{ max-width:1180px; margin:0 auto; display:grid; grid-template-columns:auto 1fr; gap:20px 28px; align-items:start; }
+    .footer-brand img{ height:44px; width:auto; display:block; }
+    .footer-cols{ display:grid; grid-template-columns: repeat(2, minmax(180px, 240px)); gap:12px 28px; }
+    .footer-col h4{ margin:0 0 8px 0; font-size:14px; font-weight:700; color:#251c33; }
+    .footer-col ul{ list-style:none; margin:0; padding:0; }
     .footer-col li+li{ margin-top:6px; }
-    .footer-col a{
-      color:#2a2535;
-      text-decoration:none;
-      font-size:14px;
-    }
+    .footer-col a{ color:#2a2535; text-decoration:none; font-size:14px; }
     .footer-col a:hover{ text-decoration:underline; }
 
     /* —— Responsividade —— */
@@ -104,69 +51,50 @@
     }
 
     /* ===========================================================
-       MENU SUSPENSO — FIX DEFINITIVO (desktop alinhado; mobile centralizado)
+       MENU SUSPENSO — FIX ROBUSTO (desktop ancorado; mobile centralizado)
        =========================================================== */
 
-    /* ancora do dropdown */
+    /* Evita que o menu seja cortado pelo header */
+    .navbar{ overflow: visible; }
+
+    /* A âncora do menu (mantém o desktop simples) */
     .menu-wrap{ position: relative; }
 
-    /* painel base */
+    /* Aparência base do painel */
     .menu-dropdown{
-      z-index: 10000;
+      display: none;                /* controlado por .open no JS */
       background:#fff;
       border:1px solid #eaeaea;
       border-radius:12px;
       box-shadow:0 16px 38px rgba(0,0,0,.18);
-      opacity:0; visibility:hidden;
-      transform: translateY(8px) scale(.98);
-      transition: opacity .18s ease, transform .18s ease, visibility .18s;
+      z-index: 10000;
+      max-height: 80vh;
+      overflow:auto;
     }
-    .menu-dropdown.open{ opacity:1; visibility:visible; transform: translateY(0) scale(1); }
+    .menu-dropdown.open{ display:block; }
 
-    /* só o X no topo do painel */
+    /* Só o “X” no cabeçalho do painel */
     .menu-dropdown .menu-header span{ display:none; }
     .menu-dropdown .menu-header{
       display:flex; justify-content:flex-end; align-items:center;
       padding:8px 10px;
     }
 
-    /* DESKTOP: dropdown ancorado ao botão (direita, abaixo do hambúrguer) */
-    @media (min-width: 769px){
+    /* DESKTOP: ancorado ao botão (direita, abaixo do hambúrguer) */
+    @media (min-width:769px){
       .menu-dropdown{
-        position:absolute !important;
+        position: absolute;
         top: calc(100% + 8px);
-        right:0; left:auto;
-        width:300px;
-        max-height: 80vh;
-        overflow:auto;
-        transform-origin: top right;
+        right: 0; left: auto;
+        width: 300px;
       }
-      .hamburger{ position:relative; z-index:10001; }
+      .hamburger{ position: relative; z-index: 10001; }
     }
 
-    /* MOBILE: painel CENTRALIZADO na tela, logo abaixo do header */
-    @media (max-width: 768px){
-      .navbar{ overflow: visible; }        /* evita corte */
-      .menu-wrap{ position: static; }      /* remove âncora local */
-
-      .menu-dropdown{
-        position: fixed !important;
-        top: calc(var(--nav-h, 64px) + 8px) !important;  /* abaixo do header */
-        left: 50% !important;
-        right: auto !important;
-        width: min(92vw, 380px);            /* centralizado e confortável */
-        max-height: calc(100vh - var(--nav-h, 64px) - 24px);
-        overflow: auto; -webkit-overflow-scrolling: touch;
-        border-radius: 14px;
-        transform: translateX(-50%) translateY(8px) scale(.98);
-        transform-origin: top center;
-      }
-      .menu-dropdown.open{
-        transform: translateX(-50%) translateY(0) scale(1);
-      }
-
-      /* opcional: empurra o hambúrguer um pouco à esquerda */
-      .hamburger{ margin-left: 8px; }
+    /* MOBILE: o JS centraliza com position: fixed (ver script abaixo) */
+    @media (max-width:768px){
+      .menu-dropdown{ border-radius:14px; }
+      .hamburger{ margin-left: 8px; } /* pode deixar o botão mais à esquerda, se quiser */
     }
   </style>
 </head>
@@ -278,7 +206,7 @@
     </div>
   </main>
 
-  <!-- Script do menu (fecha no X/fora/ESC) -->
+  <!-- Script do menu (fecha no X/fora/ESC + posicionamento robusto) -->
   <script>
     (function () {
       function closeAll() {
@@ -289,43 +217,79 @@
         });
       }
 
+      function positionMenu(btn, menu){
+        const isMobile = window.matchMedia('(max-width: 768px)').matches;
+
+        if (isMobile) {
+          // Centraliza o painel no viewport
+          const nav = document.querySelector('.navbar');
+          const top = (nav ? nav.offsetHeight : 64) + 8;
+          const vw = window.innerWidth;
+          const vh = window.innerHeight;
+          const menuWidth = Math.min(380, Math.max(260, Math.round(vw * 0.92)));
+          const left = Math.round((vw - menuWidth) / 2);
+
+          Object.assign(menu.style, {
+            position: 'fixed',
+            top: top + 'px',
+            left: left + 'px',
+            right: 'auto',
+            width: menuWidth + 'px',
+            maxHeight: (vh - top - 16) + 'px',
+            overflow: 'auto',
+            WebkitOverflowScrolling: 'touch'
+          });
+        } else {
+          // Ancorado ao botão (direita) no desktop
+          Object.assign(menu.style, {
+            position: 'absolute',
+            top: 'calc(100% + 8px)',
+            right: '0',
+            left: 'auto',
+            width: '300px',
+            maxHeight: '80vh',
+            overflow: 'auto'
+          });
+        }
+      }
+
       document.querySelectorAll('.menu-wrap').forEach(wrap => {
         const btn  = wrap.querySelector('#hamburger');
         const menu = wrap.querySelector('#menu-lateral');
         const xBtn = wrap.querySelector('.menu-close');
         if (!btn || !menu) return;
 
+        // Abre/fecha
         btn.addEventListener('click', e => {
           e.stopPropagation();
           const willOpen = !menu.classList.contains('open');
           closeAll();
+          if (willOpen) {
+            positionMenu(btn, menu);
+          }
           menu.classList.toggle('open', willOpen);
           btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
         });
 
+        // Fechar no X
         xBtn?.addEventListener('click', e => {
           e.stopPropagation();
           menu.classList.remove('open');
           btn.setAttribute('aria-expanded', 'false');
         });
 
+        // Não fechar ao clicar dentro
         menu.addEventListener('click', e => e.stopPropagation());
+
+        // Reposiciona se a tela girar ou mudar de tamanho com o menu aberto
+        window.addEventListener('resize', () => {
+          if (menu.classList.contains('open')) positionMenu(btn, menu);
+        });
       });
 
+      // Fecha ao clicar fora / ESC
       document.addEventListener('click', closeAll);
       document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
-    })();
-  </script>
-
-  <!-- Altura do header para posicionar o menu centralizado no mobile -->
-  <script>
-    (function(){
-      function setNavH(){
-        const nav = document.querySelector('.navbar');
-        if (nav) document.documentElement.style.setProperty('--nav-h', nav.offsetHeight + 'px');
-      }
-      setNavH();
-      window.addEventListener('resize', setNavH);
     })();
   </script>
 
