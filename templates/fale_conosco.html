@@ -1,1 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Fale conosco - AcheTece</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .container-contato{
+      max-width: 940px; margin: 24px auto; padding: 16px;
+      background: #fff; border: 1px solid #eee; border-radius: 10px;
+    }
+    .container-contato h1{ font-size: 22px; margin: 0 0 12px 0 }
+    .container-contato p.desc{ margin: 0 0 16px 0; color:#555 }
+    form.contato label{ display:block; font-weight:600; margin:12px 0 6px }
+    form.contato input, form.contato textarea{
+      width:100%; padding:12px; border:1px solid #ddd; border-radius:8px;
+      font-family: inherit; font-size: 15px;
+    }
+    form.contato textarea{ min-height:140px; resize: vertical }
+    .acoes{ margin-top:16px; display:flex; gap:10px; }
+    .btn-enviar{
+      background:#003bb3; color:#fff; border:none; border-radius:8px;
+      padding:10px 16px; font-weight:600; cursor:pointer;
+    }
+    .btn-enviar:hover{ background:#336be3 }
+    .msg-ok{
+      margin:12px 0 0; padding:10px 12px; border-radius:8px;
+      background:#e8f4ff; border:1px solid #b7dcff; color:#0d3b66; font-size:14px;
+    }
+    .msg-erro{
+      margin:12px 0 0; padding:10px 12px; border-radius:8px;
+      background:#ffe8e8; border:1px solid #ffc7c7; color:#8a1f1f; font-size:14px;
+    }
+
+    /* Reuso rápido dos rodapés (mesmo estilo da home) */
+    .cta-bar{ background:#0f0714;color:#fff;padding:20px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,0.06);margin-top:32px; }
+    .cta-text h3{ margin:0 0 4px 0;font-size:18px;font-weight:700;line-height:1.2; }
+    .cta-text p{ margin:0;font-size:15px;opacity:.9; }
+    .cta-btn{ display:inline-block;background:#fff;color:#2a2535;text-decoration:none;padding:10px 18px;border-radius:10px;font-weight:600;box-shadow:0 1px 0 rgba(0,0,0,.08);transition:transform .12s ease, background .2s ease, box-shadow .2s ease;white-space:nowrap; }
+    .cta-btn:hover{ background:#f2f2f5;transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.12); }
+
+    .site-footer{ background:#fff;color:#211a2a;border-top:1px solid #eee;padding:18px 16px 28px; }
+    .footer-inner{ max-width:1180px;margin:0 auto;display:grid;grid-template-columns:auto 1fr;gap:20px 28px;align-items:start; }
+    .footer-brand img{ height:44px;width:auto;display:block; }
+    .footer-cols{ display:grid;grid-template-columns: repeat(2, minmax(180px, 240px));gap:12px 28px; }
+    .footer-col h4{ margin:0 0 8px 0;font-size:14px;font-weight:700;color:#251c33; }
+    .footer-col ul{ list-style:none;margin:0;padding:0; }
+    .footer-col li+li{ margin-top:6px; }
+    .footer-col a{ color:#2a2535;text-decoration:none;font-size:14px; }
+    .footer-col a:hover{ text-decoration:underline; }
+    @media (max-width: 720px){
+      .footer-inner{ grid-template-columns:1fr; }
+      .footer-cols{ grid-template-columns:1fr; }
+      .cta-text h3{ font-size:16px; }
+      .cta-text p{ font-size:14px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container-contato">
+    <h1>Fale conosco</h1>
+    <p class="desc">Envie sua mensagem e retornaremos em breve.</p>
+
+    {% if enviado %}
+      <div class="msg-ok">Mensagem enviada com sucesso! Obrigado pelo contato.</div>
+    {% elif erro %}
+      <div class="msg-erro">Não foi possível enviar sua mensagem: {{ erro }}</div>
+    {% endif %}
+
+    <form class="contato" method="post" action="{{ url_for('contato') }}">
+      <label for="nome">Nome</label>
+      <input id="nome" name="nome" type="text" required>
+
+      <label for="email">E-mail</label>
+      <input id="email" name="email" type="email" required>
+
+      <label for="mensagem">Mensagem</label>
+      <textarea id="mensagem" name="mensagem" required></textarea>
+
+      <div class="acoes">
+        <button type="submit" class="btn-enviar">Enviar</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Faixa preta CTA -->
+  <section class="cta-bar">
+    <div class="cta-text">
+      <h3>É proprietário de uma malharia?</h3>
+      <p>Cadastre sua malharia e comece a receber novos pedidos.</p>
+    </div>
+    <a href="{{ url_for('malharia_info') }}" class="cta-btn">Cadastrar</a>
+  </section>
+
+  <!-- Rodapé branco -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="{{ url_for('static', filename='logo_simbolo.png') }}" alt="AcheTece">
+      </div>
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h4>Sobre nós</h4>
+          <ul>
+            <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
+            <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
+            <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
+            <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
+          </ul>
+        </div>
+        <div class="footer-col"><h4>&nbsp;</h4><ul><li>&nbsp;</li></ul></div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
 
