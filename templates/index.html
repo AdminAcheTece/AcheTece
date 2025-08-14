@@ -42,7 +42,27 @@
     .footer-col a{ color:#2a2535; text-decoration:none; font-size:14px; }
     .footer-col a:hover{ text-decoration:underline; }
 
-    /* —— Responsividade —— */
+    /* —— NAV DE TOPO (links ao lado da logo) —— */
+    .top-nav{
+      display:flex;
+      gap:24px;
+      align-items:center;
+      padding-left:16px;
+    }
+    .top-nav a{
+      color:#17161a;
+      text-decoration:none;
+      font-weight:600;
+      padding:8px 0;
+    }
+    .top-nav a:hover{ color:#003bb3; text-decoration:underline; }
+
+    /* esconder nav de topo no mobile (usa menu sanduíche) */
+    @media (max-width: 900px){
+      .top-nav{ display:none; }
+    }
+
+    /* —— Responsividade geral —— */
     @media (max-width: 720px){
       .footer-inner{ grid-template-columns:1fr; }
       .footer-cols{ grid-template-columns:1fr; }
@@ -54,15 +74,11 @@
        MENU SUSPENSO — FIX ROBUSTO (desktop ancorado; mobile centralizado)
        =========================================================== */
 
-    /* Evita que o menu seja cortado pelo header */
     .navbar{ overflow: visible; }
-
-    /* A âncora do menu (mantém o desktop simples) */
     .menu-wrap{ position: relative; }
 
-    /* Aparência base do painel */
     .menu-dropdown{
-      display: none;                /* controlado por .open no JS */
+      display: none;
       background:#fff;
       border:1px solid #eaeaea;
       border-radius:12px;
@@ -73,14 +89,12 @@
     }
     .menu-dropdown.open{ display:block; }
 
-    /* Só o “X” no cabeçalho do painel */
     .menu-dropdown .menu-header span{ display:none; }
     .menu-dropdown .menu-header{
       display:flex; justify-content:flex-end; align-items:center;
       padding:8px 10px;
     }
 
-    /* DESKTOP: ancorado ao botão (direita, abaixo do hambúrguer) */
     @media (min-width:769px){
       .menu-dropdown{
         position: absolute;
@@ -91,10 +105,9 @@
       .hamburger{ position: relative; z-index: 10001; }
     }
 
-    /* MOBILE: o JS centraliza com position: fixed (ver script abaixo) */
     @media (max-width:768px){
       .menu-dropdown{ border-radius:14px; }
-      .hamburger{ margin-left: 8px; } /* pode deixar o botão mais à esquerda, se quiser */
+      .hamburger{ margin-left: 8px; }
     }
   </style>
 </head>
@@ -153,7 +166,6 @@
             <span>Quem Somos</span>
           </a>
 
-          <!-- Novos itens -->
           <a href="{{ url_for('contato') }}" class="menu-item">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M4 4h16v12H4z"></path>
@@ -177,13 +189,17 @@
       <div class="logo">
         <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
       </div>
+
+      <!-- LINKS AO LADO DA LOGO (desktop) -->
+      <nav class="top-nav">
+        <a href="{{ url_for('buscar_teares') }}">Buscar Tear</a>
+        <a href="{{ url_for('malharia_info') }}">Cadastrar Malharia</a>
+        <a href="{{ url_for('login') }}">Já sou cadastrado</a>
+      </nav>
     </div>
 
     <div class="header-right">
-      <ul class="nav-links">
-        <li><span class="texto-visitante">Conecte-se com quem tece sua malha</span></li>
-        <li><a href="{{ url_for('buscar_teares') }}" class="botao-buscar-topo">Buscar Tear</a></li>
-      </ul>
+      <!-- mantive vazio; se quiser uma frase curta podemos recolocar aqui -->
     </div>
   </header>
 
@@ -195,15 +211,7 @@
       Facilitamos a conexão entre empresas que procuram teares de malharia disponíveis para produção e empresas que têm teares com capacidade ociosa.
     </p>
 
-    <div class="area-cadastro">
-      <p class="frase-cadastro">É malharia? Cadastre-se!</p>
-
-      <!-- CTAs lado a lado -->
-      <div class="cta-botoes">
-        <a href="{{ url_for('malharia_info') }}" class="btn-principal">Cadastrar Malharia</a>
-        <a href="{{ url_for('login') }}" class="botao-login">Já sou cadastrado</a>
-      </div>
-    </div>
+    <!-- removidos os botões da home (foram para o cabeçalho) -->
   </main>
 
   <!-- Script do menu (fecha no X/fora/ESC + posicionamento robusto) -->
@@ -221,11 +229,9 @@
         const isMobile = window.matchMedia('(max-width: 768px)').matches;
 
         if (isMobile) {
-          // Centraliza o painel no viewport
           const nav = document.querySelector('.navbar');
           const top = (nav ? nav.offsetHeight : 64) + 8;
-          const vw = window.innerWidth;
-          const vh = window.innerHeight;
+          const vw = window.innerWidth, vh = window.innerHeight;
           const menuWidth = Math.min(380, Math.max(260, Math.round(vw * 0.92)));
           const left = Math.round((vw - menuWidth) / 2);
 
@@ -240,7 +246,6 @@
             WebkitOverflowScrolling: 'touch'
           });
         } else {
-          // Ancorado ao botão (direita) no desktop
           Object.assign(menu.style, {
             position: 'absolute',
             top: 'calc(100% + 8px)',
@@ -259,35 +264,27 @@
         const xBtn = wrap.querySelector('.menu-close');
         if (!btn || !menu) return;
 
-        // Abre/fecha
         btn.addEventListener('click', e => {
           e.stopPropagation();
           const willOpen = !menu.classList.contains('open');
           closeAll();
-          if (willOpen) {
-            positionMenu(btn, menu);
-          }
+          if (willOpen) positionMenu(btn, menu);
           menu.classList.toggle('open', willOpen);
           btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
         });
 
-        // Fechar no X
         xBtn?.addEventListener('click', e => {
           e.stopPropagation();
           menu.classList.remove('open');
           btn.setAttribute('aria-expanded', 'false');
         });
 
-        // Não fechar ao clicar dentro
         menu.addEventListener('click', e => e.stopPropagation());
-
-        // Reposiciona se a tela girar ou mudar de tamanho com o menu aberto
         window.addEventListener('resize', () => {
           if (menu.classList.contains('open')) positionMenu(btn, menu);
         });
       });
 
-      // Fecha ao clicar fora / ESC
       document.addEventListener('click', closeAll);
       document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
     })();
