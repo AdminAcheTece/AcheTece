@@ -1153,3 +1153,27 @@ thead tr {
     top: calc(100% + 8px);
   }
 }
+
+/* --- CTA: lado a lado, alinhados à esquerda --- */
+.cta-bar{
+  justify-content: flex-start !important; /* encosta à esquerda */
+  align-items: center;
+  text-align: left;
+  gap: 12px; /* espaço entre frase e botão */
+}
+
+/* garante que o botão não centralize por margin:auto de overrides anteriores */
+.cta-btn{
+  margin: 0 !important;
+}
+
+/* no mobile também fica lado a lado e à esquerda */
+@media (max-width: 720px){
+  .cta-bar{
+    flex-direction: row !important; /* impede empilhar */
+    align-items: center;
+  }
+  .cta-btn{
+    margin: 0 !important;
+  }
+}
