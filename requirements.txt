@@ -4,7 +4,7 @@ certifi==2025.7.9
 charset-normalizer==3.4.2
 click==8.2.1
 Flask==3.1.1
-Flask-Mail==0.10.0
+Flask-Mail==0.9.1          # <- estável
 Flask-SQLAlchemy==3.1.1
 git-filter-repo==2.47.0
 google-auth==2.40.3
@@ -32,3 +32,6 @@ SQLAlchemy==2.0.41
 typing_extensions==4.14.1
 urllib3==2.5.0
 Werkzeug==3.1.3
+
+# **ADICIONAR** (necessário para Postgres / DATABASE_URL no Render)
+psycopg2-binary==2.9.9
