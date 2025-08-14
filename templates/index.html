@@ -102,6 +102,72 @@
       .cta-text h3{ font-size:16px; }
       .cta-text p{ font-size:14px; }
     }
+
+    /* ===========================================================
+       MENU SUSPENSO — FIX DEFINITIVO (desktop alinhado; mobile centralizado)
+       =========================================================== */
+
+    /* ancora do dropdown */
+    .menu-wrap{ position: relative; }
+
+    /* painel base */
+    .menu-dropdown{
+      z-index: 10000;
+      background:#fff;
+      border:1px solid #eaeaea;
+      border-radius:12px;
+      box-shadow:0 16px 38px rgba(0,0,0,.18);
+      opacity:0; visibility:hidden;
+      transform: translateY(8px) scale(.98);
+      transition: opacity .18s ease, transform .18s ease, visibility .18s;
+    }
+    .menu-dropdown.open{ opacity:1; visibility:visible; transform: translateY(0) scale(1); }
+
+    /* só o X no topo do painel */
+    .menu-dropdown .menu-header span{ display:none; }
+    .menu-dropdown .menu-header{
+      display:flex; justify-content:flex-end; align-items:center;
+      padding:8px 10px;
+    }
+
+    /* DESKTOP: dropdown ancorado ao botão (direita, abaixo do hambúrguer) */
+    @media (min-width: 769px){
+      .menu-dropdown{
+        position:absolute !important;
+        top: calc(100% + 8px);
+        right:0; left:auto;
+        width:300px;
+        max-height: 80vh;
+        overflow:auto;
+        transform-origin: top right;
+      }
+      .hamburger{ position:relative; z-index:10001; }
+    }
+
+    /* MOBILE: painel CENTRALIZADO na tela, logo abaixo do header */
+    @media (max-width: 768px){
+      .navbar{ overflow: visible; }        /* evita corte */
+      .menu-wrap{ position: static; }      /* remove âncora local */
+
+      .menu-dropdown{
+        position: fixed !important;
+        top: calc(var(--nav-h, 64px) + 8px) !important;  /* abaixo do header */
+        left: 50% !important;
+        right: auto !important;
+        width: min(92vw, 380px);            /* centralizado e confortável */
+        max-height: calc(100vh - var(--nav-h, 64px) - 24px);
+        overflow: auto; -webkit-overflow-scrolling: touch;
+        border-radius: 14px;
+        transform: translateX(-50%) translateY(8px) scale(.98);
+        transform-origin: top center;
+      }
+      .menu-dropdown.open{
+        transform: translateX(-50%) translateY(0) scale(1);
+      }
+
+      /* opcional: empurra o hambúrguer um pouco à esquerda */
+      .hamburger{ margin-left: 8px; }
+    }
   </style>
 </head>
 <body>
@@ -248,6 +314,18 @@
 
       document.addEventListener('click', closeAll);
       document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
+    })();
+  </script>
+
+  <!-- Altura do header para posicionar o menu centralizado no mobile -->
+  <script>
+    (function(){
+      function setNavH(){
+        const nav = document.querySelector('.navbar');
+        if (nav) document.documentElement.style.setProperty('--nav-h', nav.offsetHeight + 'px');
+      }
+      setNavH();
+      window.addEventListener('resize', setNavH);
     })();
   </script>
 
