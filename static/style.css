@@ -1,1443 +1,326 @@
-/* Reset básico */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-/* Corpo da página */
-body {
-    font-family: 'Inter', sans-serif;
-    color: #444;
-    background-color: #f9f9f9;
-}
-
-/* Cabeçalho geral com fundo branco */
-header {
-    background-color: #ffffff;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* sombra sutil */
-}
-
-/* Navbar com logo centralizado */
-.navbar {
-    background-color: #fff;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 10px 20px;
-    gap: 10px;
-}
-
-/* Logo */
-.logo {
-    text-align: center;
-}
-
-.logo img {
-    max-height: 110px;
-    height: auto;
-    width: auto;
-    max-width: 100%;
-}
-
-/* Menu de navegação */
-.nav-links {
-    list-style: none;
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-}
-
-.nav-links li a {
-    color: white;
-    text-decoration: none;
-    font-weight: bold;
-    font-size: 16px;
-    background-color: #003bb3;
-    padding: 10px 18px;
-    border-radius: 8px;
-    transition: background-color 0.2s ease;
-}
-
-.nav-links li a:hover {
-    background-color: #003bb3;
-}
-
-/* Container */
-.container {
-    max-width: 900px;
-    margin: 40px auto;
-    padding: 30px;
-    background-color: #ffffff;
-    border-radius: 16px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-/* Logo para formulários */
-.logo-formulario {
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-.logo-formulario img {
-    max-width: 180px;
-}
-
-/* Título principal */
-.titulo {
-    text-align: center;
-    color: #000000;
-    margin-bottom: 30px;
-    font-size: 26px;
-}
-
-/* Estilo dos formulários */
-.formulario label {
-    display: block;
-    margin-top: 15px;
-    font-weight: bold;
-    color: #000000;
-}
-
-.formulario input,
-.formulario select {
-    width: 100%;
-    padding: 10px;
-    margin-top: 5px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    background-color: #f9f9f9;
-    font-size: 14px;
-}
-
-/* Botão principal de salvar */
-.botao-salvar {
-    width: auto;
-    margin-top: 30px;
-    padding: 12px 24px;
-    background-color: #003bb3;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.botao-salvar:hover {
-    background-color: #003bb3;
-}
-
-/* Botão de editar */
-.botao-editar {
-    display: inline-block;
-    padding: 8px 14px;
-    background-color: #003bb3;
-    color: white;
-    border-radius: 8px;
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: bold;
-    transition: background-color 0.3s;
-}
-
-.botao-editar:hover {
-    background-color: #003bb3;
-}
-
-/* Tabela com scroll horizontal e largura fixa */
-.table-wrapper {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-}
-
-/* Estilo para tabelas */
-table {
-    width: 100%;
-    min-width: 900px;
-    margin-top: 20px;
-    border-collapse: collapse;
-}
-
-th, td {
-    padding: 10px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-    font-size: 14px;
-    white-space: nowrap;
-    text-align: center;
-    vertical-align: middle;
-}
-
-thead tr {
-    background-color: #f2f2f2;
-}
-
-/* Botão WhatsApp */
-.btn-whatsapp {
-    background-color: #25D366;
-    color: white;
-    padding: 8px 16px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: bold;
-    font-size: 14px;
-    display: inline-block;
-    transition: background-color 0.2s ease;
-    text-align: center;
-    white-space: nowrap;
-}
-
-.btn-whatsapp:hover {
-    background-color: #25D366;
-}
-
-/* Estilo do hero */
-.hero {
-    text-align: center;
-    padding: 40px 20px;
-}
-
-.hero img {
-    width: 100%;
-    max-width: 640px;
-    height: auto;
-    border-radius: 10px;
-    margin-bottom: 20px;
-}
-
-.hero h1 {
-    font-size: 1.8rem;
-    color: #000000;
-}
-
-.hero p {
-    font-size: 1rem;
-    color: #444;
-    max-width: 700px;
-    margin: 0 auto;
-    padding: 0 10px;
-}
-
-/* Botão cadastrar */
-.botao-cadastrar {
-    display: inline-block;
-    margin-top: 30px;
-    background-color: #003bb3;
-    color: #fff;
-    padding: 12px 24px;
-    font-weight: bold;
-    border-radius: 8px;
-    text-decoration: none;
-    transition: background-color 0.2s ease;
-}
-
-.botao-cadastrar:hover {
-    background-color: #003bb3;
-}
-
-/* Responsivo ajustado — sem quebra de tabela */
-@media (max-width: 768px) {
-    .logo img {
-        max-width: 140px;
-    }
-
-    .nav-links {
-        gap: 10px;
-    }
-
-    .nav-links li a {
-        font-size: 13px;
-        padding: 8px 12px;
-        white-space: nowrap;
-    }
-
-    .container {
-        margin: 20px;
-        padding: 20px;
-    }
-
-    .titulo {
-        font-size: 22px;
-    }
-
-    .botao-salvar,
-    .botao-editar,
-    .botao-cadastrar {
-        font-size: 15px;
-        max-width: 100%;
-    }
-
-    .voltar-link {
-        font-size: 13px;
-    }
-}
-
-/* ✅ NOVO - Botões do Painel (Logout, Editar, Cadastrar) */
-.painel-acoes {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 12px;
-    margin: 20px 0 30px;
-}
-
-.painel-acoes a {
-    text-decoration: none;
-    font-weight: bold;
-    font-size: 14px;
-    padding: 10px 20px;
-    border-radius: 8px;
-    text-align: center;
-    transition: background-color 0.2s ease;
-}
-
-/* Estilos distintos para os botões */
-.btn-cinza {
-    background-color: #444;
-    color: #fff;
-}
-
-.btn-cinza:hover {
-    background-color: #444;
-}
-
-.btn-azul-medio {
-    background-color: #003bb3;
-    color: #fff;
-}
-
-.btn-azul-medio:hover {
-    background-color: #003bb3;
-}
-
-.btn-azul-forte {
-    background-color: #003bb3;
-    color: #fff;
-}
-
-.btn-azul-forte:hover {
-    background-color: #003bb3;
-}
-
-/* Responsividade: manter botões ao lado da frase */
-@media (max-width: 600px) {
-  .faixa-malharia {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .faixa-direita {
-    align-items: flex-start;
-  }
-}
-
-    .faixa-esquerda {
-        flex: 1 1 auto;
-        flex-wrap: nowrap;
-    }
-
-    .faixa-direita {
-        flex: 0 0 auto;
-        align-items: flex-start;
-        margin-left: auto;
-    }
-
-    .faixa-esquerda p {
-        white-space: normal;
-    }
-
-    .nav-links {
-        list-style: none;
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        margin: 0;
-        padding: 0;
-    }
-
-    .texto-visitante {
-        font-size: 14px;
-        color: #333;
-        font-style: normal; /* Sem itálico */
-    }
-
-    .botao-buscar-topo {
-        background-color: #003bb3;
-        color: white;
-        padding: 8px 16px;
-        border-radius: 6px;
-        text-decoration: none;
-        font-weight: bold;
-        font-size: 14px;
-    }
-
-    .area-cadastro {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 6px;
-        margin-top: 24px;
-    }
-
-    .frase-cadastro {
-        font-size: 16px;
-        font-weight: bold;
-        color: #333;
-        margin: 0;
-    }
-
-    .link-login {
-        font-size: 14px;
-        color: #003bb3;
-        text-decoration: underline;
-    }
-
-    .btn-principal {
-        display: inline-block;
-        background-color: #003bb3;
-        color: white;
-        padding: 10px 24px; /* 👈 menor altura, largura mantida */
-        font-size: 15px;
-        border-radius: 10px;
-        text-decoration: none;
-        font-weight: bold;
-        transition: background-color 0.3s ease;
-    }
-
-    .btn-principal:hover {
-        background-color: #003bb3;
-    }
-
-    .frase-instrucao {
-        text-align: center;
-        font-size: 10px;
-        color: #555;
-        margin-top: -20px;
-        margin-bottom: 30px;
-    }
-
-    .navbar {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 20px 24px;
-        background-color: #fff;
-        position: relative;
-    }
-
-    .logo img {
-        max-height: 60px;
-    }
-
-    /* Ícone de casa fixo à direita, alinhado verticalmente com a logo */
-    .icone-home {
-        position: absolute;
-        right: 24px;
-        top: 50%;
-        transform: translateY(-50%);
-        background-color: #444;
-        padding: 8px;
-        border-radius: 6px;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background-color 0.2s ease;
-        z-index: 1000;
-    }
-
-    .icone-home svg {
-        stroke: white;
-    }
-
-    .icone-home:hover {
-        background-color: #000;
-    }
-
-    /* Cabeçalho com logo e botão home */
-    header {
-        background-color: #fff;
-        padding: 16px 24px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        border-bottom: 1px solid #ddd;
-        position: relative;
-    }
-
-    .logo img {
-        max-height: 60px;
-        height: auto;
-        width: auto;
-    }
-
-    .icone-home {
-        position: absolute;
-        right: 24px;
-        top: 50%;
-        transform: translateY(-50%);
-    }
-
-    .erro-campo {
-        border: 2px solid red;
-        background-color: #fff5f5;
-    }
-
-    .mensagem-campo {
-        color: red;
-        font-size: 13px;
-        margin-top: -10px;
-        margin-bottom: 12px;
-    }
-
-    .plano-box {
-        background-color: #e6f0ff;
-        border: 2px solid #003bb3;
-        border-radius: 12px;
-        padding: 20px;
-        margin: 30px auto;
-        text-align: center;
-        max-width: 300px;
-    }
-
-    .plano-titulo {
-        font-size: 18px;
-        color: #003bb3;
-        margin-bottom: 6px;
-        font-weight: 600;
-    }
-
-    .plano-preco {
-        font-size: 28px;
-        font-weight: bold;
-        color: #003bb3;
-    }
-
-    .flash-message {
-        text-align: center;
-        font-size: 16px;
-        margin-bottom: 20px;
-        font-weight: bold;
-    }
-
-    .flash-message.error {
-        color: red;
-    }
-
-    .flash-message.success {
-        color: green;
-    }
-
-}
-
-/* ===========================
-   MENU SANDUÍCHE + CTAs GERAIS
-   =========================== */
-
-/* Paleta (se já existir, mantém a sua) */
-:root {
-  --azul-principal: #003bb3;
+/* ============================================================
+   AChetece — CSS Base (Nível Máximo / Revisado)
+   ============================================================ */
+
+/* 0) Variáveis de cor/espaço */
+:root{
+  --azul: #003bb3;
   --azul-hover: #336be3;
+  --cinza-100: #f9f9f9;
+  --cinza-150: #f6f8fa;
+  --cinza-200: #f2f2f2;
+  --cinza-300: #eaeaea;
+  --cinza-400: #ddd;
+  --cinza-500: #cfcfcf;
+  --cinza-600: #bfbfbf;
+  --cinza-700: #999;
+  --cinza-800: #666;
+  --cinza-texto: #444;
+  --preto: #000;
+  --branco: #fff;
+
+  --raio-8: 8px;
+  --raio-10: 10px;
+  --raio-12: 12px;
+  --sombra-1: 0 2px 6px rgba(0,0,0,.06);
+  --sombra-2: 0 12px 24px rgba(0,0,0,.12);
+  --sombra-3: 0 16px 38px rgba(0,0,0,.18);
 }
 
-/* Header em linha: logo à esquerda, itens/ícone à direita */
-.navbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 20px;
-  background: #fff;
-  position: relative;
+/* 1) Reset básico */
+*{ margin:0; padding:0; box-sizing:border-box; }
+img{ max-width:100%; height:auto; display:block; }
+
+/* 2) Base tipográfica */
+body{
+  font-family:'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  color: var(--cinza-texto);
+  background: var(--cinza-100);
+  line-height:1.4;
 }
 
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
+/* 3) Header / Navbar
+   ------------------------------------------------------------ */
+header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
 
-/* Botão hamburger (sanduíche) */
-.hamburger {
-  width: 44px;
-  height: 40px;
-  border: 2px solid var(--azul-principal);
-  border-radius: 10px;
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 5px;
-  padding: 8px;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0,0,0,.06);
-}
-.hamburger span {
-  display: block;
-  height: 2px;
-  width: 100%;
-  background: var(--azul-principal);
-  border-radius: 2px;
-}
-.hamburger:hover {
-  background: #f4f7ff;
-  border-color: var(--azul-hover);
-}
-
-/* Dropdown do menu */
-.menu-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 20px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 12px;
-  margin-top: 10px;
-  box-shadow: 0 12px 24px rgba(0,0,0,.12);
-  min-width: 260px;
-  display: none;          /* escondido por padrão */
-  z-index: 1000;
-}
-.menu-dropdown.open { display: block; }
-
-.menu-sep {
-  height: 1px;
-  background: #e5e7eb;
-  margin: 8px 0;
-}
-
-/* Links do dropdown (azuis sólidos) */
-.menu-link {
-  display: block;
-  width: 100%;
-  text-align: center;
-  padding: 12px 16px;
-  border-radius: 10px;
-  text-decoration: none;
-  font-weight: bold;
-  color: #fff;
-  background: var(--azul-principal);
-  transition: background-color .25s ease, box-shadow .25s ease;
-  box-shadow: 0 2px 6px rgba(0,0,0,.06);
-  margin-bottom: 8px;
-}
-.menu-link:hover { background: var(--azul-hover); }
-
-/* Linha com os dois CTAs lado a lado (quebra no mobile) */
-.cta-botoes {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
-  margin-top: 12px;
-}
-.cta-botoes .btn-principal,
-.cta-botoes .botao-login {
-  min-width: 260px;
-  text-align: center;
-  padding: 12px 24px; /* garante mesma altura */
-}
-
-/* Botão secundário (outline branco/azul) — “Já sou cadastrado” */
-.botao-login {
-  display: inline-block;
-  background: #fff;
-  color: var(--azul-principal);
-  border: 2px solid var(--azul-principal);
-  border-radius: 10px;
-  font-weight: bold;
-  text-decoration: none;
-  transition: background-color .25s ease, color .25s ease,
-              box-shadow .25s ease, border-color .25s ease;
-  box-shadow: 0 2px 6px rgba(0,0,0,.06);
-  padding: 12px 24px;
-}
-.botao-login:hover {
-  background: var(--azul-principal);
-  color: #fff;
-  border-color: var(--azul-principal);
-  box-shadow: 0 4px 10px rgba(0,0,0,.12);
-}
-
-/* Acessibilidade de foco */
-.botao-login:focus-visible,
-.btn-principal:focus-visible,
-.botao-buscar-topo:focus-visible,
-.menu-link:focus-visible,
-.hamburger:focus-visible {
-  outline: 3px solid rgba(0,59,179,.25);
-  outline-offset: 2px;
-}
-
-/* ===========================
-   AJUSTES SOLICITADOS (final do style.css)
-   =========================== */
-
-/* 1) CTA "Já sou cadastrado" (fora do menu): borda azul */
-.cta-botoes .botao-login,
-.botao-login {
-  background: #fff;
-  color: var(--azul-principal);
-  border: 2px solid var(--azul-principal);
-  border-radius: 10px;
-  padding: 12px 24px;
-  font-weight: bold;
-  text-decoration: none;
-  transition: background-color .25s ease, color .25s ease, border-color .25s ease, box-shadow .25s ease;
-}
-
-.cta-botoes .botao-login:hover,
-.botao-login:hover {
-  background: var(--azul-principal);
-  color: #fff;
-  border-color: var(--azul-principal);
-  box-shadow: 0 4px 10px rgba(0,0,0,.12);
-}
-
-/* 2) Botão sanduíche: cinza escuro */
-.hamburger {
-  border-color: #444 !important;
-  background: #fff;
-}
-.hamburger span {
-  background: #444 !important;
-}
-.hamburger:hover {
-  background: #f2f2f2;
-  border-color: #000;
-}
-
-/* 3) Itens dentro do MENU: mesma largura + borda cinza escuro */
-.menu-dropdown .menu-link,
-.menu-dropdown .botao-login {
-  display: block;
-  width: 100%;
-  box-sizing: border-box;
-  background: #fff;
-  color: #444;
-  border: 2px solid #444;
-  border-radius: 10px;
-  padding: 12px 16px;
-  text-align: center;
-  font-weight: 700;
-  text-decoration: none;
-  margin-bottom: 8px;
-  box-shadow: none;
-  transition: background-color .2s ease, color .2s ease, border-color .2s ease;
-}
-
-.menu-dropdown .menu-link:hover,
-.menu-dropdown .botao-login:hover {
-  background: #f4f4f4;
-  color: #000;
-  border-color: #000;
-}
-
-/* (opcional) pequenos ajustes visuais do dropdown */
-.menu-sep { background: #e0e0e0; }
-.menu-dropdown { border-color: #ddd; }
-
-/* Responsivo: esconde a frase longa ao lado da logo em telas pequenas */
-@media (max-width: 640px) {
-  .nav-links li:first-child { display: none; }
-}
-
-/* === FORA DO MENU: "Já sou cadastrado" com borda azul e hover preenchido === */
-.cta-botoes a.botao-login,
-.area-cadastro a.botao-login,
-.hero a.botao-login {
-  background: #fff !important;
-  color: var(--azul-principal) !important;
-  border: 2px solid var(--azul-principal) !important;
-  border-radius: 10px;
-  padding: 12px 24px;
-  font-weight: 700;
-  text-decoration: none;
-  transition: background-color .2s ease, color .2s ease, border-color .2s ease, box-shadow .2s ease;
-}
-
-.cta-botoes a.botao-login:hover,
-.area-cadastro a.botao-login:hover,
-.hero a.botao-login:hover {
-  background: var(--azul-principal) !important;
-  color: #fff !important;
-  border-color: var(--azul-principal) !important;
-  box-shadow: 0 4px 10px rgba(0,0,0,.12);
-}
-
-/* === DENTRO DO MENU: mantém cinza escuro com mesma largura === */
-.menu-dropdown .botao-login {
-  background: #fff !important;
-  color: #444 !important;
-  border: 2px solid #444 !important;
-  border-radius: 10px;
-  padding: 12px 16px;
-  width: 100%;
-  box-sizing: border-box;
-  font-weight: 700;
-  text-align: center;
-  text-decoration: none;
-  transition: background-color .2s ease, color .2s ease, border-color .2s ease;
-}
-.menu-dropdown .botao-login:hover {
-  background: #f4f4f4 !important;
-  color: #000 !important;
-  border-color: #000 !important;
-}
-
-/* Ancorar o dropdown no botão */
-.menu-wrap {
-  position: relative;
-  display: inline-flex;      /* mantém o tamanho compacto ao redor do botão */
-  align-items: center;
-}
-
-/* Abrir logo abaixo do botão (override do right:20px anterior) */
-.menu-wrap .menu-dropdown {
-  position: absolute;
-  top: calc(100% + 8px) !important;  /* 8px de respiro abaixo do botão */
-  right: 0 !important;               /* alinhado à borda direita do botão */
-  left: auto !important;
-  margin-top: 0 !important;
-}
-
-/* ===== Dropdown: limpo e FECHADO por padrão (override final) ===== */
-
-/* Ancoragem do dropdown ao botão */
-.menu-wrap {
-  position: relative !important;
-  display: inline-flex !important;
-  align-items: center !important;
-}
-
-/* FECHADO por padrão */
-.menu-wrap .menu-dropdown {
-  position: absolute !important;
-  top: calc(100% + 8px) !important;   /* logo abaixo do botão */
-  right: 0 !important;
-  left: auto !important;
-  z-index: 1000 !important;
-
-  display: none !important;           /* <-- fecha por padrão */
-  flex-direction: column !important;
-  gap: 10px !important;
-
-  min-width: 260px !important;
-  padding: 12px !important;
-  background: #fff !important;
-  border: 1px solid #e6e6e6 !important;
-  border-radius: 12px !important;
-  box-shadow: 0 12px 24px rgba(0,0,0,.08) !important;
-}
-
-/* ABERTO quando tem a classe .open */
-.menu-wrap .menu-dropdown.open { 
-  display: flex !important;
-}
-
-/* Itens do menu: mesma largura, borda fina e discreta */
-.menu-dropdown .menu-link,
-.menu-dropdown .botao-login {
-  display: block !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-  margin: 0 !important;
-  padding: 12px 18px !important;
-  text-align: center !important;
-  font-weight: 700 !important;
-  text-decoration: none !important;
-
-  background: #fff !important;
-  color: #333 !important;
-  border: 1px solid #cfcfcf !important;    /* borda fininha e clean */
-  border-radius: 10px !important;
-
-  transition: background-color .15s ease, color .15s ease, border-color .15s ease !important;
-}
-
-/* Hover cinza bem claro */
-.menu-dropdown .menu-link:hover,
-.menu-dropdown .botao-login:hover {
-  background: #f5f5f5 !important;
-  color: #111 !important;
-  border-color: #bfbfbf !important;
-}
-
-/* Some com separadores antigos */
-.menu-dropdown .menu-sep { 
-  display: none !important; 
-}
-
-/* Botão sanduíche cinza escuro */
-.hamburger {
-  border-color: #444 !important;
-  background: #fff !important;
-}
-.hamburger span {
-  background: #444 !important;
-}
-.hamburger:hover {
-  background: #f2f2f2 !important;
-  border-color: #000 !important;
-}
-
-/* Fora do menu: "Já sou cadastrado" com borda azul e hover preenchido */
-.cta-botoes a.botao-login,
-.area-cadastro a.botao-login,
-.hero a.botao-login {
-  background: #fff !important;
-  color: var(--azul-principal) !important;
-  border: 1px solid var(--azul-principal) !important; /* linha fina azul */
-  border-radius: 10px !important;
-  padding: 12px 24px !important;
-  font-weight: 700 !important;
-  text-decoration: none !important;
-  transition: background-color .2s ease, color .2s ease, border-color .2s ease, box-shadow .2s ease !important;
-}
-.cta-botoes a.botao-login:hover,
-.area-cadastro a.botao-login:hover,
-.hero a.botao-login:hover {
-  background: var(--azul-principal) !important;
-  color: #fff !important;
-  border-color: var(--azul-principal) !important;
-  box-shadow: 0 4px 10px rgba(0,0,0,.12) !important;
-}
-
-/* some com o separador antigo */
-.menu-dropdown .menu-sep { display: none !important; }
-
-/* Botões do menu: mesma largura, borda fina e discreta */
-.menu-dropdown .menu-link,
-.menu-dropdown .botao-login {
-  display: block !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-  margin: 0 !important;                /* sem margens extras */
-  padding: 12px 18px !important;
-  text-align: center !important;
-  font-weight: 700 !important;
-  text-decoration: none !important;
-
-  background: #fff !important;
-  color: #333 !important;
-  border: 1px solid #cfcfcf !important; /* borda bem fininha */
-  border-radius: 10px !important;
-
-  transition: background-color .15s ease, color .15s ease, border-color .15s ease;
-}
-
-/* Hover: cinza bem claro e leve reforço na borda */
-.menu-dropdown .menu-link:hover,
-.menu-dropdown .botao-login:hover {
-  background: #f5f5f5 !important;  /* cinza claro */
-  color: #111 !important;
-  border-color: #bfbfbf !important;
-}
-
-/* Acessibilidade de foco */
-.menu-dropdown .menu-link:focus-visible,
-.menu-dropdown .botao-login:focus-visible {
-  outline: 2px solid rgba(0,0,0,.15);
-  outline-offset: 2px;
-}
-
-/* === Botão sanduíche: borda cinza CLARO e fina === */
-.hamburger {
-  border: 1px solid #d6d6d6 !important;  /* fino + claro */
-  border-radius: 10px !important;
-  background: #fff !important;
-}
-.hamburger span {
-  background: #444 !important;           /* tracinhos continuam em cinza escuro */
-}
-.hamburger:hover {
-  background: #f7f7f7 !important;        /* hover bem leve */
-  border-color: #bfbfbf !important;      /* um tom mais forte no hover */
-}
-.hamburger:focus-visible {
-  outline: 2px solid rgba(0,0,0,.15);
-  outline-offset: 2px;
-}
-
-/* ===== Dropdown cabeçalho (cinza claro + botão X) ===== */
-.menu-dropdown .menu-header{
-  display:flex; align-items:center; justify-content:space-between;
-  background:#f5f5f6; color:#555;
-  padding:8px 10px; border-radius:10px; margin-bottom:10px;
-  font-weight:600;
-}
-.menu-dropdown .menu-close{
-  background:transparent; border:0; cursor:pointer;
-  width:32px; height:32px; border-radius:8px; color:#666;
-  display:inline-flex; align-items:center; justify-content:center;
-}
-.menu-dropdown .menu-close:hover{ background:#ebebed; color:#333; }
-
-/* ===== Itens do menu: clean (sem borda/fundo), todos iguais ===== */
-.menu-dropdown{
-  display:none; /* fecha por padrão (controle via .open no JS) */
-  flex-direction:column; gap:10px;
-  min-width:260px; padding:12px;
-  background:#fff; border:1px solid #e6e6e6; border-radius:12px;
-  box-shadow:0 12px 24px rgba(0,0,0,.08);
-}
-.menu-dropdown.open{ display:flex; }
-
-.menu-dropdown .menu-item{
-  display:flex; align-items:center; gap:10px;
-  width:100%; box-sizing:border-box;
-  padding:12px 14px; border-radius:10px;
-  text-decoration:none; font-weight:700;
-  background:transparent; border:none; /* <- sem borda */
-  color:#333; box-shadow:none;
-  transition: background-color .15s ease, color .15s ease;
-}
-.menu-dropdown .menu-item:hover{
-  background:#f3f3f4;               /* cinza claro no hover */
-  color:#111;
-}
-
-/* Ícones no mesmo tom do texto */
-.menu-dropdown .menu-item .icon{
-  width:18px; height:18px; flex:0 0 18px;
-  color: currentColor;
-  stroke: currentColor; fill: none;
-  stroke-width: 2;
-}
-
-/* Ancoragem: abre logo abaixo do botão */
-.menu-wrap{ position:relative; display:inline-flex; align-items:center; }
-.menu-wrap .menu-dropdown{ position:absolute; top:calc(100% + 8px); right:0; left:auto; z-index:1000; }
-
-/* Botão sanduíche (borda fina cinza claro) */
-.hamburger{ border:1px solid #d6d6d6; border-radius:10px; background:#fff; }
-.hamburger span{ background:#444; }
-.hamburger:hover{ background:#f7f7f7; border-color:#bfbfbf; }
-
-/* ====== Navbar: logo + hambúrguer à esquerda ====== */
 .navbar{
   display:flex; align-items:center; justify-content:space-between;
-  padding:10px 20px; background:#fff; position:relative;
+  padding:12px 16px; background:var(--branco); position:relative; overflow:visible;
 }
-.header-left{ display:flex; align-items:center; gap:12px; }
 
-/* Hambúrguer (borda fina cinza claro) */
+/* grupos esquerda/direita */
+.header-left, .header-right{ display:flex; align-items:center; gap:16px; }
+.header-right{ margin-left:auto; gap:20px; }
+
+/* Logo — maior e fluida */
+.logo img{
+  height: clamp(72px, 12vw, 120px);
+  width:auto;
+}
+
+/* Links de topo (ao lado da logo) */
+.top-nav{ display:flex; align-items:center; gap:24px; }
+.top-nav a{
+  color:#17161a; text-decoration:none; font-weight:600; padding:8px 0; line-height:1;
+}
+.top-nav a:hover{ color:var(--azul); text-decoration:underline; }
+
+/* Esconde links de topo em telas menores (mantém no menu sanduíche) */
+@media (max-width: 900px){
+  .top-nav{ display:none; }
+}
+
+/* Botão sanduíche */
 .hamburger{
-  border:1px solid #d6d6d6; border-radius:10px; background:#fff;
-  width:44px; height:40px; padding:8px; display:flex; flex-direction:column; gap:5px;
+  display:inline-flex; align-items:center; justify-content:center;
+  width:40px; height:40px; padding:0;
+  background:var(--branco);
+  border:1px solid #d6d6d6; border-radius: var(--raio-10);
+  cursor:pointer; box-shadow: var(--sombra-1);
 }
-.hamburger span{ height:2px; width:100%; background:#444; border-radius:2px; }
-.hamburger:hover{ background:#f7f7f7; border-color:#bfbfbf; }
+.hamburger span{
+  width:20px; height:2px; background:#1c1b22; border-radius:2px; display:block;
+}
+.hamburger span + span{ margin-top:4px; }
+.hamburger:hover{ background:#f7f7f7; border-color: var(--cinza-600); }
+.hamburger:focus-visible{ outline:2px solid rgba(0,0,0,.15); outline-offset:2px; }
 
-/* Ancoragem do menu: abre logo abaixo do botão */
+/* Mobile: logo maior, hambúrguer menor */
+@media (max-width: 768px){
+  .logo img{ height: clamp(84px, 18vw, 128px); }   /* aumenta bem no celular */
+  .hamburger{ width:28px; height:28px; border-radius:8px; }
+  .hamburger span{ width:16px; height:2px; }
+  .hamburger span + span{ margin-top:3px; }
+}
+
+/* 4) Menu suspenso (dropdown)
+   ------------------------------------------------------------ */
+/* Âncora no botão */
 .menu-wrap{ position:relative; display:inline-flex; align-items:center; }
-.menu-wrap .menu-dropdown{
-  position:absolute; top:calc(100% + 8px); left:0; z-index:1000;
-  display:none; flex-direction:column; gap:4px;
-  min-width:260px; padding:8px;
-  background:#fff; border:1px solid #e6e6e6; border-radius:12px;
-  box-shadow:0 12px 24px rgba(0,0,0,.08);
-}
-.menu-wrap .menu-dropdown.open{ display:flex; }
 
-/* Cabeçalho do dropdown (estilo GitHub) */
-.menu-dropdown .menu-header{
-  display:flex; align-items:center; justify-content:space-between;
-  padding:6px 8px; background:#f6f8fa; color:#57606a; border-radius:8px; font-weight:600;
-  margin-bottom:4px;
-}
-.menu-dropdown .menu-close{
-  width:28px; height:28px; border:0; background:transparent; color:#57606a;
-  display:inline-flex; align-items:center; justify-content:center; border-radius:6px; cursor:pointer;
-}
-.menu-dropdown .menu-close:hover{ background:#eaeef2; color:#24292f; }
-
-/* Itens do menu: SEM bordas/fundo, hover cinza claro */
-.menu-dropdown .menu-item{
-  display:flex; align-items:center; gap:10px;
-  padding:10px 12px; border-radius:8px; text-decoration:none; font-weight:600;
-  color:#24292f; background:transparent; border:none;
-}
-.menu-dropdown .menu-item:hover{ background:#f6f8fa; color:#24292f; }
-.menu-dropdown .menu-item .icon{
-  width:18px; height:18px; flex:0 0 18px;
-  color:currentColor; stroke:currentColor; fill:none; stroke-width:2;
-}
-
-/* CTA fora do menu: "Já sou cadastrado" outline azul */
-.cta-botoes .botao-login,
-.hero .botao-login,
-.area-cadastro .botao-login{
-  background:#fff; color:var(--azul-principal); border:1px solid var(--azul-principal);
-  border-radius:10px; padding:12px 24px; font-weight:700; text-decoration:none;
-  transition:background-color .2s ease, color .2s ease, border-color .2s ease, box-shadow .2s ease;
-}
-.cta-botoes .botao-login:hover,
-.hero .botao-login:hover,
-.area-cadastro .botao-login:hover{
-  background:var(--azul-principal); color:#fff; border-color:var(--azul-principal);
-  box-shadow:0 4px 10px rgba(0,0,0,.12);
-}
-
-/* --- CTA: centralizado no desktop, empilhado no mobile --- */
-/* coloca esta parte no FINAL do seu <style> (ou em style.css) */
-
-.cta-bar{
-  justify-content: center;   /* centraliza o conjunto (texto + botão) */
-  text-align: center;        /* centraliza os textos */
-  gap: 12px;                 /* espacinhos entre texto e botão */
-}
-
-/* mobile: empilha */
-@media (max-width: 720px){
-  .cta-bar{
-    flex-direction: column;  /* um embaixo do outro */
-    align-items: center;     /* garante alinhamento no centro */
-  }
-  .cta-btn{
-    margin-top: 6px;         /* respiro entre texto e botão */
-  }
-}
-
-/* Esconde o texto "Menu" no cabeçalho do dropdown */
-.menu-dropdown .menu-header span{
-  display: none;
-}
-
-/* Alinha o X à direita */
-.menu-dropdown .menu-header{
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  padding: 8px 10px;
-}
-
-/* Garante um contexto de posicionamento para o dropdown */
-.menu-wrap{ position: relative; }
-
-/* Padrão (desktop): dropdown alinhado ao botão, à direita */
+/* Painel base (visibilidade por .open) */
 .menu-dropdown{
-  position: absolute;
-  top: calc(100% + 8px);   /* logo abaixo do botão */
-  right: 0;                /* gruda na direita do .menu-wrap (onde está o hambúrguer) */
-  left: auto;              /* evita empurrar pra esquerda */
-  min-width: 260px;
-  background: #fff;
-  border: 1px solid #eee;
-  border-radius: 12px;
-  box-shadow: 0 12px 32px rgba(0,0,0,.14);
-  z-index: 9999;
+  background:var(--branco);
+  border:1px solid var(--cinza-300);
+  border-radius: var(--raio-12);
+  box-shadow: var(--sombra-3);
+  z-index:10000;
+  max-height:80vh; overflow:auto; -webkit-overflow-scrolling:touch;
 
-  /* animação/visibilidade, caso use classe .open */
-  opacity: 0; visibility: hidden; transform: translateY(8px) scale(.98);
-  transition: opacity .18s ease, transform .18s ease, visibility .18s;
-}
-.menu-dropdown.open{
-  opacity: 1; visibility: visible; transform: translateY(0) scale(1);
-}
+  /* ancorado ao botão por padrão (desktop) */
+  position:absolute; top:calc(100% + 8px); right:0; left:auto;
 
-/* Garante que o botão fique clicável por cima do dropdown */
-.hamburger{ position: relative; z-index: 10000; }
+  /* largura confortável e mais estreito */
+  width:auto; min-width:220px; max-width:320px;
 
-/* Mobile: usa uma largura confortável e continua alinhado ao botão */
-@media (max-width: 720px){
-  .menu-dropdown{
-    width: min(86vw, 320px); /* ocupa a tela sem sair pra fora */
-    right: 0;
-    left: auto;              /* assegura que não vá pra esquerda */
-    top: calc(100% + 8px);
-  }
-}
-
-/* --- CTA: lado a lado, alinhados à esquerda --- */
-.cta-bar{
-  justify-content: flex-start !important; /* encosta à esquerda */
-  align-items: center;
-  text-align: left;
-  gap: 12px; /* espaço entre frase e botão */
-}
-
-/* garante que o botão não centralize por margin:auto de overrides anteriores */
-.cta-btn{
-  margin: 0 !important;
-}
-
-/* no mobile também fica lado a lado e à esquerda */
-@media (max-width: 720px){
-  .cta-bar{
-    flex-direction: row !important; /* impede empilhar */
-    align-items: center;
-  }
-  .cta-btn{
-    margin: 0 !important;
-  }
-}
-
-/* ====== FIX MENU SUSPENSO (nível máximo) ====== */
-
-/* 1) Âncora para posicionar o dropdown relativo ao botão  */
-.menu-wrap{ position: relative; }
-
-/* 2) Dropdown alinhado ao botão, à DIREITA, logo abaixo */
-.menu-dropdown{
-  position: absolute !important;   /* força absoluto (se antes era fixed) */
-  top: calc(100% + 8px);           /* abaixo do botão */
-  right: 0 !important;             /* encosta à direita do .menu-wrap */
-  left: auto !important;           /* impede de “grudar” na esquerda */
-  transform-origin: top right;
-
-  /* Tamanho e segurança no viewport */
-  width: clamp(260px, 86vw, 360px); /* mínimo 260, máximo 360; em telas pequenas usa vw */
-  max-height: min(80vh, 520px);
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
-
-  /* Visual */
-  background: #fff;
-  border: 1px solid #eaeaea;
-  border-radius: 12px;
-  box-shadow: 0 16px 38px rgba(0,0,0,.18);
-  z-index: 10000;
-
-  /* Animação de abertura */
-  opacity: 0; 
-  visibility: hidden; 
+  /* visibilidade */
+  opacity:0; pointer-events:none; visibility:hidden;
   transform: translateY(8px) scale(.98);
-  transition: opacity .18s ease, transform .18s ease, visibility .18s;
+  transition: opacity .18s ease, transform .18s ease, visibility .18s ease;
 }
 .menu-dropdown.open{
-  opacity: 1;
-  visibility: visible;
+  opacity:1; pointer-events:auto; visibility:visible;
   transform: translateY(0) scale(1);
 }
 
-/* 3) Garante que o botão fique sempre clicável acima do dropdown */
-.hamburger{ position: relative; z-index: 10001; }
-
-/* 4) Só o “X” no topo do painel */
-.menu-dropdown .menu-header span{ display: none; }
-.menu-dropdown .menu-header{
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  padding: 8px 10px;
-}
-
-/* 5) Mobile: manter ancorado ao botão e ocupar bem a tela */
-@media (max-width: 768px){
-  .navbar{ overflow: visible; } /* evita que o menu seja cortado por overflow hidden */
-  .menu-dropdown{
-    right: 0 !important;
-    left: auto !important;
-    top: calc(100% + 10px);
-    width: clamp(260px, 92vw, 360px); /* um pouco mais largo no celular */
-    border-radius: 12px;
-  }
-}
-
-/* ===== MENU SUSPENSO — FIX DEFINITIVO ===== */
-
-/* ancora normal p/ desktop (já deve existir, mas reforço) */
-.menu-wrap{ position: relative; }
-
-/* visual geral do painel */
-.menu-dropdown{
-  z-index: 10000;
-  background:#fff;
-  border:1px solid #eaeaea;
-  border-radius:12px;
-  box-shadow:0 16px 38px rgba(0,0,0,.18);
-  opacity:0; visibility:hidden;
-  transform: translateY(8px) scale(.98);
-  transition: opacity .18s ease, transform .18s ease, visibility .18s;
-}
-.menu-dropdown.open{ opacity:1; visibility:visible; transform: translateY(0) scale(1); }
-
-/* só o X */
-.menu-dropdown .menu-header span{ display:none; }
+/* Cabeçalho do painel — só o X com fundo */
 .menu-dropdown .menu-header{
   display:flex; justify-content:flex-end; align-items:center;
-  padding:8px 10px;
+  padding:8px 10px; background:transparent;
+}
+.menu-dropdown .menu-header span{ display:none; } /* esconde a palavra "Menu" */
+
+/* Botão X com “pílula” cinza */
+.menu-dropdown .menu-close{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:36px; height:36px; background:#f0f2f5;
+  border:0; border-radius:10px; cursor:pointer;
+}
+.menu-dropdown .menu-close:hover{ background:#e9ebee; }
+.menu-dropdown .menu-close:active{ background:#e3e5e9; }
+
+/* Itens do menu (link + ícone) */
+.menu-dropdown .menu-item{
+  display:flex; align-items:center; gap:10px;
+  padding:10px 12px; border-radius:10px;
+  color:#24292f; text-decoration:none; font-weight:600;
+  background:transparent; transition: background-color .15s ease, color .15s ease;
+}
+.menu-dropdown .menu-item:hover{ background:#f6f8fa; color:#111; }
+.menu-dropdown .menu-item .icon{
+  width:18px; height:18px; flex:0 0 18px; color: currentColor; stroke: currentColor; fill:none; stroke-width:2;
 }
 
-/* DESKTOP: alinhado ao botão, à direita (abaixo do hambúrguer) */
-@media (min-width: 769px){
-  .menu-dropdown{
-    position:absolute !important;
-    top: calc(100% + 8px);
-    right:0; left:auto;
-    width: 300px;
-    max-height: 80vh;
-    overflow:auto;
-  }
-  .hamburger{ position:relative; z-index:10001; }
-}
-
-/* MOBILE: painel CENTRALIZADO na tela, logo abaixo do header */
+/* Mobile: centralizado na tela, logo abaixo do header */
 @media (max-width: 768px){
-  .navbar{ overflow:visible; } /* evita corte */
-  .menu-wrap{ position: static; } /* tira a âncora local */
+  .navbar{ overflow:visible; }
+  .menu-wrap{ position: static; } /* remove âncora local */
 
   .menu-dropdown{
-    position: fixed !important;
-    top: calc(var(--nav-h, 64px) + 8px) !important; /* abaixo do header */
-    left: 50% !important;
-    right: auto !important;
-    transform: translateX(-50%) translateY(8px) scale(.98);
-    transform-origin: top center;
-
-    width: min(92vw, 380px);      /* centralizado e confortável */
-    max-height: calc(100vh - var(--nav-h, 64px) - 24px);
-    overflow: auto; -webkit-overflow-scrolling: touch;
+    position: fixed; top: calc(var(--nav-h, 64px) + 8px);
+    left: 50%; right:auto; transform-origin: top center;
+    width: min(88vw, 320px); max-height: calc(100vh - var(--nav-h, 64px) - 24px);
     border-radius:14px;
-  }
-  .menu-dropdown.open{
-    transform: translateX(-50%) translateY(0) scale(1);
-  }
-
-  /* se quiser o hambúrguer totalmente à esquerda no mobile */
-  .hamburger{ margin-left: 8px; }
-}
-
-/* ===== MENU SUSPENSO — FIX ===== */
-
-/* 1) Âncora e hierarquia */
-.navbar{ overflow: visible; }
-.menu-wrap{ position: relative; }
-.hamburger{ position: relative; z-index: 10002; }
-
-/* 2) Painel: aparência + visibilidade controlada por classe .open */
-.menu-dropdown{
-  background:#fff;
-  border:1px solid #eaeaea;
-  border-radius:12px;
-  box-shadow:0 16px 38px rgba(0,0,0,.18);
-  z-index: 10001;
-
-  /* visibilidade (sem display:none) */
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(8px) scale(.98);
-  transition: opacity .18s ease, transform .18s ease;
-  max-height: 80vh;
-  overflow: auto;
-}
-.menu-dropdown.open{
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateY(0) scale(1);
-}
-
-/* 3) Desktop: ancorado ao botão (direita, abaixo do hambúrguer) */
-@media (min-width: 769px){
-  .menu-dropdown{
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0; left: auto;
-    width: 300px;
-    transform-origin: top right;
-  }
-}
-
-/* 4) Mobile: centralizado na tela, logo abaixo do header */
-@media (max-width: 768px){
-  .menu-wrap{ position: static; }       /* remove âncora local */
-  .menu-dropdown{
-    position: fixed;
-    top: calc(var(--nav-h, 64px) + 8px);
-    left: 50%; right: auto;
-    width: min(92vw, 380px);
-    max-height: calc(100vh - var(--nav-h, 64px) - 24px);
     transform: translate(-50%, 8px) scale(.98);
-    transform-origin: top center;
-    -webkit-overflow-scrolling: touch;
-    border-radius: 14px;
   }
   .menu-dropdown.open{
     transform: translate(-50%, 0) scale(1);
   }
 }
 
-/* 5) Só o “X” com fundo cinza — não o cabeçalho inteiro */
-.menu-dropdown .menu-header{
-  display:flex;
-  justify-content:flex-end;
-  align-items:center;
-  padding:8px 10px;
-  background: transparent;         /* <- tira fundo do cabeçalho */
-}
-.menu-dropdown .menu-header span{ display:none; }
+/* 5) Hero
+   ------------------------------------------------------------ */
+.hero{ text-align:center; padding:40px 20px; }
+.hero img{ width:100%; max-width:640px; border-radius:10px; margin:0 auto 20px; }
+.hero h1{ font-size:1.8rem; color:#000; margin-bottom:6px; }
+.hero p{ font-size:1rem; color:var(--cinza-texto); max-width:700px; margin:0 auto; }
 
-.menu-dropdown .menu-close{
-  display:inline-flex;
-  align-items:center; justify-content:center;
-  width: 36px; height: 36px;
-  background:#f0f2f5;               /* <- fundo cinza só no botão */
-  border:0; border-radius:10px;
-  cursor:pointer;
+/* Área de cadastro (mantida p/ páginas internas) */
+.area-cadastro{ display:flex; flex-direction:column; align-items:center; gap:6px; margin-top:24px; }
+.frase-cadastro{ font-size:16px; font-weight:700; color:#333; }
+.btn-principal{
+  display:inline-block; background:var(--azul); color:var(--branco);
+  padding:10px 24px; font-size:15px; border-radius:10px; text-decoration:none; font-weight:700;
+  transition: background-color .25s ease, box-shadow .25s ease;
 }
-.menu-dropdown .menu-close:hover{ background:#e9ebee; }
-.menu-dropdown .menu-close:active{ background:#e3e5e9; }
-
-/* ========== HEADER — alinhamento na mesma linha ========== */
-.navbar{
-  display:flex;
-  align-items:center;          /* centra verticalmente TUDO */
-  gap:16px;
-  padding:12px 16px;
+.btn-principal:hover{ background:var(--azul); box-shadow:0 4px 10px rgba(0,0,0,.12); }
+.botao-login{
+  display:inline-block; background:#fff; color:var(--azul);
+  border:1px solid var(--azul); border-radius:10px; padding:12px 24px;
+  font-weight:700; text-decoration:none; transition: background-color .2s, color .2s, border-color .2s, box-shadow .2s;
 }
-.header-left,
-.header-right{ display:flex; align-items:center; }
-.header-right{ margin-left:auto; gap:20px; }  /* empurra links + hambúrguer p/ direita */
+.botao-login:hover{ background:var(--azul); color:#fff; border-color:var(--azul); box-shadow:0 4px 10px rgba(0,0,0,.12); }
 
-/* Logo: tamanho consistente no desktop */
-.logo img{
-  display:block;
-  height:48px;                 /* ajuste fino do desktop */
-  width:auto;
+/* 6) CTA preta acima do rodapé
+   ------------------------------------------------------------ */
+.cta-bar{
+  background:#0f0714; color:#fff; padding:20px 16px;
+  display:flex; align-items:center; justify-content:flex-start; gap:12px; flex-wrap:wrap;
+  border-top:1px solid rgba(255,255,255,.06); margin-top:32px; text-align:left;
+}
+.cta-text h3{ margin:0 0 4px 0; font-size:18px; font-weight:700; line-height:1.2; }
+.cta-text p{ margin:0; font-size:15px; opacity:.9; }
+.cta-btn{
+  display:inline-block; background:#fff; color:#2a2535; text-decoration:none;
+  padding:10px 18px; border-radius:10px; font-weight:600; box-shadow:0 1px 0 rgba(0,0,0,.08);
+  transition: transform .12s ease, background .2s ease, box-shadow .2s ease; white-space:nowrap;
+}
+.cta-btn:hover{ background:#f2f2f5; transform:translateY(-1px); box-shadow:0 3px 10px rgba(0,0,0,.12); }
+
+@media (max-width: 720px){
+  .cta-text h3{ font-size:16px; }
+  .cta-text p{ font-size:14px; }
 }
 
-/* Links de topo: não “esticam” o header */
-.top-nav{ display:flex; align-items:center; gap:24px; }
-.top-nav a{ line-height:1; }   /* evita desalinhamento vertical */
+/* 7) Rodapé branco com logo + links
+   ------------------------------------------------------------ */
+.site-footer{ background:#fff; color:#211a2a; border-top:1px solid #eee; padding:18px 16px 28px; }
+.footer-inner{ max-width:1180px; margin:0 auto; display:grid; grid-template-columns:auto 1fr; gap:20px 28px; align-items:start; }
+.footer-brand img{ height:44px; width:auto; }
+.footer-cols{ display:grid; grid-template-columns: repeat(2, minmax(180px, 240px)); gap:12px 28px; }
+.footer-col h4{ margin:0 0 8px 0; font-size:14px; font-weight:700; color:#251c33; }
+.footer-col ul{ list-style:none; margin:0; padding:0; }
+.footer-col li+li{ margin-top:6px; }
+.footer-col a{ color:#2a2535; text-decoration:none; font-size:14px; }
+.footer-col a:hover{ text-decoration:underline; }
 
-/* ========== Botão sanduíche — tamanho e proporções ========== */
-.hamburger{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  width:40px;
-  height:40px;
-  background:#fff;
-  border:1px solid #e6e6e9;
-  border-radius:10px;
-  cursor:pointer;
+@media (max-width: 720px){
+  .footer-inner{ grid-template-columns:1fr; }
+  .footer-cols{ grid-template-columns:1fr; }
 }
-.hamburger span{
-  display:block;
-  width:20px;
-  height:2px;
-  background:#1c1b22;
-  border-radius:2px;
-}
-.hamburger span + span{ margin-top:4px; }
 
-/* ========== MOBILE — logo maior e hambúrguer menor ========== */
+/* 8) Navegação “antiga” (mantida por compatibilidade)
+   ------------------------------------------------------------ */
+.nav-links{ list-style:none; display:flex; align-items:center; gap:16px; margin:0; padding:0; flex-wrap:wrap; justify-content:center; }
+.nav-links li a{
+  color:#fff; background:var(--azul); text-decoration:none; font-weight:700; font-size:16px;
+  padding:10px 18px; border-radius: var(--raio-8); transition: background-color .2s ease;
+}
+.nav-links li a:hover{ background:var(--azul); }
+.texto-visitante{ font-size:14px; color:#333; }
+.botao-buscar-topo{
+  background:var(--azul); color:#fff; padding:8px 16px; border-radius:6px; text-decoration:none; font-weight:700; font-size:14px;
+}
+
+/* 9) Containers / Cards / Formulários
+   ------------------------------------------------------------ */
+.container{
+  max-width:900px; margin:40px auto; padding:30px; background:var(--branco);
+  border-radius:16px; box-shadow:0 4px 12px rgba(0,0,0,.1);
+}
+.logo-formulario{ text-align:center; margin-bottom:20px; }
+.logo-formulario img{ max-width:180px; }
+.titulo{ text-align:center; color:#000; margin-bottom:30px; font-size:26px; }
+
+.formulario label{ display:block; margin-top:15px; font-weight:700; color:#000; }
+.formulario input, .formulario select{
+  width:100%; padding:10px; margin-top:5px;
+  border:1px solid #ccc; border-radius: var(--raio-8);
+  background:#f9f9f9; font-size:14px;
+}
+
+.botao-salvar{
+  width:auto; margin-top:30px; padding:12px 24px;
+  background:var(--azul); color:#fff; border:0; border-radius: var(--raio-10);
+  font-size:16px; font-weight:700; cursor:pointer; transition: background-color .25s ease, box-shadow .25s ease;
+}
+.botao-salvar:hover{ background:var(--azul); box-shadow:0 4px 10px rgba(0,0,0,.12); }
+
+.botao-editar{
+  display:inline-block; padding:8px 14px; background:var(--azul); color:#fff;
+  border-radius: var(--raio-8); text-decoration:none; font-size:14px; font-weight:700; transition: background-color .25s ease;
+}
+.botao-editar:hover{ background:var(--azul); }
+
+/* 10) Tabelas
+   ------------------------------------------------------------ */
+.table-wrapper{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+table{ width:100%; min-width:900px; margin-top:20px; border-collapse:collapse; }
+th, td{
+  padding:10px; text-align:center; vertical-align:middle; border-bottom:1px solid #ddd; font-size:14px; white-space:nowrap;
+}
+thead tr{ background:#f2f2f2; }
+
+/* 11) Botões auxiliares / Painel
+   ------------------------------------------------------------ */
+.btn-whatsapp{
+  background:#25D366; color:#fff; padding:8px 16px; border-radius: var(--raio-8);
+  text-decoration:none; font-weight:700; font-size:14px; display:inline-block; transition: background-color .2s ease; text-align:center; white-space:nowrap;
+}
+.btn-whatsapp:hover{ background:#25D366; }
+
+.painel-acoes{
+  display:flex; flex-wrap:wrap; justify-content:center; gap:12px; margin:20px 0 30px;
+}
+.painel-acoes a{
+  text-decoration:none; font-weight:700; font-size:14px; padding:10px 20px; border-radius: var(--raio-8);
+  text-align:center; transition: background-color .2s ease;
+}
+.btn-cinza{ background:#444; color:#fff; }
+.btn-azul-medio{ background:var(--azul); color:#fff; }
+.btn-azul-forte{ background:var(--azul); color:#fff; }
+
+.erro-campo{ border:2px solid red; background:#fff5f5; }
+.mensagem-campo{ color:red; font-size:13px; margin-top:-10px; margin-bottom:12px; }
+
+.plano-box{
+  background:#e6f0ff; border:2px solid var(--azul); border-radius:12px;
+  padding:20px; margin:30px auto; text-align:center; max-width:300px;
+}
+.plano-titulo{ font-size:18px; color:var(--azul); margin-bottom:6px; font-weight:600; }
+.plano-preco{ font-size:28px; font-weight:700; color:var(--azul); }
+
+.flash-message{ text-align:center; font-size:16px; margin-bottom:20px; font-weight:700; }
+.flash-message.error{ color:red; }
+.flash-message.success{ color:green; }
+
+/* 12) Responsividade pontual
+   ------------------------------------------------------------ */
 @media (max-width: 768px){
-  .logo img{ height:56px; }        /* aumenta a logo no celular */
-  .hamburger{
-    width:28px;                    /* diminui o sanduíche no celular */
-    height:28px;
-    border-radius:8px;
-  }
-  .hamburger span{
-    width:16px;
-    height:2px;
-  }
-  .hamburger span + span{ margin-top:3px; }
+  .container{ margin:20px; padding:20px; }
+  .titulo{ font-size:22px; }
+  .botao-salvar, .botao-editar, .botao-cadastrar{ font-size:15px; max-width:100%; }
 }
+
+/* 13) Utilitário: altura do header para scripts (mobile menu) */
+:root{ --nav-h: 64px; } /* atualizado por JS */
