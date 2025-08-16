@@ -416,6 +416,54 @@ thead tr{ background:#f2f2f2; }
   .promo-bar{ flex-wrap:wrap; row-gap:6px; }
 }
 
+/* ===== Cabeçalho compacto (reduz ~50%) ===== */
+
+/* tira espaço vertical do header */
+.navbar{
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+
+/* evita que altura extra venha de line-height */
+.logo{ line-height: 0; }
+
+/* define uma logo menor e consistente */
+.navbar .logo img{
+  height: clamp(44px, 6vw, 56px) !important; /* <= ajuste fino desktop */
+  width: auto;
+  display: block;
+  margin: 0;  /* garante sem margem extra */
+}
+
+/* links sem “almofada” vertical */
+.top-nav a{
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  line-height: 1 !important;
+}
+
+/* hambúrguer alinhado (altura igual/menor que a logo) */
+.hamburger{
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 8px !important;
+}
+
+/* Mobile ainda mais enxuto */
+@media (max-width: 768px){
+  .navbar{
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+  }
+  .navbar .logo img{
+    height: clamp(40px, 10vw, 48px) !important;
+  }
+  .hamburger{
+    width: 28px !important;
+    height: 28px !important;
+  }
+}
+
 /* ==== Sem negrito no menu suspenso (hambúrguer) ==== */
 .menu-dropdown .menu-item{
   font-weight: 400 !important;   /* normal */
