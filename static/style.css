@@ -385,6 +385,37 @@ thead tr{ background:#f2f2f2; }
   font-weight: 400 !important;   /* normal */
 }
 
+/* Faixa preta estreita acima do header */
+.promo-bar{
+  background:#0f0714;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  padding:6px 10px;            /* estreita */
+  font-size:14px;
+  line-height:1.2;
+}
+.promo-text strong{ font-weight:700; }
+.promo-cta{
+  display:inline-block;
+  background:#003bb3;
+  color:#fff;
+  text-decoration:none;
+  padding:6px 10px;            /* pequeno para não “engrossar” a faixa */
+  border-radius:8px;
+  font-weight:600;
+  white-space:nowrap;
+  transition:background .2s ease, transform .12s ease;
+}
+.promo-cta:hover{ background:#336be3; transform:translateY(-1px); }
+
+/* Mobile: texto em duas linhas, mantendo a faixa estreita */
+@media (max-width: 600px){
+  .promo-bar{ flex-wrap:wrap; row-gap:6px; }
+}
+
 /* ==== Sem negrito no menu suspenso (hambúrguer) ==== */
 .menu-dropdown .menu-item{
   font-weight: 400 !important;   /* normal */
