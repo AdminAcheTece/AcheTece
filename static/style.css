@@ -1,5 +1,5 @@
 /* ============================================================
-   AChetece — CSS Base (Nível Máximo / Revisado)
+   AcheTece — CSS Base (Nível Máximo / Revisado)
    ============================================================ */
 
 /* 0) Variáveis de cor/espaço */
@@ -25,9 +25,12 @@
   --sombra-1: 0 2px 6px rgba(0,0,0,.06);
   --sombra-2: 0 12px 24px rgba(0,0,0,.12);
   --sombra-3: 0 16px 38px rgba(0,0,0,.18);
+
+  /* utilizado no posicionamento do dropdown no mobile (atualizado via JS) */
+  --nav-h: 64px;
 }
 
-/* 1) Reset básico */
+/* 1) Reset */
 *{ margin:0; padding:0; box-sizing:border-box; }
 img{ max-width:100%; height:auto; display:block; }
 
@@ -39,66 +42,104 @@ body{
   line-height:1.4;
 }
 
-/* 3) Header / Navbar
-   ------------------------------------------------------------ */
-header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
+/* ============================================================
+   FAIXA PROMOCIONAL ESTREITA NO TOPO
+   ============================================================ */
+.promo-bar{
+  background:#0f0714; color:#fff;
+  display:flex; align-items:center; justify-content:center; gap:12px;
+  padding:6px 10px; font-size:14px; line-height:1.2;
+}
+.promo-text strong{ font-weight:700; }
+.promo-cta{
+  display:inline-block; background:var(--azul); color:#fff; text-decoration:none;
+  padding:6px 10px; border-radius:8px; font-weight:600; white-space:nowrap;
+  transition:background .2s ease, transform .12s ease;
+}
+.promo-cta:hover{ background:var(--azul-hover); transform:translateY(-1px); }
+@media (max-width: 600px){
+  .promo-bar{ flex-wrap:wrap; row-gap:6px; }
+}
 
+/* ============================================================
+   HEADER / NAVBAR (compacto) + LOGO 3× MAIOR
+   ============================================================ */
+header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
 .navbar{
   display:flex; align-items:center; justify-content:space-between;
-  padding:12px 16px; background:var(--branco); position:relative; overflow:visible;
+  padding:4px 16px;                 /* cabeçalho baixo */
+  min-height:52px;                  /* altura fixa da faixa branca */
+  background:var(--branco);
+  position:relative;
+  overflow:visible;                 /* permite a logo “crescer” pra fora */
 }
 
-/* grupos esquerda/direita */
-.header-left, .header-right{ display:flex; align-items:center; gap:16px; }
+/* grupos */
+.header-left, .header-right{ display:flex; align-items:center; }
 .header-right{ margin-left:auto; gap:20px; }
 
-/* Logo — maior e fluida */
-.logo img{
-  height: clamp(72px, 12vw, 120px);
-  width:auto;
+/* área lógica da logo (baixa) */
+.logo{
+  height:48px; display:flex; align-items:center; line-height:0; position:relative; z-index:1;
 }
 
-/* Links de topo (ao lado da logo) */
+/* LOGO 3× MAIOR sem aumentar o header */
+.logo img{
+  height:48px; width:auto;
+  transform: scale(3);              /* ← 3x maior */
+  transform-origin: left center;    /* cresce a partir da esquerda */
+  will-change: transform;
+}
+
+/* dá um respiro entre a logo ampliada e os links */
+.header-right{ gap:28px; }
+
+/* responsivo: reduz levemente a ampliação para não sobrepor */
+@media (max-width:1200px){ .logo img{ transform: scale(2.4); } }
+@media (max-width: 900px){ .logo{ height:44px; } .logo img{ height:44px; transform: scale(2.0); } }
+@media (max-width: 600px){ .logo{ height:42px; } .logo img{ height:42px; transform: scale(1.8); } }
+
+/* Links de topo (ao lado da logo) — SEM negrito */
 .top-nav{ display:flex; align-items:center; gap:24px; }
 .top-nav a{
-  color:#17161a; text-decoration:none; font-weight:600; padding:8px 0; line-height:1;
+  color:#17161a; text-decoration:none; font-weight:400; padding:0; line-height:1;
 }
 .top-nav a:hover{ color:var(--azul); text-decoration:underline; }
 
 /* Esconde links de topo em telas menores (mantém no menu sanduíche) */
-@media (max-width: 900px){
-  .top-nav{ display:none; }
-}
+@media (max-width: 900px){ .top-nav{ display:none; } }
 
-/* Botão sanduíche */
+/* ============================================================
+   BOTÃO HAMBÚRGUER (corrigido)
+   ============================================================ */
 .hamburger{
-  display:inline-flex; align-items:center; justify-content:center;
-  width:40px; height:40px; padding:0;
+  display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
+  width:34px; height:34px; padding:0;
   background:var(--branco);
-  border:1px solid #d6d6d6; border-radius: var(--raio-10);
+  border:1px solid #d6d6d6; border-radius:8px;
   cursor:pointer; box-shadow: var(--sombra-1);
 }
 .hamburger span{
-  width:20px; height:2px; background:#1c1b22; border-radius:2px; display:block;
+  display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px;
 }
 .hamburger span + span{ margin-top:4px; }
 .hamburger:hover{ background:#f7f7f7; border-color: var(--cinza-600); }
 .hamburger:focus-visible{ outline:2px solid rgba(0,0,0,.15); outline-offset:2px; }
 
-/* Mobile: logo maior, hambúrguer menor */
+/* tamanhos no celular */
 @media (max-width: 768px){
-  .logo img{ height: clamp(84px, 18vw, 128px); }   /* aumenta bem no celular */
   .hamburger{ width:28px; height:28px; border-radius:8px; }
   .hamburger span{ width:16px; height:2px; }
   .hamburger span + span{ margin-top:3px; }
 }
 
-/* 4) Menu suspenso (dropdown)
-   ------------------------------------------------------------ */
+/* ============================================================
+   MENU SUSPENSO (dropdown)
+   ============================================================ */
 /* Âncora no botão */
 .menu-wrap{ position:relative; display:inline-flex; align-items:center; }
 
-/* Painel base (visibilidade por .open) */
+/* Painel base — visibilidade controlada por .open */
 .menu-dropdown{
   background:var(--branco);
   border:1px solid var(--cinza-300);
@@ -107,13 +148,11 @@ header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
   z-index:10000;
   max-height:80vh; overflow:auto; -webkit-overflow-scrolling:touch;
 
-  /* ancorado ao botão por padrão (desktop) */
+  /* desktop: ancorado ao botão, à direita */
   position:absolute; top:calc(100% + 8px); right:0; left:auto;
 
-  /* largura confortável e mais estreito */
   width:auto; min-width:220px; max-width:320px;
 
-  /* visibilidade */
   opacity:0; pointer-events:none; visibility:hidden;
   transform: translateY(8px) scale(.98);
   transition: opacity .18s ease, transform .18s ease, visibility .18s ease;
@@ -123,14 +162,12 @@ header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
   transform: translateY(0) scale(1);
 }
 
-/* Cabeçalho do painel — só o X com fundo */
+/* Cabeçalho: só o X */
 .menu-dropdown .menu-header{
   display:flex; justify-content:flex-end; align-items:center;
   padding:8px 10px; background:transparent;
 }
-.menu-dropdown .menu-header span{ display:none; } /* esconde a palavra "Menu" */
-
-/* Botão X com “pílula” cinza */
+.menu-dropdown .menu-header span{ display:none; }
 .menu-dropdown .menu-close{
   display:inline-flex; align-items:center; justify-content:center;
   width:36px; height:36px; background:#f0f2f5;
@@ -139,11 +176,11 @@ header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
 .menu-dropdown .menu-close:hover{ background:#e9ebee; }
 .menu-dropdown .menu-close:active{ background:#e3e5e9; }
 
-/* Itens do menu (link + ícone) */
+/* Itens do menu — SEM negrito */
 .menu-dropdown .menu-item{
   display:flex; align-items:center; gap:10px;
   padding:10px 12px; border-radius:10px;
-  color:#24292f; text-decoration:none; font-weight:600;
+  color:#24292f; text-decoration:none; font-weight:400;
   background:transparent; transition: background-color .15s ease, color .15s ease;
 }
 .menu-dropdown .menu-item:hover{ background:#f6f8fa; color:#111; }
@@ -157,19 +194,23 @@ header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
   .menu-wrap{ position: static; } /* remove âncora local */
 
   .menu-dropdown{
-    position: fixed; top: calc(var(--nav-h, 64px) + 8px);
-    left: 50%; right:auto; transform-origin: top center;
-    width: min(88vw, 320px); max-height: calc(100vh - var(--nav-h, 64px) - 24px);
+    position: fixed;
+    top: calc(var(--nav-h, 64px) + 8px);
+    left: 50%; right:auto;
+    width: min(88vw, 320px);
+    max-height: calc(100vh - var(--nav-h, 64px) - 24px);
     border-radius:14px;
     transform: translate(-50%, 8px) scale(.98);
+    transform-origin: top center;
   }
   .menu-dropdown.open{
     transform: translate(-50%, 0) scale(1);
   }
 }
 
-/* 5) Hero
-   ------------------------------------------------------------ */
+/* ============================================================
+   HERO
+   ============================================================ */
 .hero{ text-align:center; padding:40px 20px; }
 .hero img{ width:100%; max-width:640px; border-radius:10px; margin:0 auto 20px; }
 .hero h1{ font-size:1.8rem; color:#000; margin-bottom:6px; }
@@ -191,8 +232,9 @@ header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
 }
 .botao-login:hover{ background:var(--azul); color:#fff; border-color:var(--azul); box-shadow:0 4px 10px rgba(0,0,0,.12); }
 
-/* 6) CTA preta acima do rodapé
-   ------------------------------------------------------------ */
+/* ============================================================
+   CTA PRETA (acima do rodapé)
+   ============================================================ */
 .cta-bar{
   background:#0f0714; color:#fff; padding:20px 16px;
   display:flex; align-items:center; justify-content:flex-start; gap:12px; flex-wrap:wrap;
@@ -206,14 +248,14 @@ header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
   transition: transform .12s ease, background .2s ease, box-shadow .2s ease; white-space:nowrap;
 }
 .cta-btn:hover{ background:#f2f2f5; transform:translateY(-1px); box-shadow:0 3px 10px rgba(0,0,0,.12); }
-
 @media (max-width: 720px){
   .cta-text h3{ font-size:16px; }
   .cta-text p{ font-size:14px; }
 }
 
-/* 7) Rodapé branco com logo + links
-   ------------------------------------------------------------ */
+/* ============================================================
+   RODAPÉ
+   ============================================================ */
 .site-footer{ background:#fff; color:#211a2a; border-top:1px solid #eee; padding:18px 16px 28px; }
 .footer-inner{ max-width:1180px; margin:0 auto; display:grid; grid-template-columns:auto 1fr; gap:20px 28px; align-items:start; }
 .footer-brand img{ height:44px; width:auto; }
@@ -223,14 +265,14 @@ header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
 .footer-col li+li{ margin-top:6px; }
 .footer-col a{ color:#2a2535; text-decoration:none; font-size:14px; }
 .footer-col a:hover{ text-decoration:underline; }
-
 @media (max-width: 720px){
   .footer-inner{ grid-template-columns:1fr; }
   .footer-cols{ grid-template-columns:1fr; }
 }
 
-/* 8) Navegação “antiga” (mantida por compatibilidade)
-   ------------------------------------------------------------ */
+/* ============================================================
+   NAVEGAÇÃO “ANTIGA” (compatibilidade)
+   ============================================================ */
 .nav-links{ list-style:none; display:flex; align-items:center; gap:16px; margin:0; padding:0; flex-wrap:wrap; justify-content:center; }
 .nav-links li a{
   color:#fff; background:var(--azul); text-decoration:none; font-weight:700; font-size:16px;
@@ -242,8 +284,9 @@ header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
   background:var(--azul); color:#fff; padding:8px 16px; border-radius:6px; text-decoration:none; font-weight:700; font-size:14px;
 }
 
-/* 9) Containers / Cards / Formulários
-   ------------------------------------------------------------ */
+/* ============================================================
+   CONTAINERS / FORM / TABELAS / PAINEL (preservado)
+   ============================================================ */
 .container{
   max-width:900px; margin:40px auto; padding:30px; background:var(--branco);
   border-radius:16px; box-shadow:0 4px 12px rgba(0,0,0,.1);
@@ -272,8 +315,6 @@ header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
 }
 .botao-editar:hover{ background:var(--azul); }
 
-/* 10) Tabelas
-   ------------------------------------------------------------ */
 .table-wrapper{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
 table{ width:100%; min-width:900px; margin-top:20px; border-collapse:collapse; }
 th, td{
@@ -281,8 +322,6 @@ th, td{
 }
 thead tr{ background:#f2f2f2; }
 
-/* 11) Botões auxiliares / Painel
-   ------------------------------------------------------------ */
 .btn-whatsapp{
   background:#25D366; color:#fff; padding:8px 16px; border-radius: var(--raio-8);
   text-decoration:none; font-weight:700; font-size:14px; display:inline-block; transition: background-color .2s ease; text-align:center; white-space:nowrap;
@@ -314,157 +353,9 @@ thead tr{ background:#f2f2f2; }
 .flash-message.error{ color:red; }
 .flash-message.success{ color:green; }
 
-/* 12) Responsividade pontual
-   ------------------------------------------------------------ */
+/* Responsividade geral dos containers */
 @media (max-width: 768px){
   .container{ margin:20px; padding:20px; }
   .titulo{ font-size:22px; }
   .botao-salvar, .botao-editar, .botao-cadastrar{ font-size:15px; max-width:100%; }
-}
-
-/* 13) Utilitário: altura do header para scripts (mobile menu) */
-:root{ --nav-h: 64px; } /* atualizado por JS */
-
-/* FIX: hamburger – empilha as 3 barras na vertical */
-.hamburger{
-  display: inline-flex;
-  flex-direction: column;          /* ← o que faltava */
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  background: #fff;
-  border: 1px solid #d6d6d6;
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,.06);
-}
-
-.hamburger span{
-  display: block;
-  width: 20px;
-  height: 2px;
-  background: #1c1b22;
-  border-radius: 2px;
-}
-
-/* espaçamento entre as barras */
-.hamburger span + span{ margin-top: 4px; }
-
-/* tamanhos no celular */
-@media (max-width: 768px){
-  .hamburger{ width: 28px; height: 28px; border-radius: 8px; }
-  .hamburger span{ width: 16px; height: 2px; }
-  .hamburger span + span{ margin-top: 3px; }
-}
-
-/* Logo +50% */
-.logo img{
-  height: clamp(108px, 18vw, 180px) !important; /* antes ~72–120px */
-  width: auto;
-}
-
-/* No mobile, também maior */
-@media (max-width: 768px){
-  .logo img{
-    height: clamp(126px, 22vw, 192px) !important; /* antes ~84–128px */
-  }
-}
-
-/* ==== Cabeçalho mais baixo ==== */
-.navbar{
-  padding-top: 6px !important;   /* antes ~12px */
-  padding-bottom: 6px !important;
-}
-
-/* Obs.: a altura final do header nunca será menor que a altura da logo.
-   Se a sua logo estiver muito grande, o header vai acompanhar. */
-
-/* ==== Sem negrito no menu do topo ==== */
-.top-nav a{
-  font-weight: 400 !important;   /* normal */
-}
-
-/* Faixa preta estreita acima do header */
-.promo-bar{
-  background:#0f0714;
-  color:#fff;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:12px;
-  padding:6px 10px;            /* estreita */
-  font-size:14px;
-  line-height:1.2;
-}
-.promo-text strong{ font-weight:700; }
-.promo-cta{
-  display:inline-block;
-  background:#003bb3;
-  color:#fff;
-  text-decoration:none;
-  padding:6px 10px;            /* pequeno para não “engrossar” a faixa */
-  border-radius:8px;
-  font-weight:600;
-  white-space:nowrap;
-  transition:background .2s ease, transform .12s ease;
-}
-.promo-cta:hover{ background:#336be3; transform:translateY(-1px); }
-
-/* Mobile: texto em duas linhas, mantendo a faixa estreita */
-@media (max-width: 600px){
-  .promo-bar{ flex-wrap:wrap; row-gap:6px; }
-}
-
-/* ===== Cabeçalho compacto (reduz ~50%) ===== */
-
-/* tira espaço vertical do header */
-.navbar{
-  padding-top: 4px !important;
-  padding-bottom: 4px !important;
-}
-
-/* evita que altura extra venha de line-height */
-.logo{ line-height: 0; }
-
-/* define uma logo menor e consistente */
-.navbar .logo img{
-  height: clamp(44px, 6vw, 56px) !important; /* <= ajuste fino desktop */
-  width: auto;
-  display: block;
-  margin: 0;  /* garante sem margem extra */
-}
-
-/* links sem “almofada” vertical */
-.top-nav a{
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-  line-height: 1 !important;
-}
-
-/* hambúrguer alinhado (altura igual/menor que a logo) */
-.hamburger{
-  width: 34px !important;
-  height: 34px !important;
-  border-radius: 8px !important;
-}
-
-/* Mobile ainda mais enxuto */
-@media (max-width: 768px){
-  .navbar{
-    padding-top: 4px !important;
-    padding-bottom: 4px !important;
-  }
-  .navbar .logo img{
-    height: clamp(40px, 10vw, 48px) !important;
-  }
-  .hamburger{
-    width: 28px !important;
-    height: 28px !important;
-  }
-}
-
-/* ==== Sem negrito no menu suspenso (hambúrguer) ==== */
-.menu-dropdown .menu-item{
-  font-weight: 400 !important;   /* normal */
 }
