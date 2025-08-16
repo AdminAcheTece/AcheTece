@@ -370,3 +370,22 @@ thead tr{ background:#f2f2f2; }
     height: clamp(126px, 22vw, 192px) !important; /* antes ~84–128px */
   }
 }
+
+/* ==== Cabeçalho mais baixo ==== */
+.navbar{
+  padding-top: 6px !important;   /* antes ~12px */
+  padding-bottom: 6px !important;
+}
+
+/* Obs.: a altura final do header nunca será menor que a altura da logo.
+   Se a sua logo estiver muito grande, o header vai acompanhar. */
+
+/* ==== Sem negrito no menu do topo ==== */
+.top-nav a{
+  font-weight: 400 !important;   /* normal */
+}
+
+/* ==== Sem negrito no menu suspenso (hambúrguer) ==== */
+.menu-dropdown .menu-item{
+  font-weight: 400 !important;   /* normal */
+}
