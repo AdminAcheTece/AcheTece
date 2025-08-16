@@ -23,5 +23,52 @@
     <main>
         {% block content %}{% endblock %}
     </main>
+
+    <!-- Cookie Consent -->
+<div class="cookie-backdrop" id="ck-backdrop" hidden></div>
+
+<div class="cookie-modal" id="ck-modal" role="dialog" aria-modal="true" aria-labelledby="ck-title" hidden>
+  <div class="cookie-card" role="document">
+    <h2 id="ck-title">Sobre cookies</h2>
+    <p class="cookie-text">
+      Ao clicar em “Permitir todos”, você consente que a AcheTece e seus parceiros utilizem cookies
+      (ou tecnologias semelhantes) para personalizar sua experiência, fornecer anúncios personalizados
+      e nos ajudar a entender o uso do site. Os cookies necessários estarão sempre ativos, pois são
+      essenciais para o funcionamento do site. Veja nossa política para saber mais:
+      <a class="cookie-link" href="{{ url_for('termos') }}#cookies" target="_blank" rel="noopener">
+        Política de cookies
+      </a>.
+    </p>
+
+    <!-- Preferências (expandido ao clicar em "Gerenciar Cookies") -->
+    <div class="cookie-prefs" id="ck-prefs" hidden>
+      <label class="cookie-switch">
+        <input type="checkbox" checked disabled>
+        <span>Necessários (sempre ativos)</span>
+      </label>
+      <label class="cookie-switch">
+        <input type="checkbox" id="ck-analytics">
+        <span>Analíticos (ex.: métricas de uso)</span>
+      </label>
+      <label class="cookie-switch">
+        <input type="checkbox" id="ck-marketing">
+        <span>Marketing (ex.: anúncios personalizados)</span>
+      </label>
+      <label class="cookie-switch">
+        <input type="checkbox" id="ck-performance">
+        <span>Desempenho/Funcionais (ex.: salvar preferências)</span>
+      </label>
+      <button class="btn-cookie-outline" id="ck-save">Salvar preferências</button>
+    </div>
+
+    <div class="cookie-actions">
+      <button class="btn-cookie" id="ck-allow-all">Permitir todos</button>
+      <button class="btn-cookie" id="ck-necessary">Apenas os Necessários</button>
+      <button class="btn-cookie-outline" id="ck-manage">Gerenciar Cookies</button>
+    </div>
+  </div>
+</div>
+<!-- /Cookie Consent -->
+
 </body>
 </html>
