@@ -324,3 +324,36 @@ thead tr{ background:#f2f2f2; }
 
 /* 13) Utilitário: altura do header para scripts (mobile menu) */
 :root{ --nav-h: 64px; } /* atualizado por JS */
+
+/* FIX: hamburger – empilha as 3 barras na vertical */
+.hamburger{
+  display: inline-flex;
+  flex-direction: column;          /* ← o que faltava */
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: #fff;
+  border: 1px solid #d6d6d6;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.06);
+}
+
+.hamburger span{
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: #1c1b22;
+  border-radius: 2px;
+}
+
+/* espaçamento entre as barras */
+.hamburger span + span{ margin-top: 4px; }
+
+/* tamanhos no celular */
+@media (max-width: 768px){
+  .hamburger{ width: 28px; height: 28px; border-radius: 8px; }
+  .hamburger span{ width: 16px; height: 2px; }
+  .hamburger span + span{ margin-top: 3px; }
+}
