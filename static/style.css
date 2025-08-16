@@ -357,3 +357,16 @@ thead tr{ background:#f2f2f2; }
   .hamburger span{ width: 16px; height: 2px; }
   .hamburger span + span{ margin-top: 3px; }
 }
+
+/* Logo +50% */
+.logo img{
+  height: clamp(108px, 18vw, 180px) !important; /* antes ~72–120px */
+  width: auto;
+}
+
+/* No mobile, também maior */
+@media (max-width: 768px){
+  .logo img{
+    height: clamp(126px, 22vw, 192px) !important; /* antes ~84–128px */
+  }
+}
