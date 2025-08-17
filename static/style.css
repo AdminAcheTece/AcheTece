@@ -422,3 +422,96 @@ thead tr{ background:#f2f2f2; }
 
 /* acessibilidade */
 #ck-modal[hidden], #ck-backdrop[hidden]{ display:none !important; }
+
+/* ===== Hero novo ===== */
+.hero-grid{
+  display:grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 28px;
+  align-items: center;
+  padding: 28px 20px 8px;
+  max-width: 1120px;
+  margin: 0 auto;
+}
+.hero-copy h1{
+  font-size: clamp(24px, 3.2vw, 36px);
+  color:#000;
+  margin: 10px 0 8px;
+  line-height: 1.2;
+}
+.hero-copy p{
+  font-size: clamp(14px, 1.6vw, 18px);
+  color:#444;
+  margin: 0 0 14px;
+}
+
+.role-toggle{ display:flex; gap:8px; }
+.chip{
+  appearance: none;
+  border:1px solid #d6d6d6;
+  background:#fff;
+  padding:8px 12px;
+  border-radius:999px;
+  cursor:pointer;
+  font: inherit;
+}
+.chip.is-active{ background:#0f0714; color:#fff; border-color:#0f0714; }
+
+.hero-ctas{ display:flex; gap:12px; align-items:center; margin: 8px 0 10px; }
+.link-inline{ color:#003bb3; text-decoration:none; }
+.link-inline:hover{ text-decoration:underline; }
+
+.hero-badges{
+  display:flex; gap:10px; flex-wrap:wrap;
+  list-style:none; padding:0; margin:6px 0 0;
+}
+.hero-badges li{
+  font-size: 13px;
+  background:#f6f8fa;
+  border:1px solid #e5e7eb;
+  padding:6px 10px;
+  border-radius:999px;
+}
+
+.hero-figure img{
+  width:100%;
+  border-radius:10px;
+  display:block;
+}
+
+@media (max-width: 900px){
+  .hero-grid{ grid-template-columns: 1fr; gap: 18px; padding-top: 18px; }
+  .hero-figure{ order:-1; } /* imagem primeiro no mobile, se preferir remova */
+}
+
+/* ===== Como funciona ===== */
+.how-it-works{
+  max-width: 1120px;
+  margin: 22px auto 8px;
+  padding: 0 20px 20px;
+}
+.how-it-works h2{
+  font-size: clamp(20px, 2.4vw, 28px);
+  margin: 0 0 8px;
+  color:#000;
+  text-align:center;
+}
+.steps{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:16px;
+}
+.step{
+  background:#fff;
+  border:1px solid #eee;
+  border-radius:12px;
+  padding:16px;
+  text-align:center;
+}
+.step-ico{ font-size: 22px; margin-bottom:6px; }
+.step h3{ font-size:16px; margin:0 0 4px; color:#111; }
+.step p{ font-size:14px; color:#555; margin:0; }
+
+@media (max-width: 900px){
+  .steps{ grid-template-columns: 1fr; }
+}
