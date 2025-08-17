@@ -132,6 +132,93 @@
     }
     .promo-cta:hover{ background:#336be3; transform:translateY(-1px); }
     @media (max-width: 600px){ .promo-bar{ flex-wrap:wrap; row-gap:6px; } }
+
+    /* ====== HERO NOVO ====== */
+    .hero-grid{
+      display:grid;
+      grid-template-columns: 1.05fr 1fr;
+      gap: 28px;
+      align-items: center;
+      padding: 28px 20px 8px;
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+    .hero-copy h1{
+      font-size: clamp(24px, 3.2vw, 36px);
+      color:#000;
+      margin: 10px 0 8px;
+      line-height: 1.2;
+    }
+    .hero-copy p{
+      font-size: clamp(14px, 1.6vw, 18px);
+      color:#444;
+      margin: 0 0 14px;
+    }
+    .role-toggle{ display:flex; gap:8px; }
+    .chip{
+      appearance: none;
+      border:1px solid #d6d6d6;
+      background:#fff;
+      padding:8px 12px;
+      border-radius:999px;
+      cursor:pointer;
+      font: inherit;
+    }
+    .chip.is-active{ background:#0f0714; color:#fff; border-color:#0f0714; }
+    .hero-ctas{ display:flex; gap:12px; align-items:center; margin: 8px 0 10px; }
+    .link-inline{ color:#003bb3; text-decoration:none; }
+    .link-inline:hover{ text-decoration:underline; }
+    .hero-badges{
+      display:flex; gap:10px; flex-wrap:wrap;
+      list-style:none; padding:0; margin:6px 0 0;
+    }
+    .hero-badges li{
+      font-size: 13px;
+      background:#f6f8fa;
+      border:1px solid #e5e7eb;
+      padding:6px 10px;
+      border-radius:999px;
+    }
+    .hero-figure img{
+      width:100%;
+      border-radius:10px;
+      display:block;
+    }
+    @media (max-width: 900px){
+      .hero-grid{ grid-template-columns: 1fr; gap: 18px; padding-top: 18px; }
+      .hero-figure{ order:-1; }
+    }
+
+    /* ====== COMO FUNCIONA ====== */
+    .how-it-works{
+      max-width: 1120px;
+      margin: 22px auto 8px;
+      padding: 0 20px 20px;
+    }
+    .how-it-works h2{
+      font-size: clamp(20px, 2.4vw, 28px);
+      margin: 0 0 8px;
+      color:#000;
+      text-align:center;
+    }
+    .steps{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:16px;
+    }
+    .step{
+      background:#fff;
+      border:1px solid #eee;
+      border-radius:12px;
+      padding:16px;
+      text-align:center;
+    }
+    .step-ico{ font-size: 22px; margin-bottom:6px; }
+    .step h3{ font-size:16px; margin:0 0 4px; color:#111; }
+    .step p{ font-size:14px; color:#555; margin:0; }
+    @media (max-width: 900px){
+      .steps{ grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -241,16 +328,65 @@
     </div>
   </header>
 
-  <!-- Seção de destaque -->
-  <main class="hero">
-    <img src="{{ url_for('static', filename='imagem_teares.jpg') }}"
-         alt="Imagem de teares" loading="lazy">
-    <h1>Ache. Conecte. Produza.</h1>
-    <p>
-      Facilitamos a conexão entre empresas que procuram teares de malharia disponíveis para produção e empresas que têm teares com capacidade ociosa.
-    </p>
-    <!-- (os botões foram movidos para a top-nav) -->
+  <!-- Hero novo com alternância de público -->
+  <main class="hero hero-grid">
+    <!-- Coluna de texto -->
+    <div class="hero-copy">
+      <div class="role-toggle" role="tablist" aria-label="Selecione seu perfil">
+        <button class="chip is-active" role="tab" aria-selected="true" data-role="cliente">
+          Quero produzir
+        </button>
+        <button class="chip" role="tab" aria-selected="false" data-role="malharia">
+          Tenho teares
+        </button>
+      </div>
+
+      <h1 id="hero-title">Encontre teares de malharia prontos para produzir</h1>
+      <p id="hero-sub">
+        Compare capacidades por tipo, diâmetro e galga — fale direto com a malharia.
+      </p>
+
+      <div class="hero-ctas">
+        <a id="hero-cta" href="{{ url_for('buscar_teares') }}" class="btn-principal">Buscar teares agora</a>
+        <a href="{{ url_for('malharia_info') }}" class="link-inline">Como funciona</a>
+      </div>
+
+      <ul class="hero-badges" aria-label="Vantagens">
+        <li>Contato direto</li>
+        <li>Sem taxa por lead</li>
+        <li>Plano mensal R$ 49,90</li>
+      </ul>
+    </div>
+
+    <!-- Coluna da imagem -->
+    <figure class="hero-figure">
+      <img src="{{ url_for('static', filename='imagem_teares.jpg') }}"
+           alt="Tear circular em operação, com alimentadores e cones de fio"
+           loading="eager" />
+    </figure>
   </main>
+
+  <!-- Seção curta “Como funciona” -->
+  <section class="how-it-works" aria-labelledby="como-funciona">
+    <h2 id="como-funciona">Como funciona</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-ico" aria-hidden="true">🔎</div>
+        <h3>1. Busque</h3>
+        <p>Filtre por tipo, diâmetro, galga e localização.</p>
+      </div>
+      <div class="step">
+        <div class="step-ico" aria-hidden="true">💬</div>
+        <h3>2. Conecte</h3>
+        <p>Fale direto com a malharia para alinhar prazos e preços.</p>
+      </div>
+      <div class="step">
+        <div class="step-ico" aria-hidden="true">🧵</div>
+        <h3>3. Produza</h3>
+        <p>Combine e acompanhe a produção com quem tece sua malha.</p>
+      </div>
+    </div>
+  </section>
 
   <!-- Script do menu (fecha no X/fora/ESC) -->
   <script>
@@ -302,6 +438,48 @@
       }
       setNavH();
       window.addEventListener('resize', setNavH);
+    })();
+  </script>
+
+  <!-- JS do hero: alterna textos/CTA conforme o perfil -->
+  <script>
+    (function(){
+      const cliente = {
+        title: "Encontre teares de malharia prontos para produzir",
+        sub: "Compare capacidades por tipo, diâmetro e galga — fale direto com a malharia.",
+        ctaText: "Buscar teares agora",
+        ctaHref: "{{ url_for('buscar_teares') }}"
+      };
+      const malharia = {
+        title: "Tem teares ociosos? Receba pedidos todo mês",
+        sub: "Seja encontrado por quem precisa produzir. Cadastro simples por R$ 49,90/mês.",
+        ctaText: "Cadastrar minha malharia",
+        ctaHref: "{{ url_for('malharia_info') }}"
+      };
+
+      const tabs = document.querySelectorAll('.role-toggle [data-role]');
+      const h1 = document.getElementById('hero-title');
+      const p  = document.getElementById('hero-sub');
+      const cta= document.getElementById('hero-cta');
+
+      function setRole(role){
+        const cfg = role === 'malharia' ? malharia : cliente;
+        h1.textContent = cfg.title;
+        p.textContent  = cfg.sub;
+        cta.textContent= cfg.ctaText;
+        cta.setAttribute('href', cfg.ctaHref);
+        tabs.forEach(b=>{
+          const active = b.dataset.role === role;
+          b.classList.toggle('is-active', active);
+          b.setAttribute('aria-selected', active ? 'true':'false');
+        });
+      }
+
+      tabs.forEach(b=>{
+        b.addEventListener('click', ()=> setRole(b.dataset.role));
+      });
+
+      setRole('cliente'); // estado inicial
     })();
   </script>
 
