@@ -11,14 +11,14 @@
 
   <style>
     /* ====== LAYOUT DO TOPO ====== */
-    .navbar{ overflow: visible; padding-top:6px; padding-bottom:6px; } /* header mais baixo */
+    .navbar{ overflow: visible; padding-top:6px; padding-bottom:6px; }
     .header-left, .header-right{ display:flex; align-items:center; }
     .header-right{ margin-left:auto; gap:20px; }
 
     /* ====== LINKS AO LADO DA LOGO ====== */
     .top-nav{ display:flex; gap:24px; align-items:center; }
     .top-nav a{
-      color:#17161a; text-decoration:none; font-weight:400;  /* sem negrito */
+      color:#17161a; text-decoration:none; font-weight:400;
       padding:8px 0; line-height:1;
     }
     .top-nav a:hover{ color:#003bb3; text-decoration:underline; }
@@ -62,9 +62,10 @@
     .menu-wrap{ position: relative; }
     .hamburger{ position: relative; z-index: 10002; }
 
-    /* hamburguer garantido em colunas (3 barrinhas) */
     .hamburger{
       display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
+      width:40px; height:40px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
+      box-shadow:0 2px 6px rgba(0,0,0,.06);
     }
     .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
     .hamburger span + span{ margin-top:4px; }
@@ -74,7 +75,6 @@
       .hamburger span + span{ margin-top:3px; }
     }
 
-    /* Painel: visibilidade via opacity/pointer-events */
     .menu-dropdown{
       background:#fff; border:1px solid #eaeaea; border-radius:12px; box-shadow:0 16px 38px rgba(0,0,0,.18);
       z-index:10001; max-height:80vh; overflow:auto;
@@ -83,7 +83,6 @@
     }
     .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
 
-    /* Cabeçalho do painel: só o X com fundo cinza */
     .menu-dropdown .menu-header{
       display:flex; justify-content:flex-end; align-items:center; padding:8px 10px; background:transparent;
     }
@@ -95,18 +94,14 @@
     .menu-dropdown .menu-close:hover{ background:#e9ebee; }
     .menu-dropdown .menu-close:active{ background:#e3e5e9; }
 
-    /* Itens do menu sem negrito */
     .menu-dropdown .menu-item{ font-weight:400; }
 
-    /* DESKTOP: ancorado ao botão (direita) e estreito */
     @media (min-width:769px){
       .menu-dropdown{
         position:absolute; top:calc(100% + 8px); right:0; left:auto;
         width:auto; min-width:220px; max-width:320px; padding-right:2px; transform-origin: top right;
       }
     }
-
-    /* MOBILE: centralizado abaixo do header */
     @media (max-width:768px){
       .menu-wrap{ position: static; }
       .menu-dropdown{
@@ -166,19 +161,7 @@
     }
     .chip.is-active{ background:#0f0714; color:#fff; border-color:#0f0714; }
     .hero-ctas{ display:flex; gap:12px; align-items:center; margin: 8px 0 10px; }
-    .link-inline{ color:#003bb3; text-decoration:none; }
-    .link-inline:hover{ text-decoration:underline; }
-    .hero-badges{
-      display:flex; gap:10px; flex-wrap:wrap;
-      list-style:none; padding:0; margin:6px 0 0;
-    }
-    .hero-badges li{
-      font-size: 13px;
-      background:#f6f8fa;
-      border:1px solid #e5e7eb;
-      padding:6px 10px;
-      border-radius:999px;
-    }
+    .btn-principal{ display:inline-block; background:#003bb3; color:#fff; padding:12px 18px; border-radius:12px; font-weight:700; text-decoration:none; }
     .hero-figure img{
       width:100%;
       border-radius:10px;
@@ -213,13 +196,8 @@
       padding:16px;
       text-align:center;
     }
-    /* Ícones pretos (SVG) – maiores */
-    .step-ico{
-      width:58px; height:58px;
-      color:#111;              /* SVG usa currentColor */
-      margin: 0 auto 8px;
-    }
-    .step-ico svg{ width:100%; height:100%; display:block; }
+    .step-ico{ margin-bottom:8px; display:flex; align-items:center; justify-content:center; }
+    .step-ico svg{ width:48px; height:48px; color:#111; }
     .step h3{ font-size:16px; margin:0 0 4px; color:#111; }
     .step p{ font-size:14px; color:#555; margin:0; }
     @media (max-width: 900px){
@@ -240,7 +218,6 @@
   <!-- Cabeçalho -->
   <header class="navbar">
     <div class="header-left">
-      <!-- Logo à esquerda -->
       <div class="logo">
         <img src="{{ url_for('static', filename='logo.jpg') }}"
              alt="Logo AcheTece"
@@ -250,7 +227,6 @@
     </div>
 
     <div class="header-right">
-      <!-- LINKS AO LADO DA LOGO (desktop) -->
       <nav class="top-nav" aria-label="Menu principal" role="navigation">
         <a href="{{ url_for('buscar_teares') }}">Ache o tear aqui</a>
         <a href="{{ url_for('malharia_info') }}">Cadastrar malharia</a>
@@ -281,51 +257,48 @@
 
           <a href="{{ url_for('buscar_teares') }}" class="menu-item" role="menuitem">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="11" cy="11" r="7"></circle>
-              <line x1="16.65" y1="16.65" x2="21" y2="21"></line>
+              <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"></circle>
+              <line x1="16.65" y1="16.65" x2="21" y2="21" stroke="currentColor" stroke-width="2"></line>
             </svg>
             <span>Buscar Tear</span>
           </a>
 
           <a href="{{ url_for('malharia_info') }}" class="menu-item" role="menuitem">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"></circle>
-              <path d="M9.5 9a2.5 2.5 0 1 1 4.1 2A3 3 0 0 0 12 13.6"></path>
-              <circle cx="12" cy="17" r="1.2" fill="currentColor"></circle>
+              <rect x="3" y="4" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"></rect>
+              <path d="M7 8h10M7 12h10" stroke="currentColor" stroke-width="2"></path>
             </svg>
             <span>Como Funciona</span>
           </a>
 
           <a href="{{ url_for('login') }}" class="menu-item" role="menuitem">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="8" r="4"></circle>
-              <path d="M4 20a8 8 0 0 1 16 0"></path>
+              <circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"></circle>
+              <path d="M4 20a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="2"></path>
             </svg>
             <span>Já sou cadastrado</span>
           </a>
 
           <a href="{{ url_for('quem_somos') }}" class="menu-item" role="menuitem">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"></circle>
-              <circle cx="12" cy="8" r="1.5" fill="currentColor"></circle>
-              <path d="M11 11h2v6h-2z" fill="currentColor"></path>
+              <circle cx="12" cy="7" r="4" fill="none" stroke="currentColor" stroke-width="2"></circle>
+              <path d="M4 21c2-4 14-4 16 0" fill="none" stroke="currentColor" stroke-width="2"></path>
             </svg>
             <span>Quem Somos</span>
           </a>
 
           <a href="{{ url_for('contato') }}" class="menu-item" role="menuitem">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 4h16v12H4z"></path>
-              <path d="M22 20H2"></path>
-              <path d="M22 8l-10 6L2 8" fill="none"></path>
+              <rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"></rect>
+              <path d="M3 8l9 6 9-6" fill="none" stroke="currentColor" stroke-width="2"></path>
             </svg>
             <span>Fale conosco</span>
           </a>
 
           <a href="{{ url_for('termos') }}" class="menu-item" role="menuitem">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="4" y="4" width="16" height="16" rx="2"></rect>
-              <path d="M8 8h8M8 12h8M8 16h5"></path>
+              <rect x="4" y="4" width="16" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"></rect>
+              <path d="M8 8h8M8 12h8M8 16h5" stroke="currentColor" stroke-width="2"></path>
             </svg>
             <span>Termos e Políticas</span>
           </a>
@@ -354,7 +327,7 @@
 
       <div class="hero-ctas">
         <a id="hero-cta" href="{{ url_for('buscar_teares') }}" class="btn-principal">Buscar teares agora</a>
-        <a href="{{ url_for('malharia_info') }}" class="link-inline">Como funciona</a>
+        <!-- (link “Como funciona” removido conforme pedido) -->
       </div>
 
     </div>
@@ -367,49 +340,10 @@
     </figure>
   </main>
 
-  <!-- Seção curta “Como funciona” – ÍCONES PRETOS (SVG) -->
+  <!-- Seção “Como funciona” dinâmica -->
   <section class="how-it-works" aria-labelledby="como-funciona">
-    <h2 id="como-funciona">Procura por teares disponíveis? Como funciona:</h2>
-    <div class="steps">
-      <!-- 1. Ache — Lupa -->
-      <div class="step">
-        <div class="step-ico" aria-hidden="true">
-          <svg viewBox="0 0 64 64" role="img" focusable="false">
-            <circle cx="28" cy="28" r="16" fill="none" stroke="currentColor" stroke-width="4" />
-            <line x1="41" y1="41" x2="58" y2="58" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
-          </svg>
-        </div>
-        <h3>1. Ache</h3>
-        <p>Filtre por tipo, diâmetro, galga e localização.</p>
-      </div>
-
-      <!-- 2. Conecte — Balão de conversa -->
-      <div class="step">
-        <div class="step-ico" aria-hidden="true">
-          <svg viewBox="0 0 64 64" role="img" focusable="false">
-            <path d="M12 18c0-3.3 2.7-6 6-6h28c3.3 0 6 2.7 6 6v18c0 3.3-2.7 6-6 6H31l-9 8v-8h-4c-3.3 0-6-2.7-6-6V18Z"
-                  fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"/>
-            <path d="M20 26h24M20 32h16" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <h3>2. Conecte</h3>
-        <p>Fale direto com a malharia para alinhar prazos e preços.</p>
-      </div>
-
-      <!-- 3. Produza — Cone de fio -->
-      <div class="step">
-        <div class="step-ico" aria-hidden="true">
-          <svg viewBox="0 0 64 64" role="img" focusable="false">
-            <path d="M20 10h24l6 40a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4l6-40Z"
-                  fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"/>
-            <path d="M16 18h32M14 26h36M12 34h40M18 42h28"
-                  fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <h3>3. Produza</h3>
-        <p>Combine e acompanhe a produção com quem tece sua malha.</p>
-      </div>
-    </div>
+    <h2 id="how-title">Precisa produzir malha? Como funciona:</h2>
+    <div class="steps" id="how-steps"><!-- renderizado via JS --></div>
   </section>
 
   <!-- Script do menu (fecha no X/fora/ESC) -->
@@ -465,9 +399,58 @@
     })();
   </script>
 
-  <!-- JS do hero: alterna textos/CTA conforme o perfil -->
+  <!-- JS do hero + “Como funciona” dinâmico -->
   <script>
     (function(){
+      // --------- Ícones pretos (SVG) ----------
+      function iconSVG(name){
+        switch(name){
+          case 'search': // lupa
+            return '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="16.65" y1="16.65" x2="21" y2="21"></line></svg>';
+          case 'chat':   // balão
+            return '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="3"></rect><path d="M7 11h10M7 8h10M8 18l3-4" stroke-linecap="round"></path></svg>';
+          case 'cone':   // cone de fio (spool simplificado)
+            return '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4h10l2 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L7 4z"></path><path d="M6 8h12M5.5 12h13M5 16h14" stroke-linecap="round"></path></svg>';
+          default:
+            return '';
+        }
+      }
+
+      // --------- Conteúdos das duas personas ----------
+      const howCliente = {
+        title: "Precisa produzir malha? Como funciona:",
+        steps: [
+          { icon: "search",  t: "1. Ache",    d: "Filtre por tipo, diâmetro, galga e localização." },
+          { icon: "chat",    t: "2. Conecte", d: "Fale direto com a malharia para alinhar prazos e preços." },
+          { icon: "cone",    t: "3. Produza", d: "Combine e acompanhe a produção com quem tece sua malha." }
+        ]
+      };
+
+      const howMalharia = {
+        title: "Tem teares ociosos? Como funciona:",
+        steps: [
+          { icon: "cone",   t: "1. Cadastre",            d: "Crie seu perfil e informe localização e contatos." },
+          { icon: "search", t: "2. Publique seus teares", d: "Detalhe tipo, diâmetro, galga e capacidade disponível." },
+          { icon: "chat",   t: "3. Receba contatos",      d: "Negocie prazos e valores e transforme ocioso em produção." }
+        ]
+      };
+
+      // --------- Renderização da seção "Como funciona" ----------
+      const howTitle = document.getElementById('how-title');
+      const howSteps = document.getElementById('how-steps');
+
+      function renderHow(cfg){
+        howTitle.textContent = cfg.title;
+        howSteps.innerHTML = cfg.steps.map(s => `
+          <div class="step">
+            <div class="step-ico">${iconSVG(s.icon)}</div>
+            <h3>${s.t}</h3>
+            <p>${s.d}</p>
+          </div>
+        `).join('');
+      }
+
+      // --------- Alternância do HERO + HOW ----------
       const cliente = {
         title: "Encontre teares de malharia prontos para produzir",
         sub: "Compare capacidades por tipo, diâmetro e galga — fale direto com a malharia.",
@@ -487,23 +470,27 @@
       const cta= document.getElementById('hero-cta');
 
       function setRole(role){
-        const cfg = role === 'malharia' ? malharia : cliente;
-        h1.textContent = cfg.title;
-        p.textContent  = cfg.sub;
-        cta.textContent= cfg.ctaText;
-        cta.setAttribute('href', cfg.ctaHref);
+        const cfgHero = role === 'malharia' ? malharia : cliente;
+        const cfgHow  = role === 'malharia' ? howMalharia : howCliente;
+
+        h1.textContent = cfgHero.title;
+        p.textContent  = cfgHero.sub;
+        cta.textContent= cfgHero.ctaText;
+        cta.setAttribute('href', cfgHero.ctaHref);
+
         tabs.forEach(b=>{
           const active = b.dataset.role === role;
           b.classList.toggle('is-active', active);
           b.setAttribute('aria-selected', active ? 'true':'false');
         });
+
+        renderHow(cfgHow);
       }
 
-      tabs.forEach(b=>{
-        b.addEventListener('click', ()=> setRole(b.dataset.role));
-      });
+      tabs.forEach(b=> b.addEventListener('click', ()=> setRole(b.dataset.role)));
 
-      setRole('cliente'); // estado inicial
+      // estado inicial
+      setRole('cliente');
     })();
   </script>
 
