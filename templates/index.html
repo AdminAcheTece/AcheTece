@@ -213,7 +213,13 @@
       padding:16px;
       text-align:center;
     }
-    .step-ico{ font-size: 22px; margin-bottom:6px; }
+    /* Ícones pretos (SVG) – maiores */
+    .step-ico{
+      width:58px; height:58px;
+      color:#111;              /* SVG usa currentColor */
+      margin: 0 auto 8px;
+    }
+    .step-ico svg{ width:100%; height:100%; display:block; }
     .step h3{ font-size:16px; margin:0 0 4px; color:#111; }
     .step p{ font-size:14px; color:#555; margin:0; }
     @media (max-width: 900px){
@@ -361,22 +367,45 @@
     </figure>
   </main>
 
-  <!-- Seção curta “Como funciona” -->
+  <!-- Seção curta “Como funciona” – ÍCONES PRETOS (SVG) -->
   <section class="how-it-works" aria-labelledby="como-funciona">
     <h2 id="como-funciona">Procura por teares disponíveis? Como funciona:</h2>
     <div class="steps">
+      <!-- 1. Ache — Lupa -->
       <div class="step">
-        <div class="step-ico" aria-hidden="true">🔎</div>
+        <div class="step-ico" aria-hidden="true">
+          <svg viewBox="0 0 64 64" role="img" focusable="false">
+            <circle cx="28" cy="28" r="16" fill="none" stroke="currentColor" stroke-width="4" />
+            <line x1="41" y1="41" x2="58" y2="58" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
+          </svg>
+        </div>
         <h3>1. Ache</h3>
         <p>Filtre por tipo, diâmetro, galga e localização.</p>
       </div>
+
+      <!-- 2. Conecte — Balão de conversa -->
       <div class="step">
-        <div class="step-ico" aria-hidden="true">💬</div>
+        <div class="step-ico" aria-hidden="true">
+          <svg viewBox="0 0 64 64" role="img" focusable="false">
+            <path d="M12 18c0-3.3 2.7-6 6-6h28c3.3 0 6 2.7 6 6v18c0 3.3-2.7 6-6 6H31l-9 8v-8h-4c-3.3 0-6-2.7-6-6V18Z"
+                  fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"/>
+            <path d="M20 26h24M20 32h16" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+          </svg>
+        </div>
         <h3>2. Conecte</h3>
         <p>Fale direto com a malharia para alinhar prazos e preços.</p>
       </div>
+
+      <!-- 3. Produza — Cone de fio -->
       <div class="step">
-        <div class="step-ico" aria-hidden="true">🧵</div>
+        <div class="step-ico" aria-hidden="true">
+          <svg viewBox="0 0 64 64" role="img" focusable="false">
+            <path d="M20 10h24l6 40a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4l6-40Z"
+                  fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"/>
+            <path d="M16 18h32M14 26h36M12 34h40M18 42h28"
+                  fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+        </div>
         <h3>3. Produza</h3>
         <p>Combine e acompanhe a produção com quem tece sua malha.</p>
       </div>
