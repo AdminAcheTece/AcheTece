@@ -189,22 +189,20 @@ header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
 }
 
 /* Mobile: centralizado na tela, logo abaixo do header */
-@media (max-width: 768px){
-  .navbar{ overflow:visible; }
-  .menu-wrap{ position: static; } /* remove âncora local */
-
+@media (max-width:768px){
   .menu-dropdown{
     position: fixed;
     top: calc(var(--nav-h, 64px) + 8px);
-    left: 50%; right:auto;
-    width: min(88vw, 320px);
-    max-height: calc(100vh - var(--nav-h, 64px) - 24px);
-    border-radius:14px;
+    left: 50%;
+    right: auto;
+    width: max-content;       /* largura mínima necessária */
+    max-width: 90vw;          /* nunca passar da tela */
+    min-width: 160px;         /* largura mínima estética */
+    padding: 4px 0;
     transform: translate(-50%, 8px) scale(.98);
     transform-origin: top center;
-  }
-  .menu-dropdown.open{
-    transform: translate(-50%, 0) scale(1);
+    -webkit-overflow-scrolling: touch;
+    border-radius:14px;
   }
 }
 
