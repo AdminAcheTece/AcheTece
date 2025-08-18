@@ -397,11 +397,15 @@
     <div class="footer-container">
       <div class="footer-col">
         <h4>
-          <svg xmlns="http://www.w3.org/2000/svg" class="footer-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path d="M9 12h6m-6 4h6M5 8h14M5 4h14M5 20h14M5 16h.01M5 12h.01M5 8h.01" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <!-- Ícone igual ao da index: Clipboard Check -->
+          <svg xmlns="http://www.w3.org/2000/svg" class="footer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="4" y="5" width="16" height="16" rx="2" ry="2"></rect>
+            <path d="M9 5h6V3a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v2z"></path>
+            <path d="m9 14 2 2 4-4"></path>
           </svg>
           Sobre nós
         </h4>
+
         <ul>
           <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
           <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
