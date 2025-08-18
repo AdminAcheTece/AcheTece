@@ -13,27 +13,48 @@
             background-color: #f9f9f9;
         }
 
+        /* ===== Cabeçalho padrão busca.html ===== */
         header {
             background-color: #fff;
-            padding: 16px 24px;
+            padding: 10px 20px;
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid #ddd;
-            position: relative;
         }
 
         .logo img {
-            max-height: 60px;
+            max-height: 50px;
+            width: auto;
         }
 
-        .icone-home {
-            position: absolute;
-            right: 24px;
-            top: 50%;
-            transform: translateY(-50%);
+        .header-icons {
+            display: flex;
+            align-items: center;
+            gap: 15px;
         }
 
+        .icone-home svg {
+            width: 24px;
+            height: 24px;
+            stroke: #003bb3;
+        }
+
+        /* Botão sanduíche (hamburger) mais estreito */
+        .menu-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 6px;
+        }
+
+        .menu-toggle svg {
+            width: 26px;
+            height: 26px;
+            stroke: #003bb3;
+        }
+
+        /* ===== Container conteúdo ===== */
         .container {
             max-width: 800px;
             margin: 40px auto;
@@ -105,11 +126,22 @@
     <div class="logo">
         <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
     </div>
-    <a href="/" class="icone-home" title="Página Inicial">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="#003bb3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-home">
-            <path d="M3 9L12 2l9 7v11a2 2 0 0 1-2 2h-3a1 1 0 0 1-1-1v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V9z"/>
-        </svg>
-    </a>
+    <div class="header-icons">
+        <!-- Ícone Home -->
+        <a href="/" class="icone-home" title="Página Inicial">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-home">
+                <path d="M3 9L12 2l9 7v11a2 2 0 0 1-2 2h-3a1 1 0 0 1-1-1v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V9z"/>
+            </svg>
+        </a>
+        <!-- Botão Sanduíche -->
+        <button class="menu-toggle" aria-label="Abrir menu">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#003bb3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <line x1="3" y1="12" x2="21" y2="12"/>
+                <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+        </button>
+    </div>
 </header>
 
 <div class="container">
