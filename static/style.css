@@ -293,21 +293,39 @@ header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
   .cta-text p{ font-size:14px; }
 }
 
-/* ============================================================
-   RODAPÉ
-   ============================================================ */
-.site-footer{ background:#fff; color:#211a2a; border-top:1px solid #eee; padding:18px 16px 28px; }
-.footer-inner{ max-width:1180px; margin:0 auto; display:grid; grid-template-columns:auto 1fr; gap:20px 28px; align-items:start; }
-.footer-brand img{ height:44px; width:auto; }
-.footer-cols{ display:grid; grid-template-columns: repeat(2, minmax(180px, 240px)); gap:12px 28px; }
-.footer-col h4{ margin:0 0 8px 0; font-size:14px; font-weight:700; color:#251c33; }
-.footer-col ul{ list-style:none; margin:0; padding:0; }
-.footer-col li+li{ margin-top:6px; }
-.footer-col a{ color:#2a2535; text-decoration:none; font-size:14px; }
-.footer-col a:hover{ text-decoration:underline; }
-@media (max-width: 720px){
-  .footer-inner{ grid-template-columns:1fr; }
-  .footer-cols{ grid-template-columns:1fr; }
+/* ===== Rodapé (igual ao index, com logo_simbolo à esquerda) ===== */
+footer{
+  background:#fff;
+  border-top:1px solid #e5e5e5;
+  padding:30px 20px;
+  margin-top:40px;
+}
+.footer-container{
+  max-width:1000px;
+  margin:0 auto;
+}
+.footer-block{
+  display:grid;
+  grid-template-columns: 42px 1fr;  /* ícone à esquerda, conteúdo à direita */
+  column-gap:12px;
+  align-items:start;
+}
+.footer-logo{
+  width:32px; height:auto; display:block; margin-top:2px; /* leve ajuste vertical */
+}
+.footer-title{
+  font-size:15px; font-weight:700; color:#111; margin:0 0 10px 0;
+}
+.footer-links{ list-style:none; margin:0; padding:0; }
+.footer-links li{ margin-bottom:8px; }
+.footer-links a{
+  text-decoration:none; color:#222; font-size:14px; transition:color .2s;
+}
+.footer-links a:hover{ color:var(--azul); }
+
+@media (max-width:520px){
+  .footer-block{ grid-template-columns:36px 1fr; column-gap:10px; }
+  .footer-logo{ width:30px; }
 }
 
 /* ============================================================
