@@ -91,7 +91,7 @@
         </svg>
       </a>
 
-      <!-- Menu sanduíche -->
+      <!-- Menu sanduíche (estrutura EXATA do index) -->
       <div class="menu-wrap">
         <button class="hamburger" id="hamburger" type="button" aria-label="Abrir menu" aria-controls="menu-lateral" aria-haspopup="menu" aria-expanded="false">
           <span></span><span></span><span></span>
@@ -99,17 +99,64 @@
 
         <nav class="menu-dropdown" id="menu-lateral" role="menu" aria-label="Menu rápido">
           <div class="menu-header">
+            <span>Menu</span>
             <button type="button" class="menu-close" aria-label="Fechar menu">
-              <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+              </svg>
             </button>
           </div>
 
-          <a href="{{ url_for('buscar_teares') }}" class="menu-item">🔍 Buscar Tear</a>
-          <a href="{{ url_for('malharia_info') }}" class="menu-item">ℹ️ Como Funciona</a>
-          <a href="{{ url_for('login') }}" class="menu-item">👤 Já sou cadastrado</a>
-          <a href="{{ url_for('quem_somos') }}" class="menu-item">🏢 Quem Somos</a>
-          <a href="{{ url_for('contato') }}" class="menu-item">✉️ Fale Conosco</a>
-          <a href="{{ url_for('termos') }}" class="menu-item">📑 Termos e Políticas</a>
+          <a href="{{ url_for('buscar_teares') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"></circle>
+              <line x1="16.65" y1="16.65" x2="21" y2="21"></line>
+            </svg>
+            <span>Buscar Tear</span>
+          </a>
+
+          <a href="{{ url_for('malharia_info') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M9.5 9a2.5 2.5 0 1 1 4.1 2A3 3 0 0 0 12 13.6"></path>
+              <circle cx="12" cy="17" r="1.2" fill="currentColor"></circle>
+            </svg>
+            <span>Como Funciona</span>
+          </a>
+
+          <a href="{{ url_for('login') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="8" r="4"></circle>
+              <path d="M4 20a8 8 0 0 1 16 0"></path>
+            </svg>
+            <span>Já sou cadastrado</span>
+          </a>
+
+          <a href="{{ url_for('quem_somos') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <circle cx="12" cy="8" r="1.5" fill="currentColor"></circle>
+              <path d="M11 11h2v6h-2z" fill="currentColor"></path>
+            </svg>
+            <span>Quem Somos</span>
+          </a>
+
+          <a href="{{ url_for('contato') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 4h16v12H4z"></path>
+              <path d="M22 20H2"></path>
+              <path d="M22 8l-10 6L2 8" fill="none"></path>
+            </svg>
+            <span>Fale conosco</span>
+          </a>
+
+          <a href="{{ url_for('termos') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+              <path d="M8 8h8M8 12h8M8 16h5"></path>
+            </svg>
+            <span>Termos e Políticas</span>
+          </a>
         </nav>
       </div>
     </div>
