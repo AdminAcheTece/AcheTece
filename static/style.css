@@ -552,3 +552,39 @@ thead tr{ background:#f2f2f2; }
 @media (max-width: 900px){
   .steps{ grid-template-columns: 1fr; }
 }
+
+/* Botão hambúrguer — padronizado com casinha */
+.hamburger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;      /* mesma largura da casinha */
+  height: 40px;     /* mesma altura da casinha */
+  padding: 0;       /* remove excesso interno */
+  background: var(--branco);
+  border: 1px solid #d6d6d6;
+  border-radius: var(--raio-10);
+  box-shadow: var(--sombra-1);
+  cursor: pointer;
+}
+
+/* Ícone interno */
+.hamburger svg,
+.hamburger span {
+  width: 20px;
+  height: 20px;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .hamburger {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--raio-8);
+  }
+  .hamburger svg,
+  .hamburger span {
+    width: 16px;
+    height: 16px;
+  }
+}
