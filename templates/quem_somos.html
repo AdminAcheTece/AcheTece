@@ -7,75 +7,111 @@
   <!-- CSS principal -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* ===== Cabeçalho padrão busca.html ===== */
+    .navbar{ overflow:visible; padding-top:6px; padding-bottom:6px; background:#fff; border-bottom:1px solid #eee; }
+    .header-left,.header-right{ display:flex; align-items:center; }
+    .header-right{ margin-left:auto; gap:20px; }
+    .logo img{ max-height:60px; height:auto; width:auto; display:block; }
+    .top-nav{ display:none; }
+
+    .menu-wrap{ position: relative; }
+    .hamburger{
+      display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
+      width:40px; height:40px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
+      box-shadow:0 2px 6px rgba(0,0,0,.06);
+      position:relative; z-index:10002;
+    }
+    .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
+    .hamburger span + span{ margin-top:4px; }
+    @media (max-width:768px){
+      .hamburger{ width:28px; height:28px; border-radius:8px; }
+      .hamburger span{ width:16px; height:2px; }
+      .hamburger span + span{ margin-top:3px; }
+    }
+
+    .menu-dropdown{
+      background:#fff; border:1px solid #eaeaea; border-radius:12px; box-shadow:0 16px 38px rgba(0,0,0,.18);
+      z-index:10001; max-height:80vh; overflow:auto;
+      opacity:0; pointer-events:none; transform: translateY(8px) scale(.98);
+      transition: opacity .18s ease, transform .18s ease;
+    }
+    .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
+    .menu-dropdown .menu-header{
+      display:flex; justify-content:flex-end; align-items:center; padding:8px 10px;
+    }
+    .menu-dropdown .menu-close{
+      display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px;
+      background:#f0f2f5; border:0; border-radius:10px; cursor:pointer;
+    }
+    .menu-dropdown .menu-item{
+      display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222;
+    }
+    .menu-dropdown .menu-item:hover{ background:#f5f7ff; color:#003bb3; border-radius:8px; }
+
+    @media (min-width:769px){
+      .menu-dropdown{ position:absolute; top:calc(100% + 8px); right:0; min-width:220px; transform-origin: top right; }
+    }
+    @media (max-width:768px){
+      .menu-wrap{ position: static; }
+      .menu-dropdown{
+        position: fixed;
+        top: calc(var(--nav-h, 64px) + 8px);
+        left: 50%; transform: translate(-50%, 8px) scale(.98);
+        width:max-content; max-width:90vw; min-width:160px; border-radius:14px;
+      }
+      .menu-dropdown.open{ transform: translate(-50%,0) scale(1); }
+    }
+
+    .icon-btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px;
+      background:#fff; cursor:pointer;
+    }
+    .icon{ width:20px; height:20px; color:#222; }
+  </style>
 </head>
 <body>
 
-  <!-- Cabeçalho com logo + menu -->
+  <!-- ===== Cabeçalho (igual ao busca.html) ===== -->
   <header class="navbar">
     <div class="header-left">
-      <div class="menu-wrap">
-        <!-- Botão sanduíche -->
-        <button class="hamburger" id="hamburger" aria-label="Abrir menu" aria-controls="menu-lateral" aria-expanded="false">
-          <span></span><span></span><span></span>
-        </button>
-
-        <!-- Dropdown -->
-        <nav class="menu-dropdown" id="menu-lateral">
-          <div class="menu-header">
-            <span>Menu</span>
-            <button type="button" class="menu-close" aria-label="Fechar menu">
-              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
-              </svg>
-            </button>
-          </div>
-
-          <a href="{{ url_for('buscar_teares') }}" class="menu-item">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="11" cy="11" r="7"></circle>
-              <line x1="16.65" y1="16.65" x2="21" y2="21"></line>
-            </svg>
-            <span>Buscar Tear</span>
-          </a>
-
-          <a href="{{ url_for('malharia_info') }}" class="menu-item">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"></circle>
-              <path d="M9.5 9a2.5 2.5 0 1 1 4.1 2A3 3 0 0 0 12 13.6"></path>
-              <circle cx="12" cy="17" r="1.2" fill="currentColor"></circle>
-            </svg>
-            <span>Como Funciona</span>
-          </a>
-
-          <a href="{{ url_for('login') }}" class="menu-item">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="8" r="4"></circle>
-              <path d="M4 20a8 8 0 0 1 16 0"></path>
-            </svg>
-            <span>Já sou cadastrado</span>
-          </a>
-
-          <a href="{{ url_for('quem_somos') }}" class="menu-item">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"></circle>
-              <circle cx="12" cy="8" r="1.5" fill="currentColor"></circle>
-              <path d="M11 11h2v6h-2z" fill="currentColor"></path>
-            </svg>
-            <span>Quem Somos</span>
-          </a>
-        </nav>
-      </div>
-
-      <!-- Logo -->
       <div class="logo">
         <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
       </div>
     </div>
 
     <div class="header-right">
-      <ul class="nav-links">
-        <li><a href="{{ url_for('buscar_teares') }}" class="botao-buscar-topo">Buscar Tear</a></li>
-      </ul>
+      <!-- Botão home -->
+      <a href="{{ url_for('index') }}" class="icon-btn" aria-label="Página inicial" title="Página inicial">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 10.5 12 3l9 7.5"></path>
+          <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
+          <path d="M9 21V12h6v9"></path>
+        </svg>
+      </a>
+
+      <!-- Menu sanduíche -->
+      <div class="menu-wrap">
+        <button class="hamburger" id="hamburger" type="button" aria-label="Abrir menu" aria-controls="menu-lateral" aria-haspopup="menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+
+        <nav class="menu-dropdown" id="menu-lateral" role="menu" aria-label="Menu rápido">
+          <div class="menu-header">
+            <button type="button" class="menu-close" aria-label="Fechar menu">
+              <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+
+          <a href="{{ url_for('buscar_teares') }}" class="menu-item">🔍 Buscar Tear</a>
+          <a href="{{ url_for('malharia_info') }}" class="menu-item">ℹ️ Como Funciona</a>
+          <a href="{{ url_for('login') }}" class="menu-item">👤 Já sou cadastrado</a>
+          <a href="{{ url_for('quem_somos') }}" class="menu-item">🏢 Quem Somos</a>
+          <a href="{{ url_for('contato') }}" class="menu-item">✉️ Fale Conosco</a>
+          <a href="{{ url_for('termos') }}" class="menu-item">📑 Termos e Políticas</a>
+        </nav>
+      </div>
     </div>
   </header>
 
@@ -106,7 +142,7 @@
     </div>
   </section>
 
-  <!-- Script do menu (multi-instância, fecha no X/fora/ESC) -->
+  <!-- Script do menu (mesmo do busca.html) -->
   <script>
     (function () {
       function closeAll() {
@@ -116,13 +152,11 @@
           if (b) b.setAttribute('aria-expanded', 'false');
         });
       }
-
       document.querySelectorAll('.menu-wrap').forEach(wrap => {
         const btn  = wrap.querySelector('#hamburger');
         const menu = wrap.querySelector('#menu-lateral');
         const xBtn = wrap.querySelector('.menu-close');
         if (!btn || !menu) return;
-
         btn.addEventListener('click', e => {
           e.stopPropagation();
           const willOpen = !menu.classList.contains('open');
@@ -130,16 +164,13 @@
           menu.classList.toggle('open', willOpen);
           btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
         });
-
         xBtn?.addEventListener('click', e => {
           e.stopPropagation();
           menu.classList.remove('open');
           btn.setAttribute('aria-expanded', 'false');
         });
-
         menu.addEventListener('click', e => e.stopPropagation());
       });
-
       document.addEventListener('click', closeAll);
       document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
     })();
