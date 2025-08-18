@@ -217,6 +217,40 @@
       .dot{ margin:0; }
       .card{ flex:1; min-height:auto; }
     }
+
+    /* ===== Rodapé (faixa branca do index) ===== */
+    footer{
+      background:#fff;
+      border-top:1px solid #e5e5e5;
+      padding:30px 20px;
+      margin-top:40px;
+    }
+    .footer-container{
+      max-width:1000px;
+      margin:0 auto;
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
+      gap:30px;
+    }
+    .footer-col h4{
+      font-size:15px;
+      font-weight:700;
+      margin-bottom:14px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      color:#111;
+    }
+    .footer-col ul{list-style:none;padding:0;margin:0;}
+    .footer-col ul li{margin-bottom:8px;}
+    .footer-col ul li a{
+      text-decoration:none;
+      color:#222;
+      font-size:14px;
+      transition:color .2s;
+    }
+    .footer-col ul li a:hover{color:var(--azul);}
+    .footer-icon{width:18px;height:18px;flex-shrink:0;}
   </style>
 </head>
 <body>
@@ -320,6 +354,27 @@
       </div>
     </div>
   </div>
+
+  <!-- ===== Rodapé (faixa branca igual à index) ===== -->
+  <footer>
+    <div class="footer-container">
+      <div class="footer-col">
+        <h4>
+          <!-- Ícone como na index -->
+          <svg xmlns="http://www.w3.org/2000/svg" class="footer-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path d="M9 12h6m-6 4h6M5 8h14M5 4h14M5 20h14M5 16h.01M5 12h.01M5 8h.01" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Sobre nós
+        </h4>
+        <ul>
+          <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
+          <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
+          <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
+          <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
 
   <!-- ===== Scripts do MENU ===== -->
   <script>
