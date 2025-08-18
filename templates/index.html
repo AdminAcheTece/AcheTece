@@ -313,16 +313,16 @@
     <div class="hero-copy">
       <div class="role-toggle" role="tablist" aria-label="Selecione seu perfil">
         <button class="chip is-active" role="tab" aria-selected="true" data-role="cliente">
-          Quero produzir
+          Procuro Malharia
         </button>
         <button class="chip" role="tab" aria-selected="false" data-role="malharia">
-          Tenho teares
+          Sou Malharia
         </button>
       </div>
 
       <h1 id="hero-title">Encontre teares de malharia prontos para produzir</h1>
       <p id="hero-sub">
-        Filtre sua busca por tipo, diâmetro, galga, localização — e fale direto com a malharia.
+        Filtre sua busca por tipo, diâmetro, galga e localizaçao. Fale direto com a malharia.
       </p>
 
       <div class="hero-ctas">
@@ -433,9 +433,9 @@
       const howMalharia = {
         title: "Tem teares ociosos? Como funciona:",
         steps: [
-          { icon: "profile", t: "1. Cadastre sua malharia",  d: "Crie seu perfil e informe localização e contatos." },
-          { icon: "devices", t: "2. Publique seus teares",    d: "Detalhe tipo, diâmetro, galga e capacidade disponível." },
-          { icon: "phone",   t: "3. Receba contatos",         d: "Negocie prazos e valores e transforme o ocioso em produção." }
+          { icon: "profile", t: "1. Cadastre sua malharia",  d: "Crie seu perfil e informe os contatos." },
+          { icon: "devices", t: "2. Publique seus teares",    d: "Detalhe tipo, diâmetro, galga e localização." },
+          { icon: "phone",   t: "3. Receba contatos",         d: "Negocie prazos, valores e transforme ociosidade em produção." }
         ]
       };
 
@@ -457,13 +457,13 @@
       // --------- Alternância do HERO + HOW ----------
       const cliente = {
         title: "Encontre teares de malharia prontos para produzir",
-        sub: "Compare capacidades por tipo, diâmetro e galga — fale direto com a malharia.",
+        sub: "Filtre sua busca por tipo, diâmetro, galga e localizaçao. Fale direto com a malharia.",
         ctaText: "Buscar teares agora",
         ctaHref: "{{ url_for('buscar_teares') }}"
       };
       const malharia = {
         title: "Tem teares ociosos? Receba pedidos todo mês",
-        sub: "Seja encontrado por quem precisa produzir. Cadastro simples por R$ 49,90/mês.",
+        sub: "Seja encontrado por quem precisa produzir. Cadastro simples por apenas R$ 49,90/mês.",
         ctaText: "Cadastrar minha malharia",
         ctaHref: "{{ url_for('malharia_info') }}"
       };
