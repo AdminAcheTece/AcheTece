@@ -110,25 +110,24 @@ header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
 @media (max-width: 900px){ .top-nav{ display:none; } }
 
 /* ============================================================
-   BOTÃO HAMBÚRGUER (corrigido)
+   BOTÃO HAMBÚRGUER (PADRONIZADO com o index)
    ============================================================ */
 .hamburger{
   display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
-  width:34px; height:34px; padding:0;
+  width:40px; height:40px; padding:0;                 /* <<< 40x40 desktop */
   background:var(--branco);
-  border:1px solid #d6d6d6; border-radius:8px;
+  border:1px solid #d6d6d6; border-radius: var(--raio-10);
   cursor:pointer; box-shadow: var(--sombra-1);
 }
 .hamburger span{
   display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px;
 }
 .hamburger span + span{ margin-top:4px; }
-.hamburger:hover{ background:#f7f7f7; border-color: var(--cinza-600); }
 .hamburger:focus-visible{ outline:2px solid rgba(0,0,0,.15); outline-offset:2px; }
 
 /* tamanhos no celular */
 @media (max-width: 768px){
-  .hamburger{ width:28px; height:28px; border-radius:8px; }
+  .hamburger{ width:28px; height:28px; border-radius:var(--raio-8); }  /* <<< 28x28 mobile */
   .hamburger span{ width:16px; height:2px; }
   .hamburger span + span{ margin-top:3px; }
 }
@@ -162,7 +161,7 @@ header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
   transform: translateY(0) scale(1);
 }
 
-/* Cabeçalho: só o X */
+/* Cabeçalho: só o X (padronizado) */
 .menu-dropdown .menu-header{
   display:flex; justify-content:flex-end; align-items:center;
   padding:8px 10px; background:transparent;
@@ -170,13 +169,14 @@ header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
 .menu-dropdown .menu-header span{ display:none; }
 .menu-dropdown .menu-close{
   display:inline-flex; align-items:center; justify-content:center;
-  width:36px; height:36px; background:#f0f2f5;
-  border:0; border-radius:10px; cursor:pointer;
+  width:36px; height:36px;
+  background:#f0f2f5; border:0; border-radius:10px; cursor:pointer;
+  padding:0; line-height:1; color:#1c1b22;          /* <<< X preto e sem padding extra */
 }
 .menu-dropdown .menu-close:hover{ background:#e9ebee; }
 .menu-dropdown .menu-close:active{ background:#e3e5e9; }
+.menu-dropdown .menu-close svg{ display:block; }    /* evita “expandir” por linha */
 
-/* Itens do menu — SEM negrito */
 .menu-dropdown .menu-item{
   display:flex; align-items:center; gap:10px;
   padding:10px 12px; border-radius:10px;
@@ -188,16 +188,16 @@ header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
   width:18px; height:18px; flex:0 0 18px; color: currentColor; stroke: currentColor; fill:none; stroke-width:2;
 }
 
-/* Mobile: centralizado na tela, logo abaixo do header */
+/* Mobile: centralizado na tela, logo abaixo do header (ajuste de largura) */
 @media (max-width:768px){
   .menu-dropdown{
     position: fixed;
     top: calc(var(--nav-h, 64px) + 8px);
     left: 50%;
     right: auto;
-    width: max-content;       /* largura mínima necessária */
-    max-width: 90vw;          /* nunca passar da tela */
-    min-width: 160px;         /* largura mínima estética */
+    width: max-content;       /* <<< largura mínima necessária */
+    max-width: 90vw;          /* <<< nunca passar da tela */
+    min-width: 160px;         /* <<< largura mínima estética */
     padding: 4px 0;
     transform: translate(-50%, 8px) scale(.98);
     transform-origin: top center;
@@ -351,7 +351,6 @@ thead tr{ background:#f2f2f2; }
 .flash-message.error{ color:red; }
 .flash-message.success{ color:green; }
 
-/* Responsividade geral dos containers */
 @media (max-width: 768px){
   .container{ margin:20px; padding:20px; }
   .titulo{ font-size:22px; }
@@ -404,7 +403,6 @@ thead tr{ background:#f2f2f2; }
 .btn-cookie-outline:hover{ background:#111; color:#fff; }
 .btn-cookie-outline:active{ transform:scale(.98); }
 
-/* Preferências (abertas ao clicar em “Gerenciar Cookies”) */
 .cookie-prefs{
   background:#f6f8fa;
   border:1px solid #e5e7eb;
@@ -418,7 +416,6 @@ thead tr{ background:#f2f2f2; }
 }
 .cookie-switch input{ width:18px; height:18px; }
 
-/* acessibilidade */
 #ck-modal[hidden], #ck-backdrop[hidden]{ display:none !important; }
 
 /* ===== Hero novo ===== */
@@ -479,7 +476,7 @@ thead tr{ background:#f2f2f2; }
 
 @media (max-width: 900px){
   .hero-grid{ grid-template-columns: 1fr; gap: 18px; padding-top: 18px; }
-  .hero-figure{ order:-1; } /* imagem primeiro no mobile, se preferir remova */
+  .hero-figure{ order:-1; }
 }
 
 /* ===== Como funciona ===== */
