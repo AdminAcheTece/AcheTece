@@ -18,6 +18,29 @@
 
     body { font-family: Arial, sans-serif; margin:0; padding:0; background:var(--cinza-bg); color:var(--cinza-texto); }
 
+    /* ===== TOPBAR (faixa preta) ===== */
+    .topbar{
+      background:#0b0b0b;
+      color:#fff;
+      padding:6px 14px;
+      border-bottom:1px solid #111;
+    }
+    .topbar-inner{
+      max-width:1000px; margin:0 auto;
+      display:flex; align-items:center; justify-content:flex-end; gap:12px;
+    }
+    .topbar-action{
+      display:inline-flex; align-items:center; gap:10px;
+      color:#fff; text-decoration:none;
+      padding:6px 10px; border-radius:10px;
+      background:#111; border:1px solid rgba(255,255,255,.12);
+      transition:background .2s, transform .02s;
+    }
+    .topbar-action:hover{ background:#161616; }
+    .ic-top{ width:18px; height:18px; display:block; }
+    .ic-wa{ color:#22c55e; }  /* WhatsApp verde */
+    .ic-mail{ color:#fff; }
+
     /* ===== Cabeçalho padrão busca.html ===== */
     .navbar{ overflow:visible; padding-top:6px; padding-bottom:6px; background:#fff; border-bottom:1px solid #eee; display:flex; align-items:center; }
     .header-left,.header-right{ display:flex; align-items:center; }
@@ -84,7 +107,7 @@
       padding: 40px 36px;
       border-radius: 14px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-      text-align:center;  /* centraliza blocos principais */
+      text-align:center;
     }
 
     h1 {
@@ -107,13 +130,12 @@
     .bullet-highlights li{
       list-style:none; text-align:center; padding:10px 12px; border-radius:10px;
       background:#fff; color:#000; font-weight:800;
-      border:1.5px solid #000;  /* borda preta */
+      border:1.5px solid #000;
     }
     @media (max-width:680px){ .bullet-highlights{ grid-template-columns:1fr; } }
 
     p { font-size: 16px; line-height: 1.6; margin-bottom: 20px; }
 
-    /* Título da seção vantagens */
     .section-title{
       font-size: clamp(18px, 2.4vw, 22px);
       margin: 8px 0 10px;
@@ -140,7 +162,7 @@
     .pricing-card{
       position:relative;
       margin: 28px auto 16px;
-      max-width: 560px;            /* card maior que o botão */
+      max-width: 560px;
       border-radius: 18px;
       padding: 28px 22px 24px;
       text-align:center;
@@ -151,7 +173,7 @@
     }
     .badge-top{
       position:absolute; left:50%; top:-12px; transform: translateX(-50%);
-      background:#fff; color:#000;      /* texto preto na badge */
+      background:#fff; color:#000;
       border-radius: 999px; padding:6px 12px; font-size:12px; font-weight:800;
       box-shadow: 0 6px 16px rgba(0,0,0,.12);
     }
@@ -165,7 +187,7 @@
     .botao-cadastrar {
       display: inline-block;
       width: 100%;
-      max-width: 440px;          /* menor que o card do preço */
+      max-width: 440px;
       text-align: center;
       background: var(--azul);
       color: white;
@@ -180,7 +202,7 @@
     }
     .botao-cadastrar:hover { background:#002c80; transform: translateY(-2px); box-shadow:0 12px 22px rgba(0,59,179,.36); }
 
-    /* ===== Fluxo visual de etapas (refeito) ===== */
+    /* ===== Fluxo visual de etapas ===== */
     .flow-wrap{ margin-top:16px; }
     .flow-title{ font-weight:800; text-align:left; margin: 24px 0 10px; }
     .flow{
@@ -188,7 +210,6 @@
       display:grid; grid-template-columns: repeat(5, 1fr); gap:16px;
       align-items:start;
     }
-    /* linha contínua atrás dos pontos (desktop) */
     .flow::before{
       content:''; position:absolute; top:20px; left:8px; right:8px; height:4px;
       background: linear-gradient(90deg, var(--azul), var(--azul-2));
@@ -206,7 +227,6 @@
       font-size:14px; color:#333;
     }
 
-    /* mobile: coluna com linha vertical contínua */
     @media (max-width:700px){
       .flow{ display:flex; flex-direction:column; gap:14px; }
       .flow::before{
@@ -218,7 +238,7 @@
       .card{ flex:1; min-height:auto; }
     }
 
-    /* ===== Rodapé (faixa branca do index) ===== */
+    /* ===== Rodapé ===== */
     footer{
       background:#fff;
       border-top:1px solid #e5e5e5;
@@ -254,6 +274,23 @@
   </style>
 </head>
 <body>
+
+  <!-- ===== TOPBAR ===== -->
+  <div class="topbar">
+    <div class="topbar-inner">
+      <a class="topbar-action" href="{{ url_for('contato') }}" aria-label="Fale conosco">
+        <!-- WhatsApp -->
+        <svg class="ic-top ic-wa" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M20.52 3.48A11.94 11.94 0 0 0 12.06 0C5.7 0 .5 5.19.5 11.6c0 2.05.54 4.05 1.58 5.82L0 24l6.76-2.01a11.6 11.6 0 0 0 5.3 1.29h.01c6.36 0 11.56-5.19 11.56-11.6 0-3.09-1.22-6-3.11-8.2Zm-8.46 18.1h-.01a9.7 9.7 0 0 1-4.95-1.34l-.35-.2-4.01 1.2 1.16-3.9-.23-.4a9.66 9.66 0 0 1-1.41-5.08c0-5.36 4.38-9.71 9.77-9.71 2.61 0 5.07 1.02 6.91 2.87a9.73 9.73 0 0 1 2.86 6.95c0 5.36-4.38 9.71-9.75 9.71Zm5.6-7.27c-.31-.16-1.81-.9-2.09-1-.28-.1-.49-.16-.7.16-.2.31-.8 1-.98 1.21-.18.2-.36.22-.67.06-.31-.16-1.3-.48-2.48-1.53-.92-.8-1.54-1.77-1.72-2.07-.18-.31-.02-.48.13-.64.13-.13.31-.36.46-.54.15-.18.2-.31.31-.52.1-.22.05-.41-.02-.57-.16-.16-.7-1.69-.95-2.3-.25-.6-.51-.52-.7-.52-.18 0-.39-.02-.6-.02-.2 0-.52.07-.79.36-.28.31-1.07 1.05-1.07 2.56 0 1.51 1.1 2.97 1.25 3.18.15.2 2.17 3.3 5.25 4.61.73.32 1.3.5 1.75.64.74.24 1.4.2 1.93.12.59-.09 1.81-.74 2.07-1.45.26-.72.26-1.33.18-1.45-.08-.12-.28-.2-.59-.36Z"/>
+        </svg>
+        <!-- Email -->
+        <svg class="ic-top ic-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/>
+        </svg>
+        <span style="font-weight:700;">Fale conosco</span>
+      </a>
+    </div>
+  </div>
 
   <!-- ===== Cabeçalho ===== -->
   <header class="navbar">
@@ -355,12 +392,11 @@
     </div>
   </div>
 
-  <!-- ===== Rodapé (faixa branca igual à index) ===== -->
+  <!-- ===== Rodapé ===== -->
   <footer>
     <div class="footer-container">
       <div class="footer-col">
         <h4>
-          <!-- Ícone como na index -->
           <svg xmlns="http://www.w3.org/2000/svg" class="footer-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path d="M9 12h6m-6 4h6M5 8h14M5 4h14M5 20h14M5 16h.01M5 12h.01M5 8h.01" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
@@ -376,7 +412,7 @@
     </div>
   </footer>
 
-  <!-- ===== Scripts do MENU ===== -->
+  <!-- ===== Scripts ===== -->
   <script>
     (function () {
       function closeAll() {
@@ -413,12 +449,13 @@
     })();
   </script>
 
-  <!-- Mede altura do topo para posicionar o menu no mobile -->
+  <!-- Ajuste de altura: considera TOPBAR + HEADER -->
   <script>
     (function(){
       function setNavH(){
-        const nav   = document.querySelector('.navbar');
-        const total = nav?.offsetHeight || 0;
+        const topbar = document.querySelector('.topbar')?.offsetHeight || 0;
+        const nav    = document.querySelector('.navbar')?.offsetHeight || 0;
+        const total  = topbar + nav;
         document.documentElement.style.setProperty('--nav-h', total + 'px');
       }
       setNavH();
