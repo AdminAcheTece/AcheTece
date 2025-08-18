@@ -14,13 +14,7 @@
       --cinza-texto:#444;
     }
 
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: var(--cinza-bg);
-      color: var(--cinza-texto);
-    }
+    body { font-family: Arial, sans-serif; margin:0; padding:0; background:var(--cinza-bg); color:var(--cinza-texto); }
 
     /* ===== Cabeçalho padrão busca.html ===== */
     .navbar{ overflow:visible; padding-top:6px; padding-bottom:6px; background:#fff; border-bottom:1px solid #eee; display:flex; align-items:center; }
@@ -92,7 +86,7 @@
 
     h1 {
       font-size: clamp(26px, 3.4vw, 36px);
-      margin: 0 0 18px 0;
+      margin: 0 0 12px 0;
       text-align: center;
       color: #222;
       letter-spacing: .2px;
@@ -101,41 +95,41 @@
       text-align:center;
       font-size: 16px;
       color:#5a5a5a;
-      margin: 0 auto 24px;
-      max-width: 680px;
+      margin: 0 auto 18px;
+      max-width: 700px;
     }
+
+    /* Destaques Simples • Direta • Profissional */
+    .bullet-highlights{
+      display:grid; grid-template-columns: repeat(3,1fr); gap:10px; margin: 8px auto 22px; max-width:740px;
+    }
+    .bullet-highlights li{
+      list-style:none; text-align:center; padding:8px 10px; border-radius:10px; background:#f6f8ff; color:#0e2b6b; font-weight:700;
+      border:1px solid #e6ecff;
+    }
+    @media (max-width:680px){ .bullet-highlights{ grid-template-columns:1fr; } }
 
     p { font-size: 16px; line-height: 1.6; margin-bottom: 20px; }
     ul { margin-bottom: 24px; padding-left: 20px; }
     li { margin-bottom: 10px; }
 
     /* Lista de benefícios com check */
-    .benefits{
-      list-style:none; padding-left:0; margin-left:0;
-    }
-    .benefits li{
-      position:relative; padding-left:28px;
-    }
+    .benefits{ list-style:none; padding-left:0; margin-left:0; }
+    .benefits li{ position:relative; padding-left:28px; }
     .benefits li::before{
       content:'';
-      position:absolute; left:0; top:6px;
-      width:18px; height:18px; border-radius:50%;
+      position:absolute; left:0; top:6px; width:18px; height:18px; border-radius:50%;
       background: radial-gradient(circle at 30% 30%, #fff 0 40%, transparent 41%), var(--azul);
       box-shadow: 0 0 0 2px rgba(0,59,179,.12);
-      -webkit-mask:
-        radial-gradient(circle 7px at 55% 60%, transparent 98%, #000 100%),
-        linear-gradient(#000,#000);
-      mask:
-        radial-gradient(circle 7px at 55% 60%, transparent 98%, #000 100%),
-        linear-gradient(#000,#000);
-      -webkit-mask-composite: destination-out, source-over;
-              mask-composite: exclude, add;
+      -webkit-mask: radial-gradient(circle 7px at 55% 60%, transparent 98%, #000 100%), linear-gradient(#000,#000);
+      mask: radial-gradient(circle 7px at 55% 60%, transparent 98%, #000 100%), linear-gradient(#000,#000);
+      -webkit-mask-composite: destination-out, source-over; mask-composite: exclude, add;
     }
 
     /* ===== Card de Preço Moderno ===== */
     .pricing-card{
       position:relative;
-      margin: 28px auto 20px;
+      margin: 28px auto 16px;
       max-width: 520px;
       border-radius: 18px;
       padding: 28px 22px 24px;
@@ -143,14 +137,7 @@
       color:#fff;
       background: linear-gradient(135deg, var(--azul) 0%, var(--azul-2) 100%);
       box-shadow: 0 14px 30px rgba(0,59,179,.35);
-      overflow:hidden;
-    }
-    .pricing-card::after{
-      content:'';
-      position:absolute; inset:auto -40px -40px auto;
-      width:220px; height:220px; border-radius:50%;
-      background: rgba(255,255,255,.12);
-      filter: blur(8px);
+      overflow: visible; /* garante que a badge apareça por completo */
     }
     .badge-top{
       position:absolute; left:50%; top:-12px; transform: translateX(-50%);
@@ -158,24 +145,17 @@
       border-radius: 999px; padding:6px 12px; font-size:12px; font-weight:700;
       box-shadow: 0 6px 16px rgba(0,0,0,.12);
     }
-    .pricing-title{
-      margin: 6px 0 6px; font-size:14px; letter-spacing:.6px; text-transform:uppercase; opacity:.9;
-    }
     .pricing-value{
       margin: 0; line-height:1;
       font-size: clamp(38px, 6.2vw, 56px); font-weight:800; letter-spacing: -.5px;
     }
-    .pricing-value small{
-      font-size: .35em; font-weight:600; opacity:.95;
-    }
-    .pricing-note{
-      margin:10px 0 0; font-size:13px; opacity:.95;
-    }
+    .pricing-value small{ font-size: .35em; font-weight:600; opacity:.95; }
 
-    /* CTA destacado */
+    /* CTA mais estreito */
     .botao-cadastrar {
       display: inline-block;
       width: 100%;
+      max-width: 520px;          /* <<< reduz a largura */
       text-align: center;
       background: var(--azul);
       color: white;
@@ -186,28 +166,39 @@
       font-size: 18px;
       transition: transform .15s ease, box-shadow .2s ease, background .2s ease;
       box-shadow: 0 8px 18px rgba(0,59,179,.28);
+      margin-left:auto; margin-right:auto;
     }
-    .botao-cadastrar:hover {
-      background: #002c80;
-      transform: translateY(-2px);
-      box-shadow: 0 12px 22px rgba(0,59,179,.36);
+    .botao-cadastrar:hover { background:#002c80; transform: translateY(-2px); box-shadow:0 12px 22px rgba(0,59,179,.36); }
+
+    /* ===== Fluxo visual de etapas ===== */
+    .flow { display:flex; align-items:center; justify-content:space-between; gap:10px; margin: 18px 0 6px; }
+    .step { flex:1; text-align:center; position:relative; }
+    .dot {
+      width:38px; height:38px; border-radius:999px; margin:0 auto 8px;
+      display:flex; align-items:center; justify-content:center;
+      background: var(--azul); color:#fff; font-weight:800;
+      box-shadow: 0 6px 16px rgba(0,59,179,.25);
     }
-
-    /* Bloco de etapas (leve) */
-    .steps{ margin:14px 0 8px; }
-    .steps li{ margin-bottom:8px; color:#333; }
-    .steps strong{ color:#000; }
-
-    /* Pequenas melhorias de legibilidade no mobile */
-    @media (max-width:520px){
-      .container{ padding:28px 18px; }
-      .botao-cadastrar{ font-size:17px; }
+    .step:not(:last-child)::after{
+      content:''; position:absolute; top:19px; right:-5px; left:calc(50% + 22px);
+      height:4px; background:linear-gradient(90deg, var(--azul), var(--azul-2)); border-radius:4px;
+    }
+    .label { font-size:13px; color:#333; }
+    @media (max-width:700px){
+      .flow{ flex-direction:column; align-items:flex-start; gap:14px; }
+      .step{ width:100%; text-align:left; padding-left:56px; }
+      .dot{ position:absolute; left:0; top:-2px; }
+      .step:not(:last-child)::after{
+        left:18px; right:auto; top:38px; width:4px; height:18px;
+        background:linear-gradient(180deg, var(--azul), var(--azul-2));
+      }
+      .label{ font-size:14px; }
     }
   </style>
 </head>
 <body>
 
-  <!-- ===== Cabeçalho padrão busca.html ===== -->
+  <!-- ===== Cabeçalho ===== -->
   <header class="navbar">
     <div class="header-left">
       <div class="logo">
@@ -216,7 +207,6 @@
     </div>
 
     <div class="header-right">
-      <!-- Casinha -->
       <a href="{{ url_for('index') }}" class="icon-btn" aria-label="Página inicial" title="Página inicial">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 10.5 12 3l9 7.5"></path>
@@ -225,7 +215,6 @@
         </svg>
       </a>
 
-      <!-- Menu sanduíche -->
       <div class="menu-wrap">
         <button class="hamburger" id="hamburger" type="button" aria-label="Abrir menu" aria-controls="menu-lateral" aria-haspopup="menu" aria-expanded="false">
           <span></span><span></span><span></span>
@@ -254,40 +243,60 @@
 
   <!-- ===== Conteúdo ===== -->
   <div class="container">
-    <h1>Seja uma Malharia Parceira do AcheTece</h1>
-    <p class="sublead">Conecte sua produção a empresas que precisam de tecelagem. Visibilidade imediata para seus teares — de forma simples, direta e profissional.</p>
+    <h1>Conecte sua malharia ao mercado certo</h1>
+    <p class="sublead">Ganhe visibilidade para seus teares e receba contatos qualificados sem intermediação.</p>
+    <ul class="bullet-highlights">
+      <li><strong>Simples</strong></li>
+      <li><strong>Direta</strong></li>
+      <li><strong>Profissional</strong></li>
+    </ul>
 
-    <p>O <strong>AcheTece</strong> é uma plataforma que conecta empresas que precisam de serviços de tecelagem com malharias que possuem teares circulares disponíveis.</p>
+    <p>O <strong>AcheTece</strong> conecta empresas que precisam de serviços de tecelagem a malharias com teares circulares disponíveis, de forma ágil e transparente.</p>
 
-    <p>Como malharia, <strong>ao se cadastrar você poderá:</strong></p>
+    <p><strong>Ao se cadastrar, você poderá:</strong></p>
     <ul class="benefits">
-      <li>Ser encontrada por potenciais clientes interessados em serviços de tecelagem;</li>
+      <li>Ser encontrado por potenciais clientes interessados em tecelagem;</li>
       <li>Apresentar seus teares e características técnicas na plataforma;</li>
       <li>Receber contatos diretos por telefone ou e-mail, sem intermediação;</li>
       <li>Atualizar suas informações a qualquer momento via painel da malharia.</li>
     </ul>
 
-    <!-- ===== NOVO CARD DE PREÇO ===== -->
+    <!-- ===== CARD DE PREÇO (sem "Apenas" e sem rodapé) ===== -->
     <div class="pricing-card" aria-label="Plano mensal AcheTece">
       <span class="badge-top">Oferta Exclusiva</span>
-      <div class="pricing-title">Apenas</div>
       <h2 class="pricing-value">R$49,90 <small>/ mês</small></h2>
-      <div class="pricing-note">Sem taxas extras • Cancelamento fácil</div>
     </div>
 
     <a href="{{ url_for('cadastrar_empresa') }}" class="botao-cadastrar">Quero cadastrar minha malharia</a>
 
-    <p style="margin-top:22px;"><strong>O processo é simples:</strong></p>
-    <ul class="steps">
-      <li><strong>1.</strong> Cadastre sua malharia</li>
-      <li><strong>2.</strong> Realize o pagamento da mensalidade</li>
-      <li><strong>3.</strong> Seu perfil é ativado e aparecerá nas buscas</li>
-      <li><strong>4.</strong> Cadastre seus teares</li>
-      <li><strong>5.</strong> Receba contatos diretos de potenciais clientes</li>
-    </ul>
+    <p style="margin:22px 0 8px;"><strong>Como funciona:</strong></p>
+
+    <!-- ===== Fluxo de etapas ===== -->
+    <div class="flow" aria-label="Fluxo de cadastro e ativação">
+      <div class="step">
+        <div class="dot">1</div>
+        <div class="label">Cadastre sua malharia</div>
+      </div>
+      <div class="step">
+        <div class="dot">2</div>
+        <div class="label">Pague a mensalidade</div>
+      </div>
+      <div class="step">
+        <div class="dot">3</div>
+        <div class="label">Perfil ativado</div>
+      </div>
+      <div class="step">
+        <div class="dot">4</div>
+        <div class="label">Cadastre seus teares</div>
+      </div>
+      <div class="step">
+        <div class="dot">5</div>
+        <div class="label">Receba contatos</div>
+      </div>
+    </div>
   </div>
 
-  <!-- ===== Scripts do MENU (idênticos ao busca.html) ===== -->
+  <!-- ===== Scripts do MENU ===== -->
   <script>
     (function () {
       function closeAll() {
