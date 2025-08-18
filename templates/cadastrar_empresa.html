@@ -1,279 +1,439 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>Cadastrar Malharia</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f9f9f9;
-      margin: 0;
-      padding: 0;
-    }
+    <meta charset="UTF-8">
+    <title>Cadastrar Malharia</title>
 
-    /* ===== CABEÇALHO (padrão busca.html) ===== */
-    header {
-      background-color: #fff;
-      border-bottom: 1px solid #ddd;
-    }
-    .header-wrap {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 16px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    .logo img {
-      max-height: 50px;
-      height: auto;
-      width: auto;
-    }
-    .acoes {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      position: relative;
-    }
-    .icone-home,
-    .btn-menu {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 32px;
-      height: 32px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      background: #fff;
-      cursor: pointer;
-      transition: background .2s ease;
-    }
-    .icone-home:hover,
-    .btn-menu:hover {
-      background: #f2f2f2;
-    }
+    <!-- Mantém seu CSS principal -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
-    /* Menu suspenso */
-    .menu-pop {
-      position: absolute;
-      top: calc(100% + 6px);
-      right: 0;
-      min-width: 200px;
-      background: #fff;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      padding: 8px;
-      display: none;
-    }
-    .menu-pop.aberto { display: block; }
-    .menu-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px;
-      border-radius: 6px;
-      color: #333;
-      text-decoration: none;
-      transition: background .2s ease;
-    }
-    .menu-item:hover { background: #f2f2f2; }
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    /* ===== CONTEÚDO ===== */
-    .container {
-      max-width: 500px;
-      margin: 60px auto;
-      background: #fff;
-      padding: 32px;
-      border-radius: 12px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    h1.titulo {
-      text-align: center;
-      font-size: 24px;
-      font-weight: bold;
-      margin-bottom: 24px;
-    }
-    .formulario label {
-      display: block;
-      margin-bottom: 6px;
-      font-weight: bold;
-      font-size: 14px;
-    }
-    .formulario input,
-    .formulario select {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 16px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 14px;
-    }
-    .formulario button.botao-salvar {
-      width: 100%;
-      padding: 12px;
-      border: none;
-      border-radius: 8px;
-      background-color: #003bb3;
-      color: white;
-      font-weight: bold;
-      font-size: 14px;
-      cursor: pointer;
-    }
-    .formulario button.botao-salvar:hover {
-      background-color: #003bb3;
-    }
-    .mensagem-erro {
-      background-color: #ffe6e6;
-      color: #b30000;
-      border: 1px solid #ff4d4d;
-      padding: 20px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      text-align: center;
-      animation: aparecer 0.4s ease-in-out;
-    }
-    .mensagem-erro .icone {
-      font-size: 30px;
-      display: block;
-      margin-bottom: 10px;
-    }
-    .mensagem-erro .botao-voltar {
-      display: inline-block;
-      margin-top: 15px;
-      padding: 10px 20px;
-      background-color: #003bb3;
-      color: #fff;
-      font-weight: bold;
-      border-radius: 8px;
-      text-decoration: none;
-      transition: background-color 0.2s ease;
-      cursor: pointer;
-    }
-    .mensagem-erro .botao-voltar:hover {
-      background-color: #003bb3;
-    }
-    .erro-campo { border: 2px solid red; background-color: #fff5f5; }
-    .mensagem-campo {
-      color: red;
-      font-size: 13px;
-      margin-top: -10px;
-      margin-bottom: 12px;
-    }
-    @keyframes aparecer {
-      from { opacity: 0; transform: scale(0.95); }
-      to { opacity: 1; transform: scale(1); }
-    }
-  </style>
+    <style>
+        /* =========================
+           BASE DA PÁGINA (como no original)
+           ========================= */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+            color:#444;
+        }
+
+        /* =========================
+           CABEÇALHO – igual ao busca.html
+           ========================= */
+        .navbar{ overflow:visible; padding-top:6px; padding-bottom:6px; background:#fff; border-bottom:1px solid #eee; }
+        .header-left,.header-right{ display:flex; align-items:center; }
+        .header-right{ margin-left:auto; gap:20px; }
+        .logo img{ max-height:60px; height:auto; width:auto; display:block; }
+        .top-nav{ display:none; } /* não exibimos links ao lado da logo */
+
+        /* MENU SUSPENSO — desktop ancorado; mobile centralizado (mesmo do busca.html) */
+        .menu-wrap{ position: relative; }
+        .hamburger{ position: relative; z-index: 10002; }
+        .hamburger{
+          display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
+          width:40px; height:40px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
+          box-shadow:0 2px 6px rgba(0,0,0,.06);
+        }
+        .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
+        .hamburger span + span{ margin-top:4px; }
+        @media (max-width: 768px){
+          .hamburger{ width:28px; height:28px; border-radius:8px; }
+          .hamburger span{ width:16px; height:2px; }
+          .hamburger span + span{ margin-top:3px; }
+        }
+
+        .menu-dropdown{
+          background:#fff; border:1px solid #eaeaea; border-radius:12px; box-shadow:0 16px 38px rgba(0,0,0,.18);
+          z-index:10001; max-height:80vh; overflow:auto;
+          opacity:0; pointer-events:none; transform: translateY(8px) scale(.98);
+          transition: opacity .18s ease, transform .18s ease;
+        }
+        .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
+
+        .menu-dropdown .menu-header{
+          display:flex; justify-content:flex-end; align-items:center; padding:8px 10px; background:transparent;
+        }
+        .menu-dropdown .menu-header span{ display:none; }
+        .menu-dropdown .menu-close{
+          display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px;
+          background:#f0f2f5; border:0; border-radius:10px; cursor:pointer;
+        }
+        .menu-dropdown .menu-close:hover{ background:#e9ebee; }
+        .menu-dropdown .menu-close:active{ background:#e3e5e9; }
+
+        .menu-dropdown .menu-item{
+          font-weight:400; display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222;
+        }
+        .menu-dropdown .menu-item .icon{ width:18px; height:18px; color:#222; }
+        .menu-dropdown .menu-item:hover{ background:#f5f7ff; color:#003bb3; border-radius:8px; }
+
+        /* DESKTOP (ancorado ao botão) */
+        @media (min-width:769px){
+          .menu-dropdown{
+            position:absolute; top:calc(100% + 8px); right:0; left:auto;
+            width:auto; min-width:220px; max-width:320px; padding-right:2px; transform-origin: top right;
+          }
+        }
+
+        /* MOBILE (centralizado e limitado à tela) */
+        @media (max-width:768px){
+          .menu-wrap{ position: static; }
+          .menu-dropdown{
+            position: fixed;
+            top: calc(var(--nav-h, 64px) + 8px);
+            left: 50%;
+            right: auto;
+            width: max-content;
+            max-width: 90vw;
+            min-width: 160px;
+            padding: 4px 0;
+            max-height: calc(100vh - var(--nav-h, 64px) - 24px);
+            transform: translate(-50%, 8px) scale(.98);
+            transform-origin: top center;
+            -webkit-overflow-scrolling: touch;
+            border-radius:14px;
+          }
+          .menu-dropdown.open{ transform: translate(-50%, 0) scale(1); }
+        }
+
+        /* Botão da casinha (mantido) */
+        .icon-btn{
+          display:inline-flex; align-items:center; justify-content:center;
+          width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px;
+          background:#fff; cursor:pointer; transition:box-shadow .2s, transform .02s, background .2s;
+        }
+        .icon-btn:hover{ box-shadow:0 2px 8px rgba(0,0,0,.06); background:#f7f7f7; }
+        .icon-btn:active{ transform:translateY(1px); }
+        .icon{ width:20px; height:20px; color:#222; }
+
+        /* =========================
+           CONTEÚDO (como no original)
+           ========================= */
+        .container {
+            max-width: 500px;
+            margin: 60px auto;
+            background: #fff;
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1.titulo {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 24px;
+        }
+        .formulario label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .formulario input,
+        .formulario select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 16px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .formulario button.botao-salvar {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background-color: #003bb3;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .formulario button.botao-salvar:hover {
+            background-color: #003bb3;
+        }
+
+        .mensagem-erro {
+            background-color: #ffe6e6;
+            color: #b30000;
+            border: 1px solid #ff4d4d;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            animation: aparecer 0.4s ease-in-out;
+        }
+        .mensagem-erro .icone {
+            font-size: 30px;
+            display: block;
+            margin-bottom: 10px;
+        }
+        .mensagem-erro .botao-voltar {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 20px;
+            background-color: #003bb3;
+            color: #fff;
+            font-weight: bold;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+        }
+        .mensagem-erro .botao-voltar:hover {
+            background-color: #003bb3;
+        }
+        .erro-campo { border: 2px solid red; background-color: #fff5f5; }
+        .mensagem-campo {
+            color: red;
+            font-size: 13px;
+            margin-top: -10px;
+            margin-bottom: 12px;
+        }
+        @keyframes aparecer {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
 </head>
 <body>
 
-<header>
-  <div class="header-wrap">
-    <!-- Logo à esquerda -->
-    <a class="logo" href="/">
-      <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
-    </a>
+  <!-- ===== Cabeçalho (idêntico ao busca.html) ===== -->
+  <header class="navbar">
+    <div class="header-left">
+      <div class="logo">
+        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece" decoding="async" fetchpriority="high">
+      </div>
+    </div>
 
-    <div class="acoes">
-      <!-- Ícone Home -->
-      <a href="/" class="icone-home" title="Página Inicial">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="#003bb3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 9L12 2l9 7v11a2 2 0 0 1-2 2h-3a1 1 0 0 1-1-1v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V9z"/>
+    <div class="header-right">
+      <!-- Casinha -->
+      <a href="{{ url_for('index') }}" class="icon-btn" aria-label="Página inicial" title="Página inicial">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 10.5 12 3l9 7.5"></path>
+          <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
+          <path d="M9 21V12h6v9"></path>
         </svg>
       </a>
 
-      <!-- Botão Hambúrguer -->
-      <button class="btn-menu" id="btnMenu" aria-haspopup="true" aria-expanded="false" aria-controls="menuSuspenso">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="#003bb3" stroke-width="2" stroke-linecap="round">
-          <path d="M3 6h18M3 12h18M3 18h18"/>
-        </svg>
-      </button>
+      <!-- Menu sanduíche -->
+      <div class="menu-wrap">
+        <button class="hamburger" id="hamburger" type="button" aria-label="Abrir menu" aria-controls="menu-lateral" aria-haspopup="menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
 
-      <!-- Menu suspenso -->
-      <nav class="menu-pop" id="menuSuspenso">
-        <a class="menu-item" href="{{ url_for('index') }}">🔍 Buscar Malharias</a>
-        <a class="menu-item" href="{{ url_for('cadastrar_empresa') }}">➕ Cadastrar Malharia</a>
-        <a class="menu-item" href="{{ url_for('login') }}">👤 Já sou cadastrado</a>
-      </nav>
+        <nav class="menu-dropdown" id="menu-lateral" role="menu" aria-label="Menu rápido">
+          <div class="menu-header">
+            <span>Menu</span>
+            <button type="button" class="menu-close" aria-label="Fechar menu">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+              </svg>
+            </button>
+          </div>
+
+          <a href="{{ url_for('buscar_teares') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"></circle>
+              <line x1="16.65" y1="16.65" x2="21" y2="21"></line>
+            </svg>
+            <span>Buscar Tear</span>
+          </a>
+
+          <a href="{{ url_for('malharia_info') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M9.5 9a2.5 2.5 0 1 1 4.1 2A3 3 0 0 0 12 13.6"></path>
+              <circle cx="12" cy="17" r="1.2" fill="currentColor"></circle>
+            </svg>
+            <span>Como Funciona</span>
+          </a>
+
+          <a href="{{ url_for('login') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="8" r="4"></circle>
+              <path d="M4 20a8 8 0 0 1 16 0"></path>
+            </svg>
+            <span>Já sou cadastrado</span>
+          </a>
+
+          <a href="{{ url_for('quem_somos') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <circle cx="12" cy="8" r="1.5" fill="currentColor"></circle>
+              <path d="M11 11h2v6h-2z" fill="currentColor"></path>
+            </svg>
+            <span>Quem Somos</span>
+          </a>
+
+          <a href="{{ url_for('contato') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 4h16v12H4z"></path>
+              <path d="M22 20H2"></path>
+              <path d="M22 8l-10 6L2 8" fill="none"></path>
+            </svg>
+            <span>Fale conosco</span>
+          </a>
+
+          <a href="{{ url_for('termos') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+              <path d="M8 8h8M8 12h8M8 16h5"></path>
+            </svg>
+            <span>Termos e Políticas</span>
+          </a>
+        </nav>
+      </div>
     </div>
+  </header>
+
+  <!-- ===== Conteúdo do CADASTRO (intocado) ===== -->
+  <div class="container">
+      <h1 class="titulo">Cadastrar Malharia</h1>
+
+      {% if erro %}
+      <div class="mensagem-erro">
+          <div class="icone">⚠️</div>
+          <p><strong>Erro:</strong> {{ erro }}</p>
+          <a href="#formulario" class="botao-voltar">← Corrigir dados</a>
+      </div>
+      {% endif %}
+
+      <form method="POST" action="{{ url_for('cadastrar_empresa') }}" class="formulario" id="formulario" autocomplete="off">
+          <label for="nome">Nome da Empresa <span style="color:#d00000">*</span></label>
+          <input type="text" id="nome" name="nome" required
+                 value="{{ nome or '' }}" class="{% if erros and erros.get('nome') %}erro-campo{% endif %}">
+          {% if erros and erros.get('nome') %}
+              <div class="mensagem-campo">{{ erros.get('nome') }}</div>
+          {% endif %}
+
+          <label for="apelido">Apelido da Empresa:</label>
+          <input type="text" id="apelido" name="apelido" value="{{ apelido or '' }}" class="{% if erros and erros.get('apelido') %}erro-campo{% endif %}">
+          {% if erros and erros.get('apelido') %}
+              <div class="mensagem-campo">{{ erros.get('apelido') }}</div>
+          {% endif %}
+
+          <!-- 🔹 NOVO: Nome do responsável (utilizado no payer.first_name) -->
+          <label for="responsavel_nome">Nome do responsável <span style="color:#d00000">*</span></label>
+          <input type="text" id="responsavel_nome" name="responsavel_nome" autocomplete="given-name" required
+                 placeholder="Ex.: Maria"
+                 value="{{ responsavel_nome or '' }}"
+                 class="{% if erros and erros.get('responsavel_nome') %}erro-campo{% endif %}">
+          {% if erros and erros.get('responsavel_nome') %}
+              <div class="mensagem-campo">{{ erros.get('responsavel_nome') }}</div>
+          {% endif %}
+
+          <!-- 🔹 NOVO: Sobrenome (opcional) -->
+          <label for="responsavel_sobrenome">Sobrenome do responsável (opcional)</label>
+          <input type="text" id="responsavel_sobrenome" name="responsavel_sobrenome" autocomplete="family-name"
+                 placeholder="Ex.: Silva"
+                 value="{{ responsavel_sobrenome or '' }}"
+                 class="{% if erros and erros.get('responsavel_sobrenome') %}erro-campo{% endif %}">
+          {% if erros and erros.get('responsavel_sobrenome') %}
+              <div class="mensagem-campo">{{ erros.get('responsavel_sobrenome') }}</div>
+          {% endif %}
+
+          <label for="estado">Estado <span style="color:#d00000">*</span></label>
+          <select id="estado" name="estado" required class="{% if erros and erros.get('estado') %}erro-campo{% endif %}">
+              <option value="">Selecione o estado</option>
+              {% for uf in estados %}
+                  <option value="{{ uf }}" {% if estado == uf %}selected{% endif %}>{{ uf }}</option>
+              {% endfor %}
+          </select>
+          {% if erros and erros.get('estado') %}
+              <div class="mensagem-campo">{{ erros.get('estado') }}</div>
+          {% endif %}
+
+          <label for="cidade">Cidade <span style="color:#d00000">*</span></label>
+          <select id="cidade" name="cidade" required class="{% if erros and erros.get('cidade') %}erro-campo{% endif %}">
+              <option value="">Selecione a cidade</option>
+              {% for c in cidades %}
+                  <option value="{{ c }}" {% if cidade == c %}selected{% endif %}>{{ c }}</option>
+              {% endfor %}
+          </select>
+          {% if erros and erros.get('cidade') %}
+              <div class="mensagem-campo">{{ erros.get('cidade') }}</div>
+          {% endif %}
+
+          <label for="telefone">Telefone <span style="color:#d00000">*</span></label>
+          <input type="tel" id="telefone" name="telefone"
+                 pattern="[0-9]{10,13}" placeholder="47999991234"
+                 title="Digite apenas números, ex: 47999991234"
+                 value="{{ telefone or '' }}" required
+                 class="{% if erros and erros.get('telefone') %}erro-campo{% endif %}">
+          {% if erros and erros.get('telefone') %}
+              <div class="mensagem-campo">{{ erros.get('telefone') }}</div>
+          {% endif %}
+
+          <label for="email">E-mail <span style="color:#d00000">*</span></label>
+          <input type="email" id="email" name="email" value="{{ email or '' }}" required
+                 class="{% if erros and erros.get('email') %}erro-campo{% endif %}">
+          {% if erros and erros.get('email') %}
+              <div class="mensagem-campo">{{ erros.get('email') }}</div>
+          {% endif %}
+
+          <label for="senha">Senha <span style="color:#d00000">*</span></label>
+          <input type="password" id="senha" name="senha" autocomplete="new-password" required>
+
+          <button type="submit" class="botao-salvar">Salvar Empresa</button>
+      </form>
   </div>
-</header>
 
-<div class="container">
-  <h1 class="titulo">Cadastrar Malharia</h1>
+  <!-- ===== Scripts do MENU (copiados do busca.html) ===== -->
+  <script>
+    (function () {
+      function closeAll() {
+        document.querySelectorAll('.menu-wrap .menu-dropdown.open').forEach(m => {
+          m.classList.remove('open');
+          const b = m.closest('.menu-wrap')?.querySelector('.hamburger');
+          if (b) b.setAttribute('aria-expanded', 'false');
+        });
+      }
 
-  {% if erro %}
-  <div class="mensagem-erro">
-    <div class="icone">⚠️</div>
-    <p><strong>Erro:</strong> {{ erro }}</p>
-    <a href="#formulario" class="botao-voltar">← Corrigir dados</a>
-  </div>
-  {% endif %}
+      document.querySelectorAll('.menu-wrap').forEach(wrap => {
+        const btn  = wrap.querySelector('#hamburger');
+        const menu = wrap.querySelector('#menu-lateral');
+        const xBtn = wrap.querySelector('.menu-close');
+        if (!btn || !menu) return;
 
-  <form method="POST" action="{{ url_for('cadastrar_empresa') }}" class="formulario" id="formulario" autocomplete="off">
-    <label for="nome">Nome da Empresa <span style="color:#d00000">*</span></label>
-    <input type="text" id="nome" name="nome" required value="{{ nome or '' }}" class="{% if erros and erros.get('nome') %}erro-campo{% endif %}">
-    {% if erros and erros.get('nome') %}<div class="mensagem-campo">{{ erros.get('nome') }}</div>{% endif %}
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const willOpen = !menu.classList.contains('open');
+          closeAll();
+          menu.classList.toggle('open', willOpen);
+          btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        });
 
-    <label for="apelido">Apelido da Empresa:</label>
-    <input type="text" id="apelido" name="apelido" value="{{ apelido or '' }}" class="{% if erros and erros.get('apelido') %}erro-campo{% endif %}">
-    {% if erros and erros.get('apelido') %}<div class="mensagem-campo">{{ erros.get('apelido') }}</div>{% endif %}
+        xBtn?.addEventListener('click', e => {
+          e.stopPropagation();
+          menu.classList.remove('open');
+          btn.setAttribute('aria-expanded', 'false');
+        });
 
-    <label for="responsavel_nome">Nome do responsável <span style="color:#d00000">*</span></label>
-    <input type="text" id="responsavel_nome" name="responsavel_nome" autocomplete="given-name" required placeholder="Ex.: Maria" value="{{ responsavel_nome or '' }}" class="{% if erros and erros.get('responsavel_nome') %}erro-campo{% endif %}">
-    {% if erros and erros.get('responsavel_nome') %}<div class="mensagem-campo">{{ erros.get('responsavel_nome') }}</div>{% endif %}
+        menu.addEventListener('click', e => e.stopPropagation());
+      });
 
-    <label for="responsavel_sobrenome">Sobrenome do responsável (opcional)</label>
-    <input type="text" id="responsavel_sobrenome" name="responsavel_sobrenome" autocomplete="family-name" placeholder="Ex.: Silva" value="{{ responsavel_sobrenome or '' }}" class="{% if erros and erros.get('responsavel_sobrenome') %}erro-campo{% endif %}">
-    {% if erros and erros.get('responsavel_sobrenome') %}<div class="mensagem-campo">{{ erros.get('responsavel_sobrenome') }}</div>{% endif %}
+      document.addEventListener('click', closeAll);
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
+    })();
+  </script>
 
-    <label for="estado">Estado <span style="color:#d00000">*</span></label>
-    <select id="estado" name="estado" required class="{% if erros and erros.get('estado') %}erro-campo{% endif %}">
-      <option value="">Selecione o estado</option>
-      {% for uf in estados %}
-      <option value="{{ uf }}" {% if estado == uf %}selected{% endif %}>{{ uf }}</option>
-      {% endfor %}
-    </select>
-    {% if erros and erros.get('estado') %}<div class="mensagem-campo">{{ erros.get('estado') }}</div>{% endif %}
-
-    <label for="cidade">Cidade <span style="color:#d00000">*</span></label>
-    <select id="cidade" name="cidade" required class="{% if erros and erros.get('cidade') %}erro-campo{% endif %}">
-      <option value="">Selecione a cidade</option>
-      {% for c in cidades %}
-      <option value="{{ c }}" {% if cidade == c %}selected{% endif %}>{{ c }}</option>
-      {% endfor %}
-    </select>
-    {% if erros and erros.get('cidade') %}<div class="mensagem-campo">{{ erros.get('cidade') }}</div>{% endif %}
-
-    <label for="telefone">Telefone <span style="color:#d00000">*</span></label>
-    <input type="tel" id="telefone" name="telefone" pattern="[0-9]{10,13}" placeholder="47999991234" title="Digite apenas números, ex: 47999991234" value="{{ telefone or '' }}" required class="{% if erros and erros.get('telefone') %}erro-campo{% endif %}">
-    {% if erros and erros.get('telefone') %}<div class="mensagem-campo">{{ erros.get('telefone') }}</div>{% endif %}
-
-    <label for="email">E-mail <span style="color:#d00000">*</span></label>
-    <input type="email" id="email" name="email" value="{{ email or '' }}" required class="{% if erros and erros.get('email') %}erro-campo{% endif %}">
-    {% if erros and erros.get('email') %}<div class="mensagem-campo">{{ erros.get('email') }}</div>{% endif %}
-
-    <label for="senha">Senha <span style="color:#d00000">*</span></label>
-    <input type="password" id="senha" name="senha" autocomplete="new-password" required>
-
-    <button type="submit" class="botao-salvar">Salvar Empresa</button>
-  </form>
-</div>
-
-<script>
-  const btnMenu = document.getElementById('btnMenu');
-  const menuSuspenso = document.getElementById('menuSuspenso');
-  btnMenu.addEventListener('click', (e) => {
-    e.stopPropagation();
-    menuSuspenso.classList.toggle('aberto');
-  });
-  document.addEventListener('click', () => {
-    menuSuspenso.classList.remove('aberto');
-  });
-</script>
-
+  <!-- Mede altura do topo para posicionar o menu no mobile (igual ao busca.html) -->
+  <script>
+    (function(){
+      function setNavH(){
+        const promo = document.querySelector('.promo-bar'); // pode não existir aqui
+        const nav   = document.querySelector('.navbar');
+        const total = (promo?.offsetHeight || 0) + (nav?.offsetHeight || 0);
+        document.documentElement.style.setProperty('--nav-h', total + 'px');
+      }
+      setNavH();
+      window.addEventListener('resize', setNavH);
+    })();
+  </script>
 </body>
 </html>
