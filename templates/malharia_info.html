@@ -7,16 +7,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
+    :root{
+      --azul:#003bb3;
+      --azul-2:#336be3;
+      --cinza-bg:#f9f9f9;
+      --cinza-texto:#444;
+    }
+
     body {
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
-      background-color: #f9f9f9;
-      color: #444;
+      background-color: var(--cinza-bg);
+      color: var(--cinza-texto);
     }
 
     /* ===== Cabeçalho padrão busca.html ===== */
-    .navbar{ overflow:visible; padding-top:6px; padding-bottom:6px; background:#fff; border-bottom:1px solid #eee; }
+    .navbar{ overflow:visible; padding-top:6px; padding-bottom:6px; background:#fff; border-bottom:1px solid #eee; display:flex; align-items:center; }
     .header-left,.header-right{ display:flex; align-items:center; }
     .header-right{ margin-left:auto; gap:20px; }
     .logo img{ max-height:60px; height:auto; width:auto; display:block; }
@@ -48,7 +55,7 @@
     }
 
     .menu-dropdown .menu-item{ font-weight:400; display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222; }
-    .menu-dropdown .menu-item:hover{ background:#f5f7ff; color:#003bb3; border-radius:8px; }
+    .menu-dropdown .menu-item:hover{ background:#f5f7ff; color:var(--azul); border-radius:8px; }
 
     @media (min-width:769px){
       .menu-dropdown{ position:absolute; top:calc(100% + 8px); right:0; min-width:220px; max-width:320px; padding-right:2px; transform-origin: top right; }
@@ -75,38 +82,126 @@
 
     /* ===== Container conteúdo ===== */
     .container {
-      max-width: 800px;
+      max-width: 880px;
       margin: 40px auto;
       background: #fff;
-      padding: 40px;
-      border-radius: 12px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      padding: 40px 36px;
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
     }
-    h1 { font-size: 28px; margin-bottom: 24px; text-align: center; color: #333; }
+
+    h1 {
+      font-size: clamp(26px, 3.4vw, 36px);
+      margin: 0 0 18px 0;
+      text-align: center;
+      color: #222;
+      letter-spacing: .2px;
+    }
+    .sublead{
+      text-align:center;
+      font-size: 16px;
+      color:#5a5a5a;
+      margin: 0 auto 24px;
+      max-width: 680px;
+    }
+
     p { font-size: 16px; line-height: 1.6; margin-bottom: 20px; }
     ul { margin-bottom: 24px; padding-left: 20px; }
     li { margin-bottom: 10px; }
 
-    .botao-cadastrar {
-      display: block; width: 100%; text-align: center;
-      background-color: #003bb3; color: white; font-weight: bold;
-      padding: 14px; border-radius: 10px; text-decoration: none; font-size: 16px;
-      transition: background-color 0.3s ease;
+    /* Lista de benefícios com check */
+    .benefits{
+      list-style:none; padding-left:0; margin-left:0;
     }
-    .botao-cadastrar:hover { background-color: #002c80; }
+    .benefits li{
+      position:relative; padding-left:28px;
+    }
+    .benefits li::before{
+      content:'';
+      position:absolute; left:0; top:6px;
+      width:18px; height:18px; border-radius:50%;
+      background: radial-gradient(circle at 30% 30%, #fff 0 40%, transparent 41%), var(--azul);
+      box-shadow: 0 0 0 2px rgba(0,59,179,.12);
+      -webkit-mask:
+        radial-gradient(circle 7px at 55% 60%, transparent 98%, #000 100%),
+        linear-gradient(#000,#000);
+      mask:
+        radial-gradient(circle 7px at 55% 60%, transparent 98%, #000 100%),
+        linear-gradient(#000,#000);
+      -webkit-mask-composite: destination-out, source-over;
+              mask-composite: exclude, add;
+    }
 
-    .plano-destaque {
-      background-color: #f1f5ff;
-      border: 2px solid #003bb3;
-      color: #003bb3;
-      padding: 16px;
-      margin: 24px auto;
-      max-width: 400px;
+    /* ===== Card de Preço Moderno ===== */
+    .pricing-card{
+      position:relative;
+      margin: 28px auto 20px;
+      max-width: 520px;
+      border-radius: 18px;
+      padding: 28px 22px 24px;
+      text-align:center;
+      color:#fff;
+      background: linear-gradient(135deg, var(--azul) 0%, var(--azul-2) 100%);
+      box-shadow: 0 14px 30px rgba(0,59,179,.35);
+      overflow:hidden;
+    }
+    .pricing-card::after{
+      content:'';
+      position:absolute; inset:auto -40px -40px auto;
+      width:220px; height:220px; border-radius:50%;
+      background: rgba(255,255,255,.12);
+      filter: blur(8px);
+    }
+    .badge-top{
+      position:absolute; left:50%; top:-12px; transform: translateX(-50%);
+      background:#fff; color:var(--azul);
+      border-radius: 999px; padding:6px 12px; font-size:12px; font-weight:700;
+      box-shadow: 0 6px 16px rgba(0,0,0,.12);
+    }
+    .pricing-title{
+      margin: 6px 0 6px; font-size:14px; letter-spacing:.6px; text-transform:uppercase; opacity:.9;
+    }
+    .pricing-value{
+      margin: 0; line-height:1;
+      font-size: clamp(38px, 6.2vw, 56px); font-weight:800; letter-spacing: -.5px;
+    }
+    .pricing-value small{
+      font-size: .35em; font-weight:600; opacity:.95;
+    }
+    .pricing-note{
+      margin:10px 0 0; font-size:13px; opacity:.95;
+    }
+
+    /* CTA destacado */
+    .botao-cadastrar {
+      display: inline-block;
+      width: 100%;
       text-align: center;
-      font-size: 20px;
-      font-weight: bold;
+      background: var(--azul);
+      color: white;
+      font-weight: 700;
+      padding: 16px 22px;
       border-radius: 12px;
-      box-shadow: 0 0 8px rgba(0, 59, 179, 0.2);
+      text-decoration: none;
+      font-size: 18px;
+      transition: transform .15s ease, box-shadow .2s ease, background .2s ease;
+      box-shadow: 0 8px 18px rgba(0,59,179,.28);
+    }
+    .botao-cadastrar:hover {
+      background: #002c80;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 22px rgba(0,59,179,.36);
+    }
+
+    /* Bloco de etapas (leve) */
+    .steps{ margin:14px 0 8px; }
+    .steps li{ margin-bottom:8px; color:#333; }
+    .steps strong{ color:#000; }
+
+    /* Pequenas melhorias de legibilidade no mobile */
+    @media (max-width:520px){
+      .container{ padding:28px 18px; }
+      .botao-cadastrar{ font-size:17px; }
     }
   </style>
 </head>
@@ -160,31 +255,36 @@
   <!-- ===== Conteúdo ===== -->
   <div class="container">
     <h1>Seja uma Malharia Parceira do AcheTece</h1>
+    <p class="sublead">Conecte sua produção a empresas que precisam de tecelagem. Visibilidade imediata para seus teares — de forma simples, direta e profissional.</p>
 
     <p>O <strong>AcheTece</strong> é uma plataforma que conecta empresas que precisam de serviços de tecelagem com malharias que possuem teares circulares disponíveis.</p>
 
     <p>Como malharia, <strong>ao se cadastrar você poderá:</strong></p>
-    <ul>
+    <ul class="benefits">
       <li>Ser encontrada por potenciais clientes interessados em serviços de tecelagem;</li>
       <li>Apresentar seus teares e características técnicas na plataforma;</li>
       <li>Receber contatos diretos por telefone ou e-mail, sem intermediação;</li>
       <li>Atualizar suas informações a qualquer momento via painel da malharia.</li>
     </ul>
 
-    <div class="plano-destaque">
-      PLANO MENSAL: R$49,90
+    <!-- ===== NOVO CARD DE PREÇO ===== -->
+    <div class="pricing-card" aria-label="Plano mensal AcheTece">
+      <span class="badge-top">Oferta Exclusiva</span>
+      <div class="pricing-title">Apenas</div>
+      <h2 class="pricing-value">R$49,90 <small>/ mês</small></h2>
+      <div class="pricing-note">Sem taxas extras • Cancelamento fácil</div>
     </div>
 
-    <p><strong>O processo é simples:</strong></p>
-    <ul>
-      <li>1. Cadastre sua malharia</li>
-      <li>2. Realize o pagamento da mensalidade</li>
-      <li>3. Seu perfil é ativado e aparecerá nas buscas</li>
-      <li>4. Cadastre seus teares</li>
-      <li>5. Receba contatos diretos de potenciais clientes</li>
-    </ul>
-
     <a href="{{ url_for('cadastrar_empresa') }}" class="botao-cadastrar">Quero cadastrar minha malharia</a>
+
+    <p style="margin-top:22px;"><strong>O processo é simples:</strong></p>
+    <ul class="steps">
+      <li><strong>1.</strong> Cadastre sua malharia</li>
+      <li><strong>2.</strong> Realize o pagamento da mensalidade</li>
+      <li><strong>3.</strong> Seu perfil é ativado e aparecerá nas buscas</li>
+      <li><strong>4.</strong> Cadastre seus teares</li>
+      <li><strong>5.</strong> Receba contatos diretos de potenciais clientes</li>
+    </ul>
   </div>
 
   <!-- ===== Scripts do MENU (idênticos ao busca.html) ===== -->
