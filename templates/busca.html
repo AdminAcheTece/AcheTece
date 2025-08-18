@@ -69,9 +69,21 @@
 
         /* ===== Menu suspenso (copiado do index) ===== */
         .menu-wrap{ position: relative; }
-        .hamburger{ position: relative; z-index: 10002; display:inline-flex; flex-direction:column; align-items:center; justify-content:center; }
+
+        /* HAMBURGER — mesma medida visual do index */
+        .hamburger{
+          position: relative; z-index: 10002;
+          display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
+          width:36px; height:36px;              /* fixa o tamanho no desktop */
+          border:1px solid #e4e4e4; border-radius:10px; background:#fff;
+          transition:box-shadow .2s, transform .02s, background .2s;
+          padding:0;
+        }
+        .hamburger:hover{ box-shadow:0 2px 8px rgba(0,0,0,.06); background:#f7f7f7; }
+        .hamburger:active{ transform:translateY(1px); }
         .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
         .hamburger span + span{ margin-top:4px; }
+
         @media (max-width: 768px){
           .hamburger{ width:28px; height:28px; border-radius:8px; }
           .hamburger span{ width:16px; height:2px; }
@@ -101,25 +113,36 @@
         .menu-dropdown .menu-item .icon{ width:18px; height:18px; color:#222; }
         .menu-dropdown .menu-item:hover{ background:#f5f7ff; color:#003bb3; border-radius:8px; }
 
+        /* DESKTOP (ancorado ao botão) */
         @media (min-width:769px){
           .menu-dropdown{
             position:absolute; top:calc(100% + 8px); right:0; left:auto;
             width:auto; min-width:220px; max-width:320px; padding-right:2px; transform-origin: top right;
           }
         }
+
+        /* MOBILE (agora no limite da maior palavra) */
         @media (max-width:768px){
           .menu-wrap{ position: static; }
           .menu-dropdown{
-            position: fixed; top: calc(var(--nav-h, 64px) + 8px);
-            left: 50%; right: auto; width: min(88vw, 320px);
+            position: fixed;
+            top: calc(var(--nav-h, 64px) + 8px);
+            left: 50%;
+            right: auto;
+            width: max-content;      /* << ajustado */
+            max-width: 90vw;         /* << limite da tela */
+            min-width: 160px;        /* << mínimo estético */
+            padding: 4px 0;          /* leve respiro vertical */
             max-height: calc(100vh - var(--nav-h, 64px) - 24px);
-            transform: translate(-50%, 8px) scale(.98); transform-origin: top center;
-            -webkit-overflow-scrolling: touch; border-radius:14px;
+            transform: translate(-50%, 8px) scale(.98);
+            transform-origin: top center;
+            -webkit-overflow-scrolling: touch;
+            border-radius:14px;
           }
           .menu-dropdown.open{ transform: translate(-50%, 0) scale(1); }
         }
 
-        /* Botões (casinha) com o mesmo look dos seus controles */
+        /* Botão da casinha (mantido) */
         .icon-btn{
           display:inline-flex; align-items:center; justify-content:center;
           width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px;
