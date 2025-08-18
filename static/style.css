@@ -133,6 +133,48 @@ header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
 }
 
 /* ============================================================
+   Botão da casinha — mesmo tamanho/estilo do hambúrguer
+   (funciona tanto com .icon-btn quanto .icone-home)
+   ============================================================ */
+.icon-btn,
+.icone-home{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:40px;                 /* igual ao .hamburger */
+  height:40px;                /* igual ao .hamburger */
+  padding:0;                  /* sem padding para não “alargar” */
+  background:var(--branco);
+  border:1px solid #d6d6d6;
+  border-radius:var(--raio-10);
+  box-shadow:var(--sombra-1);
+  color:#1c1b22;              /* ícone preto */
+  text-decoration:none;       /* remove sublinhado do <a> */
+  line-height:1;              /* evita expandir por linha */
+  cursor:pointer;
+}
+.icon-btn svg,
+.icone-home svg{
+  width:20px;
+  height:20px;
+}
+
+/* Mobile: mesmas medidas do hambúrguer */
+@media (max-width:768px){
+  .icon-btn,
+  .icone-home{
+    width:28px;
+    height:28px;
+    border-radius:var(--raio-8);
+  }
+  .icon-btn svg,
+  .icone-home svg{
+    width:16px;
+    height:16px;
+  }
+}
+
+/* ============================================================
    MENU SUSPENSO (dropdown)
    ============================================================ */
 /* Âncora no botão */
