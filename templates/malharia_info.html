@@ -10,6 +10,8 @@
     :root{
       --azul:#003bb3;
       --azul-2:#336be3;
+      --verde:#16a34a;     /* verde principal */
+      --verde-2:#22c55e;   /* gradiente */
       --cinza-bg:#f9f9f9;
       --cinza-texto:#444;
     }
@@ -82,17 +84,16 @@
       padding: 40px 36px;
       border-radius: 14px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+      text-align:center;  /* centraliza blocos principais */
     }
 
     h1 {
       font-size: clamp(26px, 3.4vw, 36px);
       margin: 0 0 12px 0;
-      text-align: center;
       color: #222;
       letter-spacing: .2px;
     }
     .sublead{
-      text-align:center;
       font-size: 16px;
       color:#5a5a5a;
       margin: 0 auto 18px;
@@ -104,63 +105,72 @@
       display:grid; grid-template-columns: repeat(3,1fr); gap:10px; margin: 8px auto 22px; max-width:740px;
     }
     .bullet-highlights li{
-      list-style:none; text-align:center; padding:8px 10px; border-radius:10px; background:#f6f8ff; color:#0e2b6b; font-weight:700;
-      border:1px solid #e6ecff;
+      list-style:none; text-align:center; padding:10px 12px; border-radius:10px;
+      background:#fff; color:#000; font-weight:800;
+      border:1.5px solid #000;  /* borda preta */
     }
     @media (max-width:680px){ .bullet-highlights{ grid-template-columns:1fr; } }
 
     p { font-size: 16px; line-height: 1.6; margin-bottom: 20px; }
-    ul { margin-bottom: 24px; padding-left: 20px; }
-    li { margin-bottom: 10px; }
 
-    /* Lista de benefícios com check */
-    .benefits{ list-style:none; padding-left:0; margin-left:0; }
-    .benefits li{ position:relative; padding-left:28px; }
-    .benefits li::before{
-      content:'';
-      position:absolute; left:0; top:6px; width:18px; height:18px; border-radius:50%;
-      background: radial-gradient(circle at 30% 30%, #fff 0 40%, transparent 41%), var(--azul);
-      box-shadow: 0 0 0 2px rgba(0,59,179,.12);
-      -webkit-mask: radial-gradient(circle 7px at 55% 60%, transparent 98%, #000 100%), linear-gradient(#000,#000);
-      mask: radial-gradient(circle 7px at 55% 60%, transparent 98%, #000 100%), linear-gradient(#000,#000);
-      -webkit-mask-composite: destination-out, source-over; mask-composite: exclude, add;
+    /* Título da seção vantagens */
+    .section-title{
+      font-size: clamp(18px, 2.4vw, 22px);
+      margin: 8px 0 10px;
+      font-weight: 800;
+      color:#111;
     }
 
-    /* ===== Card de Preço Moderno ===== */
+    /* Lista de benefícios centralizada */
+    .benefits{
+      list-style:none; padding:0; margin:0 auto 24px; max-width:760px; text-align:left;
+    }
+    .benefits li{
+      display:flex; align-items:flex-start; justify-content:center;
+      gap:10px; margin:10px 0;
+    }
+    .benefits li::before{
+      content:''; display:inline-block; flex:0 0 18px; width:18px; height:18px; border-radius:50%;
+      margin-top:3px;
+      background: radial-gradient(circle at 30% 30%, #fff 0 40%, transparent 41%), var(--azul);
+      box-shadow: 0 0 0 2px rgba(0,59,179,.12);
+    }
+
+    /* ===== Card de Preço (VERDE) ===== */
     .pricing-card{
       position:relative;
       margin: 28px auto 16px;
-      max-width: 520px;
+      max-width: 560px;            /* card maior que o botão */
       border-radius: 18px;
       padding: 28px 22px 24px;
       text-align:center;
       color:#fff;
-      background: linear-gradient(135deg, var(--azul) 0%, var(--azul-2) 100%);
-      box-shadow: 0 14px 30px rgba(0,59,179,.35);
-      overflow: visible; /* garante que a badge apareça por completo */
+      background: linear-gradient(135deg, var(--verde) 0%, var(--verde-2) 100%);
+      box-shadow: 0 14px 30px rgba(22,163,74,.35);
+      overflow: visible;
     }
     .badge-top{
       position:absolute; left:50%; top:-12px; transform: translateX(-50%);
-      background:#fff; color:var(--azul);
-      border-radius: 999px; padding:6px 12px; font-size:12px; font-weight:700;
+      background:#fff; color:#000;      /* texto preto na badge */
+      border-radius: 999px; padding:6px 12px; font-size:12px; font-weight:800;
       box-shadow: 0 6px 16px rgba(0,0,0,.12);
     }
     .pricing-value{
       margin: 0; line-height:1;
       font-size: clamp(38px, 6.2vw, 56px); font-weight:800; letter-spacing: -.5px;
     }
-    .pricing-value small{ font-size: .35em; font-weight:600; opacity:.95; }
+    .pricing-value small{ font-size: .35em; font-weight:700; opacity:1; color:#fff; }
 
-    /* CTA mais estreito */
+    /* CTA central e mais estreito que o card */
     .botao-cadastrar {
       display: inline-block;
       width: 100%;
-      max-width: 520px;          /* <<< reduz a largura */
+      max-width: 440px;          /* menor que o card do preço */
       text-align: center;
       background: var(--azul);
       color: white;
       font-weight: 700;
-      padding: 16px 22px;
+      padding: 14px 20px;
       border-radius: 12px;
       text-decoration: none;
       font-size: 18px;
@@ -170,29 +180,42 @@
     }
     .botao-cadastrar:hover { background:#002c80; transform: translateY(-2px); box-shadow:0 12px 22px rgba(0,59,179,.36); }
 
-    /* ===== Fluxo visual de etapas ===== */
-    .flow { display:flex; align-items:center; justify-content:space-between; gap:10px; margin: 18px 0 6px; }
-    .step { flex:1; text-align:center; position:relative; }
-    .dot {
-      width:38px; height:38px; border-radius:999px; margin:0 auto 8px;
+    /* ===== Fluxo visual de etapas (refeito) ===== */
+    .flow-wrap{ margin-top:16px; }
+    .flow-title{ font-weight:800; text-align:left; margin: 24px 0 10px; }
+    .flow{
+      position:relative;
+      display:grid; grid-template-columns: repeat(5, 1fr); gap:16px;
+      align-items:start;
+    }
+    /* linha contínua atrás dos pontos (desktop) */
+    .flow::before{
+      content:''; position:absolute; top:20px; left:8px; right:8px; height:4px;
+      background: linear-gradient(90deg, var(--azul), var(--azul-2));
+      border-radius:4px; z-index:0;
+    }
+    .step{ position:relative; text-align:center; z-index:1; }
+    .dot{
+      width:38px; height:38px; border-radius:999px; margin:0 auto 10px;
       display:flex; align-items:center; justify-content:center;
-      background: var(--azul); color:#fff; font-weight:800;
-      box-shadow: 0 6px 16px rgba(0,59,179,.25);
+      background: var(--azul); color:#fff; font-weight:800; box-shadow: 0 6px 16px rgba(0,59,179,.25);
     }
-    .step:not(:last-child)::after{
-      content:''; position:absolute; top:19px; right:-5px; left:calc(50% + 22px);
-      height:4px; background:linear-gradient(90deg, var(--azul), var(--azul-2)); border-radius:4px;
+    .card{
+      background:#fff; border:1px solid #e8ecf5; border-radius:14px; padding:14px 12px;
+      min-height:72px; display:flex; align-items:center; justify-content:center;
+      font-size:14px; color:#333;
     }
-    .label { font-size:13px; color:#333; }
+
+    /* mobile: coluna com linha vertical contínua */
     @media (max-width:700px){
-      .flow{ flex-direction:column; align-items:flex-start; gap:14px; }
-      .step{ width:100%; text-align:left; padding-left:56px; }
-      .dot{ position:absolute; left:0; top:-2px; }
-      .step:not(:last-child)::after{
-        left:18px; right:auto; top:38px; width:4px; height:18px;
-        background:linear-gradient(180deg, var(--azul), var(--azul-2));
+      .flow{ display:flex; flex-direction:column; gap:14px; }
+      .flow::before{
+        left:19px; right:auto; width:4px; top:6px; bottom:6px; height:auto;
+        background: linear-gradient(180deg, var(--azul), var(--azul-2));
       }
-      .label{ font-size:14px; }
+      .step{ display:flex; align-items:flex-start; gap:12px; text-align:left; }
+      .dot{ margin:0; }
+      .card{ flex:1; min-height:auto; }
     }
   </style>
 </head>
@@ -245,6 +268,7 @@
   <div class="container">
     <h1>Conecte sua malharia ao mercado certo</h1>
     <p class="sublead">Ganhe visibilidade para seus teares e receba contatos qualificados sem intermediação.</p>
+
     <ul class="bullet-highlights">
       <li><strong>Simples</strong></li>
       <li><strong>Direta</strong></li>
@@ -253,7 +277,7 @@
 
     <p>O <strong>AcheTece</strong> conecta empresas que precisam de serviços de tecelagem a malharias com teares circulares disponíveis, de forma ágil e transparente.</p>
 
-    <p><strong>Vantagens ao se cadastrar:</strong></p>
+    <h2 class="section-title">Vantagens ao se cadastrar</h2>
     <ul class="benefits">
       <li>Ser encontrado por potenciais clientes interessados em tecelagem;</li>
       <li>Apresentar seus teares e características técnicas na plataforma;</li>
@@ -261,7 +285,7 @@
       <li>Atualizar suas informações a qualquer momento via painel da malharia.</li>
     </ul>
 
-    <!-- ===== CARD DE PREÇO (sem "Apenas" e sem rodapé) ===== -->
+    <!-- ===== CARD DE PREÇO (verde) ===== -->
     <div class="pricing-card" aria-label="Plano mensal AcheTece">
       <span class="badge-top">Oferta Exclusiva</span>
       <h2 class="pricing-value">R$49,90 <small>/ mês</small></h2>
@@ -269,29 +293,30 @@
 
     <a href="{{ url_for('cadastrar_empresa') }}" class="botao-cadastrar">Quero cadastrar minha malharia</a>
 
-    <p style="margin:22px 0 8px;"><strong>Como funciona:</strong></p>
-
     <!-- ===== Fluxo de etapas ===== -->
-    <div class="flow" aria-label="Fluxo de cadastro e ativação">
-      <div class="step">
-        <div class="dot">1</div>
-        <div class="label">Cadastre sua malharia</div>
-      </div>
-      <div class="step">
-        <div class="dot">2</div>
-        <div class="label">Pague a mensalidade</div>
-      </div>
-      <div class="step">
-        <div class="dot">3</div>
-        <div class="label">Perfil ativado</div>
-      </div>
-      <div class="step">
-        <div class="dot">4</div>
-        <div class="label">Cadastre seus teares</div>
-      </div>
-      <div class="step">
-        <div class="dot">5</div>
-        <div class="label">Receba contatos</div>
+    <div class="flow-wrap">
+      <p class="flow-title">Como funciona:</p>
+      <div class="flow" aria-label="Fluxo de cadastro e ativação">
+        <div class="step">
+          <div class="dot">1</div>
+          <div class="card">Cadastre sua malharia</div>
+        </div>
+        <div class="step">
+          <div class="dot">2</div>
+          <div class="card">Pague a mensalidade</div>
+        </div>
+        <div class="step">
+          <div class="dot">3</div>
+          <div class="card">Perfil ativado</div>
+        </div>
+        <div class="step">
+          <div class="dot">4</div>
+          <div class="card">Cadastre seus teares</div>
+        </div>
+        <div class="step">
+          <div class="dot">5</div>
+          <div class="card">Receba contatos</div>
+        </div>
       </div>
     </div>
   </div>
