@@ -605,4 +605,17 @@ thead tr{ background:#f2f2f2; }
     width: 16px;
     height: 16px;
   }
+
+  .titulo-privacidade{
+  text-align: center;
+  margin-bottom: 28px;
+  }
+  
+  .titulo-privacidade h1{
+  font-size: 28px;
+  font-weight: 800;
+  color: #111;
+  line-height: 1.3;
+  }
+ 
 }
