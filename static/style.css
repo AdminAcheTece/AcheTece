@@ -639,13 +639,14 @@ thead tr{ background:#f2f2f2; }
   }
 
   .container-termos{
-  max-width: 940px;          /* limite de largura */
-  margin: 40px auto;         /* centraliza na tela e afasta em cima/baixo */
-  padding: 32px 40px;        /* espaçamento interno */
+  max-width: 940px;              /* largura máxima da caixa */
+  width: 90%;                    /* ocupa até 90% da tela em telas pequenas */
+  margin: 40px auto;             /* centraliza horizontalmente */
+  padding: 32px 48px;            /* espaçamento interno (top/bottom, left/right) */
   background:#fff;
   border:1px solid #eee;
   border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05); /* opcional */
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
  
 }
