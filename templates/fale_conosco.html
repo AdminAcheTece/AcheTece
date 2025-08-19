@@ -8,14 +8,14 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
   <style>
-    /* ===== Barra fixa no topo (atalhos) ===== */
+    /* ===== Barra fixa no topo (logo à esquerda, ação à direita) ===== */
     .topbar-fixa{
       position: sticky;
       top: 0;
       z-index: 999;
       background: #0f0714;
       color: #fff;
-      padding: 8px 12px;
+      padding: 6px 12px;              /* menor altura da faixa */
       border-bottom: 1px solid rgba(255,255,255,.1);
     }
     .topbar-wrap{
@@ -23,11 +23,12 @@
       margin: 0 auto;
       display: flex;
       align-items: center;
-      justify-content: space-between; /* logo esquerda, ícones direita */
-      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 56px;               /* garante altura confortável */
     }
     .topbar-left img{
-      height: 72px; /* altura maior para destacar o logotipo */
+      height: 56px;                   /* logo maior mas sem exagero */
       width: auto;
       display: block;
     }
@@ -37,14 +38,16 @@
       gap: 10px;
     }
 
-    /* ===== Ícone WhatsApp ===== */
+    /* ===== Botão/ícone WhatsApp ===== */
     .whatsapp-btn {
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 8px 12px;
-      border-radius: 8px;
-      background: #25D366; /* verde oficial WhatsApp */
+      height: 36px;                   /* menor para combinar com a faixa */
+      min-width: 36px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      background: #25D366;            /* verde oficial WhatsApp */
       color: #fff;
       transition: transform .12s ease, background .2s ease, box-shadow .2s ease;
       box-shadow: 0 1px 0 rgba(0,0,0,.08);
@@ -58,6 +61,7 @@
       width: 18px;
       height: 18px;
       fill: currentColor;
+      display: block;
     }
 
     /* ===== Container principal ===== */
@@ -192,13 +196,14 @@
     <div class="topbar-wrap">
       <div class="topbar-left">
         <a href="{{ url_for('index') }}">
+          <!-- ATENÇÃO: nome com espaços, exatamente como no arquivo -->
           <img src="{{ url_for('static', filename='Logotipo Branco_fundo preto.png') }}" alt="AcheTece">
         </a>
       </div>
       <div class="topbar-right">
         <!-- WhatsApp ícone -->
         <a href="https://wa.me/5547996660450?text=Olá,%20quero%20falar%20com%20a%20AcheTece" target="_blank" rel="noopener" class="whatsapp-btn" aria-label="WhatsApp">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true">
             <path d="M16 .396c-8.837 0-16 7.163-16 16 0 2.819.734 5.566 2.126 7.996l-2.209 8.021 8.182-2.146c2.356 1.289 5.029 1.969 7.901 1.969h.001c8.837 0 16-7.163 16-16s-7.163-16-16-16zm0 29.104h-.001c-2.479 0-4.884-.66-6.975-1.907l-.5-.297-4.857 1.274 1.295-4.711-.324-.484c-1.295-1.937-1.979-4.2-1.979-6.545 0-6.617 5.383-12 12-12 3.2 0 6.209 1.248 8.477 3.515s3.523 5.277 3.523 8.477c0 6.617-5.383 12-12 12zm6.596-9.064c-.362-.181-2.145-1.057-2.479-1.176-.334-.124-.579-.181-.824.181s-.945 1.176-1.159 1.421c-.215.248-.423.277-.785.096-.362-.181-1.528-.562-2.91-1.791-1.076-.962-1.8-2.144-2.012-2.505-.215-.362-.023-.558.159-.739.164-.163.362-.423.543-.634.181-.21.241-.362.362-.604.124-.248.062-.466-.03-.647-.091-.181-.824-1.996-1.13-2.725-.297-.715-.6-.619-.824-.629-.215-.009-.466-.011-.715-.011s-.647.091-.985.466c-.334.372-1.295 1.266-1.295 3.084 0 1.819 1.326 3.575 1.511 3.822.181.248 2.611 3.981 6.327 5.58.885.381 1.575.609 2.113.781.889.283 1.698.243 2.34.148.714-.106 2.145-.876 2.447-1.72.302-.843.302-1.562.211-1.72-.091-.163-.334-.248-.696-.429z"/>
           </svg>
         </a>
