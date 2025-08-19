@@ -61,6 +61,26 @@ body{
   .promo-bar{ flex-wrap:wrap; row-gap:6px; }
 }
 
+/* ====== FAIXA PRETA ESTREITA NO TOPO — mobile centralizado ====== */
+@media (max-width: 600px){
+  .promo-bar{
+    flex-direction: column;      /* empilha texto e botão */
+    align-items: center;         /* centraliza horizontalmente */
+    justify-content: center;     /* centraliza no eixo principal */
+    text-align: center;          /* centraliza o texto dentro do span */
+    row-gap: 8px;                /* espaçamento vertical entre texto e botão */
+    padding: 10px 12px;          /* um pouco mais de respiro no mobile */
+  }
+  .promo-text{
+    display: block;
+    width: 100%;
+    text-align: center;          /* garante centralização do texto */
+  }
+  .promo-cta{
+    display: inline-block;       /* botão no tamanho do conteúdo */
+  }
+}
+
 /* ============================================================
    HEADER / NAVBAR (compacto) + LOGO 3× MAIOR
    ============================================================ */
