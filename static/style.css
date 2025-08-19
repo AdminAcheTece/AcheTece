@@ -637,5 +637,15 @@ thead tr{ background:#f2f2f2; }
   color: #111;
   line-height: 1.3;
   }
+
+  .container-termos{
+  max-width: 940px;          /* limite de largura */
+  margin: 40px auto;         /* centraliza na tela e afasta em cima/baixo */
+  padding: 32px 40px;        /* espaçamento interno */
+  background:#fff;
+  border:1px solid #eee;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05); /* opcional */
+}
  
 }
