@@ -6,14 +6,118 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    .container-termos{
-      max-width: 940px; margin: 24px auto; padding: 16px;
-      background:#fff; border:1px solid #eee; border-radius: 10px;
+    /* ===== Barra fixa no topo (igual ao fale_conosco) ===== */
+    .topbar-fixa{
+      position: sticky;
+      top: 0;
+      z-index: 999;
+      background: #0f0714;
+      color: #fff;
+      padding: 6px 12px; /* altura enxuta */
+      border-bottom: 1px solid rgba(255,255,255,.1);
     }
-    .container-termos h1{ font-size:22px; margin:0 0 14px 0 }
-    .container-termos h2{ font-size:18px; margin:18px 0 8px 0 }
-    .container-termos p{ margin:8px 0; color:#444; line-height:1.6 }
+    .topbar-wrap{
+      max-width: 1180px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 56px;
+    }
+    /* Logo apenas imagem (sem link) */
+    .topbar-left img{
+      height: 56px;
+      width: auto;
+      display: block;
+      user-select: none;
+      -webkit-user-drag: none;
+      pointer-events: none;
+    }
+    .topbar-right{
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .icon-btn{
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 36px;
+      min-width: 36px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      color: #fff;
+      background: #2a2535;
+      transition: transform .12s ease, background .2s ease, box-shadow .2s ease, border-color .2s ease;
+      border: 1px solid rgba(255,255,255,.35);
+      box-shadow: none;
+    }
+    .icon-btn:hover{
+      background: #403852;
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(0,0,0,.12);
+      border-color: rgba(255,255,255,.5);
+    }
+    .icon-btn svg{
+      width: 18px;
+      height: 18px;
+      display: block;
+      fill: currentColor;
+    }
+    /* WhatsApp: sem borda, apenas fundo verde */
+    .whatsapp-btn{
+      background: #25D366;
+      border: none;
+      outline: none;
+      box-shadow: 0 1px 0 rgba(0,0,0,.08);
+      color: #fff;
+    }
+    .whatsapp-btn:hover{
+      background: #1ebe5d;
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(0,0,0,.12);
+    }
+    .whatsapp-btn svg{
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+      display: block;
+    }
 
+    /* ===== Conteúdo central (caixa branca) ===== */
+    .container-termos{
+      max-width: 940px;
+      width: 90%;
+      margin: 40px auto;
+      padding: 32px 48px;
+      background:#fff;
+      border:1px solid #eee;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    /* Título de destaque */
+    .titulo-privacidade{
+      text-align: center;
+      margin: 0 0 28px 0;
+    }
+    .titulo-privacidade h1{
+      font-size: 28px;
+      font-weight: 800;
+      color: #111;
+      line-height: 1.3;
+      margin: 0;
+    }
+
+    /* Tipografia e espaçamentos internos */
+    .container-termos h2{ font-size:18px; margin:26px 0 12px 0 }
+    .container-termos h3{ font-size:16px; margin:20px 0 10px 0 }
+    .container-termos p{ margin:10px 0; color:#444; line-height:1.7 }
+    .container-termos ul{ margin:10px 0 16px 20px; padding-left:20px; }
+    .container-termos li{ margin:6px 0; color:#444; line-height:1.6 }
+
+    /* ===== Faixa preta CTA + rodapé (igual às outras páginas) ===== */
     .cta-bar{ background:#0f0714;color:#fff;padding:20px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,0.06);margin-top:32px; }
     .cta-text h3{ margin:0 0 4px 0;font-size:18px;font-weight:700;line-height:1.2; }
     .cta-text p{ margin:0;font-size:15px;opacity:.9; }
@@ -29,20 +133,48 @@
     .footer-col li+li{ margin-top:6px; }
     .footer-col a{ color:#2a2535;text-decoration:none;font-size:14px; }
     .footer-col a:hover{ text-decoration:underline; }
+
     @media (max-width: 720px){
       .footer-inner{ grid-template-columns:1fr; }
       .footer-cols{ grid-template-columns:1fr; }
       .cta-text h3{ font-size:16px; }
       .cta-text p{ font-size:14px; }
+      .container-termos{ padding:24px; }
+      .titulo-privacidade h1{ font-size:24px; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Título de destaque -->
-  <div class="titulo-privacidade">
-    <h1>Bem-vindo(a) à Política de Privacidade do consumidor da AcheTece</h1>
+  <!-- ===== Topbar preta fixa (idêntica ao /contato) ===== -->
+  <div class="topbar-fixa">
+    <div class="topbar-wrap">
+      <div class="topbar-left">
+        <img src="{{ url_for('static', filename='Logo Branco_fundo preto.png') }}" alt="AcheTece">
+      </div>
+      <div class="topbar-right">
+        <!-- Casinha -->
+        <a href="{{ url_for('index') }}" class="icon-btn" aria-label="Página Inicial">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+            <path d="M3 9.5L12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5z"/>
+          </svg>
+        </a>
+        <!-- WhatsApp -->
+        <a href="https://wa.me/5547996660450?text=Olá,%20quero%20falar%20com%20a%20AcheTece" target="_blank" rel="noopener" class="icon-btn whatsapp-btn" aria-label="WhatsApp">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true">
+            <path d="M16 .396c-8.837 0-16 7.163-16 16 0 2.819.734 5.566 2.126 7.996l-2.209 8.021 8.182-2.146c2.356 1.289 5.029 1.969 7.901 1.969h.001c8.837 0 16-7.163 16-16s-7.163-16-16-16zm0 29.104h-.001c-2.479 0-4.884-.66-6.975-1.907l-.5-.297-4.857 1.274 1.295-4.711-.324-.484c-1.295-1.937-1.979-4.2-1.979-6.545 0-6.617 5.383-12 12-12 3.2 0 6.209 1.248 8.477 3.515s3.523 5.277 3.523 8.477c0 6.617-5.383 12-12 12zm6.596-9.064c-.362-.181-2.145-1.057-2.479-1.176-.334-.124-.579-.181-.824.181s-.945 1.176-1.159 1.421c-.215.248-.423.277-.785.096-.362-.181-1.528-.562-2.91-1.791-1.076-.962-1.8-2.144-2.012-2.505-.215-.362-.023-.558.159-.739.164-.163.362-.423.543-.634.181-.21.241-.362.362-.604.124-.248.062-.466-.03-.647-.091-.181-.824-1.996-1.13-2.725-.297-.715-.6-.619-.824-.629-.215-.009-.466-.011-.715-.011s-.647.091-.985.466c-.334.372-1.295 1.266-1.295 3.084 0 1.819 1.326 3.575 1.511 3.822.181.248 2.611 3.981 6.327 5.58.885.381 1.575.609 2.113.781.889.283 1.698.243 2.34.148.714-.106 2.145-.876 2.447-1.72.302-.843.302-1.562.211-1.72-.091-.163-.334-.248-.696-.429z"/>
+          </svg>
+        </a>
+      </div>
+    </div>
   </div>
+
+  <!-- ===== Bloco branco central com o conteúdo ===== -->
+  <div class="container-termos">
+    <!-- Título de destaque -->
+    <div class="titulo-privacidade">
+      <h1>Bem-vindo(a) à Política de Privacidade do consumidor da AcheTece</h1>
+    </div>
 
     <h2>1. Introdução</h2>
     <p>Este documento apresenta os Termos de Uso e a Política de Privacidade do AcheTece.</p>
@@ -83,7 +215,7 @@
     <p>O AcheTece pode atualizar esta Política de Privacidade periodicamente. Recomendamos que consulte esta página regularmente.</p>
   </div>
 
-  <!-- Faixa preta CTA -->
+  <!-- ===== Faixa preta CTA ===== -->
   <section class="cta-bar">
     <div class="cta-text">
       <h3>É proprietário de uma malharia?</h3>
@@ -92,7 +224,7 @@
     <a href="{{ url_for('malharia_info') }}" class="cta-btn">Cadastrar</a>
   </section>
 
-  <!-- Rodapé branco -->
+  <!-- ===== Rodapé branco ===== -->
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-brand">
