@@ -4,61 +4,61 @@
     <meta charset="UTF-8">
     <title>Login Administrativo - AcheTece</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f2f2f2;
             margin: 0;
+            padding: 0;
         }
 
+        /* ===== Faixa preta topo ===== */
+        .topbar-fixa {
+            background: #0f0714;
+            color: #fff;
+            padding: 6px 16px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 18px;
+        }
+        .topbar-fixa a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .topbar-fixa a:hover {
+            text-decoration: underline;
+        }
+        .topbar-fixa img {
+            height: 16px;
+            width: 16px;
+        }
+
+        /* ===== Faixa branca logo ===== */
         header {
             background-color: #fff;
-            padding: 16px 24px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            padding: 14px 0;
             border-bottom: 1px solid #ddd;
-            position: relative;
-        }
-
-        .logo {
             text-align: center;
         }
-
         .logo img {
             max-height: 60px;
             height: auto;
             width: auto;
         }
 
-        .icone-home {
-            position: absolute;
-            right: 24px;
-            top: 50%;
-            transform: translateY(-50%);
-            background-color: #444;
-            padding: 8px;
-            border-radius: 6px;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background-color 0.2s ease;
-        }
-
-        .icone-home:hover {
-            background-color: #000;
-        }
-
-        .icone-home svg {
-            stroke: white;
-        }
-
+        /* ===== Área de login ===== */
         .login-container {
             display: flex;
             justify-content: center;
-            align-items: center;
-            height: calc(100vh - 90px);
+            align-items: flex-start;
+            padding-top: 40px; /* distância em relação ao topo */
+            min-height: calc(100vh - 140px);
         }
 
         .login-box {
@@ -85,12 +85,11 @@
         input[type="password"] {
             width: 100%;
             padding: 10px;
-            margin: 10px 0 6px 0; /* aproxima o link do campo senha */
+            margin: 10px 0 6px 0;
             border-radius: 6px;
             border: 1px solid #ccc;
         }
 
-        /* Link "Esqueci a senha" — igual ao login.html (alinhado à direita, discreto) */
         .link-esqueci-senha {
             text-align: right;
             margin-bottom: 20px;
@@ -107,12 +106,13 @@
         button {
             background-color: #003bb3;
             color: white;
-            padding: 10px 16px;
+            padding: 12px 16px;
             border: none;
             border-radius: 6px;
             font-weight: bold;
             cursor: pointer;
             width: 100%;
+            font-size: 16px;
         }
 
         .flash-message {
@@ -120,49 +120,36 @@
             margin-bottom: 10px;
             font-weight: bold;
         }
-
-        .flash-message.success {
-            color: green;
-        }
-
-        .flash-message.error {
-            color: red;
-        }
+        .flash-message.success { color: green; }
+        .flash-message.error { color: red; }
 
         @media (max-width: 600px) {
-            .icone-home {
-                padding: 6px;
-                right: 12px;
-            }
-
-            .icone-home svg {
-                width: 20px;
-                height: 20px;
-            }
-
-            .logo img {
-                max-height: 50px;
-            }
-
-            .login-box {
-                padding: 24px;
-                margin: 20px;
-            }
+            .logo img { max-height: 50px; }
+            .login-box { padding: 24px; margin: 20px; }
+            .topbar-fixa { flex-wrap: wrap; justify-content: center; gap: 12px; }
         }
     </style>
 </head>
 <body>
 
-<!-- Cabeçalho com logo e casinha -->
+<!-- Faixa preta topo -->
+<div class="topbar-fixa">
+    <a href="https://wa.me/5500000000000" target="_blank">
+        <img src="{{ url_for('static', filename='whatsapp.png') }}" alt="WhatsApp"> WhatsApp
+    </a>
+    <a href="mailto:contato@achetece.com">
+        <img src="{{ url_for('static', filename='email.png') }}" alt="Email"> E-mail
+    </a>
+    <a href="{{ url_for('fale_conosco') }}">
+        <img src="{{ url_for('static', filename='chat.png') }}" alt="Fale Conosco"> Fale Conosco
+    </a>
+</div>
+
+<!-- Faixa branca logo -->
 <header>
     <div class="logo">
         <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
     </div>
-    <a href="/" class="icone-home" title="Voltar à página inicial">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 9L12 2l9 7v11a2 2 0 0 1-2 2h-3a1 1 0 0 1-1-1v-4a2 2 0 0 0-2-2h-2a 2 2 0 0 0-2 2v4a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V9z"/>
-        </svg>
-    </a>
 </header>
 
 <!-- Formulário -->
@@ -185,7 +172,6 @@
             <label for="senha">Senha:</label>
             <input type="password" name="senha" required>
 
-            <!-- Link Esqueci a senha (abaixo do campo senha, alinhado à direita) -->
             <div class="link-esqueci-senha">
                 <a href="{{ url_for('esqueci_senha') }}">Esqueci a senha</a>
             </div>
