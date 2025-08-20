@@ -1,149 +1,149 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <title>Login Administrativo - AcheTece</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- mantém seu CSS principal -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f2f2f2;
-            margin: 0;
-            padding: 0;
-        }
+  <meta charset="UTF-8">
+  <title>Login Administrativo - AcheTece</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- mantém seu CSS principal -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
-        /* ===== Faixa preta topo ===== */
-        .topbar-fixa {
-            background: #0f0714;
-            color: #fff;
-            padding: 6px 16px;
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            gap: 18px;
-        }
-        .topbar-fixa a {
-            color: #fff;
-            text-decoration: none;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .topbar-fixa a:hover { text-decoration: underline; }
-        .topbar-fixa img { height: 16px; width: 16px; }
+  <style>
+    :root{
+      --azul:#003bb3;
+      --azul-2:#336be3;
+      --cinza-bg:#f2f2f2;
+      --cinza-texto:#444;
+    }
 
-        /* ===== Faixa branca logo ===== */
-        header {
-            background-color: #fff;
-            padding: 14px 0;
-            border-bottom: 1px solid #ddd;
-            text-align: center;
-        }
-        .logo img { max-height: 60px; height: auto; width: auto; }
+    body{ font-family:'Inter', Arial, sans-serif; margin:0; padding:0; background:var(--cinza-bg); color:var(--cinza-texto); }
 
-        /* ===== Área de login ===== */
-        .login-container {
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            padding-top: 40px; /* distância em relação ao topo */
-            min-height: calc(100vh - 140px);
-        }
-        .login-box {
-            background-color: #fff;
-            padding: 30px 40px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 400px;
-        }
-        h2 {
-            text-align: center;
-            color: #003bb3;
-            margin-bottom: 20px;
-        }
-        label { font-weight: bold; color: #003bb3; }
-        input[type="email"], input[type="password"] {
-            width: 100%; padding: 10px; margin: 10px 0 6px 0;
-            border-radius: 6px; border: 1px solid #ccc;
-        }
-        .link-esqueci-senha { text-align: right; margin-bottom: 20px; }
-        .link-esqueci-senha a { color: #003bb3; text-decoration: none; font-size: 14px; }
-        .link-esqueci-senha a:hover { text-decoration: underline; }
+    /* ===== TOPBAR (igual ao malharia_info) ===== */
+    .topbar{
+      background:#0b0b0b;
+      color:#fff;
+      padding:6px 14px;
+      border-bottom:1px solid #111;
+    }
+    .topbar-inner{
+      max-width:1000px; margin:0 auto;
+      display:flex; align-items:center; justify-content:flex-end; gap:12px;
+    }
+    .topbar-action{
+      display:inline-flex; align-items:center; gap:10px;
+      color:#fff; text-decoration:none;
+      padding:6px 10px; border-radius:10px;
+      background:#111; border:1px solid rgba(255,255,255,.12);
+      transition:background .2s, transform .02s;
+    }
+    .topbar-action:hover{ background:#161616; }
+    .ic-top{ width:18px; height:18px; display:block; }
+    .ic-wa{ color:#22c55e; }  /* WhatsApp verde */
+    .ic-mail{ color:#fff; }
 
-        button {
-            background-color: #003bb3; color: white; padding: 12px 16px;
-            border: none; border-radius: 6px; font-weight: bold; cursor: pointer;
-            width: 100%; font-size: 16px;
-        }
+    /* ===== Faixa branca com logo (igual ao padrão) ===== */
+    header{
+      background:#fff;
+      padding:14px 0;
+      border-bottom:1px solid #ddd;
+      text-align:center;
+    }
+    .logo img{ max-height:60px; height:auto; width:auto; display:block; margin:0 auto; }
 
-        .flash-message { text-align: center; margin-bottom: 10px; font-weight: bold; }
-        .flash-message.success { color: green; }
-        .flash-message.error { color: red; }
+    /* ===== Área de login ===== */
+    .login-container{
+      display:flex; justify-content:center; align-items:flex-start;
+      padding-top:40px; /* distância em relação ao topo */
+      min-height:calc(100vh - 140px);
+    }
+    .login-box{
+      background:#fff;
+      padding:30px 40px;
+      border-radius:10px;
+      box-shadow:0 0 10px rgba(0,0,0,0.1);
+      width:100%; max-width:400px;
+    }
+    h2{ text-align:center; color:var(--azul); margin-bottom:20px; }
+    label{ font-weight:700; color:var(--azul); }
+    input[type="email"], input[type="password"]{
+      width:100%; padding:10px; margin:10px 0 6px 0;
+      border-radius:6px; border:1px solid #ccc;
+    }
+    .link-esqueci-senha{ text-align:right; margin-bottom:20px; }
+    .link-esqueci-senha a{ color:var(--azul); text-decoration:none; font-size:14px; }
+    .link-esqueci-senha a:hover{ text-decoration:underline; }
+    button{
+      background:var(--azul); color:#fff; padding:12px 16px;
+      border:none; border-radius:6px; font-weight:700; cursor:pointer;
+      width:100%; font-size:16px;
+    }
+    .flash-message{ text-align:center; margin-bottom:10px; font-weight:700; }
+    .flash-message.success{ color:green; }
+    .flash-message.error{ color:red; }
 
-        @media (max-width: 600px) {
-            .logo img { max-height: 50px; }
-            .login-box { padding: 24px; margin: 20px; }
-            .topbar-fixa { flex-wrap: wrap; justify-content: center; gap: 12px; }
-        }
-    </style>
+    @media (max-width:600px){
+      .logo img{ max-height:50px; }
+      .login-box{ padding:24px; margin:20px; }
+      .topbar-inner{ justify-content:center; gap:12px; }
+    }
+  </style>
 </head>
 <body>
 
-<!-- Faixa preta topo -->
-<div class="topbar-fixa">
-    <a href="https://wa.me/55SEUNUMEROAQUI" target="_blank" rel="noopener">
-        <img src="{{ url_for('static', filename='whatsapp.png') }}" alt="WhatsApp"> WhatsApp
-    </a>
-    <a href="mailto:contato@achetece.com">
-        <img src="{{ url_for('static', filename='email.png') }}" alt="E-mail"> E-mail
-    </a>
-    <!-- use o path real da sua página de contato -->
-    <a href="/fale_conosco">
-        <img src="{{ url_for('static', filename='chat.png') }}" alt="Fale Conosco"> Fale Conosco
-    </a>
-</div>
+  <!-- ===== TOPBAR (botão único Fale conosco) ===== -->
+  <div class="topbar">
+    <div class="topbar-inner">
+      <a class="topbar-action" href="{{ url_for('contato') }}" aria-label="Fale conosco">
+        <!-- WhatsApp (SVG) -->
+        <svg class="ic-top ic-wa" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M20.52 3.48A11.94 11.94 0 0 0 12.06 0C5.7 0 .5 5.19.5 11.6c0 2.05.54 4.05 1.58 5.82L0 24l6.76-2.01a11.6 11.6 0 0 0 5.3 1.29h.01c6.36 0 11.56-5.19 11.56-11.6 0-3.09-1.22-6-3.11-8.2Zm-8.46 18.1h-.01a9.7 9.7 0 0 1-4.95-1.34l-.35-.2-4.01 1.2 1.16-3.9-.23-.4a9.66 9.66 0 0 1-1.41-5.08c0-5.36 4.38-9.71 9.77-9.71 2.61 0 5.07 1.02 6.91 2.87a9.73 9.73 0 0 1 2.86 6.95c0 5.36-4.38 9.71-9.75 9.71Zm5.6-7.27c-.31-.16-1.81-.9-2.09-1-.28-.1-.49-.16-.7.16-.2.31-.8 1-.98 1.21-.18.2-.36.22-.67.06-.31-.16-1.3-.48-2.48-1.53-.92-.8-1.54-1.77-1.72-2.07-.18-.31-.02-.48.13-.64.13-.13.31-.36.46-.54.15-.18.2-.31.31-.52.1-.22.05-.41-.02-.57-.16-.16-.7-1.69-.95-2.3-.25-.6-.51-.52-.7-.52-.18 0-.39-.02-.6-.02-.2 0-.52.07-.79.36-.28.31-1.07 1.05-1.07 2.56 0 1.51 1.1 2.97 1.25 3.18.15.2 2.17 3.3 5.25 4.61.73.32 1.3.5 1.75.64.74.24 1.4.2 1.93.12.59-.09 1.81-.74 2.07-1.45.26-.72.26-1.33.18-1.45-.08-.12-.28-.2-.59-.36Z"/>
+        </svg>
+        <!-- Email (SVG) -->
+        <svg class="ic-top ic-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <rect x="3" y="5" width="18" height="14" rx="2" ry="2"></rect>
+          <path d="M3 7l9 6 9-6"></path>
+        </svg>
+        <span style="font-weight:700;">Fale conosco</span>
+      </a>
+    </div>
+  </div>
 
-<!-- Faixa branca com logo -->
-<header>
+  <!-- ===== Faixa branca com logo ===== -->
+  <header>
     <div class="logo">
-        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
+      <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
     </div>
-</header>
+  </header>
 
-<!-- Formulário -->
-<div class="login-container">
+  <!-- ===== Conteúdo (formulário) ===== -->
+  <div class="login-container">
     <div class="login-box">
-        <h2>Login do Administrador</h2>
+      <h2>Login do Administrador</h2>
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              {% if category == 'error' %}
-                <div class="flash-message error">{{ message }}</div>
-              {% endif %}
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            {% if category == 'error' %}
+              <div class="flash-message error">{{ message }}</div>
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
 
-        <form method="POST">
-            <label for="email">Email:</label>
-            <input type="email" name="email" required>
+      <form method="POST">
+        <label for="email">Email:</label>
+        <input type="email" name="email" required>
 
-            <label for="senha">Senha:</label>
-            <input type="password" name="senha" required>
+        <label for="senha">Senha:</label>
+        <input type="password" name="senha" required>
 
-            <div class="link-esqueci-senha">
-                <a href="{{ url_for('esqueci_senha') }}">Esqueci a senha</a>
-            </div>
+        <div class="link-esqueci-senha">
+          <a href="{{ url_for('esqueci_senha') }}">Esqueci a senha</a>
+        </div>
 
-            <button type="submit">Entrar</button>
-        </form>
+        <button type="submit">Entrar</button>
+      </form>
     </div>
-</div>
+  </div>
 
 </body>
 </html>
