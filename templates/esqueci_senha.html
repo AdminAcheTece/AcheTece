@@ -1,171 +1,287 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <title>Esqueci a Senha</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- CSS principal -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', Arial, sans-serif;
-            background-color: #f9f9f9;
-            margin: 0;
-            padding: 0;
-        }
+  <meta charset="UTF-8">
+  <title>Esqueci a Senha</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- CSS principal -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
-        /* ===== Cabeçalho padrão quem_somos.html ===== */
-        .topbar-fixa{
-            position: sticky;
-            top: 0;
-            z-index: 999;
-            background: #0f0714;
-            color: #fff;
-            padding: 6px 20px;
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-        }
-        .topbar-fixa a{
-            color: #fff;
-            margin-left: 18px;
-            font-size: 14px;
-            text-decoration: none;
-        }
-        .navbar{
-            overflow: visible;
-            padding-top: 6px;
-            padding-bottom: 6px;
-            background: #fff;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            align-items: center;
-            padding-left: 20px;
-            padding-right: 20px;
-        }
-        .logo img{
-            max-height: 60px;
-            width: auto;
-        }
-        .header-right{
-            margin-left: auto;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-        .header-right a{
-            text-decoration: none;
-            color: #003bb3;
-        }
+  <style>
+    /* ===== Faixa preta fixa no topo (igual padrão) ===== */
+    .topbar-fixa{
+      position: sticky;
+      top: 0;
+      z-index: 999;
+      background: #0f0714;
+      color: #fff;
+    }
+    .topbar-wrap{
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 14px;
+      font-size: 14px;
+    }
+    .topbar-link{
+      display:inline-flex; align-items:center; gap:8px;
+      text-decoration:none; color:#fff; opacity:.95;
+    }
+    .topbar-link:hover{ opacity:1; }
 
-        /* ===== Container principal ===== */
-        .container {
-            max-width: 400px;
-            margin: 60px auto;
-            background: #fff;
-            padding: 32px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
+    /* ===== Navbar branca (igual ao quem_somos) ===== */
+    .navbar{ overflow:visible; padding-top:6px; padding-bottom:6px; background:#fff; border-bottom:1px solid #eee; }
+    .header-left,.header-right{ display:flex; align-items:center; }
+    .header-right{ margin-left:auto; gap:20px; }
+    .logo img{ max-height:60px; height:auto; width:auto; display:block; }
+    .top-nav{ display:none; } /* mantido, caso seja usado em outras páginas */
 
-        h2 {
-            text-align: center;
-            margin-bottom: 20px;
-            font-size: 22px;
-        }
+    .icon-btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px;
+      background:#fff; cursor:pointer;
+      box-shadow:0 2px 6px rgba(0,0,0,.06);
+    }
+    .icon{ width:20px; height:20px; color:#222; }
 
-        form input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 16px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            font-size: 14px;
-        }
+    .menu-wrap{ position: relative; }
+    .hamburger{
+      display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
+      width:36px; height:36px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
+      box-shadow:0 2px 6px rgba(0,0,0,.06);
+      position:relative; z-index:10002;
+    }
+    .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
+    .hamburger span + span{ margin-top:4px; }
+    @media (max-width:768px){
+      .hamburger{ width:28px; height:28px; border-radius:8px; }
+      .hamburger span{ width:16px; height:2px; }
+      .hamburger span + span{ margin-top:3px; }
+      .icon-btn{ width:28px; height:28px; border-radius:8px; } /* mantém proporção da casinha no mobile */
+    }
 
-        button {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            background-color: #003bb3;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-        }
+    .menu-dropdown{
+      background:#fff; border:1px solid #eaeaea; border-radius:12px; box-shadow:0 16px 38px rgba(0,0,0,.18);
+      z-index:10001; max-height:80vh; overflow:auto;
+      opacity:0; pointer-events:none; transform: translateY(8px) scale(.98);
+      transition: opacity .18s ease, transform .18s ease;
+    }
+    .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
+    .menu-dropdown .menu-header{
+      display:flex; justify-content:flex-end; align-items:center; padding:8px 10px;
+    }
+    .menu-dropdown .menu-close{
+      display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px;
+      background:#f0f2f5; border:0; border-radius:10px; cursor:pointer;
+    }
+    .menu-dropdown .menu-item{
+      display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222;
+    }
+    .menu-dropdown .menu-item:hover{ background:#f5f7ff; color:#003bb3; border-radius:8px; }
 
-        button:hover {
-            background-color: #336be3;
-        }
+    @media (min-width:769px){
+      .menu-dropdown{ position:absolute; top:calc(100% + 8px); right:0; min-width:220px; transform-origin: top right; }
+    }
+    @media (max-width:768px){
+      .menu-wrap{ position: static; }
+      .menu-dropdown{
+        position: fixed;
+        top: calc(var(--nav-h, 64px) + 8px);
+        left: 50%; transform: translate(-50%, 8px) scale(.98);
+        width:max-content; max-width:90vw; min-width:160px; border-radius:14px;
+      }
+      .menu-dropdown.open{ transform: translate(-50%,0) scale(1); }
+    }
 
-        .mensagem {
-            text-align: center;
-            color: green;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-
-        .erro {
-            text-align: center;
-            color: red;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-
-        .voltar {
-            display: block;
-            text-align: center;
-            margin-top: 20px;
-            font-size: 14px;
-            text-decoration: none;
-            color: #555;
-        }
-    </style>
+    /* ===== Página: conteúdo ===== */
+    body{ background:#f9f9f9; margin:0; padding:0; font-family: Arial, sans-serif; }
+    .container{
+      max-width: 400px;
+      margin: 24px auto 60px; /* 24px para dar fôlego abaixo da navbar */
+      background: #fff;
+      padding: 32px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h2{ text-align:center; margin-bottom:20px; font-size:22px; }
+    form input{
+      width:100%; padding:12px; margin-bottom:16px; border-radius:8px; border:1px solid #ccc; font-size:14px;
+    }
+    button{
+      width:100%; padding:12px; border:none; border-radius:8px; background-color:#003bb3; color:#fff; font-weight:bold; cursor:pointer;
+    }
+    button:hover{ background-color:#003bb3; }
+    .mensagem,.erro{ text-align:center; margin-bottom:10px; font-size:14px; }
+    .mensagem{ color:green; }
+    .erro{ color:red; }
+    .voltar{ display:block; text-align:center; margin-top:20px; font-size:14px; text-decoration:none; color:#555; }
+  </style>
 </head>
 <body>
 
-    <!-- ===== Faixa preta ===== -->
-    <div class="topbar-fixa">
-        <a href="/">Início</a>
-        <a href="{{ url_for('fale_conosco') }}">Fale Conosco</a>
+  <!-- ===== Faixa preta (topbar) ===== -->
+  <div class="topbar-fixa" role="banner" aria-label="Contato rápido">
+    <div class="topbar-wrap">
+      <a class="topbar-link" href="https://wa.me/5547991120670" target="_blank" rel="noopener" aria-label="Fale no WhatsApp">
+        <!-- Ícone WhatsApp (sem borda) -->
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#25D366" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M20.52 3.48A11.87 11.87 0 0012 0C5.37 0 0 5.37 0 12c0 2.11.55 4.09 1.52 5.81L0 24l6.35-1.66A11.9 11.9 0 0012 24c6.63 0 12-5.37 12-12 0-3.2-1.24-6.21-3.48-8.52zM12 22a9.9 9.9 0 01-5.02-1.37l-.36-.21-3.77.99 1.01-3.67-.23-.38A9.9 9.9 0 012 12C2 6.48 6.48 2 12 2s10 4.48 10 10-4.48 10-10 10zm5.32-7.17c-.29-.15-1.71-.84-1.98-.93-.26-.1-.45-.15-.64.15-.19.29-.74.93-.9 1.12-.17.19-.33.22-.62.07-.29-.15-1.22-.45-2.32-1.44-.86-.77-1.44-1.72-1.61-2.01-.17-.29-.02-.45.13-.6.13-.13.29-.33.43-.49.15-.17.19-.29.29-.48.1-.19.05-.36-.02-.52-.07-.15-.64-1.54-.88-2.11-.23-.56-.47-.49-.64-.5l-.55-.01c-.19 0-.52.07-.79.36s-1.04 1.02-1.04 2.48 1.07 2.87 1.22 3.07c.15.19 2.1 3.2 5.08 4.49.71.31 1.27.49 1.7.63.71.23 1.36.2 1.87.12.57-.08 1.71-.7 1.96-1.38.24-.67.24-1.25.17-1.37-.06-.12-.26-.2-.55-.35z"/>
+        </svg>
+        <span>Fale conosco</span>
+      </a>
+      <a class="topbar-link" href="mailto:gestao.achetece@gmail.com" aria-label="Envie um e-mail">
+        <!-- Ícone e-mail -->
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#ffffff" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M20 4H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 2v.01L12 13 4 6.01V6h16zM4 18V8l8 5 8-5v10H4z"/>
+        </svg>
+        <span>gestao.achetece@gmail.com</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- ===== Navbar branca (igual ao quem_somos) ===== -->
+  <header class="navbar">
+    <div class="header-left">
+      <div class="logo">
+        <!-- usa logo_simbolo.png e não é link -->
+        <img src="{{ url_for('static', filename='logo_simbolo.png') }}" alt="Logo AcheTece">
+      </div>
     </div>
 
-    <!-- ===== Faixa branca (navbar) ===== -->
-    <div class="navbar">
-        <div class="logo">
-            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
-        </div>
-        <div class="header-right">
-            <a href="/" title="Página Inicial">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" 
-                     stroke="#003bb3" stroke-width="2" stroke-linecap="round" 
-                     stroke-linejoin="round" class="lucide lucide-home">
-                    <path d="M3 9L12 2l9 7v11a2 2 0 0 1-2 2h-3a1 1 0 0 1-1-1v-4
-                             a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4a1 1 0 0 1-1 1H5
-                             a2 2 0 0 1-2-2V9z"/>
-                </svg>
-            </a>
-        </div>
+    <div class="header-right">
+      <!-- Botão home com mesma largura do hamburger -->
+      <a href="{{ url_for('index') }}" class="icon-btn" aria-label="Página inicial" title="Página inicial">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 10.5 12 3l9 7.5"></path>
+          <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
+          <path d="M9 21V12h6v9"></path>
+        </svg>
+      </a>
+
+      <!-- Menu sanduíche -->
+      <div class="menu-wrap">
+        <button class="hamburger" id="hamburger" type="button" aria-label="Abrir menu" aria-controls="menu-lateral" aria-haspopup="menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+
+        <nav class="menu-dropdown" id="menu-lateral" role="menu" aria-label="Menu rápido">
+          <div class="menu-header">
+            <span>Menu</span>
+            <button type="button" class="menu-close" aria-label="Fechar menu">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+              </svg>
+            </button>
+          </div>
+
+          <a href="{{ url_for('buscar_teares') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"></circle>
+              <line x1="16.65" y1="16.65" x2="21" y2="21"></line>
+            </svg>
+            <span>Buscar Tear</span>
+          </a>
+
+          <a href="{{ url_for('malharia_info') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M9.5 9a2.5 2.5 0 1 1 4.1 2A3 3 0 0 0 12 13.6"></path>
+              <circle cx="12" cy="17" r="1.2" fill="currentColor"></circle>
+            </svg>
+            <span>Como Funciona</span>
+          </a>
+
+          <a href="{{ url_for('login') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="8" r="4"></circle>
+              <path d="M4 20a8 8 0 0 1 16 0"></path>
+            </svg>
+            <span>Já sou cadastrado</span>
+          </a>
+
+          <a href="{{ url_for('quem_somos') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <circle cx="12" cy="8" r="1.5" fill="currentColor"></circle>
+              <path d="M11 11h2v6h-2z" fill="currentColor"></path>
+            </svg>
+            <span>Quem Somos</span>
+          </a>
+
+          <a href="{{ url_for('contato') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 4h16v12H4z"></path>
+              <path d="M22 20H2"></path>
+              <path d="M22 8l-10 6L2 8" fill="none"></path>
+            </svg>
+            <span>Fale conosco</span>
+          </a>
+
+          <a href="{{ url_for('termos') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+              <path d="M8 8h8M8 12h8M8 16h5"></path>
+            </svg>
+            <span>Termos e Políticas</span>
+          </a>
+        </nav>
+      </div>
     </div>
+  </header>
 
-    <!-- ===== Conteúdo principal ===== -->
-    <div class="container">
-        <h2>Recuperar Senha</h2>
+  <!-- ===== Conteúdo ===== -->
+  <div class="container" role="main">
+    <h2>Recuperar Senha</h2>
 
-        {% if mensagem %}
-            <div class="mensagem">{{ mensagem }}</div>
-        {% elif erro %}
-            <div class="erro">{{ erro }}</div>
-        {% endif %}
+    {% if mensagem %}
+      <div class="mensagem">{{ mensagem }}</div>
+    {% elif erro %}
+      <div class="erro">{{ erro }}</div>
+    {% endif %}
 
-        <form method="POST">
-            <input type="email" name="email" placeholder="Digite seu e-mail" required>
-            <button type="submit">Enviar instruções</button>
-        </form>
+    <form method="POST" novalidate>
+      <input type="email" name="email" placeholder="Digite seu e-mail" required>
+      <button type="submit">Enviar instruções</button>
+    </form>
 
-        <a class="voltar" href="{{ url_for('login') }}">← Voltar ao login</a>
-    </div>
+    <a class="voltar" href="{{ url_for('login') }}">← Voltar ao login</a>
+  </div>
 
+  <!-- Script do menu (igual ao quem_somos/busca) -->
+  <script>
+    (function () {
+      function closeAll() {
+        document.querySelectorAll('.menu-wrap .menu-dropdown.open').forEach(m => {
+          m.classList.remove('open');
+          const b = m.closest('.menu-wrap')?.querySelector('.hamburger');
+          if (b) b.setAttribute('aria-expanded', 'false');
+        });
+      }
+      document.querySelectorAll('.menu-wrap').forEach(wrap => {
+        const btn  = wrap.querySelector('#hamburger');
+        const menu = wrap.querySelector('#menu-lateral');
+        const xBtn = wrap.querySelector('.menu-close');
+        if (!btn || !menu) return;
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const willOpen = !menu.classList.contains('open');
+          closeAll();
+          menu.classList.toggle('open', willOpen);
+          btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        });
+        xBtn?.addEventListener('click', e => {
+          e.stopPropagation();
+          menu.classList.remove('open');
+          btn.setAttribute('aria-expanded', 'false');
+        });
+        menu.addEventListener('click', e => e.stopPropagation());
+      });
+      document.addEventListener('click', closeAll);
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
+    })();
+  </script>
 </body>
 </html>
