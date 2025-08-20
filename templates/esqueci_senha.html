@@ -3,65 +3,58 @@
 <head>
   <meta charset="UTF-8">
   <title>Esqueci a Senha</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- CSS principal -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
-    /* ===== Faixa preta fixa no topo (igual padrão) ===== */
-    .topbar-fixa{
-      position: sticky;
-      top: 0;
-      z-index: 999;
-      background: #0f0714;
-      color: #fff;
+    :root{
+      --azul:#003bb3;
+      --azul-2:#336be3;
+      --cinza-bg:#f9f9f9;
+      --cinza-texto:#444;
     }
-    .topbar-wrap{
-      max-width: 1180px;
-      margin: 0 auto;
-      padding: 6px 12px;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 14px;
-      font-size: 14px;
-    }
-    .topbar-link{
-      display:inline-flex; align-items:center; gap:8px;
-      text-decoration:none; color:#fff; opacity:.95;
-    }
-    .topbar-link:hover{ opacity:1; }
 
-    /* ===== Navbar branca (igual ao quem_somos) ===== */
-    .navbar{ overflow:visible; padding-top:6px; padding-bottom:6px; background:#fff; border-bottom:1px solid #eee; }
+    body { font-family: Arial, sans-serif; margin:0; padding:0; background:var(--cinza-bg); color:var(--cinza-texto); }
+
+    /* ===== TOPBAR (faixa preta) — EXATO DO malharia_info ===== */
+    .topbar{
+      background:#0b0b0b;
+      color:#fff;
+      padding:6px 14px;
+      border-bottom:1px solid #111;
+    }
+    .topbar-inner{
+      max-width:1000px; margin:0 auto;
+      display:flex; align-items:center; justify-content:flex-end; gap:12px;
+    }
+    .topbar-action{
+      display:inline-flex; align-items:center; gap:10px;
+      color:#fff; text-decoration:none;
+      padding:6px 10px; border-radius:10px;
+      background:#111; border:1px solid rgba(255,255,255,.12);
+      transition:background .2s, transform .02s;
+    }
+    .topbar-action:hover{ background:#161616; }
+    .ic-top{ width:18px; height:18px; display:block; }
+    .ic-wa{ color:#22c55e; }
+    .ic-mail{ color:#fff; }
+
+    /* ===== NAVBAR (faixa branca) — EXATO DO malharia_info ===== */
+    .navbar{ overflow:visible; padding-top:6px; padding-bottom:6px; background:#fff; border-bottom:1px solid #eee; display:flex; align-items:center; }
     .header-left,.header-right{ display:flex; align-items:center; }
     .header-right{ margin-left:auto; gap:20px; }
     .logo img{ max-height:60px; height:auto; width:auto; display:block; }
-    .top-nav{ display:none; } /* mantido, caso seja usado em outras páginas */
-
-    .icon-btn{
-      display:inline-flex; align-items:center; justify-content:center;
-      width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px;
-      background:#fff; cursor:pointer;
-      box-shadow:0 2px 6px rgba(0,0,0,.06);
-    }
-    .icon{ width:20px; height:20px; color:#222; }
+    .top-nav{ display:none; }
 
     .menu-wrap{ position: relative; }
     .hamburger{
       display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
       width:36px; height:36px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
       box-shadow:0 2px 6px rgba(0,0,0,.06);
-      position:relative; z-index:10002;
+      cursor:pointer;
     }
     .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
     .hamburger span + span{ margin-top:4px; }
-    @media (max-width:768px){
-      .hamburger{ width:28px; height:28px; border-radius:8px; }
-      .hamburger span{ width:16px; height:2px; }
-      .hamburger span + span{ margin-top:3px; }
-      .icon-btn{ width:28px; height:28px; border-radius:8px; } /* mantém proporção da casinha no mobile */
-    }
 
     .menu-dropdown{
       background:#fff; border:1px solid #eaeaea; border-radius:12px; box-shadow:0 16px 38px rgba(0,0,0,.18);
@@ -70,50 +63,58 @@
       transition: opacity .18s ease, transform .18s ease;
     }
     .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
-    .menu-dropdown .menu-header{
-      display:flex; justify-content:flex-end; align-items:center; padding:8px 10px;
-    }
+
+    .menu-dropdown .menu-header{ display:flex; justify-content:flex-end; align-items:center; padding:8px 10px; }
+    .menu-dropdown .menu-header span{ display:none; }
     .menu-dropdown .menu-close{
       display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px;
       background:#f0f2f5; border:0; border-radius:10px; cursor:pointer;
     }
-    .menu-dropdown .menu-item{
-      display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222;
-    }
-    .menu-dropdown .menu-item:hover{ background:#f5f7ff; color:#003bb3; border-radius:8px; }
+
+    .menu-dropdown .menu-item{ font-weight:400; display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222; }
+    .menu-dropdown .menu-item:hover{ background:#f5f7ff; color:var(--azul); border-radius:8px; }
 
     @media (min-width:769px){
-      .menu-dropdown{ position:absolute; top:calc(100% + 8px); right:0; min-width:220px; transform-origin: top right; }
+      .menu-dropdown{ position:absolute; top:calc(100% + 8px); right:0; min-width:220px; max-width:320px; padding-right:2px; transform-origin: top right; }
     }
     @media (max-width:768px){
       .menu-wrap{ position: static; }
       .menu-dropdown{
-        position: fixed;
-        top: calc(var(--nav-h, 64px) + 8px);
-        left: 50%; transform: translate(-50%, 8px) scale(.98);
-        width:max-content; max-width:90vw; min-width:160px; border-radius:14px;
+        position: fixed; top: calc(var(--nav-h, 64px) + 8px); left: 50%;
+        width:max-content; max-width:90vw; min-width:160px; padding:4px 0;
+        max-height: calc(100vh - var(--nav-h, 64px) - 24px);
+        transform: translate(-50%, 8px) scale(.98); transform-origin: top center;
+        border-radius:14px; -webkit-overflow-scrolling:touch;
       }
       .menu-dropdown.open{ transform: translate(-50%,0) scale(1); }
     }
 
-    /* ===== Página: conteúdo ===== */
-    body{ background:#f9f9f9; margin:0; padding:0; font-family: Arial, sans-serif; }
+    .icon-btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px;
+      background:#fff; cursor:pointer; transition:box-shadow .2s, transform .02s, background .2s;
+      box-shadow:0 2px 6px rgba(0,0,0,.06);
+    }
+    .icon-btn:hover{ box-shadow:0 2px 8px rgba(0,0,0,.06); background:#f7f7f7; }
+    .icon{ width:20px; height:20px; color:#222; }
+
+    /* ===== Conteúdo da página ===== */
     .container{
       max-width: 400px;
-      margin: 24px auto 60px; /* 24px para dar fôlego abaixo da navbar */
+      margin: 40px auto;
       background: #fff;
       padding: 32px;
       border-radius: 12px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
-    h2{ text-align:center; margin-bottom:20px; font-size:22px; }
+    h2{ text-align:center; margin-bottom:20px; font-size:22px; color:#222; }
     form input{
       width:100%; padding:12px; margin-bottom:16px; border-radius:8px; border:1px solid #ccc; font-size:14px;
     }
     button{
-      width:100%; padding:12px; border:none; border-radius:8px; background-color:#003bb3; color:#fff; font-weight:bold; cursor:pointer;
+      width:100%; padding:12px; border:none; border-radius:8px; background:var(--azul); color:#fff; font-weight:bold; cursor:pointer;
     }
-    button:hover{ background-color:#003bb3; }
+    button:hover{ background:#003bb3; }
     .mensagem,.erro{ text-align:center; margin-bottom:10px; font-size:14px; }
     .mensagem{ color:green; }
     .erro{ color:red; }
@@ -122,46 +123,41 @@
 </head>
 <body>
 
-  <!-- ===== Faixa preta (topbar) ===== -->
-  <div class="topbar-fixa" role="banner" aria-label="Contato rápido">
-    <div class="topbar-wrap">
-      <a class="topbar-link" href="https://wa.me/5547991120670" target="_blank" rel="noopener" aria-label="Fale no WhatsApp">
-        <!-- Ícone WhatsApp (sem borda) -->
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="#25D366" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M20.52 3.48A11.87 11.87 0 0012 0C5.37 0 0 5.37 0 12c0 2.11.55 4.09 1.52 5.81L0 24l6.35-1.66A11.9 11.9 0 0012 24c6.63 0 12-5.37 12-12 0-3.2-1.24-6.21-3.48-8.52zM12 22a9.9 9.9 0 01-5.02-1.37l-.36-.21-3.77.99 1.01-3.67-.23-.38A9.9 9.9 0 012 12C2 6.48 6.48 2 12 2s10 4.48 10 10-4.48 10-10 10zm5.32-7.17c-.29-.15-1.71-.84-1.98-.93-.26-.1-.45-.15-.64.15-.19.29-.74.93-.9 1.12-.17.19-.33.22-.62.07-.29-.15-1.22-.45-2.32-1.44-.86-.77-1.44-1.72-1.61-2.01-.17-.29-.02-.45.13-.6.13-.13.29-.33.43-.49.15-.17.19-.29.29-.48.1-.19.05-.36-.02-.52-.07-.15-.64-1.54-.88-2.11-.23-.56-.47-.49-.64-.5l-.55-.01c-.19 0-.52.07-.79.36s-1.04 1.02-1.04 2.48 1.07 2.87 1.22 3.07c.15.19 2.1 3.2 5.08 4.49.71.31 1.27.49 1.7.63.71.23 1.36.2 1.87.12.57-.08 1.71-.7 1.96-1.38.24-.67.24-1.25.17-1.37-.06-.12-.26-.2-.55-.35z"/>
+  <!-- ===== TOPBAR (igual ao malharia_info) ===== -->
+  <div class="topbar">
+    <div class="topbar-inner">
+      <a class="topbar-action" href="{{ url_for('contato') }}" aria-label="Fale conosco">
+        <!-- WhatsApp -->
+        <svg class="ic-top ic-wa" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M20.52 3.48A11.94 11.94 0 0 0 12.06 0C5.7 0 .5 5.19.5 11.6c0 2.05.54 4.05 1.58 5.82L0 24l6.76-2.01a11.6 11.6 0 0 0 5.3 1.29h.01c6.36 0 11.56-5.19 11.56-11.6 0-3.09-1.22-6-3.11-8.2Zm-8.46 18.1h-.01a9.7 9.7 0 0 1-4.95-1.34l-.35-.2-4.01 1.2 1.16-3.9-.23-.4a9.66 9.66 0 0 1-1.41-5.08c0-5.36 4.38-9.71 9.77-9.71 2.61 0 5.07 1.02 6.91 2.87a9.73 9.73 0 0 1 2.86 6.95c0 5.36-4.38 9.71-9.75 9.71Zm5.6-7.27c-.31-.16-1.81-.9-2.09-1-.28-.1-.49-.16-.7.16-.2.31-.8 1-.98 1.21-.18.2-.36.22-.67.06-.31-.16-1.3-.48-2.48-1.53-.92-.8-1.54-1.77-1.72-2.07-.18-.31-.02-.48.13-.64.13-.13.31-.36.46-.54.15-.18.2-.31.31-.52.1-.22.05-.41-.02-.57-.16-.16-.7-1.69-.95-2.3-.25-.6-.51-.52-.7-.52-.18 0-.39-.02-.6-.02-.2 0-.52.07-.79.36-.28.31-1.07 1.05-1.07 2.56 0 1.51 1.1 2.97 1.25 3.18.15.2 2.17 3.3 5.25 4.61.73.32 1.3.5 1.75.64.74.24 1.4.2 1.93.12.59-.09 1.81-.74 2.07-1.45.26-.72.26-1.33.18-1.45-.08-.12-.28-.2-.59-.36Z"/>
         </svg>
-        <span>Fale conosco</span>
-      </a>
-      <a class="topbar-link" href="mailto:gestao.achetece@gmail.com" aria-label="Envie um e-mail">
-        <!-- Ícone e-mail -->
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="#ffffff" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M20 4H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 2v.01L12 13 4 6.01V6h16zM4 18V8l8 5 8-5v10H4z"/>
+        <!-- Email -->
+        <svg class="ic-top ic-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/>
         </svg>
-        <span>gestao.achetece@gmail.com</span>
+        <span style="font-weight:700;">Fale conosco</span>
       </a>
     </div>
   </div>
 
-  <!-- ===== Navbar branca (igual ao quem_somos) ===== -->
+  <!-- ===== NAVBAR (igual ao malharia_info) ===== -->
   <header class="navbar">
     <div class="header-left">
       <div class="logo">
-        <!-- usa logo.jpg e não é link -->
         <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
       </div>
     </div>
 
     <div class="header-right">
-      <!-- Botão home com mesma largura do hamburger -->
+      <!-- home -->
       <a href="{{ url_for('index') }}" class="icon-btn" aria-label="Página inicial" title="Página inicial">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M3 10.5 12 3l9 7.5"></path>
           <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
           <path d="M9 21V12h6v9"></path>
         </svg>
       </a>
 
-      <!-- Menu sanduíche -->
       <div class="menu-wrap">
         <button class="hamburger" id="hamburger" type="button" aria-label="Abrir menu" aria-controls="menu-lateral" aria-haspopup="menu" aria-expanded="false">
           <span></span><span></span><span></span>
@@ -177,56 +173,12 @@
             </button>
           </div>
 
-          <a href="{{ url_for('buscar_teares') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="11" cy="11" r="7"></circle>
-              <line x1="16.65" y1="16.65" x2="21" y2="21"></line>
-            </svg>
-            <span>Buscar Tear</span>
-          </a>
-
-          <a href="{{ url_for('malharia_info') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"></circle>
-              <path d="M9.5 9a2.5 2.5 0 1 1 4.1 2A3 3 0 0 0 12 13.6"></path>
-              <circle cx="12" cy="17" r="1.2" fill="currentColor"></circle>
-            </svg>
-            <span>Como Funciona</span>
-          </a>
-
-          <a href="{{ url_for('login') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="8" r="4"></circle>
-              <path d="M4 20a8 8 0 0 1 16 0"></path>
-            </svg>
-            <span>Já sou cadastrado</span>
-          </a>
-
-          <a href="{{ url_for('quem_somos') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"></circle>
-              <circle cx="12" cy="8" r="1.5" fill="currentColor"></circle>
-              <path d="M11 11h2v6h-2z" fill="currentColor"></path>
-            </svg>
-            <span>Quem Somos</span>
-          </a>
-
-          <a href="{{ url_for('contato') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 4h16v12H4z"></path>
-              <path d="M22 20H2"></path>
-              <path d="M22 8l-10 6L2 8" fill="none"></path>
-            </svg>
-            <span>Fale conosco</span>
-          </a>
-
-          <a href="{{ url_for('termos') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="4" y="4" width="16" height="16" rx="2"></rect>
-              <path d="M8 8h8M8 12h8M8 16h5"></path>
-            </svg>
-            <span>Termos e Políticas</span>
-          </a>
+          <a href="{{ url_for('buscar_teares') }}" class="menu-item" role="menuitem">Buscar Tear</a>
+          <a href="{{ url_for('malharia_info') }}" class="menu-item" role="menuitem">Como Funciona</a>
+          <a href="{{ url_for('login') }}" class="menu-item" role="menuitem">Já sou cadastrado</a>
+          <a href="{{ url_for('quem_somos') }}" class="menu-item" role="menuitem">Quem Somos</a>
+          <a href="{{ url_for('contato') }}" class="menu-item" role="menuitem">Fale conosco</a>
+          <a href="{{ url_for('termos') }}" class="menu-item" role="menuitem">Termos e Políticas</a>
         </nav>
       </div>
     </div>
@@ -250,7 +202,7 @@
     <a class="voltar" href="{{ url_for('login') }}">← Voltar ao login</a>
   </div>
 
-  <!-- Script do menu (igual ao quem_somos/busca) -->
+  <!-- ===== Scripts (iguais ao malharia_info) ===== -->
   <script>
     (function () {
       function closeAll() {
@@ -265,6 +217,7 @@
         const menu = wrap.querySelector('#menu-lateral');
         const xBtn = wrap.querySelector('.menu-close');
         if (!btn || !menu) return;
+
         btn.addEventListener('click', e => {
           e.stopPropagation();
           const willOpen = !menu.classList.contains('open');
@@ -272,15 +225,31 @@
           menu.classList.toggle('open', willOpen);
           btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
         });
+
         xBtn?.addEventListener('click', e => {
           e.stopPropagation();
           menu.classList.remove('open');
           btn.setAttribute('aria-expanded', 'false');
         });
+
         menu.addEventListener('click', e => e.stopPropagation());
       });
       document.addEventListener('click', closeAll);
       document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
+    })();
+  </script>
+
+  <!-- Ajuste de altura: considera TOPBAR + HEADER (igual ao malharia_info) -->
+  <script>
+    (function(){
+      function setNavH(){
+        const topbar = document.querySelector('.topbar')?.offsetHeight || 0;
+        const nav    = document.querySelector('.navbar')?.offsetHeight || 0;
+        const total  = topbar + nav;
+        document.documentElement.style.setProperty('--nav-h', total + 'px');
+      }
+      setNavH();
+      window.addEventListener('resize', setNavH);
     })();
   </script>
 </body>
