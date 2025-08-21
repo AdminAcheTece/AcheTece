@@ -40,14 +40,17 @@
     .ic-wa{ color:#22c55e; }  /* WhatsApp verde */
     .ic-mail{ color:#fff; }
 
-    /* ===== Faixa branca com logo (igual ao padrão) ===== */
-    header{
+    /* ===== Cabeçalho padrão (logo à esquerda) ===== */
+    .navbar{
+      overflow:visible;
+      padding:10px 20px;
       background:#fff;
-      padding:14px 0;
       border-bottom:1px solid #ddd;
-      text-align:center;
+      display:flex;
+      align-items:center;
     }
-    .logo img{ max-height:60px; height:auto; width:auto; display:block; margin:0 auto; }
+    .header-left{ display:flex; align-items:center; }
+    .logo img{ max-height:60px; height:auto; width:auto; display:block; }
 
     /* ===== Área de login ===== */
     .login-container{
@@ -67,6 +70,7 @@
     input[type="email"], input[type="password"]{
       width:100%; padding:10px; margin:10px 0 6px 0;
       border-radius:6px; border:1px solid #ccc;
+      background:#f3f7ff; /* mantém o visual do print */
     }
     .link-esqueci-senha{ text-align:right; margin-bottom:20px; }
     .link-esqueci-senha a{ color:var(--azul); text-decoration:none; font-size:14px; }
@@ -86,18 +90,17 @@
       .topbar-inner{ justify-content:center; gap:12px; }
     }
 
-    /* ===== Cabeçalho padrão ===== */
-    .navbar{
-      overflow:visible;
-      padding:10px 20px;
-      background:#fff;
-      border-bottom:1px solid #ddd;
-      display:flex;
-      align-items:center;
+    /* ===== Toggle de visibilidade da senha ===== */
+    .input-wrap{ position:relative; }
+    .input-wrap input{ padding-right:42px; } /* espaço pro botão do olho */
+    .toggle-visibility{
+      position:absolute; right:8px; top:50%; transform:translateY(-50%);
+      width:34px; height:34px; border:1px solid #dcdcdc; background:#fff;
+      border-radius:8px; display:inline-flex; align-items:center; justify-content:center;
+      cursor:pointer; padding:0;
     }
-    .header-left{ display:flex; align-items:center; }
-    .logo img{ max-height:60px; height:auto; width:auto; display:block; }
-   
+    .toggle-visibility:hover{ background:#f5f7ff; }
+    .toggle-visibility svg{ width:18px; height:18px; color:#1c1b22; }
   </style>
 </head>
 <body>
@@ -121,13 +124,13 @@
   </div>
 
   <!-- ===== Faixa branca com logo (alinhado à esquerda) ===== -->
-<header class="navbar">
-  <div class="header-left">
-    <div class="logo">
-      <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
+  <header class="navbar">
+    <div class="header-left">
+      <div class="logo">
+        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
+      </div>
     </div>
-  </div>
-</header>
+  </header>
 
   <!-- ===== Conteúdo (formulário) ===== -->
   <div class="login-container">
@@ -144,12 +147,35 @@
         {% endif %}
       {% endwith %}
 
-      <form method="POST">
+      <form method="POST" autocomplete="on">
         <label for="email">Email:</label>
-        <input type="email" name="email" required>
+        <input type="email" name="email" id="email" required autocomplete="username">
 
         <label for="senha">Senha:</label>
-        <input type="password" name="senha" required>
+        <div class="input-wrap">
+          <input
+            id="senha"
+            type="password"
+            name="senha"
+            required
+            autocomplete="current-password"
+          >
+          <button
+            type="button"
+            class="toggle-visibility"
+            aria-label="Mostrar senha"
+            aria-pressed="false"
+            data-target="#senha"
+            title="Mostrar/ocultar senha"
+          >
+            <!-- Ícone olho -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
 
         <div class="link-esqueci-senha">
           <a href="{{ url_for('esqueci_senha') }}">Esqueci a senha</a>
@@ -159,6 +185,48 @@
       </form>
     </div>
   </div>
+
+  <!-- JS: mostrar/ocultar senha -->
+  <script>
+    (function () {
+      function togglePassword(btn) {
+        const input = document.querySelector(btn.getAttribute('data-target'));
+        if (!input) return;
+        const isText = input.type === 'text';
+        input.type = isText ? 'password' : 'text';
+        btn.setAttribute('aria-pressed', String(!isText));
+        btn.setAttribute('aria-label', isText ? 'Mostrar senha' : 'Ocultar senha');
+      }
+
+      // Alterna no clique
+      document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.toggle-visibility');
+        if (!btn) return;
+        e.preventDefault();
+        togglePassword(btn);
+      });
+
+      // “Espreitar”: mostrar enquanto estiver pressionando
+      document.addEventListener('mousedown', function (e) {
+        const btn = e.target.closest('.toggle-visibility');
+        if (!btn) return;
+        const input = document.querySelector(btn.getAttribute('data-target'));
+        if (!input || input.type === 'text') return;
+        input.type = 'text';
+        btn.setAttribute('aria-pressed', 'true');
+      });
+      ['mouseup','mouseleave','blur'].forEach(evt => {
+        document.addEventListener(evt, function () {
+          const btn = document.querySelector('.toggle-visibility[aria-pressed="true"]');
+          if (!btn) return;
+          const input = document.querySelector(btn.getAttribute('data-target'));
+          if (!input) return;
+          input.type = 'password';
+          btn.setAttribute('aria-pressed', 'false');
+        });
+      });
+    })();
+  </script>
 
 </body>
 </html>
