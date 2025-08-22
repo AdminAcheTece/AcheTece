@@ -159,15 +159,27 @@
     </style>
 </head>
 <body>
-    <header>
+    <!-- Faixa preta topo -->
+    <div class="faixa-preta">
+        <div class="conteudo-faixa">
+            <a href="https://wa.me/5599999999999" target="_blank">Whats</a>
+            <a href="mailto:contato@achetece.com">Email</a>
+            <a href="/contato">Fale Conosco</a>
+        </div>
+    </div>
+
+    <!-- Faixa branca logo + ícones -->
+    <header class="faixa-branca">
         <div class="logo">
             <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
         </div>
-        <a href="/" class="icone-home" title="Página Inicial">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-home">
-                <path d="M3 9L12 2l9 7v11a2 2 0 0 1-2 2h-3a1 1 0 0 1-1-1v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V9z"/>
-            </svg>
-        </a>
+        <div class="icones-header">
+            <a href="/" class="icone-home" title="Página Inicial">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-home">
+                    <path d="M3 9L12 2l9 7v11a2 2 0 0 1-2 2h-3a1 1 0 0 1-1-1v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V9z"/>
+                </svg>
+            </a>
+        </div>
     </header>
 
     <div class="container">
