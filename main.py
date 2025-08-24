@@ -518,7 +518,7 @@ def webhook():
     </p>
     <div class="footer">
       AcheTece © {{ ano }} – Todos os direitos reservados.
-      <br><a href="{{ base }}">www.achetece.com</a>
+      <br><a href="{{ base }}">www.achetece.com.br</a>
     </div>
   </div>
 </body>
@@ -932,7 +932,7 @@ def teste_email_pagamento():
         </p>
         <div class="footer">
           AcheTece © 2025 – Todos os direitos reservados.<br>
-          <a href="{{ base }}">www.achetece.com</a>
+          <a href="{{ base }}">www.achetece.com.br</a>
         </div>
       </div>
     </body>
