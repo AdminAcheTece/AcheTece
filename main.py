@@ -31,15 +31,12 @@ def login_admin_requerido(f):
 
 def base_url():
     """Retorna a URL base preferindo APP_BASE_URL (Render)."""
-    # Ex.: https://achetece.onrender.com
     env_url = os.getenv('APP_BASE_URL')
     if env_url:
         return env_url.rstrip('/')
-    # fallback: derivar do request (em runtime HTTP)
     try:
         return request.url_root.rstrip('/')
     except Exception:
-        # fallback final se chamado fora de contexto
         return "http://localhost:5000"
 
 # App
@@ -65,7 +62,7 @@ MP_ACCESS_TOKEN = os.getenv("MP_ACCESS_TOKEN") or os.getenv("MERCADO_PAGO_TOKEN"
 sdk = mercadopago.SDK(MP_ACCESS_TOKEN)
 
 # Preço do plano (opcional via env; default 2.00 para teste)
-PLAN_MONTHLY = float(os.getenv("PLAN_MONTHLY", "2.00"))  # coloque "49.90" no Render quando quiser
+PLAN_MONTHLY = float(os.getenv("PLAN_MONTHLY", "2.00"))
 
 # ---------------------------
 # Utilitários
@@ -77,7 +74,6 @@ def gerar_token(email):
 
 def enviar_email_recuperacao(email, nome_empresa=""):
     token = gerar_token(email)
-    # Força domínio correto
     link = f"{base_url()}{url_for('redefinir_senha', token=token)}"
 
     msg = Message(
@@ -153,7 +149,6 @@ def login():
         email = request.form.get('email', '').strip().lower()
         senha = request.form.get('senha', '')
 
-        # Limpa sessões anteriores
         session.pop('empresa_id', None)
         session.pop('admin', None)
 
@@ -415,7 +410,6 @@ def painel_malharia():
 
 @app.route('/webhook', methods=['POST', 'GET'])
 def webhook():
-    # Aceita POST (webhook) e GET (alguns fluxos/retentativas)
     data = None
     try:
         data = request.get_json(silent=True)
@@ -480,7 +474,6 @@ def webhook():
         db.session.commit()
         app.logger.info(f"Empresa ativada: {empresa.email}")
 
-    # E-mail de confirmação (HTML)
     try:
         apelido = empresa.apelido or empresa.nome
         msg = Message(
@@ -756,6 +749,35 @@ def admin_empresas():
                            empresas=empresas, pagina=pagina, total_paginas=total_paginas,
                            status=status, data_inicio=data_inicio, data_fim=data_fim)
 
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# NOVA ROTA: Alterar/editar status de pagamento (pendente <-> ativo)
+# Aceita GET (para o link do botão) e POST (para uso via form)
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+@app.route('/admin/editar_status/<int:empresa_id>', methods=['GET', 'POST'])
+@login_admin_requerido
+def admin_editar_status(empresa_id):
+    empresa = Empresa.query.get_or_404(empresa_id)
+
+    # Permite forçar um valor (?status=ativo) ou alterna automaticamente
+    novo_status = request.values.get('status')
+    if not novo_status:
+        novo_status = 'ativo' if empresa.status_pagamento != 'ativo' else 'pendente'
+
+    empresa.status_pagamento = novo_status
+    empresa.data_pagamento = datetime.utcnow() if novo_status == 'ativo' else None
+    db.session.commit()
+
+    flash(f'Status de "{empresa.apelido or empresa.nome}" atualizado para {novo_status}.', 'success')
+    # Mantém filtros/página se vierem como querystring
+    return redirect(url_for(
+        'admin_empresas',
+        pagina=request.args.get('pagina', 1),
+        status=request.args.get('status', ''),
+        data_inicio=request.args.get('data_inicio', ''),
+        data_fim=request.args.get('data_fim', '')
+    ))
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 @app.route('/admin/excluir_empresa/<int:empresa_id>', methods=['POST'])
 @login_admin_requerido
 def excluir_empresa(empresa_id):
@@ -820,7 +842,6 @@ def admin_logout():
 
 @app.route('/pagar', methods=['GET'])
 def pagar():
-    # Rota antiga mantida por compatibilidade: redireciona para /checkout
     return redirect(url_for('checkout'))
 
 @app.route('/pagamento_aprovado')
@@ -853,9 +874,9 @@ def contato():
             try:
                 msg = Message(
                     subject=f"[AcheTece] Novo contato — {nome}",
-                    recipients=[os.getenv("CONTACT_TO", app.config.get("MAIL_USERNAME") or "")],
+                    recipients=[os.getenv("CONTACT_TO", app.config.get("MAIL_USERNAME") or "")]
                 )
-                    # opcional: msg.sender vem de MAIL_DEFAULT_SENDER/MAIL_USERNAME
+                # opcional: msg.sender vem de MAIL_DEFAULT_SENDER/MAIL_USERNAME
                 msg.reply_to = email
                 msg.body = f"Nome: {nome}\nE-mail: {email}\n\nMensagem:\n{mensagem}"
                 mail.send(msg)
