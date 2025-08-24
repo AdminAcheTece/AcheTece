@@ -171,9 +171,11 @@ def logout():
 
 @app.route('/cadastrar_empresa', methods=['GET', 'POST'])
 def cadastrar_empresa():
-    estados = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT',
-               'PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO']
-    cidades = ['Blumenau','Brusque','Gaspar','Joinville','São Paulo','Rio de Janeiro','Jaraguá do Sul']
+    # Lista de UFs permanece fixa
+    estados = [
+        'AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT',
+        'PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'
+    ]
 
     if request.method == 'POST':
         nome = request.form['nome']
@@ -195,6 +197,7 @@ def cadastrar_empresa():
         erros = {}
         telefone_limpo = re.sub(r'\D', '', telefone or '')
 
+        # --- validações existentes ---
         if len(telefone_limpo) < 10 or len(telefone_limpo) > 13:
             erros['telefone'] = 'Telefone inválido. Use apenas números com DDD. Ex: 47999991234'
         if Empresa.query.filter_by(nome=nome).first():
@@ -205,16 +208,36 @@ def cadastrar_empresa():
             erros['email'] = 'E-mail já cadastrado.'
         if estado not in estados:
             erros['estado'] = 'Estado inválido.'
-        if cidade not in cidades:
-            erros['cidade'] = 'Cidade inválida.'
+
+        # --- validação da cidade com base no UF selecionado ---
+        try:
+            cidades_validas = _get_cidades_por_uf(estado)  # usa arquivo/cached/IBGE
+        except Exception as e:
+            app.logger.warning(f"Falha ao obter cidades para UF={estado}: {e}")
+            cidades_validas = []
+
+        if cidades_validas:
+            if cidade not in cidades_validas:
+                erros['cidade'] = 'Cidade inválida.'
+        else:
+            # Se por algum motivo não carregou a lista (ex.: arquivo ausente e sem internet),
+            # não bloqueia o usuário e registra um aviso.
+            app.logger.warning(f"Nenhuma cidade carregada para UF={estado}. Pulando validação estrita de cidade.")
+
         if not responsavel_nome or len(re.sub(r'[^A-Za-zÀ-ÿ]', '', responsavel_nome)) < 2:
             erros['responsavel_nome'] = 'Informe ao menos o primeiro nome do responsável.'
 
         if erros:
-            return render_template('cadastrar_empresa.html',
-                                   erro='Corrija os campos destacados abaixo.',
-                                   erros=erros, estados=estados, cidades=cidades, **dados)
+            # Não enviamos mais 'cidades' para o template; o select será populado via /api/cidades
+            return render_template(
+                'cadastrar_empresa.html',
+                erro='Corrija os campos destacados abaixo.',
+                erros=erros,
+                estados=estados,
+                **dados
+            )
 
+        # --- criação do registro ---
         nova_empresa = Empresa(
             nome=nome,
             apelido=apelido,
@@ -233,7 +256,8 @@ def cadastrar_empresa():
         session['empresa_id'] = nova_empresa.id
         return redirect(url_for('checkout'))
 
-    return render_template('cadastrar_empresa.html', estados=estados, cidades=cidades)
+    # GET: só enviamos os estados; as cidades serão carregadas via JS (/api/cidades)
+    return render_template('cadastrar_empresa.html', estados=estados)
 
 @app.route('/checkout')
 def checkout():
