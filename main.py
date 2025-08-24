@@ -894,16 +894,62 @@ def termos():
 def rota_teste():
     return "✅ A rota funciona!"
 
-# Carrega um dicionário { "SC": ["Blumenau", "Brusque", ...], "SP": [...], ... }
-# Salve o arquivo em: static/cidades_por_uf.json
-with open(os.path.join(app.root_path, 'static', 'cidades_por_uf.json'), 'r', encoding='utf-8') as f:
-    CIDADES_POR_UF = json.load(f)
+# --- IBGE / Cidades por UF ---
+import json, os
+from pathlib import Path
+import requests
+from flask import jsonify
 
-@app.route('/api/cidades')
+_CIDADES_CACHE = {}
+_CIDADES_JSON_PATH = Path(app.root_path) / "static" / "cidades_por_uf.json"
+
+def _carregar_cidades_estatico():
+    """Carrega cidades do JSON estático (se existir)."""
+    try:
+        if _CIDADES_JSON_PATH.exists():
+            with open(_CIDADES_JSON_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            # normaliza chaves para UF maiúsculo
+            return {k.upper(): v for k, v in data.items()}
+    except Exception as e:
+        app.logger.warning(f"Falha ao ler cidades_por_uf.json: {e}")
+    return {}
+
+_CIDADES_ESTATICO = _carregar_cidades_estatico()
+
+def _buscar_cidades_ibge(uf: str):
+    """Busca cidades do UF na API do IBGE e retorna lista de nomes."""
+    url = f"https://servicodados.ibge.gov.br/api/v1/localidades/estados/{uf}/municipios?orderBy=nome"
+    r = requests.get(url, timeout=15)
+    r.raise_for_status()
+    dados = r.json() or []
+    # cada item tem {"id":..., "nome": "...", "microrregiao":{...}}
+    return [item.get("nome") for item in dados if isinstance(item, dict) and item.get("nome")]
+
+def _get_cidades_por_uf(uf: str):
+    uf = (uf or "").upper().strip()
+    if not uf:
+        return []
+    # 1) cache em memória
+    if uf in _CIDADES_CACHE:
+        return _CIDADES_CACHE[uf]
+    # 2) arquivo estático (se presente)
+    if uf in _CIDADES_ESTATICO:
+        _CIDADES_CACHE[uf] = list(_CIDADES_ESTATICO[uf])
+        return _CIDADES_CACHE[uf]
+    # 3) API IBGE
+    try:
+        cidades = _buscar_cidades_ibge(uf)
+        _CIDADES_CACHE[uf] = cidades
+        return cidades
+    except Exception as e:
+        app.logger.exception(f"Falha ao buscar cidades do IBGE para {uf}: {e}")
+        return []
+
+@app.route("/api/cidades")
 def api_cidades():
-    uf = (request.args.get('uf') or '').upper()
-    cidades = CIDADES_POR_UF.get(uf, [])
-    return jsonify(cidades)
+    uf = request.args.get("uf", "")
+    return jsonify(_get_cidades_por_uf(uf))
 
 @app.route('/teste_email_pagamento')
 def teste_email_pagamento():
