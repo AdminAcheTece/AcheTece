@@ -15,6 +15,7 @@ import io
 import math
 import re
 import uuid
+import json
 
 # ---------------------------
 # Helpers e Configurações
@@ -892,6 +893,17 @@ def termos():
 @app.route('/rota-teste')
 def rota_teste():
     return "✅ A rota funciona!"
+
+# Carrega um dicionário { "SC": ["Blumenau", "Brusque", ...], "SP": [...], ... }
+# Salve o arquivo em: static/cidades_por_uf.json
+with open(os.path.join(app.root_path, 'static', 'cidades_por_uf.json'), 'r', encoding='utf-8') as f:
+    CIDADES_POR_UF = json.load(f)
+
+@app.route('/api/cidades')
+def api_cidades():
+    uf = (request.args.get('uf') or '').upper()
+    cidades = CIDADES_POR_UF.get(uf, [])
+    return jsonify(cidades)
 
 @app.route('/teste_email_pagamento')
 def teste_email_pagamento():
