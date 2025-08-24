@@ -328,7 +328,7 @@
     </div>
   </section>
 
-  <!-- ===== Conteúdo do CADASTRO (formulário original mantido) ===== -->
+  <!-- ===== Conteúdo do CADASTRO ===== -->
   <div class="container">
     <h1 class="titulo">Cadastrar Malharia</h1>
 
@@ -386,11 +386,11 @@
       {% endif %}
 
       <label for="cidade">Cidade <span style="color:#d00000">*</span></label>
-      <select id="cidade" name="cidade" required class="{% if erros and erros.get('cidade') %}erro-campo{% endif %}">
+      <!-- Agora a lista é preenchida via JS a partir de /api/cidades -->
+      <select id="cidade" name="cidade" required
+              data-inicial="{{ cidade or '' }}"
+              class="{% if erros and erros.get('cidade') %}erro-campo{% endif %}">
         <option value="">Selecione a cidade</option>
-        {% for c in cidades %}
-          <option value="{{ c }}" {% if cidade == c %}selected{% endif %}>{{ c }}</option>
-        {% endfor %}
       </select>
       {% if erros and erros.get('cidade') %}
         <div class="mensagem-campo">{{ erros.get('cidade') }}</div>
@@ -420,7 +420,7 @@
     </form>
   </div>
 
-  <!-- ===== Scripts do MENU (iguais ao malharia_info/busca) ===== -->
+  <!-- ===== Scripts do MENU ===== -->
   <script>
     (function () {
       function closeAll() {
@@ -471,6 +471,50 @@
       setNavH();
       window.addEventListener('resize', setNavH);
     })();
+  </script>
+
+  <!-- ===== Script: cidades dinâmicas por UF ===== -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const ufSelect = document.getElementById('estado');
+      const cidadeSelect = document.getElementById('cidade');
+
+      async function carregarCidades(uf, preselecionada = '') {
+        if (!uf) {
+          cidadeSelect.innerHTML = '<option value="">Selecione a cidade</option>';
+          return;
+        }
+        cidadeSelect.innerHTML = '<option value="">Carregando...</option>';
+        try {
+          const resp = await fetch(`/api/cidades?uf=${encodeURIComponent(uf)}`);
+          if (!resp.ok) throw new Error('Falha na resposta da API');
+          const cidades = await resp.json();
+
+          // Monta as opções
+          const options = ['<option value="">Selecione a cidade</option>']
+            .concat(cidades.map(c => {
+              const sel = (preselecionada && preselecionada === c) ? ' selected' : '';
+              return `<option value="${c.replace(/"/g,'&quot;')}"${sel}>${c}</option>`;
+            }));
+          cidadeSelect.innerHTML = options.join('');
+        } catch (err) {
+          console.error(err);
+          cidadeSelect.innerHTML = '<option value="">Falha ao carregar cidades</option>';
+        }
+      }
+
+      // Atualiza cidades ao mudar o UF
+      ufSelect.addEventListener('change', () => {
+        carregarCidades(ufSelect.value);
+      });
+
+      // Pré-carrega se já veio UF selecionado (ex.: retorno por erro de validação)
+      const ufInicial = ufSelect.value;
+      const cidadeInicial = cidadeSelect.getAttribute('data-inicial') || '';
+      if (ufInicial) {
+        carregarCidades(ufInicial, cidadeInicial);
+      }
+    });
   </script>
 </body>
 </html>
