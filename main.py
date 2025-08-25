@@ -1143,5 +1143,71 @@ def teste_email_pagamento():
     """, base=base_url())
     return html_email
 
+from flask import jsonify, session, request
+import re
+
+def _try_int(s):
+    try:
+        return int(str(s).strip())
+    except:
+        return None
+
+def _empresa_from_ext(ext):
+    """
+    Aceita formatos tipo:
+    - achetece:123:uuid
+    - 123
+    - qualquer-coisa-123
+    """
+    if not ext:
+        return None
+    # se for "achetece:123:..."
+    if isinstance(ext, str) and ext.startswith("achetece:"):
+        parts = ext.split(":")
+        if len(parts) >= 2:
+            emp_id = _try_int(parts[1])
+            if emp_id:
+                return Empresa.query.get(emp_id)
+    # só número
+    emp_id = _try_int(ext)
+    if emp_id:
+        return Empresa.query.get(emp_id)
+    # extrai primeiro bloco numérico
+    m = re.search(r"(\d+)", str(ext))
+    if m:
+        emp_id = _try_int(m.group(1))
+        if emp_id:
+            return Empresa.query.get(emp_id)
+    return None
+
+@app.route('/api/pagamento_status')
+def api_pagamento_status():
+    """
+    Retorna {"status": "ativo|pendente|inativo|desconhecido", "empresa_id": <id or null>}
+    Prioriza sessão; se não houver, tenta via ?ext=<external_reference>.
+    """
+    empresa = None
+
+    # 1) sessão (cliente retornou do checkout ainda logado)
+    emp_id = session.get('empresa_id')
+    if emp_id:
+        empresa = Empresa.query.get(emp_id)
+
+    # 2) fallback por external_reference na URL (?ext=achetece:123:xxx)
+    if not empresa:
+        ext = request.args.get('ext')
+        if ext:
+            empresa = _empresa_from_ext(ext)
+
+    if not empresa:
+        return jsonify({"status": "desconhecido", "empresa_id": None}), 200
+
+    status = (empresa.status_pagamento or "pendente").lower()
+    # normaliza
+    if status not in ("ativo", "pendente", "inativo"):
+        status = "desconhecido"
+
+    return jsonify({"status": status, "empresa_id": int(empresa.id)}), 200
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
