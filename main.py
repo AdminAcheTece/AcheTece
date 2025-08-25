@@ -259,8 +259,12 @@ def cadastrar_empresa():
     # GET: só enviamos os estados; as cidades serão carregadas via JS (/api/cidades)
     return render_template('cadastrar_empresa.html', estados=estados)
 
+from uuid import uuid4
+from flask import request, redirect, url_for
+
 @app.route('/checkout')
 def checkout():
+    # --- Autenticação de sessão ---
     if 'empresa_id' not in session:
         return redirect(url_for('login'))
 
@@ -269,28 +273,45 @@ def checkout():
         session.pop('empresa_id', None)
         return redirect(url_for('login'))
 
-    success_url = f"{base_url()}/pagamento_aprovado"
-    failure_url = f"{base_url()}/pagamento_erro"
-    pending_url = f"{base_url()}/pagamento_pendente"
-    notify_url  = f"{base_url()}/webhook"
+    # --- URLs de retorno e webhook ---
+    base = base_url()  # garanta que retorna https://achetece.com.br em produção
+    success_url = f"{base}/pagamento_aprovado"
+    failure_url = f"{base}/pagamento_erro"
+    pending_url = f"{base}/pagamento_pendente"
+    notify_url  = f"{base}/webhook"
 
-    ext_ref = f"achetece:{empresa.id}:{uuid.uuid4().hex}"
+    # --- Identificação única e estável da empresa ---
+    # Seu webhook já entende "achetece:<ID>:"; mantemos esse padrão
+    ext_ref = f"achetece:{empresa.id}:{uuid4().hex}"
 
     first_name = (getattr(empresa, 'responsavel_nome', '') or '').strip() or empresa.email.split('@')[0]
     last_name  = (getattr(empresa, 'responsavel_sobrenome', '') or '').strip()
 
+    # --- (Opcional) seleção de plano por querystring, mantendo mensal como padrão ---
+    plano = (request.args.get('plano') or 'mensal').lower()
+    if plano not in ('mensal', 'anual'):
+        plano = 'mensal'
+
+    if plano == 'anual':
+        titulo_plano = "Assinatura anual AcheTece"
+        preco = float(PLAN_YEARLY)  # defina PLAN_YEARLY no seu settings (.env)
+    else:
+        titulo_plano = "Assinatura mensal AcheTece"
+        preco = float(PLAN_MONTHLY)
+
+    # --- Preferência do Checkout Pro ---
     preference_data = {
         "items": [{
-            "title": "Assinatura mensal AcheTece",
+            "title": titulo_plano,
             "quantity": 1,
             "currency_id": "BRL",
-            "unit_price": float(PLAN_MONTHLY)
+            "unit_price": preco
         }],
         "payer": {
             "name": first_name,
             "surname": last_name,
-            "first_name": first_name,
-            "last_name": last_name,
+            "first_name": first_name,  # compat
+            "last_name": last_name,    # compat
             "email": empresa.email
         },
         "back_urls": {
@@ -300,19 +321,34 @@ def checkout():
         },
         "auto_return": "approved",
         "notification_url": notify_url,
-        "external_reference": ext_ref
+        "external_reference": ext_ref,
+        # >>> CHAVE para o webhook localizar a empresa mesmo se o e‑mail do pagador for diferente
+        "metadata": {
+            "empresa_id": int(empresa.id),
+            "empresa_email": empresa.email,
+            "plano": plano
+        },
+        # (Opcional) melhora identificação na fatura do cartão
+        "statement_descriptor": "AcheTece"
     }
 
     try:
-        app.logger.info(f"Criando preferência para {empresa.email} | notify={notify_url} | ext={ext_ref}")
+        app.logger.info(
+            f"[CHECKOUT] Criando preferência | empresa_id={empresa.id} | email={empresa.email} "
+            f"| plano={plano} | price={preco:.2f} | notify={notify_url} | ext_ref={ext_ref}"
+        )
         preference_response = sdk.preference().create(preference_data)
-        preference = preference_response.get("response", {})
+        preference = preference_response.get("response", {}) if isinstance(preference_response, dict) else {}
         init_point = preference.get("init_point")
+
         if not init_point:
+            app.logger.error(f"[CHECKOUT] init_point ausente. Response: {preference}")
             return f"<h2>Erro: 'init_point' ausente na resposta.<br><br>Detalhes: {preference}</h2>", 500
+
         return redirect(init_point)
+
     except Exception as e:
-        app.logger.exception(f"Erro ao iniciar pagamento: {e}")
+        app.logger.exception(f"[CHECKOUT] Erro ao iniciar pagamento: {e}")
         return f"<h2>Erro ao iniciar pagamento: {e}</h2>", 500
 
 @app.route('/planos')
