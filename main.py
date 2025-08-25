@@ -433,13 +433,67 @@ def painel_malharia():
     teares = Tear.query.filter_by(empresa_id=empresa.id).all()
     return render_template('painel_malharia.html', empresa=empresa, teares=teares)
 
+from datetime import datetime
+import re
+from flask import request, jsonify
+
+def _try_int(s):
+    try:
+        return int(str(s).strip())
+    except:
+        return None
+
+def _extract_empresa_id(payment):
+    """
+    Tenta achar o ID da Empresa nas seguintes fontes (nessa ordem):
+    1) metadata.empresa_id
+    2) external_reference (formatos: "achetece:123:..." | "123" | "qualquer coisa 123")
+    3) None
+    """
+    meta = (payment or {}).get("metadata") or {}
+    if isinstance(meta, dict):
+        emp_id = _try_int(meta.get("empresa_id"))
+        if emp_id:
+            return emp_id
+
+    ext = (payment or {}).get("external_reference")
+    if ext:
+        # formato "achetece:123:*"
+        if isinstance(ext, str) and ext.startswith("achetece:"):
+            parts = ext.split(":")
+            if len(parts) >= 2:
+                emp_id = _try_int(parts[1])
+                if emp_id:
+                    return emp_id
+        # só números
+        emp_id = _try_int(ext)
+        if emp_id:
+            return emp_id
+        # qualquer dígito dentro do texto
+        m = re.search(r"(\d+)", str(ext))
+        if m:
+            emp_id = _try_int(m.group(1))
+            if emp_id:
+                return emp_id
+
+    return None
+
+
 @app.route('/webhook', methods=['POST', 'GET'])
 def webhook():
+    """
+    Webhook do Mercado Pago:
+    - Busca o pagamento por ID.
+    - Resolve a empresa via metadata/external_reference (com vários formatos) ou fallback por e‑mail.
+    - Mapeia status -> {ativo|pendente|inativo}.
+    - Idempotente: só envia e-mail quando mudar para 'ativo'.
+    """
+    # ---- Captura do payload (POST e GET) ----
     data = None
     try:
         data = request.get_json(silent=True)
     except Exception as e:
-        app.logger.warning(f"get_json falhou: {e}")
+        app.logger.warning(f"[WEBHOOK] get_json falhou: {e}")
 
     topic = None
     payment_id = None
@@ -453,60 +507,92 @@ def webhook():
         topic = request.args.get('topic') or request.form.get('topic') or request.args.get('type')
         payment_id = request.args.get('id') or request.form.get('id')
 
-    app.logger.info(f"Webhook | topic={topic} | payment_id={payment_id} | raw={data}")
+    app.logger.info(f"[WEBHOOK] topic={topic} | payment_id={payment_id} | raw={data}")
 
     if not payment_id or str(topic).lower() != 'payment':
-        app.logger.info("Notificação ignorada (sem topic=payment ou sem id).")
+        app.logger.info("[WEBHOOK] Notificação ignorada (sem topic=payment ou sem id).")
         return "ok", 200
 
+    # ---- Consulta ao pagamento ----
     try:
-        payment = sdk.payment().get(payment_id)["response"]
-        app.logger.info(f"Payment: {payment}")
+        payment_resp = sdk.payment().get(payment_id)
+        payment = payment_resp.get("response", {}) if isinstance(payment_resp, dict) else {}
     except Exception as e:
-        app.logger.exception(f"Erro ao consultar pagamento: {e}")
+        app.logger.exception(f"[WEBHOOK] Erro ao consultar pagamento {payment_id}: {e}")
         return "ok", 200
 
-    status = (payment or {}).get("status")
-    payer_email = ((payment or {}).get("payer") or {}).get("email")
-    external_reference = (payment or {}).get("external_reference")
+    status = (payment or {}).get("status", "") or ""
+    status = status.lower()
+    payer_email = (((payment or {}).get("payer")) or {}).get("email")
     mp_payment_id = str((payment or {}).get("id"))
+    external_reference = (payment or {}).get("external_reference")
+    app.logger.info(f"[WEBHOOK] MP id={mp_payment_id} | status={status} | payer={payer_email} | ext_ref={external_reference} | meta={(payment or {}).get('metadata')}")
 
-    app.logger.info(f"status={status} | payer={payer_email} | ext_ref={external_reference} | mp_id={mp_payment_id}")
-
-    if status not in ["approved", "authorized"]:
-        return "ok", 200
-
+    # ---- Resolve Empresa ----
     empresa = None
-    if external_reference and isinstance(external_reference, str) and external_reference.startswith("achetece:"):
-        parts = external_reference.split(":")
-        if len(parts) >= 3:
-            try:
-                empresa_id_from_ext = int(parts[1])
-                empresa = Empresa.query.get(empresa_id_from_ext)
-            except Exception as e:
-                app.logger.warning(f"external_reference inválido: {external_reference} | {e}")
 
+    # 1) Tenta por metadata/ext_ref (vários formatos)
+    emp_id = _extract_empresa_id(payment)
+    if emp_id:
+        empresa = Empresa.query.get(emp_id)
+        app.logger.info(f"[WEBHOOK] Empresa via id={emp_id}: {bool(empresa)}")
+
+    # 2) Fallback por e-mail do pagador (atenção: pode ser diferente do e-mail da empresa)
     if not empresa and payer_email:
-        empresa = Empresa.query.filter_by(email=payer_email).first()
+        empresa = Empresa.query.filter_by(email=(payer_email or "").strip().lower()).first()
+        app.logger.info(f"[WEBHOOK] Empresa via payer_email={payer_email}: {bool(empresa)}")
 
     if not empresa:
-        app.logger.error("Empresa não encontrada por external_reference ou e-mail.")
+        app.logger.error("[WEBHOOK] Empresa não encontrada (nem por external_reference/metadata nem por e-mail).")
+        # Retornamos 200 para não gerar reentregas infinitas, mas registramos o caso.
         return "ok", 200
 
-    if empresa.status_pagamento != "ativo":
-        empresa.status_pagamento = "ativo"
+    # ---- Mapeia status do MP -> status interno ----
+    novo_status = empresa.status_pagamento or "pendente"
+    if status in ["approved", "authorized"]:
+        novo_status = "ativo"
+    elif status in ["in_process", "pending"]:
+        novo_status = "pendente"
+    elif status in ["rejected", "cancelled", "refunded", "charged_back"]:
+        novo_status = "inativo"
+    else:
+        # mantém o atual, mas loga para acompanharmos
+        app.logger.warning(f"[WEBHOOK] Status do MP não mapeado: {status}. Mantendo {novo_status}.")
+
+    # ---- Atualização idempotente ----
+    mudou_para_ativo = (empresa.status_pagamento != "ativo" and novo_status == "ativo")
+
+    # Campos auxiliares (se existirem na sua model)
+    try:
+        empresa.mercadopago_payment_id = mp_payment_id
+    except Exception:
+        pass
+    try:
+        empresa.mercadopago_reference = str(external_reference or (payment.get("metadata") or {}).get("empresa_id") or "")
+    except Exception:
+        pass
+
+    empresa.status_pagamento = novo_status
+    if novo_status == "ativo":
         empresa.data_pagamento = datetime.utcnow()
-        db.session.commit()
-        app.logger.info(f"Empresa ativada: {empresa.email}")
 
     try:
-        apelido = empresa.apelido or empresa.nome
-        msg = Message(
-            subject="✅ Pagamento aprovado! Acesse seu painel no AcheTece",
-            sender=app.config['MAIL_USERNAME'],
-            recipients=[empresa.email]
-        )
-        msg.html = render_template_string("""
+        db.session.commit()
+        app.logger.info(f"[WEBHOOK] Empresa {empresa.id} ({empresa.email}) atualizada para: {empresa.status_pagamento}")
+    except Exception as e:
+        app.logger.exception(f"[WEBHOOK] Erro ao dar commit: {e}")
+        return "ok", 200
+
+    # ---- E-mail somente ao mudar para ATIVO ----
+    if mudou_para_ativo:
+        try:
+            apelido = (empresa.apelido or empresa.nome or "").strip() or "Cliente"
+            msg = Message(
+                subject="✅ Pagamento aprovado! Acesse seu painel no AcheTece",
+                sender=app.config.get('MAIL_USERNAME'),
+                recipients=[empresa.email]
+            )
+            msg.html = render_template_string("""
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -534,12 +620,10 @@ def webhook():
     </div>
     <h2>✅ Pagamento confirmado com sucesso!</h2>
     <p>Olá <strong>{{ apelido }}</strong>,</p>
-    <p>Seu pagamento foi aprovado com sucesso e agora você tem acesso completo à nossa plataforma.</p>
-    <p>Acesse o painel da sua malharia para cadastrar seus teares e começar a receber contatos de clientes interessados.</p>
+    <p>Seu pagamento foi aprovado e seu acesso ao painel já está liberado.</p>
     <a class="botao" href="{{ base }}/login" target="_blank">Ir para o painel</a>
     <p style="text-align:center; font-size:14px; color:#777;">
-      Em caso de dúvidas, fale conosco no WhatsApp:<br>
-      <a href="https://wa.me/5547991120670" target="_blank">Clique aqui para falar com a equipe AcheTece</a>
+      Dúvidas? <a href="https://wa.me/5547991120670" target="_blank">Fale com nossa equipe</a>.
     </p>
     <div class="footer">
       AcheTece © {{ ano }} – Todos os direitos reservados.
@@ -548,12 +632,13 @@ def webhook():
   </div>
 </body>
 </html>
-        """, apelido=apelido, ano=datetime.utcnow().year, base=base_url())
-        mail.send(msg)
-        app.logger.info(f"E-mail HTML enviado para {empresa.email}")
-    except Exception as e:
-        app.logger.exception(f"Erro ao enviar e-mail: {e}")
+            """, apelido=apelido, ano=datetime.utcnow().year, base=base_url())
+            mail.send(msg)
+            app.logger.info(f"[WEBHOOK] E-mail HTML enviado para {empresa.email}")
+        except Exception as e:
+            app.logger.exception(f"[WEBHOOK] Erro ao enviar e-mail: {e}")
 
+    # Nunca devolva 500 para o Mercado Pago; sempre 200.
     return "ok", 200
 
 @app.route("/quem-somos")
