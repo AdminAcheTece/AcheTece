@@ -5,43 +5,42 @@
     <title>Pagamento Aprovado - AcheTece</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
     <!-- Ícone da aba (favicon) -->
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
-    
+
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
             margin: 0;
             padding: 0;
+            color: #333;
         }
-
         .container {
             max-width: 600px;
             margin: 60px auto;
             background: #fff;
             padding: 32px;
             border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             text-align: center;
         }
-
         h1 {
             color: #2e7d32;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
+            font-size: 24px;
+            line-height: 1.2;
         }
-
         p {
             color: #555;
             font-size: 16px;
-            margin-bottom: 30px;
+            margin: 10px 0 22px 0;
         }
-
         .botao-acao {
             background-color: #003bb3;
-            color: white;
+            color: #fff;
             padding: 14px 24px;
             font-size: 16px;
             font-weight: bold;
@@ -51,43 +50,83 @@
             transition: background-color 0.3s ease;
             display: inline-block;
         }
-
-        .botao-acao:hover {
-            background-color: #002f91;
-        }
-
-        .logo {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .logo img {
-            max-height: 80px;
-        }
-
+        .botao-acao:hover { background-color: #002f91; }
+        .logo { text-align: center; margin-bottom: 20px; }
+        .logo img { max-height: 80px; }
         .icone {
             font-size: 60px;
             color: #2e7d32;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+        }
+        .hint { color:#666; font-size:14px; margin-top:12px; }
+        .muted { color:#777; font-size:13px; }
+        @media (max-width: 480px){
+            .container { margin: 24px 12px; padding: 24px; }
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
+    <div class="container" role="status" aria-live="polite">
         <div class="logo">
-            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
+            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
+            <!-- Se preferir o símbolo, troque para logo_simbolo.png -->
         </div>
 
-        <div class="icone">✅</div>
+        <div class="icone" aria-hidden="true">✅</div>
+        <h1>Pagamento aprovado</h1>
 
-        <h1>Pagamento Aprovado</h1>
+        <p>
+            Seu pagamento foi confirmado com sucesso!<br>
+            Estamos validando seu acesso. Isso leva só alguns segundos.
+        </p>
 
-        <p>Seu pagamento foi confirmado com sucesso!<br>
-        Agora você já pode acessar seu painel e cadastrar seus teares.</p>
+        <a href="{{ url_for('login') }}" class="botao-acao" id="cta-login">Ir para o login</a>
+        <div class="hint" id="hint">Você será redirecionado automaticamente quando o acesso estiver liberado.</div>
 
-        <a href="{{ url_for('login') }}" class="botao-acao">Ir para o login</a>
+        <noscript>
+            <p class="muted">Ative o JavaScript para redireciono automático. Você pode clicar em “Ir para o login”.</p>
+        </noscript>
     </div>
+
+    <script>
+    (function () {
+        // Faz polling do status e redireciona ao ficar "ativo"
+        const urlParams = new URLSearchParams(window.location.search);
+        const ext = urlParams.get('ext'); // opcional, melhora robustez
+        const maxTries = 40; // ~ 2-3 minutos
+        let tries = 0;
+
+        async function checarStatus() {
+            try {
+                const qs = ext ? ("?ext=" + encodeURIComponent(ext)) : "";
+                const res = await fetch("/api/pagamento_status" + qs, { cache: "no-store" });
+                if (res.ok) {
+                    const js = await res.json();
+                    if (js && js.status === "ativo") {
+                        // pronto para usar a plataforma
+                        window.location.href = "/login"; // ou troque por sua rota de painel autenticado
+                        return;
+                    }
+                }
+            } catch (e) {
+                // silencia erros intermitentes de rede
+            }
+            tries++;
+            if (tries < maxTries) {
+                setTimeout(checarStatus, 4000);
+            } else {
+                const hint = document.getElementById("hint");
+                if (hint) {
+                    hint.textContent = "Se não redirecionar, clique em “Ir para o login”.";
+                }
+            }
+        }
+
+        // Inicia checagem poucos segundos após carregar
+        setTimeout(checarStatus, 2000);
+    })();
+    </script>
 
 </body>
 </html>
