@@ -5,40 +5,39 @@
     <title>Pagamento Pendente - AcheTece</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
     <!-- Ícone da aba (favicon) -->
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}"> 
-    
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
+
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
             margin: 0;
             padding: 0;
+            color: #333;
         }
-
         .container {
             max-width: 600px;
             margin: 60px auto;
             background: #fff;
             padding: 32px;
             border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             text-align: center;
         }
-
         h1 {
             color: #ff9800;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
+            font-size: 24px;
+            line-height: 1.2;
         }
-
         p {
             color: #555;
             font-size: 16px;
-            margin-bottom: 30px;
+            margin: 10px 0 22px 0;
         }
-
         .botao-acao {
             background-color: #003bb3;
             color: white;
@@ -51,24 +50,19 @@
             transition: background-color 0.3s ease;
             display: inline-block;
         }
-
-        .botao-acao:hover {
-            background-color: #002f91;
-        }
-
-        .logo {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .logo img {
-            max-height: 80px;
+        .botao-acao:hover { background-color: #002f91; }
+        .logo { text-align: center; margin-bottom: 20px; }
+        .logo img { max-height: 80px; }
+        .hint { color:#666; font-size:14px; margin-top:12px; }
+        .muted { color:#777; font-size:13px; }
+        @media (max-width: 480px){
+            .container { margin: 24px 12px; padding: 24px; }
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
+    <div class="container" role="status" aria-live="polite">
         <div class="logo">
             <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
         </div>
@@ -76,15 +70,61 @@
         <h1>Pagamento Pendente</h1>
 
         {% if empresa %}
-            <p>Olá, {{ empresa.apelido or empresa.nome }}, ainda não identificamos o pagamento da sua assinatura.</p>
+            <p>Olá, <strong>{{ empresa.apelido or empresa.nome }}</strong>. Ainda não identificamos a compensação do seu pagamento.</p>
         {% else %}
-            <p>Olá! Ainda não identificamos o pagamento da sua assinatura.</p>
+            <p>Olá! Ainda não identificamos a compensação do seu pagamento.</p>
         {% endif %}
 
-        <p>Assim que ele for confirmado, seu acesso será liberado automaticamente.</p>
+        <p>
+            Isso pode acontecer com <strong>boleto</strong> (compensação em horas ou até 1 dia útil) ou <strong>Pix em análise</strong>.
+            Assim que o pagamento for confirmado, seu acesso será liberado automaticamente.
+        </p>
 
         <a href="{{ url_for('pagar') }}" class="botao-acao">Tentar pagar novamente</a>
+        <div class="hint" id="hint">Estamos verificando periodicamente. Você será redirecionado quando o acesso estiver liberado.</div>
+
+        <noscript>
+            <p class="muted">Ative o JavaScript para verificação automática. Você pode tentar novamente pelo botão acima.</p>
+        </noscript>
     </div>
+
+    <script>
+    (function () {
+        // Faz polling do status e redireciona ao ficar "ativo"
+        const urlParams = new URLSearchParams(window.location.search);
+        const ext = urlParams.get('ext'); // opcional, melhora robustez em caso de sessão perdida
+        const maxTries = 120; // ~ 8 minutos (120 * 4s)
+        let tries = 0;
+
+        async function checarStatus() {
+            try {
+                const qs = ext ? ("?ext=" + encodeURIComponent(ext)) : "";
+                const res = await fetch("/api/pagamento_status" + qs, { cache: "no-store" });
+                if (res.ok) {
+                    const js = await res.json();
+                    if (js && js.status === "ativo") {
+                        window.location.href = "/login"; // ou sua rota de painel autenticado
+                        return;
+                    }
+                }
+            } catch (e) {
+                // Silencia erros intermitentes (rede, etc.)
+            }
+            tries++;
+            if (tries < maxTries) {
+                setTimeout(checarStatus, 4000);
+            } else {
+                const hint = document.getElementById("hint");
+                if (hint) {
+                    hint.textContent = "Se preferir, clique em “Tentar pagar novamente” ou retorne mais tarde.";
+                }
+            }
+        }
+
+        // Inicia checagem alguns segundos após carregar
+        setTimeout(checarStatus, 4000);
+    })();
+    </script>
 
 </body>
 </html>
