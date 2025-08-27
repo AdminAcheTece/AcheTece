@@ -638,6 +638,11 @@ thead tr{ background:#f2f2f2; }
   line-height: 1.3;
   }
 
+  /* Ajuste do tamanho da fonte dos links da navbar */
+  .header-right a {
+  font-size: 14px; /* ou 13px, se quiser menor */
+  } 
+   
   .container-termos{
   max-width: 940px;              /* largura máxima da caixa */
   width: 90%;                    /* ocupa até 90% da tela em telas pequenas */
