@@ -134,7 +134,7 @@ header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
    ============================================================ */
 .hamburger{
   display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
-  width:40px; height:40px; padding:0;                 /* <<< 40x40 desktop */
+  width:32px; height:32px; padding:0;                 /* <<< 40x40 desktop */
   background:var(--branco);
   border:1px solid #d6d6d6; border-radius: var(--raio-10);
   cursor:pointer; box-shadow: var(--sombra-1);
