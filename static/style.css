@@ -640,7 +640,7 @@ thead tr{ background:#f2f2f2; }
 
   /* Ajuste do tamanho da fonte dos links da navbar */
   .header-right a {
-  font-size: 14px; /* ou 13px, se quiser menor */
+  font-size: 12px; /* ou 13px, se quiser menor */
   } 
    
   .container-termos{
