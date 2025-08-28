@@ -4,7 +4,7 @@
 
 /* 0) Variáveis de cor/espaço */
 :root{
-  --azul: #003bb3;
+  --azul: #8A00FF;
   --azul-hover: #336be3;
   --cinza-100: #f9f9f9;
   --cinza-150: #f6f8fa;
@@ -533,7 +533,7 @@ thead tr{ background:#f2f2f2; }
 .chip.is-active{ background:#0f0714; color:#fff; border-color:#0f0714; }
 
 .hero-ctas{ display:flex; gap:12px; align-items:center; margin: 8px 0 10px; }
-.link-inline{ color:#003bb3; text-decoration:none; }
+.link-inline{ color:#8A00FF; text-decoration:none; }
 .link-inline:hover{ text-decoration:underline; }
 
 .hero-badges{
