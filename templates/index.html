@@ -14,6 +14,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
 
   <style>
+    /* ==================== VARIÁVEIS (marca) ==================== */
+    :root{
+      --roxo: #8A00FF;           /* cor principal da marca (substitui azuis) */
+      --roxo-hover: #A63DFF;     /* variação para hover */
+      --roxo-clarinho: #F1E6FF;  /* fundo roxo bem claro (hover menu) */
+      --preto: #000000;          /* padronização para tons quase pretos */
+    }
+
     /* ====== LAYOUT DO TOPO ====== */
     .navbar{ overflow: visible; padding-top:6px; padding-bottom:6px; }
     .header-left, .header-right{ display:flex; align-items:center; }
@@ -25,33 +33,33 @@
       color:#666666; text-decoration:none; font-weight:300;
       padding:8px 0; line-height:1;
     }
-    .top-nav a:hover{ color:#8A00FF; text-decoration:underline; }
+    .top-nav a:hover{ color:var(--roxo); text-decoration:underline; }
     @media (max-width: 900px){ .top-nav{ display:none; } }
 
     /* ====== FAIXA PRETA (CTA) ACIMA DO RODAPÉ ====== */
     .cta-bar{
-      background:#000; color:#fff; padding:20px 16px;
+      background:var(--preto); color:#fff; padding:20px 16px;
       display:flex; align-items:center; justify-content:flex-start; gap:16px; flex-wrap:wrap;
       border-top:1px solid rgba(255,255,255,.06); margin-top:32px; text-align:left;
     }
     .cta-text h3{ margin:0 0 4px; font-size:18px; font-weight:700; line-height:1.2; }
     .cta-text p{ margin:0; font-size:15px; opacity:.9; }
     .cta-btn{
-      display:inline-block; background:#fff; color:#000; text-decoration:none;
+      display:inline-block; background:#fff; color:var(--preto); text-decoration:none;
       padding:10px 18px; border-radius:10px; font-weight:600; box-shadow:0 1px 0 rgba(0,0,0,.08);
       transition:transform .12s ease, background .2s ease, box-shadow .2s ease; white-space:nowrap;
     }
     .cta-btn:hover{ background:#f2f2f5; transform:translateY(-1px); box-shadow:0 3px 10px rgba(0,0,0,.12); }
 
     /* ====== RODAPÉ BRANCO ====== */
-    .site-footer{ background:#fff; color:#000; border-top:1px solid #eee; padding:18px 16px 28px; }
+    .site-footer{ background:#fff; color:var(--preto); border-top:1px solid #eee; padding:18px 16px 28px; }
     .footer-inner{ max-width:1180px; margin:0 auto; display:grid; grid-template-columns:auto 1fr; gap:20px 28px; align-items:start; }
     .footer-brand img{ height:44px; width:auto; display:block; }
     .footer-cols{ display:grid; grid-template-columns: repeat(2, minmax(180px, 240px)); gap:12px 28px; }
-    .footer-col h4{ margin:0 0 8px; font-size:14px; font-weight:700; color:#000; }
+    .footer-col h4{ margin:0 0 8px; font-size:14px; font-weight:700; color:var(--preto); }
     .footer-col ul{ list-style:none; margin:0; padding:0; }
     .footer-col li+li{ margin-top:6px; }
-    .footer-col a{ color:#000; text-decoration:none; font-size:14px; }
+    .footer-col a{ color:var(--preto); text-decoration:none; font-size:14px; }
     .footer-col a:hover{ text-decoration:underline; }
     @media (max-width: 720px){
       .footer-inner{ grid-template-columns:1fr; }
@@ -71,7 +79,7 @@
       width:40px; height:40px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
       box-shadow:0 2px 6px rgba(0,0,0,.06);
     }
-    .hamburger span{ display:block; width:20px; height:2px; background:#000; border-radius:2px; }
+    .hamburger span{ display:block; width:20px; height:2px; background:var(--preto); border-radius:2px; }
     .hamburger span + span{ margin-top:4px; }
     @media (max-width: 768px){
       .hamburger{ width:28px; height:28px; border-radius:8px; }
@@ -98,45 +106,37 @@
     .menu-dropdown .menu-close:hover{ background:#e9ebee; }
     .menu-dropdown .menu-close:active{ background:#e3e5e9; }
 
-    .menu-dropdown .menu-item{ font-weight:400; }
-
-    @media (min-width:769px){
-      .menu-dropdown{
-        position:absolute; top:calc(100% + 8px); right:0; left:auto;
-        width:auto; min-width:220px; max-width:320px; padding-right:2px; transform-origin: top right;
-      }
+    /* Itens do menu */
+    .menu-item{
+      display:flex; align-items:center; gap:10px;
+      padding:10px 12px; color:var(--preto); text-decoration:none; border-radius:10px;
+      transition: background .15s ease, color .15s ease;
     }
-    @media (max-width:768px){
-      .menu-wrap{ position: static; }
-      .menu-dropdown{
-        position: fixed; top: calc(var(--nav-h, 64px) + 8px);
-        left: 50%; right: auto;
+    .menu-item .icon{ width:18px; height:18px; color:currentColor; }
 
-        /* ===== ajuste de largura para caber no maior link ===== */
-        width: max-content;
-        max-width: 90vw;
-        min-width: 160px;
-        padding: 4px 0;
+    /* [Regra 3] Hover do menu: fundo roxo clarinho + texto/ícone roxo */
+    .menu-dropdown .menu-item:hover{
+      background: var(--roxo-clarinho);
+      color: var(--roxo);
+    }
 
-        max-height: calc(100vh - var(--nav-h, 64px) - 24px);
-        transform: translate(-50%, 8px) scale(.98); transform-origin: top center;
-        -webkit-overflow-scrolling: touch; border-radius:14px;
-      }
-      .menu-dropdown.open{ transform: translate(-50%, 0) scale(1); }
+    .menu-dropdown .menu-item:active{
+      background: #E9D7FF; /* um pouco mais escuro que o clarinho */
+      color: var(--roxo);
     }
 
     /* ====== FAIXA PRETA ESTREITA NO TOPO ====== */
     .promo-bar{
-      background:#000; color:#fff; display:flex; align-items:center; justify-content:center;
+      background:var(--preto); color:#fff; display:flex; align-items:center; justify-content:center;
       gap:12px; padding:6px 10px; font-size:14px; line-height:1.2;
     }
     .promo-text strong{ font-weight:700; }
     .promo-cta{
-      display:inline-block; background:#8A00FF; color:#fff; text-decoration:none;
+      display:inline-block; background:var(--roxo); color:#fff; text-decoration:none;
       padding:6px 10px; border-radius:8px; font-weight:600; white-space:nowrap;
       transition:background .2s ease, transform .12s ease;
     }
-    .promo-cta:hover{ background:#8A00FF; transform:translateY(-1px); }
+    .promo-cta:hover{ background:var(--roxo-hover); transform:translateY(-1px); }
     @media (max-width: 600px){ .promo-bar{ flex-wrap:wrap; row-gap:6px; } }
 
     /* ====== HERO NOVO ====== */
@@ -151,7 +151,7 @@
     }
     .hero-copy h1{
       font-size: clamp(24px, 3.2vw, 36px);
-      color:#000;
+      color:var(--preto);
       margin: 10px 0 8px;
       line-height: 1.2;
     }
@@ -160,7 +160,10 @@
       color:#444;
       margin: 0 0 14px;
     }
+
+    /* Toggle de perfis (chips) */
     .role-toggle{ display:flex; gap:8px; }
+
     .chip{
       appearance: none;
       border:1px solid #d6d6d6;
@@ -169,10 +172,27 @@
       border-radius:999px;
       cursor:pointer;
       font: inherit;
+      color: var(--roxo); /* [Regra 4] texto roxo quando não selecionado */
+      transition: color .15s ease, background .15s ease, border-color .15s ease;
     }
-    .chip.is-active{ background:#000; color:#fff; border-color:#000; }
+
+    /* [Regra 4] Estado ativo/selecionado: preto com texto branco */
+    .chip.is-active{
+      background:var(--preto);
+      color:#fff;
+      border-color:var(--preto);
+    }
+
     .hero-ctas{ display:flex; gap:12px; align-items:center; margin: 8px 0 10px; }
-    .btn-principal{ display:inline-block; background:#8A00FF; color:#fff; padding:12px 18px; border-radius:12px; font-weight:700; text-decoration:none; }
+
+    /* Botão principal (marca em roxo) — [Regra 2] */
+    .btn-principal{
+      display:inline-block; background:var(--roxo); color:#fff;
+      padding:12px 18px; border-radius:12px; font-weight:700; text-decoration:none;
+      transition: background .15s ease, transform .12s ease;
+    }
+    .btn-principal:hover{ background:var(--roxo-hover); transform: translateY(-1px); }
+
     .hero-figure img{
       width:100%;
       border-radius:10px;
@@ -192,7 +212,7 @@
     .how-it-works h2{
       font-size: clamp(20px, 2.4vw, 28px);
       margin: 0 0 8px;
-      color:#000;
+      color:var(--preto);
       text-align:center;
     }
     .steps{
@@ -208,8 +228,8 @@
       text-align:center;
     }
     .step-ico{ margin-bottom:8px; display:flex; align-items:center; justify-content:center; }
-    .step-ico svg{ width:56px; height:56px; color:#000; } /* maior, preto */
-    .step h3{ font-size:16px; margin:0 0 4px; color:#000; }
+    .step-ico svg{ width:56px; height:56px; color:var(--preto); } /* ícones pretos */
+    .step h3{ font-size:16px; margin:0 0 4px; color:var(--preto); }
     .step p{ font-size:14px; color:#555; margin:0; }
     @media (max-width: 900px){
       .steps{ grid-template-columns: 1fr; }
