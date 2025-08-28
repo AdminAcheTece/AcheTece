@@ -652,6 +652,42 @@ thead tr{ background:#f2f2f2; }
   border:1px solid #eee;
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
+
+  /* --- Roxo da marca para botões (sem afetar o restante do site) --- */
+
+  /* Paleta roxa (ajuste os hex se quiser) */
+  :root {
+    --roxo-primario: #7B00FF;   /* roxo base do botão */
+    --roxo-hover:    #9E37FF;   /* roxo para hover/foco */
+    --roxo-ring:     #E4D4FF;   /* contorno/foco bem sutil */
+  }
+
+  /* Sobrescreve APENAS nos botões que hoje herdam --azul */
+  button, .btn, [class*="btn-"], input[type="submit"], a.btn {
+    /* se seus estilos de botão usam var(--azul) / var(--azul-2),
+       aqui a gente redefine essas variáveis só para o escopo dos botões */
+    --azul:  var(--roxo-primario);
+    --azul-2: var(--roxo-hover);
+  }
+
+  /* Caso algum botão tenha a cor fixa em #003bb3, forçamos a troca aqui */
+  button, .btn, [class*="btn-"], input[type="submit"], a.btn {
+    background-color: var(--roxo-primario) !important;
+    border-color:     var(--roxo-primario) !important;
+    color: #fff;
+  }
+  button:hover, .btn:hover, [class*="btn-"]:hover,
+  button:focus, .btn:focus, [class*="btn-"]:focus {
+    background-color: var(--roxo-hover) !important;
+    border-color:     var(--roxo-hover) !important;
+    outline: 3px solid var(--roxo-ring);
+    outline-offset: 2px;
+  }
+
+  /* mantém o raio/altura dos seus botões atuais; remova se já existir */
+  button, .btn, [class*="btn-"], input[type="submit"], a.btn {
+    border-radius: 999px; /* pílula como no exemplo roxo */
+    font-weight: 700;
+  }
  
 }
