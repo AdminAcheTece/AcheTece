@@ -686,5 +686,41 @@ thead tr{ background:#f2f2f2; }
       border-radius: 999px;
       font-weight: 700;
     }
+      
+    /* ===== HAMBURGUER FIX ===== */
+.hamburger{
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;           /* sem espaçamento entre spans, usaremos 1 barra + sombras */
+  line-height: 0;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Esconde as barras extra e usa só a central com sombras para formar as 3 linhas */
+.hamburger span{ display: none; }
+.hamburger span:nth-child(2){
+  display: block;
+  width: 20px !important;
+  height: 2px !important;
+  background: #1c1b22;
+  border-radius: 1px;
+  /* Espaçamento ENTRE as linhas (ajuste fino aqui): */
+  box-shadow: 0 -4px 0 0 #1c1b22, 0 4px 0 0 #1c1b22;
+}
+
+/* Mobile: mantém proporção e aproxima um pouco mais */
+@media (max-width:768px){
+  .hamburger{ width:28px; height:28px; }
+  .hamburger span:nth-child(2){
+    width:16px !important;
+    box-shadow: 0 -3px 0 0 #1c1b22, 0 3px 0 0 #1c1b22; 
   }
 }
