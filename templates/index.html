@@ -74,17 +74,24 @@
     .menu-wrap{ position: relative; }
     .hamburger{ position: relative; z-index: 10002; }
 
-    .hamburger{
-      display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
-      width:40px; height:40px; border:none; border-radius:none; background:transparente;
-      box-shadow:none;
+    .hamburger span{ display: none; }
+    .hamburger span:nth-child(2){
+      display: block;
+      width: 22px !important;     /* ligeiramente mais largo (ajusta se quiser) */
+      height: 3px !important;     /* MAIS GROSSO como na imagem 2 */
+      background: #111;           /* cor das listras */
+      border-radius: 999px;       /* pontas bem arredondadas */
+      /* Espaçamento compacto entre as 3 linhas: */
+      box-shadow: 0 -5px 0 0 #111, 0 5px 0 0 #111;  /* ajuste fino aqui */
     }
-    .hamburger span{ display:block; width:20px; height:2px; background:var(--preto); border-radius:2px; }
-    .hamburger span + span{ margin-top:4px; }
-    @media (max-width: 768px){
-      .hamburger{ width:28px; height:28px; border-radius:8px; }
-      .hamburger span{ width:16px; height:2px; }
-      .hamburger span + span{ margin-top:3px; }
+
+    /* Mobile: proporcional e bem nítido */
+    @media (max-width:768px){
+      .hamburger{ width:28px; height:28px; }
+      .hamburger span:nth-child(2){
+        width:18px !important;
+        height:2px !important;
+        box-shadow: 0 -4px 0 0 #111, 0 4px 0 0 #111;
     }
 
     .menu-dropdown{
