@@ -687,40 +687,40 @@ thead tr{ background:#f2f2f2; }
       font-weight: 700;
     }
       
-    /* ===== HAMBURGUER FIX ===== */
-.hamburger{
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  padding: 0;
-  width: 40px;
-  height: 40px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0;           /* sem espaçamento entre spans, usaremos 1 barra + sombras */
-  line-height: 0;
-  -webkit-appearance: none;
-  appearance: none;
-}
+    /* ===== HAMBURGER — estilo compacto com 3 linhas iguais ===== */
+   .hamburger{
+     background: transparent;
+     border: none;
+     box-shadow: none;
+     padding: 0;
+     width: 40px;
+     height: 40px;
+     display: inline-flex;
+     align-items: center;
+     justify-content: center;
+     line-height: 0;
+     -webkit-appearance: none;
+     appearance: none;
+   }
 
-/* Esconde as barras extra e usa só a central com sombras para formar as 3 linhas */
-.hamburger span{ display: none; }
-.hamburger span:nth-child(2){
-  display: block;
-  width: 20px !important;
-  height: 2px !important;
-  background: #1c1b22;
-  border-radius: 1px;
-  /* Espaçamento ENTRE as linhas (ajuste fino aqui): */
-  box-shadow: 0 -4px 0 0 #1c1b22, 0 4px 0 0 #1c1b22;
-}
+   /* Esconde as barras extra e usa só a central com sombras p/ formar 3 listras */
+   .hamburger span{ display: none; }
+   .hamburger span:nth-child(2){
+     display: block;
+     width: 22px !important;     /* ligeiramente mais largo (ajusta se quiser) */
+     height: 3px !important;     /* MAIS GROSSO como na imagem 2 */
+     background: #111;           /* cor das listras */
+     border-radius: 999px;       /* pontas bem arredondadas */
+   /* Espaçamento compacto entre as 3 linhas: */
+     box-shadow: 0 -5px 0 0 #111, 0 5px 0 0 #111;  /* ajuste fino aqui */
+   }
 
-/* Mobile: mantém proporção e aproxima um pouco mais */
-@media (max-width:768px){
+   /* Mobile: proporcional e bem nítido */
+   @media (max-width:768px){
   .hamburger{ width:28px; height:28px; }
   .hamburger span:nth-child(2){
-    width:16px !important;
-    box-shadow: 0 -3px 0 0 #1c1b22, 0 3px 0 0 #1c1b22; 
+    width:18px !important;
+    height:2px !important;
+    box-shadow: 0 -4px 0 0 #111, 0 4px 0 0 #111; 
   }
 }
