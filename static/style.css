@@ -147,13 +147,13 @@ header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
   cursor: pointer;
   line-height: 0;
   border: 0;
-  box-shadow: 0 -6px 0 0 #111, 0 6px 0 0 #111;
+  box-shadow: none;
   background-color: transparent; /* mantém transparente */
   /* Desenha as 3 listras com MESMA espessura (desktop) */
   background:
-    linear-gradient(#111, #111) 50% calc(50% - 4px) / 22px 3px no-repeat,
+    linear-gradient(#111, #111) 50% calc(50% - 6px) / 22px 3px no-repeat,
     linear-gradient(#111, #111) 50% 50%              / 22px 3px no-repeat,
-    linear-gradient(#111, #111) 50% calc(50% + 4px) / 22px 3px no-repeat;
+    linear-gradient(#111, #111) 50% calc(50% + 6px) / 22px 3px no-repeat;
 }
 
 .hamburger:focus-visible{
@@ -167,9 +167,9 @@ header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
     width: 28px;
     height: 28px;
     background:
-      linear-gradient(#111, #111) 50% calc(50% - 3.5px) / 18px 2px no-repeat,
+      linear-gradient(#111, #111) 50% calc(50% - 5px) / 18px 2px no-repeat,
       linear-gradient(#111, #111) 50% 50%               / 18px 2px no-repeat,
-      linear-gradient(#111, #111) 50% calc(50% + 3.5px) / 18px 2px no-repeat;
+      linear-gradient(#111, #111) 50% calc(50% + 5px) / 18px 2px no-repeat;
   }
 }
 
