@@ -130,43 +130,46 @@ header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
 @media (max-width: 900px){ .top-nav{ display:none; } }
 
 /* ============================================================
-   HAMBURGUER — 1 barra + box-shadow (linhas iguais, fundo transparente)
+   HAMBURGUER — 3 listras por background (sem spans, sem sobreposição)
    ============================================================ */
+
+/* Oculta qualquer markup interno para evitar conflito */
+.hamburger span,
+.hamburger svg { display: none !important; }
+
 .hamburger{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  width:40px; height:40px; padding:0;
-  background:transparent; border:none; box-shadow:none;
-  cursor:pointer; line-height:0;
-  -webkit-appearance:none; appearance:none;
-  border-radius: 0; /* sem radius pra não sugerir “botão” */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  cursor: pointer;
+  line-height: 0;
+  border: 0;
+  box-shadow: none;
+  background-color: transparent; /* mantém transparente */
+  /* Desenha as 3 listras com MESMA espessura (desktop) */
+  background:
+    linear-gradient(#111, #111) 50% calc(50% - 4px) / 22px 3px no-repeat,
+    linear-gradient(#111, #111) 50% 50%              / 22px 3px no-repeat,
+    linear-gradient(#111, #111) 50% calc(50% + 4px) / 22px 3px no-repeat;
 }
 
-/* Esconde as barras extra (1ª e 3ª) e usa a central para desenhar as 3 listras */
-.hamburger span{ display:none; }
-.hamburger span:nth-child(2){
-  display:block;
-  width:22px;              /* largura desktop */
-  height:3px;              /* espessura desktop */
-  background:#111;
-  border-radius:999px;     /* pontas bem arredondadas */
-  box-shadow: 0 -5px 0 0 #111, 0 5px 0 0 #111; /* espaçamento compacto */
-}
-
-/* Acessibilidade (sem alterar espessura das linhas) */
 .hamburger:focus-visible{
-  outline:2px solid rgba(0,0,0,.15);
-  outline-offset:2px;
+  outline: 2px solid rgba(0,0,0,.15);
+  outline-offset: 2px;
 }
 
-/* Mobile: proporcional e nítido */
+/* Mobile: proporções menores e mesmo gap */
 @media (max-width: 768px){
-  .hamburger{ width:28px; height:28px; border-radius:var(--raio-8); }
-  .hamburger span:nth-child(2){
-    width:18px;
-    height:2px;
-    box-shadow: 0 -4px 0 0 #111, 0 4px 0 0 #111;
+  .hamburger{
+    width: 28px;
+    height: 28px;
+    background:
+      linear-gradient(#111, #111) 50% calc(50% - 3.5px) / 18px 2px no-repeat,
+      linear-gradient(#111, #111) 50% 50%               / 18px 2px no-repeat,
+      linear-gradient(#111, #111) 50% calc(50% + 3.5px) / 18px 2px no-repeat;
   }
 }
 
