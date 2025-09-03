@@ -130,52 +130,43 @@ header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
 @media (max-width: 900px){ .top-nav{ display:none; } }
 
 /* ============================================================
-   BOTÃO HAMBÚRGUER (PADRONIZADO com o index) — ATUALIZADO
+   HAMBURGUER — 1 barra + box-shadow (linhas iguais, fundo transparente)
    ============================================================ */
 .hamburger{
   display:inline-flex;
-  flex-direction:column;
   align-items:center;
   justify-content:center;
-  width:40px;            /* 40x40 desktop */
-  height:40px;
-  padding:0;
-  background:transparent;/* sem fundo visível */
-  border:none;           /* REMOVE BORDA */
-  box-shadow:none;       /* REMOVE SOMBRA */
-  cursor:pointer;
-  gap:4px;               /* espaçamento consistente entre barras */
-  line-height:0;         /* evita interferência de linha */
-  -webkit-appearance:none;
-  appearance:none;
+  width:40px; height:40px; padding:0;
+  background:transparent; border:none; box-shadow:none;
+  cursor:pointer; line-height:0;
+  -webkit-appearance:none; appearance:none;
+  border-radius: 0; /* sem radius pra não sugerir “botão” */
 }
 
-/* As 3 barras idênticas */
-.hamburger span{
+/* Esconde as barras extra (1ª e 3ª) e usa a central para desenhar as 3 listras */
+.hamburger span{ display:none; }
+.hamburger span:nth-child(2){
   display:block;
-  width:20px;            /* medidas inteiras evitam “borrar” */
-  height:2px;            /* mesma espessura nas 3 barras */
-  background:#1c1b22;
-  border-radius:1px;     /* leve suavização sem “engrossar” */
-  transform:none;        /* nada de scale/translate no estado normal */
+  width:22px;              /* largura desktop */
+  height:3px;              /* espessura desktop */
+  background:#111;
+  border-radius:999px;     /* pontas bem arredondadas */
+  box-shadow: 0 -5px 0 0 #111, 0 5px 0 0 #111; /* espaçamento compacto */
 }
 
-/* Acessibilidade sem alterar espessura das barras */
+/* Acessibilidade (sem alterar espessura das linhas) */
 .hamburger:focus-visible{
   outline:2px solid rgba(0,0,0,.15);
   outline-offset:2px;
 }
 
-/* tamanhos no celular */
+/* Mobile: proporcional e nítido */
 @media (max-width: 768px){
-  .hamburger{
-    width:28px;
-    height:28px;
-    border-radius:var(--raio-8);
-  }
-  .hamburger span{
-    width:16px;
-    height:2px;          /* mantém espessura */
+  .hamburger{ width:28px; height:28px; border-radius:var(--raio-8); }
+  .hamburger span:nth-child(2){
+    width:18px;
+    height:2px;
+    box-shadow: 0 -4px 0 0 #111, 0 4px 0 0 #111;
   }
 }
 
@@ -618,11 +609,10 @@ thead tr{ background:#f2f2f2; }
   .steps{ grid-template-columns: 1fr; }
 }
 
-/* --------------- ATENÇÃO: bloco duplicado de hambúrguer removido --------------- */
-/* (Estava aqui embaixo um segundo bloco “Botão hambúrguer — padronizado com casinha”.
-   Foi removido para evitar conflitos e manter o visual sem borda/sombra.) */
+/* --------------- ATENÇÃO: bloco duplicado do hambúrguer removido --------------- */
+/* (não há mais CSS do hambúrguer dentro de @media para evitar conflito) */
 
-/* Mobile */
+/* Mobile (ajustes diversos já aprovados) */
 @media (max-width: 768px) {
 
   .titulo-privacidade{
@@ -686,41 +676,5 @@ thead tr{ background:#f2f2f2; }
       border-radius: 999px;
       font-weight: 700;
     }
-      
-    /* ===== HAMBURGER — estilo compacto com 3 linhas iguais ===== */
-   .hamburger{
-     background: transparent;
-     border: none;
-     box-shadow: none;
-     padding: 0;
-     width: 40px;
-     height: 40px;
-     display: inline-flex;
-     align-items: center;
-     justify-content: center;
-     line-height: 0;
-     -webkit-appearance: none;
-     appearance: none;
-   }
-
-   /* Esconde as barras extra e usa só a central com sombras p/ formar 3 listras */
-   .hamburger span{ display: none; }
-   .hamburger span:nth-child(2){
-     display: block;
-     width: 22px !important;     /* ligeiramente mais largo (ajusta se quiser) */
-     height: 3px !important;     /* MAIS GROSSO como na imagem 2 */
-     background: #111;           /* cor das listras */
-     border-radius: 999px;       /* pontas bem arredondadas */
-   /* Espaçamento compacto entre as 3 linhas: */
-     box-shadow: 0 -5px 0 0 #111, 0 5px 0 0 #111;  /* ajuste fino aqui */
-   }
-
-   /* Mobile: proporcional e bem nítido */
-   @media (max-width:768px){
-  .hamburger{ width:28px; height:28px; }
-  .hamburger span:nth-child(2){
-    width:18px !important;
-    height:2px !important;
-    box-shadow: 0 -4px 0 0 #111, 0 4px 0 0 #111; 
   }
 }
