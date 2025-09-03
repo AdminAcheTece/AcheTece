@@ -64,20 +64,20 @@ body{
 /* ====== FAIXA PRETA ESTREITA NO TOPO — mobile centralizado ====== */
 @media (max-width: 600px){
   .promo-bar{
-    flex-direction: column;      /* empilha texto e botão */
-    align-items: center;         /* centraliza horizontalmente */
-    justify-content: center;     /* centraliza no eixo principal */
-    text-align: center;          /* centraliza o texto dentro do span */
-    row-gap: 8px;                /* espaçamento vertical entre texto e botão */
-    padding: 10px 12px;          /* um pouco mais de respiro no mobile */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    row-gap: 8px;
+    padding: 10px 12px;
   }
   .promo-text{
     display: block;
     width: 100%;
-    text-align: center;          /* garante centralização do texto */
+    text-align: center;
   }
   .promo-cta{
-    display: inline-block;       /* botão no tamanho do conteúdo */
+    display: inline-block;
   }
 }
 
@@ -87,11 +87,11 @@ body{
 header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
 .navbar{
   display:flex; align-items:center; justify-content:space-between;
-  padding:4px 16px;                 /* cabeçalho baixo */
-  min-height:52px;                  /* altura fixa da faixa branca */
+  padding:4px 16px;
+  min-height:52px;
   background:var(--branco);
   position:relative;
-  overflow:visible;                 /* permite a logo “crescer” pra fora */
+  overflow:visible;
 }
 
 /* grupos */
@@ -106,8 +106,8 @@ header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
 /* LOGO 3× MAIOR sem aumentar o header */
 .logo img{
   height:48px; width:auto;
-  transform: scale(3);              /* ← 3x maior */
-  transform-origin: left center;    /* cresce a partir da esquerda */
+  transform: scale(3);
+  transform-origin: left center;
   will-change: transform;
 }
 
@@ -130,26 +130,53 @@ header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
 @media (max-width: 900px){ .top-nav{ display:none; } }
 
 /* ============================================================
-   BOTÃO HAMBÚRGUER (PADRONIZADO com o index)
+   BOTÃO HAMBÚRGUER (PADRONIZADO com o index) — ATUALIZADO
    ============================================================ */
 .hamburger{
-  display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
-  width:32px; height:32px; padding:0;                 /* <<< 40x40 desktop */
-  background:var(--branco);
-  border:1px solid #d6d6d6; border-radius: var(--raio-10);
-  cursor:pointer; box-shadow: var(--sombra-1);
+  display:inline-flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  width:40px;            /* 40x40 desktop */
+  height:40px;
+  padding:0;
+  background:transparent;/* sem fundo visível */
+  border:none;           /* REMOVE BORDA */
+  box-shadow:none;       /* REMOVE SOMBRA */
+  cursor:pointer;
+  gap:4px;               /* espaçamento consistente entre barras */
+  line-height:0;         /* evita interferência de linha */
+  -webkit-appearance:none;
+  appearance:none;
 }
+
+/* As 3 barras idênticas */
 .hamburger span{
-  display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px;
+  display:block;
+  width:20px;            /* medidas inteiras evitam “borrar” */
+  height:2px;            /* mesma espessura nas 3 barras */
+  background:#1c1b22;
+  border-radius:1px;     /* leve suavização sem “engrossar” */
+  transform:none;        /* nada de scale/translate no estado normal */
 }
-.hamburger span + span{ margin-top:4px; }
-.hamburger:focus-visible{ outline:2px solid rgba(0,0,0,.15); outline-offset:2px; }
+
+/* Acessibilidade sem alterar espessura das barras */
+.hamburger:focus-visible{
+  outline:2px solid rgba(0,0,0,.15);
+  outline-offset:2px;
+}
 
 /* tamanhos no celular */
 @media (max-width: 768px){
-  .hamburger{ width:28px; height:28px; border-radius:var(--raio-8); }  /* <<< 28x28 mobile */
-  .hamburger span{ width:16px; height:2px; }
-  .hamburger span + span{ margin-top:3px; }
+  .hamburger{
+    width:28px;
+    height:28px;
+    border-radius:var(--raio-8);
+  }
+  .hamburger span{
+    width:16px;
+    height:2px;          /* mantém espessura */
+  }
 }
 
 /* ============================================================
@@ -161,16 +188,16 @@ header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  width:40px;                 /* igual ao .hamburger */
-  height:40px;                /* igual ao .hamburger */
-  padding:0;                  /* sem padding para não “alargar” */
+  width:40px;
+  height:40px;
+  padding:0;
   background:var(--branco);
   border:1px solid #d6d6d6;
   border-radius:var(--raio-10);
   box-shadow:var(--sombra-1);
-  color:#1c1b22;              /* ícone preto */
-  text-decoration:none;       /* remove sublinhado do <a> */
-  line-height:1;              /* evita expandir por linha */
+  color:#1c1b22;
+  text-decoration:none;
+  line-height:1;
   cursor:pointer;
 }
 .icon-btn svg,
@@ -233,11 +260,11 @@ header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
   display:inline-flex; align-items:center; justify-content:center;
   width:36px; height:36px;
   background:#f0f2f5; border:0; border-radius:10px; cursor:pointer;
-  padding:0; line-height:1; color:#1c1b22;          /* <<< X preto e sem padding extra */
+  padding:0; line-height:1; color:#1c1b22;
 }
 .menu-dropdown .menu-close:hover{ background:#e9ebee; }
 .menu-dropdown .menu-close:active{ background:#e3e5e9; }
-.menu-dropdown .menu-close svg{ display:block; }    /* evita “expandir” por linha */
+.menu-dropdown .menu-close svg{ display:block; }
 
 .menu-dropdown .menu-item{
   display:flex; align-items:center; gap:10px;
@@ -257,9 +284,9 @@ header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
     top: calc(var(--nav-h, 64px) + 8px);
     left: 50%;
     right: auto;
-    width: max-content;       /* <<< largura mínima necessária */
-    max-width: 90vw;          /* <<< nunca passar da tela */
-    min-width: 160px;         /* <<< largura mínima estética */
+    width: max-content;
+    max-width: 90vw;
+    min-width: 160px;
     padding: 4px 0;
     transform: translate(-50%, 8px) scale(.98);
     transform-origin: top center;
@@ -326,12 +353,12 @@ footer{
 }
 .footer-block{
   display:grid;
-  grid-template-columns: 42px 1fr;  /* ícone à esquerda, conteúdo à direita */
+  grid-template-columns: 42px 1fr;
   column-gap:12px;
   align-items:start;
 }
 .footer-logo{
-  width:32px; height:auto; display:block; margin-top:2px; /* leve ajuste vertical */
+  width:32px; height:auto; display:block; margin-top:2px;
 }
 .footer-title{
   font-size:15px; font-weight:700; color:#111; margin:0 0 10px 0;
@@ -591,103 +618,73 @@ thead tr{ background:#f2f2f2; }
   .steps{ grid-template-columns: 1fr; }
 }
 
-/* Botão hambúrguer — padronizado com casinha */
-.hamburger {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;      /* mesma largura da casinha */
-  height: 40px;     /* mesma altura da casinha */
-  padding: 0;       /* remove excesso interno */
-  background: var(--branco);
-  border: 1px solid #d6d6d6;
-  border-radius: var(--raio-10);
-  box-shadow: var(--sombra-1);
-  cursor: pointer;
-}
-
-/* Ícone interno */
-.hamburger svg,
-.hamburger span {
-  width: 20px;
-  height: 20px;
-}
+/* --------------- ATENÇÃO: bloco duplicado de hambúrguer removido --------------- */
+/* (Estava aqui embaixo um segundo bloco “Botão hambúrguer — padronizado com casinha”.
+   Foi removido para evitar conflitos e manter o visual sem borda/sombra.) */
 
 /* Mobile */
 @media (max-width: 768px) {
-  .hamburger {
-    width: 28px;
-    height: 28px;
-    border-radius: var(--raio-8);
-  }
-  .hamburger svg,
-  .hamburger span {
-    width: 16px;
-    height: 16px;
-  }
 
   .titulo-privacidade{
-  text-align: center;
-  margin-bottom: 28px;
+    text-align: center;
+    margin-bottom: 28px;
   }
   
   .titulo-privacidade h1{
-  font-size: 28px;
-  font-weight: 800;
-  color: #111;
-  line-height: 1.3;
+    font-size: 28px;
+    font-weight: 800;
+    color: #111;
+    line-height: 1.3;
   }
 
   /* Ajuste do tamanho da fonte dos links da navbar */
   .header-right a {
-  font-size: 12px; /* ou 13px, se quiser menor */
+    font-size: 12px; /* ou 13px, se quiser menor */
   } 
    
   .container-termos{
-  max-width: 940px;              /* largura máxima da caixa */
-  width: 90%;                    /* ocupa até 90% da tela em telas pequenas */
-  margin: 40px auto;             /* centraliza horizontalmente */
-  padding: 32px 48px;            /* espaçamento interno (top/bottom, left/right) */
-  background:#fff;
-  border:1px solid #eee;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    max-width: 940px;
+    width: 90%;
+    margin: 40px auto;
+    padding: 32px 48px;
+    background:#fff;
+    border:1px solid #eee;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 
-  /* --- Roxo da marca para botões (sem afetar o restante do site) --- */
+    /* --- Roxo da marca para botões (sem afetar o restante do site) --- */
 
-  /* Paleta roxa (ajuste os hex se quiser) */
-  :root {
-    --roxo-primario: #7B00FF;   /* roxo base do botão */
-    --roxo-hover:    #9E37FF;   /* roxo para hover/foco */
-    --roxo-ring:     #E4D4FF;   /* contorno/foco bem sutil */
-  }
+    /* Paleta roxa (ajuste os hex se quiser) */
+    :root {
+      --roxo-primario: #7B00FF;
+      --roxo-hover:    #9E37FF;
+      --roxo-ring:     #E4D4FF;
+    }
 
-  /* Sobrescreve APENAS nos botões que hoje herdam --azul */
-  button, .btn, [class*="btn-"], input[type="submit"], a.btn {
-    /* se seus estilos de botão usam var(--azul) / var(--azul-2),
-       aqui a gente redefine essas variáveis só para o escopo dos botões */
-    --azul:  var(--roxo-primario);
-    --azul-2: var(--roxo-hover);
-  }
+    /* Sobrescreve APENAS nos botões que hoje herdam --azul */
+    button, .btn, [class*="btn-"], input[type="submit"], a.btn {
+      --azul:  var(--roxo-primario);
+      --azul-2: var(--roxo-hover);
+    }
 
-  /* Caso algum botão tenha a cor fixa em #003bb3, forçamos a troca aqui */
-  button, .btn, [class*="btn-"], input[type="submit"], a.btn {
-    background-color: var(--roxo-primario) !important;
-    border-color:     var(--roxo-primario) !important;
-    color: #fff;
-  }
-  button:hover, .btn:hover, [class*="btn-"]:hover,
-  button:focus, .btn:focus, [class*="btn-"]:focus {
-    background-color: var(--roxo-hover) !important;
-    border-color:     var(--roxo-hover) !important;
-    outline: 3px solid var(--roxo-ring);
-    outline-offset: 2px;
-  }
+    /* Caso algum botão tenha a cor fixa em #003bb3, forçamos a troca aqui */
+    button, .btn, [class*="btn-"], input[type="submit"], a.btn {
+      background-color: var(--roxo-primario) !important;
+      border-color:     var(--roxo-primario) !important;
+      color: #fff;
+    }
+    button:hover, .btn:hover, [class*="btn-"]:hover,
+    button:focus, .btn:focus, [class*="btn-"]:focus {
+      background-color: var(--roxo-hover) !important;
+      border-color:     var(--roxo-hover) !important;
+      outline: 3px solid var(--roxo-ring);
+      outline-offset: 2px;
+    }
 
-  /* mantém o raio/altura dos seus botões atuais; remova se já existir */
-  button, .btn, [class*="btn-"], input[type="submit"], a.btn {
-    border-radius: 999px; /* pílula como no exemplo roxo */
-    font-weight: 700;
+    /* mantém o raio/altura dos seus botões atuais; remova se já existir */
+    button, .btn, [class*="btn-"], input[type="submit"], a.btn {
+      border-radius: 999px;
+      font-weight: 700;
+    }
   }
- 
 }
