@@ -130,46 +130,64 @@ header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
 @media (max-width: 900px){ .top-nav{ display:none; } }
 
 /* ============================================================
-   HAMBURGUER — 3 listras por background (sem spans, sem sobreposição)
+   HAMBURGUER — 3 listras por background-image (sem spans/SVG, sempre visível)
    ============================================================ */
 
 /* Oculta qualquer markup interno para evitar conflito */
-.hamburger span,
-.hamburger svg { display: none !important; }
+button.hamburger span,
+button.hamburger svg { display: none !important; }
 
-.hamburger{
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  cursor: pointer;
-  line-height: 0;
-  border: 0;
-  box-shadow: none;
-  background-color: transparent; /* mantém transparente */
-  /* Desenha as 3 listras com MESMA espessura (desktop) */
-  background:
-    linear-gradient(#111, #111) 50% calc(50% - 6px) / 22px 3px no-repeat,
-    linear-gradient(#111, #111) 50% 50%              / 22px 3px no-repeat,
-    linear-gradient(#111, #111) 50% calc(50% + 6px) / 22px 3px no-repeat;
+button.hamburger{
+  /* Medidas e variáveis (desktop) */
+  --hb-w: 22px;      /* largura da listra */
+  --hb-thick: 3px;   /* espessura da listra */
+  --hb-gap: 6px;     /* distância do centro até as listras de cima/baixo */
+
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:40px;
+  height:40px;
+  padding:0;
+  border:0 !important;
+  box-shadow:none !important;
+  background-color: transparent !important;
+  cursor:pointer;
+  line-height:0;
+  -webkit-appearance:none;
+  appearance:none;
+
+  /* Desenha as 3 listras (forçado) */
+  background-image:
+    linear-gradient(#111,#111),
+    linear-gradient(#111,#111),
+    linear-gradient(#111,#111) !important;
+  background-repeat: no-repeat !important;
+  background-position:
+    50% calc(50% - var(--hb-gap)),
+    50% 50%,
+    50% calc(50% + var(--hb-gap)) !important;
+  background-size:
+    var(--hb-w) var(--hb-thick),
+    var(--hb-w) var(--hb-thick),
+    var(--hb-w) var(--hb-thick) !important;
 }
 
-.hamburger:focus-visible{
-  outline: 2px solid rgba(0,0,0,.15);
-  outline-offset: 2px;
+/* Acessibilidade */
+button.hamburger:focus-visible{
+  outline:2px solid rgba(0,0,0,.15);
+  outline-offset:2px;
 }
 
-/* Mobile: proporções menores e mesmo gap */
-@media (max-width: 768px){
-  .hamburger{
-    width: 28px;
-    height: 28px;
-    background:
-      linear-gradient(#111, #111) 50% calc(50% - 5px) / 18px 2px no-repeat,
-      linear-gradient(#111, #111) 50% 50%               / 18px 2px no-repeat,
-      linear-gradient(#111, #111) 50% calc(50% + 5px) / 18px 2px no-repeat;
+/* Mobile: proporções menores */
+@media (max-width:768px){
+  button.hamburger{
+    width:28px;
+    height:28px;
+    /* Variáveis mobile */
+    --hb-w: 18px;
+    --hb-thick: 2px;
+    --hb-gap: 4px;
   }
 }
 
@@ -564,7 +582,7 @@ thead tr{ background:#f2f2f2; }
 .hero-badges li{
   font-size: 13px;
   background:#f6f8fa;
-  border:1px solid #e5e7eb;
+  border:1px solid #e6e7eb;
   padding:6px 10px;
   border-radius:999px;
 }
