@@ -336,8 +336,9 @@
   </header>
 
   <!-- Hero novo com alternância de público -->
-  <main class="hero hero-grid">
-    <!-- Coluna de texto -->
+  <!-- Ajuste: sem imagem; grid com 1 coluna e itens centralizados -->
+  <main class="hero hero-grid" style="grid-template-columns:1fr; justify-items:center; text-align:center;">
+    <!-- Conteúdo -->
     <div class="hero-copy">
       <div class="role-toggle" role="tablist" aria-label="Selecione seu perfil">
         <button class="chip is-active" role="tab" aria-selected="true" data-role="cliente">
@@ -357,15 +358,7 @@
         <a id="hero-cta" href="{{ url_for('buscar_teares') }}" class="btn-principal">Buscar teares agora</a>
         <!-- (link “Como funciona” removido conforme pedido) -->
       </div>
-
     </div>
-
-    <!-- Coluna da imagem -->
-    <figure class="hero-figure">
-      <img src="{{ url_for('static', filename='imagem_teares.jpg') }}"
-           alt="Tear circular em operação, com alimentadores e cones de fio"
-           loading="eager" />
-    </figure>
   </main>
 
   <!-- Seção “Como funciona” dinâmica -->
@@ -503,7 +496,7 @@
         tabs.forEach(b=>{
           const active = b.dataset.role === role;
           b.classList.toggle('is-active', active);
-          b.setAttribute('aria-selected', active ? 'true':'false');
+          b.setAttribute('aria-selected', active ? 'true' : 'false');
         });
 
         renderHow(cfgHow);
