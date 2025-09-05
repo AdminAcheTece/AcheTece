@@ -14,210 +14,86 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
 
   <style>
-    /* ==================== VARIÁVEIS (marca) ==================== */
     :root{
-      --roxo: #8A00FF;           /* cor principal da marca */
-      --roxo-hover: #A63DFF;     /* variação para hover */
-      --roxo-clarinho: #F1E6FF;  /* fundo roxo bem claro (hover menu) */
-      --preto: #000000;          /* preto padrão */
+      --roxo:#8A00FF; --roxo-hover:#A63DFF; --roxo-clarinho:#F1E6FF; --preto:#000;
     }
-
-    /* ====== FAIXA PRETA ESTREITA NO TOPO ====== */
-    .promo-bar{
-      background:var(--preto); color:#fff; display:flex; align-items:center; justify-content:center;
-      gap:12px; padding:6px 10px; font-size:14px; line-height:1.2;
-    }
-    .promo-text strong{ font-weight:700; }
-    .promo-cta{
-      display:inline-block; background:var(--roxo); color:#fff; text-decoration:none;
-      padding:6px 10px; border-radius:8px; font-weight:600; white-space:nowrap;
-      transition:background .2s ease, transform .12s ease;
-    }
-    .promo-cta:hover{ background:var(--roxo-hover); transform:translateY(-1px); }
-    @media (max-width: 600px){ .promo-bar{ flex-wrap:wrap; row-gap:6px; } }
-
-    /* ====== BARRA BRANCA (logo + botão Menu) ====== */
-    .navbar{
-      background:#fff;
-      overflow: visible; padding:10px 16px; border-bottom:1px solid #eee;
-      display:flex; align-items:center; gap:16px;
-    }
-    .header-left, .header-right{ display:flex; align-items:center; }
-    .header-right{ margin-left:auto; gap:16px; }
-    .logo img{ height:40px; width:auto; display:block; }
-
-    /* removemos os links ao lado do botão */
-    .top-nav{ display:none !important; }
-
-    /* ===== Botão Menu (pílula) ===== */
-    .menu-pill{
-      display:inline-flex; align-items:center; gap:10px;
-      background:#E3E3E3;  /* cinza médio */
-      color:#000; border:none; cursor:pointer;
-      padding:10px 18px; border-radius:999px; font-weight:700; font-size:16px;
-      box-shadow:0 1px 0 rgba(0,0,0,.06);
-      transition: background .2s ease, transform .12s ease, box-shadow .2s ease;
-    }
-    .menu-pill:hover{
-      background: var(--roxo);
-      color:#000;  /* sempre preto */
-      transform: translateY(-1px);
-      box-shadow:0 3px 10px rgba(0,0,0,.12);
-    }
-    .menu-pill svg{ width:18px; height:18px; }
-
-    /* ===== Overlay do menu grande ===== */
-    .menu-overlay{
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,.6);
-      display: none; align-items: center; justify-content: center;
-      z-index: 1000;
-    }
-    .menu-overlay.is-open{ display:flex; }
-
-    /* ===== Modal central ===== */
-    .menu-modal{
-      width: min(960px, 92vw);
-      background:#fff; border-radius:16px; padding:28px;
-      box-shadow:0 18px 50px rgba(0,0,0,.28); position:relative;
-    }
-    .close-btn{
-      position:absolute; top:12px; right:12px;
-      width:40px; height:40px; border:none; border-radius:12px;
-      background:#f0f2f5; cursor:pointer; display:flex; align-items:center; justify-content:center;
-    }
-    .close-btn:hover{ background:#e9ebee; }
-    .menu-modal h2{ margin:0 0 16px; font-size:22px; color:var(--preto); }
-
-    /* ===== Grid interno (2 colunas) ===== */
-    .menu-columns{
-      display:grid; grid-template-columns: 1fr 1fr; gap:28px;
-    }
-    @media (max-width: 860px){
-      .menu-columns{ grid-template-columns: 1fr; }
-    }
-
-    .menu-section h3{ margin:0 0 10px; font-size:16px; color:var(--preto); }
-
-    /* ===== Botões sociais ===== */
-    .btn-social{
-      display:flex; align-items:center; gap:10px;
-      border:none; cursor:pointer; border-radius:999px; padding:12px 16px; font-weight:700;
-      background:#f1f1f1; color:#000; width:100%; justify-content:center;
-      transition: background .2s ease, transform .12s ease;
-    }
-    .btn-social:hover{ background:#e9e9e9; transform: translateY(-1px); }
-    .btn-social svg{ width:20px; height:20px; }
-
-    /* ===== Campos Login ===== */
-    .login-field{
-      width:100%; border:1px solid #e5e5e9; background:#f6f6f7;
-      padding:12px 14px; border-radius:14px; outline:none; font-size:14px; color:#222;
-    }
-    .login-field + .login-field{ margin-top:8px; }
-    .forgot{
-      display:inline-flex; align-items:center; gap:6px; margin-top:8px; font-size:13px; color:#444; text-decoration:none;
-    }
-    .forgot:hover{ text-decoration:underline; }
-
-    .btn-enter{
-      margin-top:10px; width:100%; border:none; cursor:pointer;
-      background:var(--roxo); color:#fff; padding:12px 16px; border-radius:999px; font-weight:700;
-      transition: background .2s ease, transform .12s ease;
-    }
-    .btn-enter:hover{ background:var(--roxo-hover); transform: translateY(-1px); }
-
-    .register{ font-size:13px; margin-top:10px; }
-    .register a{ color:var(--roxo); text-decoration:none; }
-    .register a:hover{ text-decoration:underline; }
-
-    /* ===== Facilidades ===== */
-    .facilidades{
-      display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;
-    }
-    @media (max-width: 420px){ .facilidades{ grid-template-columns: 1fr; } }
-
-    .fac-card{
-      display:flex; align-items:center; gap:10px; border:1px solid #eee; border-radius:16px;
-      padding:12px; background:#fafafa; cursor:pointer; text-decoration:none; color:#000;
-      transition: background .2s ease, transform .12s ease, border-color .2s ease;
-    }
-    .fac-card:hover{ background:#fff; transform: translateY(-1px); border-color:#e3e3e3; }
-    .fac-card .ico{ width:22px; height:22px; }
-
-    /* ===== Mais opções ===== */
-    .list-links{ list-style:none; padding:0; margin:8px 0 0; }
-    .list-links li{
-      display:flex; align-items:center; justify-content:space-between; gap:12px;
-      padding:12px 4px; border-bottom:1px solid #f0f0f2; cursor:pointer;
-    }
-    .list-links li:last-child{ border-bottom:0; }
-    .list-links .left{ display:flex; align-items:center; gap:10px; }
-    .list-links .left .ico{ width:20px; height:20px; }
-    .list-links a{ color:#000; text-decoration:none; flex:1; }
-    .list-links li:hover a{ color:var(--roxo); }
-
-    /* ===== HERO / COMO FUNCIONA (mantidos) ===== */
-    .hero-grid{
-      display:grid; grid-template-columns: 1fr; justify-items:center; text-align:center;
-      gap: 28px; align-items: center; padding: 28px 20px 8px; max-width: 1120px; margin: 0 auto;
-    }
-    .hero-copy h1{ font-size: clamp(24px, 3.2vw, 36px); color:var(--preto); margin: 10px 0 8px; line-height: 1.2; }
-    .hero-copy p{ font-size: clamp(14px, 1.6vw, 18px); color:#444; margin: 0 0 14px; }
-
-    .role-toggle{ display:flex; gap:8px; }
-    .chip{
-      appearance: none; border:1px solid #d6d6d6; background:#fff; padding:8px 12px;
-      border-radius:999px; cursor:pointer; font: inherit; color: var(--roxo);
-      transition: color .15s ease, background .15s ease, border-color .15s ease;
-    }
-    .chip.is-active{ background:var(--preto); color:#fff; border-color:var(--preto); }
-    .hero-ctas{ display:flex; gap:12px; align-items:center; margin: 8px 0 10px; }
-    .btn-principal{
-      display:inline-block; background:var(--roxo); color:#fff; padding:12px 18px; border-radius:50px; font-weight:700; text-decoration:none;
-      transition: background .15s ease, transform .12s ease;
-    }
-    .btn-principal:hover{ background:var(--roxo-hover); transform: translateY(-1px); }
-
-    .how-it-works{ max-width: 1120px; margin: 22px auto 8px; padding: 0 20px 20px; }
-    .how-it-works h2{ font-size: clamp(20px, 2.4vw, 28px); margin: 0 0 8px; color:var(--preto); text-align:center; }
-    .steps{ display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; }
-    .step{ background:#fff; border:1px solid #eee; border-radius:12px; padding:16px; text-align:center; }
-    .step-ico{ margin-bottom:8px; display:flex; align-items:center; justify-content:center; }
-    .step-ico svg{ width:56px; height:56px; color:var(--preto); }
-    .step h3{ font-size:16px; margin:0 0 4px; color:var(--preto); }
-    .step p{ font-size:14px; color:#555; margin:0; }
-    @media (max-width: 900px){ .steps{ grid-template-columns: 1fr; } }
-
-    /* ====== CTA preta e Rodapé (mantidos) ====== */
-    .cta-bar{
-      background:var(--preto); color:#fff; padding:20px 16px;
-      display:flex; align-items:center; justify-content:flex-start; gap:16px; flex-wrap:wrap;
-      border-top:1px solid rgba(255,255,255,.06); margin-top:32px; text-align:left;
-    }
-    .cta-text h3{ margin:0 0 4px; font-size:18px; font-weight:700; line-height:1.2; }
-    .cta-text p{ margin:0; font-size:15px; opacity:.9; }
-    .cta-btn{
-      display:inline-block; background:#fff; color:var(--preto); text-decoration:none;
-      padding:10px 18px; border-radius:20px; font-weight:600; box-shadow:0 1px 0 rgba(0,0,0,.08);
-      transition:transform .12s ease, background .2s ease, box-shadow .2s ease; white-space:nowrap;
-    }
-    .cta-btn:hover{ background:#f2f2f5; transform:translateY(-1px); box-shadow:0 3px 10px rgba(0,0,0,.12); }
-
-    .site-footer{ background:#fff; color:var(--preto); border-top:1px solid #eee; padding:18px 16px 28px; }
-    .footer-inner{ max-width:1180px; margin:0 auto; display:grid; grid-template-columns:auto 1fr; gap:20px 28px; align-items:start; }
-    .footer-brand img{ height:40px; width:auto; display:block; }
-    .footer-cols{ display:grid; grid-template-columns: repeat(2, minmax(180px, 240px)); gap:12px 28px; }
-    .footer-col h4{ margin:0 0 8px; font-size:14px; font-weight:700; color:var(--preto); }
-    .footer-col ul{ list-style:none; margin:0; padding:0; }
-    .footer-col li+li{ margin-top:6px; }
-    .footer-col a{ color:var(--preto); text-decoration:none; font-size:14px; }
-    .footer-col a:hover{ text-decoration:underline; }
-
-    /* Hero subtítulo 1 linha em telas largas */
-    @media (min-width: 900px){
-      #hero-sub{ max-width:none; white-space:nowrap; display:inline-block; }
-    }
+    .promo-bar{background:var(--preto);color:#fff;display:flex;align-items:center;justify-content:center;gap:12px;padding:6px 10px;font-size:14px;line-height:1.2;}
+    .promo-cta{display:inline-block;background:var(--roxo);color:#fff;text-decoration:none;padding:6px 10px;border-radius:8px;font-weight:600;white-space:nowrap;transition:background .2s ease,transform .12s ease;}
+    .promo-cta:hover{background:var(--roxo-hover);transform:translateY(-1px);}
+    @media (max-width:600px){.promo-bar{flex-wrap:wrap;row-gap:6px}}
+    .navbar{background:#fff;overflow:visible;padding:10px 16px;border-bottom:1px solid #eee;display:flex;align-items:center;gap:16px;}
+    .header-left,.header-right{display:flex;align-items:center}.header-right{margin-left:auto;gap:16px}
+    .logo img{height:40px;width:auto;display:block}
+    .top-nav{display:none !important;}
+    .menu-pill{display:inline-flex;align-items:center;gap:10px;background:#E3E3E3;color:#000;border:none;cursor:pointer;padding:10px 18px;border-radius:999px;font-weight:700;font-size:16px;box-shadow:0 1px 0 rgba(0,0,0,.06);transition:background .2s ease,transform .12s ease,box-shadow .2s ease;}
+    .menu-pill:hover{background:var(--roxo);color:#000;transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.12)}
+    .menu-pill svg{width:18px;height:18px}
+    .menu-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:1000}
+    .menu-overlay.is-open{display:flex}
+    .menu-modal{width:min(960px,92vw);background:#fff;border-radius:16px;padding:28px;box-shadow:0 18px 50px rgba(0,0,0,.28);position:relative}
+    .close-btn{position:absolute;top:12px;right:12px;width:40px;height:40px;border:none;border-radius:12px;background:#f0f2f5;cursor:pointer;display:flex;align-items:center;justify-content:center}
+    .close-btn:hover{background:#e9ebee}
+    .menu-modal h2{margin:0 0 16px;font-size:22px;color:var(--preto)}
+    .menu-columns{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+    @media (max-width:860px){.menu-columns{grid-template-columns:1fr}}
+    .menu-section h3{margin:0 0 10px;font-size:16px;color:var(--preto)}
+    .btn-social{display:flex;align-items:center;gap:10px;border:none;cursor:pointer;border-radius:999px;padding:12px 16px;font-weight:700;background:#f1f1f1;color:#000;width:100%;justify-content:center;transition:background .2s ease,transform .12s ease}
+    .btn-social:hover{background:#e9e9e9;transform:translateY(-1px)}
+    .btn-social svg{width:20px;height:20px}
+    .login-field{width:100%;border:1px solid #e5e5e9;background:#f6f6f7;padding:12px 14px;border-radius:14px;outline:none;font-size:14px;color:#222}
+    .login-field + .login-field{margin-top:8px}
+    .forgot{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:13px;color:#444;text-decoration:none}
+    .forgot:hover{text-decoration:underline}
+    .btn-enter{margin-top:10px;width:100%;border:none;cursor:pointer;background:var(--roxo);color:#fff;padding:12px 16px;border-radius:999px;font-weight:700;transition:background .2s ease,transform .12s ease}
+    .btn-enter:hover{background:var(--roxo-hover);transform:translateY(-1px)}
+    .register{font-size:13px;margin-top:10px}
+    .register a{color:var(--roxo);text-decoration:none}
+    .register a:hover{text-decoration:underline}
+    .facilidades{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+    @media (max-width:420px){.facilidades{grid-template-columns:1fr}}
+    .fac-card{display:flex;align-items:center;gap:10px;border:1px solid #eee;border-radius:16px;padding:12px;background:#fafafa;cursor:pointer;text-decoration:none;color:#000;transition:background .2s ease,transform .12s ease,border-color .2s ease}
+    .fac-card:hover{background:#fff;transform:translateY(-1px);border-color:#e3e3e3}
+    .fac-card .ico{width:22px;height:22px}
+    .list-links{list-style:none;padding:0;margin:8px 0 0}
+    .list-links li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 4px;border-bottom:1px solid #f0f0f2;cursor:pointer}
+    .list-links li:last-child{border-bottom:0}
+    .list-links .left{display:flex;align-items:center;gap:10px}
+    .list-links .left .ico{width:20px;height:20px}
+    .list-links a{color:#000;text-decoration:none;flex:1}
+    .list-links li:hover a{color:var(--roxo)}
+    .hero-grid{display:grid;grid-template-columns:1fr;justify-items:center;text-align:center;gap:28px;align-items:center;padding:28px 20px 8px;max-width:1120px;margin:0 auto}
+    .hero-copy h1{font-size:clamp(24px,3.2vw,36px);color:var(--preto);margin:10px 0 8px;line-height:1.2}
+    .hero-copy p{font-size:clamp(14px,1.6vw,18px);color:#444;margin:0 0 14px}
+    .role-toggle{display:flex;gap:8px}
+    .chip{appearance:none;border:1px solid #d6d6d6;background:#fff;padding:8px 12px;border-radius:999px;cursor:pointer;font:inherit;color:var(--roxo)}
+    .chip.is-active{background:var(--preto);color:#fff;border-color:var(--preto)}
+    .hero-ctas{display:flex;gap:12px;align-items:center;margin:8px 0 10px}
+    .btn-principal{display:inline-block;background:var(--roxo);color:#fff;padding:12px 18px;border-radius:50px;font-weight:700;text-decoration:none;transition:background .15s ease,transform .12s ease}
+    .btn-principal:hover{background:var(--roxo-hover);transform:translateY(-1px)}
+    .how-it-works{max-width:1120px;margin:22px auto 8px;padding:0 20px 20px}
+    .how-it-works h2{font-size:clamp(20px,2.4vw,28px);margin:0 0 8px;color:var(--preto);text-align:center}
+    .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    .step{background:#fff;border:1px solid #eee;border-radius:12px;padding:16px;text-align:center}
+    .step-ico{margin-bottom:8px;display:flex;align-items:center;justify-content:center}
+    .step-ico svg{width:56px;height:56px;color:var(--preto)}
+    .step h3{font-size:16px;margin:0 0 4px;color:var(--preto)}
+    .step p{font-size:14px;color:#555;margin:0}
+    @media (max-width:900px){.steps{grid-template-columns:1fr}}
+    .cta-bar{background:var(--preto);color:#fff;padding:20px 16px;display:flex;align-items:center;justify-content:flex-start;gap:16px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,.06);margin-top:32px;text-align:left}
+    .cta-text h3{margin:0 0 4px;font-size:18px;font-weight:700;line-height:1.2}
+    .cta-text p{margin:0;font-size:15px;opacity:.9}
+    .cta-btn{display:inline-block;background:#fff;color:var(--preto);text-decoration:none;padding:10px 18px;border-radius:20px;font-weight:600;box-shadow:0 1px 0 rgba(0,0,0,.08);transition:transform .12s ease,background .2s ease,box-shadow .2s ease;white-space:nowrap}
+    .cta-btn:hover{background:#f2f2f5;transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.12)}
+    .site-footer{background:#fff;color:var(--preto);border-top:1px solid #eee;padding:18px 16px 28px}
+    .footer-inner{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:auto 1fr;gap:20px 28px;align-items:start}
+    .footer-brand img{height:40px;width:auto;display:block}
+    .footer-cols{display:grid;grid-template-columns:repeat(2,minmax(180px,240px));gap:12px 28px}
+    .footer-col h4{margin:0 0 8px;font-size:14px;font-weight:700;color:var(--preto)}
+    .footer-col ul{list-style:none;margin:0;padding:0}
+    .footer-col li+li{margin-top:6px}
+    .footer-col a{color:var(--preto);text-decoration:none;font-size:14px}
+    .footer-col a:hover{text-decoration:underline}
+    @media (min-width:900px){#hero-sub{max-width:none;white-space:nowrap;display:inline-block}}
   </style>
 </head>
 <body>
@@ -235,14 +111,11 @@
     <div class="header-left">
       <div class="logo">
         <img src="{{ url_for('static', filename='logo.jpg') }}"
-             alt="Logo AcheTece"
-             decoding="async"
-             fetchpriority="high">
+             alt="Logo AcheTece" decoding="async" fetchpriority="high">
       </div>
     </div>
 
     <div class="header-right">
-      <!-- NOVO botão Menu -->
       <button class="menu-pill" id="openMegaMenu" aria-haspopup="dialog" aria-controls="megaMenu" aria-expanded="false">
         <span>Menu</span>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
@@ -266,8 +139,8 @@
         <section class="menu-section">
           <h3>Entrar ou criar conta</h3>
 
-          <!-- Social (Google) -->
-          <button class="btn-social" onclick="location.href='{{ url_for('login_google') }}'">
+          <!-- Social (Google) -> auth.login_google -->
+          <button class="btn-social" onclick="location.href='{{ url_for('auth.login_google') }}'">
             <svg viewBox="0 0 533.5 544.3" aria-hidden="true">
               <path d="M533.5 278.4c0-18.6-1.7-37-5.2-54.8H272v103.9h147.1c-6.3 34.3-25.2 63.3-53.6 82.8v68.7h86.6c50.7-46.7 81.4-115.5 81.4-200.6z" fill="#4285F4"/>
               <path d="M272 544.3c72.9 0 134.1-24.1 178.8-65.3l-86.6-68.7c-24 16.1-54.7 25.6-92.2 25.6-70.9 0-131-47.8-152.5-112.1H29.8v70.3C73.9 486.5 166.6 544.3 272 544.3z" fill="#34A853"/>
@@ -308,7 +181,6 @@
           <ul class="list-links">
             <li onclick="location.href='{{ url_for('malharia_info') }}'">
               <div class="left">
-                <!-- Empresa+ (prédio com +) -->
                 <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
                   <rect x="3" y="3" width="14" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
                   <path d="M7 8h6M7 12h6M7 16h3" stroke="currentColor" stroke-width="2"/>
@@ -330,7 +202,6 @@
 
             <li onclick="location.href='{{ config['WHATSAPP_URL'] }}'" aria-label="Suporte pelo WhatsApp">
               <div class="left">
-                <!-- WhatsApp SVG -->
                 <svg class="ico" viewBox="0 0 32 32" aria-hidden="true">
                   <path d="M19.1 17.5c.3.1.5.1.6-.2l.9-1.1c.2-.3.1-.6 0-.9-.2-.2-1.2-1-1.4-1.1-.2-.1-.5-.1-.7.1l-.5.6c-.2.2-.4.2-.6.1-1.1-.6-2-1.5-2.6-2.6-.1-.2-.1-.5.1-.6l.6-.5c.2-.2.3-.5.1-.7-.1-.2-.9-1.2-1.1-1.4-.3-.2-.6-.3-.9 0l-1.1.9c-.3.2-.4.6-.3 1 0 2.3 1 4.5 2.6 6.1 1.6 1.6 3.8 2.6 6.1 2.6.4.1.8 0 1-.3l.9-1.1c.3-.3.2-.6 0-.9-.2-.2-1.2-1-1.4-1.1" fill="#25D366"/>
                   <path d="M16 3.2C9.7 3.2 4.6 8.3 4.6 14.6c0 2.1.6 4.1 1.7 5.8L5 28l7.7-1.1c1.7 1.1 3.7 1.7 5.8 1.7 6.3 0 11.4-5.1 11.4-11.4S22.3 3.2 16 3.2z" fill="none" stroke="#25D366" stroke-width="2"/>
@@ -403,49 +274,38 @@
     </div>
   </footer>
 
-  <!-- ===== JS: Mega Menu ===== -->
+  <!-- JS: Mega Menu -->
   <script>
     (function(){
-      const openBtn  = document.getElementById('openMegaMenu');
-      const overlay  = document.getElementById('menuOverlay');
-      const modal    = document.getElementById('megaMenu');
-      const closeBtn = document.getElementById('closeMegaMenu');
+      const openBtn=document.getElementById('openMegaMenu');
+      const overlay=document.getElementById('menuOverlay');
+      const modal=document.getElementById('megaMenu');
+      const closeBtn=document.getElementById('closeMegaMenu');
 
-      function openMenu(){
-        overlay.classList.add('is-open');
-        overlay.setAttribute('aria-hidden','false');
-        openBtn.setAttribute('aria-expanded','true');
-        setTimeout(()=> modal.focus?.(), 0);
-      }
-      function closeMenu(){
-        overlay.classList.remove('is-open');
-        overlay.setAttribute('aria-hidden','true');
-        openBtn.setAttribute('aria-expanded','false');
-        openBtn.focus?.();
-      }
+      function openMenu(){overlay.classList.add('is-open');overlay.setAttribute('aria-hidden','false');openBtn.setAttribute('aria-expanded','true');setTimeout(()=>modal.focus?.(),0);}
+      function closeMenu(){overlay.classList.remove('is-open');overlay.setAttribute('aria-hidden','true');openBtn.setAttribute('aria-expanded','false');openBtn.focus?.();}
 
-      openBtn.addEventListener('click', openMenu);
-      closeBtn.addEventListener('click', closeMenu);
-      overlay.addEventListener('click', (e)=>{ if(e.target === overlay) closeMenu(); });
-      document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeMenu(); });
+      openBtn.addEventListener('click',openMenu);
+      closeBtn.addEventListener('click',closeMenu);
+      overlay.addEventListener('click',e=>{if(e.target===overlay)closeMenu();});
+      document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();});
     })();
   </script>
 
-  <!-- ===== Mede altura topo (se precisar) ===== -->
+  <!-- Mede altura topo (se precisar) -->
   <script>
     (function(){
       function setNavH(){
-        const promo = document.querySelector('.promo-bar');
-        const nav   = document.querySelector('.navbar');
-        const total = (promo?.offsetHeight || 0) + (nav?.offsetHeight || 0);
-        document.documentElement.style.setProperty('--nav-h', total + 'px');
+        const promo=document.querySelector('.promo-bar');
+        const nav=document.querySelector('.navbar');
+        const total=(promo?.offsetHeight||0)+(nav?.offsetHeight||0);
+        document.documentElement.style.setProperty('--nav-h',total+'px');
       }
-      setNavH();
-      window.addEventListener('resize', setNavH);
+      setNavH(); window.addEventListener('resize',setNavH);
     })();
   </script>
 
-  <!-- ===== JS do hero + “Como funciona” dinâmico ===== -->
+  <!-- JS do hero / como funciona -->
   <script>
     (function(){
       function iconSVG(name){
@@ -459,30 +319,24 @@
         }
       }
 
-      const howCliente = {
-        title: "Precisa produzir malha? Como funciona:",
-        steps: [
-          { icon: "search",  t: "1. Ache",    d: "Filtre por tipo, diâmetro, galga e localização." },
-          { icon: "phone",   t: "2. Conecte", d: "Fale direto com a malharia para alinhar prazos e preços." },
-          { icon: "cone",    t: "3. Produza", d: "Combine e acompanhe a produção com quem tece sua malha." }
-        ]
-      };
+      const howCliente={title:"Precisa produzir malha? Como funciona:",steps:[
+        {icon:"search",t:"1. Ache",d:"Filtre por tipo, diâmetro, galga e localização."},
+        {icon:"phone",t:"2. Conecte",d:"Fale direto com a malharia para alinhar prazos e preços."},
+        {icon:"cone",t:"3. Produza",d:"Combine e acompanhe a produção com quem tece sua malha."}
+      ]};
 
-      const howMalharia = {
-        title: "Tem teares ociosos? Como funciona:",
-        steps: [
-          { icon: "profile", t: "1. Cadastre sua malharia",  d: "Crie seu perfil e informe os contatos." },
-          { icon: "publish", t: "2. Publique seus teares",    d: "Detalhe tipo, diâmetro, galga e localização." },
-          { icon: "phone",   t: "3. Receba contatos",         d: "Negocie prazos, valores e transforme ociosidade em produção." }
-        ]
-      };
+      const howMalharia={title:"Tem teares ociosos? Como funciona:",steps:[
+        {icon:"profile",t:"1. Cadastre sua malharia",d:"Crie seu perfil e informe os contatos."},
+        {icon:"publish",t:"2. Publique seus teares",d:"Detalhe tipo, diâmetro, galga e localização."},
+        {icon:"phone",t:"3. Receba contatos",d:"Negocie prazos, valores e transforme ociosidade em produção."}
+      ]};
 
-      const howTitle = document.getElementById('how-title');
-      const howSteps = document.getElementById('how-steps');
+      const howTitle=document.getElementById('how-title');
+      const howSteps=document.getElementById('how-steps');
 
       function renderHow(cfg){
-        howTitle.textContent = cfg.title;
-        howSteps.innerHTML = cfg.steps.map(s => `
+        howTitle.textContent=cfg.title;
+        howSteps.innerHTML=cfg.steps.map(s=>`
           <div class="step">
             <div class="step-ico">${iconSVG(s.icon)}</div>
             <h3>${s.t}</h3>
@@ -491,43 +345,23 @@
         `).join('');
       }
 
-      const cliente = {
-        title: "Encontre teares de malharia prontos para produzir",
-        sub: "Filtre sua busca por tipo, diâmetro, galga e localizaçao. Fale direto com a malharia.",
-        ctaText: "Buscar teares agora",
-        ctaHref: "{{ url_for('buscar_teares') }}"
-      };
-      const malharia = {
-        title: "Tem teares ociosos? Receba pedidos todo mês",
-        sub: "Seja encontrado por quem precisa produzir. Cadastro simples por apenas R$ 49,90/mês.",
-        ctaText: "Cadastrar minha malharia",
-        ctaHref: "{{ url_for('malharia_info') }}"
-      };
+      const cliente={title:"Encontre teares de malharia prontos para produzir",sub:"Filtre sua busca por tipo, diâmetro, galga e localizaçao. Fale direto com a malharia.",ctaText:"Buscar teares agora",ctaHref:"{{ url_for('buscar_teares') }}"};
+      const malharia={title:"Tem teares ociosos? Receba pedidos todo mês",sub:"Seja encontrado por quem precisa produzir. Cadastro simples por apenas R$ 49,90/mês.",ctaText:"Cadastrar minha malharia",ctaHref:"{{ url_for('malharia_info') }}"};
 
-      const tabs = document.querySelectorAll('.role-toggle [data-role]');
-      const h1 = document.getElementById('hero-title');
-      const p  = document.getElementById('hero-sub');
-      const cta= document.getElementById('hero-cta');
+      const tabs=document.querySelectorAll('.role-toggle [data-role]');
+      const h1=document.getElementById('hero-title');
+      const p=document.getElementById('hero-sub');
+      const cta=document.getElementById('hero-cta');
 
       function setRole(role){
-        const cfgHero = role === 'malharia' ? malharia : cliente;
-        const cfgHow  = role === 'malharia' ? howMalharia : howCliente;
-
-        h1.textContent = cfgHero.title;
-        p.textContent  = cfgHero.sub;
-        cta.textContent= cfgHero.ctaText;
-        cta.setAttribute('href', cfgHero.ctaHref);
-
-        tabs.forEach(b=>{
-          const active = b.dataset.role === role;
-          b.classList.toggle('is-active', active);
-          b.setAttribute('aria-selected', active ? 'true' : 'false');
-        });
-
+        const cfgHero=role==='malharia'?malharia:cliente;
+        const cfgHow=role==='malharia'?howMalharia:howCliente;
+        h1.textContent=cfgHero.title; p.textContent=cfgHero.sub; cta.textContent=cfgHero.ctaText; cta.setAttribute('href',cfgHero.ctaHref);
+        tabs.forEach(b=>{const a=b.dataset.role===role;b.classList.toggle('is-active',a);b.setAttribute('aria-selected',a?'true':'false');});
         renderHow(cfgHow);
       }
 
-      tabs.forEach(b=> b.addEventListener('click', ()=> setRole(b.dataset.role)));
+      tabs.forEach(b=>b.addEventListener('click',()=>setRole(b.dataset.role)));
       setRole('cliente');
     })();
   </script>
