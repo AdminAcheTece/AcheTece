@@ -16,112 +16,10 @@
   <style>
     /* ==================== VARIÁVEIS (marca) ==================== */
     :root{
-      --roxo: #8A00FF;           /* cor principal da marca (substitui azuis) */
+      --roxo: #8A00FF;           /* cor principal da marca */
       --roxo-hover: #A63DFF;     /* variação para hover */
       --roxo-clarinho: #F1E6FF;  /* fundo roxo bem claro (hover menu) */
-      --preto: #000000;          /* padronização para tons quase pretos */
-    }
-
-    /* ====== LAYOUT DO TOPO ====== */
-    .navbar{ overflow: visible; padding-top:6px; padding-bottom:6px; }
-    .header-left, .header-right{ display:flex; align-items:center; }
-    .header-right{ margin-left:auto; gap:20px; }
-
-    /* ====== LINKS AO LADO DA LOGO ====== */
-    .top-nav{ display:flex; gap:24px; align-items:center; }
-    .top-nav a {
-      color:#666666; text-decoration:none; font-weight:300;
-      padding:8px 0; line-height:1; font-size:14px;
-    }
-    .top-nav a:hover{ color:var(--roxo); text-decoration:underline; }
-    @media (max-width: 900px){ .top-nav{ display:none; } }
-
-    /* ====== FAIXA PRETA (CTA) ACIMA DO RODAPÉ ====== */
-    .cta-bar{
-      background:var(--preto); color:#fff; padding:20px 16px;
-      display:flex; align-items:center; justify-content:flex-start; gap:16px; flex-wrap:wrap;
-      border-top:1px solid rgba(255,255,255,.06); margin-top:32px; text-align:left;
-    }
-    .cta-text h3{ margin:0 0 4px; font-size:18px; font-weight:700; line-height:1.2; }
-    .cta-text p{ margin:0; font-size:15px; opacity:.9; }
-    .cta-btn{
-      display:inline-block; background:#fff; color:var(--preto); text-decoration:none;
-      padding:10px 18px; border-radius:20px; font-weight:600; box-shadow:0 1px 0 rgba(0,0,0,.08);
-      transition:transform .12s ease, background .2s ease, box-shadow .2s ease; white-space:nowrap;
-    }
-    .cta-btn:hover{ background:#f2f2f5; transform:translateY(-1px); box-shadow:0 3px 10px rgba(0,0,0,.12); }
-
-    /* ====== RODAPÉ BRANCO ====== */
-    .site-footer{ background:#fff; color:var(--preto); border-top:1px solid #eee; padding:18px 16px 28px; }
-    .footer-inner{ max-width:1180px; margin:0 auto; display:grid; grid-template-columns:auto 1fr; gap:20px 28px; align-items:start; }
-    .footer-brand img{ height:40px; width:auto; display:block; }
-    .footer-cols{ display:grid; grid-template-columns: repeat(2, minmax(180px, 240px)); gap:12px 28px; }
-    .footer-col h4{ margin:0 0 8px; font-size:14px; font-weight:700; color:var(--preto); }
-    .footer-col ul{ list-style:none; margin:0; padding:0; }
-    .footer-col li+li{ margin-top:6px; }
-    .footer-col a{ color:var(--preto); text-decoration:none; font-size:14px; }
-    .footer-col a:hover{ text-decoration:underline; }
-    @media (max-width: 720px){
-      .footer-inner{ grid-template-columns:1fr; }
-      .footer-cols{ grid-template-columns:1fr; }
-      .cta-text h3{ font-size:16px; }
-      .cta-text p{ font-size:14px; }
-    }
-
-    /* ===========================================================
-       MENU SUSPENSO — desktop ancorado; mobile centralizado
-       =========================================================== */
-    .menu-wrap{ position: relative; }
-    .hamburger{ position: relative; z-index: 10002; }
-
-    .hamburger{
-      display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
-      width:40px; height:40px; border:none; border-radius:0; background:transparent; /* <- corrigido */
-      box-shadow:none;
-    }
-    .hamburger span{ display:block; width:20px; height:2px; background:var(--preto); border-radius:2px; }
-    .hamburger span + span{ margin-top:4px; }
-    @media (max-width: 768px){
-      .hamburger{ width:28px; height:28px; border-radius:8px; }
-      .hamburger span{ width:16px; height:2px; }
-      .hamburger span + span{ margin-top:3px; }
-    }
-
-    .menu-dropdown{
-      background:#fff; border:1px solid #eaeaea; border-radius:12px; box-shadow:0 16px 38px rgba(0,0,0,.18);
-      z-index:10001; max-height:80vh; overflow:auto;
-      opacity:0; pointer-events:none; transform: translateY(8px) scale(.98);
-      transition: opacity .18s ease, transform .18s ease;
-    }
-    .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
-
-    .menu-dropdown .menu-header{
-      display:flex; justify-content:flex-end; align-items:center; padding:8px 10px; background:transparent;
-    }
-    .menu-dropdown .menu-header span{ display:none; }
-    .menu-dropdown .menu-close{
-      display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px;
-      background:#f0f2f5; border:0; border-radius:10px; cursor:pointer;
-    }
-    .menu-dropdown .menu-close:hover{ background:#e9ebee; }
-    .menu-dropdown .menu-close:active{ background:#e3e5e9; }
-
-    /* Itens do menu */
-    .menu-item{
-      display:flex; align-items:center; gap:10px;
-      padding:10px 12px; color:var(--preto); text-decoration:none; border-radius:10px;
-      transition: background .15s ease, color .15s ease;
-    }
-    .menu-item .icon{ width:18px; height:18px; color:currentColor; }
-
-    /* Hover do menu */
-    .menu-dropdown .menu-item:hover{
-      background: var(--roxo-clarinho);
-      color: var(--roxo);
-    }
-    .menu-dropdown .menu-item:active{
-      background: #E9D7FF;
-      color: var(--roxo);
+      --preto: #000000;          /* preto padrão */
     }
 
     /* ====== FAIXA PRETA ESTREITA NO TOPO ====== */
@@ -138,106 +36,187 @@
     .promo-cta:hover{ background:var(--roxo-hover); transform:translateY(-1px); }
     @media (max-width: 600px){ .promo-bar{ flex-wrap:wrap; row-gap:6px; } }
 
-    /* ====== HERO NOVO ====== */
-    .hero-grid{
-      display:grid;
-      grid-template-columns: 1.05fr 1fr;
-      gap: 28px;
-      align-items: center;
-      padding: 28px 20px 8px;
-      max-width: 1120px;
-      margin: 0 auto;
-    }
-    .hero-copy h1{
-      font-size: clamp(24px, 3.2vw, 36px);
-      color:var(--preto);
-      margin: 10px 0 8px;
-      line-height: 1.2;
-    }
-    .hero-copy p{
-      font-size: clamp(14px, 1.6vw, 18px);
-      color:#444;
-      margin: 0 0 14px;
-    }
-
-    /* Toggle de perfis (chips) */
-    .role-toggle{ display:flex; gap:8px; }
-
-    .chip{
-      appearance: none;
-      border:1px solid #d6d6d6;
+    /* ====== BARRA BRANCA (logo + botão Menu) ====== */
+    .navbar{
       background:#fff;
-      padding:8px 12px;
-      border-radius:999px;
-      cursor:pointer;
-      font: inherit;
-      color: var(--roxo);
+      overflow: visible; padding:10px 16px; border-bottom:1px solid #eee;
+      display:flex; align-items:center; gap:16px;
+    }
+    .header-left, .header-right{ display:flex; align-items:center; }
+    .header-right{ margin-left:auto; gap:16px; }
+    .logo img{ height:40px; width:auto; display:block; }
+
+    /* removemos os links ao lado do botão */
+    .top-nav{ display:none !important; }
+
+    /* ===== Botão Menu (pílula) ===== */
+    .menu-pill{
+      display:inline-flex; align-items:center; gap:10px;
+      background:#E3E3E3;  /* cinza médio */
+      color:#000; border:none; cursor:pointer;
+      padding:10px 18px; border-radius:999px; font-weight:700; font-size:16px;
+      box-shadow:0 1px 0 rgba(0,0,0,.06);
+      transition: background .2s ease, transform .12s ease, box-shadow .2s ease;
+    }
+    .menu-pill:hover{
+      background: var(--roxo);
+      color:#000;  /* sempre preto */
+      transform: translateY(-1px);
+      box-shadow:0 3px 10px rgba(0,0,0,.12);
+    }
+    .menu-pill svg{ width:18px; height:18px; }
+
+    /* ===== Overlay do menu grande ===== */
+    .menu-overlay{
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.6);
+      display: none; align-items: center; justify-content: center;
+      z-index: 1000;
+    }
+    .menu-overlay.is-open{ display:flex; }
+
+    /* ===== Modal central ===== */
+    .menu-modal{
+      width: min(960px, 92vw);
+      background:#fff; border-radius:16px; padding:28px;
+      box-shadow:0 18px 50px rgba(0,0,0,.28); position:relative;
+    }
+    .close-btn{
+      position:absolute; top:12px; right:12px;
+      width:40px; height:40px; border:none; border-radius:12px;
+      background:#f0f2f5; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    }
+    .close-btn:hover{ background:#e9ebee; }
+    .menu-modal h2{ margin:0 0 16px; font-size:22px; color:var(--preto); }
+
+    /* ===== Grid interno (2 colunas) ===== */
+    .menu-columns{
+      display:grid; grid-template-columns: 1fr 1fr; gap:28px;
+    }
+    @media (max-width: 860px){
+      .menu-columns{ grid-template-columns: 1fr; }
+    }
+
+    .menu-section h3{ margin:0 0 10px; font-size:16px; color:var(--preto); }
+
+    /* ===== Botões sociais ===== */
+    .btn-social{
+      display:flex; align-items:center; gap:10px;
+      border:none; cursor:pointer; border-radius:999px; padding:12px 16px; font-weight:700;
+      background:#f1f1f1; color:#000; width:100%; justify-content:center;
+      transition: background .2s ease, transform .12s ease;
+    }
+    .btn-social:hover{ background:#e9e9e9; transform: translateY(-1px); }
+    .btn-social svg{ width:20px; height:20px; }
+
+    /* ===== Campos Login ===== */
+    .login-field{
+      width:100%; border:1px solid #e5e5e9; background:#f6f6f7;
+      padding:12px 14px; border-radius:14px; outline:none; font-size:14px; color:#222;
+    }
+    .login-field + .login-field{ margin-top:8px; }
+    .forgot{
+      display:inline-flex; align-items:center; gap:6px; margin-top:8px; font-size:13px; color:#444; text-decoration:none;
+    }
+    .forgot:hover{ text-decoration:underline; }
+
+    .btn-enter{
+      margin-top:10px; width:100%; border:none; cursor:pointer;
+      background:var(--roxo); color:#fff; padding:12px 16px; border-radius:999px; font-weight:700;
+      transition: background .2s ease, transform .12s ease;
+    }
+    .btn-enter:hover{ background:var(--roxo-hover); transform: translateY(-1px); }
+
+    .register{ font-size:13px; margin-top:10px; }
+    .register a{ color:var(--roxo); text-decoration:none; }
+    .register a:hover{ text-decoration:underline; }
+
+    /* ===== Facilidades ===== */
+    .facilidades{
+      display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;
+    }
+    @media (max-width: 420px){ .facilidades{ grid-template-columns: 1fr; } }
+
+    .fac-card{
+      display:flex; align-items:center; gap:10px; border:1px solid #eee; border-radius:16px;
+      padding:12px; background:#fafafa; cursor:pointer; text-decoration:none; color:#000;
+      transition: background .2s ease, transform .12s ease, border-color .2s ease;
+    }
+    .fac-card:hover{ background:#fff; transform: translateY(-1px); border-color:#e3e3e3; }
+    .fac-card .ico{ width:22px; height:22px; }
+
+    /* ===== Mais opções ===== */
+    .list-links{ list-style:none; padding:0; margin:8px 0 0; }
+    .list-links li{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:12px 4px; border-bottom:1px solid #f0f0f2; cursor:pointer;
+    }
+    .list-links li:last-child{ border-bottom:0; }
+    .list-links .left{ display:flex; align-items:center; gap:10px; }
+    .list-links .left .ico{ width:20px; height:20px; }
+    .list-links a{ color:#000; text-decoration:none; flex:1; }
+    .list-links li:hover a{ color:var(--roxo); }
+
+    /* ===== HERO / COMO FUNCIONA (mantidos) ===== */
+    .hero-grid{
+      display:grid; grid-template-columns: 1fr; justify-items:center; text-align:center;
+      gap: 28px; align-items: center; padding: 28px 20px 8px; max-width: 1120px; margin: 0 auto;
+    }
+    .hero-copy h1{ font-size: clamp(24px, 3.2vw, 36px); color:var(--preto); margin: 10px 0 8px; line-height: 1.2; }
+    .hero-copy p{ font-size: clamp(14px, 1.6vw, 18px); color:#444; margin: 0 0 14px; }
+
+    .role-toggle{ display:flex; gap:8px; }
+    .chip{
+      appearance: none; border:1px solid #d6d6d6; background:#fff; padding:8px 12px;
+      border-radius:999px; cursor:pointer; font: inherit; color: var(--roxo);
       transition: color .15s ease, background .15s ease, border-color .15s ease;
     }
-
-    .chip.is-active{
-      background:var(--preto);
-      color:#fff;
-      border-color:var(--preto);
-    }
-
+    .chip.is-active{ background:var(--preto); color:#fff; border-color:var(--preto); }
     .hero-ctas{ display:flex; gap:12px; align-items:center; margin: 8px 0 10px; }
-
     .btn-principal{
-      display:inline-block; background:var(--roxo); color:#fff;
-      padding:12px 18px; border-radius:50px; font-weight:700; text-decoration:none;
+      display:inline-block; background:var(--roxo); color:#fff; padding:12px 18px; border-radius:50px; font-weight:700; text-decoration:none;
       transition: background .15s ease, transform .12s ease;
     }
     .btn-principal:hover{ background:var(--roxo-hover); transform: translateY(-1px); }
 
-    .hero-figure img{
-      width:100%;
-      border-radius:10px;
-      display:block;
-    }
-    @media (max-width: 900px){
-      .hero-grid{ grid-template-columns: 1fr; gap: 18px; padding-top: 18px; }
-      .hero-figure{ order:-1; }
-    }
-
-    /* ====== COMO FUNCIONA ====== */
-    .how-it-works{
-      max-width: 1120px;
-      margin: 22px auto 8px;
-      padding: 0 20px 20px;
-    }
-    .how-it-works h2{
-      font-size: clamp(20px, 2.4vw, 28px);
-      margin: 0 0 8px;
-      color:var(--preto);
-      text-align:center;
-    }
-    .steps{
-      display:grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap:16px;
-    }
-    .step{
-      background:#fff;
-      border:1px solid #eee;
-      border-radius:12px;
-      padding:16px;
-      text-align:center;
-    }
+    .how-it-works{ max-width: 1120px; margin: 22px auto 8px; padding: 0 20px 20px; }
+    .how-it-works h2{ font-size: clamp(20px, 2.4vw, 28px); margin: 0 0 8px; color:var(--preto); text-align:center; }
+    .steps{ display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; }
+    .step{ background:#fff; border:1px solid #eee; border-radius:12px; padding:16px; text-align:center; }
     .step-ico{ margin-bottom:8px; display:flex; align-items:center; justify-content:center; }
-    .step-ico svg{ width:56px; height:56px; color:var(--preto); } /* ícones pretos */
+    .step-ico svg{ width:56px; height:56px; color:var(--preto); }
     .step h3{ font-size:16px; margin:0 0 4px; color:var(--preto); }
     .step p{ font-size:14px; color:#555; margin:0; }
-    @media (max-width: 900px){
-      .steps{ grid-template-columns: 1fr; }
+    @media (max-width: 900px){ .steps{ grid-template-columns: 1fr; } }
+
+    /* ====== CTA preta e Rodapé (mantidos) ====== */
+    .cta-bar{
+      background:var(--preto); color:#fff; padding:20px 16px;
+      display:flex; align-items:center; justify-content:flex-start; gap:16px; flex-wrap:wrap;
+      border-top:1px solid rgba(255,255,255,.06); margin-top:32px; text-align:left;
     }
-    
-    /* Hero: manter o subtítulo em uma única linha em telas largas */
+    .cta-text h3{ margin:0 0 4px; font-size:18px; font-weight:700; line-height:1.2; }
+    .cta-text p{ margin:0; font-size:15px; opacity:.9; }
+    .cta-btn{
+      display:inline-block; background:#fff; color:var(--preto); text-decoration:none;
+      padding:10px 18px; border-radius:20px; font-weight:600; box-shadow:0 1px 0 rgba(0,0,0,.08);
+      transition:transform .12s ease, background .2s ease, box-shadow .2s ease; white-space:nowrap;
+    }
+    .cta-btn:hover{ background:#f2f2f5; transform:translateY(-1px); box-shadow:0 3px 10px rgba(0,0,0,.12); }
+
+    .site-footer{ background:#fff; color:var(--preto); border-top:1px solid #eee; padding:18px 16px 28px; }
+    .footer-inner{ max-width:1180px; margin:0 auto; display:grid; grid-template-columns:auto 1fr; gap:20px 28px; align-items:start; }
+    .footer-brand img{ height:40px; width:auto; display:block; }
+    .footer-cols{ display:grid; grid-template-columns: repeat(2, minmax(180px, 240px)); gap:12px 28px; }
+    .footer-col h4{ margin:0 0 8px; font-size:14px; font-weight:700; color:var(--preto); }
+    .footer-col ul{ list-style:none; margin:0; padding:0; }
+    .footer-col li+li{ margin-top:6px; }
+    .footer-col a{ color:var(--preto); text-decoration:none; font-size:14px; }
+    .footer-col a:hover{ text-decoration:underline; }
+
+    /* Hero subtítulo 1 linha em telas largas */
     @media (min-width: 900px){
-    #hero-sub{
-    max-width: none;     /* desfaz o limite de 700px herdado de .hero p */
-    white-space: nowrap; /* não deixa quebrar a linha */
-    display: inline-block; /* facilita centralizar */
+      #hero-sub{ max-width:none; white-space:nowrap; display:inline-block; }
     }
   </style>
 </head>
@@ -251,8 +230,8 @@
     <a class="promo-cta" href="{{ url_for('malharia_info') }}">Saiba como</a>
   </section>
 
-  <!-- Cabeçalho -->
-  <header class="navbar">
+  <!-- Barra branca: logo + botão Menu -->
+  <header class="navbar" role="banner">
     <div class="header-left">
       <div class="logo">
         <img src="{{ url_for('static', filename='logo.jpg') }}"
@@ -263,158 +242,196 @@
     </div>
 
     <div class="header-right">
-      <nav class="top-nav" aria-label="Menu principal" role="navigation">
-        <a href="{{ url_for('buscar_teares') }}">Ache o tear aqui</a>
-        <a href="{{ url_for('malharia_info') }}">Cadastrar malharia</a>
-        <a href="{{ url_for('login') }}">Já sou cadastrado</a>
-      </nav>
-
-      <!-- Menu sanduíche à direita -->
-      <div class="menu-wrap">
-        <button class="hamburger"
-                id="hamburger"
-                type="button"
-                aria-label="Abrir menu"
-                aria-controls="menu-lateral"
-                aria-haspopup="menu"
-                aria-expanded="false">
-          <span></span><span></span><span></span>
-        </button>
-
-        <nav class="menu-dropdown" id="menu-lateral" role="menu" aria-label="Menu rápido">
-          <div class="menu-header">
-            <span>Menu</span>
-            <button type="button" class="menu-close" aria-label="Fechar menu">
-              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
-              </svg>
-            </button>
-          </div>
-
-          <a href="{{ url_for('buscar_teares') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"></circle>
-              <line x1="16.65" y1="16.65" x2="21" y2="21" stroke="currentColor" stroke-width="2"></line>
-            </svg>
-            <span>Buscar Tear</span>
-          </a>
-
-          <a href="{{ url_for('malharia_info') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="3" y="4" width="18" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="2"></rect>
-              <path d="M7 11h10M7 8h10M8 18l3-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-            </svg>
-            <span>Como Funciona</span>
-          </a>
-
-          <a href="{{ url_for('login') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"></circle>
-              <path d="M4 20a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="2"></path>
-            </svg>
-            <span>Já sou cadastrado</span>
-          </a>
-
-          <a href="{{ url_for('quem_somos') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="7" r="4" fill="none" stroke="currentColor" stroke-width="2"></circle>
-              <path d="M4 21c2-4 14-4 16 0" fill="none" stroke="currentColor" stroke-width="2"></path>
-            </svg>
-            <span>Quem Somos</span>
-          </a>
-
-          <a href="{{ url_for('contato') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"></rect>
-              <path d="M3 8l9 6 9-6" fill="none" stroke="currentColor" stroke-width="2"></path>
-            </svg>
-            <span>Fale conosco</span>
-          </a>
-
-          <a href="{{ url_for('termos') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="4" y="4" width="16" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"></rect>
-              <path d="M8 8h8M8 12h8M8 16h5" stroke="currentColor" stroke-width="2"></path>
-            </svg>
-            <span>Termos e Políticas</span>
-          </a>
-        </nav>
-      </div>
+      <!-- NOVO botão Menu -->
+      <button class="menu-pill" id="openMegaMenu" aria-haspopup="dialog" aria-controls="megaMenu" aria-expanded="false">
+        <span>Menu</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+      </button>
     </div>
   </header>
 
-  <!-- Hero novo com alternância de público -->
-  <!-- Ajuste: sem imagem; grid com 1 coluna e itens centralizados -->
-  <main class="hero hero-grid" style="grid-template-columns:1fr; justify-items:center; text-align:center;">
-    <!-- Conteúdo -->
+  <!-- MENU SUSPENSO GRANDE + OVERLAY -->
+  <div class="menu-overlay" id="menuOverlay" aria-hidden="true">
+    <div class="menu-modal" role="dialog" aria-modal="true" aria-labelledby="megaMenuTitle" id="megaMenu">
+      <button class="close-btn" id="closeMegaMenu" aria-label="Fechar menu">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+          <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+        </svg>
+      </button>
+
+      <h2 id="megaMenuTitle">Menu</h2>
+
+      <div class="menu-columns">
+        <!-- Coluna esquerda: Login -->
+        <section class="menu-section">
+          <h3>Entrar ou criar conta</h3>
+
+          <!-- Social (Google) -->
+          <button class="btn-social" onclick="location.href='{{ url_for('login_google') }}'">
+            <svg viewBox="0 0 533.5 544.3" aria-hidden="true">
+              <path d="M533.5 278.4c0-18.6-1.7-37-5.2-54.8H272v103.9h147.1c-6.3 34.3-25.2 63.3-53.6 82.8v68.7h86.6c50.7-46.7 81.4-115.5 81.4-200.6z" fill="#4285F4"/>
+              <path d="M272 544.3c72.9 0 134.1-24.1 178.8-65.3l-86.6-68.7c-24 16.1-54.7 25.6-92.2 25.6-70.9 0-131-47.8-152.5-112.1H29.8v70.3C73.9 486.5 166.6 544.3 272 544.3z" fill="#34A853"/>
+              <path d="M119.5 323.8c-10.2-30.6-10.2-63.5 0-94.1v-70.3H29.8C-9.8 205.9-9.8 338.4 29.8 417.9l89.7-94.1z" fill="#FBBC05"/>
+              <path d="M272 106.4c39.6-.6 77.6 14.9 106.7 42.9l79.6-79.6C404.8 24.4 342.3-.5 272 0 166.6 0 73.9 57.8 29.8 160.1l89.7 70.3C141 154.7 201.1 106.9 272 106.4z" fill="#EA4335"/>
+            </svg>
+            Entrar com Google
+          </button>
+
+          <!-- Dados de acesso -->
+          <div style="margin-top:10px;">
+            <input type="email" class="login-field" placeholder="Email de login...">
+            <input type="password" class="login-field" placeholder="Senha de acesso...">
+            <a href="{{ url_for('esqueci_senha') }}" class="forgot" aria-label="Esqueci minha senha">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+              Esqueci minha senha
+            </a>
+            <button class="btn-enter">Entrar</button>
+            <p class="register">Não tem cadastro? <a href="{{ url_for('criar_conta') if false else '#' }}">Crie sua conta aqui</a></p>
+          </div>
+        </section>
+
+        <!-- Coluna direita: Facilidades + Mais opções -->
+        <section class="menu-section">
+          <h3>Facilidades AcheTece</h3>
+          <div class="facilidades">
+            <a class="fac-card" href="{{ url_for('buscar_teares') }}">
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><line x1="16.65" y1="16.65" x2="21" y2="21" stroke="currentColor" stroke-width="2"/></svg>
+              <span>Procuro Malharia</span>
+            </a>
+            <a class="fac-card" href="{{ url_for('malharia_info') }}">
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10l2 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L7 4z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M6 8h12M5.5 12h13M5 16h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              <span>Sou Malharia</span>
+            </a>
+          </div>
+
+          <h3>Mais opções</h3>
+          <ul class="list-links">
+            <li onclick="location.href='{{ url_for('malharia_info') }}'">
+              <div class="left">
+                <!-- Empresa+ (prédio com +) -->
+                <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="3" y="3" width="14" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+                  <path d="M7 8h6M7 12h6M7 16h3" stroke="currentColor" stroke-width="2"/>
+                  <circle cx="20" cy="16" r="3" fill="none" stroke="currentColor" stroke-width="2"/>
+                  <path d="M20 14v4M18 16h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <a href="{{ url_for('malharia_info') }}">Cadastrar minha malharia</a>
+              </div>
+              <svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+            </li>
+
+            <li onclick="location.href='{{ url_for('quem_somos') }}'">
+              <div class="left">
+                <img class="ico" src="{{ url_for('static', filename='logo_simbolo.png') }}" alt="AcheTece">
+                <a href="{{ url_for('quem_somos') }}">Conheça a AcheTece</a>
+              </div>
+              <svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+            </li>
+
+            <li onclick="location.href='{{ config['WHATSAPP_URL'] }}'" aria-label="Suporte pelo WhatsApp">
+              <div class="left">
+                <!-- WhatsApp SVG -->
+                <svg class="ico" viewBox="0 0 32 32" aria-hidden="true">
+                  <path d="M19.1 17.5c.3.1.5.1.6-.2l.9-1.1c.2-.3.1-.6 0-.9-.2-.2-1.2-1-1.4-1.1-.2-.1-.5-.1-.7.1l-.5.6c-.2.2-.4.2-.6.1-1.1-.6-2-1.5-2.6-2.6-.1-.2-.1-.5.1-.6l.6-.5c.2-.2.3-.5.1-.7-.1-.2-.9-1.2-1.1-1.4-.3-.2-.6-.3-.9 0l-1.1.9c-.3.2-.4.6-.3 1 0 2.3 1 4.5 2.6 6.1 1.6 1.6 3.8 2.6 6.1 2.6.4.1.8 0 1-.3l.9-1.1c.3-.3.2-.6 0-.9-.2-.2-1.2-1-1.4-1.1" fill="#25D366"/>
+                  <path d="M16 3.2C9.7 3.2 4.6 8.3 4.6 14.6c0 2.1.6 4.1 1.7 5.8L5 28l7.7-1.1c1.7 1.1 3.7 1.7 5.8 1.7 6.3 0 11.4-5.1 11.4-11.4S22.3 3.2 16 3.2z" fill="none" stroke="#25D366" stroke-width="2"/>
+                </svg>
+                <a href="{{ config['WHATSAPP_URL'] }}" target="_blank" rel="noopener">Suporte AcheTece</a>
+              </div>
+              <svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+            </li>
+          </ul>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <main class="hero hero-grid">
     <div class="hero-copy">
       <div class="role-toggle" role="tablist" aria-label="Selecione seu perfil">
-        <button class="chip is-active" role="tab" aria-selected="true" data-role="cliente">
-          Procuro Malharia
-        </button>
-        <button class="chip" role="tab" aria-selected="false" data-role="malharia">
-          Sou Malharia
-        </button>
+        <button class="chip is-active" role="tab" aria-selected="true" data-role="cliente">Procuro Malharia</button>
+        <button class="chip" role="tab" aria-selected="false" data-role="malharia">Sou Malharia</button>
       </div>
 
       <h1 id="hero-title">Encontre teares de malharia prontos para produzir</h1>
-      <p id="hero-sub">
-        Filtre sua busca por tipo, diâmetro, galga e localizaçao. Fale direto com a malharia.
-      </p>
+      <p id="hero-sub">Filtre sua busca por tipo, diâmetro, galga e localizaçao. Fale direto com a malharia.</p>
 
       <div class="hero-ctas">
         <a id="hero-cta" href="{{ url_for('buscar_teares') }}" class="btn-principal">Buscar teares agora</a>
-        <!-- (link “Como funciona” removido conforme pedido) -->
       </div>
     </div>
   </main>
 
-  <!-- Seção “Como funciona” dinâmica -->
+  <!-- COMO FUNCIONA -->
   <section class="how-it-works" aria-labelledby="como-funciona">
     <h2 id="how-title">Precisa produzir malha? Como funciona:</h2>
-    <div class="steps" id="how-steps"><!-- renderizado via JS --></div>
+    <div class="steps" id="how-steps"></div>
   </section>
 
-  <!-- Script do menu (fecha no X/fora/ESC) -->
+  <!-- CTA -->
+  <section class="cta-bar" aria-label="Convite para cadastro">
+    <div class="cta-text">
+      <h3>É proprietário de uma malharia?</h3>
+      <p>Cadastre sua malharia e comece a receber novos pedidos.</p>
+    </div>
+    <a href="{{ url_for('malharia_info') }}" class="cta-btn">Cadastrar</a>
+  </section>
+
+  <!-- Rodapé -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="{{ url_for('static', filename='logo_simbolo.png') }}" alt="AcheTece">
+      </div>
+
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h4>Sobre nós</h4>
+          <ul>
+            <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
+            <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
+            <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
+            <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>&nbsp;</h4>
+          <ul><li>&nbsp;</li></ul>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== JS: Mega Menu ===== -->
   <script>
-    (function () {
-      function closeAll() {
-        document.querySelectorAll('.menu-wrap .menu-dropdown.open').forEach(m => {
-          m.classList.remove('open');
-          const b = m.closest('.menu-wrap')?.querySelector('.hamburger');
-          if (b) b.setAttribute('aria-expanded', 'false');
-        });
+    (function(){
+      const openBtn  = document.getElementById('openMegaMenu');
+      const overlay  = document.getElementById('menuOverlay');
+      const modal    = document.getElementById('megaMenu');
+      const closeBtn = document.getElementById('closeMegaMenu');
+
+      function openMenu(){
+        overlay.classList.add('is-open');
+        overlay.setAttribute('aria-hidden','false');
+        openBtn.setAttribute('aria-expanded','true');
+        setTimeout(()=> modal.focus?.(), 0);
+      }
+      function closeMenu(){
+        overlay.classList.remove('is-open');
+        overlay.setAttribute('aria-hidden','true');
+        openBtn.setAttribute('aria-expanded','false');
+        openBtn.focus?.();
       }
 
-      document.querySelectorAll('.menu-wrap').forEach(wrap => {
-        const btn  = wrap.querySelector('#hamburger');
-        const menu = wrap.querySelector('#menu-lateral');
-        const xBtn = wrap.querySelector('.menu-close');
-        if (!btn || !menu) return;
-
-        btn.addEventListener('click', e => {
-          e.stopPropagation();
-          const willOpen = !menu.classList.contains('open');
-          closeAll();
-          menu.classList.toggle('open', willOpen);
-          btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-        });
-
-        xBtn?.addEventListener('click', e => {
-          e.stopPropagation();
-          menu.classList.remove('open');
-          btn.setAttribute('aria-expanded', 'false');
-        });
-
-        menu.addEventListener('click', e => e.stopPropagation());
-      });
-
-      document.addEventListener('click', closeAll);
-      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
+      openBtn.addEventListener('click', openMenu);
+      closeBtn.addEventListener('click', closeMenu);
+      overlay.addEventListener('click', (e)=>{ if(e.target === overlay) closeMenu(); });
+      document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeMenu(); });
     })();
   </script>
 
-  <!-- Mede altura do topo (promo + header) para posicionar o menu no mobile -->
+  <!-- ===== Mede altura topo (se precisar) ===== -->
   <script>
     (function(){
       function setNavH(){
@@ -428,7 +445,7 @@
     })();
   </script>
 
-  <!-- JS do hero + “Como funciona” dinâmico -->
+  <!-- ===== JS do hero + “Como funciona” dinâmico ===== -->
   <script>
     (function(){
       function iconSVG(name){
@@ -514,43 +531,5 @@
       setRole('cliente');
     })();
   </script>
-
-  <!-- —— Faixa preta (CTA) —— -->
-  <section class="cta-bar" aria-label="Convite para cadastro">
-    <div class="cta-text">
-      <h3>É proprietário de uma malharia?</h3>
-      <p>Cadastre sua malharia e comece a receber novos pedidos.</p>
-    </div>
-    <a href="{{ url_for('malharia_info') }}" class="cta-btn">Cadastrar</a>
-  </section>
-
-  <!-- —— Rodapé branco com logo-símbolo + links —— -->
-  <footer class="site-footer">
-    <div class="footer-inner">
-      <div class="footer-brand">
-        <img src="{{ url_for('static', filename='logo_simbolo.png') }}" alt="AcheTece">
-      </div>
-
-      <div class="footer-cols">
-        <div class="footer-col">
-          <h4>Sobre nós</h4>
-          <ul>
-            <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
-            <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
-            <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
-            <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
-          </ul>
-        </div>
-
-        <div class="footer-col">
-          <h4>&nbsp;</h4>
-          <ul>
-            <li>&nbsp;</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </footer>
-
 </body>
 </html>
