@@ -23,7 +23,7 @@
     }
 
     /* ====== LAYOUT DO TOPO ====== */
-    .navbar{ overflow: visible; padding-top:6px; padding-bottom:6px; }
+    .navbar{ overflow: visible; padding-top:6px; padding-bottom:6px; display:flex; align-items:center; }
     .header-left, .header-right{ display:flex; align-items:center; }
     .header-right{ margin-left:auto; gap:20px; }
 
@@ -69,59 +69,19 @@
     }
 
     /* ===========================================================
-       MENU SUSPENSO — desktop ancorado; mobile centralizado
+       HAMBÚRGUER BÁSICO (aciona o modal)
        =========================================================== */
-    .menu-wrap{ position: relative; }
-    .hamburger{ position: relative; z-index: 10002; }
-
     .hamburger{
       display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
-      width:40px; height:40px; border:none; border-radius:0; background:transparent; /* <- corrigido */
-      box-shadow:none;
+      width:40px; height:40px; border:none; background:transparent;
+      box-shadow:none; cursor:pointer;
     }
     .hamburger span{ display:block; width:20px; height:2px; background:var(--preto); border-radius:2px; }
     .hamburger span + span{ margin-top:4px; }
     @media (max-width: 768px){
-      .hamburger{ width:28px; height:28px; border-radius:8px; }
-      .hamburger span{ width:16px; height:2px; }
+      .hamburger{ width:32px; height:32px; }
+      .hamburger span{ width:18px; height:2px; }
       .hamburger span + span{ margin-top:3px; }
-    }
-
-    .menu-dropdown{
-      background:#fff; border:1px solid #eaeaea; border-radius:12px; box-shadow:0 16px 38px rgba(0,0,0,.18);
-      z-index:10001; max-height:80vh; overflow:auto;
-      opacity:0; pointer-events:none; transform: translateY(8px) scale(.98);
-      transition: opacity .18s ease, transform .18s ease;
-    }
-    .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
-
-    .menu-dropdown .menu-header{
-      display:flex; justify-content:flex-end; align-items:center; padding:8px 10px; background:transparent;
-    }
-    .menu-dropdown .menu-header span{ display:none; }
-    .menu-dropdown .menu-close{
-      display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px;
-      background:#f0f2f5; border:0; border-radius:10px; cursor:pointer;
-    }
-    .menu-dropdown .menu-close:hover{ background:#e9ebee; }
-    .menu-dropdown .menu-close:active{ background:#e3e5e9; }
-
-    /* Itens do menu */
-    .menu-item{
-      display:flex; align-items:center; gap:10px;
-      padding:10px 12px; color:var(--preto); text-decoration:none; border-radius:10px;
-      transition: background .15s ease, color .15s ease;
-    }
-    .menu-item .icon{ width:18px; height:18px; color:currentColor; }
-
-    /* Hover do menu */
-    .menu-dropdown .menu-item:hover{
-      background: var(--roxo-clarinho);
-      color: var(--roxo);
-    }
-    .menu-dropdown .menu-item:active{
-      background: #E9D7FF;
-      color: var(--roxo);
     }
 
     /* ====== FAIXA PRETA ESTREITA NO TOPO ====== */
@@ -161,7 +121,7 @@
     }
 
     /* Toggle de perfis (chips) */
-    .role-toggle{ display:flex; gap:8px; }
+    .role-toggle{ display:flex; gap:8px; justify-content:center; }
 
     .chip{
       appearance: none;
@@ -181,7 +141,7 @@
       border-color:var(--preto);
     }
 
-    .hero-ctas{ display:flex; gap:12px; align-items:center; margin: 8px 0 10px; }
+    .hero-ctas{ display:flex; gap:12px; align-items:center; margin: 8px 0 10px; justify-content:center; }
 
     .btn-principal{
       display:inline-block; background:var(--roxo); color:#fff;
@@ -231,13 +191,76 @@
     @media (max-width: 900px){
       .steps{ grid-template-columns: 1fr; }
     }
-    
+
     /* Hero: manter o subtítulo em uma única linha em telas largas */
     @media (min-width: 900px){
-    #hero-sub{
-    max-width: none;     /* desfaz o limite de 700px herdado de .hero p */
-    white-space: nowrap; /* não deixa quebrar a linha */
-    display: inline-block; /* facilita centralizar */
+      #hero-sub{
+        max-width: none;
+        white-space: nowrap;
+        display: inline-block;
+      }
+    }
+
+    /* ===========================================================
+       MENU SUSPENSO — Modal grande (desktop) / Sheet (mobile)
+       =========================================================== */
+    .overlay-menu { position: fixed; inset: 0; z-index: 1000; display: none; }
+    .overlay-menu.is-open { display: block; }
+    .overlay-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.45); backdrop-filter: blur(2px); }
+
+    .overlay-panel{
+      position: relative;
+      margin: 40px auto;
+      width: min(960px, calc(100% - 24px));
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.20);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      max-height: calc(100% - 80px);
+    }
+    .overlay-header{ display:flex; align-items:center; justify-content:space-between; padding: 18px 22px; border-bottom: 1px solid #eee; }
+    .overlay-header h2{ margin:0; font-size: 22px; font-weight: 700; color:#111; }
+    .overlay-close{ border:0; background:#f3f3f3; width:36px; height:36px; border-radius:12px; font-size:22px; line-height:1; cursor:pointer; }
+
+    .overlay-content{ display:grid; grid-template-columns: 1fr 1fr; gap: 28px; padding: 22px; overflow:auto; }
+    .section-title{ font-size:14px; color:#6b6b6b; font-weight:700; margin:6px 0 10px; text-transform: uppercase; letter-spacing:.3px; }
+    .section-title.mt{ margin-top: 18px; }
+
+    .social-row{ display:flex; gap:14px; flex-wrap:wrap; }
+    .btn-social{
+      display:flex; align-items:center; gap:10px;
+      padding:10px 14px; border:none; cursor:pointer; border-radius:999px;
+      background:#f2f2f2; font-weight:700;
+    }
+    .btn-social .social-icon{
+      display:inline-flex; align-items:center; justify-content:center;
+      width:26px; height:26px; border-radius:50%; background:#fff; font-weight:900;
+    }
+    .btn-social.facebook{ background:#e8f0ff; }
+
+    .access-fields{ margin-top: 14px; }
+    .input{ width:100%; height:48px; border-radius:999px; border:1px solid #e6e6e6; padding:0 16px; margin-bottom:10px; font-size:14px; background:#f9f9f9; }
+    .links-inline { margin-bottom: 10px; }
+    .links-inline a{ font-size:12px; color:#666; text-decoration: underline; }
+    .btn-primary{ width:100%; height:54px; border-radius:999px; border:0; cursor:pointer; background: #8A00FF; color:#fff; font-weight:800; font-size:16px; box-shadow: 0 8px 18px rgba(138,0,255,.25); }
+    .small{ font-size:12px; color:#555; margin-top:8px; }
+
+    .cards-row{ display:flex; gap:12px; flex-wrap:wrap; }
+    .mini-card{ flex: 0 0 140px; background:#fafafa; border:1px solid #eee; border-radius:16px; padding:14px; text-decoration:none; color:#111; display:flex; flex-direction:column; gap:10px; }
+    .mini-card:hover{ border-color:#ddd; }
+    .mini-card-ico{ font-size:22px; }
+    .mini-card-title{ font-weight:700; color:#8A00FF; }
+
+    .list-links{ display:flex; flex-direction:column; border-top:1px solid #f0f0f0; margin-top:8px; }
+    .list-item{ display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 0; text-decoration:none; color:#222; border-bottom:1px solid #f5f5f5; }
+    .list-item .arrow{ opacity:.5; }
+
+    @media (max-width: 768px){
+      .overlay-panel{ margin: 0; width: 100%; height: 100%; border-radius: 0; box-shadow: none; max-height: 100%; }
+      .overlay-content{ grid-template-columns: 1fr; gap: 16px; padding: 16px; }
+      .overlay-header{ padding: 14px 16px; }
     }
   </style>
 </head>
@@ -269,77 +292,10 @@
         <a href="{{ url_for('login') }}">Já sou cadastrado</a>
       </nav>
 
-      <!-- Menu sanduíche à direita -->
-      <div class="menu-wrap">
-        <button class="hamburger"
-                id="hamburger"
-                type="button"
-                aria-label="Abrir menu"
-                aria-controls="menu-lateral"
-                aria-haspopup="menu"
-                aria-expanded="false">
-          <span></span><span></span><span></span>
-        </button>
-
-        <nav class="menu-dropdown" id="menu-lateral" role="menu" aria-label="Menu rápido">
-          <div class="menu-header">
-            <span>Menu</span>
-            <button type="button" class="menu-close" aria-label="Fechar menu">
-              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
-              </svg>
-            </button>
-          </div>
-
-          <a href="{{ url_for('buscar_teares') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"></circle>
-              <line x1="16.65" y1="16.65" x2="21" y2="21" stroke="currentColor" stroke-width="2"></line>
-            </svg>
-            <span>Buscar Tear</span>
-          </a>
-
-          <a href="{{ url_for('malharia_info') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="3" y="4" width="18" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="2"></rect>
-              <path d="M7 11h10M7 8h10M8 18l3-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-            </svg>
-            <span>Como Funciona</span>
-          </a>
-
-          <a href="{{ url_for('login') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"></circle>
-              <path d="M4 20a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="2"></path>
-            </svg>
-            <span>Já sou cadastrado</span>
-          </a>
-
-          <a href="{{ url_for('quem_somos') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="7" r="4" fill="none" stroke="currentColor" stroke-width="2"></circle>
-              <path d="M4 21c2-4 14-4 16 0" fill="none" stroke="currentColor" stroke-width="2"></path>
-            </svg>
-            <span>Quem Somos</span>
-          </a>
-
-          <a href="{{ url_for('contato') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"></rect>
-              <path d="M3 8l9 6 9-6" fill="none" stroke="currentColor" stroke-width="2"></path>
-            </svg>
-            <span>Fale conosco</span>
-          </a>
-
-          <a href="{{ url_for('termos') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="4" y="4" width="16" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"></rect>
-              <path d="M8 8h8M8 12h8M8 16h5" stroke="currentColor" stroke-width="2"></path>
-            </svg>
-            <span>Termos e Políticas</span>
-          </a>
-        </nav>
-      </div>
+      <!-- Botão hambúrguer que abre o modal -->
+      <button class="hamburger" id="hamburgerBtn" type="button" aria-label="Abrir menu">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </header>
 
@@ -364,7 +320,6 @@
 
       <div class="hero-ctas">
         <a id="hero-cta" href="{{ url_for('buscar_teares') }}" class="btn-principal">Buscar teares agora</a>
-        <!-- (link “Como funciona” removido conforme pedido) -->
       </div>
     </div>
   </main>
@@ -375,58 +330,76 @@
     <div class="steps" id="how-steps"><!-- renderizado via JS --></div>
   </section>
 
-  <!-- Script do menu (fecha no X/fora/ESC) -->
-  <script>
-    (function () {
-      function closeAll() {
-        document.querySelectorAll('.menu-wrap .menu-dropdown.open').forEach(m => {
-          m.classList.remove('open');
-          const b = m.closest('.menu-wrap')?.querySelector('.hamburger');
-          if (b) b.setAttribute('aria-expanded', 'false');
-        });
-      }
+  <!-- ===== MENU SUSPENSO (MODAL) ===== -->
+  <div id="overlayMenu" class="overlay-menu" aria-hidden="true">
+    <div class="overlay-backdrop" data-close></div>
 
-      document.querySelectorAll('.menu-wrap').forEach(wrap => {
-        const btn  = wrap.querySelector('#hamburger');
-        const menu = wrap.querySelector('#menu-lateral');
-        const xBtn = wrap.querySelector('.menu-close');
-        if (!btn || !menu) return;
+    <section class="overlay-panel" role="dialog" aria-modal="true" aria-labelledby="overlayMenuTitle">
+      <header class="overlay-header">
+        <h2 id="overlayMenuTitle">Menu</h2>
+        <button class="overlay-close" type="button" aria-label="Fechar" data-close>×</button>
+      </header>
 
-        btn.addEventListener('click', e => {
-          e.stopPropagation();
-          const willOpen = !menu.classList.contains('open');
-          closeAll();
-          menu.classList.toggle('open', willOpen);
-          btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-        });
+      <div class="overlay-content">
+        <!-- Coluna Esquerda -->
+        <div class="overlay-col">
+          <h3 class="section-title">Entrar ou criar conta</h3>
 
-        xBtn?.addEventListener('click', e => {
-          e.stopPropagation();
-          menu.classList.remove('open');
-          btn.setAttribute('aria-expanded', 'false');
-        });
+          <div class="social-row">
+            <button class="btn-social google" onclick="location.href='{{ url_for('login') }}'">
+              <span class="social-icon">G</span> Entrar com Google
+            </button>
 
-        menu.addEventListener('click', e => e.stopPropagation());
-      });
+            <button class="btn-social facebook" onclick="alert('Conectar Facebook em breve')">
+              <span class="social-icon">f</span> Entrar com Facebook
+            </button>
+          </div>
 
-      document.addEventListener('click', closeAll);
-      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
-    })();
-  </script>
+          <div class="access-fields">
+            <input type="email" class="input" placeholder="Email de login..." />
+            <input type="password" class="input" placeholder="Senha de acesso..." />
+            <div class="links-inline">
+              <a href="{{ url_for('forgot_password') if 'forgot_password' in globals() else '#' }}">Esqueci minha senha</a>
+            </div>
+            <button class="btn-primary" onclick="location.href='{{ url_for('login') }}'">Entrar</button>
+            <p class="small">
+              Não tem cadastro?
+              <a href="{{ url_for('cadastrar_empresa') }}">Crie sua conta aqui</a>
+            </p>
+          </div>
+        </div>
 
-  <!-- Mede altura do topo (promo + header) para posicionar o menu no mobile -->
-  <script>
-    (function(){
-      function setNavH(){
-        const promo = document.querySelector('.promo-bar');
-        const nav   = document.querySelector('.navbar');
-        const total = (promo?.offsetHeight || 0) + (nav?.offsetHeight || 0);
-        document.documentElement.style.setProperty('--nav-h', total + 'px');
-      }
-      setNavH();
-      window.addEventListener('resize', setNavH);
-    })();
-  </script>
+        <!-- Coluna Direita -->
+        <div class="overlay-col">
+          <h3 class="section-title">Facilidades</h3>
+          <div class="cards-row">
+            <a class="mini-card" href="{{ url_for('buscar_teares') }}">
+              <div class="mini-card-ico">🔍</div>
+              <div class="mini-card-title">Empresas</div>
+            </a>
+            <a class="mini-card" href="#" onclick="alert('Empregos em breve')">
+              <div class="mini-card-ico">💼</div>
+              <div class="mini-card-title">Empregos</div>
+            </a>
+          </div>
+
+          <h3 class="section-title mt">Mais opções</h3>
+          <nav class="list-links">
+            <a class="list-item" href="{{ url_for('cadastrar_empresa') }}">
+              <span>Cadastrar minha empresa</span> <span class="arrow">→</span>
+            </a>
+            <a class="list-item" href="{{ url_for('quem_somos') }}">
+              <span>Conheça o AcheTece</span> <span class="arrow">→</span>
+            </a>
+            <a class="list-item" href="https://wa.me/5547999999999" target="_blank" rel="noopener">
+              <span>Suporte AcheTece</span> <span class="arrow">→</span>
+            </a>
+          </nav>
+        </div>
+      </div>
+    </section>
+  </div>
+  <!-- ===== /MENU SUSPENSO ===== -->
 
   <!-- JS do hero + “Como funciona” dinâmico -->
   <script>
@@ -512,6 +485,39 @@
 
       tabs.forEach(b=> b.addEventListener('click', ()=> setRole(b.dataset.role)));
       setRole('cliente');
+    })();
+  </script>
+
+  <!-- JS do MENU SUSPENSO (abrir/fechar) -->
+  <script>
+    (function(){
+      const overlay = document.getElementById('overlayMenu');
+      const openBtn  = document.getElementById('hamburgerBtn');
+      const closeEls = overlay.querySelectorAll('[data-close]');
+
+      function openMenu(){
+        overlay.classList.add('is-open');
+        overlay.setAttribute('aria-hidden','false');
+        document.body.style.overflow = 'hidden';
+      }
+      function closeMenu(){
+        overlay.classList.remove('is-open');
+        overlay.setAttribute('aria-hidden','true');
+        document.body.style.overflow = '';
+      }
+
+      if (openBtn) openBtn.addEventListener('click', openMenu);
+      closeEls.forEach(el => el.addEventListener('click', closeMenu));
+
+      // fechar com ESC
+      document.addEventListener('keydown', (e)=>{
+        if(e.key === 'Escape' && overlay.classList.contains('is-open')) closeMenu();
+      });
+
+      // clique fora do painel
+      overlay.addEventListener('click', (e)=>{
+        if (e.target === overlay) closeMenu();
+      });
     })();
   </script>
 
