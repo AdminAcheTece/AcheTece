@@ -115,6 +115,33 @@
       .overlay-header{padding:14px 16px;}
     }
 
+    /* Botão Facebook no padrão da marca */
+    .btn-facebook{
+      display:flex; align-items:center; gap:12px;
+      background:#1877F2; color:#fff; 
+      border:0; border-radius:999px; cursor:pointer;
+      padding:12px 18px; font-weight:800; line-height:1.1;
+      box-shadow:0 6px 16px rgba(24,119,242,.25);
+      transition:transform .12s ease, box-shadow .2s ease, background .2s ease;
+    }
+    .btn-facebook:hover{ background:#166FE5; transform:translateY(-1px); box-shadow:0 8px 18px rgba(24,119,242,.35); }
+    .btn-facebook:active{ transform:translateY(0); box-shadow:0 4px 10px rgba(24,119,242,.25); }
+
+    /* Ícone “f” */
+    .btn-facebook .fb-icon{
+      display:inline-flex; align-items:center; justify-content:center;
+      width:28px; height:28px;
+    }
+    .btn-facebook .fb-icon svg{ width:24px; height:24px; display:block; }
+
+    /* Texto (duas linhas como no exemplo 2) */
+    .btn-facebook .fb-text{
+      display:block; text-align:left; font-size:14px; font-weight:800;
+      color:#fff;
+    }
+    /* Se preferir tudo em uma linha, descomente: */
+    /* .btn-facebook .fb-text{ white-space:nowrap; } */
+
     .list-item {
       display: flex;
       justify-content: space-between;
@@ -286,8 +313,14 @@
             <button class="btn-social google" onclick="location.href='/login'">
               <span class="social-icon">G</span> Entrar com Google
             </button>
-            <button class="btn-social facebook" onclick="alert('Conectar Facebook em breve')">
-              <span class="social-icon">f</span> Entrar com Facebook
+            <button class="btn-facebook" onclick="alert('Conectar Facebook em breve')">
+              <span class="fb-icon" aria-hidden="true">
+                <!-- Logo Facebook branca -->
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path fill="#fff" d="M22 12.06C22 6.49 17.52 2 11.94 2 6.37 2 1.88 6.49 1.88 12.06c0 5.02 3.68 9.18 8.49 9.93v-7.02H7.93v-2.9h2.44V9.4c0-2.41 1.43-3.74 3.62-3.74 1.05 0 2.15.19 2.15.19v2.36h-1.21c-1.19 0-1.56.74-1.56 1.5v1.8h2.66l-.43 2.9h-2.23v7.02c4.81-.75 8.49-4.91 8.49-9.93Z"/>
+                </svg>
+              </span>
+              <span class="fb-text">Entrar com<br>Facebook</span>
             </button>
           </div>
 
