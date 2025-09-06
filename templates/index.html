@@ -151,7 +151,49 @@
       height: 22px;
       stroke-width: 3; /* traço mais grosso */
     }
-     
+
+    .cards-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: nowrap;           /* impede quebra de linha */
+    }
+
+    .mini-card {
+      flex: 0 0 180px;              /* largura fixa */
+      background: #fafafa;
+      border: 1px solid #eee;
+      border-radius: 16px;
+      padding: 16px;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+      color: var(--roxo);
+      font-weight: 700;
+      transition: all 0.2s ease;
+      white-space: nowrap;          /* impede quebra do texto */
+    }
+
+    .mini-card:hover {
+      border-color: var(--roxo);
+      transform: translateY(-4px);
+      box-shadow: 0 4px 10px rgba(0,0,0,.1);
+    }
+
+    .mini-card-ico {
+      font-size: 24px;
+      color: var(--roxo);
+    }
+
+    .mini-card.procura {
+      background: #f4f4f4;          /* cinza claro */
+    }
+
+    .mini-card.malharia {
+      background: #F1E6FF;          /* roxo clarinho */
+    }
+    
   </style>
 </head>
 <body>
@@ -241,12 +283,26 @@
         <div class="overlay-col">
           <h3 class="section-title">Facilidades</h3>
           <div class="cards-row">
-            <a class="mini-card" href="/buscar_teares">
-              <div class="mini-card-ico">🔍</div>
+            <!-- Card 1: Procuro Malharia -->
+            <a class="mini-card procura" href="/buscar_teares">
+              <div class="mini-card-ico">
+                <!-- Ícone lupa roxa -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8" stroke="var(--roxo)"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="var(--roxo)"/>
+                </svg>
+              </div>
               <div class="mini-card-title">Procuro Malharia</div>
             </a>
-            <a class="mini-card" href="#" onclick="alert('Empregos em breve')">
-              <div class="mini-card-ico">💼</div>
+
+            <!-- Card 2: Sou Malharia -->
+            <a class="mini-card malharia" href="/malharia_info">
+              <div class="mini-card-ico">
+                <!-- Ícone indústria roxo -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="var(--roxo)" viewBox="0 0 24 24">
+                  <path d="M3 20V9l6 3V9l6 3V6h3v14H3z"/>
+                </svg>
+              </div>
               <div class="mini-card-title">Sou Malharia</div>
             </a>
           </div>
