@@ -6,261 +6,113 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Ícone da aba (favicon) -->
-  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
-  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
+  <link rel="icon" type="image/x-icon" href="/static/favicon_final.ico">
+  <link rel="icon" type="image/png" href="/static/favicon_final.png">
 
   <!-- CSS principal -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="/static/style.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
 
   <style>
-    /* ==================== VARIÁVEIS (marca) ==================== */
     :root{
-      --roxo: #8A00FF;           /* cor principal da marca (substitui azuis) */
-      --roxo-hover: #A63DFF;     /* variação para hover */
-      --roxo-clarinho: #F1E6FF;  /* fundo roxo bem claro (hover menu) */
-      --preto: #000000;          /* padronização para tons quase pretos */
+      --roxo:#8A00FF; --roxo-hover:#A63DFF; --roxo-clarinho:#F1E6FF; --preto:#000;
     }
 
-    /* ====== LAYOUT DO TOPO ====== */
-    .navbar{ overflow: visible; padding-top:6px; padding-bottom:6px; display:flex; align-items:center; }
-    .header-left, .header-right{ display:flex; align-items:center; }
-    .header-right{ margin-left:auto; gap:20px; }
+    .navbar{overflow:visible;padding-top:6px;padding-bottom:6px;display:flex;align-items:center;}
+    .header-left,.header-right{display:flex;align-items:center;}
+    .header-right{margin-left:auto;gap:20px;}
 
-    /* ====== LINKS AO LADO DA LOGO ====== */
-    .top-nav{ display:flex; gap:24px; align-items:center; }
-    .top-nav a {
-      color:#666666; text-decoration:none; font-weight:300;
-      padding:8px 0; line-height:1; font-size:14px;
-    }
-    .top-nav a:hover{ color:var(--roxo); text-decoration:underline; }
-    @media (max-width: 900px){ .top-nav{ display:none; } }
+    .top-nav{display:flex;gap:24px;align-items:center;}
+    .top-nav a{color:#666;text-decoration:none;font-weight:300;padding:8px 0;line-height:1;font-size:14px;}
+    .top-nav a:hover{color:var(--roxo);text-decoration:underline;}
+    @media (max-width:900px){.top-nav{display:none;}}
 
-    /* ====== FAIXA PRETA (CTA) ACIMA DO RODAPÉ ====== */
-    .cta-bar{
-      background:var(--preto); color:#fff; padding:20px 16px;
-      display:flex; align-items:center; justify-content:flex-start; gap:16px; flex-wrap:wrap;
-      border-top:1px solid rgba(255,255,255,.06); margin-top:32px; text-align:left;
-    }
-    .cta-text h3{ margin:0 0 4px; font-size:18px; font-weight:700; line-height:1.2; }
-    .cta-text p{ margin:0; font-size:15px; opacity:.9; }
-    .cta-btn{
-      display:inline-block; background:#fff; color:var(--preto); text-decoration:none;
-      padding:10px 18px; border-radius:20px; font-weight:600; box-shadow:0 1px 0 rgba(0,0,0,.08);
-      transition:transform .12s ease, background .2s ease, box-shadow .2s ease; white-space:nowrap;
-    }
-    .cta-btn:hover{ background:#f2f2f5; transform:translateY(-1px); box-shadow:0 3px 10px rgba(0,0,0,.12); }
+    .cta-bar{background:var(--preto);color:#fff;padding:20px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,.06);margin-top:32px;text-align:left;}
+    .cta-text h3{margin:0 0 4px;font-size:18px;font-weight:700;line-height:1.2;}
+    .cta-text p{margin:0;font-size:15px;opacity:.9;}
+    .cta-btn{display:inline-block;background:#fff;color:var(--preto);text-decoration:none;padding:10px 18px;border-radius:20px;font-weight:600;box-shadow:0 1px 0 rgba(0,0,0,.08);transition:transform .12s ease,background .2s ease,box-shadow .2s ease;white-space:nowrap;}
+    .cta-btn:hover{background:#f2f2f5;transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.12);}
 
-    /* ====== RODAPÉ BRANCO ====== */
-    .site-footer{ background:#fff; color:var(--preto); border-top:1px solid #eee; padding:18px 16px 28px; }
-    .footer-inner{ max-width:1180px; margin:0 auto; display:grid; grid-template-columns:auto 1fr; gap:20px 28px; align-items:start; }
-    .footer-brand img{ height:40px; width:auto; display:block; }
-    .footer-cols{ display:grid; grid-template-columns: repeat(2, minmax(180px, 240px)); gap:12px 28px; }
-    .footer-col h4{ margin:0 0 8px; font-size:14px; font-weight:700; color:var(--preto); }
-    .footer-col ul{ list-style:none; margin:0; padding:0; }
-    .footer-col li+li{ margin-top:6px; }
-    .footer-col a{ color:var(--preto); text-decoration:none; font-size:14px; }
-    .footer-col a:hover{ text-decoration:underline; }
-    @media (max-width: 720px){
-      .footer-inner{ grid-template-columns:1fr; }
-      .footer-cols{ grid-template-columns:1fr; }
-      .cta-text h3{ font-size:16px; }
-      .cta-text p{ font-size:14px; }
-    }
+    .site-footer{background:#fff;color:var(--preto);border-top:1px solid #eee;padding:18px 16px 28px;}
+    .footer-inner{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:auto 1fr;gap:20px 28px;align-items:start;}
+    .footer-brand img{height:40px;width:auto;display:block;}
+    .footer-cols{display:grid;grid-template-columns:repeat(2,minmax(180px,240px));gap:12px 28px;}
+    .footer-col h4{margin:0 0 8px;font-size:14px;font-weight:700;color:var(--preto);}
+    .footer-col ul{list-style:none;margin:0;padding:0;}
+    .footer-col li+li{margin-top:6px;}
+    .footer-col a{color:var(--preto);text-decoration:none;font-size:14px;}
+    .footer-col a:hover{text-decoration:underline;}
+    @media (max-width:720px){.footer-inner{grid-template-columns:1fr}.footer-cols{grid-template-columns:1fr}.cta-text h3{font-size:16px}.cta-text p{font-size:14px}}
 
-    /* ===========================================================
-       HAMBÚRGUER BÁSICO (aciona o modal)
-       =========================================================== */
-    .hamburger{
-      display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
-      width:40px; height:40px; border:none; background:transparent;
-      box-shadow:none; cursor:pointer;
-    }
-    .hamburger span{ display:block; width:20px; height:2px; background:var(--preto); border-radius:2px; }
-    .hamburger span + span{ margin-top:4px; }
-    @media (max-width: 768px){
-      .hamburger{ width:32px; height:32px; }
-      .hamburger span{ width:18px; height:2px; }
-      .hamburger span + span{ margin-top:3px; }
-    }
+    .hamburger{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:40px;height:40px;border:none;background:transparent;box-shadow:none;cursor:pointer;}
+    .hamburger span{display:block;width:20px;height:2px;background:var(--preto);border-radius:2px;}
+    .hamburger span+span{margin-top:4px;}
+    @media (max-width:768px){.hamburger{width:32px;height:32px}.hamburger span{width:18px;height:2px}.hamburger span+span{margin-top:3px}}
 
-    /* ====== FAIXA PRETA ESTREITA NO TOPO ====== */
-    .promo-bar{
-      background:var(--preto); color:#fff; display:flex; align-items:center; justify-content:center;
-      gap:12px; padding:6px 10px; font-size:14px; line-height:1.2;
-    }
-    .promo-text strong{ font-weight:700; }
-    .promo-cta{
-      display:inline-block; background:var(--roxo); color:#fff; text-decoration:none;
-      padding:6px 10px; border-radius:8px; font-weight:600; white-space:nowrap;
-      transition:background .2s ease, transform .12s ease;
-    }
-    .promo-cta:hover{ background:var(--roxo-hover); transform:translateY(-1px); }
-    @media (max-width: 600px){ .promo-bar{ flex-wrap:wrap; row-gap:6px; } }
+    .promo-bar{background:var(--preto);color:#fff;display:flex;align-items:center;justify-content:center;gap:12px;padding:6px 10px;font-size:14px;line-height:1.2;}
+    .promo-text strong{font-weight:700;}
+    .promo-cta{display:inline-block;background:var(--roxo);color:#fff;text-decoration:none;padding:6px 10px;border-radius:8px;font-weight:600;white-space:nowrap;transition:background .2s ease,transform .12s ease;}
+    .promo-cta:hover{background:var(--roxo-hover);transform:translateY(-1px);}
+    @media (max-width:600px){.promo-bar{flex-wrap:wrap;row-gap:6px}}
 
-    /* ====== HERO NOVO ====== */
-    .hero-grid{
-      display:grid;
-      grid-template-columns: 1.05fr 1fr;
-      gap: 28px;
-      align-items: center;
-      padding: 28px 20px 8px;
-      max-width: 1120px;
-      margin: 0 auto;
-    }
-    .hero-copy h1{
-      font-size: clamp(24px, 3.2vw, 36px);
-      color:var(--preto);
-      margin: 10px 0 8px;
-      line-height: 1.2;
-    }
-    .hero-copy p{
-      font-size: clamp(14px, 1.6vw, 18px);
-      color:#444;
-      margin: 0 0 14px;
+    .hero-grid{display:grid;grid-template-columns:1fr;gap:28px;align-items:center;padding:28px 20px 8px;max-width:1120px;margin:0 auto;justify-items:center;text-align:center;}
+    .hero-copy h1{font-size:clamp(24px,3.2vw,36px);color:var(--preto);margin:10px 0 8px;line-height:1.2;}
+    .hero-copy p{font-size:clamp(14px,1.6vw,18px);color:#444;margin:0 0 14px;}
+
+    .role-toggle{display:flex;gap:8px;justify-content:center;}
+    .chip{appearance:none;border:1px solid #d6d6d6;background:#fff;padding:8px 12px;border-radius:999px;cursor:pointer;font:inherit;color:var(--roxo);transition:color .15s,background .15s,border-color .15s;}
+    .chip.is-active{background:var(--preto);color:#fff;border-color:var(--preto);}
+    .hero-ctas{display:flex;gap:12px;align-items:center;margin:8px 0 10px;justify-content:center;}
+    .btn-principal{display:inline-block;background:var(--roxo);color:#fff;padding:12px 18px;border-radius:50px;font-weight:700;text-decoration:none;transition:background .15s ease,transform .12s ease;}
+    .btn-principal:hover{background:var(--roxo-hover);transform:translateY(-1px);}
+
+    .how-it-works{max-width:1120px;margin:22px auto 8px;padding:0 20px 20px;}
+    .how-it-works h2{font-size:clamp(20px,2.4vw,28px);margin:0 0 8px;color:var(--preto);text-align:center;}
+    .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+    .step{background:#fff;border:1px solid #eee;border-radius:12px;padding:16px;text-align:center;}
+    .step-ico{margin-bottom:8px;display:flex;align-items:center;justify-content:center;}
+    .step-ico svg{width:56px;height:56px;color:var(--preto);}
+    .step h3{font-size:16px;margin:0 0 4px;color:var(--preto);}
+    .step p{font-size:14px;color:#555;margin:0;}
+    @media (max-width:900px){.steps{grid-template-columns:1fr}}
+
+    @media (min-width:900px){
+      #hero-sub{max-width:none;white-space:nowrap;display:inline-block;}
     }
 
-    /* Toggle de perfis (chips) */
-    .role-toggle{ display:flex; gap:8px; justify-content:center; }
-
-    .chip{
-      appearance: none;
-      border:1px solid #d6d6d6;
-      background:#fff;
-      padding:8px 12px;
-      border-radius:999px;
-      cursor:pointer;
-      font: inherit;
-      color: var(--roxo);
-      transition: color .15s ease, background .15s ease, border-color .15s ease;
-    }
-
-    .chip.is-active{
-      background:var(--preto);
-      color:#fff;
-      border-color:var(--preto);
-    }
-
-    .hero-ctas{ display:flex; gap:12px; align-items:center; margin: 8px 0 10px; justify-content:center; }
-
-    .btn-principal{
-      display:inline-block; background:var(--roxo); color:#fff;
-      padding:12px 18px; border-radius:50px; font-weight:700; text-decoration:none;
-      transition: background .15s ease, transform .12s ease;
-    }
-    .btn-principal:hover{ background:var(--roxo-hover); transform: translateY(-1px); }
-
-    .hero-figure img{
-      width:100%;
-      border-radius:10px;
-      display:block;
-    }
-    @media (max-width: 900px){
-      .hero-grid{ grid-template-columns: 1fr; gap: 18px; padding-top: 18px; }
-      .hero-figure{ order:-1; }
-    }
-
-    /* ====== COMO FUNCIONA ====== */
-    .how-it-works{
-      max-width: 1120px;
-      margin: 22px auto 8px;
-      padding: 0 20px 20px;
-    }
-    .how-it-works h2{
-      font-size: clamp(20px, 2.4vw, 28px);
-      margin: 0 0 8px;
-      color:var(--preto);
-      text-align:center;
-    }
-    .steps{
-      display:grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap:16px;
-    }
-    .step{
-      background:#fff;
-      border:1px solid #eee;
-      border-radius:12px;
-      padding:16px;
-      text-align:center;
-    }
-    .step-ico{ margin-bottom:8px; display:flex; align-items:center; justify-content:center; }
-    .step-ico svg{ width:56px; height:56px; color:var(--preto); } /* ícones pretos */
-    .step h3{ font-size:16px; margin:0 0 4px; color:var(--preto); }
-    .step p{ font-size:14px; color:#555; margin:0; }
-    @media (max-width: 900px){
-      .steps{ grid-template-columns: 1fr; }
-    }
-
-    /* Hero: manter o subtítulo em uma única linha em telas largas */
-    @media (min-width: 900px){
-      #hero-sub{
-        max-width: none;
-        white-space: nowrap;
-        display: inline-block;
-      }
-    }
-
-    /* ===========================================================
-       MENU SUSPENSO — Modal grande (desktop) / Sheet (mobile)
-       =========================================================== */
-    .overlay-menu { position: fixed; inset: 0; z-index: 1000; display: none; }
-    .overlay-menu.is-open { display: block; }
-    .overlay-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.45); backdrop-filter: blur(2px); }
-
-    .overlay-panel{
-      position: relative;
-      margin: 40px auto;
-      width: min(960px, calc(100% - 24px));
-      background: #fff;
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0,0,0,.20);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      max-height: calc(100% - 80px);
-    }
-    .overlay-header{ display:flex; align-items:center; justify-content:space-between; padding: 18px 22px; border-bottom: 1px solid #eee; }
-    .overlay-header h2{ margin:0; font-size: 22px; font-weight: 700; color:#111; }
-    .overlay-close{ border:0; background:#f3f3f3; width:36px; height:36px; border-radius:12px; font-size:22px; line-height:1; cursor:pointer; }
-
-    .overlay-content{ display:grid; grid-template-columns: 1fr 1fr; gap: 28px; padding: 22px; overflow:auto; }
-    .section-title{ font-size:14px; color:#6b6b6b; font-weight:700; margin:6px 0 10px; text-transform: uppercase; letter-spacing:.3px; }
-    .section-title.mt{ margin-top: 18px; }
-
-    .social-row{ display:flex; gap:14px; flex-wrap:wrap; }
-    .btn-social{
-      display:flex; align-items:center; gap:10px;
-      padding:10px 14px; border:none; cursor:pointer; border-radius:999px;
-      background:#f2f2f2; font-weight:700;
-    }
-    .btn-social .social-icon{
-      display:inline-flex; align-items:center; justify-content:center;
-      width:26px; height:26px; border-radius:50%; background:#fff; font-weight:900;
-    }
-    .btn-social.facebook{ background:#e8f0ff; }
-
-    .access-fields{ margin-top: 14px; }
-    .input{ width:100%; height:48px; border-radius:999px; border:1px solid #e6e6e6; padding:0 16px; margin-bottom:10px; font-size:14px; background:#f9f9f9; }
-    .links-inline { margin-bottom: 10px; }
-    .links-inline a{ font-size:12px; color:#666; text-decoration: underline; }
-    .btn-primary{ width:100%; height:54px; border-radius:999px; border:0; cursor:pointer; background: #8A00FF; color:#fff; font-weight:800; font-size:16px; box-shadow: 0 8px 18px rgba(138,0,255,.25); }
-    .small{ font-size:12px; color:#555; margin-top:8px; }
-
-    .cards-row{ display:flex; gap:12px; flex-wrap:wrap; }
-    .mini-card{ flex: 0 0 140px; background:#fafafa; border:1px solid #eee; border-radius:16px; padding:14px; text-decoration:none; color:#111; display:flex; flex-direction:column; gap:10px; }
-    .mini-card:hover{ border-color:#ddd; }
-    .mini-card-ico{ font-size:22px; }
-    .mini-card-title{ font-weight:700; color:#8A00FF; }
-
-    .list-links{ display:flex; flex-direction:column; border-top:1px solid #f0f0f0; margin-top:8px; }
-    .list-item{ display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 0; text-decoration:none; color:#222; border-bottom:1px solid #f5f5f5; }
-    .list-item .arrow{ opacity:.5; }
-
-    @media (max-width: 768px){
-      .overlay-panel{ margin: 0; width: 100%; height: 100%; border-radius: 0; box-shadow: none; max-height: 100%; }
-      .overlay-content{ grid-template-columns: 1fr; gap: 16px; padding: 16px; }
-      .overlay-header{ padding: 14px 16px; }
+    /* Modal / sheet */
+    .overlay-menu{position:fixed;inset:0;z-index:1000;display:none;}
+    .overlay-menu.is-open{display:block;}
+    .overlay-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(2px);}
+    .overlay-panel{position:relative;margin:40px auto;width:min(960px,calc(100% - 24px));background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden;display:flex;flex-direction:column;max-height:calc(100% - 80px);}
+    .overlay-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid #eee;}
+    .overlay-header h2{margin:0;font-size:22px;font-weight:700;color:#111;}
+    .overlay-close{border:0;background:#f3f3f3;width:36px;height:36px;border-radius:12px;font-size:22px;line-height:1;cursor:pointer;}
+    .overlay-content{display:grid;grid-template-columns:1fr 1fr;gap:28px;padding:22px;overflow:auto;}
+    .section-title{font-size:14px;color:#6b6b6b;font-weight:700;margin:6px 0 10px;text-transform:uppercase;letter-spacing:.3px;}
+    .section-title.mt{margin-top:18px;}
+    .social-row{display:flex;gap:14px;flex-wrap:wrap;}
+    .btn-social{display:flex;align-items:center;gap:10px;padding:10px 14px;border:none;cursor:pointer;border-radius:999px;background:#f2f2f2;font-weight:700;}
+    .btn-social .social-icon{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#fff;font-weight:900;}
+    .btn-social.facebook{background:#e8f0ff;}
+    .access-fields{margin-top:14px;}
+    .input{width:100%;height:48px;border-radius:999px;border:1px solid #e6e6e6;padding:0 16px;margin-bottom:10px;font-size:14px;background:#f9f9f9;}
+    .links-inline{margin-bottom:10px;}
+    .links-inline a{font-size:12px;color:#666;text-decoration:underline;}
+    .btn-primary{width:100%;height:54px;border-radius:999px;border:0;cursor:pointer;background:#8A00FF;color:#fff;font-weight:800;font-size:16px;box-shadow:0 8px 18px rgba(138,0,255,.25);}
+    .small{font-size:12px;color:#555;margin-top:8px;}
+    .cards-row{display:flex;gap:12px;flex-wrap:wrap;}
+    .mini-card{flex:0 0 140px;background:#fafafa;border:1px solid #eee;border-radius:16px;padding:14px;text-decoration:none;color:#111;display:flex;flex-direction:column;gap:10px;}
+    .mini-card:hover{border-color:#ddd;}
+    .mini-card-ico{font-size:22px;}
+    .mini-card-title{font-weight:700;color:#8A00FF;}
+    .list-links{display:flex;flex-direction:column;border-top:1px solid #f0f0f0;margin-top:8px;}
+    .list-item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;text-decoration:none;color:#222;border-bottom:1px solid #f5f5f5;}
+    .list-item .arrow{opacity:.5;}
+    @media (max-width:768px){
+      .overlay-panel{margin:0;width:100%;height:100%;border-radius:0;box-shadow:none;max-height:100%;}
+      .overlay-content{grid-template-columns:1fr;gap:16px;padding:16px;}
+      .overlay-header{padding:14px 16px;}
     }
   </style>
 </head>
@@ -271,69 +123,54 @@
     <span class="promo-text">
       <strong>Malharia:</strong> receba agora novos pedidos por apenas <strong>R$49,90/mês</strong>.
     </span>
-    <a class="promo-cta" href="{{ url_for('malharia_info') }}">Saiba como</a>
+    <a class="promo-cta" href="/malharia_info">Saiba como</a>
   </section>
 
   <!-- Cabeçalho -->
   <header class="navbar">
     <div class="header-left">
       <div class="logo">
-        <img src="{{ url_for('static', filename='logo.jpg') }}"
-             alt="Logo AcheTece"
-             decoding="async"
-             fetchpriority="high">
+        <img src="/static/logo.jpg" alt="Logo AcheTece" decoding="async" fetchpriority="high">
       </div>
     </div>
 
     <div class="header-right">
       <nav class="top-nav" aria-label="Menu principal" role="navigation">
-        <a href="{{ url_for('buscar_teares') }}">Ache o tear aqui</a>
-        <a href="{{ url_for('malharia_info') }}">Cadastrar malharia</a>
-        <a href="{{ url_for('login') }}">Já sou cadastrado</a>
+        <a href="/buscar_teares">Ache o tear aqui</a>
+        <a href="/malharia_info">Cadastrar malharia</a>
+        <a href="/login">Já sou cadastrado</a>
       </nav>
 
-      <!-- Botão hambúrguer que abre o modal -->
       <button class="hamburger" id="hamburgerBtn" type="button" aria-label="Abrir menu">
         <span></span><span></span><span></span>
       </button>
     </div>
   </header>
 
-  <!-- Hero novo com alternância de público -->
-  <!-- Ajuste: sem imagem; grid com 1 coluna e itens centralizados -->
-  <main class="hero hero-grid" style="grid-template-columns:1fr; justify-items:center; text-align:center;">
-    <!-- Conteúdo -->
+  <main class="hero hero-grid">
     <div class="hero-copy">
       <div class="role-toggle" role="tablist" aria-label="Selecione seu perfil">
-        <button class="chip is-active" role="tab" aria-selected="true" data-role="cliente">
-          Procuro Malharia
-        </button>
-        <button class="chip" role="tab" aria-selected="false" data-role="malharia">
-          Sou Malharia
-        </button>
+        <button class="chip is-active" role="tab" aria-selected="true" data-role="cliente">Procuro Malharia</button>
+        <button class="chip" role="tab" aria-selected="false" data-role="malharia">Sou Malharia</button>
       </div>
 
       <h1 id="hero-title">Encontre teares de malharia prontos para produzir</h1>
-      <p id="hero-sub">
-        Filtre sua busca por tipo, diâmetro, galga e localizaçao. Fale direto com a malharia.
-      </p>
+      <p id="hero-sub">Filtre sua busca por tipo, diâmetro, galga e localizaçao. Fale direto com a malharia.</p>
 
       <div class="hero-ctas">
-        <a id="hero-cta" href="{{ url_for('buscar_teares') }}" class="btn-principal">Buscar teares agora</a>
+        <a id="hero-cta" href="/buscar_teares" class="btn-principal">Buscar teares agora</a>
       </div>
     </div>
   </main>
 
-  <!-- Seção “Como funciona” dinâmica -->
   <section class="how-it-works" aria-labelledby="como-funciona">
     <h2 id="how-title">Precisa produzir malha? Como funciona:</h2>
-    <div class="steps" id="how-steps"><!-- renderizado via JS --></div>
+    <div class="steps" id="how-steps"></div>
   </section>
 
-  <!-- ===== MENU SUSPENSO (MODAL) ===== -->
+  <!-- Modal / Sheet -->
   <div id="overlayMenu" class="overlay-menu" aria-hidden="true">
     <div class="overlay-backdrop" data-close></div>
-
     <section class="overlay-panel" role="dialog" aria-modal="true" aria-labelledby="overlayMenuTitle">
       <header class="overlay-header">
         <h2 id="overlayMenuTitle">Menu</h2>
@@ -341,39 +178,32 @@
       </header>
 
       <div class="overlay-content">
-        <!-- Coluna Esquerda -->
         <div class="overlay-col">
           <h3 class="section-title">Entrar ou criar conta</h3>
-
           <div class="social-row">
-            <button class="btn-social google" onclick="location.href='{{ url_for('login') }}'">
+            <button class="btn-social google" onclick="location.href='/login'">
               <span class="social-icon">G</span> Entrar com Google
             </button>
-
             <button class="btn-social facebook" onclick="alert('Conectar Facebook em breve')">
               <span class="social-icon">f</span> Entrar com Facebook
             </button>
           </div>
 
           <div class="access-fields">
-            <input type="email" class="input" placeholder="Email de login..." />
-            <input type="password" class="input" placeholder="Senha de acesso..." />
+            <input type="email" class="input" placeholder="Email de login...">
+            <input type="password" class="input" placeholder="Senha de acesso...">
             <div class="links-inline">
-              <a href="{{ url_for('forgot_password') if 'forgot_password' in globals() else '#' }}">Esqueci minha senha</a>
+              <a href="/esqueci_senha">Esqueci minha senha</a>
             </div>
-            <button class="btn-primary" onclick="location.href='{{ url_for('login') }}'">Entrar</button>
-            <p class="small">
-              Não tem cadastro?
-              <a href="{{ url_for('cadastrar_empresa') }}">Crie sua conta aqui</a>
-            </p>
+            <button class="btn-primary" onclick="location.href='/login'">Entrar</button>
+            <p class="small">Não tem cadastro? <a href="/cadastrar_empresa">Crie sua conta aqui</a></p>
           </div>
         </div>
 
-        <!-- Coluna Direita -->
         <div class="overlay-col">
           <h3 class="section-title">Facilidades</h3>
           <div class="cards-row">
-            <a class="mini-card" href="{{ url_for('buscar_teares') }}">
+            <a class="mini-card" href="/buscar_teares">
               <div class="mini-card-ico">🔍</div>
               <div class="mini-card-title">Empresas</div>
             </a>
@@ -385,174 +215,114 @@
 
           <h3 class="section-title mt">Mais opções</h3>
           <nav class="list-links">
-            <a class="list-item" href="{{ url_for('cadastrar_empresa') }}">
-              <span>Cadastrar minha empresa</span> <span class="arrow">→</span>
-            </a>
-            <a class="list-item" href="{{ url_for('quem_somos') }}">
-              <span>Conheça o AcheTece</span> <span class="arrow">→</span>
-            </a>
-            <a class="list-item" href="https://wa.me/5547999999999" target="_blank" rel="noopener">
-              <span>Suporte AcheTece</span> <span class="arrow">→</span>
-            </a>
+            <a class="list-item" href="/cadastrar_empresa"><span>Cadastrar minha empresa</span> <span class="arrow">→</span></a>
+            <a class="list-item" href="/quem_somos"><span>Conheça o AcheTece</span> <span class="arrow">→</span></a>
+            <a class="list-item" href="https://wa.me/5547999999999" target="_blank" rel="noopener"><span>Suporte AcheTece</span> <span class="arrow">→</span></a>
           </nav>
         </div>
       </div>
     </section>
   </div>
-  <!-- ===== /MENU SUSPENSO ===== -->
 
-  <!-- JS do hero + “Como funciona” dinâmico -->
   <script>
     (function(){
-      function iconSVG(name){
-        switch(name){
-          case 'search':  return '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="16.65" y1="16.65" x2="21" y2="21"></line></svg>';
-          case 'phone':   return '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.8 19.8 0 0 1 3.1 5.18 2 2 0 0 1 5.11 3h3a2 2 0 0 1 2 1.72c.12.86.31 1.7.57 2.5a2 2 0 0 1-.45 2.11L9 10a16 16 0 0 0 5 5l.67-1.23a2 2 0 0 1 2.11-.45c.8.26 1.64.45 2.5.57A2 2 0 0 1 22 16.92Z"></path></svg>';
-          case 'cone':    return '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4h10l2 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L7 4z"></path><path d="M6 8h12M5.5 12h13M5 16h14" stroke-linecap="round"></path></svg>';
-          case 'profile': return '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="2" width="14" height="20" rx="2"></rect><path d="M7 7h6M7 11h6"></path><circle cx="18" cy="16" r="3"></circle><path d="M21 22a5 5 0 0 0-6 0"></path></svg>';
-          case 'publish': return '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"></rect><path d="M3 8h18"></path><path d="M12 16V11"></path><path d="M9.5 13.5 12 11l2.5 2.5"></path></svg>';
-          default: return '';
+      function iconSVG(n){
+        switch(n){
+          case 'search':return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="16.65" y1="16.65" x2="21" y2="21"></line></svg>';
+          case 'phone':return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.8 19.8 0 0 1 3.1 5.18 2 2 0 0 1 5.11 3h3a2 2 0 0 1 2 1.72c.12.86.31 1.7.57 2.5a2 2 0 0 1-.45 2.11L9 10a16 16 0 0 0 5 5l.67-1.23a2 2 0 0 1 2.11-.45c.8.26 1.64.45 2.5.57A2 2 0 0 1 22 16.92Z"></path></svg>';
+          case 'cone':return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4h10l2 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L7 4z"></path><path d="M6 8h12M5.5 12h13M5 16h14" stroke-linecap="round"></path></svg>';
+          case 'profile':return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="2" width="14" height="20" rx="2"></rect><path d="M7 7h6M7 11h6"></path><circle cx="18" cy="16" r="3"></circle><path d="M21 22a5 5 0 0 0-6 0"></path></svg>';
+          case 'publish':return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"></rect><path d="M3 8h18"></path><path d="M12 16V11"></path><path d="M9.5 13.5 12 11l2.5 2.5"></path></svg>';
+          default:return '';
         }
       }
 
-      const howCliente = {
-        title: "Precisa produzir malha? Como funciona:",
-        steps: [
-          { icon: "search",  t: "1. Ache",    d: "Filtre por tipo, diâmetro, galga e localização." },
-          { icon: "phone",   t: "2. Conecte", d: "Fale direto com a malharia para alinhar prazos e preços." },
-          { icon: "cone",    t: "3. Produza", d: "Combine e acompanhe a produção com quem tece sua malha." }
-        ]
-      };
+      const howCliente={title:"Precisa produzir malha? Como funciona:",steps:[
+        {icon:"search",t:"1. Ache",d:"Filtre por tipo, diâmetro, galga e localização."},
+        {icon:"phone",t:"2. Conecte",d:"Fale direto com a malharia para alinhar prazos e preços."},
+        {icon:"cone",t:"3. Produza",d:"Combine e acompanhe a produção com quem tece sua malha."}
+      ]};
+      const howMalharia={title:"Tem teares ociosos? Como funciona:",steps:[
+        {icon:"profile",t:"1. Cadastre sua malharia",d:"Crie seu perfil e informe os contatos."},
+        {icon:"publish",t:"2. Publique seus teares",d:"Detalhe tipo, diâmetro, galga e localização."},
+        {icon:"phone",t:"3. Receba contatos",d:"Negocie prazos, valores e transforme ociosidade em produção."}
+      ]};
 
-      const howMalharia = {
-        title: "Tem teares ociosos? Como funciona:",
-        steps: [
-          { icon: "profile", t: "1. Cadastre sua malharia",  d: "Crie seu perfil e informe os contatos." },
-          { icon: "publish", t: "2. Publique seus teares",    d: "Detalhe tipo, diâmetro, galga e localização." },
-          { icon: "phone",   t: "3. Receba contatos",         d: "Negocie prazos, valores e transforme ociosidade em produção." }
-        ]
-      };
-
-      const howTitle = document.getElementById('how-title');
-      const howSteps = document.getElementById('how-steps');
+      const howTitle=document.getElementById('how-title');
+      const howSteps=document.getElementById('how-steps');
 
       function renderHow(cfg){
-        howTitle.textContent = cfg.title;
-        howSteps.innerHTML = cfg.steps.map(s => `
+        howTitle.textContent=cfg.title;
+        howSteps.innerHTML=cfg.steps.map(s=>`
           <div class="step">
             <div class="step-ico">${iconSVG(s.icon)}</div>
             <h3>${s.t}</h3>
             <p>${s.d}</p>
-          </div>
-        `).join('');
+          </div>`).join('');
       }
 
-      const cliente = {
-        title: "Encontre teares de malharia prontos para produzir",
-        sub: "Filtre sua busca por tipo, diâmetro, galga e localizaçao. Fale direto com a malharia.",
-        ctaText: "Buscar teares agora",
-        ctaHref: "{{ url_for('buscar_teares') }}"
-      };
-      const malharia = {
-        title: "Tem teares ociosos? Receba pedidos todo mês",
-        sub: "Seja encontrado por quem precisa produzir. Cadastro simples por apenas R$ 49,90/mês.",
-        ctaText: "Cadastrar minha malharia",
-        ctaHref: "{{ url_for('malharia_info') }}"
-      };
+      const cliente={title:"Encontre teares de malharia prontos para produzir",sub:"Filtre sua busca por tipo, diâmetro, galga e localizaçao. Fale direto com a malharia.",ctaText:"Buscar teares agora",ctaHref:"/buscar_teares"};
+      const malharia={title:"Tem teares ociosos? Receba pedidos todo mês",sub:"Seja encontrado por quem precisa produzir. Cadastro simples por apenas R$ 49,90/mês.",ctaText:"Cadastrar minha malharia",ctaHref:"/malharia_info"};
 
-      const tabs = document.querySelectorAll('.role-toggle [data-role]');
-      const h1 = document.getElementById('hero-title');
-      const p  = document.getElementById('hero-sub');
-      const cta= document.getElementById('hero-cta');
+      const tabs=document.querySelectorAll('.role-toggle [data-role]');
+      const h1=document.getElementById('hero-title');
+      const p=document.getElementById('hero-sub');
+      const cta=document.getElementById('hero-cta');
 
       function setRole(role){
-        const cfgHero = role === 'malharia' ? malharia : cliente;
-        const cfgHow  = role === 'malharia' ? howMalharia : howCliente;
-
-        h1.textContent = cfgHero.title;
-        p.textContent  = cfgHero.sub;
-        cta.textContent= cfgHero.ctaText;
-        cta.setAttribute('href', cfgHero.ctaHref);
-
-        tabs.forEach(b=>{
-          const active = b.dataset.role === role;
-          b.classList.toggle('is-active', active);
-          b.setAttribute('aria-selected', active ? 'true' : 'false');
-        });
-
+        const cfgHero= role==='malharia'? malharia: cliente;
+        const cfgHow = role==='malharia'? howMalharia: howCliente;
+        h1.textContent=cfgHero.title; p.textContent=cfgHero.sub; cta.textContent=cfgHero.ctaText; cta.setAttribute('href',cfgHero.ctaHref);
+        tabs.forEach(b=>{const a=b.dataset.role===role; b.classList.toggle('is-active',a); b.setAttribute('aria-selected',a?'true':'false');});
         renderHow(cfgHow);
       }
-
-      tabs.forEach(b=> b.addEventListener('click', ()=> setRole(b.dataset.role)));
+      tabs.forEach(b=> b.addEventListener('click',()=>setRole(b.dataset.role)));
       setRole('cliente');
     })();
   </script>
 
-  <!-- JS do MENU SUSPENSO (abrir/fechar) -->
   <script>
     (function(){
-      const overlay = document.getElementById('overlayMenu');
-      const openBtn  = document.getElementById('hamburgerBtn');
-      const closeEls = overlay.querySelectorAll('[data-close]');
+      const overlay=document.getElementById('overlayMenu');
+      const openBtn=document.getElementById('hamburgerBtn');
+      const closeEls=overlay.querySelectorAll('[data-close]');
 
-      function openMenu(){
-        overlay.classList.add('is-open');
-        overlay.setAttribute('aria-hidden','false');
-        document.body.style.overflow = 'hidden';
-      }
-      function closeMenu(){
-        overlay.classList.remove('is-open');
-        overlay.setAttribute('aria-hidden','true');
-        document.body.style.overflow = '';
-      }
+      function openMenu(){overlay.classList.add('is-open');overlay.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';}
+      function closeMenu(){overlay.classList.remove('is-open');overlay.setAttribute('aria-hidden','true');document.body.style.overflow='';}
 
-      if (openBtn) openBtn.addEventListener('click', openMenu);
-      closeEls.forEach(el => el.addEventListener('click', closeMenu));
-
-      // fechar com ESC
-      document.addEventListener('keydown', (e)=>{
-        if(e.key === 'Escape' && overlay.classList.contains('is-open')) closeMenu();
-      });
-
-      // clique fora do painel
-      overlay.addEventListener('click', (e)=>{
-        if (e.target === overlay) closeMenu();
-      });
+      if(openBtn) openBtn.addEventListener('click',openMenu);
+      closeEls.forEach(el=>el.addEventListener('click',closeMenu));
+      document.addEventListener('keydown',e=>{ if(e.key==='Escape' && overlay.classList.contains('is-open')) closeMenu();});
+      overlay.addEventListener('click',e=>{ if(e.target===overlay) closeMenu();});
     })();
   </script>
 
-  <!-- —— Faixa preta (CTA) —— -->
   <section class="cta-bar" aria-label="Convite para cadastro">
     <div class="cta-text">
       <h3>É proprietário de uma malharia?</h3>
       <p>Cadastre sua malharia e comece a receber novos pedidos.</p>
     </div>
-    <a href="{{ url_for('malharia_info') }}" class="cta-btn">Cadastrar</a>
+    <a href="/malharia_info" class="cta-btn">Cadastrar</a>
   </section>
 
-  <!-- —— Rodapé branco com logo-símbolo + links —— -->
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-brand">
-        <img src="{{ url_for('static', filename='logo_simbolo.png') }}" alt="AcheTece">
+        <img src="/static/logo_simbolo.png" alt="AcheTece">
       </div>
-
       <div class="footer-cols">
         <div class="footer-col">
           <h4>Sobre nós</h4>
           <ul>
-            <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
-            <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
-            <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
-            <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
+            <li><a href="/quem_somos">O AcheTece</a></li>
+            <li><a href="/malharia_info">Como funciona</a></li>
+            <li><a href="/contato">Fale conosco</a></li>
+            <li><a href="/termos">Termos e Políticas</a></li>
           </ul>
         </div>
-
         <div class="footer-col">
           <h4>&nbsp;</h4>
-          <ul>
-            <li>&nbsp;</li>
-          </ul>
+          <ul><li>&nbsp;</li></ul>
         </div>
       </div>
     </div>
