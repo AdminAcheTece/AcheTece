@@ -159,20 +159,22 @@
     }
 
     .mini-card {
-      flex: 0 0 180px;              /* largura fixa */
+      flex: 0 0 130px;                 /* largura fixa */
+      height: 100px;                   /* altura fixa p/ centralizar */
       background: #fafafa;
       border: 1px solid #eee;
-      border-radius: 16px;
-      padding: 16px;
+      border-radius: 12px;
+      padding: 10px;
       text-decoration: none;
       display: flex;
       flex-direction: column;
-      align-items: flex-start;
-      gap: 12px;
+      justify-content: center;         /* centraliza vertical */
+      align-items: center;             /* centraliza horizontal */
+      gap: 8px;
       color: var(--roxo);
       font-weight: 700;
       transition: all 0.2s ease;
-      white-space: nowrap;          /* impede quebra do texto */
+      text-align: center;
     }
 
     .mini-card:hover {
@@ -203,12 +205,12 @@
     }
 
     .mini-card-ico svg {
-      width: 16px;                /* ícone menor */
-      height: 16px;
+      width: 20px;                /* ícone menor */
+      height: 20px;
     }
 
     .mini-card-title {
-      font-size: 12px;            /* fonte menor */
+      font-size: 13px;                 /* fonte equilibrada */
       font-weight: 700;
       color: var(--roxo);
       white-space: nowrap;
