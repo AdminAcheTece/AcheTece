@@ -44,9 +44,6 @@ def base_url():
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-unsafe')
 
-from auth import auth
-app.register_blueprint(auth, url_prefix='/auth')
-
 # DB (SQLite local por padrão; use DATABASE_URL no Render se quiser Postgres)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///banco.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
