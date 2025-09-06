@@ -127,23 +127,31 @@
     }
 
     .list-icon {
+      flex: 0 0 24px;
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 24px;
-      height: 24px;
     }
 
-    .list-item span {
+    .list-text {
       flex: 1;
+      white-space: nowrap;   /* evita quebra de linha */
+      overflow: hidden;
+      text-overflow: ellipsis; /* se passar do espaço, coloca "..." */
     }
 
     .list-item .arrow {
+      flex: 0 0 auto;
       display: flex;
       align-items: center;
-      color: #000;
     }
-    
+
+    .list-item .arrow svg {
+      width: 22px;   /* maior que antes */
+      height: 22px;
+      stroke-width: 3; /* traço mais grosso */
+    }
+     
   </style>
 </head>
 <body>
@@ -235,11 +243,11 @@
           <div class="cards-row">
             <a class="mini-card" href="/buscar_teares">
               <div class="mini-card-ico">🔍</div>
-              <div class="mini-card-title">Empresas</div>
+              <div class="mini-card-title">Procuro Malharia</div>
             </a>
             <a class="mini-card" href="#" onclick="alert('Empregos em breve')">
               <div class="mini-card-ico">💼</div>
-              <div class="mini-card-title">Empregos</div>
+              <div class="mini-card-title">Sou Malharia</div>
             </a>
           </div>
 
@@ -257,7 +265,7 @@
               <span class="arrow">
                 <!-- seta grossa -->
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M10 17l5-5-5-5v10z"/>
+                  <path d="M9 6l6 6-6 6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </span>
             </a>
@@ -270,7 +278,7 @@
               <span>Conheça o AcheTece</span>
               <span class="arrow">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M10 17l5-5-5-5v10z"/>
+                  <path d="M9 6l6 6-6 6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </span>
             </a>
@@ -286,7 +294,7 @@
               <span>Suporte AcheTece</span>
               <span class="arrow">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M10 17l5-5-5-5v10z"/>
+                  <path d="M9 6l6 6-6 6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </span>
             </a>
