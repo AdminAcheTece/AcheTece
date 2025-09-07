@@ -151,21 +151,44 @@
 
     /* Botão Facebook */
     .btn-facebook {
+      display: flex;
+      align-items: center;     /* garante centralização vertical de tudo */
+      gap: 10px;               /* espaço entre ícone e texto */
       background: #1877F2;
       color: #fff;
       border: 0;
+      border-radius: 999px;
+      cursor: pointer;
+      padding: 0 18px;
+      height: 46px;            /* altura consistente com o botão do Google */
+      min-width: 240px;        /* mesma largura mínima do Google */
       box-shadow: none !important;   /* remove sombra */
+      transition: background .2s ease, transform .12s ease;
     }
+
     .btn-facebook:hover {
       background: #166FE5;
       transform: translateY(-1px);
     }
+
     .btn-facebook:active {
       transform: translateY(0);
       box-shadow: none !important;
     }
-    .btn-facebook .fb-icon { width: 22px; height: 22px; display: flex; }
-    .btn-facebook .fb-icon svg { width: 30px; height: 30px; }
+
+    .btn-facebook .fb-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 46px;             /* mesma altura do botão */
+      height: 46px;            /* ocupa a altura total → centraliza */
+    }
+
+    .btn-facebook .fb-icon svg {
+      width: 22px;             /* ícone proporcional */
+      height: 22px;
+      display: block;
+    }
 
     /* Ajuste para o texto dos botões (Google e Facebook) */
     .btn-google span,
@@ -275,6 +298,82 @@
       font-weight: 700;
       color: var(--roxo);
       white-space: nowrap;
+    }
+
+    /* ===== alinhamento e largura consistentes (cole no final do seu <style>) ===== */
+
+    /* valores base (ajuste se precisar) */
+    :root{
+      --social-btn-w: 190px;   /* largura de CADA botão social */
+      --social-gap: 12px;      /* espaço entre Google e Facebook */
+      --social-h: 44px;        /* altura dos botões sociais */
+    }
+
+    /* linha dos botões: alinhar à esquerda */
+    .social-row{
+      display:flex;
+      gap: var(--social-gap);
+      justify-content:flex-start;   /* << alinhado à esquerda */
+      flex-wrap:wrap;
+    }
+
+    /* manter dimensões atuais dos botões e alinhamento interno */
+    .btn-google,
+    .btn-facebook{
+      width: var(--social-btn-w);
+      height: var(--social-h);
+      padding: 0 16px;
+      border-radius: 999px;
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;   /* texto alinhado à esquerda do ícone */
+      gap:10px;
+      box-sizing:border-box;
+    }
+
+    /* garantir tamanho previsível do ícone do Google (imagem) */
+    .btn-google img{ width:20px; height:20px; }
+
+    /* centralização vertical perfeita do ícone do Facebook */
+    .btn-facebook .fb-icon{
+      display:flex; align-items:center; justify-content:center;
+      width: var(--social-h);    /* caixa do ícone com a mesma altura do botão */
+      height: var(--social-h);
+    }
+    .btn-facebook .fb-icon svg{ width:22px; height:22px; display:block; }
+
+    /* ===== campos de acesso + botão Entrar com a MESMA largura da dupla de botões ===== */
+
+    /* wrapper dos campos */
+    .access-fields{
+      /* largura total = 2 botões + o espaçamento entre eles */
+      width: calc((2 * var(--social-btn-w)) + var(--social-gap));
+      max-width: 100%;
+      padding-top: 8px;  /* só para respirar um pouco da linha de cima */
+    }
+
+    /* inputs ocupam 100% do wrapper acima */
+    .access-fields .input{
+      width: 100%;
+    }
+
+    /* botão roxo "Entrar" com a mesma largura e alinhado à esquerda */
+    .btn-primary{
+      width: calc((2 * var(--social-btn-w)) + var(--social-gap));
+      max-width: 100%;
+    }
+
+    /* responsivo: em telas estreitas, volta a ocupar 100% */
+    @media (max-width: 520px){
+      :root{
+        --social-btn-w: 100%;   /* cada botão ocupa a linha toda */
+    }
+    .btn-google, .btn-facebook{
+      width: 100%;
+    }
+    .access-fields,
+    .btn-primary{
+      width: 100%;
     }
     
   </style>
