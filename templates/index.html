@@ -166,6 +166,19 @@
     .footer-col a{color:var(--preto);text-decoration:none;font-size:14px;}
     .footer-col a:hover{text-decoration:underline;}
     @media (max-width:720px){.footer-inner{grid-template-columns:1fr}.footer-cols{grid-template-columns:1fr}.cta-text h3{font-size:16px}.cta-text p{font-size:14px}}
+  
+    /* ===== Ajuste fino de espaçamentos nos títulos da coluna direita ===== */
+
+    /* 1) título "Facilidades AcheTece" mais perto dos cards */
+    .section-title--simple + .cards-row{
+      margin-top: 12px !important;   /* antes: 36px */
+    }
+
+    /* 2) "Mais opções" mais distante dos cards acima */
+    .section-title--simple.mt{
+      margin-top: 28px !important;   /* dá um respiro maior antes do título */
+    }
+    
   </style>
 </head>
 <body>
