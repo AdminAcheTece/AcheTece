@@ -191,12 +191,13 @@
     }
 
     /* Ajuste para o texto dos botões (Google e Facebook) */
-    .btn-google span,
+    .btn-google .g-text,
     .btn-facebook .fb-text {
-      display: block;          /* força quebra em 2 linhas se necessário */
-      text-align: left;        /* alinha à esquerda, próximo do ícone */
-      line-height: 1.2;        /* deixa a altura equilibrada */
-      white-space: normal;     /* permite quebra de linha */
+      display: block;          /* força quebra em 2 linhas */
+      text-align: left;        /* texto alinhado à esquerda, perto do ícone */
+      line-height: 1.2;        /* altura equilibrada */
+      white-space: normal;     /* permite quebra */
+      max-width: 140px;        /* limite para quebrar como o Facebook */
     }
     
     .list-item {
@@ -446,7 +447,7 @@
             <!-- Botão Google -->
             <button class="btn-google" onclick="location.href='/login_google'">
               <img src="/static/icone_google.png" alt="Google">
-              <span>Entrar com Google</span>
+              <span class="g-text">Entrar com Google</span>
             </button>
 
             <!-- Botão Facebook -->
