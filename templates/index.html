@@ -115,47 +115,43 @@
       .overlay-header{padding:14px 16px;}
     }
 
-    /* Botão Google - estilo oficial */
-    .btn-google {
+    /* === Medidas iguais para os dois botões === */
+    .btn-google,
+    .btn-facebook{
+      height: 46px;            /* mesma altura */
+      min-width: 240px;        /* mesma largura mínima */
+      padding: 10px 24px;      /* mesmo respiro interno */
+      border-radius: 999px;    /* mesmo raio */
+      box-sizing: border-box;
+      gap: 12px;               /* mesmo espaçamento ícone-texto */
       display: flex;
       align-items: center;
-      justify-content: flex-start;  /* ícone e texto alinhados à esquerda */
-      gap: 12px;                    /* espaço entre ícone e texto */
-  
-      background: #fff;
-      border: 1px solid #dadce0;
-      border-radius: 999px;         /* deixa arredondado */
-      cursor: pointer;
+      justify-content: flex-start; /* ícone e texto alinhados à esquerda */
+    }
 
-      padding: 10px 24px;           /* aumenta o respiro */
-      height: 46px;                 /* altura padrão */
-      min-width: 240px;             /* largura mínima parecida com a oficial */
-  
+    /* === Google: fundo cinza claro e borda padrão === */
+    .btn-google{
+      background: #f7f7f7;           /* cinza claro (como você pediu) */
+      border: 1px solid #dadce0;
+      color: #3c4043;
       font-size: 14px;
       font-weight: 500;
-      color: #3c4043;               /* cinza oficial Google */
-
       transition: background .2s ease, box-shadow .2s ease;
     }
-
-    .btn-google:hover {
-      background: #f7f8f8;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    .btn-google:hover{
+      background: #f1f1f1;
+      box-shadow: 0 1px 3px rgba(0,0,0,.15);
     }
+    /* tamanho do ícone do Google (PNG ou SVG) */
+    .btn-google img{ width: 20px; height: 20px; }
 
-    .btn-google img {
-      width: 40px;
-      height: 40px;
-    }
-
-    /* Botão Facebook no padrão da marca */
+    /* === Facebook: mantém estilo azul, só herda as medidas acima === */
     .btn-facebook{
-      display:flex; align-items:center; gap:12px;
-      background:#1877F2; color:#fff; 
-      border:0; border-radius:999px; cursor:pointer;
-      padding:12px 18px;
-      font-weight:500;              /* menos bold (antes era 600) */
-      font-size:14px;               /* fonte um pouco menor */
+      background:#1877F2; 
+      color:#fff; 
+      border:0;
+      font-size:14px;
+      font-weight:500;         /* mantém o peso mais suave */
       line-height:1.2;
       box-shadow:0 6px 16px rgba(24,119,242,.25);
       transition:transform .12s ease, box-shadow .2s ease, background .2s ease;
@@ -163,21 +159,15 @@
     .btn-facebook:hover{ background:#166FE5; transform:translateY(-1px); box-shadow:0 8px 18px rgba(24,119,242,.35); }
     .btn-facebook:active{ transform:translateY(0); box-shadow:0 4px 10px rgba(24,119,242,.25); }
 
-    .btn-facebook .fb-icon{
-      display:inline-flex; align-items:center; justify-content:center;
-      width:30px; height:30px;      /* aumentei 2px (antes 28x28) */
-    }
-    .btn-facebook .fb-icon svg{
-      width:28px; height:28px;      /* aumentei 2px (antes 26x26) */
-      display:block;
-    }
+    /* ícone do Facebook levemente maior, proporcional à altura de 46px */
+    .btn-facebook .fb-icon{ width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center; }
+    .btn-facebook .fb-icon svg{ width:26px; height:26px; display:block; }
 
     .btn-facebook .fb-text{
-      display:block;
-      text-align:left;
-      font-size:14px;               /* combina com o botão */
-      font-weight:500;              /* menos negrito */
-      color:#fff;
+      display:block; text-align:left; color:#fff;
+      font-size:14px; font-weight:500;
+      /* se quiser tudo em uma linha, descomente: */
+      /* white-space: nowrap; */
     }
 
     /* Se preferir tudo em uma linha, descomente: */
