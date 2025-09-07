@@ -115,63 +115,57 @@
       .overlay-header{padding:14px 16px;}
     }
 
-    /* === Medidas iguais para os dois botões === */
-    .btn-google,
-    .btn-facebook{
-      height: 46px;            /* mesma altura */
-      min-width: 240px;        /* mesma largura mínima */
-      padding: 10px 24px;      /* mesmo respiro interno */
-      border-radius: 999px;    /* mesmo raio */
-      box-sizing: border-box;
-      gap: 12px;               /* mesmo espaçamento ícone-texto */
+    /* Container para botões lado a lado */
+    .social-row {
       display: flex;
-      align-items: center;
-      justify-content: flex-start; /* ícone e texto alinhados à esquerda */
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;   /* quebra linha se não couber */
     }
 
-    /* === Google: fundo cinza claro e borda padrão === */
-    .btn-google{
-      background: #f7f7f7;           /* cinza claro (como você pediu) */
-      border: 1px solid #dadce0;
-      color: #3c4043;
+    /* Ajustes gerais (Google + Facebook) */
+    .btn-google,
+    .btn-facebook {
+      height: 44px;
+      width: 190px;              /* mesma largura */
+      padding: 0 16px;
+      border-radius: 999px;
       font-size: 14px;
       font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
+      box-sizing: border-box;
+    }
+
+    /* Botão Google */
+    .btn-google {
+      background: #f7f7f7;
+      border: 1px solid #dadce0;
+      color: #3c4043;
       transition: background .2s ease, box-shadow .2s ease;
     }
-    .btn-google:hover{
-      background: #f1f1f1;
-      box-shadow: 0 1px 3px rgba(0,0,0,.15);
+    .btn-google:hover { background: #f1f1f1; }
+    .btn-google img { width: 20px; height: 20px; }
+
+    /* Botão Facebook */
+    .btn-facebook {
+      background: #1877F2;
+      color: #fff;
+      border: 0;
+      box-shadow: none !important;   /* remove sombra */
     }
-    /* tamanho do ícone do Google (PNG ou SVG) */
-    .btn-google img{ width: 20px; height: 20px; }
-
-    /* === Facebook: mantém estilo azul, só herda as medidas acima === */
-    .btn-facebook{
-      background:#1877F2; 
-      color:#fff; 
-      border:0;
-      font-size:14px;
-      font-weight:500;         /* mantém o peso mais suave */
-      line-height:1.2;
-      box-shadow:0 6px 16px rgba(24,119,242,.25);
-      transition:transform .12s ease, box-shadow .2s ease, background .2s ease;
+    .btn-facebook:hover {
+      background: #166FE5;
+      transform: translateY(-1px);
     }
-    .btn-facebook:hover{ background:#166FE5; transform:translateY(-1px); box-shadow:0 8px 18px rgba(24,119,242,.35); }
-    .btn-facebook:active{ transform:translateY(0); box-shadow:0 4px 10px rgba(24,119,242,.25); }
-
-    /* ícone do Facebook levemente maior, proporcional à altura de 46px */
-    .btn-facebook .fb-icon{ width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center; }
-    .btn-facebook .fb-icon svg{ width:26px; height:26px; display:block; }
-
-    .btn-facebook .fb-text{
-      display:block; text-align:left; color:#fff;
-      font-size:14px; font-weight:500;
-      /* se quiser tudo em uma linha, descomente: */
-      /* white-space: nowrap; */
+    .btn-facebook:active {
+      transform: translateY(0);
+      box-shadow: none !important;
     }
-
-    /* Se preferir tudo em uma linha, descomente: */
-    /* .btn-facebook .fb-text{ white-space:nowrap; } */
+    .btn-facebook .fb-icon { width: 22px; height: 22px; display: flex; }
+    .btn-facebook .fb-icon svg { width: 20px; height: 20px; }
 
     .list-item {
       display: flex;
@@ -341,19 +335,20 @@
         <div class="overlay-col">
           <h3 class="section-title">Entrar ou criar conta</h3>
           <div class="social-row">
-            <button class="btn-google" onclick="location.href='/login'">
+            <!-- Botão Google -->
+            <button class="btn-google" onclick="location.href='/login_google'">
               <img src="/static/icone_google.png" alt="Google">
               <span>Entrar com Google</span>
             </button>
 
+            <!-- Botão Facebook -->
             <button class="btn-facebook" onclick="alert('Conectar Facebook em breve')">
-              <span class="fb-icon" aria-hidden="true">
-                <!-- Logo Facebook branca -->
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path fill="#fff" d="M22 12.06C22 6.49 17.52 2 11.94 2 6.37 2 1.88 6.49 1.88 12.06c0 5.02 3.68 9.18 8.49 9.93v-7.02H7.93v-2.9h2.44V9.4c0-2.41 1.43-3.74 3.62-3.74 1.05 0 2.15.19 2.15.19v2.36h-1.21c-1.19 0-1.56.74-1.56 1.5v1.8h2.66l-.43 2.9h-2.23v7.02c4.81-.75 8.49-4.91 8.49-9.93Z"/>
+              <span class="fb-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff">
+                  <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 5 3.66 9.12 8.44 9.88v-6.99H8.08v-2.9h2.36V9.83c0-2.33 1.39-3.62 3.52-3.62 1.02 0 2.09.18 2.09.18v2.3h-1.18c-1.17 0-1.54.73-1.54 1.48v1.78h2.63l-.42 2.9h-2.21v6.99C18.34 21.12 22 17 22 12z"/>
                 </svg>
               </span>
-              <span class="fb-text">Entrar com<br>Facebook</span>
+              <span class="fb-text">Entrar com Facebook</span>
             </button>
           </div>
 
