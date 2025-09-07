@@ -173,6 +173,73 @@
     .section-title--simple.mt {
       margin-top: 36px; /* espaçamento dobrado */
     }
+
+    /* ====== Mini-cards menores, quadrados e tipografia reduzida ====== */
+    .cards-row {
+      gap: 12px;                 /* um pouco menos de espaço entre os cards */
+    }
+
+    .mini-card{
+      flex: 0 0 120px;           /* largura menor */
+      aspect-ratio: 1 / 1;       /* formato quadrado */
+      height: auto;              /* deixa o quadrado mandar na altura */
+      padding: 12px;
+      border-radius: 16px;
+      gap: 8px;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      border: 1px solid #eee;
+      box-shadow: 0 0 0 0 rgba(0,0,0,0); /* clean */
+      transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+    }
+
+    .mini-card:hover{
+      transform: translateY(-3px);
+      border-color: rgba(0,0,0,.06);
+      box-shadow: 0 6px 14px rgba(0,0,0,.08);
+    }
+
+    .mini-card-ico svg{
+      width: 22px; height: 22px; /* ícone menor, proporcional ao card */
+    }
+
+    .mini-card-title{
+      font-size: 12.5px;         /* menor para “caber” como na Solutudo */
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    /* ====== Paleta por card (fundo / texto / ícone) ======
+       - procura: roxo como destaque (sua cor principal)
+       - malharia: teal/menta para contrastar com o roxo
+    */
+    :root{
+      --procura-bg: #F5EFFF;     /* lavanda suave */
+      --procura-fg: #6E00CC;     /* roxo profundo (ícone/texto) */
+      --malharia-bg: #E9FBF6;    /* menta muito clara */
+      --malharia-fg: #0BA98B;    /* teal médio (ícone/texto) */
+    }
+
+    /* aplica as cores por card */
+    .mini-card.procura{
+      background: var(--procura-bg);
+      color: var(--procura-fg);
+    }
+    .mini-card.malharia{
+      background: var(--malharia-bg);
+      color: var(--malharia-fg);
+    }
+
+    /* garante que os SVGs usem a cor do card */
+    .mini-card-ico svg{
+      stroke: currentColor;
+      fill: none;
+    }
+    .mini-card.malharia .mini-card-ico svg[fill],
+    .mini-card.procura .mini-card-ico svg[fill]{
+      fill: currentColor;        /* se o SVG tiver fill, assume a mesma cor */
+    }
     
   </style>
 </head>
