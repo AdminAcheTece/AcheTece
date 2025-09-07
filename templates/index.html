@@ -159,6 +159,20 @@
       color:#111;
       margin: 28px 0 8px;  /* era ~14px; agora ~dobro */
     }
+
+    /* títulos "Facilidades" e "Mais opções" no mesmo estilo */
+    .section-title--simple {
+      font-weight: 700;
+      font-size: 16px;
+      line-height: 1.1;
+      color: #111;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .section-title--simple.mt {
+      margin-top: 36px; /* espaçamento dobrado */
+    }
     
   </style>
 </head>
@@ -260,11 +274,11 @@
         </div>
 
         <div class="overlay-col">
-          <h3 class="section-title">Facilidades</h3>
+          <h3 class="section-title--simple">Facilidades</h3>
           <div class="cards-row">
             <a class="mini-card procura" href="/buscar_teares">
               <div class="mini-card-ico">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <circle cx="11" cy="11" r="8" stroke="var(--roxo)"/>
                   <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="var(--roxo)"/>
                 </svg>
@@ -274,7 +288,7 @@
 
             <a class="mini-card malharia" href="/malharia_info">
               <div class="mini-card-ico">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="var(--roxo)" viewBox="0 0 24 24">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="var(--roxo)" viewBox="0 0 24 24">
                   <path d="M3 20V9l6 3V9l6 3V6h3v14H3z"/>
                 </svg>
               </div>
@@ -282,11 +296,11 @@
             </a>
           </div>
 
-          <h3 class="section-title mt">Mais opções</h3>
+          <h3 class="section-title--simple mt">Mais opções</h3>
           <nav class="list-links">
             <a class="list-item" href="/cadastrar_empresa">
               <span class="list-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
                   <path d="M3 20V9l6 3V9l6 3V6h3v14H3zM5 18h2v-2H5v2zm0-4h2v-2H5v2zm4 4h2v-2H9v2zm0-4h2v-2H9v2zm4 4h2v-2h-2v2z"/>
                 </svg>
               </span>
@@ -300,7 +314,7 @@
 
             <a class="list-item" href="/quem_somos">
               <span class="list-icon">
-                <img src="/static/logo_simbolo.png" alt="AcheTece" width="22" height="22" style="display:block">
+                <img src="/static/logo_simbolo.png" alt="AcheTece" width="28" height="28" style="display:block">
               </span>
               <span class="list-text">Conheça o AcheTece</span>
               <span class="arrow">
