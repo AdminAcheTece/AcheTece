@@ -167,6 +167,46 @@
     .footer-col a{color:var(--preto);text-decoration:none;font-size:14px;}
     .footer-col a:hover{text-decoration:underline;}
     @media (max-width:720px){.footer-inner{grid-template-columns:1fr}.footer-cols{grid-template-columns:1fr}.cta-text h3{font-size:16px}.cta-text p{font-size:14px}}
+  
+  /* ===== AJUSTES DEFINITIVOS: altura mínima dos cards + espaço do título ===== */
+
+  /* 2) dobra a distância entre o título e os cards */
+  .section-title--simple + .cards-row{
+    margin-top: 36px; /* ajuste "dobro" de respiro */
+  }
+
+  /* 1) cards mais baixos: só o necessário p/ ícone + texto */
+  .cards-row{
+    gap: 12px;
+    align-items: flex-start;
+    flex-wrap: nowrap; /* mantém lado a lado */
+  }
+
+  .mini-card{
+    /* anula formato quadrado e largura fixa anteriores */
+    aspect-ratio: auto !important;
+    flex: 0 0 auto !important;
+
+    height: auto !important;
+    padding: 8px 12px !important;  /* bem compacto */
+    border-radius: 12px;
+    gap: 6px !important;           /* menor espaço entre ícone e texto */
+    display: inline-flex;          /* altura ajusta ao conteúdo */
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mini-card-ico svg{
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .mini-card-title{
+    font-size: 12px !important;
+    line-height: 1.1 !important;
+    white-space: nowrap;           /* evita quebrar em duas linhas */
+  }
+    
   </style>
 </head>
 <body>
