@@ -240,6 +240,58 @@
     .mini-card.procura .mini-card-ico svg[fill]{
       fill: currentColor;        /* se o SVG tiver fill, assume a mesma cor */
     }
+
+    /* dobro de distância entre o título e os cards */
+    #facil-title{
+      margin-bottom: 24px;   /* era ~12px; agora ~dobro */
+    }
+
+    /* tamanho mais compacto, quadrado e fonte menor */
+    .cards-row{ gap: 12px; }
+
+    .mini-card{
+      flex: 0 0 110px;        /* menor que o atual */
+      aspect-ratio: 1/1;      /* quadrado */
+      height: auto;
+      padding: 10px;
+      border-radius: 16px;
+      gap: 8px;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .mini-card-ico svg{ width: 20px; height: 20px; }  /* ícone menor */
+    .mini-card-title{ font-size: 12px; line-height: 1.2; }
+
+    /* paleta moderna (harmoniza com o roxo #8A00FF) */
+    :root{
+      /* Procuro Malharia (lavanda) */
+      --procura-bg: #F2E8FF;   /* fundo */
+      --procura-fg: #7A1BFF;   /* texto/ícone */
+      /* Sou Malharia (menta) */
+      --malharia-bg: #E6FCF4;  /* fundo */
+      --malharia-fg: #0BA98B;  /* texto/ícone */
+    }
+
+    /* aplica as cores */
+    .mini-card.procura{
+      background: var(--procura-bg);
+      color: var(--procura-fg);
+    }
+    .mini-card.malharia{
+      background: var(--malharia-bg);
+      color: var(--malharia-fg);
+    }
+
+    /* garante que os SVGs respeitem a cor do card */
+    .mini-card-ico svg{
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;         /* traço consistente */
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
     
   </style>
 </head>
@@ -341,13 +393,13 @@
         </div>
 
         <div class="overlay-col">
-          <h3 class="section-title--simple">Facilidades</h3>
+          <h3 class="section-title--simple">Facilidades AcheTece</h3>
           <div class="cards-row">
             <a class="mini-card procura" href="/buscar_teares">
               <div class="mini-card-ico">
-                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="11" cy="11" r="8" stroke="var(--roxo)"/>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="var(--roxo)"/>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20">
+                  <circle cx="11" cy="11" r="6.8"></circle>
+                  <line x1="15.5" y1="15.5" x2="20" y2="20"></line>
                 </svg>
               </div>
               <div class="mini-card-title">Procuro Malharia</div>
