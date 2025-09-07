@@ -376,7 +376,14 @@
     .btn-primary{
       width: 100%;
     }
-    
+
+    .login-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #000;
+    }
+      
   </style>
 </head>
 <body>
@@ -461,14 +468,15 @@
             </button>
           </div>
 
-          <div class="access-fields">
-            <input type="email" class="input" placeholder="Email de login...">
-            <input type="password" class="input" placeholder="Senha de acesso...">
-            <div class="links-inline">
-              <a href="/esqueci_senha">Esqueci minha senha</a>
-            </div>
-            <button class="btn-primary" onclick="location.href='/login'">Entrar</button>
-            <p class="small">Não tem cadastro? <a href="/cadastrar_empresa">Crie sua conta aqui</a></p>
+          <div class="login-container">
+              <h3 class="login-title">Dados de acesso</h3>
+    
+              <input type="email" placeholder="Email de login..." class="login-input">
+              <input type="password" placeholder="Senha de acesso..." class="login-input">
+
+              <a href="{{ url_for('esqueci_senha') }}" class="forgot-link">
+                  <i class="fas fa-lock"></i> Esqueci minha senha
+              </a>
           </div>
         </div>
 
