@@ -16,18 +16,16 @@
   <style>
     /* ==================== VARIÁVEIS ==================== */
     :root{
-      --roxo:#8A00FF; --roxo-hover:#A63DFF; --roxo-clarinho:#F1E6FF; --preto:#000;
+      --roxo:#8A00FF; --roxo-hover:#A63DFF; --preto:#000;
 
-      /* Social buttons (mantém alinhamento à esquerda e mesma largura dos campos) */
-      --social-btn-w: 190px;   /* largura de CADA botão social */
-      --social-gap: 12px;      /* espaço entre Google e Facebook */
-      --social-h: 46px;        /* altura dos botões sociais */
+      /* Social buttons (mantém alinhamento e equaliza larguras) */
+      --social-btn-w: 190px;
+      --social-gap: 12px;
+      --social-h: 46px;
 
       /* Paleta dos mini-cards */
-      --procura-bg: #F2E8FF;   /* fundo */
-      --procura-fg: #7A1BFF;   /* ícone/texto */
-      --malharia-bg: #E6FCF4;  /* fundo */
-      --malharia-fg: #0BA98B;  /* ícone/texto */
+      --procura-bg: #F2E8FF;   --procura-fg: #7A1BFF;
+      --malharia-bg: #E6FCF4;  --malharia-fg: #0BA98B;
     }
 
     /* ==================== HEADER / NAV ==================== */
@@ -40,15 +38,14 @@
     .top-nav a:hover{color:var(--roxo);text-decoration:underline;}
     @media (max-width:900px){.top-nav{display:none;}}
 
-    .hamburger{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:40px;height:40px;border:none;background:transparent;box-shadow:none;cursor:pointer;}
+    .hamburger{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:40px;height:40px;border:none;background:transparent;cursor:pointer;}
     .hamburger span{display:block;width:20px;height:2px;background:var(--preto);border-radius:2px;}
     .hamburger span+span{margin-top:4px;}
-    @media (max-width:768px){.hamburger{width:32px;height:32px}.hamburger span{width:18px;height:2px}.hamburger span+span{margin-top:3px}}
+    @media (max-width:768px){.hamburger{width:32px;height:32px}.hamburger span{width:18px}.hamburger span+span{margin-top:3px}}
 
     /* ==================== BARRA PROMO ==================== */
     .promo-bar{background:var(--preto);color:#fff;display:flex;align-items:center;justify-content:center;gap:12px;padding:6px 10px;font-size:14px;line-height:1.2;}
-    .promo-text strong{font-weight:700;}
-    .promo-cta{display:inline-block;background:var(--roxo);color:#fff;text-decoration:none;padding:6px 10px;border-radius:8px;font-weight:600;white-space:nowrap;transition:background .2s ease,transform .12s ease;}
+    .promo-cta{display:inline-block;background:var(--roxo);color:#fff;text-decoration:none;padding:6px 10px;border-radius:8px;font-weight:600;white-space:nowrap;transition:.2s;}
     .promo-cta:hover{background:var(--roxo-hover);transform:translateY(-1px);}
     @media (max-width:600px){.promo-bar{flex-wrap:wrap;row-gap:6px}}
 
@@ -58,12 +55,12 @@
     .hero-copy p{font-size:clamp(14px,1.6vw,18px);color:#444;margin:0 0 14px;}
 
     .role-toggle{display:flex;gap:8px;justify-content:center;}
-    .chip{appearance:none;border:1px solid #d6d6d6;background:#fff;padding:8px 12px;border-radius:999px;cursor:pointer;font:inherit;color:var(--roxo);transition:color .15s,background .15s,border-color .15s;}
+    .chip{appearance:none;border:1px solid #d6d6d6;background:#fff;padding:8px 12px;border-radius:999px;cursor:pointer;font:inherit;color:var(--roxo);transition:.15s;}
     .chip.is-active{background:var(--preto);color:#fff;border-color:var(--preto);}
     .hero-ctas{display:flex;gap:12px;align-items:center;margin:8px 0 10px;justify-content:center;}
-    .btn-principal{display:inline-block;background:var(--roxo);color:#fff;padding:12px 18px;border-radius:50px;font-weight:700;text-decoration:none;transition:background .15s ease,transform .12s ease;}
+    .btn-principal{display:inline-block;background:var(--roxo);color:#fff;padding:12px 18px;border-radius:50px;font-weight:700;text-decoration:none;transition:.15s;}
     .btn-principal:hover{background:var(--roxo-hover);transform:translateY(-1px);}
-    @media (min-width:900px){ #hero-sub{max-width:none;white-space:nowrap;display:inline-block;} }
+    @media (min-width:900px){ #hero-sub{white-space:nowrap;display:inline-block;} }
 
     /* ==================== COMO FUNCIONA ==================== */
     .how-it-works{max-width:1120px;margin:22px auto 8px;padding:0 20px 20px;}
@@ -84,14 +81,12 @@
     .overlay-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid #eee;}
     .overlay-header h2{margin:0;font-size:22px;font-weight:700;color:#111;}
     .overlay-close{border:0;background:#f3f3f3;width:36px;height:36px;border-radius:12px;font-size:22px;line-height:1;cursor:pointer;}
-    .overlay-content{display:grid;grid-template-columns:1fr 1fr;gap:28px;padding:22px;overflow:auto;}
+    .overlay-content{display:grid;grid-template-columns:1fr 1fr;gap:28px;padding:22px;overflow:auto;} /* <- GARANTE 2 COLUNAS */
     .section-title{font-size:14px;color:#6b6b6b;font-weight:700;margin:6px 0 10px;text-transform:uppercase;letter-spacing:.3px;}
     .section-title.mt{margin-top:18px;}
 
     /* ==================== LOGIN / SOCIAL ==================== */
-    .section-title--login{
-      font-weight:700;font-size:16px;line-height:1.1;color:#111;text-transform:none;letter-spacing:0;
-    }
+    .section-title--login{font-weight:700;font-size:16px;line-height:1.1;color:#111;text-transform:none;}
 
     .social-row{display:flex;gap:var(--social-gap);justify-content:flex-start;flex-wrap:wrap;}
     .btn-google,.btn-facebook{
@@ -107,16 +102,19 @@
     .btn-facebook .fb-icon{display:flex;align-items:center;justify-content:center;width:var(--social-h);height:var(--social-h);}
     .btn-facebook .fb-icon svg{width:30px;height:30px;display:block;}
 
-    .form-subtitle{
-      font-weight:700;font-size:16px;line-height:1.1;color:#111;margin:28px 0 8px;
-    }
+    .form-subtitle{font-weight:700;font-size:16px;line-height:1.1;color:#111;margin:28px 0 8px;}
     .access-fields{width:calc((2 * var(--social-btn-w)) + var(--social-gap));max-width:100%;padding-top:8px;}
-    .input{width:100%;height:48px;border-radius:999px;border:1px solid #e6e6e6;padding:0 16px;margin-bottom:10px;font-size:14px;background:#eaf1ff;}
+    .input{width:100%;height:48px;border-radius:999px;border:1px solid #e6e6e6;padding:0 16px;margin-bottom:10px;font-size:14px;background:#eaf1ff;color:#111;}
     .links-inline{margin-bottom:10px;}
     .links-inline a{font-size:12px;color:#666;text-decoration:underline;}
     .btn-primary{width:calc((2 * var(--social-btn-w)) + var(--social-gap));max-width:100%;height:54px;border-radius:999px;border:0;cursor:pointer;background:#8A00FF;color:#fff;font-weight:800;font-size:16px;box-shadow:0 8px 18px rgba(138,0,255,.25);}
 
-    /* Responsivo: em telas estreitas, tudo passa a 100% */
+    /* Texto "Não tem cadastro?" */
+    .signup-text{margin-top:10px;font-size:14px;text-align:left;color:#333;}
+    .signup-text a{color:var(--roxo);font-weight:600;text-decoration:none;}
+    .signup-text a:hover{text-decoration:underline;}
+
+    /* Responsivo: em telas estreitas, tudo passa a 100% (colunas empilham naturalmente) */
     @media (max-width:520px){
       :root{ --social-btn-w:100%; }
       .btn-google,.btn-facebook{width:100%;}
@@ -124,21 +122,19 @@
     }
 
     /* ==================== MINI-CARDS / LISTAS ==================== */
-    .section-title--simple{
-      font-weight:700;font-size:16px;line-height:1.1;color:#111;text-transform:none;letter-spacing:0;
-    }
-    .section-title--simple.mt{margin-top:36px;}
+    .section-title--simple{font-weight:700;font-size:16px;line-height:1.1;color:#111;text-transform:none;}
+    .section-title--simple + .cards-row{margin-top:36px;} /* dobra o espaço título → cards */
 
-    .cards-row{display:flex;gap:12px;flex-wrap:nowrap;}
+    .cards-row{display:flex;gap:12px;flex-wrap:nowrap;align-items:flex-start;}
     .mini-card{
-      flex:0 0 110px;aspect-ratio:1/1;height:auto;padding:10px;border-radius:16px;gap:8px;
-      justify-content:center;align-items:center;text-align:center;display:flex;flex-direction:column;
-      border:1px solid #eee;box-shadow:0 0 0 0 rgba(0,0,0,0);
-      transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;text-decoration:none;font-weight:700;
+      /* cards compactos (altura mínima para ícone + texto) */
+      flex:0 0 auto; aspect-ratio:auto; height:auto; padding:8px 12px; border-radius:12px;
+      gap:6px; display:inline-flex; align-items:center; justify-content:center; text-align:center;
+      border:1px solid #eee; transition:.16s; text-decoration:none; font-weight:700;
     }
     .mini-card:hover{transform:translateY(-3px);border-color:rgba(0,0,0,.06);box-shadow:0 6px 14px rgba(0,0,0,.08);}
-    .mini-card-ico svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
-    .mini-card-title{font-size:12px;line-height:1.2;white-space:nowrap;}
+    .mini-card-ico svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+    .mini-card-title{font-size:12px;line-height:1.1;white-space:nowrap;}
 
     .mini-card.procura{background:var(--procura-bg);color:var(--procura-fg);}
     .mini-card.malharia{background:var(--malharia-bg);color:var(--malharia-fg);}
@@ -150,78 +146,33 @@
     .list-item .arrow{flex:0 0 auto;display:flex;align-items:center;}
     .list-item .arrow svg{width:22px;height:22px;stroke-width:3;}
 
+    /* WhatsApp menor no item de suporte */
+    .list-icon svg[fill="#25D366"]{width:18px;height:18px;}
+
     /* ==================== CTA BAR / FOOTER ==================== */
     .cta-bar{background:var(--preto);color:#fff;padding:20px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,.06);margin-top:32px;text-align:left;}
-    .cta-text h3{margin:0 0 4px;font-size:18px;font-weight:700;line-height:1.2;}
+    .cta-text h3{margin:0 0 4px;font-size:18px;font-weight:700;}
     .cta-text p{margin:0;font-size:15px;opacity:.9;}
-    .cta-btn{display:inline-block;background:#fff;color:var(--preto);text-decoration:none;padding:10px 18px;border-radius:20px;font-weight:600;box-shadow:0 1px 0 rgba(0,0,0,.08);transition:transform .12s ease,background .2s ease,box-shadow .2s ease;white-space:nowrap;}
+    .cta-btn{display:inline-block;background:#fff;color:var(--preto);text-decoration:none;padding:10px 18px;border-radius:20px;font-weight:600;box-shadow:0 1px 0 rgba(0,0,0,.08);transition:.2s;white-space:nowrap;}
     .cta-btn:hover{background:#f2f2f5;transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.12);}
 
     .site-footer{background:#fff;color:var(--preto);border-top:1px solid #eee;padding:18px 16px 28px;}
     .footer-inner{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:auto 1fr;gap:20px 28px;align-items:start;}
     .footer-brand img{height:40px;width:auto;display:block;}
     .footer-cols{display:grid;grid-template-columns:repeat(2,minmax(180px,240px));gap:12px 28px;}
-    .footer-col h4{margin:0 0 8px;font-size:14px;font-weight:700;color:var(--preto);}
+    .footer-col h4{margin:0 0 8px;font-size:14px;font-weight:700;}
     .footer-col ul{list-style:none;margin:0;padding:0;}
     .footer-col li+li{margin-top:6px;}
     .footer-col a{color:var(--preto);text-decoration:none;font-size:14px;}
     .footer-col a:hover{text-decoration:underline;}
     @media (max-width:720px){.footer-inner{grid-template-columns:1fr}.footer-cols{grid-template-columns:1fr}.cta-text h3{font-size:16px}.cta-text p{font-size:14px}}
-  
-  /* ===== AJUSTES DEFINITIVOS: altura mínima dos cards + espaço do título ===== */
-
-  /* 2) dobra a distância entre o título e os cards */
-  .section-title--simple + .cards-row{
-    margin-top: 22px; /* ajuste "dobro" de respiro */
-  }
-
-  /* 1) cards mais baixos: só o necessário p/ ícone + texto */
-  .cards-row{
-    gap: 12px;
-    align-items: flex-start;
-    flex-wrap: nowrap; /* mantém lado a lado */
-  }
-
-  .mini-card{
-    /* anula formato quadrado e largura fixa anteriores */
-    aspect-ratio: auto !important;
-    flex: 0 0 auto !important;
-
-    height: auto !important;
-    padding: 8px 12px !important;  /* bem compacto */
-    border-radius: 12px;
-    gap: 6px !important;           /* menor espaço entre ícone e texto */
-    display: inline-flex;          /* altura ajusta ao conteúdo */
-    align-items: center;
-    justify-content: center;
-  }
-
-  .mini-card-ico svg{
-    width: 18px !important;
-    height: 18px !important;
-  }
-
-  .mini-card-title{
-    font-size: 12px !important;
-    line-height: 1.1 !important;
-    white-space: nowrap;           /* evita quebrar em duas linhas */
-  }
-
-  /* Ajuste do ícone WhatsApp no suporte */
-  .list-icon svg[fill="#25D366"] {
-    width: 18px;   /* tamanho menor */
-    height: 18px;
-  }
- 
   </style>
 </head>
 <body>
 
   <!-- Faixa preta estreita no topo -->
   <section class="promo-bar" aria-label="Oferta para malharias">
-    <span class="promo-text">
-      <strong>Malharia:</strong> receba agora novos pedidos por apenas <strong>R$49,90/mês</strong>.
-    </span>
+    <span><strong>Malharia:</strong> receba agora novos pedidos por apenas <strong>R$49,90/mês</strong>.</span>
     <a class="promo-cta" href="/malharia_info">Saiba como</a>
   </section>
 
@@ -276,18 +227,18 @@
         <button class="overlay-close" type="button" aria-label="Fechar" data-close>×</button>
       </header>
 
+      <!-- DUAS COLUNAS GARANTIDAS -->
       <div class="overlay-content">
+        <!-- COLUNA ESQUERDA -->
         <div class="overlay-col">
           <h3 class="section-title section-title--login">Entrar ou criar conta</h3>
 
           <div class="social-row">
-            <!-- Botão Google -->
             <button class="btn-google" onclick="location.href='/login_google'">
               <img src="/static/icone_google.png" alt="Google">
               <span class="g-text">Entrar com Google</span>
             </button>
 
-            <!-- Botão Facebook -->
             <button class="btn-facebook" onclick="alert('Conectar Facebook em breve')">
               <span class="fb-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff">
@@ -303,19 +254,21 @@
           <div class="access-fields">
             <input type="email" placeholder="Email de login..." class="input" autocomplete="username">
             <input type="password" placeholder="Senha de acesso..." class="input" autocomplete="current-password">
-          
+
             <div class="links-inline">
               <a href="/esqueci_senha">Esqueci minha senha</a>
             </div>
-          
+
             <button class="btn-primary" onclick="location.href='/login'">Entrar</button>
-          
-            <!-- Novo texto de cadastro -->
+
+            <!-- TEXTO DE CADASTRO -->
             <div class="signup-text">
               Não tem cadastro? <a href="/cadastrar_empresa">Crie sua conta aqui</a>
             </div>
           </div>
+        </div>
 
+        <!-- COLUNA DIREITA -->
         <div class="overlay-col">
           <h3 class="section-title--simple">Facilidades AcheTece</h3>
           <div class="cards-row">
@@ -369,6 +322,7 @@
 
             <a class="list-item" href="https://wa.me/5547999999999" target="_blank" rel="noopener">
               <span class="list-icon">
+                <!-- Ícone reduzido via CSS (18px) -->
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#25D366">
                   <path d="M12 .5C5.65.5.5 5.65.5 12c0 2.11.55 4.16 1.6 5.97L.5 23.5l5.66-1.56A11.44 11.44 0 0 0 12 23.5c6.35 0 11.5-5.15 11.5-11.5S18.35.5 12 .5zm0 20.9c-1.83 0-3.62-.49-5.18-1.41l-.37-.22-3.36.92.9-3.28-.24-.38a9.53 9.53 0 0 1-1.45-5.03C2.3 6.48 6.65 2.1 12 2.1c5.34 0 9.7 4.38 9.7 9.8s-4.36 9.5-9.7 9.5zm5.32-7.13c-.29-.15-1.71-.84-1.97-.94-.27-.1-.46-.15-.65.15-.19.29-.75.94-.92 1.13-.17.19-.34.21-.63.07-.29-.15-1.22-.45-2.32-1.45-.86-.77-1.44-1.72-1.61-2-.17-.29-.02-.45.13-.59.13-.13.29-.34.43-.51.14-.17.19-.29.29-.48.1-.19.05-.36-.02-.51-.07-.15-.65-1.57-.89-2.15-.23-.55-.47-.48-.65-.49h-.55c-.19 0-.51.07-.78.36-.27.29-1.02 1-1.02 2.45s1.04 2.84 1.18 3.04c.15.19 2.05 3.12 4.97 4.37.69.3 1.22.48 1.64.61.69.22 1.32.19 1.82.12.55-.08 1.71-.7 1.95-1.38.24-.68.24-1.26.17-1.38-.07-.12-.26-.19-.55-.34z"/>
                 </svg>
@@ -424,16 +378,8 @@
           </div>`).join('');
       }
 
-      const cliente={
-        title:"Encontre teares de malharia prontos para produzir",
-        sub:"Filtre sua busca por tipo, diâmetro, galga e localizaçao. Fale direto com a malharia.",
-        ctaText:"Buscar teares agora", ctaHref:"/buscar_teares"
-      };
-      const malharia={
-        title:"Tem teares ociosos? Receba pedidos todo mês",
-        sub:"Seja encontrado por quem precisa produzir. Cadastro simples por apenas R$ 49,90/mês.",
-        ctaText:"Cadastrar minha malharia", ctaHref:"/malharia_info"
-      };
+      const cliente={title:"Encontre teares de malharia prontos para produzir",sub:"Filtre sua busca por tipo, diâmetro, galga e localizaçao. Fale direto com a malharia.",ctaText:"Buscar teares agora",ctaHref:"/buscar_teares"};
+      const malharia={title:"Tem teares ociosos? Receba pedidos todo mês",sub:"Seja encontrado por quem precisa produzir. Cadastro simples por apenas R$ 49,90/mês.",ctaText:"Cadastrar minha malharia",ctaHref:"/malharia_info"};
 
       const tabs=document.querySelectorAll('.role-toggle [data-role]');
       const h1=document.getElementById('hero-title');
@@ -443,15 +389,8 @@
       function setRole(role){
         const cfgHero= role==='malharia'? malharia: cliente;
         const cfgHow = role==='malharia'? howMalharia: howCliente;
-        h1.textContent=cfgHero.title;
-        p.textContent=cfgHero.sub;
-        cta.textContent=cfgHero.ctaText;
-        cta.setAttribute('href',cfgHero.ctaHref);
-        tabs.forEach(b=>{
-          const a=b.dataset.role===role;
-          b.classList.toggle('is-active',a);
-          b.setAttribute('aria-selected',a?'true':'false');
-        });
+        h1.textContent=cfgHero.title; p.textContent=cfgHero.sub; cta.textContent=cfgHero.ctaText; cta.setAttribute('href',cfgHero.ctaHref);
+        tabs.forEach(b=>{const a=b.dataset.role===role; b.classList.toggle('is-active',a); b.setAttribute('aria-selected',a?'true':'false');});
         renderHow(cfgHow);
       }
       tabs.forEach(b=> b.addEventListener('click',()=>setRole(b.dataset.role)));
@@ -465,25 +404,13 @@
       const openBtn=document.getElementById('hamburgerBtn');
       const closeEls=overlay.querySelectorAll('[data-close]');
 
-      function openMenu(){
-        overlay.classList.add('is-open');
-        overlay.setAttribute('aria-hidden','false');
-        document.body.style.overflow='hidden';
-      }
-      function closeMenu(){
-        overlay.classList.remove('is-open');
-        overlay.setAttribute('aria-hidden','true');
-        document.body.style.overflow='';
-      }
+      function openMenu(){overlay.classList.add('is-open');overlay.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';}
+      function closeMenu(){overlay.classList.remove('is-open');overlay.setAttribute('aria-hidden','true');document.body.style.overflow='';}
 
       if(openBtn) openBtn.addEventListener('click',openMenu);
       closeEls.forEach(el=>el.addEventListener('click',closeMenu));
-      document.addEventListener('keydown',e=>{
-        if(e.key==='Escape' && overlay.classList.contains('is-open')) closeMenu();
-      });
-      overlay.addEventListener('click',e=>{
-        if(e.target===overlay) closeMenu();
-      });
+      document.addEventListener('keydown',e=>{ if(e.key==='Escape' && overlay.classList.contains('is-open')) closeMenu();});
+      overlay.addEventListener('click',e=>{ if(e.target===overlay) closeMenu();});
     })();
   </script>
 
