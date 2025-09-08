@@ -16,6 +16,19 @@ import math
 import re
 import uuid
 import json
+import logging
+from unicodedata import normalize
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+STATIC_DIR = os.path.join(BASE_DIR, 'static')  # ajuste para 'estático' se o seu folder tem acento
+CACHE_DIR = os.path.join(BASE_DIR, 'cache_ibge')
+
+os.makedirs(CACHE_DIR, exist_ok=True)
+
+def _norm(s: str) -> str:
+    # normaliza para comparar sem acento/variação
+    return normalize('NFKD', s).encode('ASCII', 'ignore').decode('ASCII').strip().lower()
+
 
 # ========= NOVO: Authlib (OAuth Google) =========
 from authlib.integrations.flask_client import OAuth
@@ -1160,21 +1173,48 @@ def _buscar_cidades_ibge(uf: str):
     return [item.get("nome") for item in dados if isinstance(item, dict) and item.get("nome")]
 
 def _get_cidades_por_uf(uf: str):
-    uf = (uf or "").upper().strip()
+    """
+    Retorna lista de cidades (strings) para a UF informada (ex: 'SC', 'SP').
+    1) tenta do cache local (cache_ibge/SC.json, por exemplo)
+    2) senão, baixa do IBGE e grava no cache
+    3) em falha, retorna []
+    """
     if not uf:
         return []
-    if uf in _CIDADES_CACHE:
-        return _CIDADES_CACHE[uf]
-    if uf in _CIDADES_ESTATICO:
-        _CIDADES_CACHE[uf] = list(_CIDADES_ESTATICO[uf])
-        return _CIDADES_CACHE[uf]
+
+    uf = uf.strip().upper()
+    cache_path = os.path.join(CACHE_DIR, f'{uf}.json')
+
+    # 1) tenta cache local
     try:
-        cidades = _buscar_cidades_ibge(uf)
-        _CIDADES_CACHE[uf] = cidades
-        return cidades
+        if os.path.exists(cache_path) and os.path.getsize(cache_path) > 2:
+            with open(cache_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                if isinstance(data, list) and data:
+                    return data
     except Exception as e:
-        app.logger.exception(f"Falha ao buscar cidades do IBGE para {uf}: {e}")
-        return []
+        logging.warning(f'Falha ao ler cache de cidades {uf}: {e}')
+
+    # 2) baixa do IBGE
+    try:
+        url = f'https://servicodados.ibge.gov.br/api/v1/localidades/estados/{uf}/municipios'
+        r = requests.get(url, timeout=10)
+        r.raise_for_status()
+        municipios = r.json()
+        # pega somente o nome
+        cidades = sorted([m.get('nome', '').strip() for m in municipios if m.get('nome')], key=_norm)
+
+        # grava cache local para próximas chamadas
+        if cidades:
+            with open(cache_path, 'w', encoding='utf-8') as f:
+                json.dump(cidades, f, ensure_ascii=False)
+            return cidades
+
+    except Exception as e:
+        logging.warning(f'Falha ao baixar cidades do IBGE para UF={uf}: {e}')
+
+    # 3) falha total -> lista vazia
+    return []
 
 @app.route("/api/cidades")
 def api_cidades():
