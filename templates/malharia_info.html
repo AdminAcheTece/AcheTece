@@ -56,14 +56,14 @@
     .hamburger{
       display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
       width:36px; height:36px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
-      box-shadow:0 2px 6px rgba(0,0,0,.06);
+      box-shadow:none !important;
       cursor:pointer;
     }
     .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
     .hamburger span + span{ margin-top:4px; }
 
     .menu-dropdown{
-      background:#fff; border:1px solid #eaeaea; border-radius:12px; box-shadow:0 16px 38px rgba(0,0,0,.18);
+      background:#fff; border:1px solid #eaeaea; border-radius:12px; box-shadow:none !important;
       z-index:10001; max-height:80vh; overflow:auto;
       opacity:0; pointer-events:none; transform: translateY(8px) scale(.98);
       transition: opacity .18s ease, transform .18s ease;
@@ -100,7 +100,7 @@
       width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px;
       background:#fff; cursor:pointer; transition:box-shadow .2s, transform .02s, background .2s;
     }
-    .icon-btn:hover{ box-shadow:0 2px 8px rgba(0,0,0,.06); background:#f7f7f7; }
+    .icon-btn:hover{ box-shadow:none !important; background:#f7f7f7; }
     .icon{ width:20px; height:20px; color:#222; }
 
     /* ===== Container conteúdo ===== */
@@ -110,7 +110,7 @@
       background: #fff;
       padding: 40px 36px;
       border-radius: 14px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+      box-shadow: none !important;
       text-align:center;
     }
 
@@ -159,7 +159,7 @@
       content:''; display:inline-block; flex:0 0 18px; width:18px; height:18px; border-radius:50%;
       margin-top:3px;
       background: radial-gradient(circle at 30% 30%, #fff 0 40%, transparent 41%), var(--azul);
-      box-shadow: 0 0 0 2px rgba(0,59,179,.12);
+      box-shadow: none !important;
     }
 
     /* ===== Card de Preço (VERDE) ===== */
@@ -172,14 +172,14 @@
       text-align:center;
       color:#fff;
       background: linear-gradient(135deg, var(--verde) 0%, var(--verde-2) 100%);
-      box-shadow: 0 14px 30px rgba(22,163,74,.35);
+      box-shadow: none !important;
       overflow: visible;
     }
     .badge-top{
       position:absolute; left:50%; top:-12px; transform: translateX(-50%);
       background:#fff; color:#000;
       border-radius: 999px; padding:6px 12px; font-size:12px; font-weight:800;
-      box-shadow: 0 6px 16px rgba(0,0,0,.12);
+      box-shadow: none !important;
     }
     .pricing-value{
       margin: 0; line-height:1;
@@ -201,10 +201,10 @@
       text-decoration: none;
       font-size: 18px;
       transition: transform .15s ease, box-shadow .2s ease, background .2s ease;
-      box-shadow: 0 8px 18px rgba(0,59,179,.28);
+      box-shadow: none !important;
       margin-left:auto; margin-right:auto;
     }
-    .botao-cadastrar:hover { background:#002c80; transform: translateY(-2px); box-shadow:0 12px 22px rgba(0,59,179,.36); }
+    .botao-cadastrar:hover { background:#002c80; transform: translateY(-2px); box-shadow:none !important; }
 
     /* ===== Fluxo visual de etapas ===== */
     .flow-wrap{ margin-top:16px; }
@@ -223,7 +223,7 @@
     .dot{
       width:38px; height:38px; border-radius:999px; margin:0 auto 10px;
       display:flex; align-items:center; justify-content:center;
-      background: var(--azul); color:#fff; font-weight:800; box-shadow: 0 6px 16px rgba(0,59,179,.25);
+      background: var(--azul); color:#fff; font-weight:800; box-shadow: none !important;
     }
     .card{
       background:#fff; border:1px solid #e8ecf5; border-radius:14px; padding:14px 12px;
