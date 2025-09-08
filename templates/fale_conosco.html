@@ -249,54 +249,51 @@
       .cta-text p{ font-size:14px; }
     }
 
-    /* ===== Faixa preta (CTA unificada) ===== */
-    .cta-bar{
-      background:#000;              /* preto puro */
-      color:#fff;
-      padding:20px 16px;
-      display:flex;
-      align-items:center;
-      gap:16px;                     /* espaço entre texto e botão */
-      flex-wrap:wrap;
-      border-top:1px solid rgba(255,255,255,0.06);
-      margin-top:32px;
-    }
-    
-    .cta-text{
-      flex:1;                       /* ocupa todo o espaço à esquerda */
-    }
-    
-    .cta-text h3{
-      margin:0 0 4px 0;
-      font-size:18px;
-      font-weight:700;
-      line-height:1.2;
-    }
-    
-    .cta-text p{
-      margin:0;
-      font-size:15px;
-      opacity:.9;
-    }
-    
-    /* Botão estilo pílula */
-    .cta-btn{
-      display:inline-block;
-      background:#fff;
-      color:#000;
-      text-decoration:none;
-      padding:10px 22px;
-      border-radius:9999px;          /* pílula */
-      font-weight:700;
-      box-shadow:0 1px 0 rgba(0,0,0,.08);
-      transition:transform .12s ease, background .2s ease, box-shadow .2s ease;
-      white-space:nowrap;
-    }
-    .cta-btn:hover{
-      background:#f2f2f5;
-      transform:translateY(-1px);
-      box-shadow:0 3px 10px rgba(0,0,0,.12);
-    }
+    /* ===== Faixa preta (CTA alinhada à esquerda) ===== */
+  .cta-bar{
+    background:#000;              /* fundo preto */
+    color:#fff;
+    padding:20px 16px;
+    display:flex;
+    align-items:center;
+    gap:16px;                     /* espaço entre texto e botão */
+    flex-wrap:wrap;
+    border-top:1px solid rgba(255,255,255,0.06);
+    margin-top:32px;
+    justify-content:flex-start;   /* tudo alinhado à esquerda */
+  }
+  
+  .cta-text h3{
+    margin:0 0 4px 0;
+    font-size:18px;
+    font-weight:700;
+    line-height:1.2;
+  }
+  
+  .cta-text p{
+    margin:0;
+    font-size:15px;
+    opacity:.9;
+  }
+  
+  /* Botão estilo pílula */
+  .cta-btn{
+    display:inline-block;
+    background:#fff;
+    color:#000;
+    text-decoration:none;
+    padding:10px 22px;
+    border-radius:9999px;          /* pílula */
+    font-weight:700;
+    box-shadow:0 1px 0 rgba(0,0,0,.08);
+    transition:transform .12s ease, background .2s ease, box-shadow .2s ease;
+    white-space:nowrap;
+  }
+  .cta-btn:hover{
+    background:#f2f2f5;
+    transform:translateY(-1px);
+    box-shadow:0 3px 10px rgba(0,0,0,.12);
+  }
     
   </style>
 </head>
