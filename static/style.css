@@ -84,7 +84,7 @@ body{
 /* ============================================================
    HEADER / NAVBAR (compacto) + LOGO 3× MAIOR
    ============================================================ */
-header{ background: var(--branco); box-shadow: 0 2px 4px rgba(0,0,0,.05); }
+header{ background: var(--branco); box-shadow: none !important; }
 .navbar{
   display:flex; align-items:center; justify-content:space-between;
   padding:4px 16px;
@@ -206,7 +206,7 @@ button.hamburger:focus-visible{
   background:var(--branco);
   border:1px solid #d6d6d6;
   border-radius:var(--raio-10);
-  box-shadow:var(--sombra-1);
+  box-shadow:none !important;
   color:#1c1b22;
   text-decoration:none;
   line-height:1;
@@ -244,7 +244,7 @@ button.hamburger:focus-visible{
   background:var(--branco);
   border:1px solid var(--cinza-300);
   border-radius: var(--raio-12);
-  box-shadow: var(--sombra-3);
+  box-shadow: none !important;
   z-index:10000;
   max-height:80vh; overflow:auto; -webkit-overflow-scrolling:touch;
 
@@ -323,13 +323,13 @@ button.hamburger:focus-visible{
   padding:10px 24px; font-size:15px; border-radius:10px; text-decoration:none; font-weight:700;
   transition: background-color .25s ease, box-shadow .25s ease;
 }
-.btn-principal:hover{ background:var(--azul); box-shadow:0 4px 10px rgba(0,0,0,.12); }
+.btn-principal:hover{ background:var(--azul); box-shadow:none !important; }
 .botao-login{
   display:inline-block; background:#fff; color:var(--azul);
   border:1px solid var(--azul); border-radius:10px; padding:12px 24px;
   font-weight:700; text-decoration:none; transition: background-color .2s, color .2s, border-color .2s, box-shadow .2s;
 }
-.botao-login:hover{ background:var(--azul); color:#fff; border-color:var(--azul); box-shadow:0 4px 10px rgba(0,0,0,.12); }
+.botao-login:hover{ background:var(--azul); color:#fff; border-color:var(--azul); box-shadow:none !important; }
 
 /* ============================================================
    CTA PRETA (acima do rodapé)
@@ -343,10 +343,10 @@ button.hamburger:focus-visible{
 .cta-text p{ margin:0; font-size:15px; opacity:.9; }
 .cta-btn{
   display:inline-block; background:#fff; color:#2a2535; text-decoration:none;
-  padding:10px 18px; border-radius:10px; font-weight:600; box-shadow:0 1px 0 rgba(0,0,0,.08);
+  padding:10px 18px; border-radius:10px; font-weight:600; box-shadow:none !important;
   transition: transform .12s ease, background .2s ease, box-shadow .2s ease; white-space:nowrap;
 }
-.cta-btn:hover{ background:#f2f2f5; transform:translateY(-1px); box-shadow:0 3px 10px rgba(0,0,0,.12); }
+.cta-btn:hover{ background:#f2f2f5; transform:translateY(-1px); box-shadow:none !important; }
 @media (max-width: 720px){
   .cta-text h3{ font-size:16px; }
   .cta-text p{ font-size:14px; }
@@ -406,7 +406,7 @@ footer{
    ============================================================ */
 .container{
   max-width:900px; margin:40px auto; padding:30px; background:var(--branco);
-  border-radius:16px; box-shadow:0 4px 12px rgba(0,0,0,.1);
+  border-radius:16px; box-shadow:none !important;
 }
 .logo-formulario{ text-align:center; margin-bottom:20px; }
 .logo-formulario img{ max-width:180px; }
@@ -424,7 +424,7 @@ footer{
   background:var(--azul); color:#fff; border:0; border-radius: var(--raio-10);
   font-size:16px; font-weight:700; cursor:pointer; transition: background-color .25s ease, box-shadow .25s ease;
 }
-.botao-salvar:hover{ background:var(--azul); box-shadow:0 4px 10px rgba(0,0,0,.12); }
+.botao-salvar:hover{ background:var(--azul); box-shadow:none !important; }
 
 .botao-editar{
   display:inline-block; padding:8px 14px; background:var(--azul); color:#fff;
@@ -490,7 +490,7 @@ thead tr{ background:#f2f2f2; }
   background:#fff; color:#111;
   border:2px solid #d6d6d6;
   border-radius:16px;
-  box-shadow:0 24px 60px rgba(0,0,0,.25);
+  box-shadow:none !important;
   padding:22px;
 }
 .cookie-card h2{
@@ -661,7 +661,7 @@ thead tr{ background:#f2f2f2; }
     background:#fff;
     border:1px solid #eee;
     border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    box-shadow: none !important;
 
     /* --- Roxo da marca para botões (sem afetar o restante do site) --- */
 
