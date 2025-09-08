@@ -113,11 +113,22 @@
     }
     .solucao h3{ margin:0 0 8px 0; }
     .cta-row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+
+    /* === PADRÃO DOS BOTÕES (pill) === */
     .btn{
-      display:inline-block; padding:10px 14px; border-radius:10px; text-decoration:none;
-      border:1px solid #8A00FF; color:#8A00FF; font-weight:700;
+      display:inline-block;
+      padding:10px 18px;
+      border-radius:50px;          /* <-- arredondado tipo "pill" */
+      text-decoration:none;
+      border:1px solid #8A00FF;
+      color:#8A00FF;
+      font-weight:700;
+      transition:all .3s ease;
     }
-    .btn-primary{ background:#8A00FF; color:#fff; }
+    .btn-primary{
+      background:#8A00FF;
+      color:#fff;
+    }
 
     /* Caixas existentes para Missão / Contato */
     .plano-box{ background:#eaf2ff; border:1px solid #1f51ff; border-radius:12px; padding:18px; margin:26px auto; }
@@ -132,24 +143,14 @@
     .como ul{ margin:0; padding-left:18px; }
     .como li{ margin:6px 0; }
 
+    /* Opcional — estilo para um botão "home" com borda forte (não altera o atual) */
     .btn-home {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 48px;      /* ajuste conforme necessário */
-      height: 48px;     /* ajuste conforme necessário */
-      border: 2px solid #888;   /* borda mais destacada */
-      border-radius: 12px;      /* mantém arredondamento */
-      background: #fff;         /* fundo branco */
-      box-shadow: none !important; /* remove sombra */
-      cursor: pointer;
-      transition: border-color 0.3s ease;
+      display:inline-flex; align-items:center; justify-content:center;
+      width:48px; height:48px; border:2px solid #888; border-radius:12px;
+      background:#fff; box-shadow:none !important; cursor:pointer;
+      transition:border-color .3s ease;
     }
-    
-    .btn-home:hover {
-      border-color: #333; /* borda mais forte no hover */
-    }
-    
+    .btn-home:hover { border-color:#333; }
   </style>
 </head>
 <body>
@@ -322,6 +323,7 @@
         const menu = wrap.querySelector('#menu-lateral');
         const xBtn = wrap.querySelector('.menu-close');
         if (!btn || !menu) return;
+
         btn.addEventListener('click', e => {
           e.stopPropagation();
           const willOpen = !menu.classList.contains('open');
@@ -329,15 +331,19 @@
           menu.classList.toggle('open', willOpen);
           btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
         });
+
         xBtn?.addEventListener('click', e => {
           e.stopPropagation();
           menu.classList.remove('open');
           btn.setAttribute('aria-expanded', 'false');
         });
+
         menu.addEventListener('click', e => e.stopPropagation());
       });
+
       document.addEventListener('click', closeAll);
       document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
     })();
   </script>
 </body>
+</html>
