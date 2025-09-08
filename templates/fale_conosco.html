@@ -40,12 +40,6 @@
       user-select: none;
       -webkit-user-drag: none;
       pointer-events: none; /* garante que não pareça clicável */
-    
-    /* Logo menor no celular */
-    @media (max-width: 720px){
-      .topbar-left img{
-        height: 36px;   /* teste: pode ajustar 32px, 34px... */
-      }
     }
     
     .topbar-right{
@@ -254,6 +248,10 @@
       .footer-cols{ grid-template-columns:1fr; }
       .cta-text h3{ font-size:16px; }
       .cta-text p{ font-size:14px; }
+    }
+    @media (max-width: 720px){
+      .topbar-left img{
+        height: 36px; }
     }
 
     /* ===== Faixa preta (CTA alinhada à esquerda) ===== */
