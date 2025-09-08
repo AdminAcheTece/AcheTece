@@ -782,9 +782,17 @@ def webhook():
 
     return "ok", 200
 
+@app.route("/quem_somos")
+@app.route("/quem_somos/")
 @app.route("/quem-somos")
+@app.route("/quem-somos/")
 def quem_somos():
     return render_template("quem_somos.html")
+
+# compatibilidade se alguém acessar .html direto:
+@app.route("/quem_somos.html")
+def quem_somos_html():
+    return redirect(url_for("quem_somos"), code=301)
 
 @app.route('/cadastrar_teares', methods=['GET', 'POST'])
 def cadastrar_teares():
