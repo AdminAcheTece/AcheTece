@@ -17,6 +17,10 @@ import re
 import uuid
 import json
 
+# ========= NOVO: Authlib (OAuth Google) =========
+from authlib.integrations.flask_client import OAuth
+# ===============================================
+
 # ---------------------------
 # Helpers e Configurações
 # ---------------------------
@@ -58,12 +62,31 @@ app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 mail = Mail(app)
 db = SQLAlchemy(app)
 
+# ========= NOVO: Configuração OAuth Google =========
+oauth = OAuth(app)
+
+# Preferimos usar o discovery document do Google (OIDC)
+google = oauth.register(
+    name='google',
+    client_id=os.getenv("GOOGLE_CLIENT_ID"),
+    client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={
+        'scope': 'openid email profile',
+        # Para garantir que o consent apareça quando necessário e termos refresh_token:
+        'prompt': 'consent',
+        'access_type': 'offline'
+    }
+)
+# ===================================================
+
 # Mercado Pago SDK
 MP_ACCESS_TOKEN = os.getenv("MP_ACCESS_TOKEN") or os.getenv("MERCADO_PAGO_TOKEN", "")
 sdk = mercadopago.SDK(MP_ACCESS_TOKEN)
 
 # Preço do plano (opcional via env; default 2.00 para teste)
 PLAN_MONTHLY = float(os.getenv("PLAN_MONTHLY", "2.00"))
+PLAN_YEARLY = float(os.getenv("PLAN_YEARLY", "2.00"))  # mantido default para não quebrar
 
 # ---------------------------
 # Utilitários
@@ -123,6 +146,9 @@ class Empresa(db.Model):
     teares = db.relationship('Tear', backref='empresa', lazy=True)
     responsavel_nome = db.Column(db.String(120))
     responsavel_sobrenome = db.Column(db.String(120))
+    # Campos opcionais citados no webhook (guardados se existirem)
+    # mercadopago_payment_id = db.Column(db.String(64))
+    # mercadopago_reference   = db.Column(db.String(128))
 
 class Tear(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -143,6 +169,83 @@ class Tear(db.Model):
 def index():
     teares = Tear.query.all()
     return render_template('index.html', teares=teares)
+
+# ========= NOVO: Login com Google =========
+@app.route('/login/google')
+def login_google():
+    # Guarda "next" se foi passado, para redirecionar após login
+    nxt = request.args.get('next')
+    if nxt:
+        session['login_next'] = nxt
+    # Define a URL absoluta de callback
+    redirect_uri = f"{base_url()}{url_for('authorize_google')}"
+    return google.authorize_redirect(redirect_uri)
+
+@app.route('/callback/google')
+def authorize_google():
+    # Obtém token e dados do usuário
+    try:
+        token = google.authorize_access_token()
+        userinfo = google.get('userinfo').json()  # OIDC userinfo
+    except Exception as e:
+        app.logger.exception(f"[GOOGLE OAUTH] Falha na autorização: {e}")
+        flash("Falha ao autenticar com o Google. Tente novamente.", "error")
+        return redirect(url_for('login'))
+
+    email = (userinfo.get('email') or '').strip().lower()
+    nome_completo = (userinfo.get('name') or '').strip()
+
+    if not email:
+        flash("Não foi possível obter o e-mail do Google.", "error")
+        return redirect(url_for('login'))
+
+    # Se já existe empresa com esse e-mail, loga
+    empresa = Empresa.query.filter_by(email=email).first()
+
+    if not empresa:
+        # Cria um registro mínimo para a empresa (status pendente por padrão)
+        apelido_sugestao = None
+        # tenta fazer um apelido simples do nome
+        if nome_completo:
+            apelido_sugestao = re.sub(r'[^A-Za-zÀ-ÿ0-9 ]', '', nome_completo).strip()
+            if apelido_sugestao:
+                # limita tamanho e evita conflito
+                apelido_sugestao = apelido_sugestao[:50]
+                if Empresa.query.filter_by(apelido=apelido_sugestao).first():
+                    apelido_sugestao = None
+
+        senha_aleatoria = generate_password_hash(uuid.uuid4().hex[:12])
+
+        # Garante nome único (campo nome é unique=True)
+        nome_emp = nome_completo or email.split('@')[0]
+        base_nome = nome_emp
+        sufixo = 1
+        while Empresa.query.filter_by(nome=nome_emp).first():
+            sufixo += 1
+            nome_emp = f"{base_nome}-{sufixo}"
+
+        empresa = Empresa(
+            nome=nome_emp,
+            apelido=apelido_sugestao,
+            email=email,
+            senha=senha_aleatoria,
+            status_pagamento='pendente',
+            responsavel_nome=nome_completo.split(' ')[0] if nome_completo else None,
+            responsavel_sobrenome=' '.join(nome_completo.split(' ')[1:]) if len(nome_completo.split(' ')) > 1 else None
+        )
+        db.session.add(empresa)
+        db.session.commit()
+
+        flash("Conta criada via Google. Complete seus dados no painel.", "success")
+
+    # Autentica sessão do usuário
+    session['empresa_id'] = empresa.id
+    session['admin'] = (empresa.email == "gestao.achetece@gmail.com")
+
+    # Redireciona para o destino salvo ou painel
+    dest = session.pop('login_next', None) or url_for('painel_malharia')
+    return redirect(dest)
+# =========================================
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -220,15 +323,12 @@ def cadastrar_empresa():
             if cidade not in cidades_validas:
                 erros['cidade'] = 'Cidade inválida.'
         else:
-            # Se por algum motivo não carregou a lista (ex.: arquivo ausente e sem internet),
-            # não bloqueia o usuário e registra um aviso.
             app.logger.warning(f"Nenhuma cidade carregada para UF={estado}. Pulando validação estrita de cidade.")
 
         if not responsavel_nome or len(re.sub(r'[^A-Za-zÀ-ÿ]', '', responsavel_nome)) < 2:
             erros['responsavel_nome'] = 'Informe ao menos o primeiro nome do responsável.'
 
         if erros:
-            # Não enviamos mais 'cidades' para o template; o select será populado via /api/cidades
             return render_template(
                 'cadastrar_empresa.html',
                 erro='Corrija os campos destacados abaixo.',
@@ -256,7 +356,6 @@ def cadastrar_empresa():
         session['empresa_id'] = nova_empresa.id
         return redirect(url_for('checkout'))
 
-    # GET: só enviamos os estados; as cidades serão carregadas via JS (/api/cidades)
     return render_template('cadastrar_empresa.html', estados=estados)
 
 from uuid import uuid4
@@ -274,27 +373,26 @@ def checkout():
         return redirect(url_for('login'))
 
     # --- URLs de retorno e webhook ---
-    base = base_url()  # garanta que retorna https://achetece.com.br em produção
+    base = base_url()
     success_url = f"{base}/pagamento_aprovado"
     failure_url = f"{base}/pagamento_erro"
     pending_url = f"{base}/pagamento_pendente"
     notify_url  = f"{base}/webhook"
 
     # --- Identificação única e estável da empresa ---
-    # Seu webhook já entende "achetece:<ID>:"; mantemos esse padrão
     ext_ref = f"achetece:{empresa.id}:{uuid4().hex}"
 
     first_name = (getattr(empresa, 'responsavel_nome', '') or '').strip() or empresa.email.split('@')[0]
     last_name  = (getattr(empresa, 'responsavel_sobrenome', '') or '').strip()
 
-    # --- (Opcional) seleção de plano por querystring, mantendo mensal como padrão ---
+    # --- plano ---
     plano = (request.args.get('plano') or 'mensal').lower()
     if plano not in ('mensal', 'anual'):
         plano = 'mensal'
 
     if plano == 'anual':
         titulo_plano = "Assinatura anual AcheTece"
-        preco = float(PLAN_YEARLY)  # defina PLAN_YEARLY no seu settings (.env)
+        preco = float(PLAN_YEARLY)
     else:
         titulo_plano = "Assinatura mensal AcheTece"
         preco = float(PLAN_MONTHLY)
@@ -310,8 +408,8 @@ def checkout():
         "payer": {
             "name": first_name,
             "surname": last_name,
-            "first_name": first_name,  # compat
-            "last_name": last_name,    # compat
+            "first_name": first_name,
+            "last_name": last_name,
             "email": empresa.email
         },
         "back_urls": {
@@ -322,13 +420,11 @@ def checkout():
         "auto_return": "approved",
         "notification_url": notify_url,
         "external_reference": ext_ref,
-        # >>> CHAVE para o webhook localizar a empresa mesmo se o e‑mail do pagador for diferente
         "metadata": {
             "empresa_id": int(empresa.id),
             "empresa_email": empresa.email,
             "plano": plano
         },
-        # (Opcional) melhora identificação na fatura do cartão
         "statement_descriptor": "AcheTece"
     }
 
@@ -520,7 +616,7 @@ def webhook():
     """
     Webhook do Mercado Pago:
     - Busca o pagamento por ID.
-    - Resolve a empresa via metadata/external_reference (com vários formatos) ou fallback por e‑mail.
+    - Resolve a empresa via metadata/external_reference (com vários formatos) ou fallback por e-mail.
     - Mapeia status -> {ativo|pendente|inativo}.
     - Idempotente: só envia e-mail quando mudar para 'ativo'.
     """
@@ -580,7 +676,6 @@ def webhook():
 
     if not empresa:
         app.logger.error("[WEBHOOK] Empresa não encontrada (nem por external_reference/metadata nem por e-mail).")
-        # Retornamos 200 para não gerar reentregas infinitas, mas registramos o caso.
         return "ok", 200
 
     # ---- Mapeia status do MP -> status interno ----
@@ -592,13 +687,11 @@ def webhook():
     elif status in ["rejected", "cancelled", "refunded", "charged_back"]:
         novo_status = "inativo"
     else:
-        # mantém o atual, mas loga para acompanharmos
         app.logger.warning(f"[WEBHOOK] Status do MP não mapeado: {status}. Mantendo {novo_status}.")
 
     # ---- Atualização idempotente ----
     mudou_para_ativo = (empresa.status_pagamento != "ativo" and novo_status == "ativo")
 
-    # Campos auxiliares (se existirem na sua model)
     try:
         empresa.mercadopago_payment_id = mp_payment_id
     except Exception:
@@ -674,7 +767,6 @@ def webhook():
         except Exception as e:
             app.logger.exception(f"[WEBHOOK] Erro ao enviar e-mail: {e}")
 
-    # Nunca devolva 500 para o Mercado Pago; sempre 200.
     return "ok", 200
 
 @app.route("/quem-somos")
@@ -914,7 +1006,6 @@ def admin_editar_status(empresa_id):
     db.session.commit()
 
     flash(f'Status de "{empresa.apelido or empresa.nome}" atualizado para {novo_status}.', 'success')
-    # Mantém filtros/página se vierem como querystring
     return redirect(url_for(
         'admin_empresas',
         pagina=request.args.get('pagina', 1),
@@ -1022,7 +1113,6 @@ def contato():
                     subject=f"[AcheTece] Novo contato — {nome}",
                     recipients=[os.getenv("CONTACT_TO", app.config.get("MAIL_USERNAME") or "")]
                 )
-                # opcional: msg.sender vem de MAIL_DEFAULT_SENDER/MAIL_USERNAME
                 msg.reply_to = email
                 msg.body = f"Nome: {nome}\nE-mail: {email}\n\nMensagem:\n{mensagem}"
                 mail.send(msg)
@@ -1054,7 +1144,6 @@ def _carregar_cidades_estatico():
         if _CIDADES_JSON_PATH.exists():
             with open(_CIDADES_JSON_PATH, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            # normaliza chaves para UF maiúsculo
             return {k.upper(): v for k, v in data.items()}
     except Exception as e:
         app.logger.warning(f"Falha ao ler cidades_por_uf.json: {e}")
@@ -1068,21 +1157,17 @@ def _buscar_cidades_ibge(uf: str):
     r = requests.get(url, timeout=15)
     r.raise_for_status()
     dados = r.json() or []
-    # cada item tem {"id":..., "nome": "...", "microrregiao":{...}}
     return [item.get("nome") for item in dados if isinstance(item, dict) and item.get("nome")]
 
 def _get_cidades_por_uf(uf: str):
     uf = (uf or "").upper().strip()
     if not uf:
         return []
-    # 1) cache em memória
     if uf in _CIDADES_CACHE:
         return _CIDADES_CACHE[uf]
-    # 2) arquivo estático (se presente)
     if uf in _CIDADES_ESTATICO:
         _CIDADES_CACHE[uf] = list(_CIDADES_ESTATICO[uf])
         return _CIDADES_CACHE[uf]
-    # 3) API IBGE
     try:
         cidades = _buscar_cidades_ibge(uf)
         _CIDADES_CACHE[uf] = cidades
@@ -1161,18 +1246,15 @@ def _empresa_from_ext(ext):
     """
     if not ext:
         return None
-    # se for "achetece:123:..."
     if isinstance(ext, str) and ext.startswith("achetece:"):
         parts = ext.split(":")
         if len(parts) >= 2:
             emp_id = _try_int(parts[1])
             if emp_id:
                 return Empresa.query.get(emp_id)
-    # só número
     emp_id = _try_int(ext)
     if emp_id:
         return Empresa.query.get(emp_id)
-    # extrai primeiro bloco numérico
     m = re.search(r"(\d+)", str(ext))
     if m:
         emp_id = _try_int(m.group(1))
@@ -1188,12 +1270,10 @@ def api_pagamento_status():
     """
     empresa = None
 
-    # 1) sessão (cliente retornou do checkout ainda logado)
     emp_id = session.get('empresa_id')
     if emp_id:
         empresa = Empresa.query.get(emp_id)
 
-    # 2) fallback por external_reference na URL (?ext=achetece:123:xxx)
     if not empresa:
         ext = request.args.get('ext')
         if ext:
@@ -1203,7 +1283,6 @@ def api_pagamento_status():
         return jsonify({"status": "desconhecido", "empresa_id": None}), 200
 
     status = (empresa.status_pagamento or "pendente").lower()
-    # normaliza
     if status not in ("ativo", "pendente", "inativo"):
         status = "desconhecido"
 
@@ -1216,15 +1295,12 @@ def create_app():
     app = Flask(__name__)
     app.secret_key = os.getenv("SECRET_KEY", "dev")  # necessário p/ flash & session
 
-    # Variáveis usadas no template
     app.config['WHATSAPP_URL'] = os.getenv('WHATSAPP_URL', 'https://wa.me/5547999999999')
     app.jinja_env.globals.update(config=app.config)
 
-    # Blueprints
     from auth import bp as auth_bp
     app.register_blueprint(auth_bp, url_prefix="")  # sem prefixo
 
-    # Exemplo de home (ajuste se já tiver)
     @app.get("/", endpoint="index")
     def index():
         from flask import render_template
