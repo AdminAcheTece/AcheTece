@@ -190,14 +190,20 @@
     form.contato textarea{ min-height:140px; resize: vertical }
     .acoes{ margin-top:16px; display:flex; gap:10px; }
     .btn-enviar{
-      background:#8A00FF; color:#fff; border:none; border-radius:8px;
-      padding:10px 16px; font-weight:600; cursor:pointer;
+      background:#7d00ff;          /* roxo do seu padrão (ajuste se preferir) */
+      color:#fff;
+      border:none;
+      border-radius:9999px;         /* pílula */
+      padding:12px 22px;            /* mais “cheio” como o da imagem 2 */
+      font-weight:700;
+      cursor:pointer;
+      line-height:1;                /* deixa o texto centralizado verticalmente */
+      display:inline-block;
     }
-    .btn-enviar:hover{ background:#336be3 }
-    .msg-ok{
-      margin:12px 0 0; padding:10px 12px; border-radius:8px;
-      background:#e8f4ff; border:1px solid #b7dcff; color:#0d3b66; font-size:14px;
+    .btn-enviar:hover{
+      background:#8f1aff;          /* leve variação no hover */
     }
+
     .msg-erro{
       margin:12px 0 0; padding:10px 12px; border-radius:8px;
       background:#ffe8e8; border:1px solid #ffc7c7; color:#8a1f1f; font-size:14px;
