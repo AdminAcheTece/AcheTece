@@ -33,6 +33,7 @@
       min-height: 56px;
     }
     /* Logo APENAS imagem (sem link) */
+    /* Logo padrão (desktop) */
     .topbar-left img{
       height: 48px;
       width: auto;
@@ -40,6 +41,13 @@
       user-select: none;
       -webkit-user-drag: none;
       pointer-events: none; /* garante que não pareça clicável */
+
+    /* Logo menor no celular */
+    @media (max-width: 720px){
+      .topbar-left img{
+        height: 36px;   /* teste: pode ajustar 32px, 34px... */
+      }
+       
     }
     .topbar-right{
       display: flex;
