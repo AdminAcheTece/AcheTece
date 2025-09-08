@@ -185,12 +185,27 @@
       margin-top: 8px; /* ajuste fino: teste entre 24px e 32px se precisar */
     }
 
-    /* Cadeado antes do link "Esqueci minha senha" */
+    /* Cadeado SVG antes do "Esqueci minha senha" */
+    .links-inline a {
+      position: relative;
+      padding-left: 18px;   /* espaço para o ícone */
+      font-size: 13px;
+      color: #333;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;  /* garante alinhamento vertical */
+    }
+
     .links-inline a::before {
-      content: "🔒";         /* ícone de cadeado */
-      margin-right: 6px;     /* espaço entre o ícone e o texto */
-      font-size: 13px;       /* tamanho do ícone */
-      vertical-align: middle;
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 50%;
+      width: 12px;
+      height: 12px;
+      transform: translateY(-50%);
+      background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='%23555' viewBox='0 0 24 24'><path d='M12 1a5 5 0 0 0-5 5v4H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V12a2 2 0 0 0-2-2h-1V6a5 5 0 0 0-5-5zm-3 9V6a3 3 0 0 1 6 0v4H9z'/></svg>") no-repeat center;
+      background-size: contain;
     }
     
   </style>
