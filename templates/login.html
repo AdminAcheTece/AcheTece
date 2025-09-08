@@ -144,6 +144,23 @@
           background-color:#ffe6e6; color:#b30000; border:1px solid #ff4d4d; padding:12px; border-radius:8px;
           margin:0 0 16px; text-align:center;
         }
+
+        /* ======= NOVO: botão Google ======= */
+        .btn-google{
+          display:flex; align-items:center; justify-content:center; gap:10px;
+          width:100%; padding:12px; margin-bottom:14px;
+          background:#fff; border:1px solid #e4e4e4; border-radius:8px;
+          font-weight:700; font-size:14px; color:#1f1f1f; text-decoration:none;
+        }
+        .btn-google img{ height:20px; width:auto; display:block; }
+        .divisor-ou{
+          display:flex; align-items:center; gap:8px; margin:6px 0 14px;
+          font-size:12px; color:#888; text-transform:uppercase; letter-spacing:.06em; justify-content:center;
+        }
+        .divisor-ou::before, .divisor-ou::after{
+          content:""; flex:1; height:1px; background:#e6e6e6;
+        }
+        /* ================================== */
     </style>
 </head>
 <body>
@@ -246,6 +263,14 @@
       {% if erro %}
       <div class="mensagem-erro">{{ erro }}</div>
       {% endif %}
+
+      <!-- ===== NOVO: Botão Google ===== -->
+      <a class="btn-google" href="{{ url_for('login_google') }}">
+        <img src="{{ url_for('static', filename='google_logo.png') }}" alt="Google">
+        <span>Entrar com Google</span>
+      </a>
+      <div class="divisor-ou">ou</div>
+      <!-- ============================= -->
 
       <form method="POST" action="{{ url_for('login') }}" class="formulario">
         <input type="email" name="email" placeholder="E-mail" required>
