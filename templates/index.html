@@ -184,6 +184,14 @@
     .overlay-col:nth-child(2) .section-title--simple:first-of-type {
       margin-top: 8px; /* ajuste fino: teste entre 24px e 32px se precisar */
     }
+
+    /* Cadeado antes do link "Esqueci minha senha" */
+    .links-inline a::before {
+      content: "🔒";         /* ícone de cadeado */
+      margin-right: 6px;     /* espaço entre o ícone e o texto */
+      font-size: 13px;       /* tamanho do ícone */
+      vertical-align: middle;
+    }
     
   </style>
 </head>
