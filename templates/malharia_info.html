@@ -248,43 +248,7 @@
       .step{ display:flex; align-items:center; gap:10px; text-align:left; }
       .step .dot{ margin:0; flex:0 0 30px; text-align:center; }
     }
-    
-    /* ===== Fluxo visual de etapas ===== */
-    .flow-wrap{ margin-top:16px; }
-    .flow-title{ font-weight:800; text-align:left; margin: 24px 0 10px; }
-    .flow{
-      position:relative;
-      display:grid; grid-template-columns: repeat(5, 1fr); gap:16px;
-      align-items:start;
-    }
-    .flow::before{
-      content:''; position:absolute; top:20px; left:8px; right:8px; height:4px;
-      background: linear-gradient(90deg, var(--azul), var(--azul-2));
-      border-radius:4px; z-index:0;
-    }
-    .step{ position:relative; text-align:center; z-index:1; }
-    .dot{
-      width:38px; height:38px; border-radius:999px; margin:0 auto 10px;
-      display:flex; align-items:center; justify-content:center;
-      background: var(--azul); color:#fff; font-weight:800; box-shadow: none !important;
-    }
-    .card{
-      background:#fff; border:1px solid #e8ecf5; border-radius:14px; padding:14px 12px;
-      min-height:72px; display:flex; align-items:center; justify-content:center;
-      font-size:14px; color:#333;
-    }
-
-    @media (max-width:700px){
-      .flow{ display:flex; flex-direction:column; gap:14px; }
-      .flow::before{
-        left:19px; right:auto; width:4px; top:6px; bottom:6px; height:auto;
-        background: linear-gradient(180deg, var(--azul), var(--azul-2));
-      }
-      .step{ display:flex; align-items:flex-start; gap:12px; text-align:left; }
-      .dot{ margin:0; }
-      .card{ flex:1; min-height:auto; }
-    }
-
+        
     /* ===== Rodapé ===== */
     footer{
       background:#fff;
@@ -413,7 +377,7 @@
 
     <!-- ===== Orientação dos passos ===== -->
     <section class="guia" aria-label="Guia rápido de ativação">
-      <h2>Como ativar sua presença no AcheTece</h2>
+      <h2>Como funciona</h2>
       <div class="steps">
         <div class="step"><div class="dot">1</div><p><strong>Cadastro</strong><br>Preencha os dados da malharia.</p></div>
         <div class="step"><div class="dot">2</div><p><strong>Pagamento</strong><br>Conclua a mensalidade.</p></div>
@@ -422,35 +386,7 @@
         <div class="step"><div class="dot">5</div><p><strong>Teares</strong><br>Cadastre seus teares e comece a aparecer.</p></div>
       </div>
     </section
-    
-    <!-- ===== Fluxo de etapas ===== -->
-    <div class="flow-wrap">
-      <p class="flow-title">Como funciona:</p>
-      <div class="flow" aria-label="Fluxo de cadastro e ativação">
-        <div class="step">
-          <div class="dot">1</div>
-          <div class="card">Cadastre sua malharia</div>
-        </div>
-        <div class="step">
-          <div class="dot">2</div>
-          <div class="card">Pague a mensalidade</div>
-        </div>
-        <div class="step">
-          <div class="dot">3</div>
-          <div class="card">Perfil ativado</div>
-        </div>
-        <div class="step">
-          <div class="dot">4</div>
-          <div class="card">Cadastre seus teares</div>
-        </div>
-        <div class="step">
-          <div class="dot">5</div>
-          <div class="card">Receba contatos</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
+        
   <!-- ===== Rodapé ===== -->
   <footer>
     <div class="footer-container">
