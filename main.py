@@ -224,9 +224,16 @@ def _ensure_auth_layer_and_link():
     except Exception as e:
         app.logger.warning(f"backfill usuarios from empresas failed: {e}")
 
-@app.before_first_request
+# Flask 3 removeu before_first_request. Executa uma vez na inicialização.
 def _startup_migrations():
-    _ensure_auth_layer_and_link()
+    try:
+        _ensure_auth_layer_and_link()
+        app.logger.info("Startup migrations OK.")
+    except Exception as e:
+        app.logger.error(f"Startup migrations failed: {e}")
+
+with app.app_context():
+    _startup_migrations()
 
 # ---------------------------
 # Rotas
