@@ -149,28 +149,17 @@
 
     /* Lista de benefícios centralizada */
     .benefits{
-      list-style:none;
-      padding:0;
-      margin:0 auto 24px;
-      max-width:760px;
-      text-align:left;
+      list-style:none; padding:0; margin:0 auto 24px; max-width:760px; text-align:left;
     }
-    
     .benefits li{
-      position: relative;
-      padding-left: 12px;
-      margin: 10px 0;
+      display:flex; align-items:flex-start; justify-content:center;
+      gap:10px; margin:10px 0;
     }
-    
     .benefits li::before{
-      content:'';
-      position:absolute;
-      left:0;
-      top:8px;
-      width:4px;
-      height:14px;
-      background:#8A00FF; /* roxo AcheTece */
-      border-radius:2px;
+      content:''; display:inline-block; flex:0 0 18px; width:18px; height:18px; border-radius:50%;
+      margin-top:3px;
+      background: radial-gradient(circle at 30% 30%, #fff 0 40%, transparent 41%), var(--azul);
+      box-shadow: none !important;
     }
 
     /* ===== Card de Preço (VERDE) ===== */
@@ -217,88 +206,75 @@
     }
     .botao-cadastrar:hover { background:#002c80; transform: translateY(-2px); box-shadow:none !important; }
 
-    /* =========================
-       ORIENTAÇÃO (passo a passo)
-       ========================= */
-    .guia{
-      max-width: 880px;
-      margin: 24px auto 8px;
-      background:#F5E6FF;
-      padding: 18px 16px;
-      border-radius:12px;
-      box-shadow: none !important;
+    /* ===== Fluxo visual de etapas ===== */
+    .flow-wrap{ margin-top:16px; }
+    .flow-title{ font-weight:800; text-align:left; margin: 24px 0 10px; }
+    .flow{
+      position:relative;
+      display:grid; grid-template-columns: repeat(5, 1fr); gap:16px;
+      align-items:start;
     }
-    .guia h2{
-      margin:0 0 8px 0; font-size:18px; font-weight:800; color:#111; text-align:center;
+    .flow::before{
+      content:''; position:absolute; top:20px; left:8px; right:8px; height:4px;
+      background: linear-gradient(90deg, var(--azul), var(--azul-2));
+      border-radius:4px; z-index:0;
     }
-    .steps{
-      display:grid; grid-template-columns: repeat(5,1fr); gap:10px;
+    .step{ position:relative; text-align:center; z-index:1; }
+    .dot{
+      width:38px; height:38px; border-radius:999px; margin:0 auto 10px;
+      display:flex; align-items:center; justify-content:center;
+      background: var(--azul); color:#fff; font-weight:800; box-shadow: none !important;
     }
-    .step{
-      text-align:center; background:#fff; border:1px solid #8A00FF; border-radius:12px; padding:10px 8px;
-    }
-    .step .dot{
-      width:30px; height:30px; line-height:30px; margin:0 auto 8px;
-      border-radius:999px; background:#8A00FF; color:#fff; font-weight:800;
-      box-shadow:none !important;
-    }
-    .step p{ margin:0; font-size:13px; color:#333; }
-    @media (max-width:760px){
-      .steps{ grid-template-columns:1fr; }
-      .step{ display:flex; align-items:center; gap:10px; text-align:left; }
-      .step .dot{ margin:0; flex:0 0 30px; text-align:center; }
-    }
-        
-    /* ===== Rodapé ===== */
-    .footer {
-      background:#fff;
-      padding:20px 0;
-      border-top:1px solid #ddd;
-      text-align:left;
-    }
-    
-    .footer-container {
-      max-width:1200px;
-      margin:0 auto;
-      display:flex;
-      justify-content:flex-start;
-    }
-    
-    .footer-section {
-      margin-right:40px;
-    }
-    
-    .footer-title {
-      display:flex;
-      align-items:center;
-      font-weight:bold;
-      margin-bottom:10px;
-    }
-    
-    .footer-title i {
-      margin-right:8px;
-      font-size:18px;
-    }
-    
-    .footer-section ul {
-      list-style:none;
-      padding:0;
-      margin:0;
-    }
-    
-    .footer-section ul li {
-      margin:6px 0;
-    }
-    
-    .footer-section ul li a {
-      color:#000;
-      text-decoration:none;
-    }
-    
-    .footer-section ul li a:hover {
-      color:#8A00FF;
+    .card{
+      background:#fff; border:1px solid #e8ecf5; border-radius:14px; padding:14px 12px;
+      min-height:72px; display:flex; align-items:center; justify-content:center;
+      font-size:14px; color:#333;
     }
 
+    @media (max-width:700px){
+      .flow{ display:flex; flex-direction:column; gap:14px; }
+      .flow::before{
+        left:19px; right:auto; width:4px; top:6px; bottom:6px; height:auto;
+        background: linear-gradient(180deg, var(--azul), var(--azul-2));
+      }
+      .step{ display:flex; align-items:flex-start; gap:12px; text-align:left; }
+      .dot{ margin:0; }
+      .card{ flex:1; min-height:auto; }
+    }
+
+    /* ===== Rodapé ===== */
+    footer{
+      background:#fff;
+      border-top:1px solid #e5e5e5;
+      padding:30px 20px;
+      margin-top:40px;
+    }
+    .footer-container{
+      max-width:1000px;
+      margin:0 auto;
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
+      gap:30px;
+    }
+    .footer-col h4{
+      font-size:15px;
+      font-weight:700;
+      margin-bottom:14px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      color:#111;
+    }
+    .footer-col ul{list-style:none;padding:0;margin:0;}
+    .footer-col ul li{margin-bottom:8px;}
+    .footer-col ul li a{
+      text-decoration:none;
+      color:#222;
+      font-size:14px;
+      transition:color .2s;
+    }
+    .footer-col ul li a:hover{color:var(--azul);}
+    .footer-icon{width:18px;height:18px;flex-shrink:0;}
   </style>
 </head>
 <body>
@@ -392,32 +368,55 @@
 
     <a href="{{ url_for('cadastrar_empresa') }}" class="botao-cadastrar">Quero cadastrar minha malharia</a>
 
-    <!-- ===== Orientação dos passos ===== -->
-    <section class="guia" aria-label="Guia rápido de ativação">
-      <h2>Como funciona</h2>
-      <div class="steps">
-        <div class="step"><div class="dot">1</div><p><strong>Cadastro</strong><br>Preencha os dados da malharia.</p></div>
-        <div class="step"><div class="dot">2</div><p><strong>Pagamento</strong><br>Conclua a mensalidade.</p></div>
-        <div class="step"><div class="dot">3</div><p><strong>Confirmação</strong><br>Receba o e‑mail de ativação.</p></div>
-        <div class="step"><div class="dot">4</div><p><strong>Acesso</strong><br>Entre no <em>login</em> e edite o perfil.</p></div>
-        <div class="step"><div class="dot">5</div><p><strong>Teares</strong><br>Cadastre seus teares e comece a aparecer.</p></div>
-      </div>
-    </section
-        
-  <!-- ===== Rodapé ===== -->
-  <footer class="footer">
-    <div class="footer-container">
-      <div class="footer-section">
-        <div class="footer-title">
-          <i class="fas fa-info-circle"></i>
-          <span>Sobre nós</span>
+    <!-- ===== Fluxo de etapas ===== -->
+    <div class="flow-wrap">
+      <p class="flow-title">Como funciona:</p>
+      <div class="flow" aria-label="Fluxo de cadastro e ativação">
+        <div class="step">
+          <div class="dot">1</div>
+          <div class="card">Cadastre sua malharia</div>
         </div>
-        <ul>
-          <li><a href="/quem_somos">O AcheTece</a></li>
-          <li><a href="/como_funciona">Como funciona</a></li>
-          <li><a href="/fale_conosco">Fale conosco</a></li>
-          <li><a href="/termos_politicas">Termos e Políticas</a></li>
-        </ul>
+        <div class="step">
+          <div class="dot">2</div>
+          <div class="card">Pague a mensalidade</div>
+        </div>
+        <div class="step">
+          <div class="dot">3</div>
+          <div class="card">Perfil ativado</div>
+        </div>
+        <div class="step">
+          <div class="dot">4</div>
+          <div class="card">Cadastre seus teares</div>
+        </div>
+        <div class="step">
+          <div class="dot">5</div>
+          <div class="card">Receba contatos</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Rodapé ===== -->
+  <footer>
+    <div class="footer-container">
+      <div class="footer-block">
+        <!-- Logo símbolo igual ao index -->
+        <img
+          src="{{ url_for('static', filename='logo_simbolo.png') }}"
+          alt="AcheTece"
+          class="footer-logo"
+          width="32"
+          height="32"
+        />
+        <div>
+          <h4 class="footer-title">Sobre nós</h4>
+          <ul class="footer-links">
+            <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
+            <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
+            <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
+            <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
+          </ul>
+        </div>
       </div>
     </div>
   </footer>
