@@ -250,38 +250,55 @@
     }
         
     /* ===== Rodapé ===== */
-    footer{
+    .footer {
       background:#fff;
-      border-top:1px solid #e5e5e5;
-      padding:30px 20px;
-      margin-top:40px;
+      padding:20px 0;
+      border-top:1px solid #ddd;
+      text-align:left;
     }
-    .footer-container{
-      max-width:1000px;
+    
+    .footer-container {
+      max-width:1200px;
       margin:0 auto;
-      display:grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
-      gap:30px;
+      display:flex;
+      justify-content:flex-start;
     }
-    .footer-col h4{
-      font-size:15px;
-      font-weight:700;
-      margin-bottom:14px;
+    
+    .footer-section {
+      margin-right:40px;
+    }
+    
+    .footer-title {
       display:flex;
       align-items:center;
-      gap:8px;
-      color:#111;
+      font-weight:bold;
+      margin-bottom:10px;
     }
-    .footer-col ul{list-style:none;padding:0;margin:0;}
-    .footer-col ul li{margin-bottom:8px;}
-    .footer-col ul li a{
+    
+    .footer-title i {
+      margin-right:8px;
+      font-size:18px;
+    }
+    
+    .footer-section ul {
+      list-style:none;
+      padding:0;
+      margin:0;
+    }
+    
+    .footer-section ul li {
+      margin:6px 0;
+    }
+    
+    .footer-section ul li a {
+      color:#000;
       text-decoration:none;
-      color:#222;
-      font-size:14px;
-      transition:color .2s;
     }
-    .footer-col ul li a:hover{color:var(--azul);}
-    .footer-icon{width:18px;height:18px;flex-shrink:0;}
+    
+    .footer-section ul li a:hover {
+      color:#8A00FF;
+    }
+
   </style>
 </head>
 <body>
@@ -388,26 +405,19 @@
     </section
         
   <!-- ===== Rodapé ===== -->
-  <footer>
+  <footer class="footer">
     <div class="footer-container">
-      <div class="footer-block">
-        <!-- Logo símbolo igual ao index -->
-        <img
-          src="{{ url_for('static', filename='logo_simbolo.png') }}"
-          alt="AcheTece"
-          class="footer-logo"
-          width="32"
-          height="32"
-        />
-        <div>
-          <h4 class="footer-title">Sobre nós</h4>
-          <ul class="footer-links">
-            <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
-            <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
-            <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
-            <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
-          </ul>
+      <div class="footer-section">
+        <div class="footer-title">
+          <i class="fas fa-info-circle"></i>
+          <span>Sobre nós</span>
         </div>
+        <ul>
+          <li><a href="/quem_somos">O AcheTece</a></li>
+          <li><a href="/como_funciona">Como funciona</a></li>
+          <li><a href="/fale_conosco">Fale conosco</a></li>
+          <li><a href="/termos_politicas">Termos e Políticas</a></li>
+        </ul>
       </div>
     </div>
   </footer>
