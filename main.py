@@ -966,7 +966,7 @@ def exportar():
                      as_attachment=True,
                      download_name='teares_filtrados.csv')
 
-@app.route('/malharia-info')
+@app.route('/malharia_info', methods=['GET'])
 def malharia_info():
     return render_template('malharia_info.html')
 
