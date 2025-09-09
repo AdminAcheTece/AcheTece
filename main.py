@@ -1362,6 +1362,10 @@ def _empresa_from_ext(ext):
             return Empresa.query.get(emp_id)
     return None
 
+@app.route("/_routes")
+def _routes():
+    return "<br>".join(sorted(str(r) for r in app.url_map.iter_rules()))
+
 @app.route('/_check_usuario')
 def _check_usuario():
     try:
