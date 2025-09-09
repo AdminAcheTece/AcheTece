@@ -242,6 +242,38 @@
       .card{ flex:1; min-height:auto; }
     }
 
+    /* =========================
+       ORIENTAÇÃO (passo a passo)
+       ========================= */
+    .guia{
+      max-width: 880px;
+      margin: 24px auto 8px;
+      background:#F5E6FF;
+      padding: 18px 16px;
+      border-radius:12px;
+      box-shadow: none !important;
+    }
+    .guia h2{
+      margin:0 0 8px 0; font-size:18px; font-weight:800; color:#111; text-align:center;
+    }
+    .steps{
+      display:grid; grid-template-columns: repeat(5,1fr); gap:10px;
+    }
+    .step{
+      text-align:center; background:#fff; border:1px solid #8A00FF; border-radius:12px; padding:10px 8px;
+    }
+    .step .dot{
+      width:30px; height:30px; line-height:30px; margin:0 auto 8px;
+      border-radius:999px; background:#8A00FF; color:#fff; font-weight:800;
+      box-shadow:none !important;
+    }
+    .step p{ margin:0; font-size:13px; color:#333; }
+    @media (max-width:760px){
+      .steps{ grid-template-columns:1fr; }
+      .step{ display:flex; align-items:center; gap:10px; text-align:left; }
+      .step .dot{ margin:0; flex:0 0 30px; text-align:center; }
+    }
+    
     /* ===== Rodapé ===== */
     footer{
       background:#fff;
