@@ -18,6 +18,7 @@ import uuid
 import json
 import logging
 from unicodedata import normalize
+from sqlalchemy import inspect, text   # <-- para checar/alterar colunas
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, 'static')  # ajuste para 'estático' se o seu folder tem acento
