@@ -61,11 +61,13 @@ def base_url():
 
 # App
 app = Flask(__name__)
+app.logger.setLevel(logging.INFO)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-unsafe')
 
 # DB (SQLite local por padrão; use DATABASE_URL no Render se quiser Postgres)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///banco.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['PREFERRED_URL_SCHEME'] = 'https'
 
 # E-mail (ajuste no Render)
 app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
