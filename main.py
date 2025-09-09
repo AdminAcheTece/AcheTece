@@ -186,6 +186,29 @@ class Tear(db.Model):
     elastano = db.Column(db.String(10), nullable=False)
     empresa_id = db.Column(db.Integer, db.ForeignKey('empresa.id'), nullable=False)
 
+def _get_empresa_usuario_da_sessao():
+    """Retorna (empresa, usuario) a partir de session['empresa_id'].
+       Se não existir Usuario vinculado, cria um básico como malharia."""
+    if 'empresa_id' not in session:
+        return None, None
+    emp = Empresa.query.get(session['empresa_id'])
+    if not emp:
+        session.pop('empresa_id', None)
+        return None, None
+
+    u = emp.usuario or Usuario.query.filter_by(email=emp.email).first()
+    if not u:
+        # fallback seguro caso o backfill ainda não tenha rodado
+        u = Usuario(email=emp.email, senha_hash=emp.senha, role='malharia', is_active=True)
+        db.session.add(u); db.session.flush()
+        emp.user_id = u.id
+        db.session.commit()
+    elif not emp.user_id:
+        emp.user_id = u.id
+        db.session.commit()
+
+    return emp, u
+
 def _ensure_auth_layer_and_link():
     # 1) Criar tabela 'usuario' se necessário
     try:
@@ -243,6 +266,35 @@ with app.app_context():
 def index():
     teares = Tear.query.all()
     return render_template('index.html', teares=teares)
+
+@app.route('/dashboard_cliente')
+def dashboard_cliente():
+    # Em breve colocamos o conteúdo real
+    return render_template_string("<h2>Dashboard do Cliente</h2><p>Em breve.</p>")
+
+@app.route('/pos_login')
+def pos_login():
+    emp, u = _get_empresa_usuario_da_sessao()
+    if not emp or not u:
+        return redirect(url_for('login'))
+
+    # Se não escolheu perfil ainda, vai para os cards
+    if not u.role:
+        return redirect(url_for('escolher_perfil'))
+
+    # Roteamento por perfil
+    if u.role == 'admin':
+        return redirect(url_for('admin_empresas'))
+    if u.role == 'cliente':
+        return redirect(url_for('dashboard_cliente'))
+    if u.role == 'malharia':
+        # mantém sua lógica de pagamento
+        if emp.status_pagamento != 'ativo':
+            return render_template('pagamento_pendente.html', empresa=emp)
+        return redirect(url_for('painel_malharia'))
+
+    # Qualquer valor inesperado de role -> força escolher
+    return redirect(url_for('escolher_perfil'))
 
 # ========= NOVO: Login com Google =========
 @app.route('/login/google')
@@ -317,8 +369,8 @@ def authorize_google():
     session['admin'] = (empresa.email == "gestao.achetece@gmail.com")
 
     # Redireciona para o destino salvo ou painel
-    dest = session.pop('login_next', None) or url_for('painel_malharia')
-    return redirect(dest)
+    dest = session.pop('login_next', None) or url_for('pos_login')
+return redirect(dest)
 # =========================================
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -334,7 +386,7 @@ def login():
         if empresa and check_password_hash(empresa.senha, senha):
             session['empresa_id'] = empresa.id
             session['admin'] = (empresa.email == "gestao.achetece@gmail.com")
-            return redirect(url_for('painel_malharia'))
+            return redirect(url_for('pos_login'))
         else:
             erro = "E-mail ou senha incorretos. Tente novamente."
             return render_template('login.html', erro=erro)
@@ -1384,6 +1436,23 @@ def _check_usuario():
         return f'Usuarios: {total_u} | Empresas sem vínculo: {sem_vinculo} | Ex.: {amostras}'
     except Exception as e:
         return f'Erro: {e}', 500
+
+@app.route('/escolher_perfil', methods=['GET', 'POST'])
+def escolher_perfil():
+    emp, u = _get_empresa_usuario_da_sessao()
+    if not emp or not u:
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        role = (request.form.get('role') or '').strip().lower()
+        if role not in ('cliente', 'malharia'):
+            flash('Selecione um perfil válido.')
+            return redirect(url_for('escolher_perfil'))
+        u.role = role
+        db.session.commit()
+        return redirect(url_for('pos_login'))
+
+    return render_template('escolher_perfil.html')
 
 @app.route('/api/pagamento_status')
 def api_pagamento_status():
