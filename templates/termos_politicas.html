@@ -72,7 +72,7 @@
       background: #000;
       border: 2px solid #fff;
       transform: translateY(-1px);
-      box-shadow: 0 3px 10px rgba(255,255,255,.25);
+      box-shadow: none;
     }
     .whatsapp-btn{
       background: #25D366;
@@ -193,6 +193,20 @@
       font-size: 15px;   /* menor */
       font-weight: 500;  /* menos destaque */
       color: #444;       /* cinza discreto */
+    }
+
+    /* Tamanho padrão do ícone da casinha */
+    .btn-home svg {
+      width: 20px;   /* aumente aqui */
+      height: 20px;
+    }
+    
+    /* Se quiser maior apenas no celular */
+    @media (max-width: 720px){
+      .btn-home svg {
+        width: 24px;   /* teste 22px, 24px etc. */
+        height: 24px;
+      }
     }
     
   </style>
