@@ -149,17 +149,28 @@
 
     /* Lista de benefícios centralizada */
     .benefits{
-      list-style:none; padding:0; margin:0 auto 24px; max-width:760px; text-align:left;
+      list-style:none;
+      padding:0;
+      margin:0 auto 24px;
+      max-width:760px;
+      text-align:left;
     }
+    
     .benefits li{
-      display:flex; align-items:flex-start; justify-content:center;
-      gap:10px; margin:10px 0;
+      position: relative;
+      padding-left: 12px;
+      margin: 10px 0;
     }
+    
     .benefits li::before{
-      content:''; display:inline-block; flex:0 0 18px; width:18px; height:18px; border-radius:50%;
-      margin-top:3px;
-      background: radial-gradient(circle at 30% 30%, #fff 0 40%, transparent 41%), var(--azul);
-      box-shadow: none !important;
+      content:'';
+      position:absolute;
+      left:0;
+      top:8px;
+      width:4px;
+      height:14px;
+      background:#8A00FF; /* roxo AcheTece */
+      border-radius:2px;
     }
 
     /* ===== Card de Preço (VERDE) ===== */
