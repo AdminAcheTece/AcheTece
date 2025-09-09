@@ -146,21 +146,33 @@
         }
 
         /* ======= NOVO: botão Google ======= */
-        .btn-google{
-          display:flex; align-items:center; justify-content:center; gap:10px;
-          width:100%; padding:12px; margin-bottom:14px;
-          background:#fff; border:1px solid #e4e4e4; border-radius:8px;
-          font-weight:700; font-size:14px; color:#1f1f1f; text-decoration:none;
+        .btn-google {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          background: #fff;
+          border: 1px solid #ddd;
+          border-radius: 50px;
+          padding: 8px 16px;
+          font-size: 14px;
+          font-weight: 500;
+          color: #444;
+          text-decoration: none;
+          cursor: pointer;
+          width: 100%;   /* para ocupar toda a largura como no exemplo */
+          box-sizing: border-box;
         }
-        .btn-google img{ height:20px; width:auto; display:block; }
-        .divisor-ou{
-          display:flex; align-items:center; gap:8px; margin:6px 0 14px;
-          font-size:12px; color:#888; text-transform:uppercase; letter-spacing:.06em; justify-content:center;
+        
+        .btn-google:hover {
+          background: #f7f7f7;
         }
-        .divisor-ou::before, .divisor-ou::after{
-          content:""; flex:1; height:1px; background:#e6e6e6;
+        
+        .google-icon {
+          width: 20px;
+          height: 20px;
         }
-        /* ================================== */
+
     </style>
 </head>
 <body>
@@ -264,13 +276,11 @@
       <div class="mensagem-erro">{{ erro }}</div>
       {% endif %}
 
-      <!-- ===== NOVO: Botão Google ===== -->
-      <a class="btn-google" href="{{ url_for('login_google') }}">
-        <img src="{{ url_for('static', filename='google_logo.png') }}" alt="Google">
+      <!-- Botão Google -->
+      <a href="{{ url_for('login_google') }}" class="btn-google">
+        <img src="{{ url_for('static', filename='icone_google.png') }}" alt="Google" class="google-icon">
         <span>Entrar com Google</span>
       </a>
-      <div class="divisor-ou">ou</div>
-      <!-- ============================= -->
 
       <form method="POST" action="{{ url_for('login') }}" class="formulario">
         <input type="email" name="email" placeholder="E-mail" required>
