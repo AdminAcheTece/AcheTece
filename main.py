@@ -19,6 +19,7 @@ import json
 import logging
 from unicodedata import normalize
 from sqlalchemy import inspect, text   # <-- para checar/alterar colunas
+from authlib.integrations.flask_client import OAuth
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, 'static')  # ajuste para 'estático' se o seu folder tem acento
@@ -78,19 +79,15 @@ db = SQLAlchemy(app)
 
 # ========= NOVO: Configuração OAuth Google =========
 oauth = OAuth(app)
-
-# Preferimos usar o discovery document do Google (OIDC)
 google = oauth.register(
     name='google',
-    client_id=os.getenv("GOOGLE_CLIENT_ID"),
-    client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
-    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-    client_kwargs={
-        'scope': 'openid email profile',
-        # Para garantir que o consent apareça quando necessário e termos refresh_token:
-        'prompt': 'consent',
-        'access_type': 'offline'
-    }
+    client_id=os.environ.get("GOOGLE_CLIENT_ID"),
+    client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
+    access_token_url='https://oauth2.googleapis.com/token',
+    authorize_url='https://accounts.google.com/o/oauth2/auth',
+    api_base_url='https://www.googleapis.com/oauth2/v1/',
+    userinfo_endpoint='https://openidconnect.googleapis.com/v1/userinfo',
+    client_kwargs={'scope': 'openid email profile'},
 )
 # ===================================================
 
