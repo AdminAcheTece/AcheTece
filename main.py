@@ -146,8 +146,20 @@ def enviar_email_recuperacao(email, nome_empresa=""):
 # Modelos
 # ---------------------------
 
+class Usuario(db.Model):
+    __tablename__ = 'usuario'
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(255), unique=True, nullable=False)
+    senha_hash = db.Column(db.String(255))   # pode ficar None se usar só Google
+    google_id = db.Column(db.String(255))
+    role = db.Column(db.String(20), index=True, nullable=True)  # 'cliente' | 'malharia' | 'admin'
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 class Empresa(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), unique=True)
+    usuario = db.relationship('Usuario', backref=db.backref('empresa', uselist=False))
     nome = db.Column(db.String(100), nullable=False, unique=True)
     apelido = db.Column(db.String(50), unique=True)
     email = db.Column(db.String(100), nullable=False, unique=True)
@@ -174,6 +186,48 @@ class Tear(db.Model):
     alimentadores = db.Column(db.Integer, nullable=False)
     elastano = db.Column(db.String(10), nullable=False)
     empresa_id = db.Column(db.Integer, db.ForeignKey('empresa.id'), nullable=False)
+
+def _ensure_auth_layer_and_link():
+    # 1) Criar tabela 'usuario' se necessário
+    try:
+        Usuario.__table__.create(bind=db.engine, checkfirst=True)
+    except Exception as e:
+        app.logger.warning(f"create usuario table: {e}")
+
+    # 2) Adicionar coluna user_id em 'empresa' se necessário
+    try:
+        insp = inspect(db.engine)
+        cols = [c['name'] for c in insp.get_columns('empresa')]
+        if 'user_id' not in cols:
+            db.session.execute(text('ALTER TABLE empresa ADD COLUMN user_id INTEGER'))
+            db.session.commit()
+    except Exception as e:
+        app.logger.warning(f"add user_id to empresa failed: {e}")
+
+    # 3) Backfill: criar Usuario para cada Empresa que ainda não tem vínculo
+    try:
+        empresas = Empresa.query.all()
+        for e in empresas:
+            if e.user_id:
+                continue
+            u = Usuario.query.filter_by(email=e.email).first()
+            if not u:
+                u = Usuario(
+                    email=e.email,
+                    senha_hash=e.senha,   # aproveita o hash que você já guarda em Empresa.senha
+                    role='malharia',
+                    is_active=True
+                )
+                db.session.add(u)
+                db.session.flush()  # garante u.id
+            e.user_id = u.id
+        db.session.commit()
+    except Exception as e:
+        app.logger.warning(f"backfill usuarios from empresas failed: {e}")
+
+@app.before_first_request
+def _startup_migrations():
+    _ensure_auth_layer_and_link()
 
 # ---------------------------
 # Rotas
@@ -1310,6 +1364,16 @@ def _empresa_from_ext(ext):
         if emp_id:
             return Empresa.query.get(emp_id)
     return None
+
+@app.route('/_check_usuario')
+def _check_usuario():
+    try:
+        total_u = Usuario.query.count()
+        sem_vinculo = Empresa.query.filter(Empresa.user_id.is_(None)).count()
+        amostras = [u.email for u in Usuario.query.limit(3).all()]
+        return f'Usuarios: {total_u} | Empresas sem vínculo: {sem_vinculo} | Ex.: {amostras}'
+    except Exception as e:
+        return f'Erro: {e}', 500
 
 @app.route('/api/pagamento_status')
 def api_pagamento_status():
