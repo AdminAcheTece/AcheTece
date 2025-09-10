@@ -1,1 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Criar conta (Cliente) - AcheTece</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body style="background:#f2f2f2;margin:0;">
+  <header class="navbar">
+    <div class="header-left"><div class="logo">
+      <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
+    </div></div>
+  </header>
 
+  <main style="max-width:720px;margin:24px auto;padding:0 16px;">
+    <div style="background:#fff;border-radius:16px;padding:24px;box-shadow:0 8px 24px rgba(0,0,0,.06);">
+      <h1 style="margin:0 0 6px;font-size:24px;color:#4a145e">Dados do Cliente</h1>
+      <p style="margin:0 0 16px;color:#666">Preencha seus dados para continuar usando o AcheTece como <strong>Cliente</strong>.</p>
+
+      {% if erros %}
+        <div style="background:#ffecec;color:#b00020;border:1px solid #ffc2c2;padding:10px 12px;border-radius:8px;margin-bottom:12px;">
+          Corrija os campos destacados.
+        </div>
+      {% endif %}
+
+      <form method="POST" style="display:grid;gap:12px;">
+        <label>Nome*
+          <input type="text" name="nome" value="{{ nome or '' }}" required style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;">
+          {% if erros and erros.get('nome') %}<small style="color:#b00020">{{erros.get('nome')}}</small>{% endif %}
+        </label>
+
+        <label>Empresa (opcional)
+          <input type="text" name="empresa" value="{{ empresa or '' }}" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;">
+        </label>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <label>Estado (UF)
+            <select name="estado" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;">
+              <option value="">Selecione</option>
+              {% for uf in estados %}
+                <option value="{{uf}}" {% if estado==uf %}selected{% endif %}>{{uf}}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>Cidade
+            <input type="text" name="cidade" value="{{ cidade or '' }}" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;">
+          </label>
+        </div>
+
+        <label>WhatsApp (com DDD)
+          <input type="tel" name="whatsapp" value="{{ whatsapp or '' }}" placeholder="47999991234" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;">
+          {% if erros and erros.get('whatsapp') %}<small style="color:#b00020">{{erros.get('whatsapp')}}</small>{% endif %}
+        </label>
+
+        <div style="display:flex;gap:12px;align-items:center;margin-top:8px;">
+          <button type="submit" class="btn-roxo" style="background:#8A00FF;color:#fff;border:0;border-radius:14px;padding:10px 16px;font-weight:700;cursor:pointer;">Salvar</button>
+          <a href="{{ url_for('pos_login') }}" style="text-decoration:none;color:#4a145e;">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <footer class="footer" style="text-align:center;color:#777;padding:24px 16px;">AcheTece © {{ (now() if false) or '' }}</footer>
+</body>
+</html>
