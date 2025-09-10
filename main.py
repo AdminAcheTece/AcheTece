@@ -446,6 +446,23 @@ def _set_role(valor):
     db.session.commit()
     return f"Role atualizado para: {u.role}"
 
+@app.route("/_debug_cliente")
+def _debug_cliente():
+    emp, u = _get_empresa_usuario_da_sessao()
+    try:
+        uid = u.id if u else None
+        role = getattr(u, "role", None) if u else None
+        cp = ClienteProfile.query.filter_by(user_id=uid).first() if uid else None
+        return {
+            "logado": bool(emp and u),
+            "user_id": uid,
+            "role": role,
+            "cliente_profile_existe": bool(cp),
+        }
+    except Exception as e:
+        app.logger.exception("[_debug_cliente] %s", e)
+        return {"erro": str(e)}, 500
+
 @app.route('/logout')
 def logout():
     session.pop('empresa_id', None)
