@@ -368,10 +368,9 @@ def authorize_google():
     session['empresa_id'] = empresa.id
     session['admin'] = (empresa.email == "gestao.achetece@gmail.com")
 
-    # Redireciona para o destino salvo ou painel
+    # Redireciona para o destino salvo ou para o hub pós-login
     dest = session.pop('login_next', None) or url_for('pos_login')
-return redirect(dest)
-# =========================================
+    return redirect(dest)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
