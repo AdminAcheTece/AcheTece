@@ -213,7 +213,7 @@ def _get_empresa_usuario_da_sessao():
     u = emp.usuario or Usuario.query.filter_by(email=emp.email).first()
     if not u:
         # fallback seguro caso o backfill ainda não tenha rodado
-        u = Usuario(email=emp.email, senha_hash=emp.senha, role='malharia', is_active=True)
+        u = Usuario(email=emp.email, senha_hash=emp.senha, role=None, is_active=True)
         db.session.add(u); db.session.flush()
         emp.user_id = u.id
         db.session.commit()
@@ -251,7 +251,7 @@ def _ensure_auth_layer_and_link():
                 u = Usuario(
                     email=e.email,
                     senha_hash=e.senha,   # aproveita o hash que você já guarda em Empresa.senha
-                    role='malharia',
+                    role=None,
                     is_active=True
                 )
                 db.session.add(u)
@@ -431,6 +431,20 @@ def login():
             return render_template('login.html', erro=erro)
 
     return render_template('login.html')
+
+@app.route('/_set_role/<valor>')
+def _set_role(valor):
+    emp, u = _get_empresa_usuario_da_sessao()
+    if not u:
+        return redirect(url_for('login'))
+    if valor == 'none':
+        u.role = None
+    elif valor in ('cliente', 'malharia', 'admin'):
+        u.role = valor
+    else:
+        return "Valor inválido. Use: none | cliente | malharia | admin", 400
+    db.session.commit()
+    return f"Role atualizado para: {u.role}"
 
 @app.route('/logout')
 def logout():
