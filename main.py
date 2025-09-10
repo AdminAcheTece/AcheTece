@@ -309,6 +309,16 @@ def dashboard_cliente():
         </main>
     """, nome=(cp.nome if cp else None))
 
+@app.route('/_set_role/<valor>')
+def _set_role(valor):
+    emp, u = _get_empresa_usuario_da_sessao()
+    if not u: return redirect(url_for('login'))
+    if valor == 'none': u.role = None
+    elif valor in ('cliente','malharia','admin'): u.role = valor
+    else: return "Valor inválido", 400
+    db.session.commit()
+    return f"Role atualizado para: {u.role}"
+
 @app.route('/pos_login')
 def pos_login():
     emp, u = _get_empresa_usuario_da_sessao()
