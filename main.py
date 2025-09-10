@@ -186,6 +186,20 @@ class Tear(db.Model):
     elastano = db.Column(db.String(10), nullable=False)
     empresa_id = db.Column(db.Integer, db.ForeignKey('empresa.id'), nullable=False)
 
+class ClienteProfile(db.Model):
+    __tablename__ = 'cliente_profile'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), unique=True, nullable=False)
+    nome = db.Column(db.String(120))
+    empresa = db.Column(db.String(160))
+    whatsapp = db.Column(db.String(20))
+    cidade = db.Column(db.String(100))
+    estado = db.Column(db.String(2))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relacionamento c/ Usuario (cria atributo usuario.cliente_profile)
+    usuario = db.relationship('Usuario', backref=db.backref('cliente_profile', uselist=False))
+
 def _get_empresa_usuario_da_sessao():
     """Retorna (empresa, usuario) a partir de session['empresa_id'].
        Se não existir Usuario vinculado, cria um básico como malharia."""
@@ -247,10 +261,17 @@ def _ensure_auth_layer_and_link():
     except Exception as e:
         app.logger.warning(f"backfill usuarios from empresas failed: {e}")
 
+def _ensure_cliente_profile_table():
+    try:
+        ClienteProfile.__table__.create(bind=db.engine, checkfirst=True)
+    except Exception as e:
+        app.logger.warning(f"create cliente_profile table: {e}")
+
 # Flask 3 removeu before_first_request. Executa uma vez na inicialização.
 def _startup_migrations():
     try:
         _ensure_auth_layer_and_link()
+        _ensure_cliente_profile_table()   # <-- ADICIONE ESTA LINHA
         app.logger.info("Startup migrations OK.")
     except Exception as e:
         app.logger.error(f"Startup migrations failed: {e}")
@@ -269,8 +290,24 @@ def index():
 
 @app.route('/dashboard_cliente')
 def dashboard_cliente():
-    # Em breve colocamos o conteúdo real
-    return render_template_string("<h2>Dashboard do Cliente</h2><p>Em breve.</p>")
+    emp, u = _get_empresa_usuario_da_sessao()
+    if not emp or not u:
+        return redirect(url_for('login'))
+    if u.role != 'cliente':
+        return redirect(url_for('pos_login'))
+
+    cp = ClienteProfile.query.filter_by(user_id=u.id).first()
+    if not cp:
+        return redirect(url_for('criar_conta_cliente'))
+
+    # Aqui você vai evoluir depois (buscas salvas, histórico etc.)
+    return render_template_string("""
+        <main style="max-width:920px;margin:24px auto;padding:0 16px;font-family:Inter,Arial,sans-serif">
+          <h2 style="margin:0 0 8px;color:#4a145e">Bem-vindo(a), {{nome or 'Cliente'}}</h2>
+          <p style="margin:0 0 16px;color:#555">Seu perfil está ativo. Em breve: recursos para buscar malharias, salvar filtros e conversar.</p>
+          <a href="{{ url_for('busca') }}" style="display:inline-block;background:#8A00FF;color:#fff;padding:10px 16px;border-radius:14px;text-decoration:none;font-weight:700">Buscar malharias</a>
+        </main>
+    """, nome=(cp.nome if cp else None))
 
 @app.route('/pos_login')
 def pos_login():
@@ -286,6 +323,9 @@ def pos_login():
     if u.role == 'admin':
         return redirect(url_for('admin_empresas'))
     if u.role == 'cliente':
+        cp = ClienteProfile.query.filter_by(user_id=u.id).first()
+        if not cp:
+            return redirect(url_for('criar_conta_cliente'))
         return redirect(url_for('dashboard_cliente'))
     if u.role == 'malharia':
         # mantém sua lógica de pagamento
@@ -1452,6 +1492,66 @@ def escolher_perfil():
         return redirect(url_for('pos_login'))
 
     return render_template('escolher_perfil.html')
+
+@app.route('/criar_conta_cliente', methods=['GET', 'POST'])
+def criar_conta_cliente():
+    emp, u = _get_empresa_usuario_da_sessao()
+    if not emp or not u:
+        return redirect(url_for('login'))
+    if u.role != 'cliente':
+        return redirect(url_for('pos_login'))
+
+    estados = [
+        'AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT',
+        'PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'
+    ]
+
+    cp = ClienteProfile.query.filter_by(user_id=u.id).first()
+
+    if request.method == 'POST':
+        nome = (request.form.get('nome') or '').strip()
+        empresa_cli = (request.form.get('empresa') or '').strip()
+        whatsapp = re.sub(r'\D', '', (request.form.get('whatsapp') or ''))
+        estado = (request.form.get('estado') or '').strip().upper()
+        cidade = (request.form.get('cidade') or '').strip()
+
+        erros = {}
+        if not nome or len(re.sub(r'[^A-Za-zÀ-ÿ]', '', nome)) < 2:
+            erros['nome'] = 'Informe seu nome.'
+        if estado and estado not in estados:
+            erros['estado'] = 'Estado inválido.'
+        if whatsapp and (len(whatsapp) < 10 or len(whatsapp) > 13):
+            erros['whatsapp'] = 'WhatsApp inválido (use DDD + número).'
+
+        if erros:
+            return render_template('criar_conta_cliente.html', erros=erros, estados=estados,
+                                   nome=nome, empresa=empresa_cli, whatsapp=whatsapp,
+                                   estado=estado, cidade=cidade)
+
+        if not cp:
+            cp = ClienteProfile(user_id=u.id)
+            db.session.add(cp)
+
+        cp.nome = nome
+        cp.empresa = empresa_cli or None
+        cp.whatsapp = whatsapp or None
+        cp.estado = estado or None
+        cp.cidade = cidade or None
+        db.session.commit()
+
+        flash('Perfil de cliente salvo com sucesso.')
+        return redirect(url_for('dashboard_cliente'))
+
+    # GET
+    valores = {
+        'nome': (cp.nome if cp else ''),
+        'empresa': (cp.empresa if cp else ''),
+        'whatsapp': (cp.whatsapp if cp else ''),
+        'estado': (cp.estado if cp else ''),
+        'cidade': (cp.cidade if cp else '')
+    }
+    return render_template('criar_conta_cliente.html', estados=estados, **valores)
+
 
 @app.route('/api/pagamento_status')
 def api_pagamento_status():
