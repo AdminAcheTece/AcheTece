@@ -453,6 +453,20 @@ def login():
 
     return render_template('login.html')
 
+# --- Quem somos (várias URLs apontando para o mesmo endpoint) ---
+@app.route("/quem_somos", endpoint="quem_somos")
+@app.route("/quem_somos/")
+@app.route("/quem-somos")
+@app.route("/quem-somos/")
+def view_quem_somos():
+    return render_template("quem_somos.html")
+
+# opcional: compatibilidade com .html direto
+@app.route("/quem_somos.html")
+def quem_somos_html():
+    return redirect(url_for("quem_somos"), code=301)
+
+
 @app.route('/_set_role/<valor>')
 def _set_role(valor):
     emp, u = _get_empresa_usuario_da_sessao()
