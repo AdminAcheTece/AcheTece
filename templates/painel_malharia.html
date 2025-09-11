@@ -11,116 +11,60 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
     
     <style>
-        th, td {
-            text-align: center;
-        }
+        th, td { text-align: center; }
 
         .painel-acoes {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
+            display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;
         }
 
-        .btn-azul-medio, .btn-azul-forte, .btn-cinza {
-            padding: 10px 16px;
-            border-radius: 8px;
-            font-weight: bold;
-            text-decoration: none;
-            display: inline-block;
-            text-align: center;
-            transition: background-color 0.2s ease;
+        .btn-azul-medio, .btn-azul-forte, .btn-cinza, .btn-perigo, .btn-desabilitado {
+            padding: 10px 16px; border-radius: 8px; font-weight: bold;
+            text-decoration: none; display: inline-block; text-align: center;
+            transition: background-color 0.2s ease; cursor: pointer; border: 0;
         }
 
-        .btn-azul-medio {
-            background-color: #8A00FF;
-            color: white;
-        }
+        .btn-azul-medio { background-color: #8A00FF; color: #fff; }
+        .btn-azul-medio:hover { background-color: #8A00FF; }
 
-        .btn-azul-medio:hover {
-            background-color: #8A00FF;
-        }
+        .btn-azul-forte { background-color: #8A00FF; color: #fff; }
+        .btn-azul-forte:hover { background-color: #002f80; }
 
-        .btn-azul-forte {
-            background-color: #8A00FF;
-            color: white;
-        }
+        .btn-cinza { background-color: #ddd; color: #333; }
+        .btn-cinza:hover { background-color: #bbb; }
 
-        .btn-azul-forte:hover {
-            background-color: #002f80;
-        }
+        .btn-perigo { background-color: #d00000; color: #fff; }
+        .btn-perigo:hover { background-color: #a40000; }
 
-        .btn-cinza {
-            background-color: #ddd;
-            color: #333;
-        }
-
-        .btn-cinza:hover {
-            background-color: #bbb;
-        }
+        .btn-desabilitado { background: #eee; color: #777; cursor: not-allowed; }
 
         .botao-editar {
-            background-color: #8A00FF;
-            color: white;
-            padding: 6px 12px;
-            font-size: 13px;
-            border-radius: 6px;
-            text-decoration: none;
-            display: inline-block;
+            background-color: #8A00FF; color: white; padding: 6px 12px;
+            font-size: 13px; border-radius: 6px; text-decoration: none; display: inline-block;
         }
+        .botao-editar:hover { background-color: #8A00FF; }
 
-        .botao-editar:hover {
-            background-color: #8A00FF;
-        }
+        .table-wrapper { overflow-x: auto; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; background-color: #fff; }
+        th, td { padding: 10px; border: 1px solid #ccc; }
 
-        .table-wrapper {
-            overflow-x: auto;
-            margin-top: 20px;
-        }
+        .logo { text-align: center; margin-top: 20px; }
+        .logo img { max-height: 80px; }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background-color: #fff;
-        }
+        h1.titulo { text-align: center; margin-bottom: 6px; }
+        h2 { margin-top: 28px; text-align: center; }
 
-        th, td {
-            padding: 10px;
-            border: 1px solid #ccc;
-        }
+        /* Botão administrativo */
+        .botao-admin { background-color: #8A00FF; color: white; padding: 10px 16px; border-radius: 8px; text-decoration: none; font-weight: bold; }
+        .botao-admin:hover { background-color: #002f80; }
 
-        .logo {
-            text-align: center;
-            margin-top: 20px;
-        }
+        /* Badge de status */
+        .status-wrap { display:flex; align-items:center; justify-content:center; gap:10px; margin:10px 0 18px; }
+        .badge { display:inline-block; padding:6px 12px; border-radius:999px; font-size:13px; font-weight:700; }
+        .badge-ativa { background:#e8f7ed; color:#137a2a; }
+        .badge-pendente { background:#fff3e7; color:#b85e00; }
 
-        .logo img {
-            max-height: 80px;
-        }
-
-        h1.titulo {
-            text-align: center;
-            margin-bottom: 10px;
-        }
-
-        h2 {
-            margin-top: 40px;
-            text-align: center;
-        }
-
-        /* Novo botão administrativo */
-        .botao-admin {
-            background-color: #8A00FF;
-            color: white;
-            padding: 10px 16px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        .botao-admin:hover {
-            background-color: #002f80;
-        }
+        /* Aviso pequeno */
+        .mini { font-size: 12px; color:#666; }
     </style>
 </head>
 <body>
@@ -129,22 +73,43 @@
     <header>
         <div class="logo">
             <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
+            {% if session.get('empresa_apelido') %}
+              <div class="mini" style="margin-top:6px;">{{ session.get('empresa_apelido') }}</div>
+            {% endif %}
         </div>
     </header>
 
     <!-- Conteúdo principal -->
     <div class="container">
         <h1 class="titulo">Painel da Malharia</h1>
-        <p>Bem-vindo(a), {{ empresa.nome }}!</p>
+        <p style="text-align:center;">Bem-vindo(a), <strong>{{ empresa.nome }}</strong>!</p>
+
+        <!-- Status da assinatura -->
+        <div class="status-wrap">
+            {% if assinatura_ativa %}
+              <span class="badge badge-ativa">Assinatura ativa</span>
+              <a href="{{ url_for('checkout', plano=empresa.plano or 'mensal') }}" class="btn-azul-medio">Gerenciar pagamento</a>
+            {% else %}
+              <span class="badge badge-pendente">Assinatura pendente</span>
+              <a href="{{ url_for('checkout', plano='mensal') }}" class="btn-azul-medio">Ativar plano (Mensal)</a>
+              <a href="{{ url_for('checkout', plano='anual') }}" class="btn-azul-forte">Ativar plano (Anual)</a>
+            {% endif %}
+        </div>
 
         <!-- Botões alinhados -->
         <div class="painel-acoes">
             <a href="{{ url_for('editar_empresa') }}" class="btn-azul-medio">Editar Dados da Empresa</a>
-            <a href="{{ url_for('cadastrar_teares') }}" class="btn-azul-forte">+ Cadastrar Novo Tear</a>
+
+            {% if assinatura_ativa %}
+                <a href="{{ url_for('cadastrar_teares') }}" class="btn-azul-forte">+ Cadastrar Novo Tear</a>
+            {% else %}
+                <span class="btn-desabilitado" title="Ative seu plano para cadastrar teares.">+ Cadastrar Novo Tear</span>
+            {% endif %}
+
             <a href="{{ url_for('logout') }}" class="btn-cinza">Logout</a>
 
             {% if session.get('admin') %}
-                <a href="/admin/empresas" class="botao-admin">Painel Administrativo</a>
+                <a href="{{ url_for('admin_empresas') }}" class="botao-admin">Painel Administrativo</a>
             {% endif %}
         </div>
 
@@ -176,7 +141,11 @@
                         <td>{{ tear.alimentadores }}</td>
                         <td>{{ tear.elastano }}</td>
                         <td>
-                            <a href="{{ url_for('editar_tear', id=tear.id) }}" class="botao-editar">Editar Tear</a>
+                            {% if assinatura_ativa %}
+                              <a href="{{ url_for('editar_tear', id=tear.id) }}" class="botao-editar">Editar Tear</a>
+                            {% else %}
+                              <span class="mini">Ative o plano para editar</span>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -184,7 +153,21 @@
             </table>
         </div>
         {% else %}
-            <p style="margin-top: 20px;">Nenhum tear cadastrado ainda.</p>
+            <p style="margin-top: 20px; text-align:center;">Nenhum tear cadastrado ainda.</p>
+        {% endif %}
+
+        <!-- Seção de exclusão de conta -->
+        <div style="margin:28px 0; display:flex; justify-content:center;">
+            <form method="POST" action="{{ url_for('excluir_empresa_self') }}" onsubmit="return confirm('Deseja realmente excluir sua conta? Esta ação é irreversível.');">
+                <button type="submit" class="btn-perigo">Excluir conta</button>
+            </form>
+        </div>
+
+        {% if not assinatura_ativa %}
+            <p class="mini" style="text-align:center; max-width:760px; margin:0 auto 24px;">
+                Após a aprovação do pagamento, o botão <strong>Cadastrar Novo Tear</strong> será liberado
+                e você poderá gerenciar seus teares normalmente.
+            </p>
         {% endif %}
     </div>
 </body>
