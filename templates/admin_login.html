@@ -107,7 +107,7 @@
     }
     .toggle-visibility:hover{ color:var(--azul); }
     .toggle-visibility svg{ width:20px; height:20px; stroke:currentColor; }
-    .icon-hide{ display:none; }  /* escondemos o "olho cortado" por padrão */
+    .icon-hide{ display:none; }
   </style>
 </head>
 <body>
@@ -139,19 +139,30 @@
     <div class="login-box">
       <h2>Login do Administrador</h2>
 
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          {% for category, message in messages %}
-            {% if category == 'error' %}
-              <div class="flash-message error">{{ message }}</div>
-            {% endif %}
-          {% endfor %}
+      {# Mostra só a ÚLTIMA mensagem de erro, evitando duplicatas #}
+      {% with errors = get_flashed_messages(category_filter=['error']) %}
+        {% if errors %}
+          <div class="flash-message error">{{ errors[-1] }}</div>
+        {% endif %}
+      {% endwith %}
+
+      {# Opcional: última mensagem de sucesso (se usada no fluxo) #}
+      {% with oks = get_flashed_messages(category_filter=['success']) %}
+        {% if oks %}
+          <div class="flash-message success">{{ oks[-1] }}</div>
         {% endif %}
       {% endwith %}
 
       <form method="POST" autocomplete="on">
         <label for="email">Email:</label>
-        <input type="email" name="email" id="email" required autocomplete="username">
+        <input
+          type="email"
+          name="email"
+          id="email"
+          required
+          autocomplete="username"
+          value="{{ request.form.get('email','') }}"
+        >
 
         <label for="senha">Senha:</label>
         <div class="input-wrap">
@@ -193,7 +204,6 @@
         input.type = isText ? 'password' : 'text';
         btn.setAttribute('aria-pressed', String(!isText));
         btn.setAttribute('aria-label', isText ? 'Mostrar senha' : 'Ocultar senha');
-        // alterna ícones
         btn.querySelector('.icon-show').style.display = isText ? 'block' : 'none';
         btn.querySelector('.icon-hide').style.display = isText ? 'none' : 'block';
       }
