@@ -7,7 +7,7 @@ from flask_sqlalchemy import SQLAlchemy
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
-from datetime import datetime
+from datetime import datetime, timedelta
 import mercadopago
 import os
 import csv
@@ -31,7 +31,6 @@ os.makedirs(CACHE_DIR, exist_ok=True)
 def _norm(s: str) -> str:
     # normaliza para comparar sem acento/variação
     return normalize('NFKD', s).encode('ASCII', 'ignore').decode('ASCII').strip().lower()
-
 
 # ========= NOVO: Authlib (OAuth Google) =========
 from authlib.integrations.flask_client import OAuth
@@ -169,7 +168,7 @@ class Empresa(db.Model):
     telefone = db.Column(db.String(20))
     status_pagamento = db.Column(db.String(20), default='pendente')
     data_pagamento = db.Column(db.DateTime)
-    teares = db.relationship('Tear', backref='empresa', lazy=True)
+    teares = db.relationship('Tear', backref='empresa', lazy=True, cascade="all, delete-orphan")
     responsavel_nome = db.Column(db.String(120))
     responsavel_sobrenome = db.Column(db.String(120))
     # Campos opcionais citados no webhook (guardados se existirem)
@@ -209,6 +208,7 @@ def _get_empresa_usuario_da_sessao():
     emp = Empresa.query.get(session['empresa_id'])
     if not emp:
         session.pop('empresa_id', None)
+        session.pop('empresa_apelido', None)
         return None, None
 
     u = emp.usuario or Usuario.query.filter_by(email=emp.email).first()
@@ -222,6 +222,8 @@ def _get_empresa_usuario_da_sessao():
         emp.user_id = u.id
         db.session.commit()
 
+    # garante apelido na sessão para mostrar no menu
+    session['empresa_apelido'] = emp.apelido or emp.nome or emp.email.split('@')[0]
     return emp, u
 
 def _ensure_auth_layer_and_link():
@@ -281,6 +283,24 @@ with app.app_context():
     _startup_migrations()
 
 # ---------------------------
+# Decorators de acesso pago
+# ---------------------------
+
+def assinatura_ativa_requerida(f):
+    """Exige que a empresa logada tenha status_pagamento == 'ativo'."""
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        emp, _ = _get_empresa_usuario_da_sessao()
+        if not emp:
+            flash("Faça login para continuar.", "error")
+            return redirect(url_for("login"))
+        if (emp.status_pagamento or "pendente") != "ativo":
+            flash("Ative seu plano para acessar esta funcionalidade.", "error")
+            return redirect(url_for("painel_malharia"))
+        return f(*args, **kwargs)
+    return wrapper
+
+# ---------------------------
 # Rotas
 # ---------------------------
 
@@ -329,9 +349,7 @@ def pos_login():
             return redirect(url_for('criar_conta_cliente'))
         return redirect(url_for('dashboard_cliente'))
     if u.role == 'malharia':
-        # mantém sua lógica de pagamento
-        if emp.status_pagamento != 'ativo':
-            return render_template('pagamento_pendente.html', empresa=emp)
+        # Sempre envia ao painel (pago ou não) — gating fica no template/botões
         return redirect(url_for('painel_malharia'))
 
     # Qualquer valor inesperado de role -> força escolher
@@ -402,11 +420,11 @@ def authorize_google():
         )
         db.session.add(empresa)
         db.session.commit()
-
         flash("Conta criada via Google. Complete seus dados no painel.", "success")
 
     # Autentica sessão do usuário
     session['empresa_id'] = empresa.id
+    session['empresa_apelido'] = empresa.apelido or empresa.nome or empresa.email.split('@')[0]
     session['admin'] = (empresa.email == "gestao.achetece@gmail.com")
 
     # Redireciona para o destino salvo ou para o hub pós-login
@@ -420,11 +438,13 @@ def login():
         senha = request.form.get('senha', '')
 
         session.pop('empresa_id', None)
+        session.pop('empresa_apelido', None)
         session.pop('admin', None)
 
         empresa = Empresa.query.filter_by(email=email).first()
         if empresa and check_password_hash(empresa.senha, senha):
             session['empresa_id'] = empresa.id
+            session['empresa_apelido'] = empresa.apelido or empresa.nome or empresa.email.split('@')[0]
             session['admin'] = (empresa.email == "gestao.achetece@gmail.com")
             return redirect(url_for('pos_login'))
         else:
@@ -467,6 +487,7 @@ def _debug_cliente():
 @app.route('/logout')
 def logout():
     session.pop('empresa_id', None)
+    session.pop('empresa_apelido', None)
     return redirect(url_for('index'))
 
 @app.route('/cadastrar_empresa', methods=['GET', 'POST'])
@@ -551,7 +572,11 @@ def cadastrar_empresa():
         db.session.commit()
 
         session['empresa_id'] = nova_empresa.id
-        return redirect(url_for('checkout'))
+        session['empresa_apelido'] = nova_empresa.apelido or nova_empresa.nome or nova_empresa.email.split('@')[0]
+
+        # NOVO FLUXO: vai para o painel (não mais para o checkout direto)
+        flash("Cadastro concluído! Complete seu perfil e ative seu plano quando quiser.", "success")
+        return redirect(url_for('painel_malharia'))
 
     return render_template('cadastrar_empresa.html', estados=estados)
 
@@ -567,6 +592,7 @@ def checkout():
     empresa = Empresa.query.get(session['empresa_id'])
     if not empresa:
         session.pop('empresa_id', None)
+        session.pop('empresa_apelido', None)
         return redirect(url_for('login'))
 
     # --- URLs de retorno e webhook ---
@@ -671,6 +697,7 @@ def editar_empresa():
     empresa = Empresa.query.get(session['empresa_id'])
     if not empresa:
         session.pop('empresa_id', None)
+        session.pop('empresa_apelido', None)
         return redirect(url_for('login'))
 
     estados = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT',
@@ -744,244 +771,28 @@ def editar_empresa():
         empresa.senha = generate_password_hash(senha)
 
     db.session.commit()
+    # Mantém apelido atualizado na sessão
+    session['empresa_apelido'] = empresa.apelido or empresa.nome or empresa.email.split('@')[0]
     return redirect(url_for('editar_empresa', ok=1))
 
 @app.route('/painel_malharia')
 def painel_malharia():
-    if 'empresa_id' not in session:
+    emp, u = _get_empresa_usuario_da_sessao()
+    if not emp or not u:
         return redirect(url_for('login'))
 
-    empresa = Empresa.query.get(session['empresa_id'])
-    if not empresa:
-        session.pop('empresa_id', None)
-        return redirect(url_for('login'))
+    # Sempre abre o painel independentemente do pagamento
+    teares = Tear.query.filter_by(empresa_id=emp.id).all()
+    # Passa flag para template controlar botões/avisos
+    is_ativa = (emp.status_pagamento or "pendente") == "ativo"
+    return render_template('painel_malharia.html', empresa=emp, teares=teares, assinatura_ativa=is_ativa)
 
-    if empresa.status_pagamento != 'ativo':
-        return render_template('pagamento_pendente.html', empresa=empresa)
-
-    teares = Tear.query.filter_by(empresa_id=empresa.id).all()
-    return render_template('painel_malharia.html', empresa=empresa, teares=teares)
-
-from datetime import datetime
-import re
-from flask import request, jsonify
-
-def _try_int(s):
-    try:
-        return int(str(s).strip())
-    except:
-        return None
-
-def _extract_empresa_id(payment):
-    """
-    Tenta achar o ID da Empresa nas seguintes fontes (nessa ordem):
-    1) metadata.empresa_id
-    2) external_reference (formatos: "achetece:123:..." | "123" | "qualquer coisa 123")
-    3) None
-    """
-    meta = (payment or {}).get("metadata") or {}
-    if isinstance(meta, dict):
-        emp_id = _try_int(meta.get("empresa_id"))
-        if emp_id:
-            return emp_id
-
-    ext = (payment or {}).get("external_reference")
-    if ext:
-        # formato "achetece:123:*"
-        if isinstance(ext, str) and ext.startswith("achetece:"):
-            parts = ext.split(":")
-            if len(parts) >= 2:
-                emp_id = _try_int(parts[1])
-                if emp_id:
-                    return emp_id
-        # só números
-        emp_id = _try_int(ext)
-        if emp_id:
-            return emp_id
-        # qualquer dígito dentro do texto
-        m = re.search(r"(\d+)", str(ext))
-        if m:
-            emp_id = _try_int(m.group(1))
-            if emp_id:
-                return emp_id
-
-    return None
-
-
-@app.route('/webhook', methods=['POST', 'GET'])
-def webhook():
-    """
-    Webhook do Mercado Pago:
-    - Busca o pagamento por ID.
-    - Resolve a empresa via metadata/external_reference (com vários formatos) ou fallback por e-mail.
-    - Mapeia status -> {ativo|pendente|inativo}.
-    - Idempotente: só envia e-mail quando mudar para 'ativo'.
-    """
-    # ---- Captura do payload (POST e GET) ----
-    data = None
-    try:
-        data = request.get_json(silent=True)
-    except Exception as e:
-        app.logger.warning(f"[WEBHOOK] get_json falhou: {e}")
-
-    topic = None
-    payment_id = None
-
-    if data and isinstance(data, dict):
-        topic = data.get('type') or data.get('topic')
-        if isinstance(data.get('data'), dict):
-            payment_id = data['data'].get('id')
-        payment_id = payment_id or data.get('id')
-    else:
-        topic = request.args.get('topic') or request.form.get('topic') or request.args.get('type')
-        payment_id = request.args.get('id') or request.form.get('id')
-
-    app.logger.info(f"[WEBHOOK] topic={topic} | payment_id={payment_id} | raw={data}")
-
-    if not payment_id or str(topic).lower() != 'payment':
-        app.logger.info("[WEBHOOK] Notificação ignorada (sem topic=payment ou sem id).")
-        return "ok", 200
-
-    # ---- Consulta ao pagamento ----
-    try:
-        payment_resp = sdk.payment().get(payment_id)
-        payment = payment_resp.get("response", {}) if isinstance(payment_resp, dict) else {}
-    except Exception as e:
-        app.logger.exception(f"[WEBHOOK] Erro ao consultar pagamento {payment_id}: {e}")
-        return "ok", 200
-
-    status = (payment or {}).get("status", "") or ""
-    status = status.lower()
-    payer_email = (((payment or {}).get("payer")) or {}).get("email")
-    mp_payment_id = str((payment or {}).get("id"))
-    external_reference = (payment or {}).get("external_reference")
-    app.logger.info(f"[WEBHOOK] MP id={mp_payment_id} | status={status} | payer={payer_email} | ext_ref={external_reference} | meta={(payment or {}).get('metadata')}")
-
-    # ---- Resolve Empresa ----
-    empresa = None
-
-    # 1) Tenta por metadata/ext_ref (vários formatos)
-    emp_id = _extract_empresa_id(payment)
-    if emp_id:
-        empresa = Empresa.query.get(emp_id)
-        app.logger.info(f"[WEBHOOK] Empresa via id={emp_id}: {bool(empresa)}")
-
-    # 2) Fallback por e-mail do pagador (atenção: pode ser diferente do e-mail da empresa)
-    if not empresa and payer_email:
-        empresa = Empresa.query.filter_by(email=(payer_email or "").strip().lower()).first()
-        app.logger.info(f"[WEBHOOK] Empresa via payer_email={payer_email}: {bool(empresa)}")
-
-    if not empresa:
-        app.logger.error("[WEBHOOK] Empresa não encontrada (nem por external_reference/metadata nem por e-mail).")
-        return "ok", 200
-
-    # ---- Mapeia status do MP -> status interno ----
-    novo_status = empresa.status_pagamento or "pendente"
-    if status in ["approved", "authorized"]:
-        novo_status = "ativo"
-    elif status in ["in_process", "pending"]:
-        novo_status = "pendente"
-    elif status in ["rejected", "cancelled", "refunded", "charged_back"]:
-        novo_status = "inativo"
-    else:
-        app.logger.warning(f"[WEBHOOK] Status do MP não mapeado: {status}. Mantendo {novo_status}.")
-
-    # ---- Atualização idempotente ----
-    mudou_para_ativo = (empresa.status_pagamento != "ativo" and novo_status == "ativo")
-
-    try:
-        empresa.mercadopago_payment_id = mp_payment_id
-    except Exception:
-        pass
-    try:
-        empresa.mercadopago_reference = str(external_reference or (payment.get("metadata") or {}).get("empresa_id") or "")
-    except Exception:
-        pass
-
-    empresa.status_pagamento = novo_status
-    if novo_status == "ativo":
-        empresa.data_pagamento = datetime.utcnow()
-
-    try:
-        db.session.commit()
-        app.logger.info(f"[WEBHOOK] Empresa {empresa.id} ({empresa.email}) atualizada para: {empresa.status_pagamento}")
-    except Exception as e:
-        app.logger.exception(f"[WEBHOOK] Erro ao dar commit: {e}")
-        return "ok", 200
-
-    # ---- E-mail somente ao mudar para ATIVO ----
-    if mudou_para_ativo:
-        try:
-            apelido = (empresa.apelido or empresa.nome or "").strip() or "Cliente"
-            msg = Message(
-                subject="✅ Pagamento aprovado! Acesse seu painel no AcheTece",
-                sender=app.config.get('MAIL_USERNAME'),
-                recipients=[empresa.email]
-            )
-            msg.html = render_template_string("""
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-  <meta charset="UTF-8">
-  <title>Pagamento confirmado</title>
-  <style>
-    body { font-family: Arial, sans-serif; background-color: #f2f2f2; padding:0; margin:0; }
-    .container { max-width:600px; margin:40px auto; background:#fff; border-radius:8px; padding:30px;
-                 box-shadow:0 2px 8px rgba(0,0,0,.05); }
-    .logo { text-align:center; margin-bottom:30px; }
-    .logo img { max-height:70px; }
-    h2 { color:#003bb3; text-align:center; }
-    p { font-size:16px; color:#444; line-height:1.6; margin:20px 0; }
-    .botao { display:block; width:max-content; margin:30px auto; padding:14px 28px; background:#003bb3; color:#fff;
-             text-decoration:none; border-radius:8px; font-weight:bold; }
-    .footer { text-align:center; font-size:13px; color:#999; margin-top:30px; }
-    .footer a { color:#666; text-decoration:none; }
-    .footer a:hover { text-decoration:underline; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="logo">
-      <img src="{{ base }}/static/logo-email.png" alt="AcheTece">
-    </div>
-    <h2>✅ Pagamento confirmado com sucesso!</h2>
-    <p>Olá <strong>{{ apelido }}</strong>,</p>
-    <p>Seu pagamento foi aprovado e seu acesso ao painel já está liberado.</p>
-    <a class="botao" href="{{ base }}/login" target="_blank">Ir para o painel</a>
-    <p style="text-align:center; font-size:14px; color:#777;">
-      Dúvidas? <a href="https://wa.me/5547991120670" target="_blank">Fale com nossa equipe</a>.
-    </p>
-    <div class="footer">
-      AcheTece © {{ ano }} – Todos os direitos reservados.
-      <br><a href="{{ base }}">www.achetece.com.br</a>
-    </div>
-  </div>
-</body>
-</html>
-            """, apelido=apelido, ano=datetime.utcnow().year, base=base_url())
-            mail.send(msg)
-            app.logger.info(f"[WEBHOOK] E-mail HTML enviado para {empresa.email}")
-        except Exception as e:
-            app.logger.exception(f"[WEBHOOK] Erro ao enviar e-mail: {e}")
-
-    return "ok", 200
-
-@app.route("/quem_somos")
-@app.route("/quem_somos/")
-@app.route("/quem-somos")
-@app.route("/quem-somos/")
-def quem_somos():
-    return render_template("quem_somos.html")
-
-# compatibilidade se alguém acessar .html direto:
-@app.route("/quem_somos.html")
-def quem_somos_html():
-    return redirect(url_for("quem_somos"), code=301)
+# ======= CRUD de teares (gated por assinatura quando criar/editar/excluir) =======
 
 @app.route('/cadastrar_teares', methods=['GET', 'POST'])
+@assinatura_ativa_requerida
 def cadastrar_teares():
-    if 'empresa_id' not in session:
-        return redirect(url_for('login'))
+    emp, _ = _get_empresa_usuario_da_sessao()
     if request.method == 'POST':
         novo_tear = Tear(
             marca=request.form['marca'],
@@ -991,7 +802,7 @@ def cadastrar_teares():
             diametro=request.form['diametro'],
             alimentadores=request.form['alimentadores'],
             elastano=request.form['elastano'],
-            empresa_id=session['empresa_id']
+            empresa_id=emp.id
         )
         db.session.add(novo_tear)
         db.session.commit()
@@ -999,9 +810,11 @@ def cadastrar_teares():
     return render_template('cadastrar_teares.html')
 
 @app.route('/editar_tear/<int:id>', methods=['GET', 'POST'])
+@assinatura_ativa_requerida
 def editar_tear(id):
+    emp, _ = _get_empresa_usuario_da_sessao()
     tear = Tear.query.get_or_404(id)
-    if 'empresa_id' not in session or tear.empresa_id != session['empresa_id']:
+    if tear.empresa_id != emp.id:
         return redirect(url_for('login'))
 
     if request.method == 'POST':
@@ -1018,15 +831,32 @@ def editar_tear(id):
     return render_template('editar_tear.html', tear=tear)
 
 @app.route('/excluir_tear/<int:id>', methods=['POST'])
+@assinatura_ativa_requerida
 def excluir_tear(id):
+    emp, _ = _get_empresa_usuario_da_sessao()
     tear = Tear.query.get_or_404(id)
-    if 'empresa_id' not in session or tear.empresa_id != session['empresa_id']:
+    if tear.empresa_id != emp.id:
         return redirect(url_for('login'))
 
     db.session.delete(tear)
     db.session.commit()
     return redirect(url_for('painel_malharia'))
 
+# ======= Autoexclusão de conta pela malharia =======
+@app.route('/empresa/excluir', methods=['POST'])
+def excluir_empresa_self():
+    emp, _ = _get_empresa_usuario_da_sessao()
+    if not emp:
+        return redirect(url_for('login'))
+    # Remove teares (cascade já configurado, mas garantimos)
+    Tear.query.filter_by(empresa_id=emp.id).delete()
+    db.session.delete(emp)
+    db.session.commit()
+    session.clear()
+    flash("Sua conta foi excluída.", "success")
+    return redirect(url_for('index'))
+
+# ======= Fluxo de recuperação de senha =======
 @app.route('/esqueci_senha', methods=['GET', 'POST'])
 def esqueci_senha():
     if request.method == 'POST':
@@ -1042,6 +872,7 @@ def esqueci_senha():
         return render_template('esqueci_senha.html', erro='E-mail não encontrado no sistema.')
     return render_template('esqueci_senha.html')
 
+# ======= Busca pública =======
 @app.route('/busca', methods=['GET', 'POST'])
 def buscar_teares():
     filtros = {'tipo': '', 'diâmetro': '', 'galga': '', 'estado': '', 'cidade': ''}
@@ -1194,7 +1025,6 @@ def admin_empresas():
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 # NOVA ROTA: Alterar/editar status de pagamento (pendente <-> ativo)
-# Aceita GET (para o link do botão) e POST (para uso via form)
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 @app.route('/admin/editar_status/<int:empresa_id>', methods=['GET', 'POST'])
 @login_admin_requerido
@@ -1218,7 +1048,6 @@ def admin_editar_status(empresa_id):
         data_inicio=request.args.get('data_inicio', ''),
         data_fim=request.args.get('data_fim', '')
     ))
-# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 @app.route('/admin/excluir_empresa/<int:empresa_id>', methods=['POST'])
 @login_admin_requerido
@@ -1284,6 +1113,7 @@ def admin_logout():
 
 @app.route('/pagar', methods=['GET'])
 def pagar():
+    # Mantido por compatibilidade; aponta para /checkout
     return redirect(url_for('checkout'))
 
 @app.route('/pagamento_aprovado')
@@ -1583,7 +1413,6 @@ def criar_conta_cliente():
         'cidade': (cp.cidade if cp else '')
     }
     return render_template('criar_conta_cliente.html', estados=estados, **valores)
-
 
 @app.route('/api/pagamento_status')
 def api_pagamento_status():
