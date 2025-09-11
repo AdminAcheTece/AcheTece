@@ -20,6 +20,7 @@ import logging
 from unicodedata import normalize
 from sqlalchemy import inspect, text   # <-- para checar/alterar colunas
 from authlib.integrations.flask_client import OAuth
+from enum import Enum
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, 'static')  # ajuste para 'estático' se o seu folder tem acento
