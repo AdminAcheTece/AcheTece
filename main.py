@@ -431,6 +431,80 @@ def authorize_google():
     dest = session.pop('login_next', None) or url_for('pos_login')
     return redirect(dest)
 
+# --- IMPORTS necessários no topo (garanta que estão presentes) ---
+# from werkzeug.security import check_password_hash, generate_password_hash
+# from flask import request, render_template, redirect, url_for, flash, session
+# from your_app import app, db
+# from your_models import Malharia
+# import hashlib
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'GET':
+        return render_template('login.html')
+
+    # 1) Leia e normalize os campos do formulário
+    email = (request.form.get('email') or '').strip().lower()
+    senha = (request.form.get('senha') or '')
+
+    # 2) Busque o usuário de forma case-insensitive
+    user = Malharia.query.filter(db.func.lower(Malharia.email) == email).first()
+
+    # 3) Mensagem genérica ao usuário; motivo detalhado vai só para logs
+    GENERIC_FAIL = 'E-mail ou senha incorretos. Tente novamente.'
+
+    if not user:
+        app.logger.info(f"[LOGIN FAIL] user not found for {email}")
+        flash(GENERIC_FAIL)
+        return redirect(url_for('login'))
+
+    # 4) Conta criada via Google (sem senha local)
+    if not getattr(user, 'senha_hash', None):
+        app.logger.info(f"[LOGIN FAIL] no local password set (OAuth-only?) for {email}")
+        flash('Sua conta foi criada com o Google. Entre pelo botão do Google ou clique em "Esqueceu a senha?" para definir uma senha.')
+        return redirect(url_for('login'))
+
+    # 5) Verificação de senha + compatibilidade opcional com hash legado
+    ok = False
+    try:
+        ok = check_password_hash(user.senha_hash, senha)
+    except Exception as e:
+        app.logger.warning(f"[LOGIN WARN] check_password_hash raised for {email}: {e}")
+
+    if not ok:
+        # Compatibilidade opcional (apenas se você tiver usuário com SHA-256 antigo)
+        legacy_hash = getattr(user, 'senha_hash_antiga', None)
+        if legacy_hash:
+            sha = hashlib.sha256(senha.encode()).hexdigest()
+            if sha == legacy_hash:
+                # migra para pbkdf2 e limpa legado
+                user.senha_hash = generate_password_hash(senha)
+                user.senha_hash_antiga = None
+                db.session.commit()
+                ok = True
+
+    if not ok:
+        app.logger.info(f"[LOGIN FAIL] bad password for {email}")
+        flash(GENERIC_FAIL)
+        return redirect(url_for('login'))
+
+    # 6) Regras de ativação/pagamento (se o seu modelo tiver esses campos)
+    if hasattr(user, 'ativo') and user.ativo is False:
+        app.logger.info(f"[LOGIN BLOCK] inactive user {email}")
+        flash('Sua conta ainda não está ativada. Verifique seu e-mail ou aguarde a liberação.')
+        return redirect(url_for('login'))
+
+    if hasattr(user, 'status_pagamento'):
+        if user.status_pagamento not in (None, 'aprovado'):
+            app.logger.info(f"[LOGIN BLOCK] payment status={user.status_pagamento} for {email}")
+            flash('Pagamento ainda não aprovado. Assim que confirmar, o acesso será liberado.')
+            return redirect(url_for('login'))
+
+    # 7) Sucesso: cria sessão e redireciona
+    session['malharia_id'] = user.id
+    app.logger.info(f"[LOGIN OK] {email} -> painel_malharia")
+    return redirect(url_for('painel_malharia'))
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
