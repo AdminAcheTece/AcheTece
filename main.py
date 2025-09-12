@@ -309,6 +309,46 @@ def index():
     teares = Tear.query.all()
     return render_template('index.html', teares=teares)
 
+# Página inicial AGORA também é a busca
+@app.route("/", methods=["GET", "POST"])
+def index():
+    # 1) Leia filtros (GET/POST) exatamente como já fazia em /buscar_teares
+    origem = request.form if request.method == "POST" else request.args
+
+    filtros = {
+        "tipo": origem.get("tipo", ""),
+        "diâmetro": origem.get("diâmetro", ""),
+        "galga": origem.get("galga", ""),
+        "alimentadores": origem.get("alimentadores", ""),
+        "estado": origem.get("estado", ""),
+        "cidade": origem.get("cidade", ""),
+    }
+
+    # 2) Monte 'opcoes' (listas para cada select) como você já faz hoje
+    opcoes = carregar_opcoes_busca()  # use sua função atual
+
+    # 3) Busque resultados + paginação como já fazia
+    pagina = int(origem.get("pagina", 1) or 1)
+    resultados, total_paginas = buscar_teares_filtrados(filtros, pagina)  # sua função atual
+
+    return render_template(
+        "index.html",
+        opcoes=opcoes,
+        filtros=filtros,
+        resultados=resultados,
+        pagina=pagina,
+        total_paginas=total_paginas,
+    )
+
+# Antiga rota -> redireciona para a home (assim links antigos não quebram)
+@app.route("/buscar_teares", methods=["GET", "POST"])
+def buscar_teares_redirect():
+    # preserva querystring/filtros
+    if request.method == "POST":
+        return redirect(url_for("index"))
+    qs = request.query_string.decode("utf-8")
+    return redirect(f"{url_for('index')}{('?' + qs) if qs else ''}")
+
 @app.route('/dashboard_cliente')
 def dashboard_cliente():
     emp, u = _get_empresa_usuario_da_sessao()
