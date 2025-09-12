@@ -202,7 +202,8 @@
             <div class="painel-listas">
               <h3>Mais opções</h3>
               <ul class="lista-opcoes">
-                <li><a href="{{ url_for('planos_assinatura') }}">Assinatura e pagamentos</a></li>
+                <!-- CORRIGIDO: era 'planos_assinatura' e gerou BuildError; sua rota é 'planos' -->
+                <li><a href="{{ url_for('planos') }}">Assinatura e pagamentos</a></li>
                 <li><a href="{{ url_for('editar_empresa') }}">Editar dados da empresa</a></li>
                 <li><a href="{{ url_for('suporte') }}">Suporte AcheTece</a></li>
               </ul>
