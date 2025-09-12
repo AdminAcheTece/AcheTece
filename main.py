@@ -505,31 +505,6 @@ def login():
     app.logger.info(f"[LOGIN OK] {email} -> painel_malharia")
     return redirect(url_for('painel_malharia'))
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        email = request.form.get('email', '').strip().lower()
-        senha = request.form.get('senha', '')
-
-        session.pop('empresa_id', None)
-        session.pop('empresa_apelido', None)
-        session.pop('admin', None)
-
-        empresa = Empresa.query.filter_by(email=email).first()
-        if empresa and check_password_hash(empresa.senha, senha):
-            session['empresa_id'] = empresa.id
-            session['empresa_apelido'] = empresa.apelido or empresa.nome or empresa.email.split('@')[0]
-            session['admin'] = (empresa.email == "gestao.achetece@gmail.com")
-            return redirect(url_for('pos_login'))
-        else:
-            erro = "E-mail ou senha incorretos. Tente novamente."
-            return render_template('login.html', erro=erro)
-
-    return render_template('login.html')
-
-# --- Suporte / Fale Conosco (aliases para evitar BuildError no template) ---
-from flask import redirect, url_for, render_template
-
 @app.route("/fale_conosco")
 @app.route("/suporte")
 def fale_conosco():
