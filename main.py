@@ -453,6 +453,20 @@ def login():
 
     return render_template('login.html')
 
+# --- Suporte / Fale Conosco (aliases para evitar BuildError no template) ---
+from flask import redirect, url_for, render_template
+
+@app.route("/fale_conosco")
+@app.route("/suporte")
+def fale_conosco():
+    # Se você já tem um template fale_conosco.html, ele abre aqui:
+    try:
+        return render_template("fale_conosco.html")
+    except Exception:
+        # fallback: se ainda não tiver o template, redireciona para a home
+        return redirect(url_for("index"))
+
+
 # --- Quem somos (várias URLs apontando para o mesmo endpoint) ---
 @app.route("/quem_somos", endpoint="quem_somos")
 @app.route("/quem_somos/")
