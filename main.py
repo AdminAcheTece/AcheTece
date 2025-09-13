@@ -1514,5 +1514,80 @@ def api_pagamento_status():
 
     return jsonify({"status": status, "empresa_id": int(empresa.id)}), 200
 
+# -------- Autocomplete de Localização (cidades) --------
+from flask import jsonify, request
+from unicodedata import normalize
+
+def _norm_txt(s: str) -> str:
+    """Normaliza para busca sem acento e case-insensitive."""
+    if not s:
+        return ""
+    return normalize("NFKD", s).encode("ascii", "ignore").decode("ascii").lower().strip()
+
+def _todas_cidades_por_uf() -> dict:
+    """
+    Retorna { 'SC': ['Joinville', 'Jaraguá do Sul', ...], 'SP': [...], ... }
+    Usa sua função já existente _get_cidades_por_uf(uf). Se não tiver, adapte para ler do JSON.
+    """
+    ufs = ["AC","AL","AM","AP","BA","CE","DF","ES","GO","MA","MG","MS","MT","PA","PB","PE",
+           "PI","PR","RJ","RN","RO","RR","RS","SC","SE","SP","TO"]
+    mapa = {}
+    for sigla in ufs:
+        try:
+            lista = _get_cidades_por_uf(sigla) or []
+        except Exception:
+            lista = []
+        mapa[sigla] = lista
+    return mapa
+
+# Cache simples em memória para não reler toda hora
+_CIDADES_CACHE = None
+
+@app.get("/api/suggest/localizacao")
+def api_suggest_localizacao():
+    """
+    Query params:
+      q   = termo digitado (obrigatório)
+      uf  = UF para filtrar (opcional). Ex.: SC
+      limit = máximo de resultados (opcional, padrão 10)
+    Resposta: lista JSON de objetos { "label": "Jaraguá do Sul - SC", "cidade": "Jaraguá do Sul", "uf": "SC" }
+    """
+    global _CIDADES_CACHE
+    q = _norm_txt(request.args.get("q", ""))
+    uf = (request.args.get("uf") or "").upper().strip()
+    try:
+        limit = int(request.args.get("limit", 10))
+    except Exception:
+        limit = 10
+
+    if not q:
+        return jsonify([])
+
+    if _CIDADES_CACHE is None:
+        _CIDADES_CACHE = _todas_cidades_por_uf()
+
+    candidatos = []
+    if uf and uf in _CIDADES_CACHE:
+        fonte = [(c, uf) for c in _CIDADES_CACHE[uf]]
+    else:
+        # Varre todas as UFs
+        fonte = []
+        for uf_sigla, cidades in _CIDADES_CACHE.items():
+            fonte.extend((c, uf_sigla) for c in cidades)
+
+    # filtra por contém (melhor que startswith) e sem acento
+    resultados = []
+    for cidade, uf_sigla in fonte:
+        if q in _norm_txt(cidade):
+            resultados.append({
+                "label": f"{cidade} - {uf_sigla}",
+                "cidade": cidade,
+                "uf": uf_sigla
+            })
+            if len(resultados) >= limit:
+                break
+
+    return jsonify(resultados)
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
