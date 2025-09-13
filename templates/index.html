@@ -585,26 +585,20 @@
   </footer>
 
   <script>
-    (function(){
-      const btn = document.getElementById('toggleFilters');
-      const panel = document.getElementById('filtersPanel');
-      if(!btn || !panel) return;
-  
-      function toggle(){
-        const open = panel.classList.toggle('is-open');
-        document.body.classList.toggle('filters-open', open);
-        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      }
-      btn.addEventListener('click', toggle);
-  
-      // Fecha ao tocar fora (mobile)
-      panel.addEventListener('click', function(e){
-        // clique fora do formulário
-        if(e.target === panel && panel.classList.contains('is-open')){
-          toggle();
-        }
-      });
-    })();
+  (function(){
+    const btn = document.getElementById('toggleFilters');
+    const panel = document.getElementById('filtersPanel');
+    if(!btn || !panel) return;
+    function toggle(){
+      const open = panel.classList.toggle('is-open');
+      document.body.classList.toggle('filters-open', open);
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+    btn.addEventListener('click', toggle);
+    panel.addEventListener('click', e => {
+      if(e.target === panel && panel.classList.contains('is-open')) toggle();
+    });
+  })();
   </script>
   
 </body>
