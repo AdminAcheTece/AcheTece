@@ -739,6 +739,46 @@
   })();
   </script>
 
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const ufSelect = document.getElementById('local-estado');
+    const cidadeSelect = document.getElementById('local-cidade');
+  
+    async function carregarCidades(uf, preselecionada = '') {
+      if (!uf) {
+        cidadeSelect.innerHTML = '<option value="">Selecione a cidade</option>';
+        return;
+      }
+      cidadeSelect.innerHTML = '<option value="">Carregando...</option>';
+      try {
+        const resp = await fetch(`/api/cidades?uf=${encodeURIComponent(uf)}`);
+        if (!resp.ok) throw new Error('Falha na resposta da API');
+        const cidades = await resp.json();
+  
+        const options = ['<option value="">Selecione a cidade</option>']
+          .concat(cidades.map(c => {
+            const sel = (preselecionada && preselecionada === c) ? ' selected' : '';
+            return `<option value="${c.replace(/"/g,'&quot;')}"${sel}>${c}</option>`;
+          }));
+        cidadeSelect.innerHTML = options.join('');
+      } catch (err) {
+        console.error(err);
+        cidadeSelect.innerHTML = '<option value="">Falha ao carregar cidades</option>';
+      }
+    }
+  
+    ufSelect.addEventListener('change', () => {
+      carregarCidades(ufSelect.value);
+    });
+  
+    // Pré-carrega se já veio preenchido
+    const ufInicial = ufSelect.value;
+    const cidadeInicial = cidadeSelect.getAttribute('data-inicial') || '';
+    if (ufInicial) {
+      carregarCidades(ufInicial, cidadeInicial);
+    }
+  });
+  </script>
   
 </body>
 </html>
