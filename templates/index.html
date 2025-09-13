@@ -237,22 +237,31 @@
         </form>
       </aside>
 
+      <!-- ===== Localização (igual ao cadastrar_empresa), COLUNA DIREITA ===== -->
       <div class="localizacao-box">
         <h3 class="localizacao-titulo">Localização</h3>
       
-        <label for="local-estado">Estado</label>
-        <select id="local-estado" name="estado">
-          <option value="">Selecione o estado</option>
+        <label for="estado_lookup">Estado</label>
+        <select id="estado_lookup" data-name-target="estado">
+          <option value="" disabled selected>Selecione o estado</option>
           {% for uf in estados %}
-            <option value="{{ uf }}" {% if estado == uf %}selected{% endif %}>{{ uf }}</option>
+            <option value="{{ uf }}">{{ uf }}</option>
           {% endfor %}
         </select>
       
-        <label for="local-cidade">Cidade</label>
-        <select id="local-cidade" name="cidade" data-inicial="{{ cidade or '' }}">
-          <option value="">Selecione a cidade</option>
+        <label for="cidade_lookup">Cidade</label>
+        <select id="cidade_lookup" data-name-target="cidade" disabled
+                data-inicial="">
+          <option value="" disabled selected>Selecione a cidade</option>
         </select>
+      
+        <!-- OPCIONAL (seguro para não conflitar com a coluna esquerda):
+             estes inputs “espelho” só serão preenchidos por JS.
+             Se o seu formulário da direita já tiver <input name="estado/cidade">, remova estes dois. -->
+        <input type="hidden" name="estado" id="estado_hidden">
+        <input type="hidden" name="cidade" id="cidade_hidden">
       </div>
+
 
         </section>
 
