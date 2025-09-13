@@ -257,58 +257,71 @@
     <div class="steps" id="how-steps"></div>
   </section>
 
-  <section id="busca" class="container">
-    <h1>BUSCAR TEARES</h1>
+  <!-- Botão mobile para abrir/fechar filtros -->
+  <button class="filters-toggle" id="toggleFilters" aria-expanded="false" aria-controls="filtersPanel">
+    Filtros
+  </button>
   
-    <p class="frase-instrucao">
-      Use os filtros abaixo para encontrar a malharia e o tear que atendem à sua demanda de produção.
-    </p>
+  <div class="search-layout">
+    <!-- LATERAL ESQUERDA: filtros -->
+    <aside class="filters-panel" id="filtersPanel">
+      <h2 class="filters-title">Filtrar teares</h2>
   
-    <form method="POST" class="formulario" action="{{ url_for('index') }}">
-      {% for campo, opcoes_campo in opcoes.items() %}
-        <div class="campo">
-          <label for="{{ campo }}">{{ campo|capitalize }}:</label>
-          <select name="{{ campo }}" id="{{ campo }}">
-            <option value="">-- Todos --</option>
-            {% for opcao in opcoes_campo %}
-              <option value="{{ opcao }}" {% if filtros[campo] == opcao %}selected{% endif %}>{{ opcao }}</option>
-            {% endfor %}
-          </select>
-        </div>
-      {% endfor %}
-  
-      <div class="botoes">
-        <button type="submit">Buscar</button>
-        <a href="{{ url_for('index') }}" class="botao-cancelar">Limpar</a>
-      </div>
-    </form>
-  
-    {% if resultados %}
-      <div class="tabela-container">
-        <!-- sua tabela exatamente como já está em buscar.html -->
-        <!-- ... -->
-      </div>
-  
-      <div class="paginacao">
-        {% if pagina > 1 %}
-          <a href="?pagina={{ pagina - 1 }}{% for k, v in filtros.items() if v %}&{{ k }}={{ v }}{% endfor %}">← Anterior</a>
-        {% endif %}
-        Página {{ pagina }} de {{ total_paginas }}
-        {% if pagina < total_paginas %}
-          <a href="?pagina={{ pagina + 1 }}{% for k, v in filtros.items() if v %}&{{ k }}={{ v }}{% endfor %}">Próxima →</a>
-        {% endif %}
-      </div>
-  
-      <form action="/exportar" method="get">
-        {% for campo, valor in filtros.items() %}
-          {% if valor %}
-            <input type="hidden" name="{{ campo }}" value="{{ valor }}">
-          {% endif %}
+      <form method="POST" class="formulario" action="{{ url_for('index') }}">
+        {% for campo, opcoes_campo in opcoes.items() %}
+          <div class="filter-field">
+            <label for="{{ campo }}">{{ campo|capitalize }}</label>
+            <select name="{{ campo }}" id="{{ campo }}">
+              <option value="">-- Todos --</option>
+              {% for opcao in opcoes_campo %}
+                <option value="{{ opcao }}" {% if filtros[campo] == opcao %}selected{% endif %}>{{ opcao }}</option>
+              {% endfor %}
+            </select>
+          </div>
         {% endfor %}
-        <button type="submit">Exportar CSV</button>
+  
+        <div class="filter-actions">
+          <button type="submit" class="btn-primary">Buscar</button>
+          <a href="{{ url_for('index') }}" class="link-reset">Limpar</a>
+        </div>
       </form>
-    {% endif %}
-  </section>
+    </aside>
+  
+    <!-- ÁREA DIREITA: resultados/conteúdo -->
+    <section id="busca" class="container results-panel">
+      <h1>BUSCAR TEARES</h1>
+      <p class="frase-instrucao">
+        Use os filtros abaixo para encontrar a malharia e o tear que atendem à sua demanda de produção.
+      </p>
+  
+      {% if resultados %}
+        <div class="tabela-container">
+          <!-- sua tabela exatamente como já está em buscar.html -->
+          <!-- ... -->
+        </div>
+  
+        <div class="paginacao">
+          {% if pagina > 1 %}
+            <a href="?pagina={{ pagina - 1 }}{% for k, v in filtros.items() if v %}&{{ k }}={{ v }}{% endfor %}">← Anterior</a>
+          {% endif %}
+          Página {{ pagina }} de {{ total_paginas }}
+          {% if pagina < total_paginas %}
+            <a href="?pagina={{ pagina + 1 }}{% for k, v in filtros.items() if v %}&{{ k }}={{ v }}{% endfor %}">Próxima →</a>
+          {% endif %}
+        </div>
+  
+        <form action="/exportar" method="get">
+          {% for campo, valor in filtros.items() %}
+            {% if valor %}
+              <input type="hidden" name="{{ campo }}" value="{{ valor }}">
+            {% endif %}
+          {% endfor %}
+          <button type="submit">Exportar CSV</button>
+        </form>
+      {% endif %}
+    </section>
+  </div>
+
 
   
 
