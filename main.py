@@ -340,6 +340,11 @@ def index():
         total_paginas=total_paginas,
     )
 
+@app.route("/buscar_teares", methods=["GET", "POST"])
+def buscar_teares_redirect():
+    qs = request.query_string.decode("utf-8")
+    return redirect(f"{url_for('index')}{('?' + qs) if qs else ''}")
+
 # Antiga rota -> redireciona para a home (assim links antigos não quebram)
 @app.route("/buscar_teares", methods=["GET", "POST"])
 def buscar_teares_redirect():
