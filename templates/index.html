@@ -614,5 +614,126 @@
     }
   })();
   </script>
+
+  <script>
+  (function(){
+    const input = document.getElementById('input-localizacao');
+    const list  = document.getElementById('lista-sugestoes-localizacao');
+    if(!input || !list) return;
+  
+    // Utilitário: debounce
+    function debounce(fn, wait){
+      let t;
+      return function(...args){
+        clearTimeout(t);
+        t = setTimeout(() => fn.apply(this, args), wait);
+      }
+    }
+  
+    let highlightIndex = -1; // item focado pelo teclado
+  
+    function renderList(items){
+      list.innerHTML = '';
+      highlightIndex = -1;
+  
+      if(!items || !items.length){
+        const li = document.createElement('li');
+        li.className = 'typeahead-empty';
+        li.textContent = 'Nenhuma sugestão';
+        list.appendChild(li);
+        list.classList.add('show');
+        return;
+      }
+  
+      items.forEach((it, idx) => {
+        const li = document.createElement('li');
+        li.className = 'typeahead-item';
+        li.setAttribute('role', 'option');
+        li.setAttribute('data-cidade', it.cidade);
+        li.setAttribute('data-uf', it.uf);
+  
+        li.innerHTML = `<span class="pin"></span><span>${it.label}</span>`;
+        li.addEventListener('mousedown', (e) => {
+          // mousedown (e não click) evita perder o foco antes de setar
+          e.preventDefault();
+          input.value = it.cidade + ' - ' + it.uf;
+          list.classList.remove('show');
+        });
+        list.appendChild(li);
+      });
+  
+      list.classList.add('show');
+    }
+  
+    const fetchSuggest = debounce(async function(){
+      const q = input.value.trim();
+      if(q.length < 2){ // só começa a sugerir com 2+ letras
+        list.classList.remove('show');
+        return;
+      }
+      const ufParam = (input.dataset.uf || '').trim(); // opcional: filtra por UF atual
+      const url = new URL('/api/suggest/localizacao', window.location.origin);
+      url.searchParams.set('q', q);
+      if(ufParam) url.searchParams.set('uf', ufParam);
+      url.searchParams.set('limit', '10');
+  
+      try{
+        const resp = await fetch(url.toString(), { headers: { 'Accept': 'application/json' }});
+        const data = await resp.json();
+        renderList(data);
+      }catch(err){
+        console.error('Falha ao buscar sugestões:', err);
+        renderList([]);
+      }
+    }, 180); // debounce ~180ms
+  
+    input.addEventListener('input', fetchSuggest);
+  
+    // Fecha a lista ao perder o foco (com pequeno delay p/ permitir clique)
+    input.addEventListener('blur', () => {
+      setTimeout(() => list.classList.remove('show'), 120);
+    });
+  
+    // Navegação por teclado
+    input.addEventListener('keydown', (e) => {
+      const items = Array.from(list.querySelectorAll('.typeahead-item'));
+      if(!list.classList.contains('show') || !items.length) return;
+  
+      if(e.key === 'ArrowDown'){
+        e.preventDefault();
+        highlightIndex = (highlightIndex + 1) % items.length;
+        updateHighlight(items);
+      }else if(e.key === 'ArrowUp'){
+        e.preventDefault();
+        highlightIndex = (highlightIndex - 1 + items.length) % items.length;
+        updateHighlight(items);
+      }else if(e.key === 'Enter'){
+        e.preventDefault();
+        if(highlightIndex >= 0){
+          const li = items[highlightIndex];
+          const cidade = li.getAttribute('data-cidade');
+          const uf     = li.getAttribute('data-uf');
+          input.value = `${cidade} - ${uf}`;
+          list.classList.remove('show');
+        }else{
+          list.classList.remove('show');
+        }
+      }else if(e.key === 'Escape'){
+        list.classList.remove('show');
+      }
+    });
+  
+    function updateHighlight(items){
+      items.forEach((el, i) => {
+        el.setAttribute('aria-selected', i === highlightIndex ? 'true' : 'false');
+        if(i === highlightIndex){
+          el.scrollIntoView({ block: 'nearest' });
+        }
+      });
+    }
+  })();
+  </script>
+
+  
 </body>
 </html>
