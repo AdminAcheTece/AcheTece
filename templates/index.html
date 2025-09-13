@@ -287,43 +287,75 @@
       </form>
     </aside>
   
-    <!-- ÁREA DIREITA: resultados/conteúdo -->
-    <section id="busca" class="container results-panel">
-      <h1>BUSCAR TEARES</h1>
-      <p class="frase-instrucao">
-        Use os filtros abaixo para encontrar a malharia e o tear que atendem à sua demanda de produção.
-      </p>
-  
-      {% if resultados %}
-        <div class="tabela-container">
-          <!-- sua tabela exatamente como já está em buscar.html -->
-          <!-- ... -->
-        </div>
-  
-        <div class="paginacao">
-          {% if pagina > 1 %}
-            <a href="?pagina={{ pagina - 1 }}{% for k, v in filtros.items() if v %}&{{ k }}={{ v }}{% endfor %}">← Anterior</a>
+    <!-- Botão que aparece só no celular para abrir/fechar filtros -->
+    <button class="filters-toggle" id="toggleFilters" aria-expanded="false" aria-controls="filtersPanel">
+      Filtros
+    </button>
+    
+    <!-- Limite central da página -->
+    <div class="search-outer">
+      <!-- GRID de 2 colunas -->
+      <div class="search-layout">
+    
+        <!-- COLUNA ESQUERDA: filtros -->
+        <aside class="filters-panel" id="filtersPanel">
+          <h2 class="filters-title">Filtrar teares</h2>
+    
+          <form method="POST" class="formulario" action="{{ url_for('index') }}">
+            {% for campo, opcoes_campo in opcoes.items() %}
+              <div class="filter-field">
+                <label for="{{ campo }}">{{ campo|capitalize }}</label>
+                <select name="{{ campo }}" id="{{ campo }}">
+                  <option value="">-- Todos --</option>
+                  {% for opcao in opcoes_campo %}
+                    <option value="{{ opcao }}" {% if filtros[campo] == opcao %}selected{% endif %}>{{ opcao }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            {% endfor %}
+    
+            <div class="filter-actions">
+              <button type="submit" class="btn-primary">Buscar</button>
+              <a href="{{ url_for('index') }}" class="link-reset">Limpar</a>
+            </div>
+          </form>
+        </aside>
+    
+        <!-- COLUNA DIREITA: resultados -->
+        <section id="busca" class="results-panel">
+          <h1>BUSCAR TEARES</h1>
+          <p class="frase-instrucao">
+            Use os filtros abaixo para encontrar a malharia e o tear que atendem à sua demanda de produção.
+          </p>
+    
+          {% if resultados %}
+            <div class="tabela-container">
+              <!-- sua tabela exatamente como já está -->
+            </div>
+    
+            <div class="paginacao">
+              {% if pagina > 1 %}
+                <a href="?pagina={{ pagina - 1 }}{% for k, v in filtros.items() if v %}&{{ k }}={{ v }}{% endfor %}">← Anterior</a>
+              {% endif %}
+              Página {{ pagina }} de {{ total_paginas }}
+              {% if pagina < total_paginas %}
+                <a href="?pagina={{ pagina + 1 }}{% for k, v in filtros.items() if v %}&{{ k }}={{ v }}{% endfor %}">Próxima →</a>
+              {% endif %}
+            </div>
+    
+            <form action="/exportar" method="get">
+              {% for campo, valor in filtros.items() %}
+                {% if valor %}
+                  <input type="hidden" name="{{ campo }}" value="{{ valor }}">
+                {% endif %}
+              {% endfor %}
+              <button type="submit">Exportar CSV</button>
+            </form>
           {% endif %}
-          Página {{ pagina }} de {{ total_paginas }}
-          {% if pagina < total_paginas %}
-            <a href="?pagina={{ pagina + 1 }}{% for k, v in filtros.items() if v %}&{{ k }}={{ v }}{% endfor %}">Próxima →</a>
-          {% endif %}
-        </div>
-  
-        <form action="/exportar" method="get">
-          {% for campo, valor in filtros.items() %}
-            {% if valor %}
-              <input type="hidden" name="{{ campo }}" value="{{ valor }}">
-            {% endif %}
-          {% endfor %}
-          <button type="submit">Exportar CSV</button>
-        </form>
-      {% endif %}
-    </section>
-  </div>
-
-
-  
+        </section>
+    
+      </div>
+    </div>
 
   <!-- Modal / Sheet -->
   <div id="overlayMenu" class="overlay-menu" aria-hidden="true">
