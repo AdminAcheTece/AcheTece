@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>AcheTece - Portal de Malharias</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">F
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Ícone da aba (favicon) -->
   <link rel="icon" type="image/x-icon" href="/static/favicon_final.ico">
@@ -81,7 +81,7 @@
     .overlay-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid #eee;}
     .overlay-header h2{margin:0;font-size:22px;font-weight:700;color:#111;}
     .overlay-close{border:0;background:#f3f3f3;width:36px;height:36px;border-radius:12px;font-size:22px;line-height:1;cursor:pointer;}
-    .overlay-content{display:grid;grid-template-columns:1fr 1fr;gap:28px;padding:22px;overflow:auto;} /* <- GARANTE 2 COLUNAS */
+    .overlay-content{display:grid;grid-template-columns:1fr 1fr;gap:28px;padding:22px;overflow:auto;} /* <- 2 COLUNAS */
     .section-title{font-size:14px;color:#6b6b6b;font-weight:700;margin:6px 0 10px;text-transform:uppercase;letter-spacing:.3px;}
     .section-title.mt{margin-top:18px;}
 
@@ -115,7 +115,7 @@
     .signup-text a{color:var(--roxo);font-weight:600;text-decoration:none;}
     .signup-text a:hover{text-decoration:underline;}
 
-    /* Responsivo: em telas estreitas, tudo passa a 100% (colunas empilham naturalmente) */
+    /* Responsivo: em telas estreitas, tudo passa a 100% */
     @media (max-width:520px){
       :root{ --social-btn-w:100%; }
       .btn-google,.btn-facebook{width:100%;}
@@ -124,12 +124,11 @@
 
     /* ==================== MINI-CARDS / LISTAS ==================== */
     .section-title--simple{font-weight:700;font-size:16px;line-height:1.1;color:#111;text-transform:none;}
-    .section-title--simple + .cards-row{margin-top:36px;} /* dobra o espaço título → cards */
+    .section-title--simple + .cards-row{margin-top:36px;} /* (reajustado abaixo) */
 
     .cards-row{display:flex;gap:12px;flex-wrap:nowrap;align-items:flex-start;}
     .mini-card{
-      /* cards compactos (altura mínima para ícone + texto) */
-      flex:0 0 auto; aspect-ratio:auto; height:auto; padding:8px 12px; border-radius:12px;
+      flex:0 0 auto; height:auto; padding:8px 12px; border-radius:12px;
       gap:6px; display:inline-flex; align-items:center; justify-content:center; text-align:center;
       border:1px solid #eee; transition:.16s; text-decoration:none; font-weight:700;
     }
@@ -169,33 +168,20 @@
     @media (max-width:720px){.footer-inner{grid-template-columns:1fr}.footer-cols{grid-template-columns:1fr}.cta-text h3{font-size:16px}.cta-text p{font-size:14px}}
   
     /* ===== Ajuste fino de espaçamentos nos títulos da coluna direita ===== */
-
-    /* 1) título "Facilidades AcheTece" mais perto dos cards */
-    .section-title--simple + .cards-row{
-      margin-top: 8px !important;   /* antes: 36px */
-    }
-
-    /* 2) "Mais opções" mais distante dos cards acima */
-    .section-title--simple.mt{
-      margin-top: 28px !important;   /* dá um respiro maior antes do título */
-    }
-
-    /* Alinha o título "Facilidades AcheTece" com "Entrar ou criar conta" */
-    .overlay-col:nth-child(2) .section-title--simple:first-of-type {
-      margin-top: 8px; /* ajuste fino: teste entre 24px e 32px se precisar */
-    }
+    .section-title--simple + .cards-row{ margin-top: 8px !important; } /* antes 36px */
+    .section-title--simple.mt{ margin-top: 28px !important; }
+    .overlay-col:nth-child(2) .section-title--simple:first-of-type { margin-top: 8px; }
 
     /* Cadeado SVG antes do "Esqueci minha senha" */
     .links-inline a {
       position: relative;
-      padding-left: 18px;   /* espaço para o ícone */
+      padding-left: 18px;
       font-size: 13px;
       color: #333;
       text-decoration: none;
       display: inline-flex;
-      align-items: center;  /* garante alinhamento vertical */
+      align-items: center;
     }
-
     .links-inline a::before {
       content: "";
       position: absolute;
@@ -207,7 +193,70 @@
       background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='%23555' viewBox='0 0 24 24'><path d='M12 1a5 5 0 0 0-5 5v4H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V12a2 2 0 0 0-2-2h-1V6a5 5 0 0 0-5-5zm-3 9V6a3 3 0 0 1 6 0v4H9z'/></svg>") no-repeat center;
       background-size: contain;
     }
-    
+
+    /* ==================== LAYOUT BUSCA: COLUNA ESQ. (sticky) + CONTEÚDO DIR. ==================== */
+    .filters-toggle{
+      display:none;       /* aparece apenas no mobile */
+      position:sticky;
+      top:10px;
+      margin:12px 16px 0;
+      padding:8px 12px;
+      border-radius:10px;
+      border:1px solid #eaeaea;
+      background:#fff;
+      font-weight:700;
+      cursor:pointer;
+      z-index:20;
+    }
+
+    .search-layout{
+      display:grid;
+      grid-template-columns: 300px 1fr;  /* estreita + larga */
+      gap:24px;
+      align-items:start;
+      max-width:1200px;
+      margin:16px auto;
+      padding:0 16px;
+    }
+
+    .filters-panel{
+      border:1px solid #eee;
+      border-radius:14px;
+      padding:16px;
+      background:#fff;
+      position:sticky;
+      top:88px;                    /* ajuste conforme altura do header */
+      max-height: calc(100vh - 100px);
+      overflow:auto;
+    }
+    .filters-title{margin:0 0 12px;font-size:18px;font-weight:700;}
+    .filter-field{margin-bottom:12px;}
+    .filter-field label{display:block;font-size:14px;margin-bottom:6px;color:#444;}
+    .filter-field select{width:100%;height:40px;padding:8px 10px;border:1px solid #ccc;border-radius:10px;background:#fff;color:#333;}
+    .filter-actions .btn-primary{width:100%;}
+    .link-reset{display:inline-block;margin-top:10px;font-size:14px;color:#6a6a6a;text-decoration:underline;}
+
+    .results-panel{min-height:400px;}
+
+    /* Mobile: filtros viram drawer lateral e grid vira 1 coluna */
+    @media (max-width:1024px){
+      .filters-toggle{display:inline-block;}
+      .search-layout{grid-template-columns:1fr;}
+      .filters-panel{
+        position:fixed;
+        left:0; top:0; bottom:0;
+        width:min(90%,360px);
+        max-width:90vw;
+        max-height:none;
+        border-radius:0;
+        padding:16px;
+        transform:translateX(-110%);
+        transition:transform .2s ease;
+        z-index:1001;
+      }
+      .filters-panel.is-open{ transform:translateX(0); }
+      body.filters-open{ overflow:hidden; }
+    }
   </style>
 </head>
 <body>
@@ -242,12 +291,10 @@
       </div>
   
       <h1 id="hero-title">Encontre teares de malharia prontos para produzir</h1>
-      <p id="hero-sub">Filtre sua busca por tipo, diâmetro, galga e localizaçao. Fale direto com a malharia.</p>
+      <p id="hero-sub">Filtre sua busca por tipo, diâmetro, galga e localização. Fale direto com a malharia.</p>
   
       <div class="hero-ctas">
-        <a id="hero-cta" href="#busca" class="btn-principal">Buscar teares agora</a>             <!-- se for só na home -->
-        <!-- ou -->
-        <a id="hero-cta" href="{{ url_for('index') }}#busca" class="btn-principal">Buscar teares agora</a>  <!-- se o mesmo bloco for usado também em outras páginas -->
+        <a id="hero-cta" href="#busca" class="btn-principal">Buscar teares agora</a>
       </div>
     </div>
   </main>
@@ -257,16 +304,17 @@
     <div class="steps" id="how-steps"></div>
   </section>
 
-  <!-- Botão mobile para abrir/fechar filtros -->
+  <!-- Botão mobile para abrir/fechar filtros (visível apenas <=1024px) -->
   <button class="filters-toggle" id="toggleFilters" aria-expanded="false" aria-controls="filtersPanel">
     Filtros
   </button>
   
+  <!-- ===== LAYOUT DE BUSCA: COLUNA ESQ. (FILTROS) + COLUNA DIR. (RESULTADOS/CONTEÚDOS) ===== -->
   <div class="search-layout">
-    <!-- LATERAL ESQUERDA: filtros -->
+    <!-- COLUNA ESQUERDA: filtros -->
     <aside class="filters-panel" id="filtersPanel">
       <h2 class="filters-title">Filtrar teares</h2>
-  
+
       <form method="POST" class="formulario" action="{{ url_for('index') }}">
         {% for campo, opcoes_campo in opcoes.items() %}
           <div class="filter-field">
@@ -279,83 +327,47 @@
             </select>
           </div>
         {% endfor %}
-  
+
         <div class="filter-actions">
           <button type="submit" class="btn-primary">Buscar</button>
           <a href="{{ url_for('index') }}" class="link-reset">Limpar</a>
         </div>
       </form>
     </aside>
-  
-    <!-- Botão que aparece só no celular para abrir/fechar filtros -->
-    <button class="filters-toggle" id="toggleFilters" aria-expanded="false" aria-controls="filtersPanel">
-      Filtros
-    </button>
-    
-    <!-- Limite central da página -->
-    <div class="search-outer">
-      <!-- GRID de 2 colunas -->
-      <div class="search-layout">
-    
-        <!-- COLUNA ESQUERDA: filtros -->
-        <aside class="filters-panel" id="filtersPanel">
-          <h2 class="filters-title">Filtrar teares</h2>
-    
-          <form method="POST" class="formulario" action="{{ url_for('index') }}">
-            {% for campo, opcoes_campo in opcoes.items() %}
-              <div class="filter-field">
-                <label for="{{ campo }}">{{ campo|capitalize }}</label>
-                <select name="{{ campo }}" id="{{ campo }}">
-                  <option value="">-- Todos --</option>
-                  {% for opcao in opcoes_campo %}
-                    <option value="{{ opcao }}" {% if filtros[campo] == opcao %}selected{% endif %}>{{ opcao }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-            {% endfor %}
-    
-            <div class="filter-actions">
-              <button type="submit" class="btn-primary">Buscar</button>
-              <a href="{{ url_for('index') }}" class="link-reset">Limpar</a>
-            </div>
-          </form>
-        </aside>
-    
-        <!-- COLUNA DIREITA: resultados -->
-        <section id="busca" class="results-panel">
-          <h1>BUSCAR TEARES</h1>
-          <p class="frase-instrucao">
-            Use os filtros abaixo para encontrar a malharia e o tear que atendem à sua demanda de produção.
-          </p>
-    
-          {% if resultados %}
-            <div class="tabela-container">
-              <!-- sua tabela exatamente como já está -->
-            </div>
-    
-            <div class="paginacao">
-              {% if pagina > 1 %}
-                <a href="?pagina={{ pagina - 1 }}{% for k, v in filtros.items() if v %}&{{ k }}={{ v }}{% endfor %}">← Anterior</a>
-              {% endif %}
-              Página {{ pagina }} de {{ total_paginas }}
-              {% if pagina < total_paginas %}
-                <a href="?pagina={{ pagina + 1 }}{% for k, v in filtros.items() if v %}&{{ k }}={{ v }}{% endfor %}">Próxima →</a>
-              {% endif %}
-            </div>
-    
-            <form action="/exportar" method="get">
-              {% for campo, valor in filtros.items() %}
-                {% if valor %}
-                  <input type="hidden" name="{{ campo }}" value="{{ valor }}">
-                {% endif %}
-              {% endfor %}
-              <button type="submit">Exportar CSV</button>
-            </form>
+
+    <!-- COLUNA DIREITA: resultados e demais informações -->
+    <section id="busca" class="results-panel">
+      <h1>BUSCAR TEARES</h1>
+      <p class="frase-instrucao">
+        Use os filtros ao lado para encontrar a malharia e o tear que atendem à sua demanda de produção.
+      </p>
+
+      {% if resultados %}
+        <div class="tabela-container">
+          <!-- sua tabela exatamente como já está -->
+        </div>
+
+        <div class="paginacao">
+          {% if pagina > 1 %}
+            <a href="?pagina={{ pagina - 1 }}{% for k, v in filtros.items() if v %}&{{ k }}={{ v }}{% endfor %}">← Anterior</a>
           {% endif %}
-        </section>
-    
-      </div>
-    </div>
+          Página {{ pagina }} de {{ total_paginas }}
+          {% if pagina < total_paginas %}
+            <a href="?pagina={{ pagina + 1 }}{% for k, v in filtros.items() if v %}&{{ k }}={{ v }}{% endfor %}">Próxima →</a>
+          {% endif %}
+        </div>
+
+        <form action="/exportar" method="get">
+          {% for campo, valor in filtros.items() %}
+            {% if valor %}
+              <input type="hidden" name="{{ campo }}" value="{{ valor }}">
+            {% endif %}
+          {% endfor %}
+          <button type="submit">Exportar CSV</button>
+        </form>
+      {% endif %}
+    </section>
+  </div>
 
   <!-- Modal / Sheet -->
   <div id="overlayMenu" class="overlay-menu" aria-hidden="true">
@@ -479,6 +491,37 @@
     </section>
   </div>
 
+  <section class="cta-bar" aria-label="Convite para cadastro">
+    <div class="cta-text">
+      <h3>É proprietário de uma malharia?</h3>
+      <p>Cadastre sua malharia e comece a receber novos pedidos.</p>
+    </div>
+    <a href="/malharia_info" class="cta-btn">Cadastrar</a>
+  </section>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="/static/logo_simbolo.png" alt="AcheTece">
+      </div>
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h4>Sobre nós</h4>
+          <ul>
+            <li><a href="/quem_somos">O AcheTece</a></li>
+            <li><a href="/malharia_info">Como funciona</a></li>
+            <li><a href="/contato">Fale conosco</a></li>
+            <li><a href="/termos">Termos e Políticas</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>&nbsp;</h4>
+          <ul><li>&nbsp;</li></ul>
+        </div>
+      </div>
+    </div>
+  </footer>
+
   <!-- Scripts -->
   <script>
     (function(){
@@ -517,7 +560,7 @@
           </div>`).join('');
       }
 
-      const cliente={title:"Encontre teares de malharia prontos para produzir",sub:"Filtre sua busca por tipo, diâmetro, galga e localizaçao. Fale direto com a malharia.",ctaText:"Buscar teares agora",ctaHref:"/buscar_teares"};
+      const cliente={title:"Encontre teares de malharia prontos para produzir",sub:"Filtre sua busca por tipo, diâmetro, galga e localização. Fale direto com a malharia.",ctaText:"Buscar teares agora",ctaHref:"#busca"};
       const malharia={title:"Tem teares ociosos? Receba pedidos todo mês",sub:"Seja encontrado por quem precisa produzir. Cadastro simples por apenas R$ 49,90/mês.",ctaText:"Cadastrar minha malharia",ctaHref:"/malharia_info"};
 
       const tabs=document.querySelectorAll('.role-toggle [data-role]');
@@ -553,37 +596,7 @@
     })();
   </script>
 
-  <section class="cta-bar" aria-label="Convite para cadastro">
-    <div class="cta-text">
-      <h3>É proprietário de uma malharia?</h3>
-      <p>Cadastre sua malharia e comece a receber novos pedidos.</p>
-    </div>
-    <a href="/malharia_info" class="cta-btn">Cadastrar</a>
-  </section>
-
-  <footer class="site-footer">
-    <div class="footer-inner">
-      <div class="footer-brand">
-        <img src="/static/logo_simbolo.png" alt="AcheTece">
-      </div>
-      <div class="footer-cols">
-        <div class="footer-col">
-          <h4>Sobre nós</h4>
-          <ul>
-            <li><a href="/quem_somos">O AcheTece</a></li>
-            <li><a href="/malharia_info">Como funciona</a></li>
-            <li><a href="/contato">Fale conosco</a></li>
-            <li><a href="/termos">Termos e Políticas</a></li>
-          </ul>
-        </div>
-        <div class="footer-col">
-          <h4>&nbsp;</h4>
-          <ul><li>&nbsp;</li></ul>
-        </div>
-      </div>
-    </div>
-  </footer>
-
+  <!-- Toggle dos filtros no mobile -->
   <script>
   (function(){
     const btn = document.getElementById('toggleFilters');
