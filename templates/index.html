@@ -278,11 +278,14 @@
           <div style="font-weight:700; color:#222; margin-bottom:8px;">
             Localização <span style="background:linear-gradient(90deg,#a335ff,#ff7a00);color:#fff;border-radius:12px;padding:2px 8px;font-size:12px;margin-left:6px;">Novo</span>
           </div>
-          <div class="loc-field">
-            <div class="loc-left">
-              <span aria-hidden="true">📍</span>
-              <span id="loc-label">Brasil</span>
-            </div>
+        
+          <!-- Campo único com autocomplete (estilo OLX) -->
+          <div class="loc-search-wrap">
+            <span class="loc-ico" aria-hidden="true">📍</span>
+            <input id="loc-input" list="loc-suggestions"
+                   placeholder="Digite um bairro ou cidade"
+                   autocomplete="off" inputmode="search" />
+            <datalist id="loc-suggestions"></datalist>
             <button class="loc-clear" type="button" aria-label="Limpar localização" title="Limpar">×</button>
           </div>
         </section>
@@ -531,5 +534,102 @@
       }
     })();
   </script>
+
+  <script>
+  (function(){
+    const input   = document.getElementById('loc-input');
+    const list    = document.getElementById('loc-suggestions');
+    const clearBt = document.querySelector('.loc-clear');
+  
+    // selects da coluna de filtros (mantidos no seu form)
+    const formFiltros = document.querySelector('.filters-panel form');
+    const selUF   = document.getElementById('estado');
+    const selCID  = document.getElementById('cidade');
+  
+    if(!input || !list || !formFiltros || !selUF || !selCID) return;
+  
+    // Monta sugestões a partir das opções reais dos selects
+    function rebuildSuggestions(){
+      list.innerHTML = '';
+  
+      // Estados (UF)
+      Array.from(selUF.options).forEach(o=>{
+        const v=o.value?.trim(); if(!v) return;
+        const op=document.createElement('option'); op.value=v; list.appendChild(op);
+      });
+  
+      // Cidades (as que já estão carregadas no select atual)
+      const ufs = Array.from(selUF.options).map(o=>o.value).filter(Boolean);
+      Array.from(selCID.options).forEach(o=>{
+        const v=o.value?.trim(); if(!v) return;
+        // Sugestão só com a cidade
+        const op1=document.createElement('option'); op1.value=v; list.appendChild(op1);
+        // E variações "Cidade - UF" (para quem digita igual à OLX)
+        ufs.forEach(uf=>{
+          const op2=document.createElement('option'); op2.value=`${v} - ${uf}`; list.appendChild(op2);
+        });
+      });
+    }
+    rebuildSuggestions();
+  
+    // Sempre que o select de cidade mudar (ex.: você carrega via backend conforme UF),
+    // dá pra reconstruir a lista:
+    selCID.addEventListener('change', rebuildSuggestions);
+  
+    function aplicaLocalizacao(query){
+      const q = (query || '').trim();
+      if(!q) return;
+  
+      let cidade=null, uf=null;
+  
+      // Tenta "Cidade - UF"
+      const m = q.match(/^(.*?)(?:\s*-\s*([A-Za-z]{2}))$/);
+      if(m){
+        cidade = m[1].trim();
+        uf     = m[2].toUpperCase();
+      } else {
+        // Se digitar só a UF
+        const ufs = Array.from(selUF.options).map(o=>o.value);
+        const achouUF = ufs.find(u => u && u.toLowerCase()===q.toLowerCase());
+        if(achouUF){ uf = achouUF; }
+        else { cidade = q; } // senão, tratamos como cidade
+      }
+  
+      // Aplica UF se existir entre as opções
+      if(uf && Array.from(selUF.options).some(o=>o.value===uf)){
+        selUF.value = uf;
+      } else {
+        selUF.value = ''; // deixa sem filtro de UF
+      }
+  
+      // Aplica cidade se existir entre as opções atuais
+      if(cidade && Array.from(selCID.options).some(o=>o.value.toLowerCase()===cidade.toLowerCase())){
+        selCID.value = Array.from(selCID.options).find(o=>o.value.toLowerCase()===cidade.toLowerCase()).value;
+      } else {
+        selCID.value = '';
+      }
+  
+      // Envia o formulário de filtros
+      formFiltros.requestSubmit ? formFiltros.requestSubmit() : formFiltros.submit();
+    }
+  
+    // Enter ou perda de foco aplica
+    input.addEventListener('keydown', e=>{
+      if(e.key==='Enter'){ e.preventDefault(); aplicaLocalizacao(input.value); }
+    });
+    input.addEventListener('change', ()=> aplicaLocalizacao(input.value));
+  
+    // Botão de limpar
+    if(clearBt){
+      clearBt.addEventListener('click', ()=>{
+        input.value = '';
+        selUF.value = '';
+        selCID.value = '';
+        formFiltros.requestSubmit ? formFiltros.requestSubmit() : formFiltros.submit();
+      });
+    }
+  })();
+  </script>
+  
 </body>
 </html>
