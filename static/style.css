@@ -697,5 +697,118 @@ thead tr{ background:#f2f2f2; }
       border-radius: 999px;
       font-weight: 700;
     }
-  }
-}
+
+    /* ===== Layout de duas colunas (sidebar + conteúdo) ===== */
+   .search-layout{
+     display:grid;
+     grid-template-columns: 300px 1fr;   /* largura da sidebar */
+     gap:24px;
+     align-items:start;
+     margin-top:16px;
+   }
+   
+   /* Botão de filtro (mobile) */
+   .filters-toggle{
+     display:none;
+     border:1px solid #e5e5ea;
+     background:#fff;
+     padding:10px 14px;
+     border-radius:10px;
+     font-weight:600;
+   }
+   
+   /* ===== Sidebar ===== */
+   .filters-panel{
+     background:#fff;
+     border:1px solid #ececf1;
+     border-radius:14px;
+     padding:16px;
+     box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+     position:sticky;        /* fica fixa ao rolar */
+     top:88px;               /* ajuste conforme a altura do seu cabeçalho */
+     height:fit-content;
+   }
+   
+   .filters-title{
+     font-size:18px;
+     margin:0 0 10px 0;
+     font-weight:700;
+   }
+   
+   .filter-field{ margin-bottom:14px; }
+   .filter-field label{
+     display:block;
+     font-size:14px;
+     margin-bottom:6px;
+     color:#555;
+   }
+   
+   /* Inputs/Selects compactos (estilo OLX) */
+   .filters-panel select,
+   .filters-panel input{
+     width:100%;
+     height:44px;
+     border:1px solid #e6e6e9;
+     background:#f7f7f8;
+     border-radius:10px;
+     padding:0 12px;
+     font-size:14px;
+   }
+   
+   /* Ações */
+   .filter-actions{
+     display:flex;
+     align-items:center;
+     gap:12px;
+     margin-top:8px;
+   }
+   .btn-primary{
+     border:0;
+     padding:10px 16px;
+     border-radius:12px;
+     background:#8A00FF;            /* roxo da sua identidade */
+     color:#fff;
+     font-weight:700;
+     cursor:pointer;
+   }
+   .btn-primary:hover{ filter:brightness(0.95); }
+   .link-reset{
+     font-size:14px;
+     color:#8A00FF;
+     text-decoration:underline;
+   }
+   
+   /* ===== Painel de resultados ===== */
+   .results-panel{
+     background:transparent; /* deixe seu conteúdo como já está */
+     min-height:200px;
+   }
+   
+   /* ===== Responsivo ===== */
+   @media (max-width: 992px){
+     .search-layout{
+       grid-template-columns: 1fr;
+     }
+     .filters-toggle{
+       display:inline-flex;
+       margin:8px 0 0 0;
+     }
+     /* Sidebar vira “off-canvas” */
+     .filters-panel{
+       position:fixed;
+       left:0; top:0; bottom:0;
+       width:88%;
+       max-width:360px;
+       border-radius:0 14px 14px 0;
+       transform:translateX(-110%);
+       transition:transform .25s ease;
+       z-index:9999;
+       overflow:auto;
+     }
+     .filters-panel.is-open{
+       transform:translateX(0);
+     }
+     body.filters-open{
+       overflow:hidden; /* trava o scroll do fundo ao abrir filtros */
+     }
+   }
