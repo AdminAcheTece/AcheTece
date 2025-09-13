@@ -310,7 +310,6 @@
         <input type="hidden" name="cidade" id="cidade_hidden">
       </div>
 
-
         </section>
 
         <!-- RESULTADOS -->
@@ -386,22 +385,6 @@
         <div class="overlay-col">
           <h3 class="section-title section-title--login">Entrar ou criar conta</h3>
 
-          <div class="social-row">
-            <button class="btn-google" onclick="location.href='/login_google'">
-              <img src="/static/icone_google.png" alt="Google">
-              <span class="g-text">Entrar com Google</span>
-            </button>
-
-            <button class="btn-facebook" onclick="alert('Conectar Facebook em breve')">
-              <span class="fb-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff">
-                  <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 5 3.66 9.12 8.44 9.88v-6.99H8.08v-2.9h2.36V9.83c0-2.33 1.39-3.62 3.52-3.62 1.02 0 2.09.18 2.09.18v2.3h-1.18c-1.17 0-1.54.73-1.54 1.48v1.78h2.63l-.42 2.9h-2.21v6.99C18.34 21.12 22 17 22 12z"/>
-                </svg>
-              </span>
-              <span>Entrar com Facebook</span>
-            </button>
-          </div>
-
           <h3 class="form-subtitle">Dados de acesso</h3>
           <div class="access-fields">
             <input type="email" placeholder="Email de login..." class="input" autocomplete="username">
@@ -474,6 +457,98 @@
     <a href="{{ url_for('malharia_info') }}" class="cta-btn">Cadastrar</a>
   </section>
 
+  <!-- ===== Conteúdo do CADASTRO ===== -->
+  <div class="container">
+    <h1 class="titulo">Cadastrar Malharia</h1>
+
+    {% if erro %}
+    <div class="mensagem-erro">
+      <div class="icone">⚠️</div>
+      <p><strong>Erro:</strong> {{ erro }}</p>
+      <a href="#formulario" class="botao-voltar">← Corrigir dados</a>
+    </div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('cadastrar_empresa') }}" class="formulario" id="formulario" autocomplete="off">
+      <label for="nome">Nome da Empresa <span style="color:#d00000">*</span></label>
+      <input type="text" id="nome" name="nome" required
+             value="{{ nome or '' }}" class="{% if erros and erros.get('nome') %}erro-campo{% endif %}">
+      {% if erros and erros.get('nome') %}
+        <div class="mensagem-campo">{{ erros.get('nome') }}</div>
+      {% endif %}
+
+      <label for="apelido">Apelido da Empresa:</label>
+      <input type="text" id="apelido" name="apelido" value="{{ apelido or '' }}" class="{% if erros and erros.get('apelido') %}erro-campo{% endif %}">
+      {% if erros and erros.get('apelido') %}
+        <div class="mensagem-campo">{{ erros.get('apelido') }}</div>
+      {% endif %}
+
+      <!-- Nome do responsável -->
+      <label for="responsavel_nome">Nome do responsável <span style="color:#d00000">*</span></label>
+      <input type="text" id="responsavel_nome" name="responsavel_nome" autocomplete="given-name" required
+             placeholder="Ex.: Maria"
+             value="{{ responsavel_nome or '' }}"
+             class="{% if erros and erros.get('responsavel_nome') %}erro-campo{% endif %}">
+      {% if erros and erros.get('responsavel_nome') %}
+        <div class="mensagem-campo">{{ erros.get('responsavel_nome') }}</div>
+      {% endif %}
+
+      <!-- Sobrenome (opcional) -->
+      <label for="responsavel_sobrenome">Sobrenome do responsável (opcional)</label>
+      <input type="text" id="responsavel_sobrenome" name="responsavel_sobrenome" autocomplete="family-name"
+             placeholder="Ex.: Silva"
+             value="{{ responsavel_sobrenome or '' }}"
+             class="{% if erros and erros.get('responsavel_sobrenome') %}erro-campo{% endif %}">
+      {% if erros and erros.get('responsavel_sobrenome') %}
+        <div class="mensagem-campo">{{ erros.get('responsavel_sobrenome') }}</div>
+      {% endif %}
+
+      <label for="estado">Estado <span style="color:#d00000">*</span></label>
+      <select id="estado" name="estado" required class="{% if erros and erros.get('estado') %}erro-campo{% endif %}">
+        <option value="">Selecione o estado</option>
+        {% for uf in estados %}
+          <option value="{{ uf }}" {% if estado == uf %}selected{% endif %}>{{ uf }}</option>
+        {% endfor %}
+      </select>
+      {% if erros and erros.get('estado') %}
+        <div class="mensagem-campo">{{ erros.get('estado') }}</div>
+      {% endif %}
+
+      <label for="cidade">Cidade <span style="color:#d00000">*</span></label>
+      <!-- Agora a lista é preenchida via JS a partir de /api/cidades -->
+      <select id="cidade" name="cidade" required
+              data-inicial="{{ cidade or '' }}"
+              class="{% if erros and erros.get('cidade') %}erro-campo{% endif %}">
+        <option value="">Selecione a cidade</option>
+      </select>
+      {% if erros and erros.get('cidade') %}
+        <div class="mensagem-campo">{{ erros.get('cidade') }}</div>
+      {% endif %}
+
+      <label for="telefone">Telefone <span style="color:#d00000">*</span></label>
+      <input type="tel" id="telefone" name="telefone"
+             pattern="[0-9]{10,13}" placeholder="47999991234"
+             title="Digite apenas números, ex: 47999991234"
+             value="{{ telefone or '' }}" required
+             class="{% if erros and erros.get('telefone') %}erro-campo{% endif %}">
+      {% if erros and erros.get('telefone') %}
+        <div class="mensagem-campo">{{ erros.get('telefone') }}</div>
+      {% endif %}
+
+      <label for="email">E-mail <span style="color:#d00000">*</span></label>
+      <input type="email" id="email" name="email" value="{{ email or '' }}" required
+             class="{% if erros and erros.get('email') %}erro-campo{% endif %}">
+      {% if erros and erros.get('email') %}
+        <div class="mensagem-campo">{{ erros.get('email') }}</div>
+      {% endif %}
+
+      <label for="senha">Senha <span style="color:#d00000">*</span></label>
+      <input type="password" id="senha" name="senha" autocomplete="new-password" required>
+
+      <button type="submit" class="botao-salvar">Salvar Empresa</button>
+    </form>
+  </div>
+  
   <!-- Rodapé -->
   <footer class="site-footer">
     <div class="footer-inner">
@@ -492,427 +567,6 @@
       </div>
     </div>
   </footer>
-
-  <!-- ===== SCRIPTS ===== -->
-  <script>
-    function updateQueryString(key, value){
-      const url = new URL(window.location);
-      url.searchParams.set(key, value);
-      return url.pathname + url.search;
-    }
-  </script>
-
-  <!-- Overlay menu -->
-  <script>
-    (function(){
-      const overlay=document.getElementById('overlayMenu');
-      const openBtn=document.getElementById('hamburgerBtn');
-      const closeEls=overlay.querySelectorAll('[data-close]');
-      function openMenu(){overlay.classList.add('is-open');overlay.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';}
-      function closeMenu(){overlay.classList.remove('is-open');overlay.setAttribute('aria-hidden','true');document.body.style.overflow='';}
-      if(openBtn) openBtn.addEventListener('click',openMenu);
-      closeEls.forEach(el=>el.addEventListener('click',closeMenu));
-      document.addEventListener('keydown',e=>{ if(e.key==='Escape' && overlay.classList.contains('is-open')) closeMenu();});
-      overlay.addEventListener('click',e=>{ if(e.target===overlay) closeMenu();});
-    })();
-  </script>
-
-  <!-- Mobile: abrir/fechar painel de filtros -->
-  <script>
-    (function(){
-      const btnMobile  = document.getElementById('toggleFiltersMobile');
-      const panel = document.getElementById('filtersPanel');
-      if(!panel) return;
-      function toggle(){
-        const open = panel.classList.toggle('is-open');
-        document.body.classList.toggle('filters-open', open);
-        if(btnMobile)  btnMobile.setAttribute('aria-expanded',  open ? 'true' : 'false');
-      }
-      if(btnMobile)  btnMobile.addEventListener('click',  toggle);
-      panel.addEventListener('click', e => {
-        if(e.target === panel && panel.classList.contains('is-open')) toggle();
-      });
-    })();
-  </script>
-
-  <!-- Localização: autocomplete + aplicação nos filtros -->
-  <script>
-  (function(){
-    const $input = document.getElementById('input-localizacao');
-    const $list  = document.getElementById('lista-sugestoes-localizacao');
-    const $clear = document.querySelector('.typeahead-wrap.olx .olx-clear');
-    if(!$input || !$list) return;
-  
-    // Debounce util
-    function debounce(fn, wait){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), wait); } }
-  
-    let hi = -1;
-  
-    // SVGs inline para consistência (OLX-like)
-    const svgClock = `<svg class="ico" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/>
-      <path d="M12 7v6l4 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-    const svgPin = `<svg class="ico" viewBox="0 0 24 24" fill="none">
-      <path d="M12 22s7-6.2 7-12A7 7 0 1 0 5 10c0 5.8 7 12 7 12Z" stroke="currentColor" stroke-width="1.8"/>
-      <circle cx="12" cy="10" r="2.8" stroke="currentColor" stroke-width="1.8"/></svg>`;
-  
-    function sectionTitle(txt){
-      const li = document.createElement('li');
-      li.className = 'typeahead-section-title';
-      li.textContent = txt;
-      return li;
-    }
-  
-    function itemLi(icon, t1, t2, data){
-      const li = document.createElement('li');
-      li.className = 'typeahead-item';
-      li.setAttribute('role','option');
-      if(data){ Object.entries(data).forEach(([k,v])=> li.dataset[k]=v); }
-      li.innerHTML = `${icon}<div class="txt"><span class="t1">${t1}</span>${t2?`<span class="t2">${t2}</span>`:''}</div>`;
-      li.addEventListener('mousedown', (e)=>{
-        e.preventDefault();
-        const cidade = li.dataset.cidade;
-        const uf = li.dataset.uf;
-        if(cidade && uf){
-          $input.value = `${cidade} - ${uf}`;
-        } else if (li.dataset.fill){
-          $input.value = li.dataset.fill;
-        }
-        hide();
-      });
-      return li;
-    }
-  
-    function ctaBrasil(){
-      const li = document.createElement('li');
-      li.className = 'typeahead-cta';
-      li.innerHTML = `<button type="button" class="btn-br">Em todo Brasil</button>`;
-      li.querySelector('button').addEventListener('click', ()=>{
-        $input.value = 'Brasil';
-        hide();
-      });
-      return li;
-    }
-  
-    function render(items){
-      $list.innerHTML = '';
-      hi = -1;
-  
-      if(items.length){
-        $list.appendChild(sectionTitle('Sugestões'));
-        items.forEach(it=>{
-          const t1 = it.label || `${it.cidade} - ${it.uf}`;
-          // Subtítulo: se tiver "regiao" no payload, mostra; senão usa UF como link
-          const subt = it.regiao
-            ? it.regiao
-            : `<a href="javascript:void(0)">${it.uf}</a>`;
-          const li = itemLi(svgPin, t1, subt, {cidade: it.cidade, uf: it.uf});
-          $list.appendChild(li);
-        });
-      }else{
-        $list.appendChild(sectionTitle('Nenhuma sugestão'));
-        $list.appendChild(itemLi(svgClock, 'Digite mais letras', 'Use 2 ou mais caracteres'));
-      }
-  
-      // Seção "Localização automática"
-      $list.appendChild(sectionTitle('Localização automática'));
-      $list.appendChild(itemLi(svgClock, 'Usar localização atual', 'Permita o navegador acessar sua localização', {fill:'Perto de mim'}));
-      $list.appendChild(ctaBrasil());
-  
-      show();
-    }
-  
-    function show(){ $list.classList.add('show'); }
-    function hide(){ $list.classList.remove('show'); }
-  
-    const fetchSuggest = debounce(async function(){
-      const q = $input.value.trim();
-      if(q.length < 2){ hide(); return; }
-      const ufParam = ($input.dataset.uf || '').trim();
-      const url = new URL('/api/suggest/localizacao', window.location.origin);
-      url.searchParams.set('q', q);
-      if(ufParam) url.searchParams.set('uf', ufParam);
-      url.searchParams.set('limit', '8');
-  
-      try{
-        const r = await fetch(url, {headers:{'Accept':'application/json'}});
-        const data = await r.json();
-        render(Array.isArray(data)?data:[]);
-      }catch(e){
-        console.error(e);
-        render([]);
-      }
-    }, 160);
-  
-    $input.addEventListener('input', fetchSuggest);
-    $input.addEventListener('focus', ()=>{ if($input.value.trim().length>=2) fetchSuggest(); });
-    $input.addEventListener('blur', ()=> setTimeout(hide, 120));
-  
-    // Teclado
-    $input.addEventListener('keydown', (e)=>{
-      const items = Array.from($list.querySelectorAll('.typeahead-item'));
-      if(!$list.classList.contains('show') || !items.length) return;
-  
-      if(e.key==='ArrowDown'){ e.preventDefault(); hi=(hi+1)%items.length; mark(items); }
-      else if(e.key==='ArrowUp'){ e.preventDefault(); hi=(hi-1+items.length)%items.length; mark(items); }
-      else if(e.key==='Enter'){ e.preventDefault(); if(hi>=0){ items[hi].dispatchEvent(new Event('mousedown')); } else hide(); }
-      else if(e.key==='Escape'){ hide(); }
-    });
-  
-    function mark(items){
-      items.forEach((el,i)=>{
-        el.setAttribute('aria-selected', i===hi ? 'true' : 'false');
-        if(i===hi) el.scrollIntoView({block:'nearest'});
-      });
-    }
-  
-    // Botão limpar (X)
-    if($clear){
-      $clear.addEventListener('click', ()=>{
-        $input.value='';
-        $input.focus();
-        hide();
-      });
-    }
-  })();
-  </script>
-
-  <script>
-  (function(){
-    const input = document.getElementById('input-localizacao');
-    const list  = document.getElementById('lista-sugestoes-localizacao');
-    if(!input || !list) return;
-  
-    // Utilitário: debounce
-    function debounce(fn, wait){
-      let t;
-      return function(...args){
-        clearTimeout(t);
-        t = setTimeout(() => fn.apply(this, args), wait);
-      }
-    }
-  
-    let highlightIndex = -1; // item focado pelo teclado
-  
-    function renderList(items){
-      list.innerHTML = '';
-      highlightIndex = -1;
-  
-      if(!items || !items.length){
-        const li = document.createElement('li');
-        li.className = 'typeahead-empty';
-        li.textContent = 'Nenhuma sugestão';
-        list.appendChild(li);
-        list.classList.add('show');
-        return;
-      }
-  
-      items.forEach((it, idx) => {
-        const li = document.createElement('li');
-        li.className = 'typeahead-item';
-        li.setAttribute('role', 'option');
-        li.setAttribute('data-cidade', it.cidade);
-        li.setAttribute('data-uf', it.uf);
-  
-        li.innerHTML = `<span class="pin"></span><span>${it.label}</span>`;
-        li.addEventListener('mousedown', (e) => {
-          // mousedown (e não click) evita perder o foco antes de setar
-          e.preventDefault();
-          input.value = it.cidade + ' - ' + it.uf;
-          list.classList.remove('show');
-        });
-        list.appendChild(li);
-      });
-  
-      list.classList.add('show');
-    }
-  
-    const fetchSuggest = debounce(async function(){
-      const q = input.value.trim();
-      if(q.length < 2){ // só começa a sugerir com 2+ letras
-        list.classList.remove('show');
-        return;
-      }
-      const ufParam = (input.dataset.uf || '').trim(); // opcional: filtra por UF atual
-      const url = new URL('/api/suggest/localizacao', window.location.origin);
-      url.searchParams.set('q', q);
-      if(ufParam) url.searchParams.set('uf', ufParam);
-      url.searchParams.set('limit', '10');
-  
-      try{
-        const resp = await fetch(url.toString(), { headers: { 'Accept': 'application/json' }});
-        const data = await resp.json();
-        renderList(data);
-      }catch(err){
-        console.error('Falha ao buscar sugestões:', err);
-        renderList([]);
-      }
-    }, 180); // debounce ~180ms
-  
-    input.addEventListener('input', fetchSuggest);
-  
-    // Fecha a lista ao perder o foco (com pequeno delay p/ permitir clique)
-    input.addEventListener('blur', () => {
-      setTimeout(() => list.classList.remove('show'), 120);
-    });
-  
-    // Navegação por teclado
-    input.addEventListener('keydown', (e) => {
-      const items = Array.from(list.querySelectorAll('.typeahead-item'));
-      if(!list.classList.contains('show') || !items.length) return;
-  
-      if(e.key === 'ArrowDown'){
-        e.preventDefault();
-        highlightIndex = (highlightIndex + 1) % items.length;
-        updateHighlight(items);
-      }else if(e.key === 'ArrowUp'){
-        e.preventDefault();
-        highlightIndex = (highlightIndex - 1 + items.length) % items.length;
-        updateHighlight(items);
-      }else if(e.key === 'Enter'){
-        e.preventDefault();
-        if(highlightIndex >= 0){
-          const li = items[highlightIndex];
-          const cidade = li.getAttribute('data-cidade');
-          const uf     = li.getAttribute('data-uf');
-          input.value = `${cidade} - ${uf}`;
-          list.classList.remove('show');
-        }else{
-          list.classList.remove('show');
-        }
-      }else if(e.key === 'Escape'){
-        list.classList.remove('show');
-      }
-    });
-  
-    function updateHighlight(items){
-      items.forEach((el, i) => {
-        el.setAttribute('aria-selected', i === highlightIndex ? 'true' : 'false');
-        if(i === highlightIndex){
-          el.scrollIntoView({ block: 'nearest' });
-        }
-      });
-    }
-  })();
-  </script>
-
-  <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const ufSelect = document.getElementById('local-estado');
-    const cidadeSelect = document.getElementById('local-cidade');
-  
-    async function carregarCidades(uf, preselecionada = '') {
-      if (!uf) {
-        cidadeSelect.innerHTML = '<option value="">Selecione a cidade</option>';
-        return;
-      }
-      cidadeSelect.innerHTML = '<option value="">Carregando...</option>';
-      try {
-        const resp = await fetch(`/api/cidades?uf=${encodeURIComponent(uf)}`);
-        if (!resp.ok) throw new Error('Falha na resposta da API');
-        const cidades = await resp.json();
-  
-        const options = ['<option value="">Selecione a cidade</option>']
-          .concat(cidades.map(c => {
-            const sel = (preselecionada && preselecionada === c) ? ' selected' : '';
-            return `<option value="${c.replace(/"/g,'&quot;')}"${sel}>${c}</option>`;
-          }));
-        cidadeSelect.innerHTML = options.join('');
-      } catch (err) {
-        console.error(err);
-        cidadeSelect.innerHTML = '<option value="">Falha ao carregar cidades</option>';
-      }
-    }
-  
-    ufSelect.addEventListener('change', () => {
-      carregarCidades(ufSelect.value);
-    });
-  
-    // Pré-carrega se já veio preenchido
-    const ufInicial = ufSelect.value;
-    const cidadeInicial = cidadeSelect.getAttribute('data-inicial') || '';
-    if (ufInicial) {
-      carregarCidades(ufInicial, cidadeInicial);
-    }
-  });
-  </script>
-
-  <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const ufSel     = document.getElementById('estado_lookup');
-    const cidSel    = document.getElementById('cidade_lookup');
-    const ufHidden  = document.getElementById('estado_hidden');  // pode não existir se você já tiver os names no form
-    const cidHidden = document.getElementById('cidade_hidden');
-  
-    // Preenche os “names” de submissão (hidden) sem conflitar com a coluna esquerda
-    function mirrorToHidden(){
-      if (ufHidden)  ufHidden.value  = ufSel.value || '';
-      if (cidHidden) cidHidden.value = cidSel.value || '';
-    }
-  
-    async function carregarCidades(uf, preselecionada = '') {
-      if (!uf) {
-        cidSel.innerHTML = '<option value="" disabled selected>Selecione a cidade</option>';
-        cidSel.disabled = true;
-        mirrorToHidden();
-        return;
-      }
-      cidSel.disabled = true;
-      cidSel.innerHTML = '<option value="" disabled selected>Carregando...</option>';
-      try {
-        const resp = await fetch(`/api/cidades?uf=${encodeURIComponent(uf)}`);
-        if (!resp.ok) throw new Error('Falha na API');
-        const cidades = await resp.json();
-  
-        const opts = ['<option value="" disabled selected>Selecione a cidade</option>']
-          .concat(cidades.map(c => {
-            const sel = (preselecionada && preselecionada === c) ? ' selected' : '';
-            return `<option value="${c.replace(/"/g,'&quot;')}"${sel}>${c}</option>`;
-          }));
-        cidSel.innerHTML = opts.join('');
-        cidSel.disabled = false;
-  
-        // Se pré-selecionou cidade, já espelha no hidden
-        mirrorToHidden();
-      } catch (e) {
-        console.error(e);
-        cidSel.innerHTML = '<option value="" disabled selected>Falha ao carregar cidades</option>';
-        cidSel.disabled = true;
-      }
-    }
-  
-    // Ao mudar a UF, recarrega as cidades e limpa cidade
-    ufSel.addEventListener('change', () => {
-      carregarCidades(ufSel.value);
-      // limpa city espelhada
-      if (cidHidden) cidHidden.value = '';
-      mirrorToHidden();
-    });
-  
-    // Ao escolher cidade, espelha
-    cidSel.addEventListener('change', mirrorToHidden);
-  
-    // --- PRÉ-CARGA: usa querystring ?estado=SC&cidade=Jaraguá%20do%20Sul se existir ---
-    const qs = new URLSearchParams(location.search);
-    const ufQS  = qs.get('estado') || '';
-    const cidQS = qs.get('cidade') || '';
-    if (ufQS) {
-      // tenta selecionar a UF vinda na URL
-      const opt = Array.from(ufSel.options).find(o => o.value === ufQS);
-      if (opt) opt.selected = true;
-    }
-    const cidadeInicial = cidSel.getAttribute('data-inicial') || cidQS || '';
-    if (ufSel.value) {
-      carregarCidades(ufSel.value, cidadeInicial);
-    } else {
-      // sem UF escolhida, garante cidade bloqueada
-      carregarCidades('');
-    }
-  
-    // espelha estado/cidade mesmo quando página abre
-    mirrorToHidden();
-  });
-  </script>
   
 </body>
 </html>
