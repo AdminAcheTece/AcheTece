@@ -820,6 +820,19 @@ def teste_email():
     except Exception as e:
         return f"<h2>Erro ao enviar e-mail: {e}</h2>"
 
+@app.get("/api/cidades")
+def api_cidades_por_uf():
+    uf = (request.args.get("uf") or "").upper().strip()
+    if not uf:
+        return jsonify([])
+    try:
+        cidades = _get_cidades_por_uf(uf) or []
+    except Exception as e:
+        app.logger.warning(f"/api/cidades erro para UF={uf}: {e}")
+        cidades = []
+    return jsonify(cidades)
+
+
 @app.route('/editar_empresa', methods=['GET', 'POST'])
 def editar_empresa():
     if 'empresa_id' not in session:
