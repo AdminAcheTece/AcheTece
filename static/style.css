@@ -960,4 +960,17 @@ thead tr{ background:#f2f2f2; }
      }
      .filters-panel.is-open{transform: translateX(0)}
      body.filters-open{overflow:hidden}
+
+   /* ===== Caixa da coluna direita ===== */
+   .localizacao-box{
+     background:#fff; border:1px solid #e9e9e9; border-radius:12px; padding:16px; margin-bottom:16px;
+   }
+   .localizacao-titulo{ margin:0 0 12px; font-size:16px; font-weight:800; color:#111; }
+   .localizacao-box label{ display:block; margin:10px 0 6px; font-weight:700; font-size:14px; color:#333; }
+   .localizacao-box select{
+     width:100%; padding:12px; border:1px solid #ccc; border-radius:8px; font-size:14px; margin-bottom:8px; background:#fff;
+   }
+   .localizacao-box select:disabled{ background:#f5f5f5; color:#777; cursor:not-allowed; }
+   .localizacao-box select option[disabled]{ color:#003bb3; font-weight:500; } /* placeholder azul */
+         
    }
