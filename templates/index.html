@@ -237,87 +237,23 @@
         </form>
       </aside>
 
-      <!-- COLUNA DIREITA: BREADCRUMB + LOCALIZAÇÃO + RESULTADOS -->
-      <div class="right-col">
+      <div class="localizacao-box">
+        <h3 class="localizacao-titulo">Localização</h3>
+      
+        <label for="local-estado">Estado</label>
+        <select id="local-estado" name="estado">
+          <option value="">Selecione o estado</option>
+          {% for uf in estados %}
+            <option value="{{ uf }}" {% if estado == uf %}selected{% endif %}>{{ uf }}</option>
+          {% endfor %}
+        </select>
+      
+        <label for="local-cidade">Cidade</label>
+        <select id="local-cidade" name="cidade" data-inicial="{{ cidade or '' }}">
+          <option value="">Selecione a cidade</option>
+        </select>
+      </div>
 
-        {# ===== Variáveis para breadcrumb ===== #}
-        {% set uf      = filtros.get('estado') or filtros.get('Estado') or filtros.get('UF') %}
-        {% set uf_key  = 'estado' if filtros.get('estado') else ('Estado' if filtros.get('Estado') else ('UF' if filtros.get('UF') else 'estado')) %}
-        {% set ddd     = filtros.get('ddd') or filtros.get('DDD') %}
-        {% set ddd_key = 'ddd' if filtros.get('ddd') else ('DDD' if filtros.get('DDD') else 'ddd') %}
-        {% set cidade  = filtros.get('cidade') or filtros.get('Cidade') %}
-        {% set cidade_key = 'cidade' if filtros.get('cidade') else ('Cidade' if filtros.get('Cidade') else 'cidade') %}
-        {% set bairro  = filtros.get('bairro') or filtros.get('Bairro') %}
-        {% set bairro_key = 'bairro' if filtros.get('bairro') else ('Bairro' if filtros.get('Bairro') else 'bairro') %}
-
-        {# Monta base da query (todos filtros exceto os de localização) #}
-        {% set qs_base = '' %}
-        {% for k,v in filtros.items() if v and k not in ['estado','Estado','UF','ddd','DDD','cidade','Cidade','bairro','Bairro'] %}
-          {% set qs_base = qs_base ~ '&' ~ k ~ '=' ~ (v|urlencode) %}
-        {% endfor %}
-        {% set qs_base_clean = (qs_base[1:] if qs_base.startswith('&') else qs_base) %}
-
-        {# Links por nível #}
-        {% set link_brasil = url_for('index') ~ (('?' ~ qs_base_clean) if qs_base_clean else '') %}
-        {% set link_uf = url_for('index') ~ '?' ~ ((qs_base_clean ~ '&' if qs_base_clean else '') ~ uf_key ~ '=' ~ (uf|urlencode)) if uf else None %}
-        {% set link_ddd = url_for('index') ~ '?' ~ ((qs_base_clean ~ '&' if qs_base_clean else '') ~ uf_key ~ '=' ~ (uf|urlencode) ~ '&' ~ ddd_key ~ '=' ~ (ddd|urlencode)) if uf and ddd else None %}
-        {% set link_cidade = url_for('index') ~ '?' ~ ((qs_base_clean ~ '&' if qs_base_clean else '') ~ uf_key ~ '=' ~ (uf|urlencode) ~ '&' ~ cidade_key ~ '=' ~ (cidade|urlencode)) if uf and cidade else None %}
-        {% set link_bairro = url_for('index') ~ '?' ~ ((qs_base_clean ~ '&' if qs_base_clean else '') ~ uf_key ~ '=' ~ (uf|urlencode) ~ '&' ~ cidade_key ~ '=' ~ (cidade|urlencode) ~ '&' ~ bairro_key ~ '=' ~ (bairro|urlencode)) if uf and cidade and bairro else None %}
-
-        <nav class="breadcrumb" aria-label="caminho">
-          <span class="crumb"><a href="{{ link_brasil }}"><strong>Brasil</strong></a></span>
-          {% if uf %}
-            <span class="sep">›</span>
-            <span class="crumb"><a href="{{ link_uf }}">{{ uf }}</a></span>
-          {% endif %}
-          {% if ddd %}
-            <span class="sep">›</span>
-            <span class="crumb"><a href="{{ link_ddd }}">{{ ddd }}</a></span>
-          {% endif %}
-          {% if cidade %}
-            <span class="sep">›</span>
-            <span class="crumb"><a href="{{ link_cidade }}">{{ cidade }}</a></span>
-          {% endif %}
-          {% if bairro %}
-            <span class="sep">›</span>
-            <span class="crumb"><a href="{{ link_bairro }}">{{ bairro }}</a></span>
-          {% endif %}
-        </nav>
-
-        <!-- LOCALIZAÇÃO (estilo OLX moderno) -->
-        <section class="loc-card" aria-label="Localização">
-          <div class="loc-title">
-            <span>Localização</span>
-            <span class="badge-new">Novo</span>
-          </div>
-
-          <div class="typeahead-wrap olx">
-            <!-- ícone à esquerda -->
-            <span class="olx-left-icon" aria-hidden="true">
-              <!-- Pin minimalista -->
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
-                <path d="M12 22s7-6.2 7-12A7 7 0 1 0 5 10c0 5.8 7 12 7 12Z" stroke="currentColor" stroke-width="1.8"/>
-                <circle cx="12" cy="10" r="2.8" stroke="currentColor" stroke-width="1.8"/>
-              </svg>
-            </span>
-          
-            <input
-              id="input-localizacao"
-              name="localizacao"
-              type="text"
-              autocomplete="off"
-              placeholder="Digite um bairro ou cidade"
-              aria-label="Localização"
-              data-uf="{{ uf_atual or '' }}"
-            >
-          
-            <!-- botão limpar à direita -->
-            <button type="button" class="olx-clear" aria-label="Limpar localização" title="Limpar">
-              <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            </button>
-          
-            <ul id="lista-sugestoes-localizacao" class="typeahead-list olx-card" role="listbox" aria-label="Sugestões de localização"></ul>
-          </div>
         </section>
 
         <!-- RESULTADOS -->
