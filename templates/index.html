@@ -291,18 +291,32 @@
             <span class="badge-new">Novo</span>
           </div>
 
-          <div class="typeahead-wrap">
+          <div class="typeahead-wrap olx">
+            <!-- ícone à esquerda -->
+            <span class="olx-left-icon" aria-hidden="true">
+              <!-- Pin minimalista -->
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+                <path d="M12 22s7-6.2 7-12A7 7 0 1 0 5 10c0 5.8 7 12 7 12Z" stroke="currentColor" stroke-width="1.8"/>
+                <circle cx="12" cy="10" r="2.8" stroke="currentColor" stroke-width="1.8"/>
+              </svg>
+            </span>
+          
             <input
               id="input-localizacao"
               name="localizacao"
               type="text"
               autocomplete="off"
-              placeholder="Digite um estado ou cidade"
+              placeholder="Digite um bairro ou cidade"
               aria-label="Localização"
-              <!-- se você souber a UF atual (do breadcrumb), passe aqui: -->
               data-uf="{{ uf_atual or '' }}"
             >
-            <ul id="lista-sugestoes-localizacao" class="typeahead-list" role="listbox" aria-label="Sugestões de localização"></ul>
+          
+            <!-- botão limpar à direita -->
+            <button type="button" class="olx-clear" aria-label="Limpar localização" title="Limpar">
+              <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+          
+            <ul id="lista-sugestoes-localizacao" class="typeahead-list olx-card" role="listbox" aria-label="Sugestões de localização"></ul>
           </div>
         </section>
 
