@@ -14,45 +14,151 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
 
   <style>
+    /* ==================== VARIÁVEIS ==================== */
     :root{
       --roxo:#8A00FF; --roxo-hover:#A63DFF; --preto:#000;
+
+      /* Social buttons (mantém alinhamento e equaliza larguras) */
+      --social-btn-w: 190px;
+      --social-gap: 12px;
+      --social-h: 46px;
+
+      /* Paleta dos mini-cards */
       --procura-bg: #F2E8FF;   --procura-fg: #7A1BFF;
       --malharia-bg: #E6FCF4;  --malharia-fg: #0BA98B;
     }
 
-    /* ===== Topo e promo ===== */
-    .navbar{overflow:visible;padding:6px 0;display:flex;align-items:center;}
+    /* ==================== HEADER / NAV ==================== */
+    .navbar{overflow:visible;padding-top:6px;padding-bottom:6px;display:flex;align-items:center;}
     .header-left,.header-right{display:flex;align-items:center;}
     .header-right{margin-left:auto;gap:20px;}
-    .hamburger{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:40px;height:40px;border:none;background:transparent;cursor:pointer}
-    .hamburger span{display:block;width:20px;height:2px;background:var(--preto);border-radius:2px}
-    .hamburger span+span{margin-top:4px}
-    .promo-bar{background:#000;color:#fff;display:flex;align-items:center;justify-content:center;gap:12px;padding:6px 10px;font-size:14px}
-    .promo-cta{display:inline-block;background:var(--roxo);color:#fff;text-decoration:none;padding:6px 10px;border-radius:8px;font-weight:600}
-    .promo-cta:hover{background:var(--roxo-hover);transform:translateY(-1px)}
+    .hamburger{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:40px;height:40px;border:none;background:transparent;cursor:pointer;}
+    .hamburger span{display:block;width:20px;height:2px;background:var(--preto);border-radius:2px;}
+    .hamburger span+span{margin-top:4px;}
+    @media (max-width:768px){.hamburger{width:32px;height:32px}.hamburger span{width:18px}.hamburger span+span{margin-top:3px}}
 
-    /* ===== Layout (filtros + resultados) ===== */
-    .page-outer{max-width:1280px;margin:0 auto;padding:0 16px}
-    .search-layout{display:grid;grid-template-columns:300px 1fr;gap:24px;align-items:start;margin:10px 0 0}
+    /* ==================== BARRA PROMO ==================== */
+    .promo-bar{background:var(--preto);color:#fff;display:flex;align-items:center;justify-content:center;gap:12px;padding:6px 10px;font-size:14px;line-height:1.2;}
+    .promo-cta{display:inline-block;background:var(--roxo);color:#fff;text-decoration:none;padding:6px 10px;border-radius:8px;font-weight:600;white-space:nowrap;transition:.2s;}
+    .promo-cta:hover{background:var(--roxo-hover);transform:translateY(-1px);}
+    @media (max-width:600px){.promo-bar{flex-wrap:wrap;row-gap:6px}}
+
+    /* ==================== MODAL / SHEET ==================== */
+    .overlay-menu{position:fixed;inset:0;z-index:1000;display:none;}
+    .overlay-menu.is-open{display:block;}
+    .overlay-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(2px);}
+    .overlay-panel{position:relative;margin:40px auto;width:min(960px,calc(100% - 24px));background:#fff;border-radius:20px;box-shadow:none !important;overflow:hidden;display:flex;flex-direction:column;max-height:calc(100% - 80px);}
+    .overlay-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid #eee;}
+    .overlay-header h2{margin:0;font-size:22px;font-weight:700;color:#111;}
+    .overlay-close{border:0;background:#f3f3f3;width:36px;height:36px;border-radius:12px;font-size:22px;line-height:1;cursor:pointer;}
+    .overlay-content{display:grid;grid-template-columns:1fr 1fr;gap:28px;padding:22px;overflow:auto;} /* duas colunas */
+    .section-title{font-size:14px;color:#6b6b6b;font-weight:700;margin:6px 0 10px;text-transform:uppercase;letter-spacing:.3px;}
+    .section-title.mt{margin-top:18px;}
+
+    /* ==================== LOGIN / SOCIAL ==================== */
+    .section-title--login{font-weight:700;font-size:16px;line-height:1.1;color:#111;text-transform:none;}
+    .social-row{display:flex;gap:var(--social-gap);justify-content:flex-start;flex-wrap:wrap;}
+    .btn-google,.btn-facebook{
+      width:var(--social-btn-w);height:var(--social-h);padding:0 16px;border-radius:999px;
+      display:flex;align-items:center;justify-content:flex-start;gap:10px;box-sizing:border-box;font-size:14px;font-weight:500;
+    }
+    .btn-google{background:#f7f7f7;border:1px solid #dadce0;color:#3c4043;transition:background .2s ease,box-shadow .2s ease;}
+    .btn-google:hover{background:#f1f1f1;}
+    .btn-google img{width:40px;height:40px;}
+
+    .btn-facebook{background:#1877F2;color:#fff;border:0;cursor:pointer;transition:background .2s ease,transform .12s ease;}
+    .btn-facebook:hover{background:#166FE5;transform:translateY(-1px);}
+    .btn-facebook .fb-icon{display:flex;align-items:center;justify-content:center;width:var(--social-h);height:var(--social-h);}
+    .btn-facebook .fb-icon svg{width:30px;height:30px;display:block;}
+
+    .form-subtitle{font-weight:700;font-size:16px;line-height:1.1;color:#111;margin:28px 0 8px;}
+    .access-fields{width:calc((2 * var(--social-btn-w)) + var(--social-gap));max-width:100%;padding-top:8px;}
+    .input{width:100%;height:48px;border-radius:999px;border:1px solid #e6e6e6;padding:0 16px;margin-bottom:10px;font-size:14px;background:#eaf1ff;color:#111;}
+    .links-inline{margin-top:-4px; margin-bottom:14px;}
+    .links-inline a{font-size:12px;color:#333;text-decoration:none;}
+    .links-inline a:hover {color: var(--roxo);text-decoration: underline;}
+    .btn-primary{width:calc((2 * var(--social-btn-w)) + var(--social-gap));box-shadow: none !important;max-width:100%;height:54px;border-radius:999px;border:0;cursor:pointer;background:#8A00FF;color:#fff;font-weight:800;font-size:16px;box-shadow:0 8px 18px rgba(138,0,255,.25);}
+
+    /* Texto "Não tem cadastro?" */
+    .signup-text{margin-top:8px;font-size:12px;text-align:left;color:#000;}
+    .signup-text a{color:var(--roxo);font-weight:600;text-decoration:none;}
+    .signup-text a:hover{text-decoration:underline;}
+
+    /* Responsivo: em telas estreitas, tudo passa a 100% (colunas empilham naturalmente) */
+    @media (max-width:520px){
+      :root{ --social-btn-w:100%; }
+      .btn-google,.btn-facebook{width:100%;}
+      .access-fields,.btn-primary{width:100%;}
+    }
+
+    /* ==================== MINI-CARDS / LISTAS (usados no overlay) ==================== */
+    .section-title--simple{font-weight:700;font-size:16px;line-height:1.1;color:#111;text-transform:none;}
+    .section-title--simple + .cards-row{margin-top:36px;} /* espaçamento título → cards */
+    .cards-row{display:flex;gap:12px;flex-wrap:nowrap;align-items:flex-start;}
+    .mini-card{flex:0 0 auto;height:auto;padding:8px 12px;border-radius:12px;gap:6px;display:inline-flex;align-items:center;justify-content:center;text-align:center;border:1px solid #eee;transition:.16s;text-decoration:none;font-weight:700;}
+    .mini-card:hover{transform:translateY(-3px);border-color:rgba(0,0,0,.06);box-shadow:none !important;}
+    .mini-card-ico svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+    .mini-card-title{font-size:12px;line-height:1.1;white-space:nowrap;}
+    .mini-card.procura{background:var(--procura-bg);color:var(--procura-fg);}
+    .mini-card.malharia{background:var(--malharia-bg);color:var(--malharia-fg);}
+    .list-links{display:flex;flex-direction:column;border-top:1px solid #f0f0f0;margin-top:8px;}
+    .list-item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;text-decoration:none;color:#222;border-bottom:1px solid #f5f5f5;}
+    .list-icon{flex:0 0 24px;display:flex;align-items:center;justify-content:center;}
+    .list-text{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .list-item .arrow{flex:0 0 auto;display:flex;align-items:center;}
+    .list-item .arrow svg{width:22px;height:22px;stroke-width:3;}
+    .list-icon svg[fill="#25D366"]{width:18px;height:18px;}
+
+    /* ==================== CTA BAR / FOOTER (ANTIGOS, SEM ALTERAÇÃO) ==================== */
+    .cta-bar{background:var(--preto);color:#fff;padding:20px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,.06);margin-top:32px;text-align:left;}
+    .cta-text h3{margin:0 0 4px;font-size:18px;font-weight:700;}
+    .cta-text p{margin:0;font-size:15px;opacity:.9;}
+    .cta-btn{display:inline-block;background:#fff;color:var(--preto);text-decoration:none;padding:10px 18px;border-radius:20px;font-weight:600;box-shadow:none !important;transition:.2s;white-space:nowrap;}
+    .cta-btn:hover{background:#f2f2f5;transform:translateY(-1px);box-shadow:none !important;}
+
+    .site-footer{background:#fff;color:var(--preto);border-top:1px solid #eee;padding:18px 16px 28px;}
+    .footer-inner{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:auto 1fr;gap:20px 28px;align-items:start;}
+    .footer-brand img{height:40px;width:auto;display:block;}
+    .footer-cols{display:grid;grid-template-columns:repeat(2,minmax(180px,240px));gap:12px 28px;}
+    .footer-col h4{margin:0 0 8px;font-size:14px;font-weight:700;}
+    .footer-col ul{list-style:none;margin:0;padding:0;}
+    .footer-col li+li{margin-top:6px;}
+    .footer-col a{color:var(--preto);text-decoration:none;font-size:14px;}
+    .footer-col a:hover{text-decoration:underline;}
+    @media (max-width:720px){.footer-inner{grid-template-columns:1fr}.footer-cols{grid-template-columns:1fr}.cta-text h3{font-size:16px}.cta-text p{font-size:14px}}
+
+    /* ===== Ajuste fino de espaçamentos nos títulos da coluna direita (overlay) ===== */
+    .section-title--simple + .cards-row{ margin-top: 8px !important; }
+    .section-title--simple.mt{ margin-top: 28px !important; }
+    .overlay-col:nth-child(2) .section-title--simple:first-of-type { margin-top: 8px; }
+    .links-inline a { position: relative; padding-left: 18px; font-size: 13px; color: #333; text-decoration: none; display: inline-flex; align-items: center; }
+    .links-inline a::before { content: ""; position: absolute; left: 0; top: 50%; width: 12px; height: 12px; transform: translateY(-50%); background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='%23555' viewBox='0 0 24 24'><path d='M12 1a5 5 0 0 0-5 5v4H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V12a2 2 0 0 0-2-2h-1V6a5 5 0 0 0-5-5zm-3 9V6a3 3 0 0 1 6 0v4H9z'/></svg>") no-repeat center; background-size: contain; }
+
+    /* ==================== LAYOUT 2 COLUNAS (FILTROS + RESULTADOS) ==================== */
+    .page-outer{max-width:1280px;margin:0 auto;padding:0 16px;}
+    .search-layout{display:grid;grid-template-columns:300px 1fr;gap:24px;align-items:start;margin:10px 0 0;}
     @media (max-width:1024px){.search-layout{grid-template-columns:1fr}}
 
     /* Filtros (mantidos) */
     .filters-panel{
       border:1px solid #eee;border-radius:14px;padding:16px;background:#fff;
-      position:sticky;top:56px;max-height:calc(100vh - 72px);overflow:auto
+      position:sticky; top:56px;              /* colado ao cabeçalho */
+      max-height: calc(100vh - 72px);
+      overflow:auto;
+      z-index:10;
     }
-    .filters-title{margin:0 0 12px;font-size:18px;font-weight:700}
-    .filter-field{margin-bottom:12px}
-    .filter-field label{display:block;font-size:14px;margin-bottom:6px;color:#444}
-    .filter-field select{width:100%;height:40px;padding:8px 10px;border:1px solid #ccc;border-radius:10px;background:#fff}
-    .filter-actions .btn-primary{width:100%;height:48px;border:0;border-radius:999px;background:var(--roxo);color:#fff;font-weight:800}
-    .link-reset{display:inline-block;margin-top:10px;font-size:14px;color:#6a6a6a;text-decoration:underline}
+    .filters-title{margin:0 0 12px;font-size:18px;font-weight:700;}
+    .filter-field{margin-bottom:12px;}
+    .filter-field label{display:block;font-size:14px;margin-bottom:6px;color:#444;}
+    .filter-field select{width:100%;height:40px;padding:8px 10px;border:1px solid #ccc;border-radius:10px;background:#fff;color:#333;}
+    .filter-actions .btn-primary{width:100%;}
+    .link-reset{display:inline-block;margin-top:10px;font-size:14px;color:#6a6a6a;text-decoration:underline;}
 
     /* Drawer mobile dos filtros */
     @media (max-width:1024px){
       .filters-panel{position:fixed;left:0;top:0;bottom:0;width:min(90%,360px);max-width:90vw;border-radius:0;padding:16px;transform:translateX(-110%);transition:transform .2s ease;z-index:1001;max-height:none;overflow:auto}
-      .filters-panel.is-open{transform:translateX(0)}
-      body.filters-open{overflow:hidden}
+      .filters-panel.is-open{ transform:translateX(0); }
+      body.filters-open{ overflow:hidden; }
     }
 
     /* ===== Barra mobile estilo OLX: Localização + Filtros + Pílula ===== */
@@ -61,13 +167,21 @@
     .location-row{display:flex;align-items:center;gap:8px;font-size:14px;color:#333;margin-bottom:8px}
     .location-row select{border:0;background:#f7f7f7;border-radius:10px;padding:8px 10px}
     .toolbar-row{display:flex;gap:10px;align-items:center}
-    .btn-filtros{display:inline-flex;align-items:center;gap:8px;border:1px solid #e5e5e5;background:#fff;border-radius:12px;padding:10px 14px;font-weight:700}
-    .btn-filtros svg{width:18px;height:18px}
-    .filter-pill{display:inline-flex;align-items:center;border:2px solid #e5d3ff;background:#f3e9ff;color:#5525a5;border-radius:12px;padding:10px 14px;font-weight:600;min-height:40px;max-width:70vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .btn-filtros{
+      display:inline-flex;align-items:center;gap:8px;
+      border:1px solid #e5e5e5;background:#fff;border-radius:12px;padding:10px 14px;
+      font-weight:700;cursor:pointer;
+    }
+    .btn-filtros svg{width:18px;height:18px;}
+    .filter-pill{
+      display:inline-flex;align-items:center;border:2px solid #e5d3ff;background:#f3e9ff;
+      color:#5525a5;border-radius:12px;padding:10px 14px;font-weight:600;min-height:40px;
+      max-width:70vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
     @media (max-width:1024px){.mobile-controls{display:block}}
 
-    /* ===== Cabeçalho de resultados (desktop) ===== */
-    .right-col{min-width:0}
+    /* ===== Cabeçalho e resultados ===== */
+    .right-col{min-width:0;}
     .loc-card{background:#f6f7f9;border-radius:12px;border:1px solid #eceff3;padding:14px;margin-bottom:14px}
     .loc-field{display:flex;align-items:center;gap:10px;border:1px solid #dfe3e8;background:#fff;border-radius:12px;padding:12px 14px}
     .loc-left{display:flex;align-items:center;gap:8px;color:#333;font-weight:600}
@@ -77,18 +191,17 @@
     .results-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
     .results-toolbar .select{height:40px;border:1px solid #dfe3e8;border-radius:10px;background:#fff;padding:8px 12px}
 
-    /* ===== Área de resultados ===== */
     .results-panel .tabela-container{border:1px solid #eee;border-radius:12px;overflow:auto;background:#fff}
     .paginacao{display:flex;gap:12px;align-items:center;justify-content:center;margin:14px 0}
     .paginacao a{color:var(--roxo);text-decoration:none;font-weight:700}
 
-    /* Botão desktop antigo (não usamos mais, só fallback) */
+    /* Botão desktop antigo (não usamos no layout novo) */
     .filters-toggle{display:none}
   </style>
 </head>
 <body>
 
-  <!-- Promo topo -->
+  <!-- Faixa preta estreita no topo -->
   <section class="promo-bar" aria-label="Oferta para malharias">
     <span><strong>Malharia:</strong> receba agora novos pedidos por apenas <strong>R$49,90/mês</strong>.</span>
     <a class="promo-cta" href="/malharia_info">Saiba como</a>
@@ -108,14 +221,13 @@
     </div>
   </header>
 
-  <!-- CONTROLES MOBILE (OLX-like) -->
-  <div class="mobile-controls">
+  <!-- CONTROLES MOBILE (estilo OLX) -->
+  <div class="mobile-controls" aria-hidden="false">
     <div class="mobile-controls-inner">
       <!-- Linha 1: Localização -->
       <div class="location-row">
         <span aria-hidden="true">📍</span>
         <label for="loc-mobile" class="sr-only">Localização</label>
-        <!-- Integre estes selects com seu backend se desejar -->
         <select id="loc-mobile" name="localizacao">
           <option value="">Buscando em todo o Brasil</option>
           <option value="SC">Santa Catarina</option>
@@ -123,7 +235,7 @@
           <option value="PR">Paraná</option>
         </select>
       </div>
-      <!-- Linha 2: Filtros + pílula-resumo -->
+      <!-- Linha 2: Botão Filtros + pílula de resumo -->
       <div class="toolbar-row">
         <button class="btn-filtros" id="toggleFiltersMobile" aria-controls="filtersPanel" aria-expanded="false">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -131,8 +243,11 @@
           </svg>
           Filtros
         </button>
+
         {% set ativos = [] %}
-        {% for k,v in filtros.items() %}{% if v %}{% set _ = ativos.append(k|capitalize ~ ': ' ~ v) %}{% endif %}{% endfor %}
+        {% for k,v in filtros.items() %}
+          {% if v %}{% set _ = ativos.append(k|capitalize ~ ': ' ~ v) %}{% endif %}
+        {% endfor %}
         <div class="filter-pill" title="{{ ativos|join(', ') if ativos else 'Todos os teares' }}">
           {{ ativos|join(' • ') if ativos else 'Todos os teares' }}
         </div>
@@ -140,11 +255,11 @@
     </div>
   </div>
 
-  <!-- Página em 2 colunas -->
+  <!-- ===== TUDO EM DUAS COLUNAS: ESQ = FILTROS | DIR = RESULTADOS ===== -->
   <div class="page-outer">
     <div class="search-layout">
 
-      <!-- COLUNA ESQUERDA: FILTROS (mantidos) -->
+      <!-- COLUNA ESQUERDA: FILTROS -->
       <aside class="filters-panel" id="filtersPanel">
         <h2 class="filters-title">Filtrar teares</h2>
         <form method="POST" class="formulario" action="{{ url_for('index') }}">
@@ -159,6 +274,7 @@
               </select>
             </div>
           {% endfor %}
+
           <div class="filter-actions">
             <button type="submit" class="btn-primary">Buscar</button>
             <a href="{{ url_for('index') }}" class="link-reset">Limpar</a>
@@ -166,12 +282,14 @@
         </form>
       </aside>
 
-      <!-- COLUNA DIREITA: RESULTADOS (estilo OLX) -->
+      <!-- COLUNA DIREITA: RESULTADOS -->
       <div class="right-col">
         <!-- Cartão de Localização (desktop) -->
         <section class="loc-card" aria-label="Localização">
-          <div style="font-weight:700; color:#222; margin-bottom:8px;">Localização <span style="background:linear-gradient(90deg,#a335ff,#ff7a00);color:#fff;border-radius:12px;padding:2px 8px;font-size:12px;margin-left:6px;">Novo</span></div>
-          <div class="loc-field">
+          <div style="font-weight:700; color:#222; margin-bottom:8px;">
+            Localização <span style="background:linear-gradient(90deg,#a335ff,#ff7a00);color:#fff;border-radius:12px;padding:2px 8px;font-size:12px;margin-left:6px;">Novo</span>
+          </div>
+        <div class="loc-field">
             <div class="loc-left">
               <span aria-hidden="true">📍</span>
               <span id="loc-label">Brasil</span>
@@ -207,7 +325,7 @@
         <section id="busca" class="results-panel">
           {% if resultados %}
             <div class="tabela-container">
-              <!-- SUA TABELA / LISTA DE RESULTADOS AQUI (mantida do backend) -->
+              <!-- sua tabela exatamente como já está -->
               {{ tabela_html|safe if tabela_html is defined else '' }}
             </div>
 
@@ -223,7 +341,7 @@
             </div>
 
             <!-- Exportação -->
-            <form action="/exportar" method="get" style="margin:10px 0">
+            <form action="/exportar" method="get">
               {% for campo, valor in filtros.items() %}
                 {% if valor %}
                   <input type="hidden" name="{{ campo }}" value="{{ valor }}">
@@ -242,7 +360,7 @@
     </div>
   </div>
 
-  <!-- Modal / Sheet (menu) — mantido -->
+  <!-- Modal / Sheet (MENU COMPLETO, como no seu antigo) -->
   <div id="overlayMenu" class="overlay-menu" aria-hidden="true">
     <div class="overlay-backdrop" data-close></div>
     <section class="overlay-panel" role="dialog" aria-modal="true" aria-labelledby="overlayMenuTitle">
@@ -250,93 +368,95 @@
         <h2 id="overlayMenuTitle">Menu</h2>
         <button class="overlay-close" type="button" aria-label="Fechar" data-close>×</button>
       </header>
+
       <div class="overlay-content">
-        <!-- Coloque aqui o conteúdo do seu menu (mantido do seu projeto) -->
-        <div>Em breve</div>
-      </div>
-    </section>
-  </div>
+        <!-- COLUNA ESQUERDA -->
+        <div class="overlay-col">
+          <h3 class="section-title section-title--login">Entrar ou criar conta</h3>
 
-  <!-- Rodapé enxuto -->
-  <footer class="site-footer" style="margin-top:24px">
-    <div class="footer-inner">
-      <div class="footer-brand"><img src="/static/logo_simbolo.png" alt="AcheTece"></div>
-      <div class="footer-cols">
-        <div class="footer-col">
-          <h4>Sobre nós</h4>
-          <ul>
-            <li><a href="/quem_somos">O AcheTece</a></li>
-            <li><a href="/malharia_info">Como funciona</a></li>
-            <li><a href="/contato">Fale conosco</a></li>
-            <li><a href="/termos">Termos e Políticas</a></li>
-          </ul>
+          <div class="social-row">
+            <button class="btn-google" onclick="location.href='/login_google'">
+              <img src="/static/icone_google.png" alt="Google">
+              <span class="g-text">Entrar com Google</span>
+            </button>
+
+            <button class="btn-facebook" onclick="alert('Conectar Facebook em breve')">
+              <span class="fb-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff">
+                  <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 5 3.66 9.12 8.44 9.88v-6.99H8.08v-2.9h2.36V9.83c0-2.33 1.39-3.62 3.52-3.62 1.02 0 2.09.18 2.09.18v2.3h-1.18c-1.17 0-1.54.73-1.54 1.48v1.78h2.63l-.42 2.9h-2.21v6.99C18.34 21.12 22 17 22 12z"/>
+                </svg>
+              </span>
+              <span>Entrar com Facebook</span>
+            </button>
+          </div>
+
+          <h3 class="form-subtitle">Dados de acesso</h3>
+          <div class="access-fields">
+            <input type="email" placeholder="Email de login..." class="input" autocomplete="username">
+            <input type="password" placeholder="Senha de acesso..." class="input" autocomplete="current-password">
+            <div class="links-inline">
+              <a href="/esqueci_senha">Esqueci minha senha</a>
+            </div>
+            <button class="btn-primary" onclick="location.href='/login'">Entrar</button>
+            <div class="signup-text">
+              Não tem cadastro? <a href="/cadastrar_empresa">Crie sua conta aqui</a>
+            </div>
+          </div>
         </div>
-        <div class="footer-col"><h4>&nbsp;</h4><ul><li>&nbsp;</li></ul></div>
-      </div>
-    </div>
-  </footer>
 
-  <!-- Scripts -->
-  <script>
-    // util: atualiza querystring de forma simples
-    function updateQueryString(key, value){
-      const url = new URL(window.location);
-      url.searchParams.set(key, value);
-      return url.pathname + url.search;
-    }
-  </script>
+        <!-- COLUNA DIREITA -->
+        <div class="overlay-col">
+          <h3 class="section-title--simple">Facilidades AcheTece</h3>
+          <div class="cards-row">
+            <a class="mini-card procura" href="{{ url_for('index') }}#busca">
+              <div class="mini-card-ico">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                  <circle cx="11" cy="11" r="6.8"></circle>
+                  <line x1="15.5" y1="15.5" x2="20" y2="20"></line>
+                </svg>
+              </div>
+              <div class="mini-card-title">Procuro Malharia</div>
+            </a>
 
-  <script>
-    // Menu overlay
-    (function(){
-      const overlay=document.getElementById('overlayMenu');
-      const openBtn=document.getElementById('hamburgerBtn');
-      const closeEls=overlay.querySelectorAll('[data-close]');
-      function openMenu(){overlay.classList.add('is-open');overlay.setAttribute('aria-hidden','false');document.body.style.overflow='hidden'}
-      function closeMenu(){overlay.classList.remove('is-open');overlay.setAttribute('aria-hidden','true');document.body.style.overflow=''}
-      if(openBtn) openBtn.addEventListener('click',openMenu);
-      closeEls.forEach(el=>el.addEventListener('click',closeMenu));
-      document.addEventListener('keydown',e=>{ if(e.key==='Escape' && overlay.classList.contains('is-open')) closeMenu()});
-      overlay.addEventListener('click',e=>{ if(e.target===overlay) closeMenu()});
-    })();
-  </script>
+            <a class="mini-card malharia" href="/malharia_info">
+              <div class="mini-card-ico">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                  <path d="M3 20V9l6 3V9l6 3V6h3v14H3z"/>
+                </svg>
+              </div>
+              <div class="mini-card-title">Sou Malharia</div>
+            </a>
+          </div>
 
-  <!-- Toggle dos filtros (desktop fallback + mobile OLX-like) -->
-  <script>
-    (function(){
-      const btnDesktop = document.getElementById('toggleFilters');        // se existir
-      const btnMobile  = document.getElementById('toggleFiltersMobile');   // mobile
-      const panel = document.getElementById('filtersPanel');
-      if(!panel) return;
+          <h3 class="section-title--simple mt">Mais opções</h3>
+          <nav class="list-links">
+            <a class="list-item" href="/cadastrar_empresa">
+              <span class="list-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3 20V9l6 3V9l6 3V6h3v14H3zM5 18h2v-2H5v2zm0-4h2v-2H5v2zm4 4h2v-2H9v2zm0-4h2v-2H9v2zm4 4h2v-2h-2v2z"/>
+                </svg>
+              </span>
+              <span class="list-text">Cadastrar minha malharia</span>
+              <span class="arrow">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M9 6l6 6-6 6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+            </a>
 
-      function toggle(){
-        const open = panel.classList.toggle('is-open');
-        document.body.classList.toggle('filters-open', open);
-        if(btnDesktop) btnDesktop.setAttribute('aria-expanded', open ? 'true' : 'false');
-        if(btnMobile)  btnMobile.setAttribute('aria-expanded',  open ? 'true' : 'false');
-      }
+            <a class="list-item" href="{{ url_for('quem_somos') }}">
+              <span class="list-icon">
+                <img src="/static/logo_simbolo.png" alt="AcheTece" width="28" height="28" style="display:block">
+              </span>
+              <span class="list-text">Conheça o AcheTece</span>
+              <span class="arrow">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M9 6l6 6-6 6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+            </a>
 
-      if(btnDesktop) btnDesktop.addEventListener('click', toggle);
-      if(btnMobile)  btnMobile.addEventListener('click',  toggle);
-
-      panel.addEventListener('click', e => { if(e.target === panel && panel.classList.contains('is-open')) toggle() });
-    })();
-  </script>
-
-  <!-- Ações da Localização (demo) -->
-  <script>
-    (function(){
-      const clear = document.querySelector('.loc-clear');
-      const label = document.getElementById('loc-label');
-      if(clear && label){
-        clear.addEventListener('click', ()=>{
-          label.textContent='Brasil';
-          // aqui você pode redirecionar limpando filtros de estado/cidade, se quiser
-          // location.href = updateQueryString('estado','');
-        });
-      }
-    })();
-  </script>
-
-</body>
-</html>
+            <a class="list-item" href="https://wa.me/5547999999999" target="_blank" rel="noopener">
+              <span class="list-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#25D366">
+                  <path d="M12 .5C5.65.5.5 5.65.5 12c0 2.11.55 4.16 1.6 5.97L.5 23.5l5.66-1.56A11.44 11.44 0 0 0 12
