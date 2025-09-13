@@ -18,7 +18,7 @@
     :root{
       --roxo:#8A00FF; --roxo-hover:#A63DFF; --preto:#000;
 
-      /* Social buttons (mantém alinhamento e equaliza larguras) */
+      /* Social buttons */
       --social-btn-w: 190px;
       --social-gap: 12px;
       --social-h: 46px;
@@ -32,12 +32,6 @@
     .navbar{overflow:visible;padding-top:6px;padding-bottom:6px;display:flex;align-items:center;}
     .header-left,.header-right{display:flex;align-items:center;}
     .header-right{margin-left:auto;gap:20px;}
-
-    .top-nav{display:flex;gap:24px;align-items:center;}
-    .top-nav a{color:#666;text-decoration:none;font-weight:300;padding:8px 0;line-height:1;font-size:14px;}
-    .top-nav a:hover{color:var(--roxo);text-decoration:underline;}
-    @media (max-width:900px){.top-nav{display:none;}}
-
     .hamburger{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:40px;height:40px;border:none;background:transparent;cursor:pointer;}
     .hamburger span{display:block;width:20px;height:2px;background:var(--preto);border-radius:2px;}
     .hamburger span+span{margin-top:4px;}
@@ -49,21 +43,20 @@
     .promo-cta:hover{background:var(--roxo-hover);transform:translateY(-1px);}
     @media (max-width:600px){.promo-bar{flex-wrap:wrap;row-gap:6px}}
 
-    /* ==================== HERO ==================== */
-    .hero-grid{display:grid;grid-template-columns:1fr;gap:28px;align-items:center;padding:28px 20px 8px;max-width:1120px;margin:0 auto;justify-items:center;text-align:center;}
-    .hero-copy h1{font-size:clamp(24px,3.2vw,36px);color:var(--preto);margin:10px 0 8px;line-height:1.2;}
-    .hero-copy p{font-size:clamp(14px,1.6vw,18px);color:#444;margin:0 0 14px;}
-
+    /* ==================== HERO (coluna direita) ==================== */
+    .hero-grid{display:grid;grid-template-columns:1fr;gap:18px;align-items:center;padding:20px 0 6px;margin:0;justify-items:center;text-align:center;}
+    .hero-copy h1{font-size:clamp(22px,3.2vw,34px);color:var(--preto);margin:8px 0 6px;line-height:1.2;}
+    .hero-copy p{font-size:clamp(14px,1.6vw,18px);color:#444;margin:0 0 8px;}
     .role-toggle{display:flex;gap:8px;justify-content:center;}
     .chip{appearance:none;border:1px solid #d6d6d6;background:#fff;padding:8px 12px;border-radius:999px;cursor:pointer;font:inherit;color:var(--roxo);transition:.15s;}
     .chip.is-active{background:var(--preto);color:#fff;border-color:var(--preto);}
-    .hero-ctas{display:flex;gap:12px;align-items:center;margin:8px 0 10px;justify-content:center;}
+    .hero-ctas{display:flex;gap:12px;align-items:center;margin:6px 0 8px;justify-content:center;}
     .btn-principal{display:inline-block;background:var(--roxo);color:#fff;padding:12px 18px;border-radius:50px;font-weight:700;text-decoration:none;transition:.15s;}
     .btn-principal:hover{background:var(--roxo-hover);transform:translateY(-1px);}
     @media (min-width:900px){ #hero-sub{white-space:nowrap;display:inline-block;} }
 
-    /* ==================== COMO FUNCIONA ==================== */
-    .how-it-works{max-width:1120px;margin:22px auto 8px;padding:0 20px 20px;}
+    /* ==================== COMO FUNCIONA (coluna direita) ==================== */
+    .how-it-works{margin:18px 0 8px;}
     .how-it-works h2{font-size:clamp(20px,2.4vw,28px);margin:0 0 8px;color:var(--preto);text-align:center;}
     .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
     .step{background:#fff;border:1px solid #eee;border-radius:12px;padding:16px;text-align:center;}
@@ -77,17 +70,16 @@
     .overlay-menu{position:fixed;inset:0;z-index:1000;display:none;}
     .overlay-menu.is-open{display:block;}
     .overlay-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(2px);}
-    .overlay-panel{position:relative;margin:40px auto;width:min(960px,calc(100% - 24px));background:#fff;border-radius:20px;box-shadow:none !important;overflow:hidden;display:flex;flex-direction:column;max-height:calc(100% - 80px);}
+    .overlay-panel{position:relative;margin:40px auto;width:min(960px,calc(100% - 24px));background:#fff;border-radius:20px;overflow:hidden;display:flex;flex-direction:column;max-height:calc(100% - 80px);}
     .overlay-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid #eee;}
     .overlay-header h2{margin:0;font-size:22px;font-weight:700;color:#111;}
     .overlay-close{border:0;background:#f3f3f3;width:36px;height:36px;border-radius:12px;font-size:22px;line-height:1;cursor:pointer;}
-    .overlay-content{display:grid;grid-template-columns:1fr 1fr;gap:28px;padding:22px;overflow:auto;} /* <- 2 COLUNAS */
+    .overlay-content{display:grid;grid-template-columns:1fr 1fr;gap:28px;padding:22px;overflow:auto;}
     .section-title{font-size:14px;color:#6b6b6b;font-weight:700;margin:6px 0 10px;text-transform:uppercase;letter-spacing:.3px;}
     .section-title.mt{margin-top:18px;}
 
     /* ==================== LOGIN / SOCIAL ==================== */
     .section-title--login{font-weight:700;font-size:16px;line-height:1.1;color:#111;text-transform:none;}
-
     .social-row{display:flex;gap:var(--social-gap);justify-content:flex-start;flex-wrap:wrap;}
     .btn-google,.btn-facebook{
       width:var(--social-btn-w);height:var(--social-h);padding:0 16px;border-radius:999px;
@@ -96,12 +88,10 @@
     .btn-google{background:#f7f7f7;border:1px solid #dadce0;color:#3c4043;transition:background .2s ease,box-shadow .2s ease;}
     .btn-google:hover{background:#f1f1f1;}
     .btn-google img{width:40px;height:40px;}
-
     .btn-facebook{background:#1877F2;color:#fff;border:0;cursor:pointer;transition:background .2s ease,transform .12s ease;}
     .btn-facebook:hover{background:#166FE5;transform:translateY(-1px);}
     .btn-facebook .fb-icon{display:flex;align-items:center;justify-content:center;width:var(--social-h);height:var(--social-h);}
     .btn-facebook .fb-icon svg{width:30px;height:30px;display:block;}
-
     .form-subtitle{font-weight:700;font-size:16px;line-height:1.1;color:#111;margin:28px 0 8px;}
     .access-fields{width:calc((2 * var(--social-btn-w)) + var(--social-gap));max-width:100%;padding-top:8px;}
     .input{width:100%;height:48px;border-radius:999px;border:1px solid #e6e6e6;padding:0 16px;margin-bottom:10px;font-size:14px;background:#eaf1ff;color:#111;}
@@ -109,13 +99,9 @@
     .links-inline a{font-size:12px;color:#333;text-decoration:none;}
     .links-inline a:hover {color: var(--roxo);text-decoration: underline;}
     .btn-primary{width:calc((2 * var(--social-btn-w)) + var(--social-gap));box-shadow: none !important;max-width:100%;height:54px;border-radius:999px;border:0;cursor:pointer;background:#8A00FF;color:#fff;font-weight:800;font-size:16px;box-shadow:0 8px 18px rgba(138,0,255,.25);}
-
-    /* Texto "Não tem cadastro?" */
     .signup-text{margin-top:8px;font-size:12px;text-align:left;color:#000;}
     .signup-text a{color:var(--roxo);font-weight:600;text-decoration:none;}
     .signup-text a:hover{text-decoration:underline;}
-
-    /* Responsivo: em telas estreitas, tudo passa a 100% */
     @media (max-width:520px){
       :root{ --social-btn-w:100%; }
       .btn-google,.btn-facebook{width:100%;}
@@ -124,38 +110,28 @@
 
     /* ==================== MINI-CARDS / LISTAS ==================== */
     .section-title--simple{font-weight:700;font-size:16px;line-height:1.1;color:#111;text-transform:none;}
-    .section-title--simple + .cards-row{margin-top:36px;} /* (reajustado abaixo) */
-
+    .section-title--simple + .cards-row{margin-top:36px;}
     .cards-row{display:flex;gap:12px;flex-wrap:nowrap;align-items:flex-start;}
-    .mini-card{
-      flex:0 0 auto; height:auto; padding:8px 12px; border-radius:12px;
-      gap:6px; display:inline-flex; align-items:center; justify-content:center; text-align:center;
-      border:1px solid #eee; transition:.16s; text-decoration:none; font-weight:700;
-    }
+    .mini-card{flex:0 0 auto;height:auto;padding:8px 12px;border-radius:12px;gap:6px;display:inline-flex;align-items:center;justify-content:center;text-align:center;border:1px solid #eee;transition:.16s;text-decoration:none;font-weight:700;}
     .mini-card:hover{transform:translateY(-3px);border-color:rgba(0,0,0,.06);box-shadow:none !important;}
     .mini-card-ico svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
     .mini-card-title{font-size:12px;line-height:1.1;white-space:nowrap;}
-
     .mini-card.procura{background:var(--procura-bg);color:var(--procura-fg);}
     .mini-card.malharia{background:var(--malharia-bg);color:var(--malharia-fg);}
-
     .list-links{display:flex;flex-direction:column;border-top:1px solid #f0f0f0;margin-top:8px;}
     .list-item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;text-decoration:none;color:#222;border-bottom:1px solid #f5f5f5;}
     .list-icon{flex:0 0 24px;display:flex;align-items:center;justify-content:center;}
     .list-text{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .list-item .arrow{flex:0 0 auto;display:flex;align-items:center;}
     .list-item .arrow svg{width:22px;height:22px;stroke-width:3;}
-
-    /* WhatsApp menor no item de suporte */
     .list-icon svg[fill="#25D366"]{width:18px;height:18px;}
 
-    /* ==================== CTA BAR / FOOTER ==================== */
+    /* ==================== CTA / FOOTER ==================== */
     .cta-bar{background:var(--preto);color:#fff;padding:20px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,.06);margin-top:32px;text-align:left;}
     .cta-text h3{margin:0 0 4px;font-size:18px;font-weight:700;}
     .cta-text p{margin:0;font-size:15px;opacity:.9;}
-    .cta-btn{display:inline-block;background:#fff;color:var(--preto);text-decoration:none;padding:10px 18px;border-radius:20px;font-weight:600;box-shadow:none !important;transition:.2s;white-space:nowrap;}
-    .cta-btn:hover{background:#f2f2f5;transform:translateY(-1px);box-shadow:none !important;}
-
+    .cta-btn{display:inline-block;background:#fff;color:var(--preto);text-decoration:none;padding:10px 18px;border-radius:20px;font-weight:600;transition:.2s;white-space:nowrap;}
+    .cta-btn:hover{background:#f2f2f5;transform:translateY(-1px);}
     .site-footer{background:#fff;color:var(--preto);border-top:1px solid #eee;padding:18px 16px 28px;}
     .footer-inner{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:auto 1fr;gap:20px 28px;align-items:start;}
     .footer-brand img{height:40px;width:auto;display:block;}
@@ -167,66 +143,35 @@
     .footer-col a:hover{text-decoration:underline;}
     @media (max-width:720px){.footer-inner{grid-template-columns:1fr}.footer-cols{grid-template-columns:1fr}.cta-text h3{font-size:16px}.cta-text p{font-size:14px}}
   
-    /* ===== Ajuste fino de espaçamentos nos títulos da coluna direita ===== */
-    .section-title--simple + .cards-row{ margin-top: 8px !important; } /* antes 36px */
+    /* ===== Ajustes finos mantidos ===== */
+    .section-title--simple + .cards-row{ margin-top: 8px !important; }
     .section-title--simple.mt{ margin-top: 28px !important; }
     .overlay-col:nth-child(2) .section-title--simple:first-of-type { margin-top: 8px; }
+    .links-inline a{ position:relative;padding-left:18px;font-size:13px;color:#333;text-decoration:none;display:inline-flex;align-items:center; }
+    .links-inline a::before{ content:"";position:absolute;left:0;top:50%;width:12px;height:12px;transform:translateY(-50%);background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='%23555' viewBox='0 0 24 24'><path d='M12 1a5 5 0 0 0-5 5v4H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V12a2 2 0 0 0-2-2h-1V6a5 5 0 0 0-5-5zm-3 9V6a3 3 0 0 1 6 0v4H9z'/></svg>") no-repeat center;background-size:contain; }
 
-    /* Cadeado SVG antes do "Esqueci minha senha" */
-    .links-inline a {
-      position: relative;
-      padding-left: 18px;
-      font-size: 13px;
-      color: #333;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-    }
-    .links-inline a::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      top: 50%;
-      width: 12px;
-      height: 12px;
-      transform: translateY(-50%);
-      background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='%23555' viewBox='0 0 24 24'><path d='M12 1a5 5 0 0 0-5 5v4H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V12a2 2 0 0 0-2-2h-1V6a5 5 0 0 0-5-5zm-3 9V6a3 3 0 0 1 6 0v4H9z'/></svg>") no-repeat center;
-      background-size: contain;
-    }
-
-    /* ==================== LAYOUT BUSCA: COLUNA ESQ. (sticky) + CONTEÚDO DIR. ==================== */
+    /* ==================== LAYOUT 2 COLUNAS (FILTROS + CONTEÚDO) ==================== */
     .filters-toggle{
-      display:none;       /* aparece apenas no mobile */
-      position:sticky;
-      top:10px;
-      margin:12px 16px 0;
-      padding:8px 12px;
-      border-radius:10px;
-      border:1px solid #eaeaea;
-      background:#fff;
-      font-weight:700;
-      cursor:pointer;
-      z-index:20;
+      display:none; /* mobile only */
+      position:sticky; top:10px;
+      margin:8px 16px 0; padding:8px 12px;
+      border-radius:10px;border:1px solid #eaeaea;background:#fff;font-weight:700;cursor:pointer;z-index:20;
     }
+
+    .page-outer{max-width:1280px;margin:0 auto;padding:0 16px;}
 
     .search-layout{
       display:grid;
       grid-template-columns: 300px 1fr;  /* estreita + larga */
       gap:24px;
       align-items:start;
-      max-width:1200px;
-      margin:16px auto;
-      padding:0 16px;
+      margin:10px 0 0; /* aproxima do header */
     }
 
     .filters-panel{
-      border:1px solid #eee;
-      border-radius:14px;
-      padding:16px;
-      background:#fff;
-      position:sticky;
-      top:88px;                    /* ajuste conforme altura do header */
-      max-height: calc(100vh - 100px);
+      border:1px solid #eee;border-radius:14px;padding:16px;background:#fff;
+      position:sticky; top:56px;              /* COLADO AO CABEÇALHO */
+      max-height: calc(100vh - 72px);
       overflow:auto;
     }
     .filters-title{margin:0 0 12px;font-size:18px;font-weight:700;}
@@ -236,23 +181,16 @@
     .filter-actions .btn-primary{width:100%;}
     .link-reset{display:inline-block;margin-top:10px;font-size:14px;color:#6a6a6a;text-decoration:underline;}
 
-    .results-panel{min-height:400px;}
+    .right-col{min-width:0;} /* impede overflow */
+    .results-panel{min-height:200px;margin-top:12px;}
 
-    /* Mobile: filtros viram drawer lateral e grid vira 1 coluna */
+    /* Mobile: filtros viram drawer lateral */
     @media (max-width:1024px){
       .filters-toggle{display:inline-block;}
       .search-layout{grid-template-columns:1fr;}
       .filters-panel{
-        position:fixed;
-        left:0; top:0; bottom:0;
-        width:min(90%,360px);
-        max-width:90vw;
-        max-height:none;
-        border-radius:0;
-        padding:16px;
-        transform:translateX(-110%);
-        transition:transform .2s ease;
-        z-index:1001;
+        position:fixed;left:0;top:0;bottom:0;width:min(90%,360px);max-width:90vw;border-radius:0;padding:16px;
+        transform:translateX(-110%);transition:transform .2s ease;z-index:1001;max-height:none;overflow:auto;
       }
       .filters-panel.is-open{ transform:translateX(0); }
       body.filters-open{ overflow:hidden; }
@@ -274,99 +212,101 @@
         <img src="/static/logo.jpg" alt="Logo AcheTece" decoding="async" fetchpriority="high">
       </div>
     </div>
-  
     <div class="header-right">
-      <!-- nav removido porque não há mais links -->
       <button class="hamburger" id="hamburgerBtn" type="button" aria-label="Abrir menu">
         <span></span><span></span><span></span>
       </button>
     </div>
   </header>
-  
-  <main class="hero hero-grid">
-    <div class="hero-copy">
-      <div class="role-toggle" role="tablist" aria-label="Selecione seu perfil">
-        <button class="chip is-active" role="tab" aria-selected="true" data-role="cliente">Procuro Malharia</button>
-        <button class="chip" role="tab" aria-selected="false" data-role="malharia">Sou Malharia</button>
-      </div>
-  
-      <h1 id="hero-title">Encontre teares de malharia prontos para produzir</h1>
-      <p id="hero-sub">Filtre sua busca por tipo, diâmetro, galga e localização. Fale direto com a malharia.</p>
-  
-      <div class="hero-ctas">
-        <a id="hero-cta" href="#busca" class="btn-principal">Buscar teares agora</a>
-      </div>
-    </div>
-  </main>
-  
-  <section class="how-it-works" aria-labelledby="como-funciona">
-    <h2 id="how-title">Precisa produzir malha? Como funciona:</h2>
-    <div class="steps" id="how-steps"></div>
-  </section>
 
-  <!-- Botão mobile para abrir/fechar filtros (visível apenas <=1024px) -->
+  <!-- Botão mobile para abrir/fechar filtros -->
   <button class="filters-toggle" id="toggleFilters" aria-expanded="false" aria-controls="filtersPanel">
     Filtros
   </button>
-  
-  <!-- ===== LAYOUT DE BUSCA: COLUNA ESQ. (FILTROS) + COLUNA DIR. (RESULTADOS/CONTEÚDOS) ===== -->
-  <div class="search-layout">
-    <!-- COLUNA ESQUERDA: filtros -->
-    <aside class="filters-panel" id="filtersPanel">
-      <h2 class="filters-title">Filtrar teares</h2>
 
-      <form method="POST" class="formulario" action="{{ url_for('index') }}">
-        {% for campo, opcoes_campo in opcoes.items() %}
-          <div class="filter-field">
-            <label for="{{ campo }}">{{ campo|capitalize }}</label>
-            <select name="{{ campo }}" id="{{ campo }}">
-              <option value="">-- Todos --</option>
-              {% for opcao in opcoes_campo %}
-                <option value="{{ opcao }}" {% if filtros[campo] == opcao %}selected{% endif %}>{{ opcao }}</option>
-              {% endfor %}
-            </select>
-          </div>
-        {% endfor %}
+  <!-- ===== TUDO EM DUAS COLUNAS: ESQ = FILTROS | DIR = CONTEÚDO ===== -->
+  <div class="page-outer">
+    <div class="search-layout">
 
-        <div class="filter-actions">
-          <button type="submit" class="btn-primary">Buscar</button>
-          <a href="{{ url_for('index') }}" class="link-reset">Limpar</a>
-        </div>
-      </form>
-    </aside>
-
-    <!-- COLUNA DIREITA: resultados e demais informações -->
-    <section id="busca" class="results-panel">
-      <h1>BUSCAR TEARES</h1>
-      <p class="frase-instrucao">
-        Use os filtros ao lado para encontrar a malharia e o tear que atendem à sua demanda de produção.
-      </p>
-
-      {% if resultados %}
-        <div class="tabela-container">
-          <!-- sua tabela exatamente como já está -->
-        </div>
-
-        <div class="paginacao">
-          {% if pagina > 1 %}
-            <a href="?pagina={{ pagina - 1 }}{% for k, v in filtros.items() if v %}&{{ k }}={{ v }}{% endfor %}">← Anterior</a>
-          {% endif %}
-          Página {{ pagina }} de {{ total_paginas }}
-          {% if pagina < total_paginas %}
-            <a href="?pagina={{ pagina + 1 }}{% for k, v in filtros.items() if v %}&{{ k }}={{ v }}{% endfor %}">Próxima →</a>
-          {% endif %}
-        </div>
-
-        <form action="/exportar" method="get">
-          {% for campo, valor in filtros.items() %}
-            {% if valor %}
-              <input type="hidden" name="{{ campo }}" value="{{ valor }}">
-            {% endif %}
+      <!-- COLUNA ESQUERDA: FILTROS -->
+      <aside class="filters-panel" id="filtersPanel">
+        <h2 class="filters-title">Filtrar teares</h2>
+        <form method="POST" class="formulario" action="{{ url_for('index') }}">
+          {% for campo, opcoes_campo in opcoes.items() %}
+            <div class="filter-field">
+              <label for="{{ campo }}">{{ campo|capitalize }}</label>
+              <select name="{{ campo }}" id="{{ campo }}">
+                <option value="">-- Todos --</option>
+                {% for opcao in opcoes_campo %}
+                  <option value="{{ opcao }}" {% if filtros[campo] == opcao %}selected{% endif %}>{{ opcao }}</option>
+                {% endfor %}
+              </select>
+            </div>
           {% endfor %}
-          <button type="submit">Exportar CSV</button>
+          <div class="filter-actions">
+            <button type="submit" class="btn-primary">Buscar</button>
+            <a href="{{ url_for('index') }}" class="link-reset">Limpar</a>
+          </div>
         </form>
-      {% endif %}
-    </section>
+      </aside>
+
+      <!-- COLUNA DIREITA: TODO O CONTEÚDO -->
+      <div class="right-col">
+        <!-- HERO -->
+        <main class="hero hero-grid">
+          <div class="hero-copy">
+            <div class="role-toggle" role="tablist" aria-label="Selecione seu perfil">
+              <button class="chip is-active" role="tab" aria-selected="true" data-role="cliente">Procuro Malharia</button>
+              <button class="chip" role="tab" aria-selected="false" data-role="malharia">Sou Malharia</button>
+            </div>
+            <h1 id="hero-title">Encontre teares de malharia prontos para produzir</h1>
+            <p id="hero-sub">Filtre sua busca por tipo, diâmetro, galga e localização. Fale direto com a malharia.</p>
+            <div class="hero-ctas">
+              <a id="hero-cta" href="#busca" class="btn-principal">Buscar teares agora</a>
+            </div>
+          </div>
+        </main>
+
+        <!-- COMO FUNCIONA -->
+        <section class="how-it-works" aria-labelledby="como-funciona">
+          <h2 id="how-title">Precisa produzir malha? Como funciona:</h2>
+          <div class="steps" id="how-steps"></div>
+        </section>
+
+        <!-- BUSCAR TEARES + RESULTADOS -->
+        <section id="busca" class="results-panel">
+          <h1>BUSCAR TEARES</h1>
+          <p class="frase-instrucao">
+            Use os filtros ao lado para encontrar a malharia e o tear que atendem à sua demanda de produção.
+          </p>
+
+          {% if resultados %}
+            <div class="tabela-container">
+              <!-- sua tabela exatamente como já está -->
+            </div>
+
+            <div class="paginacao">
+              {% if pagina > 1 %}
+                <a href="?pagina={{ pagina - 1 }}{% for k, v in filtros.items() if v %}&{{ k }}={{ v }}{% endfor %}">← Anterior</a>
+              {% endif %}
+              Página {{ pagina }} de {{ total_paginas }}
+              {% if pagina < total_paginas %}
+                <a href="?pagina={{ pagina + 1 }}{% for k, v in filtros.items() if v %}&{{ k }}={{ v }}{% endfor %}">Próxima →</a>
+              {% endif %}
+            </div>
+
+            <form action="/exportar" method="get">
+              {% for campo, valor in filtros.items() %}
+                {% if valor %}
+                  <input type="hidden" name="{{ campo }}" value="{{ valor }}">
+                {% endif %}
+              {% endfor %}
+              <button type="submit">Exportar CSV</button>
+            </form>
+          {% endif %}
+        </section>
+      </div>
+    </div>
   </div>
 
   <!-- Modal / Sheet -->
@@ -378,9 +318,7 @@
         <button class="overlay-close" type="button" aria-label="Fechar" data-close>×</button>
       </header>
 
-      <!-- DUAS COLUNAS GARANTIDAS -->
       <div class="overlay-content">
-        <!-- COLUNA ESQUERDA -->
         <div class="overlay-col">
           <h3 class="section-title section-title--login">Entrar ou criar conta</h3>
 
@@ -400,26 +338,16 @@
             </button>
           </div>
 
-          <!-- TÍTULO + CAMPOS -->
           <h3 class="form-subtitle">Dados de acesso</h3>
           <div class="access-fields">
             <input type="email" placeholder="Email de login..." class="input" autocomplete="username">
             <input type="password" placeholder="Senha de acesso..." class="input" autocomplete="current-password">
-
-            <div class="links-inline">
-              <a href="/esqueci_senha">Esqueci minha senha</a>
-            </div>
-
+            <div class="links-inline"><a href="/esqueci_senha">Esqueci minha senha</a></div>
             <button class="btn-primary" onclick="location.href='/login'">Entrar</button>
-
-            <!-- TEXTO DE CADASTRO -->
-            <div class="signup-text">
-              Não tem cadastro? <a href="/cadastrar_empresa">Crie sua conta aqui</a>
-            </div>
+            <div class="signup-text">Não tem cadastro? <a href="/cadastrar_empresa">Crie sua conta aqui</a></div>
           </div>
         </div>
 
-        <!-- COLUNA DIREITA -->
         <div class="overlay-col">
           <h3 class="section-title--simple">Facilidades AcheTece</h3>
           <div class="cards-row">
@@ -432,7 +360,6 @@
               </div>
               <div class="mini-card-title">Procuro Malharia</div>
             </a>
-
             <a class="mini-card malharia" href="/malharia_info">
               <div class="mini-card-ico">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -473,7 +400,6 @@
 
             <a class="list-item" href="https://wa.me/5547999999999" target="_blank" rel="noopener">
               <span class="list-icon">
-                <!-- Ícone reduzido via CSS (18px) -->
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#25D366">
                   <path d="M12 .5C5.65.5.5 5.65.5 12c0 2.11.55 4.16 1.6 5.97L.5 23.5l5.66-1.56A11.44 11.44 0 0 0 12 23.5c6.35 0 11.5-5.15 11.5-11.5S18.35.5 12 .5zm0 20.9c-1.83 0-3.62-.49-5.18-1.41l-.37-.22-3.36.92.9-3.28-.24-.38a9.53 9.53 0 0 1-1.45-5.03C2.3 6.48 6.65 2.1 12 2.1c5.34 0 9.7 4.38 9.7 9.8s-4.36 9.5-9.7 9.5zm5.32-7.13c-.29-.15-1.71-.84-1.97-.94-.27-.1-.46-.15-.65.15-.19.29-.75.94-.92 1.13-.17.19-.34.21-.63.07-.29-.15-1.22-.45-2.32-1.45-.86-.77-1.44-1.72-1.61-2-.17-.29-.02-.45.13-.59.13-.13.29-.34.43-.51.14-.17.19-.29.29-.48.1-.19.05-.36-.02-.51-.07-.15-.65-1.57-.89-2.15-.23-.55-.47-.48-.65-.49h-.55c-.19 0-.51.07-.78.36-.27.29-1.02 1-1.02 2.45s1.04 2.84 1.18 3.04c.15.19 2.05 3.12 4.97 4.37.69.3 1.22.48 1.64.61.69.22 1.32.19 1.82.12.55-.08 1.71-.7 1.95-1.38.24-.68.24-1.26.17-1.38-.07-.12-.26-.19-.55-.34z"/>
                 </svg>
