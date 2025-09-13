@@ -291,12 +291,18 @@
             <span class="badge-new">Novo</span>
           </div>
 
-          <div class="olx-loc-field">
-            <span class="olx-loc-ico" aria-hidden="true">📍</span>
-            <input id="loc-input" list="loc-suggestions" class="olx-loc-input"
-                   placeholder="Digite um bairro ou cidade" autocomplete="off" inputmode="search" />
-            <datalist id="loc-suggestions"></datalist>
-            <button class="olx-loc-clear" type="button" aria-label="Limpar localização" title="Limpar">×</button>
+          <div class="typeahead-wrap">
+            <input
+              id="input-localizacao"
+              name="localizacao"
+              type="text"
+              autocomplete="off"
+              placeholder="Digite um estado ou cidade"
+              aria-label="Localização"
+              <!-- se você souber a UF atual (do breadcrumb), passe aqui: -->
+              data-uf="{{ uf_atual or '' }}"
+            >
+            <ul id="lista-sugestoes-localizacao" class="typeahead-list" role="listbox" aria-label="Sugestões de localização"></ul>
           </div>
         </section>
 
