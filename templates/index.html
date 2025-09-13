@@ -17,21 +17,51 @@
     /* ==================== VARIÁVEIS ==================== */
     :root{
       --roxo:#8A00FF; --roxo-hover:#A63DFF; --preto:#000;
-
-      /* Social buttons (mantém alinhamento e equaliza larguras) */
-      --social-btn-w: 190px;
-      --social-gap: 12px;
-      --social-h: 46px;
-
-      /* Paleta dos mini-cards (overlay) */
-      --procura-bg: #F2E8FF;   --procura-fg: #7A1BFF;
-      --malharia-bg: #E6FCF4;  --malharia-fg: #0BA98B;
+      --procura-bg:#F2E8FF; --procura-fg:#7A1BFF;
+      --malharia-bg:#E6FCF4; --malharia-fg:#0BA98B;
     }
 
     /* ==================== HEADER / NAV ==================== */
     .navbar{overflow:visible;padding-top:6px;padding-bottom:6px;display:flex;align-items:center;}
     .header-left,.header-right{display:flex;align-items:center;}
-    .header-right{margin-left:auto;gap:20px;}
+    .header-right{margin-left:auto;gap:16px;}
+
+    /* Botões da faixa branca (como na imagem) */
+    .hdr-actions{display:flex;align-items:center;gap:10px}
+    .btn-entrar,
+    .btn-anunciar{
+      height:40px;                   /* cabe na faixa sem aumentar altura */
+      line-height:40px;              /* centraliza texto */
+      border-radius:9999px;          /* pílula */
+      padding:0 18px;
+      font-weight:700;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      white-space:nowrap;
+    }
+    .btn-entrar{
+      background:#fff;
+      color:#222;
+      border:1.5px solid #D9DCE1;    /* borda cinza clara */
+    }
+    .btn-entrar:hover{background:#fafafa}
+    .btn-anunciar{
+      background:#F28C00;            /* laranja OLX-like */
+      color:#fff;
+      border:0;
+    }
+    .btn-anunciar:hover{background:#E57F00}
+    .btn-anunciar svg{
+      width:18px;height:18px;display:block;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
+    }
+
+    /* Em telas pequenas, escondemos os botões p/ não “estourar” o header */
+    @media (max-width:820px){
+      .hdr-actions{display:none}
+    }
+
     .hamburger{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:40px;height:40px;border:none;background:transparent;cursor:pointer;}
     .hamburger span{display:block;width:20px;height:2px;background:var(--preto);border-radius:2px;}
     .hamburger span+span{margin-top:4px;}
@@ -57,51 +87,38 @@
 
     /* ==================== LOGIN / SOCIAL (menu) ==================== */
     .section-title--login{font-weight:700;font-size:16px;line-height:1.1;color:#111;text-transform:none;}
-    .social-row{display:flex;gap:var(--social-gap);justify-content:flex-start;flex-wrap:wrap;}
-    .btn-google,.btn-facebook{
-      width:var(--social-btn-w);height:var(--social-h);padding:0 16px;border-radius:999px;
-      display:flex;align-items:center;justify-content:flex-start;gap:10px;box-sizing:border-box;font-size:14px;font-weight:500;
-    }
-    .btn-google{background:#f7f7f7;border:1px solid #dadce0;color:#3c4043;transition:background .2s ease,box-shadow .2s ease;}
+    .social-row{display:flex;gap:12px;flex-wrap:wrap}
+    .btn-google,.btn-facebook{width:190px;height:46px;padding:0 16px;border-radius:999px;display:flex;align-items:center;gap:10px;box-sizing:border-box;font-size:14px;font-weight:500;}
+    .btn-google{background:#f7f7f7;border:1px solid #dadce0;color:#3c4043;}
     .btn-google:hover{background:#f1f1f1;}
     .btn-google img{width:40px;height:40px;}
-    .btn-facebook{background:#1877F2;color:#fff;border:0;cursor:pointer;transition:background .2s ease,transform .12s ease;}
+    .btn-facebook{background:#1877F2;color:#fff;border:0;}
     .btn-facebook:hover{background:#166FE5;transform:translateY(-1px);}
-    .btn-facebook .fb-icon{display:flex;align-items:center;justify-content:center;width:var(--social-h);height:var(--social-h);}
+    .btn-facebook .fb-icon{display:flex;align-items:center;justify-content:center;width:46px;height:46px;}
     .btn-facebook .fb-icon svg{width:30px;height:30px;display:block;}
-    .form-subtitle{font-weight:700;font-size:16px;line-height:1.1;color:#111;margin:28px 0 8px;}
-    .access-fields{width:calc((2 * var(--social-btn-w)) + var(--social-gap));max-width:100%;padding-top:8px;}
+    .form-subtitle{font-weight:700;font-size:16px;margin:28px 0 8px;}
+    .access-fields{width:392px;max-width:100%;padding-top:8px;}
     .input{width:100%;height:48px;border-radius:999px;border:1px solid #e6e6e6;padding:0 16px;margin-bottom:10px;font-size:14px;background:#eaf1ff;color:#111;}
     .links-inline{margin-top:-4px;margin-bottom:14px;}
     .links-inline a{font-size:12px;color:#333;text-decoration:none;}
-    .links-inline a:hover {color: var(--roxo);text-decoration: underline;}
-    .btn-primary{width:calc((2 * var(--social-btn-w)) + var(--social-gap));box-shadow: none !important;max-width:100%;height:54px;border-radius:999px;border:0;cursor:pointer;background:#8A00FF;color:#fff;font-weight:800;font-size:16px;box-shadow:0 8px 18px rgba(138,0,255,.25);}
-    .signup-text{margin-top:8px;font-size:12px;text-align:left;color:#000;}
-    .signup-text a{color:var(--roxo);font-weight:600;text-decoration:none;}
-    .signup-text a:hover{text-decoration:underline;}
-    @media (max-width:520px){
-      :root{ --social-btn-w:100%; }
-      .btn-google,.btn-facebook{width:100%;}
-      .access-fields,.btn-primary{width:100%;}
-    }
+    .btn-primary{width:392px;max-width:100%;height:54px;border-radius:999px;border:0;background:#8A00FF;color:#fff;font-weight:800;font-size:16px;}
+    .signup-text{margin-top:8px;font-size:12px;color:#000;}
+    @media (max-width:520px){.btn-google,.btn-facebook,.access-fields,.btn-primary{width:100%}}
 
     /* ==================== MINI-CARDS / LISTAS (menu) ==================== */
     .section-title--simple{font-weight:700;font-size:16px;line-height:1.1;color:#111;text-transform:none;}
-    .section-title--simple + .cards-row{margin-top:36px;}
     .cards-row{display:flex;gap:12px;flex-wrap:nowrap;align-items:flex-start;}
-    .mini-card{flex:0 0 auto;height:auto;padding:8px 12px;border-radius:12px;gap:6px;display:inline-flex;align-items:center;justify-content:center;text-align:center;border:1px solid #eee;transition:.16s;text-decoration:none;font-weight:700;}
-    .mini-card:hover{transform:translateY(-3px);border-color:rgba(0,0,0,.06);box-shadow:none !important;}
+    .mini-card{flex:0 0 auto;padding:8px 12px;border-radius:12px;gap:6px;display:inline-flex;align-items:center;border:1px solid #eee;text-decoration:none;font-weight:700;}
+    .mini-card:hover{transform:translateY(-3px);border-color:rgba(0,0,0,.06)}
     .mini-card-ico svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
-    .mini-card-title{font-size:12px;line-height:1.1;white-space:nowrap;}
+    .mini-card-title{font-size:12px;white-space:nowrap;}
     .mini-card.procura{background:var(--procura-bg);color:var(--procura-fg);}
     .mini-card.malharia{background:var(--malharia-bg);color:var(--malharia-fg);}
     .list-links{display:flex;flex-direction:column;border-top:1px solid #f0f0f0;margin-top:8px;}
     .list-item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;text-decoration:none;color:#222;border-bottom:1px solid #f5f5f5;}
     .list-icon{flex:0 0 24px;display:flex;align-items:center;justify-content:center;}
     .list-text{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .list-item .arrow{flex:0 0 auto;display:flex;align-items:center;}
     .list-item .arrow svg{width:22px;height:22px;stroke-width:3;}
-    .list-icon svg[fill="#25D366"]{width:18px;height:18px;}
 
     /* ==================== LAYOUT (FILTROS + RESULTADOS) ==================== */
     .page-outer{max-width:1280px;margin:0 auto;padding:0 16px;}
@@ -109,28 +126,20 @@
     @media (max-width:1024px){.search-layout{grid-template-columns:1fr}}
 
     /* Filtros (mantidos) */
-    .filters-panel{
-      border:1px solid #eee;border-radius:14px;padding:16px;background:#fff;
-      position:sticky; top:56px;             /* colado ao cabeçalho */
-      max-height: calc(100vh - 72px);
-      overflow:auto;
-      z-index:10;
-    }
+    .filters-panel{border:1px solid #eee;border-radius:14px;padding:16px;background:#fff;position:sticky;top:56px;max-height:calc(100vh - 72px);overflow:auto;z-index:10;}
     .filters-title{margin:0 0 12px;font-size:18px;font-weight:700;}
     .filter-field{margin-bottom:12px;}
     .filter-field label{display:block;font-size:14px;margin-bottom:6px;color:#444;}
     .filter-field select{width:100%;height:40px;padding:8px 10px;border:1px solid #ccc;border-radius:10px;background:#fff;color:#333;}
     .filter-actions .btn-primary{width:100%;}
     .link-reset{display:inline-block;margin-top:10px;font-size:14px;color:#6a6a6a;text-decoration:underline;}
-
-    /* Drawer mobile dos filtros */
     @media (max-width:1024px){
       .filters-panel{position:fixed;left:0;top:0;bottom:0;width:min(90%,360px);max-width:90vw;border-radius:0;padding:16px;transform:translateX(-110%);transition:transform .2s ease;z-index:1001;max-height:none;overflow:auto}
-      .filters-panel.is-open{ transform:translateX(0); }
-      body.filters-open{ overflow:hidden; }
+      .filters-panel.is-open{transform:translateX(0)}
+      body.filters-open{overflow:hidden}
     }
 
-    /* ===== Barra mobile estilo OLX: Localização + Filtros + Pílula ===== */
+    /* ===== Barra mobile estilo OLX ===== */
     .mobile-controls{display:none;border-top:1px solid #eee;border-bottom:1px solid #eee;background:#fff}
     .mobile-controls-inner{max-width:1280px;margin:0 auto;padding:10px 16px}
     .location-row{display:flex;align-items:center;gap:8px;font-size:14px;color:#333;margin-bottom:8px}
@@ -155,44 +164,21 @@
     .paginacao{display:flex;gap:12px;align-items:center;justify-content:center;margin:14px 0}
     .paginacao a{color:var(--roxo);text-decoration:none;font-weight:700}
 
-    /* ==================== CTA (faixa preta) e RODAPÉ — idênticos ao fale_conosco ==================== */
-    .cta-bar{
-      background:#000;              /* fundo preto */
-      color:#fff;
-      padding:20px 16px;            /* mesma altura do arquivo fornecido */
-      display:flex;
-      align-items:center;
-      gap:16px;
-      flex-wrap:wrap;
-      border-top:1px solid rgba(255,255,255,0.06);
-      margin-top:32px;
-      justify-content:flex-start;   /* tudo alinhado à esquerda */
-    }
-    .cta-text h3{ margin:0 0 4px 0; font-size:18px; font-weight:700; line-height:1.2; }
-    .cta-text p{ margin:0; font-size:15px; opacity:.9; }
-    .cta-btn{
-      display:inline-block;
-      background:#fff;
-      color:#000;
-      text-decoration:none;
-      padding:10px 22px;
-      border-radius:9999px;         /* pílula */
-      font-weight:700;
-      box-shadow:none !important;
-      transition:transform .12s ease, background .2s ease, box-shadow .2s ease;
-      white-space:nowrap;
-    }
-    .cta-btn:hover{ background:#f2f2f5; transform:translateY(-1px); box-shadow:none !important; }
-
-    .site-footer{ background:#fff;color:#211a2a;border-top:1px solid #eee;padding:18px 16px 28px; }
-    .footer-inner{ max-width:1180px;margin:0 auto;display:grid;grid-template-columns:auto 1fr;gap:20px 28px;align-items:start; }
-    .footer-brand img{ height:44px;width:auto;display:block; }  /* exatamente como no fale_conosco */
-    .footer-cols{ display:grid;grid-template-columns: repeat(2, minmax(180px, 240px));gap:12px 28px; }
-    .footer-col h4{ margin:0 0 8px 0;font-size:14px;font-weight:700;color:#251c33; }
-    .footer-col ul{ list-style:none;margin:0;padding:0; }
-    .footer-col li+li{ margin-top:6px; }
-    .footer-col a{ color:#2a2535;text-decoration:none;font-size:14px; }
-    .footer-col a:hover{ text-decoration:underline; }
+    /* ==================== CTA (faixa preta) e RODAPÉ (como no fale_conosco) ==================== */
+    .cta-bar{background:#000;color:#fff;padding:20px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,0.06);margin-top:32px;justify-content:flex-start;}
+    .cta-text h3{margin:0 0 4px 0;font-size:18px;font-weight:700;line-height:1.2;}
+    .cta-text p{margin:0;font-size:15px;opacity:.9;}
+    .cta-btn{display:inline-block;background:#fff;color:#000;text-decoration:none;padding:10px 22px;border-radius:9999px;font-weight:700;white-space:nowrap;}
+    .cta-btn:hover{background:#f2f2f5;transform:translateY(-1px);}
+    .site-footer{background:#fff;color:#211a2a;border-top:1px solid #eee;padding:18px 16px 28px;}
+    .footer-inner{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:auto 1fr;gap:20px 28px;align-items:start;}
+    .footer-brand img{height:44px;width:auto;display:block;}
+    .footer-cols{display:grid;grid-template-columns:repeat(2,minmax(180px,240px));gap:12px 28px;}
+    .footer-col h4{margin:0 0 8px 0;font-size:14px;font-weight:700;color:#251c33;}
+    .footer-col ul{list-style:none;margin:0;padding:0;}
+    .footer-col li+li{margin-top:6px;}
+    .footer-col a{color:#2a2535;text-decoration:none;font-size:14px;}
+    .footer-col a:hover{text-decoration:underline;}
   </style>
 </head>
 <body>
@@ -210,7 +196,21 @@
         <img src="/static/logo.jpg" alt="Logo AcheTece" decoding="async" fetchpriority="high">
       </div>
     </div>
+
     <div class="header-right">
+      <!-- NOVOS BOTÕES -->
+      <div class="hdr-actions">
+        <a href="/login" class="btn-entrar">Entrar</a>
+        <a href="/cadastrar_empresa" class="btn-anunciar" aria-label="Cadastrar malharia">
+          <!-- ícone (igual ao estilo da referência) -->
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 5v14M5 12h14"></path>
+            <circle cx="19" cy="5" r="1.5" fill="#fff" stroke="none"></circle>
+          </svg>
+          <span>Cadastrar malharia</span>
+        </a>
+      </div>
+
       <button class="hamburger" id="hamburgerBtn" type="button" aria-label="Abrir menu">
         <span></span><span></span><span></span>
       </button>
@@ -220,7 +220,6 @@
   <!-- CONTROLES MOBILE (estilo OLX) -->
   <div class="mobile-controls" aria-hidden="false">
     <div class="mobile-controls-inner">
-      <!-- Linha 1: Localização -->
       <div class="location-row">
         <span aria-hidden="true">📍</span>
         <label for="loc-mobile" class="sr-only">Localização</label>
@@ -231,7 +230,6 @@
           <option value="PR">Paraná</option>
         </select>
       </div>
-      <!-- Linha 2: Botão Filtros + pílula resumo -->
       <div class="toolbar-row">
         <button class="btn-filtros" id="toggleFiltersMobile" aria-controls="filtersPanel" aria-expanded="false">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -267,7 +265,6 @@
               </select>
             </div>
           {% endfor %}
-
           <div class="filter-actions">
             <button type="submit" class="btn-primary">Buscar</button>
             <a href="{{ url_for('index') }}" class="link-reset">Limpar</a>
@@ -277,7 +274,6 @@
 
       <!-- COLUNA DIREITA: RESULTADOS -->
       <div class="right-col">
-        <!-- Localização (desktop) -->
         <section class="loc-card" aria-label="Localização">
           <div style="font-weight:700; color:#222; margin-bottom:8px;">
             Localização <span style="background:linear-gradient(90deg,#a335ff,#ff7a00);color:#fff;border-radius:12px;padding:2px 8px;font-size:12px;margin-left:6px;">Novo</span>
@@ -291,7 +287,6 @@
           </div>
         </section>
 
-        <!-- Cabeçalho de resultados -->
         <header class="results-head">
           <h1>Teares disponíveis</h1>
           <div class="results-sub">
@@ -303,7 +298,7 @@
             {% endif %}
           </div>
 
-          <div class="results-toolbar">
+        <div class="results-toolbar">
             <label for="ordenar" style="font-weight:600;color:#333">Ordenar por</label>
             <select id="ordenar" class="select" name="ordenar" onchange="location.search = updateQueryString('ordenar', this.value)">
               {% set ord = request.args.get('ordenar', 'relevancia') %}
@@ -314,7 +309,6 @@
           </div>
         </header>
 
-        <!-- Resultados -->
         <section id="busca" class="results-panel">
           {% if resultados %}
             <div class="tabela-container">
@@ -360,7 +354,6 @@
       </header>
 
       <div class="overlay-content">
-        <!-- COLUNA ESQUERDA -->
         <div class="overlay-col">
           <h3 class="section-title section-title--login">Entrar ou criar conta</h3>
 
@@ -388,13 +381,10 @@
               <a href="/esqueci_senha">Esqueci minha senha</a>
             </div>
             <button class="btn-primary" onclick="location.href='/login'">Entrar</button>
-            <div class="signup-text">
-              Não tem cadastro? <a href="/cadastrar_empresa">Crie sua conta aqui</a>
-            </div>
+            <div class="signup-text">Não tem cadastro? <a href="/cadastrar_empresa">Crie sua conta aqui</a></div>
           </div>
         </div>
 
-        <!-- COLUNA DIREITA -->
         <div class="overlay-col">
           <h3 class="section-title--simple">Facilidades AcheTece</h3>
           <div class="cards-row">
@@ -465,7 +455,7 @@
     </section>
   </div>
 
-  <!-- ===== FAIXA PRETA (CTA) — exatamente como no fale_conosco ===== -->
+  <!-- CTA (faixa preta) -->
   <section class="cta-bar" aria-label="Convite para cadastro">
     <div class="cta-text">
       <h3>É proprietário de uma malharia?</h3>
@@ -474,7 +464,7 @@
     <a href="{{ url_for('malharia_info') }}" class="cta-btn">Cadastrar</a>
   </section>
 
-  <!-- ===== RODAPÉ BRANCO — exatamente como no fale_conosco ===== -->
+  <!-- Rodapé -->
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-brand">
@@ -497,16 +487,13 @@
 
   <!-- ===== SCRIPTS ===== -->
   <script>
-    // Atualiza/insere parâmetro na querystring
     function updateQueryString(key, value){
       const url = new URL(window.location);
       url.searchParams.set(key, value);
       return url.pathname + url.search;
     }
   </script>
-
   <script>
-    // Menu overlay
     (function(){
       const overlay=document.getElementById('overlayMenu');
       const openBtn=document.getElementById('hamburgerBtn');
@@ -519,44 +506,30 @@
       overlay.addEventListener('click',e=>{ if(e.target===overlay) closeMenu();});
     })();
   </script>
-
   <script>
-    // Toggle filtros (drawer mobile)
     (function(){
-      const btnDesktop = document.getElementById('toggleFilters');        // se existir
-      const btnMobile  = document.getElementById('toggleFiltersMobile');   // principal no mobile
+      const btnMobile  = document.getElementById('toggleFiltersMobile');
       const panel = document.getElementById('filtersPanel');
       if(!panel) return;
-
       function toggle(){
         const open = panel.classList.toggle('is-open');
         document.body.classList.toggle('filters-open', open);
-        if(btnDesktop) btnDesktop.setAttribute('aria-expanded', open ? 'true' : 'false');
         if(btnMobile)  btnMobile.setAttribute('aria-expanded',  open ? 'true' : 'false');
       }
-      if(btnDesktop) btnDesktop.addEventListener('click', toggle);
       if(btnMobile)  btnMobile.addEventListener('click',  toggle);
-
       panel.addEventListener('click', e => {
         if(e.target === panel && panel.classList.contains('is-open')) toggle();
       });
     })();
   </script>
-
   <script>
-    // Ações da Localização (exemplo simples)
     (function(){
       const clear = document.querySelector('.loc-clear');
       const label = document.getElementById('loc-label');
       if(clear && label){
-        clear.addEventListener('click', ()=>{
-          label.textContent='Brasil';
-          // se quiser limpar estado/cidade na URL, faça aqui:
-          // location.href = updateQueryString('estado','');
-        });
+        clear.addEventListener('click', ()=>{ label.textContent='Brasil'; });
       }
     })();
   </script>
-
 </body>
 </html>
