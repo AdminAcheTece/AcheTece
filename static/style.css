@@ -777,7 +777,64 @@ thead tr{ background:#f2f2f2; }
      color:#8A00FF;
      text-decoration:underline;
    }
+
+   /* ===== Autocomplete (typeahead) ===== */
+   .typeahead-wrap{
+     position: relative;
+   }
    
+   .typeahead-list{
+     position: absolute;
+     left: 0;
+     right: 0;
+     top: calc(100% + 6px);
+     margin: 0;
+     padding: 6px 0;
+     list-style: none;
+     background: #fff;
+     border: 1px solid #e6e6e6;
+     border-radius: 12px;
+     box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+     max-height: 320px;
+     overflow-y: auto;
+     z-index: 1000;
+     display: none; /* escondido por padrão */
+   }
+   
+   .typeahead-list.show{
+     display: block;
+   }
+   
+   .typeahead-item{
+     padding: 10px 14px;
+     cursor: pointer;
+     font-size: 15px;
+     line-height: 1.2;
+     display: flex;
+     align-items: center;
+     gap: 8px;
+   }
+   
+   .typeahead-item:hover,
+   .typeahead-item[aria-selected="true"]{
+     background: #f4f0ff; /* leve roxo do seu tema */
+   }
+   
+   .typeahead-item .pin{
+     width: 18px;
+     height: 18px;
+     display: inline-block;
+     border-radius: 50%;
+     background: #8A00FF; /* roxo da marca */
+     opacity: .9;
+   }
+   
+   .typeahead-empty{
+     padding: 10px 14px;
+     color: #777;
+     font-size: 14px;
+   }
+     
    /* ===== Painel de resultados ===== */
    .results-panel{
      background:transparent; /* deixe seu conteúdo como já está */
