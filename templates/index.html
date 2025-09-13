@@ -23,7 +23,7 @@
       --social-gap: 12px;
       --social-h: 46px;
 
-      /* Paleta dos mini-cards */
+      /* Paleta dos mini-cards (overlay) */
       --procura-bg: #F2E8FF;   --procura-fg: #7A1BFF;
       --malharia-bg: #E6FCF4;  --malharia-fg: #0BA98B;
     }
@@ -37,13 +37,13 @@
     .hamburger span+span{margin-top:4px;}
     @media (max-width:768px){.hamburger{width:32px;height:32px}.hamburger span{width:18px}.hamburger span+span{margin-top:3px}}
 
-    /* ==================== BARRA PROMO ==================== */
+    /* ==================== BARRA PROMO (topo) ==================== */
     .promo-bar{background:var(--preto);color:#fff;display:flex;align-items:center;justify-content:center;gap:12px;padding:6px 10px;font-size:14px;line-height:1.2;}
     .promo-cta{display:inline-block;background:var(--roxo);color:#fff;text-decoration:none;padding:6px 10px;border-radius:8px;font-weight:600;white-space:nowrap;transition:.2s;}
     .promo-cta:hover{background:var(--roxo-hover);transform:translateY(-1px);}
     @media (max-width:600px){.promo-bar{flex-wrap:wrap;row-gap:6px}}
 
-    /* ==================== MODAL / SHEET ==================== */
+    /* ==================== MODAL / SHEET (menu) ==================== */
     .overlay-menu{position:fixed;inset:0;z-index:1000;display:none;}
     .overlay-menu.is-open{display:block;}
     .overlay-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(2px);}
@@ -51,11 +51,11 @@
     .overlay-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid #eee;}
     .overlay-header h2{margin:0;font-size:22px;font-weight:700;color:#111;}
     .overlay-close{border:0;background:#f3f3f3;width:36px;height:36px;border-radius:12px;font-size:22px;line-height:1;cursor:pointer;}
-    .overlay-content{display:grid;grid-template-columns:1fr 1fr;gap:28px;padding:22px;overflow:auto;} /* duas colunas */
+    .overlay-content{display:grid;grid-template-columns:1fr 1fr;gap:28px;padding:22px;overflow:auto;}
     .section-title{font-size:14px;color:#6b6b6b;font-weight:700;margin:6px 0 10px;text-transform:uppercase;letter-spacing:.3px;}
     .section-title.mt{margin-top:18px;}
 
-    /* ==================== LOGIN / SOCIAL ==================== */
+    /* ==================== LOGIN / SOCIAL (menu) ==================== */
     .section-title--login{font-weight:700;font-size:16px;line-height:1.1;color:#111;text-transform:none;}
     .social-row{display:flex;gap:var(--social-gap);justify-content:flex-start;flex-wrap:wrap;}
     .btn-google,.btn-facebook{
@@ -65,35 +65,29 @@
     .btn-google{background:#f7f7f7;border:1px solid #dadce0;color:#3c4043;transition:background .2s ease,box-shadow .2s ease;}
     .btn-google:hover{background:#f1f1f1;}
     .btn-google img{width:40px;height:40px;}
-
     .btn-facebook{background:#1877F2;color:#fff;border:0;cursor:pointer;transition:background .2s ease,transform .12s ease;}
     .btn-facebook:hover{background:#166FE5;transform:translateY(-1px);}
     .btn-facebook .fb-icon{display:flex;align-items:center;justify-content:center;width:var(--social-h);height:var(--social-h);}
     .btn-facebook .fb-icon svg{width:30px;height:30px;display:block;}
-
     .form-subtitle{font-weight:700;font-size:16px;line-height:1.1;color:#111;margin:28px 0 8px;}
     .access-fields{width:calc((2 * var(--social-btn-w)) + var(--social-gap));max-width:100%;padding-top:8px;}
     .input{width:100%;height:48px;border-radius:999px;border:1px solid #e6e6e6;padding:0 16px;margin-bottom:10px;font-size:14px;background:#eaf1ff;color:#111;}
-    .links-inline{margin-top:-4px; margin-bottom:14px;}
+    .links-inline{margin-top:-4px;margin-bottom:14px;}
     .links-inline a{font-size:12px;color:#333;text-decoration:none;}
     .links-inline a:hover {color: var(--roxo);text-decoration: underline;}
     .btn-primary{width:calc((2 * var(--social-btn-w)) + var(--social-gap));box-shadow: none !important;max-width:100%;height:54px;border-radius:999px;border:0;cursor:pointer;background:#8A00FF;color:#fff;font-weight:800;font-size:16px;box-shadow:0 8px 18px rgba(138,0,255,.25);}
-
-    /* Texto "Não tem cadastro?" */
     .signup-text{margin-top:8px;font-size:12px;text-align:left;color:#000;}
     .signup-text a{color:var(--roxo);font-weight:600;text-decoration:none;}
     .signup-text a:hover{text-decoration:underline;}
-
-    /* Responsivo: em telas estreitas, tudo passa a 100% (colunas empilham naturalmente) */
     @media (max-width:520px){
       :root{ --social-btn-w:100%; }
       .btn-google,.btn-facebook{width:100%;}
       .access-fields,.btn-primary{width:100%;}
     }
 
-    /* ==================== MINI-CARDS / LISTAS (usados no overlay) ==================== */
+    /* ==================== MINI-CARDS / LISTAS (menu) ==================== */
     .section-title--simple{font-weight:700;font-size:16px;line-height:1.1;color:#111;text-transform:none;}
-    .section-title--simple + .cards-row{margin-top:36px;} /* espaçamento título → cards */
+    .section-title--simple + .cards-row{margin-top:36px;}
     .cards-row{display:flex;gap:12px;flex-wrap:nowrap;align-items:flex-start;}
     .mini-card{flex:0 0 auto;height:auto;padding:8px 12px;border-radius:12px;gap:6px;display:inline-flex;align-items:center;justify-content:center;text-align:center;border:1px solid #eee;transition:.16s;text-decoration:none;font-weight:700;}
     .mini-card:hover{transform:translateY(-3px);border-color:rgba(0,0,0,.06);box-shadow:none !important;}
@@ -109,32 +103,7 @@
     .list-item .arrow svg{width:22px;height:22px;stroke-width:3;}
     .list-icon svg[fill="#25D366"]{width:18px;height:18px;}
 
-    /* ==================== CTA BAR / FOOTER (ANTIGOS, SEM ALTERAÇÃO) ==================== */
-    .cta-bar{background:var(--preto);color:#fff;padding:20px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,.06);margin-top:32px;text-align:left;}
-    .cta-text h3{margin:0 0 4px;font-size:18px;font-weight:700;}
-    .cta-text p{margin:0;font-size:15px;opacity:.9;}
-    .cta-btn{display:inline-block;background:#fff;color:var(--preto);text-decoration:none;padding:10px 18px;border-radius:20px;font-weight:600;box-shadow:none !important;transition:.2s;white-space:nowrap;}
-    .cta-btn:hover{background:#f2f2f5;transform:translateY(-1px);box-shadow:none !important;}
-
-    .site-footer{background:#fff;color:var(--preto);border-top:1px solid #eee;padding:18px 16px 28px;}
-    .footer-inner{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:auto 1fr;gap:20px 28px;align-items:start;}
-    .footer-brand img{height:40px;width:auto;display:block;}
-    .footer-cols{display:grid;grid-template-columns:repeat(2,minmax(180px,240px));gap:12px 28px;}
-    .footer-col h4{margin:0 0 8px;font-size:14px;font-weight:700;}
-    .footer-col ul{list-style:none;margin:0;padding:0;}
-    .footer-col li+li{margin-top:6px;}
-    .footer-col a{color:var(--preto);text-decoration:none;font-size:14px;}
-    .footer-col a:hover{text-decoration:underline;}
-    @media (max-width:720px){.footer-inner{grid-template-columns:1fr}.footer-cols{grid-template-columns:1fr}.cta-text h3{font-size:16px}.cta-text p{font-size:14px}}
-
-    /* ===== Ajuste fino de espaçamentos nos títulos da coluna direita (overlay) ===== */
-    .section-title--simple + .cards-row{ margin-top: 8px !important; }
-    .section-title--simple.mt{ margin-top: 28px !important; }
-    .overlay-col:nth-child(2) .section-title--simple:first-of-type { margin-top: 8px; }
-    .links-inline a { position: relative; padding-left: 18px; font-size: 13px; color: #333; text-decoration: none; display: inline-flex; align-items: center; }
-    .links-inline a::before { content: ""; position: absolute; left: 0; top: 50%; width: 12px; height: 12px; transform: translateY(-50%); background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='%23555' viewBox='0 0 24 24'><path d='M12 1a5 5 0 0 0-5 5v4H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V12a2 2 0 0 0-2-2h-1V6a5 5 0 0 0-5-5zm-3 9V6a3 3 0 0 1 6 0v4H9z'/></svg>") no-repeat center; background-size: contain; }
-
-    /* ==================== LAYOUT 2 COLUNAS (FILTROS + RESULTADOS) ==================== */
+    /* ==================== LAYOUT (FILTROS + RESULTADOS) ==================== */
     .page-outer{max-width:1280px;margin:0 auto;padding:0 16px;}
     .search-layout{display:grid;grid-template-columns:300px 1fr;gap:24px;align-items:start;margin:10px 0 0;}
     @media (max-width:1024px){.search-layout{grid-template-columns:1fr}}
@@ -142,7 +111,7 @@
     /* Filtros (mantidos) */
     .filters-panel{
       border:1px solid #eee;border-radius:14px;padding:16px;background:#fff;
-      position:sticky; top:56px;              /* colado ao cabeçalho */
+      position:sticky; top:56px;             /* colado ao cabeçalho */
       max-height: calc(100vh - 72px);
       overflow:auto;
       z-index:10;
@@ -167,20 +136,12 @@
     .location-row{display:flex;align-items:center;gap:8px;font-size:14px;color:#333;margin-bottom:8px}
     .location-row select{border:0;background:#f7f7f7;border-radius:10px;padding:8px 10px}
     .toolbar-row{display:flex;gap:10px;align-items:center}
-    .btn-filtros{
-      display:inline-flex;align-items:center;gap:8px;
-      border:1px solid #e5e5e5;background:#fff;border-radius:12px;padding:10px 14px;
-      font-weight:700;cursor:pointer;
-    }
-    .btn-filtros svg{width:18px;height:18px;}
-    .filter-pill{
-      display:inline-flex;align-items:center;border:2px solid #e5d3ff;background:#f3e9ff;
-      color:#5525a5;border-radius:12px;padding:10px 14px;font-weight:600;min-height:40px;
-      max-width:70vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-    }
+    .btn-filtros{display:inline-flex;align-items:center;gap:8px;border:1px solid #e5e5e5;background:#fff;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer}
+    .btn-filtros svg{width:18px;height:18px}
+    .filter-pill{display:inline-flex;align-items:center;border:2px solid #e5d3ff;background:#f3e9ff;color:#5525a5;border-radius:12px;padding:10px 14px;font-weight:600;min-height:40px;max-width:70vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     @media (max-width:1024px){.mobile-controls{display:block}}
 
-    /* ===== Cabeçalho e resultados ===== */
+    /* ===== Resultados ===== */
     .right-col{min-width:0;}
     .loc-card{background:#f6f7f9;border-radius:12px;border:1px solid #eceff3;padding:14px;margin-bottom:14px}
     .loc-field{display:flex;align-items:center;gap:10px;border:1px solid #dfe3e8;background:#fff;border-radius:12px;padding:12px 14px}
@@ -190,13 +151,48 @@
     .results-sub{color:#5b5b5b;margin-bottom:12px}
     .results-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
     .results-toolbar .select{height:40px;border:1px solid #dfe3e8;border-radius:10px;background:#fff;padding:8px 12px}
-
     .results-panel .tabela-container{border:1px solid #eee;border-radius:12px;overflow:auto;background:#fff}
     .paginacao{display:flex;gap:12px;align-items:center;justify-content:center;margin:14px 0}
     .paginacao a{color:var(--roxo);text-decoration:none;font-weight:700}
 
-    /* Botão desktop antigo (não usamos no layout novo) */
-    .filters-toggle{display:none}
+    /* ==================== CTA (faixa preta) e RODAPÉ — idênticos ao fale_conosco ==================== */
+    .cta-bar{
+      background:#000;              /* fundo preto */
+      color:#fff;
+      padding:20px 16px;            /* mesma altura do arquivo fornecido */
+      display:flex;
+      align-items:center;
+      gap:16px;
+      flex-wrap:wrap;
+      border-top:1px solid rgba(255,255,255,0.06);
+      margin-top:32px;
+      justify-content:flex-start;   /* tudo alinhado à esquerda */
+    }
+    .cta-text h3{ margin:0 0 4px 0; font-size:18px; font-weight:700; line-height:1.2; }
+    .cta-text p{ margin:0; font-size:15px; opacity:.9; }
+    .cta-btn{
+      display:inline-block;
+      background:#fff;
+      color:#000;
+      text-decoration:none;
+      padding:10px 22px;
+      border-radius:9999px;         /* pílula */
+      font-weight:700;
+      box-shadow:none !important;
+      transition:transform .12s ease, background .2s ease, box-shadow .2s ease;
+      white-space:nowrap;
+    }
+    .cta-btn:hover{ background:#f2f2f5; transform:translateY(-1px); box-shadow:none !important; }
+
+    .site-footer{ background:#fff;color:#211a2a;border-top:1px solid #eee;padding:18px 16px 28px; }
+    .footer-inner{ max-width:1180px;margin:0 auto;display:grid;grid-template-columns:auto 1fr;gap:20px 28px;align-items:start; }
+    .footer-brand img{ height:44px;width:auto;display:block; }  /* exatamente como no fale_conosco */
+    .footer-cols{ display:grid;grid-template-columns: repeat(2, minmax(180px, 240px));gap:12px 28px; }
+    .footer-col h4{ margin:0 0 8px 0;font-size:14px;font-weight:700;color:#251c33; }
+    .footer-col ul{ list-style:none;margin:0;padding:0; }
+    .footer-col li+li{ margin-top:6px; }
+    .footer-col a{ color:#2a2535;text-decoration:none;font-size:14px; }
+    .footer-col a:hover{ text-decoration:underline; }
   </style>
 </head>
 <body>
@@ -235,7 +231,7 @@
           <option value="PR">Paraná</option>
         </select>
       </div>
-      <!-- Linha 2: Botão Filtros + pílula de resumo -->
+      <!-- Linha 2: Botão Filtros + pílula resumo -->
       <div class="toolbar-row">
         <button class="btn-filtros" id="toggleFiltersMobile" aria-controls="filtersPanel" aria-expanded="false">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -243,11 +239,8 @@
           </svg>
           Filtros
         </button>
-
         {% set ativos = [] %}
-        {% for k,v in filtros.items() %}
-          {% if v %}{% set _ = ativos.append(k|capitalize ~ ': ' ~ v) %}{% endif %}
-        {% endfor %}
+        {% for k,v in filtros.items() %}{% if v %}{% set _ = ativos.append(k|capitalize ~ ': ' ~ v) %}{% endif %}{% endfor %}
         <div class="filter-pill" title="{{ ativos|join(', ') if ativos else 'Todos os teares' }}">
           {{ ativos|join(' • ') if ativos else 'Todos os teares' }}
         </div>
@@ -255,7 +248,7 @@
     </div>
   </div>
 
-  <!-- ===== TUDO EM DUAS COLUNAS: ESQ = FILTROS | DIR = RESULTADOS ===== -->
+  <!-- ===== ESQ = FILTROS | DIR = RESULTADOS ===== -->
   <div class="page-outer">
     <div class="search-layout">
 
@@ -284,12 +277,12 @@
 
       <!-- COLUNA DIREITA: RESULTADOS -->
       <div class="right-col">
-        <!-- Cartão de Localização (desktop) -->
+        <!-- Localização (desktop) -->
         <section class="loc-card" aria-label="Localização">
           <div style="font-weight:700; color:#222; margin-bottom:8px;">
             Localização <span style="background:linear-gradient(90deg,#a335ff,#ff7a00);color:#fff;border-radius:12px;padding:2px 8px;font-size:12px;margin-left:6px;">Novo</span>
           </div>
-        <div class="loc-field">
+          <div class="loc-field">
             <div class="loc-left">
               <span aria-hidden="true">📍</span>
               <span id="loc-label">Brasil</span>
@@ -321,15 +314,13 @@
           </div>
         </header>
 
-        <!-- Lista/Tabela de resultados -->
+        <!-- Resultados -->
         <section id="busca" class="results-panel">
           {% if resultados %}
             <div class="tabela-container">
-              <!-- sua tabela exatamente como já está -->
               {{ tabela_html|safe if tabela_html is defined else '' }}
             </div>
 
-            <!-- Paginação -->
             <div class="paginacao">
               {% if pagina > 1 %}
                 <a href="?pagina={{ pagina - 1 }}{% for k, v in filtros.items() if v %}&{{ k }}={{ v }}{% endfor %}">← Anterior</a>
@@ -340,7 +331,6 @@
               {% endif %}
             </div>
 
-            <!-- Exportação -->
             <form action="/exportar" method="get">
               {% for campo, valor in filtros.items() %}
                 {% if valor %}
@@ -360,7 +350,7 @@
     </div>
   </div>
 
-  <!-- Modal / Sheet (MENU COMPLETO, como no seu antigo) -->
+  <!-- MENU / OVERLAY completo -->
   <div id="overlayMenu" class="overlay-menu" aria-hidden="true">
     <div class="overlay-backdrop" data-close></div>
     <section class="overlay-panel" role="dialog" aria-modal="true" aria-labelledby="overlayMenuTitle">
@@ -459,4 +449,114 @@
             <a class="list-item" href="https://wa.me/5547999999999" target="_blank" rel="noopener">
               <span class="list-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#25D366">
-                  <path d="M12 .5C5.65.5.5 5.65.5 12c0 2.11.55 4.16 1.6 5.97L.5 23.5l5.66-1.56A11.44 11.44 0 0 0 12
+                  <path d="M12 .5C5.65.5.5 5.65.5 12c0 2.11.55 4.16 1.6 5.97L.5 23.5l5.66-1.56A11.44 11.44 0 0 0 12 23.5c6.35 0 11.5-5.15 11.5-11.5S18.35.5 12 .5zm0 20.9c-1.83 0-3.62-.49-5.18-1.41l-.37-.22-3.36.92.9-3.28-.24-.38a9.53 9.53 0 0 1-1.45-5.03C2.3 6.48 6.65 2.1 12 2.1c5.34 0 9.7 4.38 9.7 9.8s-4.36 9.5-9.7 9.5zm5.32-7.13c-.29-.15-1.71-.84-1.97-.94-.27-.1-.46-.15-.65.15s-.945 1.176-1.159 1.421c-.215.248-.423.277-.785.096-.362-.181-1.528-.562-2.91-1.791-1.076-.962-1.8-2.144-2.012-2.505-.215-.362-.023-.558.159-.739.164-.163.362-.423.543-.634.181-.21.241-.362.362-.604.124-.248.062-.466-.03-.647-.091-.181-.824-1.996-1.13-2.725-.297-.715-.6-.619-.824-.629-.215-.009-.466-.011-.715-.011s-.647.091-.985.466c-.334.372-1.295 1.266-1.295 3.084 0 1.819 1.326 3.575 1.511 3.822.181.248 2.611 3.981 6.327 5.58.885.381 1.575.609 2.113.781.889.283 1.698.243 2.34.148.714-.106 2.145-.876 2.447-1.72.302-.843.302-1.562.211-1.72-.091-.163-.334-.248-.696-.429z"/>
+                </svg>
+              </span>
+              <span class="list-text">Suporte AcheTece</span>
+              <span class="arrow">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M9 6l6 6-6 6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+            </a>
+          </nav>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===== FAIXA PRETA (CTA) — exatamente como no fale_conosco ===== -->
+  <section class="cta-bar" aria-label="Convite para cadastro">
+    <div class="cta-text">
+      <h3>É proprietário de uma malharia?</h3>
+      <p>Cadastre sua malharia e comece a receber novos pedidos.</p>
+    </div>
+    <a href="{{ url_for('malharia_info') }}" class="cta-btn">Cadastrar</a>
+  </section>
+
+  <!-- ===== RODAPÉ BRANCO — exatamente como no fale_conosco ===== -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="/static/logo_simbolo.png" alt="AcheTece">
+      </div>
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h4>Sobre nós</h4>
+          <ul>
+            <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
+            <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
+            <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
+            <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
+          </ul>
+        </div>
+        <div class="footer-col"><h4>&nbsp;</h4><ul><li>&nbsp;</li></ul></div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== SCRIPTS ===== -->
+  <script>
+    // Atualiza/insere parâmetro na querystring
+    function updateQueryString(key, value){
+      const url = new URL(window.location);
+      url.searchParams.set(key, value);
+      return url.pathname + url.search;
+    }
+  </script>
+
+  <script>
+    // Menu overlay
+    (function(){
+      const overlay=document.getElementById('overlayMenu');
+      const openBtn=document.getElementById('hamburgerBtn');
+      const closeEls=overlay.querySelectorAll('[data-close]');
+      function openMenu(){overlay.classList.add('is-open');overlay.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';}
+      function closeMenu(){overlay.classList.remove('is-open');overlay.setAttribute('aria-hidden','true');document.body.style.overflow='';}
+      if(openBtn) openBtn.addEventListener('click',openMenu);
+      closeEls.forEach(el=>el.addEventListener('click',closeMenu));
+      document.addEventListener('keydown',e=>{ if(e.key==='Escape' && overlay.classList.contains('is-open')) closeMenu();});
+      overlay.addEventListener('click',e=>{ if(e.target===overlay) closeMenu();});
+    })();
+  </script>
+
+  <script>
+    // Toggle filtros (drawer mobile)
+    (function(){
+      const btnDesktop = document.getElementById('toggleFilters');        // se existir
+      const btnMobile  = document.getElementById('toggleFiltersMobile');   // principal no mobile
+      const panel = document.getElementById('filtersPanel');
+      if(!panel) return;
+
+      function toggle(){
+        const open = panel.classList.toggle('is-open');
+        document.body.classList.toggle('filters-open', open);
+        if(btnDesktop) btnDesktop.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if(btnMobile)  btnMobile.setAttribute('aria-expanded',  open ? 'true' : 'false');
+      }
+      if(btnDesktop) btnDesktop.addEventListener('click', toggle);
+      if(btnMobile)  btnMobile.addEventListener('click',  toggle);
+
+      panel.addEventListener('click', e => {
+        if(e.target === panel && panel.classList.contains('is-open')) toggle();
+      });
+    })();
+  </script>
+
+  <script>
+    // Ações da Localização (exemplo simples)
+    (function(){
+      const clear = document.querySelector('.loc-clear');
+      const label = document.getElementById('loc-label');
+      if(clear && label){
+        clear.addEventListener('click', ()=>{
+          label.textContent='Brasil';
+          // se quiser limpar estado/cidade na URL, faça aqui:
+          // location.href = updateQueryString('estado','');
+        });
+      }
+    })();
+  </script>
+
+</body>
+</html>
