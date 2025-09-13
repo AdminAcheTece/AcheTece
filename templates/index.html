@@ -545,85 +545,140 @@
   <!-- Localização: autocomplete + aplicação nos filtros -->
   <script>
   (function(){
-    const input   = document.getElementById('loc-input');
-    const list    = document.getElementById('loc-suggestions');
-    const clearBt = document.querySelector('.olx-loc-clear');
-    const filtrosForm = document.querySelector('.filters-panel form');
-
-    if(!input || !list || !filtrosForm) return;
-
-    function findSelect(key){
-      key = key.toLowerCase();
-      const selects = Array.from(document.querySelectorAll('.filters-panel select'));
-      let el = selects.find(s => (s.id||'').toLowerCase().includes(key))
-             || selects.find(s => (s.name||'').toLowerCase().includes(key));
-      if(el) return el;
-      const groups = Array.from(document.querySelectorAll('.filters-panel .filter-field'));
-      for(const g of groups){
-        const label = g.querySelector('label');
-        const sel = g.querySelector('select');
-        if(label && sel && label.textContent.trim().toLowerCase().includes(key)) return sel;
-      }
-      return null;
+    const $input = document.getElementById('input-localizacao');
+    const $list  = document.getElementById('lista-sugestoes-localizacao');
+    const $clear = document.querySelector('.typeahead-wrap.olx .olx-clear');
+    if(!$input || !$list) return;
+  
+    // Debounce util
+    function debounce(fn, wait){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), wait); } }
+  
+    let hi = -1;
+  
+    // SVGs inline para consistência (OLX-like)
+    const svgClock = `<svg class="ico" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/>
+      <path d="M12 7v6l4 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    const svgPin = `<svg class="ico" viewBox="0 0 24 24" fill="none">
+      <path d="M12 22s7-6.2 7-12A7 7 0 1 0 5 10c0 5.8 7 12 7 12Z" stroke="currentColor" stroke-width="1.8"/>
+      <circle cx="12" cy="10" r="2.8" stroke="currentColor" stroke-width="1.8"/></svg>`;
+  
+    function sectionTitle(txt){
+      const li = document.createElement('li');
+      li.className = 'typeahead-section-title';
+      li.textContent = txt;
+      return li;
     }
-    const selUF  = findSelect('estado') || findSelect('uf') || findSelect('state');
-    const selCID = findSelect('cidade') || findSelect('city') || findSelect('municipio');
-
-    if(!selUF || !selCID) return;
-
-    function rebuildSuggestions(){
-      list.innerHTML = '';
-      const ufs = Array.from(selUF.options).map(o=>o.value).filter(Boolean);
-
-      Array.from(selUF.options).forEach(o=>{
-        const v=o.value?.trim(); if(!v) return;
-        const op=document.createElement('option'); op.value=v; list.appendChild(op);
+  
+    function itemLi(icon, t1, t2, data){
+      const li = document.createElement('li');
+      li.className = 'typeahead-item';
+      li.setAttribute('role','option');
+      if(data){ Object.entries(data).forEach(([k,v])=> li.dataset[k]=v); }
+      li.innerHTML = `${icon}<div class="txt"><span class="t1">${t1}</span>${t2?`<span class="t2">${t2}</span>`:''}</div>`;
+      li.addEventListener('mousedown', (e)=>{
+        e.preventDefault();
+        const cidade = li.dataset.cidade;
+        const uf = li.dataset.uf;
+        if(cidade && uf){
+          $input.value = `${cidade} - ${uf}`;
+        } else if (li.dataset.fill){
+          $input.value = li.dataset.fill;
+        }
+        hide();
       });
-
-      Array.from(selCID.options).forEach(o=>{
-        const v=o.value?.trim(); if(!v) return;
-        const op1=document.createElement('option'); op1.value=v; list.appendChild(op1);
-        ufs.forEach(uf=>{
-          const op2=document.createElement('option'); op2.value=`${v} - ${uf}`; list.appendChild(op2);
+      return li;
+    }
+  
+    function ctaBrasil(){
+      const li = document.createElement('li');
+      li.className = 'typeahead-cta';
+      li.innerHTML = `<button type="button" class="btn-br">Em todo Brasil</button>`;
+      li.querySelector('button').addEventListener('click', ()=>{
+        $input.value = 'Brasil';
+        hide();
+      });
+      return li;
+    }
+  
+    function render(items){
+      $list.innerHTML = '';
+      hi = -1;
+  
+      if(items.length){
+        $list.appendChild(sectionTitle('Sugestões'));
+        items.forEach(it=>{
+          const t1 = it.label || `${it.cidade} - ${it.uf}`;
+          // Subtítulo: se tiver "regiao" no payload, mostra; senão usa UF como link
+          const subt = it.regiao
+            ? it.regiao
+            : `<a href="javascript:void(0)">${it.uf}</a>`;
+          const li = itemLi(svgPin, t1, subt, {cidade: it.cidade, uf: it.uf});
+          $list.appendChild(li);
         });
+      }else{
+        $list.appendChild(sectionTitle('Nenhuma sugestão'));
+        $list.appendChild(itemLi(svgClock, 'Digite mais letras', 'Use 2 ou mais caracteres'));
+      }
+  
+      // Seção "Localização automática"
+      $list.appendChild(sectionTitle('Localização automática'));
+      $list.appendChild(itemLi(svgClock, 'Usar localização atual', 'Permita o navegador acessar sua localização', {fill:'Perto de mim'}));
+      $list.appendChild(ctaBrasil());
+  
+      show();
+    }
+  
+    function show(){ $list.classList.add('show'); }
+    function hide(){ $list.classList.remove('show'); }
+  
+    const fetchSuggest = debounce(async function(){
+      const q = $input.value.trim();
+      if(q.length < 2){ hide(); return; }
+      const ufParam = ($input.dataset.uf || '').trim();
+      const url = new URL('/api/suggest/localizacao', window.location.origin);
+      url.searchParams.set('q', q);
+      if(ufParam) url.searchParams.set('uf', ufParam);
+      url.searchParams.set('limit', '8');
+  
+      try{
+        const r = await fetch(url, {headers:{'Accept':'application/json'}});
+        const data = await r.json();
+        render(Array.isArray(data)?data:[]);
+      }catch(e){
+        console.error(e);
+        render([]);
+      }
+    }, 160);
+  
+    $input.addEventListener('input', fetchSuggest);
+    $input.addEventListener('focus', ()=>{ if($input.value.trim().length>=2) fetchSuggest(); });
+    $input.addEventListener('blur', ()=> setTimeout(hide, 120));
+  
+    // Teclado
+    $input.addEventListener('keydown', (e)=>{
+      const items = Array.from($list.querySelectorAll('.typeahead-item'));
+      if(!$list.classList.contains('show') || !items.length) return;
+  
+      if(e.key==='ArrowDown'){ e.preventDefault(); hi=(hi+1)%items.length; mark(items); }
+      else if(e.key==='ArrowUp'){ e.preventDefault(); hi=(hi-1+items.length)%items.length; mark(items); }
+      else if(e.key==='Enter'){ e.preventDefault(); if(hi>=0){ items[hi].dispatchEvent(new Event('mousedown')); } else hide(); }
+      else if(e.key==='Escape'){ hide(); }
+    });
+  
+    function mark(items){
+      items.forEach((el,i)=>{
+        el.setAttribute('aria-selected', i===hi ? 'true' : 'false');
+        if(i===hi) el.scrollIntoView({block:'nearest'});
       });
     }
-    rebuildSuggestions();
-
-    function aplicaLocalizacao(query){
-      const q = (query || '').trim();
-      let cidade=null, uf=null;
-
-      const m = q.match(/^(.*?)(?:\s*-\s*([A-Za-z]{2}))$/);
-      if(m){ cidade = m[1].trim(); uf = m[2].toUpperCase(); }
-      else{
-        const ufs = Array.from(selUF.options).map(o=>o.value).filter(Boolean);
-        const achouUF = ufs.find(u => u.toLowerCase()===q.toLowerCase());
-        if(achouUF) uf = achouUF; else cidade = q;
-      }
-
-      if(uf && Array.from(selUF.options).some(o=>o.value===uf)){ selUF.value = uf; }
-      else { selUF.value = ''; }
-
-      if(cidade){
-        const opt = Array.from(selCID.options).find(o => (o.value||'').toLowerCase()===cidade.toLowerCase());
-        selCID.value = opt ? opt.value : '';
-      }else{
-        selCID.value = '';
-      }
-
-      if(filtrosForm.requestSubmit) filtrosForm.requestSubmit(); else filtrosForm.submit();
-    }
-
-    input.addEventListener('keydown', e=>{
-      if(e.key==='Enter'){ e.preventDefault(); aplicaLocalizacao(input.value); }
-    });
-    input.addEventListener('change', ()=> aplicaLocalizacao(input.value));
-
-    if(clearBt){
-      clearBt.addEventListener('click', ()=>{
-        input.value=''; selUF.value=''; selCID.value='';
-        if(filtrosForm.requestSubmit) filtrosForm.requestSubmit(); else filtrosForm.submit();
+  
+    // Botão limpar (X)
+    if($clear){
+      $clear.addEventListener('click', ()=>{
+        $input.value='';
+        $input.focus();
+        hide();
       });
     }
   })();
