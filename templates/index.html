@@ -152,7 +152,7 @@
 
     /* ==================== LAYOUT 2 COLUNAS (FILTROS + CONTEÚDO) ==================== */
     .filters-toggle{
-      display:none; /* mobile only */
+      display:none; /* botão antigo (desktop), oculto no mobile */
       position:sticky; top:10px;
       margin:8px 16px 0; padding:8px 12px;
       border-radius:10px;border:1px solid #eaeaea;background:#fff;font-weight:700;cursor:pointer;z-index:20;
@@ -184,9 +184,27 @@
     .right-col{min-width:0;} /* impede overflow */
     .results-panel{min-height:200px;margin-top:12px;}
 
-    /* Mobile: filtros viram drawer lateral */
+    /* ==================== CONTROLES MOBILE (estilo OLX) ==================== */
+    .mobile-controls{display:none;}
     @media (max-width:1024px){
-      .filters-toggle{display:inline-block;}
+      .mobile-controls{display:block;border-top:1px solid #eee;border-bottom:1px solid #eee;background:#fff;}
+      .mobile-controls-inner{max-width:1280px;margin:0 auto;padding:10px 16px;}
+      .location-row{display:flex;align-items:center;gap:8px;font-size:14px;color:#333;margin-bottom:8px;}
+      .location-row select{border:0;background:#f7f7f7;border-radius:10px;padding:8px 10px;}
+      .toolbar-row{display:flex;gap:10px;align-items:center;}
+      .btn-filtros{
+        display:inline-flex;align-items:center;gap:8px;
+        border:1px solid #e5e5e5;background:#fff;border-radius:12px;padding:10px 14px;
+        font-weight:700;cursor:pointer;
+      }
+      .btn-filtros svg{width:18px;height:18px;}
+      .filter-pill{
+        display:inline-flex;align-items:center;border:2px solid #e5d3ff;background:#f3e9ff;
+        color:#5525a5;border-radius:12px;padding:10px 14px;font-weight:600;min-height:40px;
+        max-width:70vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+      }
+
+      /* No mobile, a grade vira 1 coluna; filtros abrem como drawer */
       .search-layout{grid-template-columns:1fr;}
       .filters-panel{
         position:fixed;left:0;top:0;bottom:0;width:min(90%,360px);max-width:90vw;border-radius:0;padding:16px;
@@ -194,6 +212,8 @@
       }
       .filters-panel.is-open{ transform:translateX(0); }
       body.filters-open{ overflow:hidden; }
+      /* Esconde o botão antigo no mobile, usamos .btn-filtros */
+      .filters-toggle{display:none;}
     }
   </style>
 </head>
@@ -219,7 +239,43 @@
     </div>
   </header>
 
-  <!-- Botão mobile para abrir/fechar filtros -->
+  <!-- CONTROLES MOBILE (estilo OLX) -->
+  <div class="mobile-controls" aria-hidden="false">
+    <div class="mobile-controls-inner">
+      <!-- Linha 1: Localização -->
+      <div class="location-row">
+        <span aria-hidden="true">📍</span>
+        <!-- Exemplo simples; pode trocar por seus dados/estados/cidades -->
+        <label for="loc-mobile" class="sr-only">Localização</label>
+        <select id="loc-mobile" name="localizacao">
+          <option value="">Buscando em todo o Brasil</option>
+          <option value="SC">Santa Catarina</option>
+          <option value="RS">Rio Grande do Sul</option>
+          <option value="PR">Paraná</option>
+        </select>
+      </div>
+      <!-- Linha 2: Botão Filtros + pílula de resumo -->
+      <div class="toolbar-row">
+        <button class="btn-filtros" id="toggleFiltersMobile" aria-controls="filtersPanel" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 6h18M6 12h12M10 18h4" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+          Filtros
+        </button>
+
+        <!-- Pílula com resumo dos filtros ativos -->
+        {% set ativos = [] %}
+        {% for k,v in filtros.items() %}
+          {% if v %}{% set _ = ativos.append(k|capitalize ~ ': ' ~ v) %}{% endif %}
+        {% endfor %}
+        <div class="filter-pill" title="{{ ativos|join(', ') if ativos else 'Todos os teares' }}">
+          {{ ativos|join(' • ') if ativos else 'Todos os teares' }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botão “antigo” (desktop) – fica oculto no mobile -->
   <button class="filters-toggle" id="toggleFilters" aria-expanded="false" aria-controls="filtersPanel">
     Filtros
   </button>
@@ -522,18 +578,25 @@
     })();
   </script>
 
-  <!-- Toggle dos filtros no mobile -->
+  <!-- Toggle dos filtros (desktop e mobile) -->
   <script>
   (function(){
-    const btn = document.getElementById('toggleFilters');
+    const btnDesktop = document.getElementById('toggleFilters');        // botão antigo (desktop)
+    const btnMobile  = document.getElementById('toggleFiltersMobile');   // novo botão (mobile estilo OLX)
     const panel = document.getElementById('filtersPanel');
-    if(!btn || !panel) return;
+    if(!panel) return;
+
     function toggle(){
       const open = panel.classList.toggle('is-open');
       document.body.classList.toggle('filters-open', open);
-      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if(btnDesktop) btnDesktop.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if(btnMobile)  btnMobile.setAttribute('aria-expanded',  open ? 'true' : 'false');
     }
-    btn.addEventListener('click', toggle);
+
+    if(btnDesktop) btnDesktop.addEventListener('click', toggle);
+    if(btnMobile)  btnMobile.addEventListener('click',  toggle);
+
+    // Fecha ao tocar fora (somente quando é drawer)
     panel.addEventListener('click', e => {
       if(e.target === panel && panel.classList.contains('is-open')) toggle();
     });
