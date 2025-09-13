@@ -90,51 +90,99 @@
       body.filters-open{overflow:hidden}
     }
 
-    /* ===== Barra mobile de filtros (igual OLX) ===== */
-    .mobile-controls{display:none;border-top:1px solid #eee;border-bottom:1px solid #eee;background:#fff}
-    .mobile-controls-inner{max-width:1280px;margin:0 auto;padding:10px 16px}
-    .location-row{display:flex;align-items:center;gap:8px;font-size:14px;color:#333;margin-bottom:8px}
-    .location-row select{border:0;background:#f7f7f7;border-radius:10px;padding:8px 10px}
-    .toolbar-row{display:flex;gap:10px;align-items:center}
-    .btn-filtros{display:inline-flex;align-items:center;gap:8px;border:1px solid #e5e5e5;background:#fff;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer}
-    .btn-filtros svg{width:18px;height:18px}
-    .filter-pill{display:inline-flex;align-items:center;border:2px solid #e5d3ff;background:#f3e9ff;color:#5525a5;border-radius:12px;padding:10px 14px;font-weight:600;min-height:40px;max-width:70vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    @media (max-width:1024px){.mobile-controls{display:block}}
-
-    /* ===== COLUNA DIREITA ===== */
-    .right-col{min-width:0;}
-
-    /* Breadcrumb (clicável) */
-    .breadcrumb{font-size:14px;color:#444;margin:6px 0 8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-    .breadcrumb .crumb{display:inline-flex;align-items:center;gap:8px}
-    .breadcrumb .crumb a{color:#444;text-decoration:none}
-    .breadcrumb .crumb a:hover{text-decoration:underline}
-    .breadcrumb .sep{opacity:.6}
-    .breadcrumb .crumb strong{color:#111}
-
-    .loc-card{background:#f6f7f9;border-radius:12px;border:1px solid #eceff3;padding:14px;margin-bottom:14px}
-    .loc-title{font-weight:700;color:#222;margin-bottom:10px;display:flex;align-items:center;gap:8px}
-    .badge-new{background:linear-gradient(90deg,#a335ff,#ff7a00);color:#fff;border-radius:12px;padding:2px 8px;font-size:12px}
-
-    /* Campo grande no estilo OLX */
-    .olx-loc-field{
-      display:flex;align-items:center;gap:10px;
-      border:1px solid #dfe3e8;background:#fff;border-radius:14px;
-      padding:12px 14px; min-height:52px;
-      box-shadow:0 1px 0 rgba(0,0,0,.02) inset;
+    /* =========================
+       CONTEÚDO (formulário original)
+       ========================= */
+    .container {
+      max-width: 500px;
+      margin: 32px auto 60px;
+      background: #fff;
+      padding: 32px;
+      border-radius: 12px;
+      box-shadow: none !important;
     }
-    .olx-loc-ico{width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;color:#444}
-    .olx-loc-input{flex:1;border:0;outline:0;min-width:0;font-size:16px;color:#111;background:transparent}
-    .olx-loc-input::placeholder{color:#7f99ab}
-    .olx-loc-clear{margin-left:8px;background:transparent;border:0;cursor:pointer;font-size:20px;line-height:1;color:#333}
+    h1.titulo {
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 24px;
+    }
+    .formulario label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .formulario input,
+    .formulario select {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    /* Placeholder azul no select */
+    select option[disabled] {
+      color: #003bb3; /* azul AcheTece */
+      font-weight: 500;
+    }
+    .formulario button.botao-salvar {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      background-color: #8A00FF;
+      color: white;
+      font-weight: bold;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .formulario button.botao-salvar:hover {
+      background-color: #8A00FF;
+    }
 
-    .results-head h1{margin:8px 0 6px;font-size:clamp(20px,2.8vw,28px)}
-    .results-sub{color:#5b5b5b;margin-bottom:12px}
-    .results-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
-    .results-toolbar .select{height:40px;border:1px solid #dfe3e8;border-radius:10px;background:#fff;padding:8px 12px}
-    .results-panel .tabela-container{border:1px solid #eee;border-radius:12px;overflow:auto;background:#fff}
-    .paginacao{display:flex;gap:12px;align-items:center;justify-content:center;margin:14px 0}
-    .paginacao a{color:var(--roxo);text-decoration:none;font-weight:700}
+    .mensagem-erro {
+      background-color: #ffe6e6;
+      color: #b30000;
+      border: 1px solid #ff4d4d;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      text-align: center;
+      animation: aparecer 0.4s ease-in-out;
+    }
+    .mensagem-erro .icone {
+      font-size: 30px;
+      display: block;
+      margin-bottom: 10px;
+    }
+    .mensagem-erro .botao-voltar {
+      display: inline-block;
+      margin-top: 15px;
+      padding: 10px 20px;
+      background-color: #8A00FF;
+      color: #fff;
+      font-weight: bold;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: background-color 0.2s ease;
+      cursor: pointer;
+    }
+    .mensagem-erro .botao-voltar:hover {
+      background-color: #8A00FF;
+    }
+    .erro-campo { border: 2px solid red; background-color: #fff5f5; }
+    .mensagem-campo {
+      color: red;
+      font-size: 13px;
+      margin-top: -10px;
+      margin-bottom: 12px;
+    }
+    @keyframes aparecer {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
 
     /* ===== CTA + Rodapé (do fale_conosco) ===== */
     .cta-bar{background:#000;color:#fff;padding:20px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,0.06);margin-top:32px;justify-content:flex-start;}
