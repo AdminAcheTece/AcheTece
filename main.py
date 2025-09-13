@@ -304,53 +304,86 @@ def assinatura_ativa_requerida(f):
 # Rotas
 # ---------------------------
 
-@app.route('/')
-def index():
-    teares = Tear.query.all()
-    return render_template('index.html', teares=teares)
-
 # Página inicial AGORA também é a busca
 @app.route("/", methods=["GET", "POST"])
 def index():
-    # 1) Leia filtros (GET/POST) exatamente como já fazia em /buscar_teares
-    origem = request.form if request.method == "POST" else request.args
+    # ==== Opções dos selects (iguais à sua antiga /busca) ====
+    filtros = {'tipo': '', 'diâmetro': '', 'galga': '', 'estado': '', 'cidade': ''}
+    opcoes = {'tipo': [], 'diâmetro': [], 'galga': [], 'estado': [], 'cidade': []}
 
-    filtros = {
-        "tipo": origem.get("tipo", ""),
-        "diâmetro": origem.get("diâmetro", ""),
-        "galga": origem.get("galga", ""),
-        "alimentadores": origem.get("alimentadores", ""),
-        "estado": origem.get("estado", ""),
-        "cidade": origem.get("cidade", ""),
-    }
+    todos_teares = Tear.query.join(Empresa).add_columns(
+        Tear.tipo, Tear.diametro, Tear.finura,
+        Empresa.estado, Empresa.cidade
+    ).all()
 
-    # 2) Monte 'opcoes' (listas para cada select) como você já faz hoje
-    opcoes = carregar_opcoes_busca()  # use sua função atual
+    for tear in todos_teares:
+        if tear.tipo not in opcoes['tipo']:
+            opcoes['tipo'].append(tear.tipo)
+        if str(tear.diametro) not in opcoes['diâmetro']:
+            opcoes['diâmetro'].append(str(tear.diametro))
+        if str(tear.finura) not in opcoes['galga']:
+            opcoes['galga'].append(str(tear.finura))
+        if tear.estado not in opcoes['estado']:
+            opcoes['estado'].append(tear.estado)
+        if tear.cidade not in opcoes['cidade']:
+            opcoes['cidade'].append(tear.cidade)
 
-    # 3) Busque resultados + paginação como já fazia
-    pagina = int(origem.get("pagina", 1) or 1)
-    resultados, total_paginas = buscar_teares_filtrados(filtros, pagina)  # sua função atual
+    # ==== Filtros: aceitamos POST (form) e GET (querystring/paginação) ====
+    origem = request.form if request.method == 'POST' else request.args
 
+    query = Tear.query.join(Empresa)
+    for campo in filtros:
+        valor = origem.get(campo, "")
+        filtros[campo] = valor
+        if valor:
+            if campo == 'tipo':
+                query = query.filter(Tear.tipo == valor)
+            elif campo == 'diâmetro':
+                query = query.filter(Tear.diametro == int(valor))
+            elif campo == 'galga':
+                query = query.filter(Tear.finura == int(valor))
+            elif campo == 'estado':
+                query = query.filter(Empresa.estado == valor)
+            elif campo == 'cidade':
+                query = query.filter(Empresa.cidade == valor)
+
+    # ==== Paginação ====
+    pagina = int(request.args.get('pagina', 1))
+    por_pagina = 5
+    total = query.count()
+    total_paginas = math.ceil(total / por_pagina)
+    teares_paginados = query.offset((pagina - 1) * por_pagina).limit(por_pagina).all()
+
+    # ==== Monta resultados (igual à sua /busca) ====
+    resultados = []
+    for tear in teares_paginados:
+        numero_telefone = re.sub(r'\D', '', tear.empresa.telefone or '')
+        mensagem = "Olá, encontrei seu tear no AcheTece e tenho demanda para esse tipo de máquina. Gostaria de conversar sobre possíveis serviços de tecelagem."
+        resultados.append({
+            'Empresa': tear.empresa.apelido,
+            'Tipo': tear.tipo,
+            'Diâmetro': tear.diametro,
+            'Galga': tear.finura,
+            'Alimentadores': tear.alimentadores,
+            'Estado': tear.empresa.estado,
+            'Cidade': tear.empresa.cidade,
+            'Telefone': numero_telefone,
+            'Mensagem': mensagem
+        })
+
+    # Renderiza a HOME (index.html) com a seção #busca usando estes dados
     return render_template(
         "index.html",
         opcoes=opcoes,
         filtros=filtros,
         resultados=resultados,
         pagina=pagina,
-        total_paginas=total_paginas,
+        total_paginas=total_paginas
     )
 
-@app.route("/buscar_teares", methods=["GET", "POST"])
-def buscar_teares_redirect():
-    qs = request.query_string.decode("utf-8")
-    return redirect(f"{url_for('index')}{('?' + qs) if qs else ''}")
 
-# Antiga rota -> redireciona para a home (assim links antigos não quebram)
 @app.route("/buscar_teares", methods=["GET", "POST"])
 def buscar_teares_redirect():
-    # preserva querystring/filtros
-    if request.method == "POST":
-        return redirect(url_for("index"))
     qs = request.query_string.decode("utf-8")
     return redirect(f"{url_for('index')}{('?' + qs) if qs else ''}")
 
@@ -492,10 +525,9 @@ def login():
     email = (request.form.get('email') or '').strip().lower()
     senha = (request.form.get('senha') or '')
 
-    # 2) Busque o usuário de forma case-insensitive
-    user = Malharia.query.filter(db.func.lower(Malharia.email) == email).first()
+    # 2) Busca case-insensitive em Empresa (malharia)
+    user = Empresa.query.filter(db.func.lower(Empresa.email) == email).first()
 
-    # 3) Mensagem genérica ao usuário; motivo detalhado vai só para logs
     GENERIC_FAIL = 'E-mail ou senha incorretos. Tente novamente.'
 
     if not user:
@@ -503,50 +535,27 @@ def login():
         flash(GENERIC_FAIL)
         return redirect(url_for('login'))
 
-    # 4) Conta criada via Google (sem senha local)
-    if not getattr(user, 'senha_hash', None):
-        app.logger.info(f"[LOGIN FAIL] no local password set (OAuth-only?) for {email}")
-        flash('Sua conta foi criada com o Google. Entre pelo botão do Google ou clique em "Esqueceu a senha?" para definir uma senha.')
-        return redirect(url_for('login'))
-
-    # 5) Verificação de senha + compatibilidade opcional com hash legado
+    # 3) Verificação de senha (hash PBKDF2)
     ok = False
     try:
-        ok = check_password_hash(user.senha_hash, senha)
+        ok = check_password_hash(user.senha, senha)
     except Exception as e:
         app.logger.warning(f"[LOGIN WARN] check_password_hash raised for {email}: {e}")
-
-    if not ok:
-        # Compatibilidade opcional (apenas se você tiver usuário com SHA-256 antigo)
-        legacy_hash = getattr(user, 'senha_hash_antiga', None)
-        if legacy_hash:
-            sha = hashlib.sha256(senha.encode()).hexdigest()
-            if sha == legacy_hash:
-                # migra para pbkdf2 e limpa legado
-                user.senha_hash = generate_password_hash(senha)
-                user.senha_hash_antiga = None
-                db.session.commit()
-                ok = True
 
     if not ok:
         app.logger.info(f"[LOGIN FAIL] bad password for {email}")
         flash(GENERIC_FAIL)
         return redirect(url_for('login'))
 
-    # 6) Regras de ativação/pagamento (se o seu modelo tiver esses campos)
-    if hasattr(user, 'ativo') and user.ativo is False:
-        app.logger.info(f"[LOGIN BLOCK] inactive user {email}")
-        flash('Sua conta ainda não está ativada. Verifique seu e-mail ou aguarde a liberação.')
+    # 4) Gate de pagamento (se quiser manter)
+    if user.status_pagamento and user.status_pagamento not in (None, 'aprovado', 'ativo'):
+        app.logger.info(f"[LOGIN BLOCK] payment status={user.status_pagamento} for {email}")
+        flash('Pagamento ainda não aprovado. Assim que confirmar, o acesso será liberado.')
         return redirect(url_for('login'))
 
-    if hasattr(user, 'status_pagamento'):
-        if user.status_pagamento not in (None, 'aprovado'):
-            app.logger.info(f"[LOGIN BLOCK] payment status={user.status_pagamento} for {email}")
-            flash('Pagamento ainda não aprovado. Assim que confirmar, o acesso será liberado.')
-            return redirect(url_for('login'))
-
-    # 7) Sucesso: cria sessão e redireciona
-    session['malharia_id'] = user.id
+    # 5) Sucesso: cria sessão e vai para o painel
+    session['empresa_id'] = user.id
+    session['empresa_apelido'] = user.apelido or user.nome or user.email.split('@')[0]
     app.logger.info(f"[LOGIN OK] {email} -> painel_malharia")
     return redirect(url_for('painel_malharia'))
 
@@ -994,70 +1003,13 @@ def esqueci_senha():
         return render_template('esqueci_senha.html', erro='E-mail não encontrado no sistema.')
     return render_template('esqueci_senha.html')
 
-# ======= Busca pública =======
+# ======= Busca pública (compat) =======
 @app.route('/busca', methods=['GET', 'POST'])
 def buscar_teares():
-    filtros = {'tipo': '', 'diâmetro': '', 'galga': '', 'estado': '', 'cidade': ''}
-    opcoes = {'tipo': [], 'diâmetro': [], 'galga': [], 'estado': [], 'cidade': []}
-
-    todos_teares = Tear.query.join(Empresa).add_columns(
-        Tear.tipo, Tear.diametro, Tear.finura,
-        Empresa.estado, Empresa.cidade
-    ).all()
-
-    for tear in todos_teares:
-        if tear.tipo not in opcoes['tipo']:
-            opcoes['tipo'].append(tear.tipo)
-        if str(tear.diametro) not in opcoes['diâmetro']:
-            opcoes['diâmetro'].append(str(tear.diametro))
-        if str(tear.finura) not in opcoes['galga']:
-            opcoes['galga'].append(str(tear.finura))
-        if tear.estado not in opcoes['estado']:
-            opcoes['estado'].append(tear.estado)
-        if tear.cidade not in opcoes['cidade']:
-            opcoes['cidade'].append(tear.cidade)
-
-    query = Tear.query.join(Empresa)
-    if request.method == 'POST':
-        for campo in filtros:
-            valor = request.form.get(campo)
-            filtros[campo] = valor
-            if valor:
-                if campo == 'tipo':
-                    query = query.filter(Tear.tipo == valor)
-                elif campo == 'diâmetro':
-                    query = query.filter(Tear.diametro == int(valor))
-                elif campo == 'galga':
-                    query = query.filter(Tear.finura == int(valor))
-                elif campo == 'estado':
-                    query = query.filter(Empresa.estado == valor)
-                elif campo == 'cidade':
-                    query = query.filter(Empresa.cidade == valor)
-
-    pagina = int(request.args.get('pagina', 1))
-    por_pagina = 5
-    total = query.count()
-    total_paginas = math.ceil(total / por_pagina)
-    teares_paginados = query.offset((pagina - 1) * por_pagina).limit(por_pagina).all()
-
-    resultados = []
-    for tear in teares_paginados:
-        numero_telefone = re.sub(r'\D', '', tear.empresa.telefone or '')
-        mensagem = "Olá, encontrei seu tear no AcheTece e tenho demanda para esse tipo de máquina. Gostaria de conversar sobre possíveis serviços de tecelagem."
-        resultados.append({
-            'Empresa': tear.empresa.apelido,
-            'Tipo': tear.tipo,
-            'Diâmetro': tear.diametro,
-            'Galga': tear.finura,
-            'Alimentadores': tear.alimentadores,
-            'Estado': tear.empresa.estado,
-            'Cidade': tear.empresa.cidade,
-            'Telefone': numero_telefone,
-            'Mensagem': mensagem
-        })
-
-    return render_template('busca.html', opcoes=opcoes, filtros=filtros,
-                           resultados=resultados, pagina=pagina, total_paginas=total_paginas)
+    # Redireciona para a home, preservando filtros/paginação
+    qs = request.query_string.decode('utf-8')
+    # POST também deve ir pra home
+    return redirect(f"{url_for('index')}{('?' + qs) if qs else ''}")
 
 @app.route('/exportar')
 def exportar():
