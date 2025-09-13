@@ -788,6 +788,83 @@
     }
   });
   </script>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const ufSel     = document.getElementById('estado_lookup');
+    const cidSel    = document.getElementById('cidade_lookup');
+    const ufHidden  = document.getElementById('estado_hidden');  // pode não existir se você já tiver os names no form
+    const cidHidden = document.getElementById('cidade_hidden');
+  
+    // Preenche os “names” de submissão (hidden) sem conflitar com a coluna esquerda
+    function mirrorToHidden(){
+      if (ufHidden)  ufHidden.value  = ufSel.value || '';
+      if (cidHidden) cidHidden.value = cidSel.value || '';
+    }
+  
+    async function carregarCidades(uf, preselecionada = '') {
+      if (!uf) {
+        cidSel.innerHTML = '<option value="" disabled selected>Selecione a cidade</option>';
+        cidSel.disabled = true;
+        mirrorToHidden();
+        return;
+      }
+      cidSel.disabled = true;
+      cidSel.innerHTML = '<option value="" disabled selected>Carregando...</option>';
+      try {
+        const resp = await fetch(`/api/cidades?uf=${encodeURIComponent(uf)}`);
+        if (!resp.ok) throw new Error('Falha na API');
+        const cidades = await resp.json();
+  
+        const opts = ['<option value="" disabled selected>Selecione a cidade</option>']
+          .concat(cidades.map(c => {
+            const sel = (preselecionada && preselecionada === c) ? ' selected' : '';
+            return `<option value="${c.replace(/"/g,'&quot;')}"${sel}>${c}</option>`;
+          }));
+        cidSel.innerHTML = opts.join('');
+        cidSel.disabled = false;
+  
+        // Se pré-selecionou cidade, já espelha no hidden
+        mirrorToHidden();
+      } catch (e) {
+        console.error(e);
+        cidSel.innerHTML = '<option value="" disabled selected>Falha ao carregar cidades</option>';
+        cidSel.disabled = true;
+      }
+    }
+  
+    // Ao mudar a UF, recarrega as cidades e limpa cidade
+    ufSel.addEventListener('change', () => {
+      carregarCidades(ufSel.value);
+      // limpa city espelhada
+      if (cidHidden) cidHidden.value = '';
+      mirrorToHidden();
+    });
+  
+    // Ao escolher cidade, espelha
+    cidSel.addEventListener('change', mirrorToHidden);
+  
+    // --- PRÉ-CARGA: usa querystring ?estado=SC&cidade=Jaraguá%20do%20Sul se existir ---
+    const qs = new URLSearchParams(location.search);
+    const ufQS  = qs.get('estado') || '';
+    const cidQS = qs.get('cidade') || '';
+    if (ufQS) {
+      // tenta selecionar a UF vinda na URL
+      const opt = Array.from(ufSel.options).find(o => o.value === ufQS);
+      if (opt) opt.selected = true;
+    }
+    const cidadeInicial = cidSel.getAttribute('data-inicial') || cidQS || '';
+    if (ufSel.value) {
+      carregarCidades(ufSel.value, cidadeInicial);
+    } else {
+      // sem UF escolhida, garante cidade bloqueada
+      carregarCidades('');
+    }
+  
+    // espelha estado/cidade mesmo quando página abre
+    mirrorToHidden();
+  });
+  </script>
   
 </body>
 </html>
