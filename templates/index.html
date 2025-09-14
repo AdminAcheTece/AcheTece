@@ -25,7 +25,6 @@
     .header-left,.header-right{display:flex;align-items:center;}
     .header-right{margin-left:auto;gap:16px;}
 
-    /* Botões do cabeçalho */
     .hdr-actions{display:flex;align-items:center;gap:10px}
     .btn-entrar,.btn-anunciar{
       height:40px;line-height:40px;border-radius:9999px;padding:0 18px;font-weight:700;
@@ -36,7 +35,6 @@
     .btn-anunciar{background:#F28C00;color:#fff;border:0;}
     .btn-anunciar:hover{background:#E57F00}
     .btn-anunciar svg{width:18px;height:18px;display:block;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
-
     @media (max-width:820px){.hdr-actions{display:none}}
 
     .hamburger{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:40px;height:40px;border:none;background:transparent;cursor:pointer;}
@@ -44,7 +42,7 @@
     .hamburger span+span{margin-top:4px;}
     @media (max-width:768px){.hamburger{width:32px;height:32px}.hamburger span{width:18px}.hamburger span+span{margin-top:3px}}
 
-    /* ===== PROMO ===== */
+    /* ===== PROMO (topo) ===== */
     .promo-bar{background:var(--preto);color:#fff;display:flex;align-items:center;justify-content:center;gap:12px;padding:6px 10px;font-size:14px;line-height:1.2;}
     .promo-cta{display:inline-block;background:var(--roxo);color:#fff;text-decoration:none;padding:6px 10px;border-radius:8px;font-weight:600;white-space:nowrap;transition:.2s;}
     .promo-cta:hover{background:var(--roxo-hover);transform:translateY(-1px);}
@@ -57,21 +55,11 @@
     .overlay-panel{position:relative;margin:40px auto;width:min(960px,calc(100% - 24px));background:#fff;border-radius:20px;overflow:hidden;display:flex;flex-direction:column;max-height:calc(100% - 80px);}
     .overlay-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid #eee;}
     .overlay-content{display:grid;grid-template-columns:1fr 1fr;gap:28px;padding:22px;overflow:auto;}
-    .section-title--login{font-weight:700;font-size:16px;line-height:1.1;color:#111;text-transform:none;}
-    .social-row{display:flex;gap:12px;flex-wrap:wrap}
-    .btn-google,.btn-facebook{width:190px;height:46px;padding:0 16px;border-radius:999px;display:flex;align-items:center;gap:10px;box-sizing:border-box;font-size:14px;font-weight:500;}
-    .btn-google{background:#f7f7f7;border:1px solid #dadce0;color:#3c4043;}
-    .btn-facebook{background:#1877F2;color:#fff;border:0;}
-    .form-subtitle{font-weight:700;font-size:16px;margin:28px 0 8px;}
-    .access-fields{width:392px;max-width:100%;padding-top:8px;}
-    .input{width:100%;height:48px;border-radius:999px;border:1px solid #e6e6e6;padding:0 16px;margin-bottom:10px;font-size:14px;background:#eaf1ff;color:#111;}
-    .links-inline{margin-top:-4px;margin-bottom:14px;}
-    .links-inline a{font-size:12px;color:#333;text-decoration:none;}
+    .section-title--login{font-weight:700;font-size:16px;}
     .btn-primary{width:392px;max-width:100%;height:54px;border-radius:999px;border:0;background:#8A00FF;color:#fff;font-weight:800;font-size:16px;}
-    .signup-text{margin-top:8px;font-size:12px;color:#000;}
-    @media (max-width:520px){.btn-google,.btn-facebook,.access-fields,.btn-primary{width:100%}}
+    .input{width:100%;height:48px;border-radius:999px;border:1px solid #e6e6e6;padding:0 16px;margin-bottom:10px;font-size:14px;background:#eaf1ff;color:#111;}
 
-    /* ===== LAYOUT (FILTROS + RESULTADOS) ===== */
+    /* ===== LAYOUT (FILTROS + COLUNA DIREITA) ===== */
     .page-outer{max-width:1280px;margin:0 auto;padding:0 16px;}
     .search-layout{display:grid;grid-template-columns:300px 1fr;gap:24px;align-items:start;margin:10px 0 0;}
     @media (max-width:1024px){.search-layout{grid-template-columns:1fr}}
@@ -90,98 +78,21 @@
       body.filters-open{overflow:hidden}
     }
 
-    /* =========================
-       CONTEÚDO (formulário)
-       ========================= */
-    .container {
-      max-width: 500px;
-      margin: 32px auto 60px;
-      background: #fff;
-      padding: 32px;
-      border-radius: 12px;
-      box-shadow: none !important;
+    /* ===== COLUNA DIREITA (FORMULÁRIO) ===== */
+    .card-form {
+      background:#fff;border:1px solid #eee;border-radius:12px;
+      padding:24px;margin:0 auto;max-width:760px;
     }
-    h1.titulo {
-      text-align: center;
-      font-size: 24px;
-      font-weight: bold;
-      margin-bottom: 24px;
-    }
-    .formulario label {
-      display: block;
-      margin-bottom: 6px;
-      font-weight: bold;
-      font-size: 14px;
-    }
-    .formulario input,
-    .formulario select {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 16px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 14px;
-    }
-    /* Placeholder azul no select */
-    select option[disabled] {
-      color: #003bb3; /* azul AcheTece */
-      font-weight: 500;
-    }
-    .formulario button.botao-salvar {
-      width: 100%;
-      padding: 12px;
-      border: none;
-      border-radius: 8px;
-      background-color: #8A00FF;
-      color: white;
-      font-weight: bold;
-      font-size: 14px;
-      cursor: pointer;
-    }
-    .formulario button.botao-salvar:hover {
-      background-color: #8A00FF;
-    }
+    .card-form h1.titulo{margin-top:0;text-align:center;font-size:28px}
 
-    .mensagem-erro {
-      background-color: #ffe6e6;
-      color: #b30000;
-      border: 1px solid #ff4d4d;
-      padding: 20px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      text-align: center;
-      animation: aparecer 0.4s ease-in-out;
+    /* ===== Form padrão que você já usa ===== */
+    .formulario label {display:block;margin-bottom:6px;font-weight:bold;font-size:14px;}
+    .formulario input, .formulario select {
+      width:100%;padding:12px;margin-bottom:16px;border:1px solid #ccc;border-radius:8px;font-size:14px;
     }
-    .mensagem-erro .icone {
-      font-size: 30px;
-      display: block;
-      margin-bottom: 10px;
-    }
-    .mensagem-erro .botao-voltar {
-      display: inline-block;
-      margin-top: 15px;
-      padding: 10px 20px;
-      background-color: #8A00FF;
-      color: #fff;
-      font-weight: bold;
-      border-radius: 8px;
-      text-decoration: none;
-      transition: background-color: 0.2s ease;
-      cursor: pointer;
-    }
-    .mensagem-erro .botao-voltar:hover {
-      background-color: #8A00FF;
-    }
-    .erro-campo { border: 2px solid red; background-color: #fff5f5; }
-    .mensagem-campo {
-      color: red;
-      font-size: 13px;
-      margin-top: -10px;
-      margin-bottom: 12px;
-    }
-    @keyframes aparecer {
-      from { opacity: 0; transform: scale(0.95); }
-      to { opacity: 1; transform: scale(1); }
+    select option[disabled]{color:#003bb3;font-weight:500;}
+    .formulario button.botao-salvar{
+      width:100%;padding:12px;border:none;border-radius:8px;background:#8A00FF;color:#fff;font-weight:bold;font-size:14px;cursor:pointer;
     }
 
     /* ===== CTA + Rodapé ===== */
@@ -200,11 +111,19 @@
     .footer-col li+li{margin-top:6px;}
     .footer-col a{color:#2a2535;text-decoration:none;font-size:14px;}
     .footer-col a:hover{text-decoration:underline;}
+
+    /* Mensagens de erro (mantidas) */
+    .mensagem-erro{background:#ffe6e6;color:#b30000;border:1px solid #ff4d4d;padding:20px;border-radius:10px;margin-bottom:20px;text-align:center;animation:aparecer .4s ease-in-out;}
+    .mensagem-erro .icone{font-size:30px;display:block;margin-bottom:10px;}
+    .mensagem-erro .botao-voltar{display:inline-block;margin-top:15px;padding:10px 20px;background:#8A00FF;color:#fff;font-weight:bold;border-radius:8px;text-decoration:none;transition:.2s;cursor:pointer;}
+    .erro-campo{border:2px solid red;background:#fff5f5;}
+    .mensagem-campo{color:red;font-size:13px;margin-top:-10px;margin-bottom:12px;}
+    @keyframes aparecer{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
   </style>
 </head>
 <body>
 
-  <!-- Faixa preta estreita no topo -->
+  <!-- Promo topo -->
   <section class="promo-bar" aria-label="Oferta para malharias">
     <span><strong>Malharia:</strong> receba agora novos pedidos por apenas <strong>R$49,90/mês</strong>.</span>
     <a class="promo-cta" href="/malharia_info">Saiba como</a>
@@ -217,7 +136,6 @@
         <img src="/static/logo.jpg" alt="Logo AcheTece" decoding="async" fetchpriority="high">
       </div>
     </div>
-
     <div class="header-right">
       <div class="hdr-actions">
         <a href="/login" class="btn-entrar">Entrar</a>
@@ -232,7 +150,7 @@
     </div>
   </header>
   
-  <!-- ===== ESQ = FILTROS | DIR = RESULTADOS ===== -->
+  <!-- ===== LAYOUT: ESQUERDA (filtros) + DIREITA (formulário) ===== -->
   <div class="page-outer">
     <div class="search-layout">
 
@@ -258,65 +176,97 @@
         </form>
       </aside>
 
-      <!-- COLUNA DIREITA: RESULTADOS -->
+      <!-- COLUNA DIREITA: FORMULÁRIO CADASTRAR MALHARIA -->
       <div class="right-col">
+        <section class="card-form" aria-labelledby="titulo-cadastrar">
+          <h1 id="titulo-cadastrar" class="titulo">Cadastrar Malharia</h1>
 
-        <!-- RESULTADOS -->
-        <header class="results-head">
-          <h1>Teares disponíveis</h1>
-          <div class="results-sub">
-            {% set _total = total_resultados if total_resultados is defined else (resultados|length if resultados else 0) %}
-            {% if _total and _total > 0 %}
-              1 - {{ resultados|length if resultados else 0 }} de {{ _total }} resultados
-            {% else %}
-              Ajuste os filtros para ver resultados.
-            {% endif %}
+          {% if erro %}
+          <div class="mensagem-erro">
+            <div class="icone">⚠️</div>
+            <p><strong>Erro:</strong> {{ erro }}</p>
+            <a href="#formulario" class="botao-voltar">← Corrigir dados</a>
           </div>
-
-          <div class="results-toolbar">
-            <label for="ordenar" style="font-weight:600;color:#333">Ordenar por</label>
-            <select id="ordenar" class="select" name="ordenar" onchange="location.search = updateQueryString('ordenar', this.value)">
-              {% set ord = request.args.get('ordenar', 'relevancia') %}
-              <option value="relevancia" {% if ord=='relevancia' %}selected{% endif %}>Mais relevantes</option>
-              <option value="novos" {% if ord=='novos' %}selected{% endif %}>Mais recentes</option>
-              <option value="antigos" {% if ord=='antigos' %}selected{% endif %}>Mais antigos</option>
-            </select>
-          </div>
-        </header>
-
-        <section id="busca" class="results-panel">
-          {% if resultados %}
-            <div class="tabela-container">
-              {{ tabela_html|safe if tabela_html is defined else '' }}
-            </div>
-
-            <div class="paginacao">
-              {% if pagina > 1 %}
-                <a href="?pagina={{ pagina - 1 }}{% for k, v in filtros.items() if v %}&{{ k }}={{ v }}{% endfor %}">← Anterior</a>
-              {% endif %}
-              Página {{ pagina }} de {{ total_paginas }}
-              {% if pagina < total_paginas %}
-                <a href="?pagina={{ pagina + 1 }}{% for k, v in filtros.items() if v %}&{{ k }}={{ v }}{% endfor %}">Próxima →</a>
-              {% endif %}
-            </div>
-
-            <form action="/exportar" method="get">
-              {% for campo, valor in filtros.items() %}
-                {% if valor %}
-                  <input type="hidden" name="{{ campo }}" value="{{ valor }}">
-                {% endif %}
-              {% endfor %}
-              <button type="submit" class="btn-primary" style="width:auto;padding:10px 16px;border-radius:12px">Exportar CSV</button>
-            </form>
-          {% else %}
-            <div style="background:#fff;border:1px solid #eee;border-radius:12px;padding:18px">
-              <strong>Nenhum resultado</strong><br>
-              Tente flexibilizar alguns filtros ou limpar a localização.
-            </div>
           {% endif %}
-        </section>
 
+          <form method="POST" action="{{ url_for('cadastrar_empresa') }}" class="formulario" id="formulario" autocomplete="off">
+            <label for="nome">Nome da Empresa <span style="color:#d00000">*</span></label>
+            <input type="text" id="nome" name="nome" required
+                   value="{{ nome or '' }}" class="{% if erros and erros.get('nome') %}erro-campo{% endif %}">
+            {% if erros and erros.get('nome') %}
+              <div class="mensagem-campo">{{ erros.get('nome') }}</div>
+            {% endif %}
+
+            <label for="apelido">Apelido da Empresa:</label>
+            <input type="text" id="apelido" name="apelido" value="{{ apelido or '' }}" class="{% if erros and erros.get('apelido') %}erro-campo{% endif %}">
+            {% if erros and erros.get('apelido') %}
+              <div class="mensagem-campo">{{ erros.get('apelido') }}</div>
+            {% endif %}
+
+            <label for="responsavel_nome">Nome do responsável <span style="color:#d00000">*</span></label>
+            <input type="text" id="responsavel_nome" name="responsavel_nome" autocomplete="given-name" required
+                   placeholder="Ex.: Maria"
+                   value="{{ responsavel_nome or '' }}"
+                   class="{% if erros and erros.get('responsavel_nome') %}erro-campo{% endif %}">
+            {% if erros and erros.get('responsavel_nome') %}
+              <div class="mensagem-campo">{{ erros.get('responsavel_nome') }}</div>
+            {% endif %}
+
+            <label for="responsavel_sobrenome">Sobrenome do responsável (opcional)</label>
+            <input type="text" id="responsavel_sobrenome" name="responsavel_sobrenome" autocomplete="family-name"
+                   placeholder="Ex.: Silva"
+                   value="{{ responsavel_sobrenome or '' }}"
+                   class="{% if erros and erros.get('responsavel_sobrenome') %}erro-campo{% endif %}">
+            {% if erros and erros.get('responsavel_sobrenome') %}
+              <div class="mensagem-campo">{{ erros.get('responsavel_sobrenome') }}</div>
+            {% endif %}
+
+            <label for="estado">Estado <span style="color:#d00000">*</span></label>
+            <select id="estado" name="estado" required class="{% if erros and erros.get('estado') %}erro-campo{% endif %}">
+              <option value="">Selecione o estado</option>
+              {% for uf in estados %}
+                <option value="{{ uf }}" {% if estado == uf %}selected{% endif %}>{{ uf }}</option>
+              {% endfor %}
+            </select>
+            {% if erros and erros.get('estado') %}
+              <div class="mensagem-campo">{{ erros.get('estado') }}</div>
+            {% endif %}
+
+            <label for="cidade">Cidade <span style="color:#d00000">*</span></label>
+            <select id="cidade" name="cidade" required
+                    data-inicial="{{ cidade or '' }}"
+                    class="{% if erros and erros.get('cidade') %}erro-campo{% endif %}">
+              <option value="">Selecione a cidade</option>
+            </select>
+            {% if erros and erros.get('cidade') %}
+              <div class="mensagem-campo">{{ erros.get('cidade') }}</div>
+            {% endif %}
+
+            <label for="telefone">Telefone <span style="color:#d00000">*</span></label>
+            <input type="tel" id="telefone" name="telefone"
+                   pattern="[0-9]{10,13}" placeholder="47999991234"
+                   title="Digite apenas números, ex: 47999991234"
+                   value="{{ telefone or '' }}" required
+                   class="{% if erros and erros.get('telefone') %}erro-campo{% endif %}">
+            {% if erros and erros.get('telefone') %}
+              <div class="mensagem-campo">{{ erros.get('telefone') }}</div>
+            {% endif %}
+
+            <label for="email">E-mail <span style="color:#d00000">*</span></label>
+            <input type="email" id="email" name="email" value="{{ email or '' }}" required
+                   class="{% if erros and erros.get('email') %}erro-campo{% endif %}">
+            {% if erros and erros.get('email') %}
+              <div class="mensagem-campo">{{ erros.get('email') }}</div>
+            {% endif %}
+
+            <label for="senha">Senha <span style="color:#d00000">*</span></label>
+            <input type="password" id="senha" name="senha" autocomplete="new-password" required>
+
+            <button type="submit" class="botao-salvar">Salvar Empresa</button>
+          </form>
+        </section>
       </div><!-- /right-col -->
+
     </div><!-- /search-layout -->
   </div><!-- /page-outer -->
 
@@ -330,10 +280,8 @@
       </header>
 
       <div class="overlay-content">
-        <!-- Conteúdo igual às versões anteriores (login, atalhos etc.) -->
         <div class="overlay-col">
           <h3 class="section-title section-title--login">Entrar ou criar conta</h3>
-
           <h3 class="form-subtitle">Dados de acesso</h3>
           <div class="access-fields">
             <input type="email" placeholder="Email de login..." class="input" autocomplete="username">
@@ -347,7 +295,7 @@
         <div class="overlay-col">
           <h3 class="section-title--simple">Facilidades AcheTece</h3>
           <div class="cards-row">
-            <a class="mini-card procura" href="{{ url_for('index') }}#busca">
+            <a class="mini-card procura" href="{{ url_for('index') }}#formulario">
               <div class="mini-card-ico">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                   <circle cx="11" cy="11" r="6.8"></circle>
@@ -397,99 +345,7 @@
     </section>
   </div>
 
-  <!-- ===== Conteúdo do CADASTRO (agora ACIMA do CTA) ===== -->
-  <div class="container">
-    <h1 class="titulo">Cadastrar Malharia</h1>
-
-    {% if erro %}
-    <div class="mensagem-erro">
-      <div class="icone">⚠️</div>
-      <p><strong>Erro:</strong> {{ erro }}</p>
-      <a href="#formulario" class="botao-voltar">← Corrigir dados</a>
-    </div>
-    {% endif %}
-
-    <form method="POST" action="{{ url_for('cadastrar_empresa') }}" class="formulario" id="formulario" autocomplete="off">
-      <label for="nome">Nome da Empresa <span style="color:#d00000">*</span></label>
-      <input type="text" id="nome" name="nome" required
-             value="{{ nome or '' }}" class="{% if erros and erros.get('nome') %}erro-campo{% endif %}">
-      {% if erros and erros.get('nome') %}
-        <div class="mensagem-campo">{{ erros.get('nome') }}</div>
-      {% endif %}
-
-      <label for="apelido">Apelido da Empresa:</label>
-      <input type="text" id="apelido" name="apelido" value="{{ apelido or '' }}" class="{% if erros and erros.get('apelido') %}erro-campo{% endif %}">
-      {% if erros and erros.get('apelido') %}
-        <div class="mensagem-campo">{{ erros.get('apelido') }}</div>
-      {% endif %}
-
-      <!-- Nome do responsável -->
-      <label for="responsavel_nome">Nome do responsável <span style="color:#d00000">*</span></label>
-      <input type="text" id="responsavel_nome" name="responsavel_nome" autocomplete="given-name" required
-             placeholder="Ex.: Maria"
-             value="{{ responsavel_nome or '' }}"
-             class="{% if erros and erros.get('responsavel_nome') %}erro-campo{% endif %}">
-      {% if erros and erros.get('responsavel_nome') %}
-        <div class="mensagem-campo">{{ erros.get('responsavel_nome') }}</div>
-      {% endif %}
-
-      <!-- Sobrenome (opcional) -->
-      <label for="responsavel_sobrenome">Sobrenome do responsável (opcional)</label>
-      <input type="text" id="responsavel_sobrenome" name="responsavel_sobrenome" autocomplete="family-name"
-             placeholder="Ex.: Silva"
-             value="{{ responsavel_sobrenome or '' }}"
-             class="{% if erros and erros.get('responsavel_sobrenome') %}erro-campo{% endif %}">
-      {% if erros and erros.get('responsavel_sobrenome') %}
-        <div class="mensagem-campo">{{ erros.get('responsavel_sobrenome') }}</div>
-      {% endif %}
-
-      <label for="estado">Estado <span style="color:#d00000">*</span></label>
-      <select id="estado" name="estado" required class="{% if erros and erros.get('estado') %}erro-campo{% endif %}">
-        <option value="">Selecione o estado</option>
-        {% for uf in estados %}
-          <option value="{{ uf }}" {% if estado == uf %}selected{% endif %}>{{ uf }}</option>
-        {% endfor %}
-      </select>
-      {% if erros and erros.get('estado') %}
-        <div class="mensagem-campo">{{ erros.get('estado') }}</div>
-      {% endif %}
-
-      <label for="cidade">Cidade <span style="color:#d00000">*</span></label>
-      <!-- Agora a lista é preenchida via JS a partir de /api/cidades -->
-      <select id="cidade" name="cidade" required
-              data-inicial="{{ cidade or '' }}"
-              class="{% if erros and erros.get('cidade') %}erro-campo{% endif %}">
-        <option value="">Selecione a cidade</option>
-      </select>
-      {% if erros and erros.get('cidade') %}
-        <div class="mensagem-campo">{{ erros.get('cidade') }}</div>
-      {% endif %}
-
-      <label for="telefone">Telefone <span style="color:#d00000">*</span></label>
-      <input type="tel" id="telefone" name="telefone"
-             pattern="[0-9]{10,13}" placeholder="47999991234"
-             title="Digite apenas números, ex: 47999991234"
-             value="{{ telefone or '' }}" required
-             class="{% if erros and erros.get('telefone') %}erro-campo{% endif %}">
-      {% if erros and erros.get('telefone') %}
-        <div class="mensagem-campo">{{ erros.get('telefone') }}</div>
-      {% endif %}
-
-      <label for="email">E-mail <span style="color:#d00000">*</span></label>
-      <input type="email" id="email" name="email" value="{{ email or '' }}" required
-             class="{% if erros and erros.get('email') %}erro-campo{% endif %}">
-      {% if erros and erros.get('email') %}
-        <div class="mensagem-campo">{{ erros.get('email') }}</div>
-      {% endif %}
-
-      <label for="senha">Senha <span style="color:#d00000">*</span></label>
-      <input type="password" id="senha" name="senha" autocomplete="new-password" required>
-
-      <button type="submit" class="botao-salvar">Salvar Empresa</button>
-    </form>
-  </div>
-
-  <!-- CTA (faixa preta) — agora DEPOIS do formulário -->
+  <!-- CTA (faixa preta) — permanece abaixo das duas colunas -->
   <section class="cta-bar" aria-label="Convite para cadastro">
     <div class="cta-text">
       <h3>É proprietário de uma malharia?</h3>
