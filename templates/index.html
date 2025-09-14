@@ -176,6 +176,17 @@
     }
     .filters-panel .filter-actions .btn-limpar:hover{background:#E57F00;transform:translateY(-1px)}
     .filters-panel .filter-actions .btn-limpar svg{width:16px;height:16px;margin-right:8px;fill:none;stroke:#fff;stroke-width:2;}
+
+    /* === Botão "Limpar" da Localização (direita) === */
+    .localizacao-card .loc-actions{ margin-top:10px; }
+    .localizacao-card .btn-limpar{
+      display:inline-flex;align-items:center;justify-content:center;
+      height:36px;line-height:36px;padding:0 16px;background:#F28C00;color:#fff;
+      font-weight:700;border:0;border-radius:9999px;text-decoration:none;white-space:nowrap;
+      cursor:pointer;transition:.2s;
+    }
+    .localizacao-card .btn-limpar:hover{ background:#E57F00; transform:translateY(-1px); }
+    .localizacao-card .btn-limpar svg{ width:16px;height:16px;margin-right:8px;fill:none;stroke:#fff;stroke-width:2; }
   </style>
 </head>
 <body>
@@ -283,8 +294,8 @@
         </section>
       </div><!-- /right-col -->
       
-      </div><!-- /search-layout -->
-      </div><!-- /page-outer -->
+    </div><!-- /search-layout -->
+  </div><!-- /page-outer -->
 
 
   <!-- OVERLAY (menu) – mantido -->
@@ -496,6 +507,25 @@
         updateQueryStringParam('cidade', cidade);
         syncHidden(ufSel.value || '', cidade);
       });
+
+      // === Botão "Limpar" (direita) ===
+      const clearBtn = document.getElementById('clearLocationBtn');
+      if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+          // limpa selects
+          if (ufSel) ufSel.value = '';
+          if (cidadeSel) {
+            cidadeSel.innerHTML = '<option value="">Selecione a cidade</option>';
+            cidadeSel.disabled = true;
+          }
+          // limpa URL e hiddens
+          updateQueryStringParam('estado', '');
+          updateQueryStringParam('cidade', '');
+          syncHidden('', '');
+          // foco de volta no estado
+          if (ufSel) ufSel.focus();
+        });
+      }
   
       // Sincroniza os hiddens na carga inicial
       syncHidden(ufInicial, cidadeInicial);
