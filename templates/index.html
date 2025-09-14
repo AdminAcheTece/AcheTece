@@ -50,7 +50,7 @@
     .promo-cta:hover{background:var(--roxo-hover);transform:translateY(-1px);}
     @media (max-width:600px){.promo-bar{flex-wrap:wrap;row-gap:6px}}
 
-    /* ===== OVERLAY (MENU) – resumo dos estilos existentes ===== */
+    /* ===== OVERLAY (MENU) ===== */
     .overlay-menu{position:fixed;inset:0;z-index:1000;display:none;}
     .overlay-menu.is-open{display:block;}
     .overlay-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(2px);}
@@ -91,7 +91,7 @@
     }
 
     /* =========================
-       CONTEÚDO (formulário original)
+       CONTEÚDO (formulário)
        ========================= */
     .container {
       max-width: 500px;
@@ -166,7 +166,7 @@
       font-weight: bold;
       border-radius: 8px;
       text-decoration: none;
-      transition: background-color 0.2s ease;
+      transition: background-color: 0.2s ease;
       cursor: pointer;
     }
     .mensagem-erro .botao-voltar:hover {
@@ -184,7 +184,7 @@
       to { opacity: 1; transform: scale(1); }
     }
 
-    /* ===== CTA + Rodapé (do fale_conosco) ===== */
+    /* ===== CTA + Rodapé ===== */
     .cta-bar{background:#000;color:#fff;padding:20px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,0.06);margin-top:32px;justify-content:flex-start;}
     .cta-text h3{margin:0 0 4px 0;font-size:18px;font-weight:700;line-height:1.2;}
     .cta-text p{margin:0;font-size:15px;opacity:.9;}
@@ -204,31 +204,6 @@
 </head>
 <body>
 
-  <!-- ===== Localização (igual ao cadastrar_empresa), COLUNA DIREITA ===== -->
-      <div class="localizacao-box">
-        <h3 class="localizacao-titulo">Localização</h3>
-      
-        <label for="estado_lookup">Estado</label>
-        <select id="estado_lookup" data-name-target="estado">
-          <option value="" disabled selected>Selecione o estado</option>
-          {% for uf in estados %}
-            <option value="{{ uf }}">{{ uf }}</option>
-          {% endfor %}
-        </select>
-      
-        <label for="cidade_lookup">Cidade</label>
-        <select id="cidade_lookup" data-name-target="cidade" disabled
-                data-inicial="">
-          <option value="" disabled selected>Selecione a cidade</option>
-        </select>
-      
-        <!-- OPCIONAL (seguro para não conflitar com a coluna esquerda):
-             estes inputs “espelho” só serão preenchidos por JS.
-             Se o seu formulário da direita já tiver <input name="estado/cidade">, remova estes dois. -->
-        <input type="hidden" name="estado" id="estado_hidden">
-        <input type="hidden" name="cidade" id="cidade_hidden">
-      </div>
-  
   <!-- Faixa preta estreita no topo -->
   <section class="promo-bar" aria-label="Oferta para malharias">
     <span><strong>Malharia:</strong> receba agora novos pedidos por apenas <strong>R$49,90/mês</strong>.</span>
@@ -282,9 +257,9 @@
           </div>
         </form>
       </aside>
-    
 
-        </section>
+      <!-- COLUNA DIREITA: RESULTADOS -->
+      <div class="right-col">
 
         <!-- RESULTADOS -->
         <header class="results-head">
@@ -422,16 +397,7 @@
     </section>
   </div>
 
-  <!-- CTA (faixa preta) -->
-  <section class="cta-bar" aria-label="Convite para cadastro">
-    <div class="cta-text">
-      <h3>É proprietário de uma malharia?</h3>
-      <p>Cadastre sua malharia e comece a receber novos pedidos.</p>
-    </div>
-    <a href="{{ url_for('malharia_info') }}" class="cta-btn">Cadastrar</a>
-  </section>
-
-  <!-- ===== Conteúdo do CADASTRO ===== -->
+  <!-- ===== Conteúdo do CADASTRO (agora ACIMA do CTA) ===== -->
   <div class="container">
     <h1 class="titulo">Cadastrar Malharia</h1>
 
@@ -522,6 +488,15 @@
       <button type="submit" class="botao-salvar">Salvar Empresa</button>
     </form>
   </div>
+
+  <!-- CTA (faixa preta) — agora DEPOIS do formulário -->
+  <section class="cta-bar" aria-label="Convite para cadastro">
+    <div class="cta-text">
+      <h3>É proprietário de uma malharia?</h3>
+      <p>Cadastre sua malharia e comece a receber novos pedidos.</p>
+    </div>
+    <a href="{{ url_for('malharia_info') }}" class="cta-btn">Cadastrar</a>
+  </section>
   
   <!-- Rodapé -->
   <footer class="site-footer">
