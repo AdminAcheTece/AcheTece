@@ -179,7 +179,7 @@
       <!-- COLUNA DIREITA: FORMULÁRIO CADASTRAR MALHARIA -->
       <div class="right-col">
         <section class="card-form" aria-labelledby="titulo-cadastrar">
-          <h1 id="titulo-cadastrar" class="titulo">Cadastrar Malharia</h1>
+          <h1 id="titulo-cadastrar" class="titulo">Localização</h1>
 
           {% if erro %}
           <div class="mensagem-erro">
@@ -190,37 +190,6 @@
           {% endif %}
 
           <form method="POST" action="{{ url_for('cadastrar_empresa') }}" class="formulario" id="formulario" autocomplete="off">
-            <label for="nome">Nome da Empresa <span style="color:#d00000">*</span></label>
-            <input type="text" id="nome" name="nome" required
-                   value="{{ nome or '' }}" class="{% if erros and erros.get('nome') %}erro-campo{% endif %}">
-            {% if erros and erros.get('nome') %}
-              <div class="mensagem-campo">{{ erros.get('nome') }}</div>
-            {% endif %}
-
-            <label for="apelido">Apelido da Empresa:</label>
-            <input type="text" id="apelido" name="apelido" value="{{ apelido or '' }}" class="{% if erros and erros.get('apelido') %}erro-campo{% endif %}">
-            {% if erros and erros.get('apelido') %}
-              <div class="mensagem-campo">{{ erros.get('apelido') }}</div>
-            {% endif %}
-
-            <label for="responsavel_nome">Nome do responsável <span style="color:#d00000">*</span></label>
-            <input type="text" id="responsavel_nome" name="responsavel_nome" autocomplete="given-name" required
-                   placeholder="Ex.: Maria"
-                   value="{{ responsavel_nome or '' }}"
-                   class="{% if erros and erros.get('responsavel_nome') %}erro-campo{% endif %}">
-            {% if erros and erros.get('responsavel_nome') %}
-              <div class="mensagem-campo">{{ erros.get('responsavel_nome') }}</div>
-            {% endif %}
-
-            <label for="responsavel_sobrenome">Sobrenome do responsável (opcional)</label>
-            <input type="text" id="responsavel_sobrenome" name="responsavel_sobrenome" autocomplete="family-name"
-                   placeholder="Ex.: Silva"
-                   value="{{ responsavel_sobrenome or '' }}"
-                   class="{% if erros and erros.get('responsavel_sobrenome') %}erro-campo{% endif %}">
-            {% if erros and erros.get('responsavel_sobrenome') %}
-              <div class="mensagem-campo">{{ erros.get('responsavel_sobrenome') }}</div>
-            {% endif %}
-
             <label for="estado">Estado <span style="color:#d00000">*</span></label>
             <select id="estado" name="estado" required class="{% if erros and erros.get('estado') %}erro-campo{% endif %}">
               <option value="">Selecione o estado</option>
@@ -241,28 +210,6 @@
             {% if erros and erros.get('cidade') %}
               <div class="mensagem-campo">{{ erros.get('cidade') }}</div>
             {% endif %}
-
-            <label for="telefone">Telefone <span style="color:#d00000">*</span></label>
-            <input type="tel" id="telefone" name="telefone"
-                   pattern="[0-9]{10,13}" placeholder="47999991234"
-                   title="Digite apenas números, ex: 47999991234"
-                   value="{{ telefone or '' }}" required
-                   class="{% if erros and erros.get('telefone') %}erro-campo{% endif %}">
-            {% if erros and erros.get('telefone') %}
-              <div class="mensagem-campo">{{ erros.get('telefone') }}</div>
-            {% endif %}
-
-            <label for="email">E-mail <span style="color:#d00000">*</span></label>
-            <input type="email" id="email" name="email" value="{{ email or '' }}" required
-                   class="{% if erros and erros.get('email') %}erro-campo{% endif %}">
-            {% if erros and erros.get('email') %}
-              <div class="mensagem-campo">{{ erros.get('email') }}</div>
-            {% endif %}
-
-            <label for="senha">Senha <span style="color:#d00000">*</span></label>
-            <input type="password" id="senha" name="senha" autocomplete="new-password" required>
-
-            <button type="submit" class="botao-salvar">Salvar Empresa</button>
           </form>
         </section>
       </div><!-- /right-col -->
