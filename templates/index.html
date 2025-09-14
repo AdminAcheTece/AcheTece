@@ -141,6 +141,35 @@
     .filters-panel .filter-actions .btn-primary{
     height:44px;
     }
+
+    /* Botão "Limpar" na coluna de filtros — estilo do "Cadastrar malharia", menor */
+    .filters-panel .filter-actions .btn-limpar{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      height:36px;           /* menor que o Buscar (54px) */
+      line-height:36px;
+      padding:0 16px;
+      background:#F28C00;    /* mesmo laranja do cabeçalho */
+      color:#fff;
+      font-weight:700;
+      border:0;
+      border-radius:9999px;  /* pílula */
+      text-decoration:none;
+      white-space:nowrap;
+      cursor:pointer;
+      margin-top:10px;       /* espaço em relação ao Buscar */
+      transition:.2s;
+    }
+    .filters-panel .filter-actions .btn-limpar:hover{
+      background:#E57F00;    /* hover igual ao cabeçalho */
+      transform:translateY(-1px);
+    }
+    
+    /* opcional: ícone dentro do botão (se usar SVG) */
+    .filters-panel .filter-actions .btn-limpar svg{
+      width:16px;height:16px;margin-right:8px;fill:none;stroke:#fff;stroke-width:2;
+    }
     
   </style>
 </head>
@@ -202,7 +231,7 @@
 
           <div class="filter-actions">
             <button type="submit" class="btn-primary">Buscar</button>
-            <a href="{{ url_for('index') }}" class="link-reset">Limpar</a>
+            <a href="{{ url_for('index') }}" class="btn-limpar" title="Limpar filtros">Limpar</a>
           </div>
         </form>
       </aside>
