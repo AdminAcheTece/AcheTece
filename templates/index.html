@@ -79,4 +79,430 @@
     /* Direita */
     .right-col{display:flex;flex-direction:column;gap:24px;}
 
-    /* Card Localizaç*
+    /* Card Localização (direita) */
+    .localizacao-card{
+      background:#fff;border:1px solid #eee;border-radius:12px;padding:16px 16px 8px;max-width:760px;
+    }
+    .localizacao-card h2{margin:0 0 10px 0;font-size:18px;font-weight:700;}
+    .localizacao-card .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .localizacao-card label{display:block;font-size:14px;margin:8px 0 6px;color:#444;}
+    .localizacao-card select{width:100%;height:40px;padding:8px 10px;border:1px solid #ccc;border-radius:10px;background:#fff;color:#333;}
+    @media (max-width:620px){.localizacao-card .row{grid-template-columns:1fr}}
+
+    /* Card formulário (direita) */
+    .card-form {
+      background:#fff;border:1px solid #eee;border-radius:12px;
+      padding:24px;margin:0 auto;max-width:760px;width:100%;
+    }
+    .card-form h1.titulo{margin-top:0;text-align:center;font-size:28px}
+
+    /* Form padrão */
+    .formulario label {display:block;margin-bottom:6px;font-weight:bold;font-size:14px;}
+    .formulario input, .formulario select {
+      width:100%;padding:12px;margin-bottom:16px;border:1px solid #ccc;border-radius:8px;font-size:14px;
+    }
+    select option[disabled]{color:#003bb3;font-weight:500;}
+    .formulario button.botao-salvar{
+      width:100%;padding:12px;border:none;border-radius:8px;background:#8A00FF;color:#fff;font-weight:bold;font-size:14px;cursor:pointer;
+    }
+
+    /* CTA + Footer */
+    .cta-bar{background:#000;color:#fff;padding:20px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,0.06);margin-top:32px;justify-content:flex-start;}
+    .cta-text h3{margin:0 0 4px 0;font-size:18px;font-weight:700;}
+    .cta-text p{margin:0;font-size:15px;opacity:.9;}
+    .cta-btn{display:inline-block;background:#fff;color:#000;text-decoration:none;padding:10px 22px;border-radius:9999px;font-weight:700;}
+    .cta-btn:hover{background:#f2f2f5;transform:translateY(-1px);}
+    .site-footer{background:#fff;color:#211a2a;border-top:1px solid #eee;padding:18px 16px 28px;}
+    .footer-inner{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:auto 1fr;gap:20px 28px;align-items:start;}
+    .footer-brand img{height:44px;width:auto;display:block;}
+    .footer-cols{display:grid;grid-template-columns:repeat(2,minmax(180px,240px));gap:12px 28px;}
+    .footer-col h4{margin:0 0 8px 0;font-size:14px;font-weight:700;color:#251c33;}
+    .footer-col ul{list-style:none;margin:0;padding:0;}
+    .footer-col li+li{margin-top:6px;}
+    .footer-col a{color:#2a2535;text-decoration:none;font-size:14px;}
+    .footer-col a:hover{text-decoration:underline;}
+
+    /* Erros (mantidos) */
+    .mensagem-erro{background:#ffe6e6;color:#b30000;border:1px solid #ff4d4d;padding:20px;border-radius:10px;margin-bottom:20px;text-align:center;animation:aparecer .4s ease-in-out;}
+    .mensagem-erro .icone{font-size:30px;display:block;margin-bottom:10px;}
+    .mensagem-erro .botao-voltar{display:inline-block;margin-top:15px;padding:10px 20px;background:#8A00FF;color:#fff;font-weight:bold;border-radius:8px;text-decoration:none;transition:.2s;cursor:pointer;}
+    .erro-campo{border:2px solid red;background:#fff5f5;}
+    .mensagem-campo{color:red;font-size:13px;margin-top:-10px;margin-bottom:12px;}
+    @keyframes aparecer{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+  </style>
+</head>
+<body>
+
+  <!-- Promo topo -->
+  <section class="promo-bar" aria-label="Oferta para malharias">
+    <span><strong>Malharia:</strong> receba agora novos pedidos por apenas <strong>R$49,90/mês</strong>.</span>
+    <a class="promo-cta" href="/malharia_info">Saiba como</a>
+  </section>
+
+  <!-- Cabeçalho -->
+  <header class="navbar">
+    <div class="header-left">
+      <div class="logo">
+        <img src="/static/logo.jpg" alt="Logo AcheTece" decoding="async" fetchpriority="high">
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="hdr-actions">
+        <a href="/login" class="btn-entrar">Entrar</a>
+        <a href="/cadastrar_empresa" class="btn-anunciar" aria-label="Cadastrar malharia">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path><circle cx="19" cy="5" r="1.5" fill="#fff" stroke="none"></circle></svg>
+          <span>Cadastrar malharia</span>
+        </a>
+      </div>
+      <button class="hamburger" id="hamburgerBtn" type="button" aria-label="Abrir menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+  
+  <!-- ===== LAYOUT ===== -->
+  <div class="page-outer">
+    <div class="search-layout">
+
+      <!-- COLUNA ESQUERDA: FILTROS (sem Estado/Cidade) -->
+      <aside class="filters-panel" id="filtersPanel">
+        <h2 class="filters-title">Filtrar teares</h2>
+        <form method="POST" class="formulario" action="{{ url_for('index') }}">
+          {% for campo, opcoes_campo in opcoes.items() %}
+            {% set c = campo|lower %}
+            {% if c in ['estado','cidade'] %}
+              {# Estado/Cidade agora vivem no card de Localização (direita) #}
+              {% continue %}
+            {% endif %}
+            <div class="filter-field">
+              <label for="{{ campo }}">{{ campo|capitalize }}</label>
+              <select name="{{ campo }}" id="{{ campo }}">
+                <option value="">-- Todos --</option>
+                {% for opcao in opcoes_campo %}
+                  <option value="{{ opcao }}" {% if filtros[campo] == opcao %}selected{% endif %}>{{ opcao }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          {% endfor %}
+
+          <!-- inputs “espelho” para carregar a localização escolhida à direita -->
+          <input type="hidden" name="estado" id="estado_hidden" value="{{ request.args.get('estado','') }}">
+          <input type="hidden" name="cidade" id="cidade_hidden" value="{{ request.args.get('cidade','') }}">
+
+          <div class="filter-actions">
+            <button type="submit" class="btn-primary">Buscar</button>
+            <a href="{{ url_for('index') }}" class="link-reset">Limpar</a>
+          </div>
+        </form>
+      </aside>
+
+      <!-- COLUNA DIREITA -->
+      <div class="right-col">
+
+        <!-- LOCALIZAÇÃO (direita) -->
+        <section class="localizacao-card" aria-labelledby="loc-title">
+          <h2 id="loc-title">Localização</h2>
+          <div class="row">
+            <div>
+              <label for="estado_lookup">Estado</label>
+              <select id="estado_lookup">
+                <option value="">Selecione o estado</option>
+                {% for uf in estados %}
+                  {% set sel_uf = request.args.get('estado','') %}
+                  <option value="{{ uf }}" {% if sel_uf==uf %}selected{% endif %}>{{ uf }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label for="cidade_lookup">Cidade</label>
+              <select id="cidade_lookup" disabled>
+                <option value="">Selecione a cidade</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <!-- FORM CADASTRAR MALHARIA -->
+        <section class="card-form" aria-labelledby="titulo-cadastrar">
+          <h1 id="titulo-cadastrar" class="titulo">Cadastrar Malharia</h1>
+
+          {% if erro %}
+          <div class="mensagem-erro">
+            <div class="icone">⚠️</div>
+            <p><strong>Erro:</strong> {{ erro }}</p>
+            <a href="#formulario" class="botao-voltar">← Corrigir dados</a>
+          </div>
+          {% endif %}
+
+          <form method="POST" action="{{ url_for('cadastrar_empresa') }}" class="formulario" id="formulario" autocomplete="off">
+            <label for="nome">Nome da Empresa <span style="color:#d00000">*</span></label>
+            <input type="text" id="nome" name="nome" required
+                   value="{{ nome or '' }}" class="{% if erros and erros.get('nome') %}erro-campo{% endif %}">
+            {% if erros and erros.get('nome') %}<div class="mensagem-campo">{{ erros.get('nome') }}</div>{% endif %}
+
+            <label for="apelido">Apelido da Empresa:</label>
+            <input type="text" id="apelido" name="apelido" value="{{ apelido or '' }}" class="{% if erros and erros.get('apelido') %}erro-campo{% endif %}">
+            {% if erros and erros.get('apelido') %}<div class="mensagem-campo">{{ erros.get('apelido') }}</div>{% endif %}
+
+            <label for="responsavel_nome">Nome do responsável <span style="color:#d00000">*</span></label>
+            <input type="text" id="responsavel_nome" name="responsavel_nome" autocomplete="given-name" required
+                   placeholder="Ex.: Maria" value="{{ responsavel_nome or '' }}"
+                   class="{% if erros and erros.get('responsavel_nome') %}erro-campo{% endif %}">
+            {% if erros and erros.get('responsavel_nome') %}<div class="mensagem-campo">{{ erros.get('responsavel_nome') }}</div>{% endif %}
+
+            <label for="responsavel_sobrenome">Sobrenome do responsável (opcional)</label>
+            <input type="text" id="responsavel_sobrenome" name="responsavel_sobrenome" autocomplete="family-name"
+                   placeholder="Ex.: Silva" value="{{ responsavel_sobrenome or '' }}"
+                   class="{% if erros and erros.get('responsavel_sobrenome') %}erro-campo{% endif %}">
+            {% if erros and erros.get('responsavel_sobrenome') %}<div class="mensagem-campo">{{ erros.get('responsavel_sobrenome') }}</div>{% endif %}
+
+            <!-- Estes são os campos de endereço da malharia (mantidos) -->
+            <label for="estado">Estado <span style="color:#d00000">*</span></label>
+            <select id="estado" name="estado" required class="{% if erros and erros.get('estado') %}erro-campo{% endif %}">
+              <option value="">Selecione o estado</option>
+              {% for uf in estados %}
+                <option value="{{ uf }}" {% if estado == uf %}selected{% endif %}>{{ uf }}</option>
+              {% endfor %}
+            </select>
+            {% if erros and erros.get('estado') %}<div class="mensagem-campo">{{ erros.get('estado') }}</div>{% endif %}
+
+            <label for="cidade">Cidade <span style="color:#d00000">*</span></label>
+            <select id="cidade" name="cidade" required data-inicial="{{ cidade or '' }}"
+                    class="{% if erros and erros.get('cidade') %}erro-campo{% endif %}">
+              <option value="">Selecione a cidade</option>
+            </select>
+            {% if erros and erros.get('cidade') %}<div class="mensagem-campo">{{ erros.get('cidade') }}</div>{% endif %}
+
+            <label for="telefone">Telefone <span style="color:#d00000">*</span></label>
+            <input type="tel" id="telefone" name="telefone"
+                   pattern="[0-9]{10,13}" placeholder="47999991234"
+                   title="Digite apenas números, ex: 47999991234"
+                   value="{{ telefone or '' }}" required
+                   class="{% if erros and erros.get('telefone') %}erro-campo{% endif %}">
+            {% if erros and erros.get('telefone') %}<div class="mensagem-campo">{{ erros.get('telefone') }}</div>{% endif %}
+
+            <label for="email">E-mail <span style="color:#d00000">*</span></label>
+            <input type="email" id="email" name="email" value="{{ email or '' }}" required
+                   class="{% if erros and erros.get('email') %}erro-campo{% endif %}">
+            {% if erros and erros.get('email') %}<div class="mensagem-campo">{{ erros.get('email') }}</div>{% endif %}
+
+            <label for="senha">Senha <span style="color:#d00000">*</span></label>
+            <input type="password" id="senha" name="senha" autocomplete="new-password" required>
+
+            <button type="submit" class="botao-salvar">Salvar Empresa</button>
+          </form>
+        </section>
+      </div><!-- /right-col -->
+
+    </div><!-- /search-layout -->
+  </div><!-- /page-outer -->
+
+  <!-- OVERLAY (menu) – mantido -->
+  <div id="overlayMenu" class="overlay-menu" aria-hidden="true">
+    <div class="overlay-backdrop" data-close></div>
+    <section class="overlay-panel" role="dialog" aria-modal="true" aria-labelledby="overlayMenuTitle">
+      <header class="overlay-header">
+        <h2 id="overlayMenuTitle">Menu</h2>
+        <button class="overlay-close" type="button" aria-label="Fechar" data-close>×</button>
+      </header>
+
+      <div class="overlay-content">
+        <div class="overlay-col">
+          <h3 class="section-title section-title--login">Entrar ou criar conta</h3>
+          <h3 class="form-subtitle">Dados de acesso</h3>
+          <div class="access-fields">
+            <input type="email" placeholder="Email de login..." class="input" autocomplete="username">
+            <input type="password" placeholder="Senha de acesso..." class="input" autocomplete="current-password">
+            <div class="links-inline"><a href="/esqueci_senha">Esqueci minha senha</a></div>
+            <button class="btn-primary" onclick="location.href='/login'">Entrar</button>
+            <div class="signup-text">Não tem cadastro? <a href="/cadastrar_empresa">Crie sua conta aqui</a></div>
+          </div>
+        </div>
+
+        <div class="overlay-col">
+          <h3 class="section-title--simple">Facilidades AcheTece</h3>
+          <div class="cards-row">
+            <a class="mini-card procura" href="{{ url_for('index') }}#formulario">
+              <div class="mini-card-ico">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                  <circle cx="11" cy="11" r="6.8"></circle>
+                  <line x1="15.5" y1="15.5" x2="20" y2="20"></line>
+                </svg>
+              </div>
+              <div class="mini-card-title">Procuro Malharia</div>
+            </a>
+            <a class="mini-card malharia" href="/malharia_info">
+              <div class="mini-card-ico">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                  <path d="M3 20V9l6 3V9l6 3V6h3v14H3z"/>
+                </svg>
+              </div>
+              <div class="mini-card-title">Sou Malharia</div>
+            </a>
+          </div>
+
+          <h3 class="section-title--simple mt">Mais opções</h3>
+          <nav class="list-links">
+            <a class="list-item" href="/cadastrar_empresa">
+              <span class="list-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3 20V9l6 3V9l6 3V6h3v14H3zM5 18h2v-2H5v2zm0-4h2v-2H5v2zm4 4h2v-2H9v2zm0-4h2v-2H9v2zm4 4h2v-2h-2v2z"/>
+                </svg>
+              </span>
+              <span class="list-text">Cadastrar minha malharia</span>
+              <span class="arrow">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 6l6 6-6 6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+            </a>
+
+            <a class="list-item" href="{{ url_for('quem_somos') }}">
+              <span class="list-icon"><img src="/static/logo_simbolo.png" alt="AcheTece" width="28" height="28" style="display:block"></span>
+              <span class="list-text">Conheça o AcheTece</span>
+              <span class="arrow"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 6l6 6-6 6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+
+            <a class="list-item" href="https://wa.me/5547999999999" target="_blank" rel="noopener">
+              <span class="list-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#25D366"><path d="M12 .5C5.65.5.5 5.65.5 12c0 2.11.55 4.16 1.6 5.97L.5 23.5l5.66-1.56A11.44 11.44 0 0 0 12 23.5c6.35 0 11.5-5.15 11.5-11.5S18.35.5 12 .5zm0 20.9c-1.83 0-3.62-.49-5.18-1.41l-.37-.22-3.36.92.9-3.28-.24-.38a9.53 9.53 0 0 1-1.45-5.03C2.3 6.48 6.65 2.1 12 2.1c5.34 0 9.7 4.38 9.7 9.8s-4.36 9.5-9.7 9.5zm5.32-7.13c-.29-.15-1.71-.84-1.97-.94-.27-.1-.46-.15-.65.15s-.945 1.176-1.159 1.421c-.215.248-.423.277-.785.096-.362-.181-1.528-.562-2.91-1.791-1.076-.962-1.8-2.144-2.012-2.505-.215-.362-.023-.558.159-.739.164-.163.362-.423.543-.634.181-.21.241-.362.362-.604.124-.248.062-.466-.03-.647-.091-.181-.824-1.996-1.13-2.725-.297-.715-.6-.619-.824-.629-.215-.009-.466-.011-.715-.011s-.647.091-.985.466c-.334.372-1.295 1.266-1.295 3.084 0 1.819 1.326 3.575 1.511 3.822.181.248 2.611 3.981 6.327 5.58.885.381 1.575.609 2.113.781.889.283 1.698.243 2.34.148.714-.106 2.145-.876 2.447-1.72.302-.843.302-1.562.211-1.72-.091-.163-.334-.248-.696-.429z"/></svg></span>
+              <span class="list-text">Suporte AcheTece</span>
+              <span class="arrow"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 6l6 6-6 6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </a>
+          </nav>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- CTA -->
+  <section class="cta-bar" aria-label="Convite para cadastro">
+    <div class="cta-text">
+      <h3>É proprietário de uma malharia?</h3>
+      <p>Cadastre sua malharia e comece a receber novos pedidos.</p>
+    </div>
+    <a href="{{ url_for('malharia_info') }}" class="cta-btn">Cadastrar</a>
+  </section>
+  
+  <!-- Rodapé -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand"><img src="/static/logo_simbolo.png" alt="AcheTece"></div>
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h4>Sobre nós</h4>
+          <ul>
+            <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
+            <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
+            <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
+            <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
+          </ul>
+        </div>
+        <div class="footer-col"><h4>&nbsp;</h4><ul><li>&nbsp;</li></ul></div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== JS: Localização (direita) ===== -->
+  <script>
+    // Utilitário: atualiza/define um parâmetro na query string preservando os demais
+    function updateQueryStringParam(key, value) {
+      const url = new URL(window.location);
+      if (value === '' || value == null) { url.searchParams.delete(key); }
+      else { url.searchParams.set(key, value); }
+      window.history.replaceState({}, '', url); // não recarrega
+    }
+
+    // Preenche a combo de cidades a partir da UF
+    async function carregarCidades(uf, selecionarValor) {
+      const cidadeSel = document.getElementById('cidade_lookup');
+      cidadeSel.innerHTML = '<option value="">Selecione a cidade</option>';
+      cidadeSel.disabled = true;
+      if (!uf) return;
+
+      try {
+        const resp = await fetch('/api/cidades?uf=' + encodeURIComponent(uf));
+        const lista = await resp.json();
+        for (const nome of lista) {
+          const opt = document.createElement('option');
+          opt.value = nome; opt.textContent = nome;
+          if (selecionarValor && selecionarValor === nome) opt.selected = true;
+          cidadeSel.appendChild(opt);
+        }
+        cidadeSel.disabled = false;
+      } catch(e) {
+        console.warn('Falha ao carregar cidades para', uf, e);
+      }
+    }
+
+    // Sincroniza hidden inputs do formulário de filtros (esquerda)
+    function syncHidden(uf, cidade) {
+      const hUF = document.getElementById('estado_hidden');
+      const hCidade = document.getElementById('cidade_hidden');
+      if (hUF) hUF.value = uf || '';
+      if (hCidade) hCidade.value = cidade || '';
+    }
+
+    (function initLocalizacaoDireita(){
+      const ufSel = document.getElementById('estado_lookup');
+      const cidadeSel = document.getElementById('cidade_lookup');
+
+      // Estado inicial vindo da URL
+      const url = new URL(window.location);
+      const ufAtual = url.searchParams.get('estado') || '';
+      const cidadeAtual = url.searchParams.get('cidade') || '';
+
+      // Se já veio UF por URL, carrega cidades e pré-seleciona
+      if (ufAtual) carregarCidades(ufAtual, cidadeAtual);
+
+      // Eventos
+      ufSel.addEventListener('change', () => {
+        const uf = ufSel.value || '';
+        updateQueryStringParam('estado', uf);
+        updateQueryStringParam('cidade', ''); // reset cidade ao trocar UF
+        syncHidden(uf, '');
+        carregarCidades(uf);
+      });
+
+      cidadeSel.addEventListener('change', () => {
+        const cidade = cidadeSel.value || '';
+        updateQueryStringParam('cidade', cidade);
+        syncHidden(ufSel.value || '', cidade);
+      });
+
+      // Garante sync inicial
+      syncHidden(ufAtual, cidadeAtual);
+    })();
+  </script>
+
+  <!-- ===== JS: cidades do formulário de cadastro (mantido) ===== -->
+  <script>
+    (function initCidadeCadastro(){
+      const uf = document.getElementById('estado');
+      const cidade = document.getElementById('cidade');
+      if (!uf || !cidade) return;
+
+      async function load(ufVal, selecionar) {
+        cidade.innerHTML = '<option value="">Selecione a cidade</option>';
+        cidade.disabled = true;
+        if (!ufVal) return;
+        try {
+          const r = await fetch('/api/cidades?uf=' + encodeURIComponent(ufVal));
+          const lista = await r.json();
+          for (const n of lista) {
+            const o = document.createElement('option');
+            o.value = n; o.textContent = n;
+            if (selecionar && selecionar === n) o.selected = true;
+            cidade.appendChild(o);
+          }
+          cidade.disabled = false;
+        } catch(e){ console.warn('Falha ao carregar cidades (cadastro):', e); }
+      }
+
+      // inicial
+      const inicialUF = uf.value || '';
+      const inicialCidade = cidade.getAttribute('data-inicial') || '';
+      if (inicialUF) load(inicialUF, inicialCidade);
+
+      uf.addEventListener('change', ()=> load(uf.value));
+    })();
+  </script>
+</body>
+</html>
