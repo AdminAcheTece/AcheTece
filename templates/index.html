@@ -325,19 +325,54 @@
 
   <!-- ===== JS: Localização (direita) ===== -->
   <script>
+    // Lista oficial de UFs (fallback caso o backend não injete {{ estados }})
+    const UFS_BR = [
+      "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS",
+      "MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"
+    ];
+  
+    // Atualiza/define parâmetro na URL preservando os demais, sem recarregar
     function updateQueryStringParam(key, value) {
       const url = new URL(window.location);
       if (value === '' || value == null) { url.searchParams.delete(key); }
       else { url.searchParams.set(key, value); }
       window.history.replaceState({}, '', url);
     }
-
-    async function carregarCidades(uf, selecionarValor) {
-      const cidadeSel = document.getElementById('cidade_lookup');
-      cidadeSel.innerHTML = '<option value="">Selecione a cidade</option>';
-      cidadeSel.disabled = true;
+  
+    // Sincroniza hidden inputs do formulário de filtros (esquerda)
+    function syncHidden(uf, cidade) {
+      const hUF = document.getElementById('estado_hidden');
+      const hCidade = document.getElementById('cidade_hidden');
+      if (hUF) hUF.value = uf || '';
+      if (hCidade) hCidade.value = cidade || '';
+    }
+  
+    // Popula a combo de UFs (fallback) se vier vazia do template
+    function ensureUFs(selectUF, selectedUF) {
+      if (!selectUF) return;
+      // Se só existe a opção placeholder, insere as UFs
+      if (selectUF.options.length <= 1) {
+        UFS_BR.forEach(uf => {
+          const opt = document.createElement('option');
+          opt.value = uf; opt.textContent = uf;
+          if (selectedUF && selectedUF === uf) opt.selected = true;
+          selectUF.appendChild(opt);
+        });
+      } else if (selectedUF) {
+        // Se o template já injetou as UFs, respeita seleção vinda da URL
+        for (const o of selectUF.options) {
+          if (o.value === selectedUF) { o.selected = true; break; }
+        }
+      }
+    }
+  
+    // Carrega cidades para uma UF
+    async function carregarCidades(uf, selectCidade, selecionarValor) {
+      if (!selectCidade) return;
+      selectCidade.innerHTML = '<option value="">Selecione a cidade</option>';
+      selectCidade.disabled = true;
       if (!uf) return;
-
+  
       try {
         const resp = await fetch('/api/cidades?uf=' + encodeURIComponent(uf));
         const lista = await resp.json();
@@ -345,47 +380,60 @@
           const opt = document.createElement('option');
           opt.value = nome; opt.textContent = nome;
           if (selecionarValor && selecionarValor === nome) opt.selected = true;
-          cidadeSel.appendChild(opt);
+          selectCidade.appendChild(opt);
         }
-        cidadeSel.disabled = false;
-      } catch(e) {
+        selectCidade.disabled = false;
+      } catch (e) {
         console.warn('Falha ao carregar cidades para', uf, e);
       }
     }
-
-    function syncHidden(uf, cidade) {
-      const hUF = document.getElementById('estado_hidden');
-      const hCidade = document.getElementById('cidade_hidden');
-      if (hUF) hUF.value = uf || '';
-      if (hCidade) hCidade.value = cidade || '';
-    }
-
+  
     (function initLocalizacaoDireita(){
-      const ufSel = document.getElementById('estado_lookup');
+      const ufSel     = document.getElementById('estado_lookup');
       const cidadeSel = document.getElementById('cidade_lookup');
-
+  
+      // Estado inicial vindo da URL (permite deep-link e refresh)
       const url = new URL(window.location);
-      const ufAtual = url.searchParams.get('estado') || '';
-      const cidadeAtual = url.searchParams.get('cidade') || '';
-
-      if (ufAtual) carregarCidades(ufAtual, cidadeAtual);
-
+      const ufInicial = url.searchParams.get('estado') || '';
+      const cidadeInicial = url.searchParams.get('cidade') || '';
+  
+      // Garante UFs no select (fallback) e aplica seleção inicial
+      ensureUFs(ufSel, ufInicial);
+  
+      // Se já existe UF na URL, carrega as cidades e pré-seleciona
+      if (ufInicial) {
+        carregarCidades(ufInicial, cidadeSel, cidadeInicial);
+      }
+  
+      // Ao trocar UF: atualiza URL, limpa cidade e recarrega lista
       ufSel.addEventListener('change', () => {
         const uf = ufSel.value || '';
         updateQueryStringParam('estado', uf);
         updateQueryStringParam('cidade', '');
         syncHidden(uf, '');
-        carregarCidades(uf);
+        carregarCidades(uf, cidadeSel);
       });
-
+  
+      // Se o usuário focar em CIDADE e ainda não estiver carregado, carrega na hora
+      cidadeSel.addEventListener('focus', () => {
+        const uf = ufSel.value || '';
+        // Se só tem placeholder e há UF, buscamos a lista
+        if (cidadeSel.options.length <= 1 && uf) {
+          carregarCidades(uf, cidadeSel);
+        }
+      });
+  
+      // Ao escolher a cidade: atualiza URL e hidden inputs
       cidadeSel.addEventListener('change', () => {
         const cidade = cidadeSel.value || '';
         updateQueryStringParam('cidade', cidade);
         syncHidden(ufSel.value || '', cidade);
       });
-
-      syncHidden(ufAtual, cidadeAtual);
+  
+      // Sincroniza os hiddens na carga inicial
+      syncHidden(ufInicial, cidadeInicial);
     })();
   </script>
+
 </body>
 </html>
