@@ -204,6 +204,31 @@
 </head>
 <body>
 
+  <!-- ===== Localização (igual ao cadastrar_empresa), COLUNA DIREITA ===== -->
+      <div class="localizacao-box">
+        <h3 class="localizacao-titulo">Localização</h3>
+      
+        <label for="estado_lookup">Estado</label>
+        <select id="estado_lookup" data-name-target="estado">
+          <option value="" disabled selected>Selecione o estado</option>
+          {% for uf in estados %}
+            <option value="{{ uf }}">{{ uf }}</option>
+          {% endfor %}
+        </select>
+      
+        <label for="cidade_lookup">Cidade</label>
+        <select id="cidade_lookup" data-name-target="cidade" disabled
+                data-inicial="">
+          <option value="" disabled selected>Selecione a cidade</option>
+        </select>
+      
+        <!-- OPCIONAL (seguro para não conflitar com a coluna esquerda):
+             estes inputs “espelho” só serão preenchidos por JS.
+             Se o seu formulário da direita já tiver <input name="estado/cidade">, remova estes dois. -->
+        <input type="hidden" name="estado" id="estado_hidden">
+        <input type="hidden" name="cidade" id="cidade_hidden">
+      </div>
+  
   <!-- Faixa preta estreita no topo -->
   <section class="promo-bar" aria-label="Oferta para malharias">
     <span><strong>Malharia:</strong> receba agora novos pedidos por apenas <strong>R$49,90/mês</strong>.</span>
@@ -231,34 +256,7 @@
       </button>
     </div>
   </header>
-
-  <!-- Barra mobile (estilo OLX) -->
-  <div class="mobile-controls" aria-hidden="false">
-    <div class="mobile-controls-inner">
-      <div class="location-row">
-        <span aria-hidden="true">📍</span>
-        <label for="loc-mobile" class="sr-only">Localização</label>
-        <select id="loc-mobile" name="localizacao">
-          <option value="">Buscando em todo o Brasil</option>
-          <option value="SC">Santa Catarina</option>
-          <option value="RS">Rio Grande do Sul</option>
-          <option value="PR">Paraná</option>
-        </select>
-      </div>
-      <div class="toolbar-row">
-        <button class="btn-filtros" id="toggleFiltersMobile" aria-controls="filtersPanel" aria-expanded="false">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M6 12h12M10 18h4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-          Filtros
-        </button>
-        {% set ativos = [] %}
-        {% for k,v in filtros.items() %}{% if v %}{% set _ = ativos.append(k|capitalize ~ ': ' ~ v) %}{% endif %}{% endfor %}
-        <div class="filter-pill" title="{{ ativos|join(', ') if ativos else 'Todos os teares' }}">
-          {{ ativos|join(' • ') if ativos else 'Todos os teares' }}
-        </div>
-      </div>
-    </div>
-  </div>
-
+  
   <!-- ===== ESQ = FILTROS | DIR = RESULTADOS ===== -->
   <div class="page-outer">
     <div class="search-layout">
@@ -284,31 +282,7 @@
           </div>
         </form>
       </aside>
-
-      <!-- ===== Localização (igual ao cadastrar_empresa), COLUNA DIREITA ===== -->
-      <div class="localizacao-box">
-        <h3 class="localizacao-titulo">Localização</h3>
-      
-        <label for="estado_lookup">Estado</label>
-        <select id="estado_lookup" data-name-target="estado">
-          <option value="" disabled selected>Selecione o estado</option>
-          {% for uf in estados %}
-            <option value="{{ uf }}">{{ uf }}</option>
-          {% endfor %}
-        </select>
-      
-        <label for="cidade_lookup">Cidade</label>
-        <select id="cidade_lookup" data-name-target="cidade" disabled
-                data-inicial="">
-          <option value="" disabled selected>Selecione a cidade</option>
-        </select>
-      
-        <!-- OPCIONAL (seguro para não conflitar com a coluna esquerda):
-             estes inputs “espelho” só serão preenchidos por JS.
-             Se o seu formulário da direita já tiver <input name="estado/cidade">, remova estes dois. -->
-        <input type="hidden" name="estado" id="estado_hidden">
-        <input type="hidden" name="cidade" id="cidade_hidden">
-      </div>
+    
 
         </section>
 
