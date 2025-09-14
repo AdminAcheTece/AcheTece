@@ -170,19 +170,17 @@
         <form method="POST" class="formulario" action="{{ url_for('index') }}">
           {% for campo, opcoes_campo in opcoes.items() %}
             {% set c = campo|lower %}
-            {% if c in ['estado','cidade'] %}
-              {# Estado/Cidade agora vivem no card de Localização (direita) #}
-              {% continue %}
+            {% if c not in ['estado','cidade'] %}
+              <div class="filter-field">
+                <label for="{{ campo }}">{{ campo|capitalize }}</label>
+                <select name="{{ campo }}" id="{{ campo }}">
+                  <option value="">-- Todos --</option>
+                  {% for opcao in opcoes_campo %}
+                    <option value="{{ opcao }}" {% if filtros[campo] == opcao %}selected{% endif %}>{{ opcao }}</option>
+                  {% endfor %}
+                </select>
+              </div>
             {% endif %}
-            <div class="filter-field">
-              <label for="{{ campo }}">{{ campo|capitalize }}</label>
-              <select name="{{ campo }}" id="{{ campo }}">
-                <option value="">-- Todos --</option>
-                {% for opcao in opcoes_campo %}
-                  <option value="{{ opcao }}" {% if filtros[campo] == opcao %}selected{% endif %}>{{ opcao }}</option>
-                {% endfor %}
-              </select>
-            </div>
           {% endfor %}
 
           <!-- inputs “espelho” para carregar a localização escolhida à direita -->
@@ -402,15 +400,15 @@
 
   <!-- ===== JS: Localização (direita) ===== -->
   <script>
-    // Utilitário: atualiza/define um parâmetro na query string preservando os demais
+    // Atualiza/define parâmetro na URL preservando os demais, sem recarregar
     function updateQueryStringParam(key, value) {
       const url = new URL(window.location);
       if (value === '' || value == null) { url.searchParams.delete(key); }
       else { url.searchParams.set(key, value); }
-      window.history.replaceState({}, '', url); // não recarrega
+      window.history.replaceState({}, '', url);
     }
 
-    // Preenche a combo de cidades a partir da UF
+    // Preenche cidades a partir da UF
     async function carregarCidades(uf, selecionarValor) {
       const cidadeSel = document.getElementById('cidade_lookup');
       cidadeSel.innerHTML = '<option value="">Selecione a cidade</option>';
@@ -444,19 +442,16 @@
       const ufSel = document.getElementById('estado_lookup');
       const cidadeSel = document.getElementById('cidade_lookup');
 
-      // Estado inicial vindo da URL
       const url = new URL(window.location);
       const ufAtual = url.searchParams.get('estado') || '';
       const cidadeAtual = url.searchParams.get('cidade') || '';
 
-      // Se já veio UF por URL, carrega cidades e pré-seleciona
       if (ufAtual) carregarCidades(ufAtual, cidadeAtual);
 
-      // Eventos
       ufSel.addEventListener('change', () => {
         const uf = ufSel.value || '';
         updateQueryStringParam('estado', uf);
-        updateQueryStringParam('cidade', ''); // reset cidade ao trocar UF
+        updateQueryStringParam('cidade', '');
         syncHidden(uf, '');
         carregarCidades(uf);
       });
@@ -467,7 +462,7 @@
         syncHidden(ufSel.value || '', cidade);
       });
 
-      // Garante sync inicial
+      // Sync inicial
       syncHidden(ufAtual, cidadeAtual);
     })();
   </script>
@@ -496,7 +491,6 @@
         } catch(e){ console.warn('Falha ao carregar cidades (cadastro):', e); }
       }
 
-      // inicial
       const inicialUF = uf.value || '';
       const inicialCidade = cidade.getAttribute('data-inicial') || '';
       if (inicialUF) load(inicialUF, inicialCidade);
