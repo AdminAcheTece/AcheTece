@@ -61,6 +61,23 @@
     /* ===== LAYOUT (FILTROS + DIREITA) ===== */
     .page-outer{max-width:1280px;margin:0 auto;padding:0 16px;}
 
+    /* Mensagem orientativa (entre cabeçalho e colunas) */
+    .page-hint{
+      width:100%;
+      box-sizing:border-box;
+      margin:10px 0 6px;
+      padding:10px 14px;
+      text-align:center;
+      font-size:15px;
+      color:#3a3550;
+      background:#f8f6ff;
+      border:1px solid #eee;
+      border-radius:12px;
+    }
+    @media (max-width:600px){
+      .page-hint{font-size:14px;padding:8px 12px;margin-top:8px}
+    }
+
     /* Botão para abrir filtros no mobile */
     .filters-toggle-bar{display:none; margin:8px 0 6px;}
     .btn-open-filters{
@@ -219,6 +236,11 @@
   </header>
   
   <div class="page-outer">
+
+    <!-- MENSAGEM ORIENTATIVA -->
+    <div class="page-hint" role="note">
+      Para encontrar o tear <strong>ideal</strong> para sua produção, use os filtros abaixo.
+    </div>
 
     <!-- Botão “Filtros” (aparece só no mobile) -->
     <div class="filters-toggle-bar">
@@ -459,7 +481,7 @@
           opt.value = nome; opt.textContent = nome;
           if (selecionarValor && selecionarValor === nome) opt.selected = true;
           selectCidade.appendChild(opt);
-        }
+        });
         selectCidade.disabled = false;
       } catch (e) {
         console.warn('Falha ao carregar cidades para', uf, e);
