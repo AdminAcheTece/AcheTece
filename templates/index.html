@@ -61,21 +61,18 @@
     /* ===== LAYOUT (FILTROS + DIREITA) ===== */
     .page-outer{max-width:1280px;margin:0 auto;padding:0 16px;}
 
-    /* Mensagem orientativa (entre cabeçalho e colunas) */
+    /* Mensagem orientativa (entre cabeçalho e colunas) — sem fundo e sem borda */
     .page-hint{
       width:100%;
       box-sizing:border-box;
       margin:10px 0 6px;
-      padding:10px 14px;
+      padding:6px 0;
       text-align:center;
       font-size:15px;
       color:#3a3550;
-      background:#f8f6ff;
-      border:1px solid #eee;
-      border-radius:12px;
     }
     @media (max-width:600px){
-      .page-hint{font-size:14px;padding:8px 12px;margin-top:8px}
+      .page-hint{font-size:14px;padding:6px 0;margin-top:8px}
     }
 
     /* Botão para abrir filtros no mobile */
@@ -237,7 +234,7 @@
   
   <div class="page-outer">
 
-    <!-- MENSAGEM ORIENTATIVA -->
+    <!-- MENSAGEM ORIENTATIVA (sem fundo e sem borda) -->
     <div class="page-hint" role="note">
       Para encontrar o tear <strong>ideal</strong> para sua produção, use os filtros abaixo.
     </div>
