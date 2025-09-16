@@ -1844,6 +1844,82 @@ def utils_demo_reseed():
     db.session.commit()
     return f"OK: empresas criadas={criadas}, atualizadas={atualizadas}, teares criados={teares_criados}"
 
+# --- DEBUG: listar apenas as empresas DEMO com teares (remover depois) ---
+from flask import render_template_string
+from sqlalchemy import or_
+
+@app.get("/utils/demo-empresas")
+def utils_demo_empresas():
+    demo_emails = [
+        "modelo@teste.com",
+        "fios@teste.com",
+        "tramasul@teste.com",
+        "parana@teste.com",
+        "nordeste@teste.com",
+        "mineira@teste.com",
+    ]
+
+    q = Empresa.query.filter(
+        or_(
+            Empresa.apelido.ilike("%[DEMO]%"),
+            Empresa.email.in_(demo_emails)
+        )
+    ).order_by(Empresa.id.asc())
+
+    empresas = q.all()
+
+    html = """
+    <html><head><meta charset="utf-8"><title>Empresas DEMO</title>
+      <style>
+        body{font-family:Inter,Arial,sans-serif;margin:24px;color:#222}
+        .card{border:1px solid #eee;border-radius:12px;padding:16px;margin:12px 0;background:#fff}
+        .muted{color:#666;font-size:13px}
+        table{width:100%;border-collapse:collapse;margin-top:10px}
+        th,td{border-bottom:1px solid #f0f0f0;padding:8px 6px;text-align:left;font-size:14px}
+        th{background:#fafafa}
+        .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;background:#f4f0ff}
+      </style>
+    </head><body>
+      <h1>Empresas DEMO cadastradas</h1>
+      {% if not empresas %}
+        <p class="muted">Nenhuma empresa DEMO encontrada.</p>
+      {% endif %}
+      {% for e in empresas %}
+        <div class="card">
+          <div>
+            <strong>{{ e.nome }}</strong>
+            {% if e.apelido %}<span class="pill">{{ e.apelido }}</span>{% endif %}<br>
+            <span class="muted">{{ e.cidade }} - {{ e.estado }} • {{ e.email }} • status={{ e.status_pagamento or '—' }}</span>
+          </div>
+          <table>
+            <thead><tr><th>Marca</th><th>Modelo</th><th>Tipo</th><th>Finura</th><th>Diâmetro</th><th>Alimentadores</th><th>Elastano</th></tr></thead>
+            <tbody>
+              {% set teares = e.teares or [] %}
+              {% if teares|length == 0 %}
+                <tr><td colspan="7" class="muted">Sem teares cadastrados.</td></tr>
+              {% else %}
+                {% for t in teares %}
+                  <tr>
+                    <td>{{ t.marca }}</td>
+                    <td>{{ getattr(t, 'modelo', '') }}</td>
+                    <td>{{ getattr(t, 'tipo', '') }}</td>
+                    <td>{{ t.finura }}</td>
+                    <td>{{ t.diametro }}</td>
+                    <td>{{ t.alimentadores }}</td>
+                    <td>{{ t.elastano }}</td>
+                  </tr>
+                {% endfor %}
+              {% endif %}
+            </tbody>
+          </table>
+          <!-- Se sua rota existir, isso abre o detalhe: -->
+          <p class="muted">ID: {{ e.id }} • <a href="/malharia_info/{{ e.id }}">abrir /malharia_info/{{ e.id }}</a></p>
+        </div>
+      {% endfor %}
+    </body></html>
+    """
+    return render_template_string(html, empresas=empresas)
+
 if __name__ == '__main__':
     from seed_demo import seed
     seed()  # cria dados demo na primeira execução
