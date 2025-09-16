@@ -304,6 +304,27 @@ def assinatura_ativa_requerida(f):
 # Rotas
 # ---------------------------
 
+# --- ROTA TEMPORÁRIA PARA POPULAR DADOS DEMO (remova depois) ---
+import os
+from flask import abort
+try:
+    from seed_demo import seed
+except Exception:
+    seed = None
+
+SEED_TOKEN = os.environ.get("SEED_TOKEN", "troque-este-token")
+
+@app.get("/seed-demo")
+def run_seed_demo():
+    if seed is None:
+        return "seed_demo.py não encontrado ou sem função seed().", 500
+    token = request.args.get("token")
+    if token != SEED_TOKEN:
+        return abort(403)
+    with app.app_context():
+        seed()
+    return "✅ Seed executado. Empresas e teares DEMO criados."
+
 # Página inicial AGORA também é a busca
 @app.route("/", methods=["GET", "POST"])
 def index():
