@@ -1774,6 +1774,76 @@ def utils_empresas_recentes():
     """
     return render_template_string(html, empresas=empresas)
 
+# --- DEBUG: (re)criar/normalizar DEMO de forma idempotente (remova depois) ---
+from werkzeug.security import generate_password_hash
+from datetime import datetime, timedelta
+
+@app.get("/utils/demo-reseed")
+def utils_demo_reseed():
+    DEMO_TAG = "[DEMO]"
+    DEFAULT_HASH = generate_password_hash("demo123")
+    empresas_def = [
+        ("Malharia Modelo",   "Modelo",   "SC", "Blumenau",      "modelo@teste.com"),
+        ("Fios & Malhas",     "Fios",     "SP", "Americana",     "fios@teste.com"),
+        ("TramaSul Têxteis",  "TramaSul", "RS", "Caxias do Sul", "tramasul@teste.com"),
+        ("Tecelagem Paraná",  "Paraná",   "PR", "Maringá",       "parana@teste.com"),
+        ("Nordeste Knit",     "Nordeste", "CE", "Fortaleza",     "nordeste@teste.com"),
+        ("Mineira Malharia",  "Mineira",  "MG", "Juiz de Fora",  "mineira@teste.com"),
+    ]
+    teares_def = {
+        f"{DEMO_TAG} Modelo":   [("Mayer",28,30,90,"Sim"), ("Terrot",32,34,96,"Não"), ("Pilotelli",24,26,72,"Sim")],
+        f"{DEMO_TAG} Fios":     [("Unitex",28,30,84,"Não"), ("Santoni",20,22,48,"Sim")],
+        f"{DEMO_TAG} TramaSul": [("Terrot",34,36,108,"Sim"), ("Mayer",18,20,36,"Não"), ("Pilotelli",26,26,64,"Sim")],
+        f"{DEMO_TAG} Paraná":   [("Mayer",28,34,96,"Sim"), ("Unitex",24,30,80,"Não")],
+        f"{DEMO_TAG} Nordeste": [("Santoni",32,34,100,"Sim"), ("Terrot",28,30,90,"Não"), ("Mayer",22,26,60,"Sim")],
+        f"{DEMO_TAG} Mineira":  [("Pilotelli",28,30,88,"Sim"), ("Terrot",24,26,68,"Não")],
+    }
+
+    criadas, atualizadas, teares_criados = 0, 0, 0
+
+    for (nome, apelido_base, estado, cidade, email) in empresas_def:
+        apelido = f"{DEMO_TAG} {apelido_base}"
+        emp = Empresa.query.filter((Empresa.email==email) | (Empresa.apelido==apelido)).first()
+        if not emp:
+            emp = Empresa(nome=nome, apelido=apelido, estado=estado, cidade=cidade,
+                          email=email, senha=DEFAULT_HASH)
+            db.session.add(emp)
+            criadas += 1
+        else:
+            # garante apelido com DEMO e campos essenciais
+            emp.nome = nome
+            emp.apelido = apelido
+            if not emp.senha: emp.senha = DEFAULT_HASH
+            emp.estado, emp.cidade, emp.email = estado, cidade, email
+            atualizadas += 1
+
+        # marca como pago/ativo se campos existirem
+        if hasattr(emp, "status_pagamento"): emp.status_pagamento = "aprovado"
+        if hasattr(emp, "data_pagamento"): emp.data_pagamento = datetime.utcnow()
+        for f, v in [("telefone","(00) 0000-0000"), ("responsavel_nome","Demo"), ("responsavel_sobrenome","Seed")]:
+            if hasattr(emp, f) and getattr(emp, f) in (None, ""): setattr(emp, f, v)
+
+        db.session.flush()  # garante emp.id
+
+        # cria teares só se ainda não houver
+        if Tear.query.filter_by(empresa_id=emp.id).count() == 0:
+            for (marca, finura, diametro, alimentadores, elastano) in teares_def.get(apelido, []):
+                t = Tear(empresa_id=emp.id, marca=marca, finura=int(finura),
+                         diametro=int(diametro), alimentadores=int(alimentadores),
+                         elastano=elastano)
+                # se seu modelo exigir:
+                if hasattr(Tear, "modelo") and getattr(t, "modelo", None) in (None, ""):
+                    setattr(t, "modelo", "DEMO-01")
+                if hasattr(Tear, "tipo") and getattr(t, "tipo", None) in (None, ""):
+                    setattr(t, "tipo", "circular")
+                if hasattr(Tear, "ativo"):
+                    t.ativo = True
+                db.session.add(t)
+                teares_criados += 1
+
+    db.session.commit()
+    return f"OK: empresas criadas={criadas}, atualizadas={atualizadas}, teares criados={teares_criados}"
+
 if __name__ == '__main__':
     from seed_demo import seed
     seed()  # cria dados demo na primeira execução
