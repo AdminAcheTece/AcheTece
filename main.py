@@ -1605,4 +1605,6 @@ def api_suggest_localizacao():
     return jsonify(resultados)
 
 if __name__ == '__main__':
+    from seed_demo import seed
+    seed()  # cria dados demo na primeira execução
     app.run(debug=True, host='0.0.0.0', port=5000)
