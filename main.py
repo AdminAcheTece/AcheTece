@@ -1625,6 +1625,100 @@ def api_suggest_localizacao():
 
     return jsonify(resultados)
 
+# --- LISTA TEMPORÁRIA DE EMPRESAS DEMO COM TEARES (remover depois) ---
+from flask import render_template_string
+from sqlalchemy import func
+
+DEMO_TAG = "[DEMO]"
+
+@app.get("/utils/demo-empresas")
+def utils_demo_empresas():
+    # Busca empresas DEMO e seus teares
+    empresas = Empresa.query.filter(Empresa.apelido.like(f"{DEMO_TAG}%"))\
+        .order_by(Empresa.estado, Empresa.cidade, Empresa.nome).all()
+
+    # Monta um HTML simples e leve
+    html = """
+    <html><head>
+      <meta charset="utf-8">
+      <title>Empresas DEMO</title>
+      <style>
+        body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; margin:24px; color:#222}
+        h1{font-size:20px; margin:0 0 16px}
+        .card{border:1px solid #eee; border-radius:12px; padding:16px; margin:12px 0; background:#fff}
+        .head{display:flex; gap:12px; align-items:center; justify-content:space-between}
+        .muted{color:#666; font-size:13px}
+        table{width:100%; border-collapse:collapse; margin-top:10px}
+        th,td{border-bottom:1px solid #f0f0f0; padding:8px 6px; text-align:left; font-size:14px}
+        th{font-weight:600; background:#fafafa}
+        .pill{display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; background:#f4f0ff}
+        a.btn{font-size:13px; text-decoration:none; padding:6px 10px; border:1px solid #ddd; border-radius:8px}
+      </style>
+    </head><body>
+      <h1>Empresas DEMO cadastradas</h1>
+      {% if not empresas %}
+        <p class="muted">Nenhuma empresa DEMO encontrada.</p>
+      {% endif %}
+      {% for e in empresas %}
+        <div class="card">
+          <div class="head">
+            <div>
+              <strong>{{ e.nome }}</strong>
+              <span class="pill">{{ e.apelido }}</span><br>
+              <span class="muted">{{ e.cidade }} - {{ e.estado }} • {{ e.email }}</span>
+            </div>
+            <div class="muted">
+              {% set qtd = e.teares|length if hasattr(e,'teares') and e.teares is not none else None %}
+              <span>{{ (qtd if qtd is not none else 0) }} teares</span>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr><th>Marca</th><th>Modelo</th><th>Tipo</th><th>Finura</th><th>Diâmetro</th><th>Alimentadores</th><th>Elastano</th></tr>
+            </thead>
+            <tbody>
+              {% for t in (e.teares if hasattr(e,'teares') and e.teares is not none else []) %}
+                <tr>
+                  <td>{{ t.marca }}</td>
+                  <td>{{ getattr(t, 'modelo', '') }}</td>
+                  <td>{{ getattr(t, 'tipo', '') }}</td>
+                  <td>{{ t.finura }}</td>
+                  <td>{{ t.diametro }}</td>
+                  <td>{{ t.alimentadores }}</td>
+                  <td>{{ t.elastano }}</td>
+                </tr>
+              {% endfor %}
+              {% if (e.teares is none) or (e.teares|length == 0) %}
+                {% for t in namespace(_=[]) %}{% endfor %}
+                {% set teares = [] %}
+                {% for t in Tear.query.filter_by(empresa_id=e.id).all() %}
+                  {% set _ = teares.append(t) %}
+                {% endfor %}
+                {% for t in teares %}
+                  <tr>
+                    <td>{{ t.marca }}</td>
+                    <td>{{ getattr(t, 'modelo', '') }}</td>
+                    <td>{{ getattr(t, 'tipo', '') }}</td>
+                    <td>{{ t.finura }}</td>
+                    <td>{{ t.diametro }}</td>
+                    <td>{{ t.alimentadores }}</td>
+                    <td>{{ t.elastano }}</td>
+                  </tr>
+                {% endfor %}
+                {% if teares|length == 0 %}
+                  <tr><td colspan="7" class="muted">Sem teares cadastrados.</td></tr>
+                {% endif %}
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      {% endfor %}
+    </body></html>
+    """
+    return render_template_string(html, empresas=empresas, Tear=Tear)
+
+
 if __name__ == '__main__':
     from seed_demo import seed
     seed()  # cria dados demo na primeira execução
