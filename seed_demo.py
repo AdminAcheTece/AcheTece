@@ -6,12 +6,15 @@ from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash
 
 from main import app, db
-from main import Empresa, Tear  # ajuste os imports se seus modelos estiverem noutro módulo
+from main import Empresa, Tear  # ajuste caso seus modelos estejam em outro módulo
 
 DEMO_TAG = "[DEMO]"
-DEFAULT_DEMO_PASSWORD = "demo123"                  # senha padrão para DEMO
+DEFAULT_DEMO_PASSWORD = "demo123"
 DEFAULT_DEMO_HASH = generate_password_hash(DEFAULT_DEMO_PASSWORD)
 
+# Defaults para campos obrigatórios de Tear em alguns projetos
+DEFAULT_TEAR_MODELO = "DEMO-01"
+DEFAULT_TEAR_TIPO = "circular"
 
 # -------- Dados base --------
 EMPRESAS = [
@@ -34,7 +37,6 @@ TEARES = {
     f"{DEMO_TAG} Mineira":  [("Pilotelli",28,30,  88, "Sim"), ("Terrot",24, 26, 68, "Não")],
 }
 
-
 # -------- Utilidades --------
 def _safe_set(obj, **pairs):
     """Define apenas os atributos que existirem no modelo."""
@@ -42,12 +44,11 @@ def _safe_set(obj, **pairs):
         if hasattr(obj, k):
             setattr(obj, k, v)
 
-
 # -------- Funções principais --------
 def seed():
     print(">> Iniciando SEED DEMO...")
     with app.app_context():
-        # Evita duplicados: mapeia apelidos e emails já existentes
+        # Evita duplicados por apelido e por email
         apelidos_alvo = [e[1] for e in EMPRESAS]
         existentes_por_apelido = {
             e.apelido for e in Empresa.query.filter(Empresa.apelido.in_(apelidos_alvo)).all()
@@ -108,11 +109,20 @@ def seed():
                 t = Tear(
                     empresa_id=emp.id,
                     marca=marca,
-                    finura=finura,
-                    diametro=diametro,
-                    alimentadores=alimentadores,
+                    finura=int(finura),
+                    diametro=int(diametro),
+                    alimentadores=int(alimentadores),
                     elastano=elastano,
                 )
+
+                # Preenche campos obrigatórios extras se existirem (ex.: modelo NOT NULL)
+                _safe_set(
+                    t,
+                    modelo=DEFAULT_TEAR_MODELO,
+                    tipo=DEFAULT_TEAR_TIPO,
+                    ativo=True,
+                )
+
                 db.session.add(t)
                 total_teares += 1
 
@@ -120,7 +130,6 @@ def seed():
         print(f">> Teares criados: {total_teares}")
 
     print("✅ SEED DEMO concluído.")
-
 
 def clear_demo():
     print(">> Removendo dados DEMO...")
@@ -137,7 +146,6 @@ def clear_demo():
         print(f">> Empresas removidas: {deletadas_empresas}")
 
     print("✅ LIMPEZA DEMO concluída.")
-
 
 if __name__ == "__main__":
     # 1) Popular:
