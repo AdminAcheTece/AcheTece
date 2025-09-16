@@ -1556,6 +1556,13 @@ def _todas_cidades_por_uf() -> dict:
 # Cache simples em memória para não reler toda hora
 _CIDADES_CACHE = None
 
+from main import app
+
+@app.route("/seed-demo")
+def seed_demo_route():
+    seed()
+    return "✅ Empresas e teares DEMO criados com sucesso!"
+
 @app.get("/api/suggest/localizacao")
 def api_suggest_localizacao():
     """
