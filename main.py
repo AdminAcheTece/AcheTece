@@ -21,6 +21,7 @@ from unicodedata import normalize
 from sqlalchemy import inspect, text   # <-- para checar/alterar colunas
 from authlib.integrations.flask_client import OAuth
 from enum import Enum
+from urllib.parse import quote_plus
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, 'static')  # ajuste para 'estático' se o seu folder tem acento
@@ -494,20 +495,33 @@ def index():
 
     # ==== Monta resultados (igual à sua /busca) ====
     resultados = []
-    for tear in teares_paginados:
-        numero_telefone = re.sub(r'\D', '', tear.empresa.telefone or '')
-        mensagem = "Olá, encontrei seu tear no AcheTece e tenho demanda para esse tipo de máquina. Gostaria de conversar sobre possíveis serviços de tecelagem."
-        resultados.append({
-            'Empresa': tear.empresa.apelido,
-            'Tipo': tear.tipo,
-            'Diâmetro': tear.diametro,
-            'Galga': tear.finura,
-            'Alimentadores': tear.alimentadores,
-            'Estado': tear.empresa.estado,
-            'Cidade': tear.empresa.cidade,
-            'Telefone': numero_telefone,
-            'Mensagem': mensagem
-        })
+for tear in teares_paginados:
+    numero_telefone = re.sub(r'\D', '', tear.empresa.telefone or '')
+    empresa_nome = (
+        (tear.empresa.apelido or '').strip()
+        or (tear.empresa.nome or '').strip()
+        or (tear.empresa.email or '').split('@')[0]
+    )
+
+    mensagem = (
+        "Olá, encontrei seu tear no AcheTece e tenho demanda para esse tipo de máquina. "
+        "Gostaria de conversar sobre possíveis serviços de tecelagem."
+    )
+    contato = ""
+    if numero_telefone:
+        contato = f"https://wa.me/55{numero_telefone}?text={quote_plus(mensagem)}"
+
+    resultados.append({
+        # use sempre chaves minúsculas (mais simples no template)
+        'empresa': empresa_nome or '—',
+        'tipo': (tear.tipo or '').upper() or '—',
+        'galga': tear.finura if tear.finura is not None else '—',
+        'diametro': tear.diametro if tear.diametro is not None else '—',
+        'alimentadores': tear.alimentadores if tear.alimentadores is not None else '—',
+        'uf': (tear.empresa.estado or '—'),
+        'cidade': (tear.empresa.cidade or '—'),
+        'contato': contato  # string vazia se não houver telefone
+    })
 
         # Renderiza a HOME (index.html) – agora passando também 'teares' e 'estados'
     UFS_BR = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS',
