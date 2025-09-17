@@ -283,22 +283,36 @@ with app.app_context():
     _startup_migrations()
 
 # ---------------------------
-# Decorators de acesso pago
+# Decorator de acesso pago (com bypass em modo DEMO)
 # ---------------------------
-
 def assinatura_ativa_requerida(f):
-    """Exige que a empresa logada tenha status_pagamento == 'ativo'."""
+    """Exige pagamento ativo, mas libera ações no modo DEMO ou para empresas com apelido iniciado por [DEMO]."""
     @wraps(f)
     def wrapper(*args, **kwargs):
         emp, _ = _get_empresa_usuario_da_sessao()
         if not emp:
             flash("Faça login para continuar.", "error")
             return redirect(url_for("login"))
-        if (emp.status_pagamento or "pendente") != "ativo":
+
+        # BYPASS em modo DEMO OU se a empresa for marcada como [DEMO]
+        # (DEMO_MODE pode ser definido no ambiente; por padrão fica 'true' para facilitar seus testes)
+        is_demo = os.getenv("DEMO_MODE", "true").lower() == "true"
+        apel = (emp.apelido or emp.nome or "")
+        if is_demo or apel.startswith("[DEMO]"):
+            return f(*args, **kwargs)
+
+        # Regra normal: exige pagamento ativo/aprovado
+        status = (emp.status_pagamento or "pendente").lower()
+        if status not in ("ativo", "aprovado"):
             flash("Ative seu plano para acessar esta funcionalidade.", "error")
             return redirect(url_for("painel_malharia"))
+
         return f(*args, **kwargs)
     return wrapper
+
+# === DEMO MODE (para testes de filtros/design) ===
+DEMO_MODE = os.getenv("DEMO_MODE", "true").lower() == "true"   # deixe true enquanto estiver testando
+DEMO_TOKEN = os.getenv("DEMO_TOKEN", "localdemo")              # token simples p/ ações demo
 
 # ---------------------------
 # Rotas
@@ -313,6 +327,81 @@ except Exception:
     seed = None
 
 SEED_TOKEN = os.environ.get("SEED_TOKEN", "troque-este-token")
+
+from random import choice
+from werkzeug.security import generate_password_hash
+
+@app.get("/demo/seed_empresas")
+def demo_seed_empresas():
+    """Cria/atualiza ~20 empresas DEMO (sem teares). Idempotente."""
+    if not DEMO_MODE or request.args.get("token") != DEMO_TOKEN:
+        return "forbidden", 403
+
+    DEMO_TAG = "[DEMO]"
+    DEFAULT_HASH = generate_password_hash("demo123")
+
+    # (UF, Cidade) comuns do setor têxtil
+    LOCS = [
+        ("SC","Blumenau"), ("SC","Brusque"), ("SC","Jaraguá do Sul"), ("SC","Joinville"),
+        ("PR","Maringá"), ("PR","Curitiba"), ("PR","Londrina"),
+        ("RS","Caxias do Sul"), ("RS","Novo Hamburgo"),
+        ("SP","Americana"), ("SP","São Paulo"), ("SP","Campinas"), ("SP","Jacareí"),
+        ("MG","Belo Horizonte"), ("MG","Juiz de Fora"),
+        ("RJ","Rio de Janeiro"),
+        ("CE","Fortaleza"),
+        ("BA","Salvador"),
+        ("GO","Goiânia"),
+        ("PE","Caruaru"),
+    ]
+
+    base_nomes = [
+        "Malharia Modelo", "Fios & Malhas", "TramaSul Têxteis", "Tecidos Paraná", "Nordeste Knit",
+        "Mineira Malharia", "Tear&Cia", "Prime Tricot", "Top Yarn", "Circular Têxtil",
+        "Malhas Brasil", "TexFiber", "Malharia Alfa", "Delta Knit", "LoomTech",
+        "Ponto a Ponto", "WeavePro", "UniKnit", "Nova Trama", "City Knit"
+    ]
+
+    criadas, atualizadas = 0, 0
+    for i, (uf, cid) in enumerate(LOCS):
+        nome  = base_nomes[i]
+        apel  = f"{DEMO_TAG} {nome.split()[0]}"
+        email = f"demo{i+1:02d}@achetece.demo"
+        tel   = f"47{990000000 + i:011d}"[:11]  # 11 dígitos
+
+        emp = Empresa.query.filter((Empresa.email==email) | (Empresa.apelido==apel)).first()
+        if not emp:
+            emp = Empresa(
+                nome=nome, apelido=apel, email=email, senha=DEFAULT_HASH,
+                estado=uf, cidade=cid, telefone=tel,
+                status_pagamento="aprovado", data_pagamento=datetime.utcnow(),
+                responsavel_nome="Demo", responsavel_sobrenome=str(i+1)
+            )
+            db.session.add(emp); criadas += 1
+        else:
+            emp.nome = nome; emp.apelido = apel; emp.estado = uf; emp.cidade = cid
+            if not emp.senha: emp.senha = DEFAULT_HASH
+            emp.status_pagamento = "aprovado"; emp.data_pagamento = datetime.utcnow()
+            if not emp.telefone: emp.telefone = tel
+            atualizadas += 1
+
+    db.session.commit()
+    # garante vínculo Usuario (seu startup já faz, mas reforçamos)
+    try: _ensure_auth_layer_and_link()
+    except: pass
+
+    return f"OK — empresas DEMO criadas={criadas}, atualizadas={atualizadas}"
+
+@app.get("/demo/login_empresa/<int:empresa_id>")
+def demo_login_empresa(empresa_id):
+    if not DEMO_MODE or request.args.get("token") != DEMO_TOKEN:
+        return "forbidden", 403
+    emp = Empresa.query.get_or_404(empresa_id)
+    session["empresa_id"] = emp.id
+    session["empresa_apelido"] = emp.apelido or emp.nome
+    goto = request.args.get("goto")
+    if goto == "cadastrar_teares":
+        return redirect(url_for("cadastrar_teares"))
+    return redirect(url_for("painel_malharia"))
 
 @app.get("/seed-demo")
 def run_seed_demo():
@@ -392,16 +481,19 @@ def index():
             'Mensagem': mensagem
         })
 
-    # Renderiza a HOME (index.html) com a seção #busca usando estes dados
+        # Renderiza a HOME (index.html) – agora passando também 'teares' e 'estados'
+    UFS_BR = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS',
+              'MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO']
     return render_template(
         "index.html",
         opcoes=opcoes,
         filtros=filtros,
-        resultados=resultados,
+        resultados=resultados,   # mantido por compatibilidade (pode remover depois se não usar)
+        teares=teares_paginados, # <<< a lista que a tabela da direita usa
+        estados=UFS_BR,          # <<< usado no card de Localização (UF/cidade)
         pagina=pagina,
         total_paginas=total_paginas
     )
-
 
 @app.route("/buscar_teares", methods=["GET", "POST"])
 def buscar_teares_redirect():
@@ -840,19 +932,6 @@ def teste_email():
         return "<h2>E-mail enviado com sucesso!</h2>"
     except Exception as e:
         return f"<h2>Erro ao enviar e-mail: {e}</h2>"
-
-@app.get("/api/cidades")
-def api_cidades_por_uf():
-    uf = (request.args.get("uf") or "").upper().strip()
-    if not uf:
-        return jsonify([])
-    try:
-        cidades = _get_cidades_por_uf(uf) or []
-    except Exception as e:
-        app.logger.warning(f"/api/cidades erro para UF={uf}: {e}")
-        cidades = []
-    return jsonify(cidades)
-
 
 @app.route('/editar_empresa', methods=['GET', 'POST'])
 def editar_empresa():
@@ -1577,8 +1656,6 @@ def _todas_cidades_por_uf() -> dict:
 # Cache simples em memória para não reler toda hora
 _CIDADES_CACHE = None
 
-from main import app
-
 @app.get("/api/suggest/localizacao")
 def api_suggest_localizacao():
     """
@@ -1633,15 +1710,13 @@ DEMO_TAG = "[DEMO]"
 
 @app.get("/utils/demo-empresas")
 def utils_demo_empresas():
-    # Busca empresas DEMO e seus teares
+    DEMO_TAG = "[DEMO]"
     empresas = Empresa.query.filter(Empresa.apelido.like(f"{DEMO_TAG}%"))\
         .order_by(Empresa.estado, Empresa.cidade, Empresa.nome).all()
 
-    # Monta um HTML simples e leve
     html = """
     <html><head>
-      <meta charset="utf-8">
-      <title>Empresas DEMO</title>
+      <meta charset="utf-8"><title>Empresas DEMO</title>
       <style>
         body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; margin:24px; color:#222}
         h1{font-size:20px; margin:0 0 16px}
@@ -1652,13 +1727,12 @@ def utils_demo_empresas():
         th,td{border-bottom:1px solid #f0f0f0; padding:8px 6px; text-align:left; font-size:14px}
         th{font-weight:600; background:#fafafa}
         .pill{display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; background:#f4f0ff}
+        .actions{display:flex; gap:8px}
         a.btn{font-size:13px; text-decoration:none; padding:6px 10px; border:1px solid #ddd; border-radius:8px}
       </style>
     </head><body>
       <h1>Empresas DEMO cadastradas</h1>
-      {% if not empresas %}
-        <p class="muted">Nenhuma empresa DEMO encontrada.</p>
-      {% endif %}
+      {% if not empresas %}<p class="muted">Nenhuma empresa DEMO encontrada.</p>{% endif %}
       {% for e in empresas %}
         <div class="card">
           <div class="head">
@@ -1667,48 +1741,30 @@ def utils_demo_empresas():
               <span class="pill">{{ e.apelido }}</span><br>
               <span class="muted">{{ e.cidade }} - {{ e.estado }} • {{ e.email }}</span>
             </div>
-            <div class="muted">
-              {% set qtd = e.teares|length if hasattr(e,'teares') and e.teares is not none else None %}
-              <span>{{ (qtd if qtd is not none else 0) }} teares</span>
+            <div class="actions">
+              <a class="btn" href="{{ url_for('demo_login_empresa', empresa_id=e.id) }}?token={{ token }}">Entrar como esta empresa</a>
+              <a class="btn" href="{{ url_for('demo_login_empresa', empresa_id=e.id) }}?token={{ token }}&goto=cadastrar_teares">Cadastrar teares</a>
             </div>
           </div>
 
           <table>
-            <thead>
-              <tr><th>Marca</th><th>Modelo</th><th>Tipo</th><th>Finura</th><th>Diâmetro</th><th>Alimentadores</th><th>Elastano</th></tr>
-            </thead>
+            <thead><tr><th>Marca</th><th>Modelo</th><th>Tipo</th><th>Finura</th><th>Diâmetro</th><th>Alimentadores</th><th>Elastano</th></tr></thead>
             <tbody>
-              {% for t in (e.teares if hasattr(e,'teares') and e.teares is not none else []) %}
-                <tr>
-                  <td>{{ t.marca }}</td>
-                  <td>{{ getattr(t, 'modelo', '') }}</td>
-                  <td>{{ getattr(t, 'tipo', '') }}</td>
-                  <td>{{ t.finura }}</td>
-                  <td>{{ t.diametro }}</td>
-                  <td>{{ t.alimentadores }}</td>
-                  <td>{{ t.elastano }}</td>
-                </tr>
-              {% endfor %}
-              {% if (e.teares is none) or (e.teares|length == 0) %}
-                {% for t in namespace(_=[]) %}{% endfor %}
-                {% set teares = [] %}
-                {% for t in Tear.query.filter_by(empresa_id=e.id).all() %}
-                  {% set _ = teares.append(t) %}
-                {% endfor %}
+              {% set teares = e.teares or [] %}
+              {% if teares|length == 0 %}
+                <tr><td colspan="7" class="muted">Sem teares cadastrados.</td></tr>
+              {% else %}
                 {% for t in teares %}
                   <tr>
                     <td>{{ t.marca }}</td>
-                    <td>{{ getattr(t, 'modelo', '') }}</td>
-                    <td>{{ getattr(t, 'tipo', '') }}</td>
+                    <td>{{ t.modelo }}</td>
+                    <td>{{ t.tipo }}</td>
                     <td>{{ t.finura }}</td>
                     <td>{{ t.diametro }}</td>
                     <td>{{ t.alimentadores }}</td>
                     <td>{{ t.elastano }}</td>
                   </tr>
                 {% endfor %}
-                {% if teares|length == 0 %}
-                  <tr><td colspan="7" class="muted">Sem teares cadastrados.</td></tr>
-                {% endif %}
               {% endif %}
             </tbody>
           </table>
@@ -1716,7 +1772,7 @@ def utils_demo_empresas():
       {% endfor %}
     </body></html>
     """
-    return render_template_string(html, empresas=empresas, Tear=Tear)
+    return render_template_string(html, empresas=empresas, token=DEMO_TOKEN)
 
 # --- DEBUG: listar últimas empresas com teares (remova depois) ---
 from flask import render_template_string
