@@ -279,32 +279,36 @@ def _ensure_auth_layer_and_link():
     except Exception as e:
         app.logger.warning(f"backfill usuarios from empresas failed: {e}")
 
+# --- util para garantir a tabela cliente_profile (idempotente) ---
 def _ensure_cliente_profile_table():
     try:
         ClienteProfile.__table__.create(bind=db.engine, checkfirst=True)
     except Exception as e:
         app.logger.warning(f"create cliente_profile table: {e}")
 
-with app.app_context():
-    _startup_migrations()
-
+# --- migrações simples de inicialização ---
 def _startup_migrations():
     """
     Executa na inicialização do app para garantir que o banco está pronto.
     - Cria TODAS as tabelas definidas pelos modelos (db.create_all)
-    - Faz os ajustes que você já tinha (coluna user_id em Empresa, backfill, etc.)
+    - Executa ajustes auxiliares (ex.: coluna user_id em Empresa + backfill)
+    - Garante cliente_profile (idempotente)
     """
     try:
-        # 1) cria todas as tabelas que ainda não existirem (Usuario, Empresa, Tear, ClienteProfile, etc.)
+        # 1) cria todas as tabelas que ainda não existirem
         db.create_all()
 
-        # 2) mantém seus ajustes específicos já existentes
-        _ensure_auth_layer_and_link()     # garante coluna empresa.user_id + backfill
-        _ensure_cliente_profile_table()   # idempotente; não faz mal se já criou acima
+        # 2) seus ajustes específicos já existentes
+        _ensure_auth_layer_and_link()   # garante empresa.user_id + backfill
+        _ensure_cliente_profile_table() # seguro repetir; não faz mal
 
         app.logger.info("Startup migrations OK (create_all + ajustes).")
     except Exception as e:
         app.logger.error(f"Startup migrations failed: {e}")
+
+# --- dispara as migrações no carregamento do app ---
+with app.app_context():
+    _startup_migrations()
 
 # ---------------------------
 # Decorator de acesso pago (com bypass em modo DEMO)
