@@ -66,37 +66,20 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-unsafe')
 
 # DB (SQLite local por padrão; use DATABASE_URL no Render se quiser Postgres)
 # === DATABASE_URL normalizado (Postgres em produção, SQLite no dev) ===
-from urllib.parse import urlparse
-
-raw_db_url = os.getenv('DATABASE_URL', 'sqlite:///banco.db')
-
-# Render (e outros) costumam fornecer 'postgres://'; SQLAlchemy prefere 'postgresql+psycopg2://'
-if raw_db_url.startswith('postgres://'):
-    raw_db_url = raw_db_url.replace('postgres://', 'postgresql+psycopg2://', 1)
-
-# Se for Postgres remoto, garanta SSL (mantendo query params se houver)
-if raw_db_url.startswith('postgresql') and 'sslmode=' not in raw_db_url:
-    if '?' in raw_db_url:
-        raw_db_url += '&sslmode=require'
-    else:
-        raw_db_url += '?sslmode=require'
-
-# === DB URL normalizado para psycopg v3 ===
 db_url = os.getenv('DATABASE_URL', 'sqlite:///banco.db')
 
-# Render costuma entregar "postgres://" ou "postgresql://"
+# Render (e outros) às vezes fornecem "postgres://" ou "postgresql://"
 if db_url.startswith('postgres://'):
     db_url = db_url.replace('postgres://', 'postgresql+psycopg://', 1)
 elif db_url.startswith('postgresql://'):
     db_url = db_url.replace('postgresql://', 'postgresql+psycopg://', 1)
 
-# Garante SSL em produção (sem quebrar query params existentes)
+# Se for Postgres remoto, garanta SSL (mantendo query params se houver)
 if db_url.startswith('postgresql+psycopg://') and 'sslmode=' not in db_url:
     db_url += ('&' if '?' in db_url else '?') + 'sslmode=require'
 
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
 app.config['PREFERRED_URL_SCHEME'] = 'https'
 
 # E-mail (ajuste no Render)
@@ -107,6 +90,8 @@ app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
 app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 
 mail = Mail(app)
+
+# Instancia o SQLAlchemy **depois** de definir a URI
 db = SQLAlchemy(app)
 
 # ========= NOVO: Configuração OAuth Google =========
@@ -300,15 +285,24 @@ def _ensure_cliente_profile_table():
     except Exception as e:
         app.logger.warning(f"create cliente_profile table: {e}")
 
-# Flask 3 removeu before_first_request. Executa uma vez na inicialização.
+with app.app_context():
+    _startup_migrations()
+
 def _startup_migrations():
+    """
+    Executa na inicialização do app para garantir que o banco está pronto.
+    - Cria TODAS as tabelas definidas pelos modelos (db.create_all)
+    - Faz os ajustes que você já tinha (coluna user_id em Empresa, backfill, etc.)
+    """
     try:
-        # garante que TODAS as tabelas existem no banco atual
+        # 1) cria todas as tabelas que ainda não existirem (Usuario, Empresa, Tear, ClienteProfile, etc.)
         db.create_all()
 
-        _ensure_auth_layer_and_link()
-        _ensure_cliente_profile_table()
-        app.logger.info("Startup migrations OK.")
+        # 2) mantém seus ajustes específicos já existentes
+        _ensure_auth_layer_and_link()     # garante coluna empresa.user_id + backfill
+        _ensure_cliente_profile_table()   # idempotente; não faz mal se já criou acima
+
+        app.logger.info("Startup migrations OK (create_all + ajustes).")
     except Exception as e:
         app.logger.error(f"Startup migrations failed: {e}")
 
