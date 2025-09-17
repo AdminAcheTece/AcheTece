@@ -81,8 +81,22 @@ if raw_db_url.startswith('postgresql') and 'sslmode=' not in raw_db_url:
     else:
         raw_db_url += '?sslmode=require'
 
-app.config['SQLALCHEMY_DATABASE_URI'] = raw_db_url
+# === DB URL normalizado para psycopg v3 ===
+db_url = os.getenv('DATABASE_URL', 'sqlite:///banco.db')
+
+# Render costuma entregar "postgres://" ou "postgresql://"
+if db_url.startswith('postgres://'):
+    db_url = db_url.replace('postgres://', 'postgresql+psycopg://', 1)
+elif db_url.startswith('postgresql://'):
+    db_url = db_url.replace('postgresql://', 'postgresql+psycopg://', 1)
+
+# Garante SSL em produção (sem quebrar query params existentes)
+if db_url.startswith('postgresql+psycopg://') and 'sslmode=' not in db_url:
+    db_url += ('&' if '?' in db_url else '?') + 'sslmode=require'
+
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 app.config['PREFERRED_URL_SCHEME'] = 'https'
 
 # E-mail (ajuste no Render)
