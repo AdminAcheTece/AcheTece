@@ -65,7 +65,23 @@ app.logger.setLevel(logging.INFO)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-unsafe')
 
 # DB (SQLite local por padrão; use DATABASE_URL no Render se quiser Postgres)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///banco.db')
+# === DATABASE_URL normalizado (Postgres em produção, SQLite no dev) ===
+from urllib.parse import urlparse
+
+raw_db_url = os.getenv('DATABASE_URL', 'sqlite:///banco.db')
+
+# Render (e outros) costumam fornecer 'postgres://'; SQLAlchemy prefere 'postgresql+psycopg2://'
+if raw_db_url.startswith('postgres://'):
+    raw_db_url = raw_db_url.replace('postgres://', 'postgresql+psycopg2://', 1)
+
+# Se for Postgres remoto, garanta SSL (mantendo query params se houver)
+if raw_db_url.startswith('postgresql') and 'sslmode=' not in raw_db_url:
+    if '?' in raw_db_url:
+        raw_db_url += '&sslmode=require'
+    else:
+        raw_db_url += '?sslmode=require'
+
+app.config['SQLALCHEMY_DATABASE_URI'] = raw_db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PREFERRED_URL_SCHEME'] = 'https'
 
@@ -273,14 +289,14 @@ def _ensure_cliente_profile_table():
 # Flask 3 removeu before_first_request. Executa uma vez na inicialização.
 def _startup_migrations():
     try:
+        # garante que TODAS as tabelas existem no banco atual
+        db.create_all()
+
         _ensure_auth_layer_and_link()
-        _ensure_cliente_profile_table()   # <-- ADICIONE ESTA LINHA
+        _ensure_cliente_profile_table()
         app.logger.info("Startup migrations OK.")
     except Exception as e:
         app.logger.error(f"Startup migrations failed: {e}")
-
-with app.app_context():
-    _startup_migrations()
 
 # ---------------------------
 # Decorator de acesso pago (com bypass em modo DEMO)
