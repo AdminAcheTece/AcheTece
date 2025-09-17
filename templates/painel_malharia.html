@@ -59,7 +59,7 @@
         /* Aviso pequeno */
         .mini { font-size: 12px; color:#666; }
 
-        /* ===== layout do menu do painel ===== */
+        /* ===== layout do painel ===== */
         .painel-menu{
           display:grid; grid-template-columns: 1fr 1fr; gap:24px;
           max-width:1100px; margin:24px auto;
@@ -110,23 +110,7 @@
         .perfil-links .seta{ margin-left:auto; stroke:var(--roxo); }
 
         .painel-col-direita{ display:flex; flex-direction:column; gap:22px; }
-        .painel-grid h3, .painel-listas h3{ margin:0 0 10px 0; color:#1f1f1f; }
-
-        .atalhos{ display:flex; gap:14px; flex-wrap:wrap; }
-        .atalho{
-          display:flex; flex-direction:column; align-items:center; gap:10px;
-          padding:14px; border-radius:16px; width:150px; text-decoration:none;
-          background:#f6f2ff; border:1px solid rgba(0,0,0,.04);
-        }
-        .atalho:hover{ filter:brightness(.98); }
-        .atalho span{ font-weight:700; color:#5f0adf; }
-
-        .ico-badge{
-          width:64px; height:64px; border-radius:16px; background:#fff; display:grid; place-items:center;
-          border:1px solid rgba(0,0,0,.06);
-        }
-        .ico-badge svg{ width:30px; height:30px; stroke:var(--roxo); fill:none; stroke-width:1.8; }
-        .ico-badge.verde svg{ stroke:#1fbf7a; }
+        .painel-listas h3{ margin:0 0 10px 0; color:#1f1f1f; }
 
         .lista-opcoes{ list-style:none; margin:0; padding:0; border-top:1px solid rgba(0,0,0,.06); }
         .lista-opcoes li{ border-bottom:1px solid rgba(0,0,0,.06); }
@@ -141,9 +125,9 @@
         .lista-opcoes .icone svg{ width:20px; height:20px; stroke:#5f5f66; fill:none; stroke-width:1.8; }
         .lista-opcoes .seta{ margin-left:auto; stroke:var(--roxo); }
 
-        /* barra de ações acima da tabela */
-        .acoes-teares{
-          max-width:1100px; margin:0 auto 10px; display:flex; justify-content:flex-end; gap:10px;
+        /* barra de ações (botão Editar/Cadastrar Teares) */
+        .acoes-topo{
+          max-width:1100px; margin:6px auto 0; display:flex; justify-content:flex-end; gap:10px;
         }
     </style>
 </head>
@@ -153,9 +137,7 @@
     <header>
         <div class="logo">
             <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
-            {% if session.get('empresa_apelido') %}
-              <div class="mini" style="margin-top:6px;">{{ session.get('empresa_apelido') }}</div>
-            {% endif %}
+            <!-- Removido: nome da empresa no cabeçalho -->
         </div>
     </header>
 
@@ -172,8 +154,13 @@
             {% else %}
               <span class="badge badge-pendente">Assinatura pendente</span>
               <a href="{{ url_for('checkout', plano='mensal') }}" class="badge badge-pendente">Ativar plano (Mensal)</a>
-              <a href="{{ url_for('checkout', plano='anual') }}" class="badge badge-pendente">Ativar plano (Anual)</a>
+              <!-- Removido: Ativar plano (Anual) -->
             {% endif %}
+        </div>
+
+        <!-- Ação principal solicitada -->
+        <div class="acoes-topo">
+          <a href="{{ url_for('cadastrar_teares') }}" class="btn-roxo">Editar/Cadastrar Teares</a>
         </div>
 
         <!-- Menu em estilo cards -->
@@ -207,23 +194,8 @@
             </ul>
           </div>
 
-          <!-- Coluna direita -->
+          <!-- Coluna direita (sem "Facilidades" e sem card Buscar Teares) -->
           <div class="painel-col-direita">
-            <div class="painel-grid">
-              <h3>Facilidades AcheTece</h3>
-              <div class="atalhos">
-                <a class="atalho" href="{{ url_for('buscar_teares') }}">
-                  <div class="ico-badge"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div>
-                  <span>Buscar teares</span>
-                </a>
-                <!-- SEM RESTRIÇÃO: visível sempre; o decorator no back libera em DEMO -->
-                <a class="atalho" href="{{ url_for('cadastrar_teares') }}">
-                  <div class="ico-badge verde"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
-                  <span>Cadastrar tear</span>
-                </a>
-              </div>
-            </div>
-
             <div class="painel-listas">
               <h3>Mais opções</h3>
               <ul class="lista-opcoes">
@@ -234,11 +206,6 @@
             </div>
           </div>
         </section>
-
-        <!-- Ações rápidas sobre teares -->
-        <div class="acoes-teares">
-          <a href="{{ url_for('cadastrar_teares') }}" class="btn-roxo">Editar/Cadastrar Teares</a>
-        </div>
 
         <h2>Teares Cadastrados:</h2>
         {% if empresa.teares %}
@@ -287,11 +254,10 @@
 
         {% if not assinatura_ativa %}
             <p class="mini" style="text-align:center; max-width:760px; margin:0 auto 24px;">
-                Se sua conta for DEMO, os botões acima já estão liberados para testes. Em produção,
+                Se sua conta for DEMO, o botão acima já está liberado para testes. Em produção,
                 ative o plano para gerenciar seus teares normalmente.
             </p>
         {% endif %}
     </div>
 </body>
 </html>
-
