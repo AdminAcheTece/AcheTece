@@ -851,8 +851,6 @@ def cadastrar_empresa():
         flash("Cadastro concluído! Complete seu perfil e ative seu plano quando quiser.", "success")
         return redirect(url_for('painel_malharia'))
 
-    return render_template('cadastrar_empresa.html', estados=estados)
-
 from uuid import uuid4
 from flask import request, redirect, url_for
 
@@ -1100,7 +1098,6 @@ def editar_tear(id):
         tear.elastano = request.form['elastano']
         db.session.commit()
         return redirect(url_for('painel_malharia'))
-
     return render_template('editar_tear.html', tear=tear)
 
 @app.route('/excluir_tear/<int:id>', methods=['POST'])
