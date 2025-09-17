@@ -11,13 +11,34 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
     
     <style>
+        :root{
+          --roxo:#8A00FF;
+          --roxo-hover:#A63DFF;
+        }
+
         th, td { text-align: center; }
 
-        .botao-editar {
-            background-color: #8A00FF; color: white; padding: 6px 12px;
-            font-size: 13px; border-radius: 6px; text-decoration: none; display: inline-block;
+        .btn-roxo{
+          display:inline-flex; align-items:center; justify-content:center;
+          height:40px; padding:0 16px; border:0; border-radius:9999px;
+          background:var(--roxo); color:#fff; font-weight:700; font-size:14px;
+          text-decoration:none; cursor:pointer; transition:.2s;
         }
-        .botao-editar:hover { background-color: #8A00FF; }
+        .btn-roxo:hover{ background:var(--roxo-hover); transform:translateY(-1px); }
+        .btn-roxo:focus-visible{ outline:3px solid rgba(138,0,255,.25); outline-offset:2px; }
+
+        .botao-editar {
+            background-color: var(--roxo); color: #fff; padding: 6px 12px;
+            font-size: 13px; border-radius: 9999px; text-decoration: none; display: inline-block;
+        }
+        .botao-editar:hover { background-color: var(--roxo-hover); }
+
+        .btn-perigo{
+          display:inline-flex; align-items:center; justify-content:center;
+          height:40px; padding:0 16px; border:0; border-radius:10px;
+          background:#e53935; color:#fff; font-weight:700; cursor:pointer;
+        }
+        .btn-perigo:hover{ filter:brightness(.95); }
 
         .table-wrapper { overflow-x: auto; margin-top: 20px; }
         table { width: 100%; border-collapse: collapse; background-color: #fff; }
@@ -60,7 +81,7 @@
           width:52px; height:52px; border-radius:50%;
           background:#f1efff; display:grid; place-items:center;
         }
-        .perfil-avatar svg{ width:28px; height:28px; stroke:#8A00FF; fill:none; stroke-width:1.8; }
+        .perfil-avatar svg{ width:28px; height:28px; stroke:var(--roxo); fill:none; stroke-width:1.8; }
         .perfil-info{ min-width:0; }
         .perfil-nome{ display:block; color:#1f1f1f; font-size:1.05rem; }
         .perfil-email{ color:#6b6b6b; font-size:.92rem; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -86,7 +107,7 @@
         }
         .perfil-links a:hover{ background:#f6f2ff; color:#5f0adf; }
         .perfil-links svg{ width:22px; height:22px; stroke:#5f5f66; fill:none; stroke-width:1.8; }
-        .perfil-links .seta{ margin-left:auto; stroke:#8A00FF; }
+        .perfil-links .seta{ margin-left:auto; stroke:var(--roxo); }
 
         .painel-col-direita{ display:flex; flex-direction:column; gap:22px; }
         .painel-grid h3, .painel-listas h3{ margin:0 0 10px 0; color:#1f1f1f; }
@@ -104,7 +125,7 @@
           width:64px; height:64px; border-radius:16px; background:#fff; display:grid; place-items:center;
           border:1px solid rgba(0,0,0,.06);
         }
-        .ico-badge svg{ width:30px; height:30px; stroke:#8A00FF; fill:none; stroke-width:1.8; }
+        .ico-badge svg{ width:30px; height:30px; stroke:var(--roxo); fill:none; stroke-width:1.8; }
         .ico-badge.verde svg{ stroke:#1fbf7a; }
 
         .lista-opcoes{ list-style:none; margin:0; padding:0; border-top:1px solid rgba(0,0,0,.06); }
@@ -118,7 +139,12 @@
           width:36px; height:36px; border-radius:10px; background:#f3f3f5; display:grid; place-items:center;
         }
         .lista-opcoes .icone svg{ width:20px; height:20px; stroke:#5f5f66; fill:none; stroke-width:1.8; }
-        .lista-opcoes .seta{ margin-left:auto; stroke:#8A00FF; }
+        .lista-opcoes .seta{ margin-left:auto; stroke:var(--roxo); }
+
+        /* barra de ações acima da tabela */
+        .acoes-teares{
+          max-width:1100px; margin:0 auto 10px; display:flex; justify-content:flex-end; gap:10px;
+        }
     </style>
 </head>
 <body>
@@ -190,19 +216,17 @@
                   <div class="ico-badge"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div>
                   <span>Buscar teares</span>
                 </a>
-                {% if assinatura_ativa %}
+                <!-- SEM RESTRIÇÃO: visível sempre; o decorator no back libera em DEMO -->
                 <a class="atalho" href="{{ url_for('cadastrar_teares') }}">
                   <div class="ico-badge verde"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
                   <span>Cadastrar tear</span>
                 </a>
-                {% endif %}
               </div>
             </div>
 
             <div class="painel-listas">
               <h3>Mais opções</h3>
               <ul class="lista-opcoes">
-                <!-- CORRIGIDO: era 'planos_assinatura' e gerou BuildError; sua rota é 'planos' -->
                 <li><a href="{{ url_for('planos') }}">Assinatura e pagamentos</a></li>
                 <li><a href="{{ url_for('editar_empresa') }}">Editar dados da empresa</a></li>
                 <li><a href="{{ url_for('fale_conosco') }}">Suporte AcheTece</a></li>
@@ -210,6 +234,11 @@
             </div>
           </div>
         </section>
+
+        <!-- Ações rápidas sobre teares -->
+        <div class="acoes-teares">
+          <a href="{{ url_for('cadastrar_teares') }}" class="btn-roxo">Editar/Cadastrar Teares</a>
+        </div>
 
         <h2>Teares Cadastrados:</h2>
         {% if empresa.teares %}
@@ -238,11 +267,7 @@
                         <td>{{ tear.alimentadores }}</td>
                         <td>{{ tear.elastano }}</td>
                         <td>
-                            {% if assinatura_ativa %}
-                              <a href="{{ url_for('editar_tear', id=tear.id) }}" class="botao-editar">Editar Tear</a>
-                            {% else %}
-                              <span class="mini">Ative o plano para editar</span>
-                            {% endif %}
+                          <a href="{{ url_for('editar_tear', id=tear.id) }}" class="botao-editar">Editar Tear</a>
                         </td>
                     </tr>
                     {% endfor %}
@@ -262,10 +287,11 @@
 
         {% if not assinatura_ativa %}
             <p class="mini" style="text-align:center; max-width:760px; margin:0 auto 24px;">
-                Após a aprovação do pagamento, o botão <strong>Cadastrar Novo Tear</strong> será liberado
-                e você poderá gerenciar seus teares normalmente.
+                Se sua conta for DEMO, os botões acima já estão liberados para testes. Em produção,
+                ative o plano para gerenciar seus teares normalmente.
             </p>
         {% endif %}
     </div>
 </body>
 </html>
+
