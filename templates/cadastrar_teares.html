@@ -11,6 +11,11 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
     
     <style>
+        :root{
+          --roxo:#8A00FF;
+          --roxo-hover:#A63DFF;
+        }
+        body{background:#f7f7fb;color:#111;font-family:Inter,Arial,system-ui,sans-serif}
         header {
             background-color: #fff;
             padding: 16px 24px;
@@ -19,38 +24,29 @@
             align-items: center;
             border-bottom: 1px solid #ddd;
         }
+        .logo img { max-height: 48px; height: auto; width: auto; }
+        .container { max-width: 760px; margin: 40px auto; background:#fff; border:1px solid #eee; border-radius:12px; padding:18px; }
 
-        .logo img {
-            max-height: 48px;
-            height: auto;
-            width: auto;
+        h1.titulo{ margin:0 0 16px; font-size:22px; font-weight:700; }
+
+        /* Campos do formulário (aproveita sua classe .formulario) */
+        .formulario label{ display:block; margin:10px 0 6px; font-weight:700; }
+        .formulario input, .formulario select{
+          width:100%; height:40px; border:1px solid #ccc; border-radius:10px; padding:0 10px; background:#fff;
         }
 
-        .nav-links {
-            list-style: none;
-            display: flex;
-            gap: 16px;
-            margin: 0;
-            padding: 0;
+        /* === Botão SALVAR (visível e roxo) === */
+        .formulario .botao-salvar{
+          display:inline-flex; align-items:center; justify-content:center;
+          height:44px; padding:0 18px; border:0; border-radius:9999px;
+          background:var(--roxo); color:#f2f2f5; font-weight:700; font-size:14px;
+          cursor:pointer; transition:.2s; margin-top:6px;
         }
+        .formulario .botao-salvar:hover{ background:var(--roxo-hover); transform:translateY(-1px); }
+        .formulario .botao-salvar:focus-visible{ outline:3px solid rgba(138,0,255,.25); outline-offset:2px; }
 
-        .nav-links li a {
-            background-color: #003bb3;
-            color: #000;
-            padding: 10px 18px;
-            border-radius: 8px;
-            font-weight: bold;
-            text-decoration: none;
-            transition: background-color 0.2s ease;
-        }
-
-        .nav-links li a:hover {
-            background-color: #003bb3;
-        }
-
-        .container {
-            margin-top: 40px;
-        }
+        .voltar-link{ display:inline-block; margin-top:14px; text-decoration:none; color:#555; }
+        .voltar-link:hover{ text-decoration:underline; }
     </style>
 </head>
 <body>
@@ -69,6 +65,7 @@
         <form method="POST" class="formulario">
             <label for="marca">Marca:</label>
             <input type="text" id="marca" name="marca" required>
+
             <label for="modelo">Modelo:</label>
             <input type="text" id="modelo" name="modelo" required>
 
@@ -85,11 +82,12 @@
             <label for="diametro">Diâmetro:</label>
             <input type="number" id="diametro" name="diametro" required>
 
-            <label for="pistas cilindro">Pistas Cilindro:</label>
-            <input type="number" id="pistas cilindro" name="pistas cilindro" required>
+            <!-- Corrigido: ids/names sem espaço -->
+            <label for="pistas_cilindro">Pistas Cilindro:</label>
+            <input type="number" id="pistas_cilindro" name="pistas_cilindro" required>
 
-            <label for="pistas disco">Pistas Disco:</label>
-            <input type="number" id="pistas disco" name="pistas disco" required>
+            <label for="pistas_disco">Pistas Disco:</label>
+            <input type="number" id="pistas_disco" name="pistas_disco" required>
             
             <label for="alimentadores">Alimentadores:</label>
             <input type="number" id="alimentadores" name="alimentadores" required>
