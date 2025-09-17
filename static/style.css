@@ -972,5 +972,9 @@ thead tr{ background:#f2f2f2; }
    }
    .localizacao-box select:disabled{ background:#f5f5f5; color:#777; cursor:not-allowed; }
    .localizacao-box select option[disabled]{ color:#003bb3; font-weight:500; } /* placeholder azul */
-         
+
+   .btn-whats {
+     display:inline-block; padding:6px 10px; border-radius:8px;
+     background:#25D366; color:#fff; text-decoration:none; font-weight:600;
    }
+   
