@@ -383,25 +383,19 @@
                   </tr>
                 </thead>
                 <tbody>
-                  {% for tear in teares %}
+                  {% for r in resultados %}
                     <tr>
-                      <td class="cell-empresa" data-label="Empresa">
-                        {{ tear.empresa_apelido or tear.empresa_nome or '—' }}
-                      </td>
-                      <td data-label="Tipo">{{ tear.tipo or '—' }}</td>
-                      <td data-label="Galga">{{ tear.galga or '—' }}</td>
-                      <td data-label="Diâmetro">{{ tear.diametro or '—' }}</td>
-                      <td data-label="Alimentadores">{{ tear.alimentadores or '—' }}</td>
-                      <td data-label="UF">{{ tear.uf or tear.estado or '—' }}</td>
-                      <td data-label="Cidade">{{ tear.cidade or '—' }}</td>
-                      <td data-label="Contato">
-                        {% if tear.whats_digits %}
-                          <a class="btn-whats" target="_blank" rel="noopener" href="https://wa.me/55{{ tear.whats_digits }}?text={{ ('Olá! Vi seu tear no AcheTece e tenho interesse.')|urlencode }}">WhatsApp</a>
-                        {% elif tear.whats %}
-                          <a class="btn-whats" target="_blank" rel="noopener" href="https://wa.me/{{ tear.whats }}">WhatsApp</a>
-                        {% else %}
-                          —
-                        {% endif %}
+                      <td>{{ r.empresa }}</td>
+                      <td>{{ r.tipo }}</td>
+                      <td>{{ r.galga }}</td>
+                      <td>{{ r.diametro }}</td>
+                      <td>{{ r.alimentadores }}</td>
+                      <td>{{ r.uf }}</td>
+                      <td>{{ r.cidade }}</td>
+                      <td>
+                        {% if r.contato %}
+                          <a href="{{ r.contato }}" target="_blank" rel="noopener" class="btn-whats">WhatsApp</a>
+                        {% else %} — {% endif %}
                       </td>
                     </tr>
                   {% endfor %}
