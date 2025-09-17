@@ -446,33 +446,33 @@ def run_seed_demo():
 # Página inicial AGORA também é a busca
 @app.route("/", methods=["GET", "POST"])
 def index():
-    # ==== Opções dos selects (iguais à sua antiga /busca) ====
+    # ==== Opções dos selects ====
     filtros = {'tipo': '', 'diâmetro': '', 'galga': '', 'estado': '', 'cidade': ''}
     opcoes = {'tipo': [], 'diâmetro': [], 'galga': [], 'estado': [], 'cidade': []}
 
-    todos_teares = Tear.query.join(Empresa).add_columns(
-        Tear.tipo, Tear.diametro, Tear.finura,
-        Empresa.estado, Empresa.cidade
-    ).all()
+    todos_teares = (
+        Tear.query.join(Empresa)
+        .add_columns(Tear.tipo, Tear.diametro, Tear.finura, Empresa.estado, Empresa.cidade)
+        .all()
+    )
+    for t in todos_teares:
+        if t.tipo and t.tipo not in opcoes['tipo']:
+            opcoes['tipo'].append(t.tipo)
+        if t.diametro is not None and str(t.diametro) not in opcoes['diâmetro']:
+            opcoes['diâmetro'].append(str(t.diametro))
+        if t.finura is not None and str(t.finura) not in opcoes['galga']:
+            opcoes['galga'].append(str(t.finura))
+        if t.estado and t.estado not in opcoes['estado']:
+            opcoes['estado'].append(t.estado)
+        if t.cidade and t.cidade not in opcoes['cidade']:
+            opcoes['cidade'].append(t.cidade)
 
-    for tear in todos_teares:
-        if tear.tipo not in opcoes['tipo']:
-            opcoes['tipo'].append(tear.tipo)
-        if str(tear.diametro) not in opcoes['diâmetro']:
-            opcoes['diâmetro'].append(str(tear.diametro))
-        if str(tear.finura) not in opcoes['galga']:
-            opcoes['galga'].append(str(tear.finura))
-        if tear.estado not in opcoes['estado']:
-            opcoes['estado'].append(tear.estado)
-        if tear.cidade not in opcoes['cidade']:
-            opcoes['cidade'].append(tear.cidade)
-
-    # ==== Filtros: aceitamos POST (form) e GET (querystring/paginação) ====
+    # ==== Filtros (POST ou GET) ====
     origem = request.form if request.method == 'POST' else request.args
-
     query = Tear.query.join(Empresa)
+
     for campo in filtros:
-        valor = origem.get(campo, "")
+        valor = (origem.get(campo) or "").strip()
         filtros[campo] = valor
         if valor:
             if campo == 'tipo':
@@ -487,52 +487,39 @@ def index():
                 query = query.filter(Empresa.cidade == valor)
 
     # ==== Paginação ====
-    pagina = int(request.args.get('pagina', 1))
+    pagina = int(request.args.get('pagina', 1) or 1)
     por_pagina = 5
     total = query.count()
-    total_paginas = math.ceil(total / por_pagina)
+    total_paginas = (total + por_pagina - 1) // por_pagina
     teares_paginados = query.offset((pagina - 1) * por_pagina).limit(por_pagina).all()
 
-    # ==== Monta resultados (igual à sua /busca) ====
+    # ==== Resultados da tabela ====
     resultados = []
-for tear in teares_paginados:
-    numero_telefone = re.sub(r'\D', '', tear.empresa.telefone or '')
-    empresa_nome = (
-        (tear.empresa.apelido or '').strip()
-        or (tear.empresa.nome or '').strip()
-        or (tear.empresa.email or '').split('@')[0]
-    )
+    for tear in teares_paginados:
+        emp = tear.empresa
+        apelido = (emp.apelido or emp.nome or (emp.email.split('@')[0] if emp and emp.email else '—'))
+        numero = re.sub(r'\D', '', (emp.telefone or ''))
+        contato_link = None
+        if numero:
+            # monta link wa.me; se não tiver DD/país, ao menos tenta o número bruto
+            contato_link = f"https://wa.me/{'55' + numero if not numero.startswith('55') else numero}"
 
-    mensagem = (
-        "Olá, encontrei seu tear no AcheTece e tenho demanda para esse tipo de máquina. "
-        "Gostaria de conversar sobre possíveis serviços de tecelagem."
-    )
-    contato = ""
-    if numero_telefone:
-        contato = f"https://wa.me/55{numero_telefone}?text={quote_plus(mensagem)}"
+        resultados.append({
+            'Empresa': apelido or '—',
+            'Tipo': tear.tipo or '—',
+            'Diâmetro': tear.diametro if tear.diametro is not None else '—',
+            'Galga': tear.finura if tear.finura is not None else '—',
+            'Alimentadores': tear.alimentadores if tear.alimentadores is not None else '—',
+            'Estado': emp.estado or '—',
+            'Cidade': emp.cidade or '—',
+            'Contato': contato_link  # use isso no template para mostrar o botão WhatsApp
+        })
 
-    resultados.append({
-        # use sempre chaves minúsculas (mais simples no template)
-        'empresa': empresa_nome or '—',
-        'tipo': (tear.tipo or '').upper() or '—',
-        'galga': tear.finura if tear.finura is not None else '—',
-        'diametro': tear.diametro if tear.diametro is not None else '—',
-        'alimentadores': tear.alimentadores if tear.alimentadores is not None else '—',
-        'uf': (tear.empresa.estado or '—'),
-        'cidade': (tear.empresa.cidade or '—'),
-        'contato': contato  # string vazia se não houver telefone
-    })
-
-        # Renderiza a HOME (index.html) – agora passando também 'teares' e 'estados'
-    UFS_BR = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS',
-              'MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO']
     return render_template(
         "index.html",
         opcoes=opcoes,
         filtros=filtros,
-        resultados=resultados,   # mantido por compatibilidade (pode remover depois se não usar)
-        teares=teares_paginados, # <<< a lista que a tabela da direita usa
-        estados=UFS_BR,          # <<< usado no card de Localização (UF/cidade)
+        resultados=resultados,
         pagina=pagina,
         total_paginas=total_paginas
     )
