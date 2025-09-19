@@ -420,6 +420,71 @@ def demo_seed_empresas():
 
     return f"OK — empresas DEMO criadas={criadas}, atualizadas={atualizadas}"
 
+@app.get("/utils/demo-count")
+def utils_demo_count():
+    from sqlalchemy import or_, and_
+    total_emp = Empresa.query.count()
+    total_tear = Tear.query.count()
+
+    aprov = (Tear.query.join(Empresa)
+             .filter(Empresa.status_pagamento == "aprovado").count())
+
+    # se existir campo ativo no Tear
+    try:
+        ativos = (Tear.query.join(Empresa)
+                  .filter(Empresa.status_pagamento == "aprovado",
+                          getattr(Tear, "ativo") == True).count())
+    except Exception:
+        ativos = "—"
+
+    mono_dupla = (Tear.query.join(Empresa)
+                  .filter(Empresa.status_pagamento == "aprovado",
+                          Tear.tipo.in_(["MONO", "DUPLA"])).count()
+                  if hasattr(Tear, "tipo") else "—")
+
+    return (f"Empresas={total_emp}, Teares={total_tear}, "
+            f"Aprovados(por empresa)={aprov}, "
+            f"Ativos(tear)={ativos}, "
+            f"Mono/Dupla={mono_dupla}")
+
+@app.get("/utils/demo-fix")
+def utils_demo_fix():
+    from sqlalchemy import or_
+    import random
+    empresas = (Empresa.query
+        .filter(or_(Empresa.apelido.ilike("%[DEMO]%"),
+                    Empresa.email.ilike("%@achetece.demo")))
+        .all())
+    criados, atualizados = 0, 0
+    for e in empresas:
+        # garante status
+        e.status_pagamento = "aprovado"
+        if getattr(e, "telefone", None) in (None, ""):
+            e.telefone = "(00) 0000-0000"
+
+        # cria 2 teares caso não tenha
+        if len(e.teares or []) == 0:
+            base = [("Mayer","Relanit","MONO",28,30,90,"Sim"),
+                    ("Mayer","Inovit","DUPLA",28,30,70,"Não")]
+            for (marca,modelo,tipo,finura,diametro,alimentadores,elastano) in base:
+                t = Tear(empresa_id=e.id, marca=marca, modelo=modelo, tipo=tipo,
+                         finura=finura, diametro=diametro,
+                         alimentadores=alimentadores, elastano=elastano)
+                if hasattr(Tear, "ativo"): t.ativo = True
+                db.session.add(t); criados += 1
+        else:
+            # normaliza os existentes
+            for t in e.teares:
+                if hasattr(t, "tipo") and t.tipo not in ("MONO","DUPLA","JACQUARD","JATO"):
+                    t.tipo = "MONO"
+                if hasattr(t, "modelo") and (t.modelo is None or t.modelo == ""):
+                    t.modelo = "DEMO-01"
+                if hasattr(Tear, "ativo") and getattr(t,"ativo", True) is not True:
+                    t.ativo = True
+                atualizados += 1
+    db.session.commit()
+    return f"OK: teares criados={criados}, teares normalizados={atualizados}"
+
 @app.get("/demo/login_empresa/<int:empresa_id>")
 def demo_login_empresa(empresa_id):
     if not DEMO_MODE or request.args.get("token") != DEMO_TOKEN:
@@ -444,14 +509,34 @@ def run_seed_demo():
     return "✅ Seed executado. Empresas e teares DEMO criados."
 
 # Página inicial AGORA também é a busca
+from sqlalchemy import or_  # <- garanta este import no topo do arquivo
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     # ==== Opções dos selects ====
     filtros = {'tipo': '', 'diâmetro': '', 'galga': '', 'estado': '', 'cidade': ''}
     opcoes = {'tipo': [], 'diâmetro': [], 'galga': [], 'estado': [], 'cidade': []}
 
-    todos_teares = (
+    # ----- BASE QUERY (passe-livre DEMO + aprovados) -----
+    base = (
         Tear.query.join(Empresa)
+        .filter(
+            or_(
+                Empresa.status_pagamento == "aprovado",
+                Empresa.apelido.ilike("%[DEMO]%"),
+                Empresa.email.ilike("%@achetece.demo")
+            )
+        )
+    )
+    # se existir campo 'ativo' no Tear, filtra por True (sem quebrar)
+    try:
+        base = base.filter(Tear.ativo == True)
+    except Exception:
+        pass
+
+    # Opções dos selects calculadas a partir da base
+    todos_teares = (
+        base
         .add_columns(Tear.tipo, Tear.diametro, Tear.finura, Empresa.estado, Empresa.cidade)
         .all()
     )
@@ -467,9 +552,16 @@ def index():
         if t.cidade and t.cidade not in opcoes['cidade']:
             opcoes['cidade'].append(t.cidade)
 
+    # (opcional) deixa mais agradável nos selects
+    opcoes['tipo'].sort()
+    opcoes['diâmetro'].sort(key=lambda x: int(x))
+    opcoes['galga'].sort(key=lambda x: int(x))
+    opcoes['estado'].sort()
+    opcoes['cidade'].sort()
+
     # ==== Filtros (POST ou GET) ====
     origem = request.form if request.method == 'POST' else request.args
-    query = Tear.query.join(Empresa)
+    query = base  # <- começa da base com passe-livre DEMO
 
     for campo in filtros:
         valor = (origem.get(campo) or "").strip()
@@ -486,10 +578,24 @@ def index():
             elif campo == 'cidade':
                 query = query.filter(Empresa.cidade == valor)
 
-    # ==== Paginação ====
+    # ==== Paginação + resultado padrão ====
     pagina = int(request.args.get('pagina', 1) or 1)
     por_pagina = 5
+
+    # quando não há nenhum filtro selecionado, ainda assim mostramos resultados
+    sem_filtro = all((v == "" for v in filtros.values()))
+
+    # total considerando a query atual (com passe-livre DEMO)
     total = query.count()
+
+    # ordena por mais recentes sempre que listar
+    query = query.order_by(Tear.id.desc())
+
+    # se por algum motivo não vier nada e não há filtros, cai para a base (fallback)
+    if total == 0 and sem_filtro:
+        query = base.order_by(Tear.id.desc())
+        total = query.count()
+
     total_paginas = (total + por_pagina - 1) // por_pagina
     teares_paginados = query.offset((pagina - 1) * por_pagina).limit(por_pagina).all()
 
