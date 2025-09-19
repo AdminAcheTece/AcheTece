@@ -1256,29 +1256,56 @@ def buscar_teares():
     # POST também deve ir pra home
     return redirect(f"{url_for('index')}{('?' + qs) if qs else ''}")
 
+# no topo (imports)
+from sqlalchemy import func  # <- adicione
+
 @app.route('/exportar')
 def exportar():
-    filtros = {'tipo': request.args.get('tipo', ''),
-               'diâmetro': request.args.get('diâmetro', ''),
-               'galga': request.args.get('galga', ''),
-               'estado': request.args.get('estado', ''),
-               'cidade': request.args.get('cidade', '')}
+    # aceita 'diâmetro' (com acento) ou 'diametro' (sem)
+    filtros_raw = {
+        'tipo'    : (request.args.get('tipo', '') or '').strip(),
+        'diâmetro': (request.args.get('diâmetro', '') or request.args.get('diametro', '') or '').strip(),
+        'galga'   : (request.args.get('galga', '') or '').strip(),
+        'estado'  : (request.args.get('estado', '') or '').strip(),
+        'cidade'  : (request.args.get('cidade', '') or '').strip(),
+    }
+
+    # helpers seguros para conversão
+    def to_int(s):
+        s = (s or '').strip()
+        s = re.sub(r'\D', '', s)  # mantém só dígitos
+        return int(s) if s else None
+
+    def to_float(s):
+        s = (s or '').strip().replace(',', '.')
+        s = re.sub(r'[^0-9\.]', '', s)  # remove aspas, símbolos etc.
+        return float(s) if s else None
+
+    galga    = to_int(filtros_raw['galga'])
+    diametro = to_float(filtros_raw['diâmetro'])
 
     query = Tear.query.join(Empresa)
-    for campo, valor in filtros.items():
-        if valor:
-            if campo == 'tipo':
-                query = query.filter(Tear.tipo == valor)
-            elif campo == 'diâmetro':
-                query = query.filter(Tear.diametro == int(valor))
-            elif campo == 'galga':
-                query = query.filter(Tear.finura == int(valor))
-            elif campo == 'estado':
-                query = query.filter(Empresa.estado == valor)
-            elif campo == 'cidade':
-                query = query.filter(Empresa.cidade == valor)
+
+    if filtros_raw['tipo']:
+        query = query.filter(Tear.tipo == filtros_raw['tipo'])
+
+    if diametro is not None:
+        # Se seu campo é FLOAT/NUMERIC, usar arredondamento ajuda a evitar precisão binária
+        query = query.filter(func.round(Tear.diametro, 2) == round(diametro, 2))
+        # Se o campo no banco for inteiro (polegadas inteiras), prefira:
+        # query = query.filter(Tear.diametro == int(round(diametro)))
+
+    if galga is not None:
+        query = query.filter(Tear.finura == galga)
+
+    if filtros_raw['estado']:
+        query = query.filter(Empresa.estado == filtros_raw['estado'])
+
+    if filtros_raw['cidade']:
+        query = query.filter(Empresa.cidade == filtros_raw['cidade'])
 
     teares = query.all()
+
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(['Empresa', 'Tipo', 'Diâmetro', 'Galga', 'Alimentadores', 'Estado', 'Cidade'])
@@ -1295,10 +1322,12 @@ def exportar():
         ])
 
     output.seek(0)
-    return send_file(io.BytesIO(output.read().encode('utf-8')),
-                     mimetype='text/csv',
-                     as_attachment=True,
-                     download_name='teares_filtrados.csv')
+    return send_file(
+        io.BytesIO(output.read().encode('utf-8')),
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name='teares_filtrados.csv'
+    )
 
 @app.route('/malharia_info', methods=['GET'])
 def malharia_info():
