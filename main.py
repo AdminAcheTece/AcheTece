@@ -1728,51 +1728,46 @@ def api_suggest_localizacao():
 
     return jsonify(resultados)
 
-# --- LISTA TEMPORÁRIA DE EMPRESAS DEMO COM TEARES (remover depois) ---
+# --- DEBUG: listar apenas as empresas DEMO com teares (remover depois) ---
 from flask import render_template_string
-from sqlalchemy import func
-
-DEMO_TAG = "[DEMO]"
+from sqlalchemy import or_
 
 @app.get("/utils/demo-empresas")
 def utils_demo_empresas():
-    DEMO_TAG = "[DEMO]"
-    empresas = Empresa.query.filter(Empresa.apelido.like(f"{DEMO_TAG}%"))\
-        .order_by(Empresa.estado, Empresa.cidade, Empresa.nome).all()
+    demo_emails = [
+        "modelo@teste.com","fios@teste.com","tramasul@teste.com",
+        "parana@teste.com","nordeste@teste.com","mineira@teste.com",
+    ]
+
+    empresas = (Empresa.query
+        .filter(or_(Empresa.apelido.ilike("%[DEMO]%"),
+                    Empresa.email.in_(demo_emails)))
+        .order_by(Empresa.id.asc())
+        .all())
 
     html = """
-    <html><head>
-      <meta charset="utf-8"><title>Empresas DEMO</title>
+    <html><head><meta charset="utf-8"><title>Empresas DEMO</title>
       <style>
-        body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; margin:24px; color:#222}
-        h1{font-size:20px; margin:0 0 16px}
-        .card{border:1px solid #eee; border-radius:12px; padding:16px; margin:12px 0; background:#fff}
-        .head{display:flex; gap:12px; align-items:center; justify-content:space-between}
-        .muted{color:#666; font-size:13px}
-        table{width:100%; border-collapse:collapse; margin-top:10px}
-        th,td{border-bottom:1px solid #f0f0f0; padding:8px 6px; text-align:left; font-size:14px}
-        th{font-weight:600; background:#fafafa}
-        .pill{display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; background:#f4f0ff}
-        .actions{display:flex; gap:8px}
-        a.btn{font-size:13px; text-decoration:none; padding:6px 10px; border:1px solid #ddd; border-radius:8px}
+        body{font-family:Inter,Arial,sans-serif;margin:24px;color:#222}
+        .card{border:1px solid #eee;border-radius:12px;padding:16px;margin:12px 0;background:#fff}
+        .muted{color:#666;font-size:13px}
+        table{width:100%;border-collapse:collapse;margin-top:10px}
+        th,td{border-bottom:1px solid #f0f0f0;padding:8px 6px;text-align:left;font-size:14px}
+        th{background:#fafafa}
+        .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;background:#f4f0ff}
       </style>
     </head><body>
       <h1>Empresas DEMO cadastradas</h1>
-      {% if not empresas %}<p class="muted">Nenhuma empresa DEMO encontrada.</p>{% endif %}
+      {% if not empresas %}
+        <p class="muted">Nenhuma empresa DEMO encontrada.</p>
+      {% endif %}
       {% for e in empresas %}
         <div class="card">
-          <div class="head">
-            <div>
-              <strong>{{ e.nome }}</strong>
-              <span class="pill">{{ e.apelido }}</span><br>
-              <span class="muted">{{ e.cidade }} - {{ e.estado }} • {{ e.email }}</span>
-            </div>
-            <div class="actions">
-              <a class="btn" href="{{ url_for('demo_login_empresa', empresa_id=e.id) }}?token={{ token }}">Entrar como esta empresa</a>
-              <a class="btn" href="{{ url_for('demo_login_empresa', empresa_id=e.id) }}?token={{ token }}&goto=cadastrar_teares">Cadastrar teares</a>
-            </div>
+          <div>
+            <strong>{{ e.nome }}</strong>
+            {% if e.apelido %}<span class="pill">{{ e.apelido }}</span>{% endif %}<br>
+            <span class="muted">{{ e.cidade }} - {{ e.estado }} • {{ e.email }} • status={{ e.status_pagamento or '—' }}</span>
           </div>
-
           <table>
             <thead><tr><th>Marca</th><th>Modelo</th><th>Tipo</th><th>Finura</th><th>Diâmetro</th><th>Alimentadores</th><th>Elastano</th></tr></thead>
             <tbody>
@@ -1783,8 +1778,8 @@ def utils_demo_empresas():
                 {% for t in teares %}
                   <tr>
                     <td>{{ t.marca }}</td>
-                    <td>{{ t.modelo }}</td>
-                    <td>{{ t.tipo }}</td>
+                    <td>{{ t.modelo|default('') }}</td>
+                    <td>{{ t.tipo|default('') }}</td>
                     <td>{{ t.finura }}</td>
                     <td>{{ t.diametro }}</td>
                     <td>{{ t.alimentadores }}</td>
@@ -1794,13 +1789,14 @@ def utils_demo_empresas():
               {% endif %}
             </tbody>
           </table>
+          <p class="muted">ID: {{ e.id }} • <a href="/malharia_info/{{ e.id }}">abrir /malharia_info/{{ e.id }}</a></p>
         </div>
       {% endfor %}
     </body></html>
     """
-    return render_template_string(html, empresas=empresas, token=DEMO_TOKEN)
+    return render_template_string(html, empresas=empresas)
 
-# --- DEBUG: listar últimas empresas com teares (remova depois) ---
+# --- DEBUG: últimas 30 empresas com teares (remover depois) ---
 from flask import render_template_string
 
 @app.get("/utils/empresas-recentes")
@@ -1839,8 +1835,8 @@ def utils_empresas_recentes():
                 {% for t in teares %}
                   <tr>
                     <td>{{ t.marca }}</td>
-                    <td>{{ getattr(t, 'modelo', '') }}</td>
-                    <td>{{ getattr(t, 'tipo', '') }}</td>
+                    <td>{{ t.modelo|default('') }}</td>
+                    <td>{{ t.tipo|default('') }}</td>
                     <td>{{ t.finura }}</td>
                     <td>{{ t.diametro }}</td>
                     <td>{{ t.alimentadores }}</td>
@@ -1850,6 +1846,7 @@ def utils_empresas_recentes():
               {% endif %}
             </tbody>
           </table>
+          <p class="muted">ID: {{ e.id }} • <a href="/malharia_info/{{ e.id }}">abrir /malharia_info/{{ e.id }}</a></p>
         </div>
       {% endfor %}
     </body></html>
