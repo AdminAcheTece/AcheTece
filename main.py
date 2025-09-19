@@ -508,16 +508,64 @@ def run_seed_demo():
         seed()
     return "✅ Seed executado. Empresas e teares DEMO criados."
 
-# Página inicial AGORA também é a busca
-from sqlalchemy import or_  # <- garanta este import no topo do arquivo
+# Página inicial AGORA também é a busca (corrigida)
+from sqlalchemy import or_  # garanta este import no topo
+# usa db.func.lower para comparações case-insensitive
+
+def _num_key(x):
+    try:
+        return float(str(x).replace(",", "."))
+    except Exception:
+        return 0.0
+
+def _to_int(s):
+    try:
+        return int(float(str(s).replace(",", ".")))
+    except Exception:
+        return None
+
+def _demo_resultados():
+    # 12 itens somente para exibir (não grava no BD)
+    base = [
+        ("SIMPLES", 30, 28, "Jaraguá do Sul", "SC"),
+        ("DUPLA",   34, 24, "Jaraguá do Sul", "SC"),
+        ("SIMPLES", 32, 28, "Guaramirim",     "SC"),
+        ("SIMPLES", 26, 24, "Blumenau",       "SC"),
+        ("DUPLA",   30, 18, "Brusque",        "SC"),
+        ("SIMPLES", 20, 28, "Joinville",      "SC"),
+    ] * 2
+    out = []
+    for tipo, d, g, cid, uf in base:
+        out.append({
+            'Empresa': "Malharia DEMO",
+            'Tipo': tipo,
+            'Diâmetro': d,
+            'Galga': g,
+            'Alimentadores': '—',
+            'Estado': uf,
+            'Cidade': cid,
+            'Contato': None
+        })
+    return out
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    # ==== Opções dos selects ====
-    filtros = {'tipo': '', 'diâmetro': '', 'galga': '', 'estado': '', 'cidade': ''}
-    opcoes = {'tipo': [], 'diâmetro': [], 'galga': [], 'estado': [], 'cidade': []}
+    # ==== Filtros (aceita nomes com e sem acento) ====
+    origem = request.values  # funciona p/ GET e POST
+    # mapeia chaves alternativas do form
+    aliases = {
+        'diâmetro': 'diametro',
+        'tipo': 'tipo',
+        'galga': 'galga',
+        'estado': 'estado',
+        'cidade': 'cidade',
+    }
+    filtros = {}
+    for k, alt in aliases.items():
+        v = (origem.get(k) or origem.get(alt) or "").strip()
+        filtros[k] = v
 
-    # ----- BASE QUERY (passe-livre DEMO + aprovados) -----
+    # ==== BASE QUERY (passe-livre DEMO + aprovados) ====
     base = (
         Tear.query.join(Empresa)
         .filter(
@@ -534,101 +582,107 @@ def index():
     except Exception:
         pass
 
-    # Opções dos selects calculadas a partir da base
-    todos_teares = (
-        base
-        .add_columns(Tear.tipo, Tear.diametro, Tear.finura, Empresa.estado, Empresa.cidade)
-        .all()
-    )
-    for t in todos_teares:
-        if t.tipo and t.tipo not in opcoes['tipo']:
-            opcoes['tipo'].append(t.tipo)
-        if t.diametro is not None and str(t.diametro) not in opcoes['diâmetro']:
-            opcoes['diâmetro'].append(str(t.diametro))
-        if t.finura is not None and str(t.finura) not in opcoes['galga']:
-            opcoes['galga'].append(str(t.finura))
-        if t.estado and t.estado not in opcoes['estado']:
-            opcoes['estado'].append(t.estado)
-        if t.cidade and t.cidade not in opcoes['cidade']:
-            opcoes['cidade'].append(t.cidade)
+    # ---- Fonte das OPÇÕES dos selects ----
+    # Se a base "aprovados+demo" estiver vazia, buscamos opções em TODOS para não deixar os selects desertos.
+    try:
+        tem_base = base.limit(1).count() > 0
+    except Exception:
+        tem_base = False
 
-    # (opcional) deixa mais agradável nos selects
+    fonte_opcoes = base if tem_base else Tear.query.join(Empresa)
+
+    opcoes = {'tipo': [], 'diâmetro': [], 'galga': [], 'estado': [], 'cidade': []}
+    for t_tipo, t_diam, t_fin, e_uf, e_cid in (
+        fonte_opcoes.with_entities(Tear.tipo, Tear.diametro, Tear.finura, Empresa.estado, Empresa.cidade).all()
+    ):
+        if t_tipo and t_tipo not in opcoes['tipo']:
+            opcoes['tipo'].append(t_tipo)
+        if t_diam is not None:
+            v = str(t_diam)
+            if v not in opcoes['diâmetro']:
+                opcoes['diâmetro'].append(v)
+        if t_fin is not None:
+            v = str(t_fin)
+            if v not in opcoes['galga']:
+                opcoes['galga'].append(v)
+        if e_uf and e_uf not in opcoes['estado']:
+            opcoes['estado'].append(e_uf)
+        if e_cid and e_cid not in opcoes['cidade']:
+            opcoes['cidade'].append(e_cid)
+
     opcoes['tipo'].sort()
-    opcoes['diâmetro'].sort(key=lambda x: int(x))
-    opcoes['galga'].sort(key=lambda x: int(x))
+    opcoes['diâmetro'].sort(key=_num_key)
+    opcoes['galga'].sort(key=_num_key)
     opcoes['estado'].sort()
     opcoes['cidade'].sort()
 
-    # ==== Filtros (POST ou GET) ====
-    origem = request.form if request.method == 'POST' else request.args
-    query = base  # <- começa da base com passe-livre DEMO
+    # ==== Aplica filtros ====
+    query = base
+    if filtros['tipo']:
+        query = query.filter(db.func.lower(Tear.tipo) == filtros['tipo'].lower())
 
-    for campo in filtros:
-        valor = (origem.get(campo) or "").strip()
-        filtros[campo] = valor
-        if valor:
-            if campo == 'tipo':
-                query = query.filter(Tear.tipo == valor)
-            elif campo == 'diâmetro':
-                query = query.filter(Tear.diametro == int(valor))
-            elif campo == 'galga':
-                query = query.filter(Tear.finura == int(valor))
-            elif campo == 'estado':
-                query = query.filter(Empresa.estado == valor)
-            elif campo == 'cidade':
-                query = query.filter(Empresa.cidade == valor)
+    di = _to_int(filtros['diâmetro'])
+    if di is not None:
+        query = query.filter(Tear.diametro == di)
+
+    ga = _to_int(filtros['galga'])
+    if ga is not None:
+        query = query.filter(Tear.finura == ga)
+
+    if filtros['estado']:
+        query = query.filter(db.func.lower(Empresa.estado) == filtros['estado'].lower())
+    if filtros['cidade']:
+        query = query.filter(db.func.lower(Empresa.cidade) == filtros['cidade'].lower())
 
     # ==== Paginação + resultado padrão ====
     pagina = int(request.args.get('pagina', 1) or 1)
     por_pagina = 5
-
-    # quando não há nenhum filtro selecionado, ainda assim mostramos resultados
     sem_filtro = all((v == "" for v in filtros.values()))
 
     # total considerando a query atual (com passe-livre DEMO)
-    total = query.count()
+    try:
+        total = query.count()
+    except Exception:
+        total = 0
 
-    # ordena por mais recentes sempre que listar
+    # Se nada e nenhum filtro, tenta um fallback para "todos" (sem regra de pagamento)
+    if total == 0 and sem_filtro:
+        query_fallback = Tear.query.join(Empresa)
+        try:
+            total = query_fallback.count()
+        except Exception:
+            total = 0
+        if total > 0:
+            query = query_fallback
+
     query = query.order_by(Tear.id.desc())
 
-    # se por algum motivo não vier nada e não há filtros, cai para a base (fallback)
-    if total == 0 and sem_filtro:
-        query = base.order_by(Tear.id.desc())
-        total = query.count()
+    total_paginas = max(1, (total + por_pagina - 1) // por_pagina)
+    teares_paginados = query.offset((pagina - 1) * por_pagina).limit(por_pagina).all() if total > 0 else []
 
-    total_paginas = (total + por_pagina - 1) // por_pagina
-    teares_paginados = query.offset((pagina - 1) * por_pagina).limit(por_pagina).all()
-
-    # ==== Resultados da tabela ====
+    # ==== Monta resultados (ou DEMO em memória) ====
     resultados = []
-    for tear in teares_paginados:
-        emp = tear.empresa
-        apelido = (emp.apelido or emp.nome or (emp.email.split('@')[0] if emp and emp.email else '—'))
-        numero = re.sub(r'\D', '', (emp.telefone or ''))
-        contato_link = None
-        if numero:
-            # monta link wa.me; se não tiver DD/país, ao menos tenta o número bruto
-            contato_link = f"https://wa.me/{'55' + numero if not numero.startswith('55') else numero}"
+    modo_demo = False
 
-        resultados.append({
-            'Empresa': apelido or '—',
-            'Tipo': tear.tipo or '—',
-            'Diâmetro': tear.diametro if tear.diametro is not None else '—',
-            'Galga': tear.finura if tear.finura is not None else '—',
-            'Alimentadores': tear.alimentadores if tear.alimentadores is not None else '—',
-            'Estado': emp.estado or '—',
-            'Cidade': emp.cidade or '—',
-            'Contato': contato_link  # use isso no template para mostrar o botão WhatsApp
-        })
+    if teares_paginados:
+        for tear in teares_paginados:
+            emp = tear.empresa
+            apelido = (emp.apelido or getattr(emp, 'nome', None) or getattr(emp, 'nome_fantasia', None)
+                       or (emp.email.split('@')[0] if emp and emp.email else '—'))
+            numero = re.sub(r'\D', '', (emp.telefone or '')) if emp else ''
+            contato_link = None
+            if numero:
+                contato_link = f"https://wa.me/{'55' + numero if not numero.startswith('55') else numero}"
 
-    return render_template(
-        "index.html",
-        opcoes=opcoes,
-        filtros=filtros,
-        resultados=resultados,
-        pagina=pagina,
-        total_paginas=total_paginas
-    )
+            resultados.append({
+                'Empresa': apelido or '—',
+                'Tipo': tear.tipo or '—',
+                'Diâmetro': tear.diametro if tear.diametro is not None else '—',
+                'Galga': tear.finura if tear.finura is not None else '—',
+                'Alimentadores': getattr(tear, 'alimentadores', None) if getattr(tear, 'alimentadores', None) is not None else '—',
+                'Estado': (emp.estado if emp else '—') or '—',
+                'Cidade': (emp.cid
+
 
 @app.route("/buscar_teares", methods=["GET", "POST"])
 def buscar_teares_redirect():
