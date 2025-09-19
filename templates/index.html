@@ -295,14 +295,47 @@
       <!-- Backdrop para o painel de filtros no mobile -->
       <div class="filters-backdrop" id="filtersBackdrop" aria-hidden="true"></div>
 
-      <!-- COLUNA ESQUERDA: FILTROS (sem Estado/Cidade) -->
-      <aside class="filters-panel" id="filtersPanel" aria-label="Filtros de teares">
-        <button class="filters-close" id="closeFiltersBtn" type="button" aria-label="Fechar filtros">×</button>
-        <h2 class="filters-title">Filtrar teares</h2>
-        <form method="POST" class="formulario" action="{{ url_for('index') }}">
-          {% for campo, opcoes_campo in opcoes.items() %}
-            {% set c = campo|lower %}
-            {% if c not in ['estado','cidade'] %}
+    <!-- COLUNA ESQUERDA: FILTROS (sem Estado/Cidade) -->
+    <aside class="filters-panel" id="filtersPanel" aria-label="Filtros de teares">
+      <button class="filters-close" id="closeFiltersBtn" type="button" aria-label="Fechar filtros">×</button>
+      <h2 class="filters-title">Filtrar teares</h2>
+    
+      <form method="POST" class="formulario" action="{{ url_for('index') }}">
+        {% for campo, opcoes_campo in opcoes.items() %}
+          {% set c = campo|lower %}
+          {% if c not in ['estado','cidade'] %}
+            
+            {% if c == 'galga' %}
+              <div class="filter-field">
+                <label for="{{ campo }}">GALGA</label>
+                <input
+                  type="number"
+                  id="{{ campo }}"
+                  name="{{ campo }}"
+                  inputmode="numeric"
+                  step="1"
+                  min="1"
+                  placeholder="Digite a galga (ex.: 28)"
+                  value="{{ filtros[campo] or '' }}"
+                  autocomplete="off">
+              </div>
+    
+            {% elif c in ['diâmetro','diametro'] %}
+              <div class="filter-field">
+                <label for="{{ campo }}">DIÂMETRO</label>
+                <input
+                  type="number"
+                  id="{{ campo }}"
+                  name="{{ campo }}"
+                  inputmode="decimal"
+                  step="0.1"
+                  min="1"
+                  placeholder="Digite o diâmetro (polegadas, ex.: 30)"
+                  value="{{ filtros[campo] or '' }}"
+                  autocomplete="off">
+              </div>
+    
+            {% else %}
               <div class="filter-field">
                 <label for="{{ campo }}">{{ campo|capitalize }}</label>
                 <select name="{{ campo }}" id="{{ campo }}">
@@ -313,7 +346,9 @@
                 </select>
               </div>
             {% endif %}
-          {% endfor %}
+    
+          {% endif %}
+        {% endfor %}
 
           <!-- inputs “espelho” para carregar a localização escolhida à direita -->
           <input type="hidden" name="estado" id="estado_hidden" value="{{ request.args.get('estado','') }}">
