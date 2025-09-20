@@ -768,6 +768,172 @@ def index():
         total=total
     )
 
+# ===================== ADMIN: SEMEADURA / IMPERSONAÇÃO =====================
+SEED_TOKEN = os.getenv("SEED_TOKEN", "ACHETECE")  # defina no Render se quiser
+def _seed_ok():
+    return request.args.get("token") == SEED_TOKEN
+
+# Empresas DEMO: apelido com [DEMO] ou email @achetece.demo
+DEMO_FILTER = or_(
+    Empresa.apelido.ilike("%[DEMO]%"),
+    Empresa.email.ilike("%@achetece.demo")
+)
+
+def _cria_teares_fake(empresa, n):
+    tipos = ["SIMPLES", "DUPLA"]
+    diametros = [18, 20, 22, 24, 26, 28, 30, 32, 34, 36]
+    galgas = [14, 18, 20, 22, 24, 26, 28, 30, 32]
+    alimentadores_pool = [2, 4, 6, 8, 12, 16, 20, 24, 30, 36]
+
+    novos = []
+    for _ in range(max(0, int(n))):
+        t = Tear(
+            tipo=random.choice(tipos),
+            diametro=random.choice(diametros),
+            finura=random.choice(galgas),
+            empresa_id=empresa.id
+        )
+        # campos opcionais
+        try: t.alimentadores = random.choice(alimentadores_pool)
+        except Exception: pass
+        try: t.ativo = True
+        except Exception: pass
+        novos.append(t)
+
+    if novos:
+        db.session.bulk_save_objects(novos)
+        db.session.commit()
+    return len(novos)
+
+def _topup(empresa, minimo):
+    """Garante pelo menos 'minimo' teares na empresa (adiciona só o necessário)."""
+    atual = Tear.query.filter_by(empresa_id=empresa.id).count()
+    if atual >= minimo: 
+        return 0
+    return _cria_teares_fake(empresa, minimo - atual)
+
+@app.route("/admin/seed_teares")
+def admin_seed_teares():
+    """
+    Adiciona n teares para UMA empresa.
+    Uso: /admin/seed_teares?empresa_id=123&n=6&token=ACHETECE
+    """
+    if not _seed_ok(): return "Não autorizado", 403
+    empresa_id = request.args.get("empresa_id", type=int)
+    n = request.args.get("n", default=5, type=int)
+    if not empresa_id: return "Informe empresa_id", 400
+    emp = Empresa.query.get_or_404(empresa_id)
+    qtd = _cria_teares_fake(emp, n)
+    return f"OK: +{qtd} teares em {emp.apelido or emp.nome or getattr(emp,'nome_fantasia',emp.id)} (id={emp.id})."
+
+@app.route("/admin/seed_teares_all")
+def admin_seed_teares_all():
+    """
+    Semeia em massa.
+    Parâmetros:
+      escopo=demo|pagantes|todas (default: todas)
+      status=aprovado|pendente|cancelado (opcional; só se escopo=todas)
+      uf=SC (opcional)
+      ids=1,2,3 (opcional; prioriza esta lista)
+      n=5  -> adiciona 'n' em cada empresa
+      min=8 -> garante pelo menos 'min' teares (top-up)
+    Ex.: /admin/seed_teares_all?escopo=demo&min=6&token=ACHETECE
+    """
+    if not _seed_ok(): return "Não autorizado", 403
+
+    escopo = (request.args.get("escopo") or "todas").lower()
+    status = request.args.get("status")
+    uf = request.args.get("uf")
+    ids = request.args.get("ids")
+    n = request.args.get("n", type=int)
+    minimo = request.args.get("min", type=int)
+
+    q = Empresa.query
+    # filtro por ids explícitos
+    if ids:
+        lista = [int(x) for x in ids.split(",") if x.strip().isdigit()]
+        if not lista: return "ids inválidos", 400
+        q = q.filter(Empresa.id.in_(lista))
+    else:
+        if escopo == "demo":
+            q = q.filter(DEMO_FILTER)
+        elif escopo == "pagantes":
+            q = q.filter(Empresa.status_pagamento == "aprovado")
+        # escopo=todas -> sem filtro adicional aqui
+        if status and escopo == "todas":
+            q = q.filter(Empresa.status_pagamento == status)
+        if uf:
+            q = q.filter(db.func.upper(Empresa.estado) == uf.upper())
+
+    empresas = q.order_by(Empresa.id.desc()).all()
+    if not empresas: 
+        return "Nenhuma empresa encontrada para o filtro.", 200
+
+    total_empresas = len(empresas)
+    total_add = 0
+    rel = []
+    for e in empresas:
+        if minimo and minimo > 0:
+            add = _topup(e, minimo)
+        else:
+            add = _cria_teares_fake(e, n or 5)
+        total_add += add
+        rel.append(f"{e.id}:{add}")
+
+    return f"OK: {total_add} teares adicionados em {total_empresas} empresas. Detalhe: {'; '.join(rel)}"
+
+@app.route("/utils/empresas_json")
+def utils_empresas_json():
+    """Lista empresas (padrão: DEMO) com contagem de teares. 
+       Use ?escopo=todas|pagantes e ?uf=SC para filtrar."""
+    escopo = (request.args.get("escopo") or "demo").lower()
+    uf = request.args.get("uf")
+    q = Empresa.query
+    if escopo == "demo":
+        q = q.filter(DEMO_FILTER)
+    elif escopo == "pagantes":
+        q = q.filter(Empresa.status_pagamento == "aprovado")
+    if uf:
+        q = q.filter(db.func.upper(Empresa.estado) == uf.upper())
+
+    empresas = q.order_by(Empresa.id.desc()).all()
+    data = []
+    for e in empresas:
+        cnt = Tear.query.filter_by(empresa_id=e.id).count()
+        data.append({
+            "id": e.id,
+            "apelido": e.apelido or e.nome or getattr(e, "nome_fantasia", "") or "",
+            "estado": e.estado, "cidade": e.cidade,
+            "status_pagamento": getattr(e, "status_pagamento", None),
+            "teares": cnt
+        })
+    return jsonify(data)
+
+# -------- Impersonação (entrar como malharia) --------
+@app.route("/admin/impersonar/<int:empresa_id>")
+def admin_impersonar(empresa_id):
+    """Entra como a empresa (painel da malharia) sem senha.
+       /admin/impersonar/123?token=ACHETECE"""
+    if not _seed_ok(): return "Não autorizado", 403
+    session["admin_impersonando"] = True
+    session["perfil"] = "malharia"
+    session["empresa_id"] = empresa_id
+    # ajuste o nome da rota do seu painel, se for diferente
+    try:
+        return redirect(url_for("painel_malharia"))
+    except Exception:
+        return redirect("/")
+
+@app.route("/admin/desimpersonar")
+def admin_desimpersonar():
+    """Volta do modo 'entrar como' para o estado neutro."""
+    session.pop("admin_impersonando", None)
+    # NÃO apaga uma eventual sessão de admin se você usa outra chave, só limpa perfil/empresa
+    session.pop("perfil", None)
+    session.pop("empresa_id", None)
+    return redirect(url_for("index"))
+# ===========================================================================
+
 @app.route("/buscar_teares", methods=["GET", "POST"])
 def buscar_teares_redirect():
     qs = request.query_string.decode("utf-8")
