@@ -23,6 +23,7 @@ from authlib.integrations.flask_client import OAuth
 from enum import Enum
 from urllib.parse import quote_plus
 from sqlalchemy import or_
+import random, os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, 'static')  # ajuste para 'estático' se o seu folder tem acento
@@ -508,6 +509,105 @@ def run_seed_demo():
     with app.app_context():
         seed()
     return "✅ Seed executado. Empresas e teares DEMO criados."
+
+# === ADMIN: sementes de teares DEMO ===
+
+DEMO_FILTER = or_(
+    Empresa.apelido.ilike("%[DEMO]%"),
+    Empresa.email.ilike("%@achetece.demo")
+)
+
+def _cria_teares_fake(empresa, n=5):
+    """Insere n teares aleatórios para a empresa."""
+    tipos = ["SIMPLES", "DUPLA"]
+    diametros = [18, 20, 22, 24, 26, 28, 30, 32, 34, 36]
+    galgas = [14, 18, 20, 22, 24, 26, 28, 30, 32]
+    alimentadores = [2, 4, 6, 8, 12, 16, 20, 24, 30, 36]
+
+    novos = []
+    for _ in range(n):
+        t = Tear(
+            tipo=random.choice(tipos),
+            diametro=random.choice(diametros),
+            finura=random.choice(galgas),
+            empresa_id=empresa.id
+        )
+        # alimentadores (se existir no modelo)
+        try:
+            t.alimentadores = random.choice(alimentadores)
+        except Exception:
+            pass
+        # ativo=True (se existir)
+        try:
+            t.ativo = True
+        except Exception:
+            pass
+        novos.append(t)
+
+    db.session.bulk_save_objects(novos)
+    db.session.commit()
+    return len(novos)
+
+def _seed_token_ok(req):
+    return (req.args.get("token", "") == os.getenv("SEED_TOKEN", "ACHETECE"))
+
+@app.route("/admin/seed_teares")
+def admin_seed_teares():
+    """Adiciona n teares para UMA empresa (por id). Ex.: /admin/seed_teares?empresa_id=123&n=6&token=ACHETECE"""
+    if not _seed_token_ok(request):
+        return "Não autorizado", 403
+    empresa_id = request.args.get("empresa_id", type=int)
+    n = request.args.get("n", default=5, type=int)
+    if not empresa_id:
+        return "Informe empresa_id", 400
+    emp = Empresa.query.get_or_404(empresa_id)
+    qtd = _cria_teares_fake(emp, n)
+    return f"OK: adicionados {qtd} teares à empresa {emp.apelido or emp.nome or emp.nome_fantasia or emp.id} (id={emp.id})."
+
+@app.route("/admin/seed_teares_all_demo")
+def admin_seed_teares_all_demo():
+    """Adiciona n teares para TODAS as empresas DEMO. Ex.: /admin/seed_teares_all_demo?n=4&token=ACHETECE"""
+    if not _seed_token_ok(request):
+        return "Não autorizado", 403
+    n = request.args.get("n", default=5, type=int)
+    empresas = Empresa.query.filter(DEMO_FILTER).all()
+    total_empresas = len(empresas)
+    total_teares = 0
+    for emp in empresas:
+        total_teares += _cria_teares_fake(emp, n)
+    return f"OK: adicionados {total_teares} teares ({n}/empresa) em {total_empresas} empresas DEMO."
+
+@app.route("/utils/demo-empresas-json")
+def utils_demo_empresas_json():
+    """Lista empresas DEMO com contagem de teares (JSON)."""
+    empresas = (Empresa.query
+                .filter(DEMO_FILTER)
+                .order_by(Empresa.id.desc())
+                .all())
+    data = []
+    for e in empresas:
+        cnt = Tear.query.filter_by(empresa_id=e.id).count()
+        data.append({
+            "id": e.id,
+            "apelido": e.apelido or e.nome or getattr(e, "nome_fantasia", "") or "",
+            "estado": e.estado, "cidade": e.cidade,
+            "teares": cnt
+        })
+    return jsonify(data)
+
+# (Opcional) IMPERSONAR malharia para entrar no painel sem senha
+@app.route("/admin/impersonar/<int:empresa_id>")
+def admin_impersonar(empresa_id):
+    """Seta sessão como malharia e redireciona ao painel. Ex.: /admin/impersonar/123?token=ACHETECE"""
+    if not _seed_token_ok(request):
+        return "Não autorizado", 403
+    session["perfil"] = "malharia"
+    session["empresa_id"] = empresa_id
+    # ajuste o nome da rota do painel, se for diferente
+    try:
+        return redirect(url_for("painel_malharia"))
+    except Exception:
+        return redirect("/")
 
 # Página inicial = busca (versão final: lista tudo e filtra progressivamente)
 
