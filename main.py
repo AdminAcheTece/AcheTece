@@ -525,8 +525,20 @@ def _to_int(s):
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    # ====== Coleta de filtros (aceita 'diâmetro' e 'diametro') ======
-    v = request.values  # funciona para GET e POST
+    # ====== util ======
+    def _num_key(x):
+        try:
+            return float(str(x).replace(",", "."))
+        except Exception:
+            return 0.0
+
+    def _to_int(s):
+        try:
+            return int(float(str(s).replace(",", ".")))
+        except Exception:
+            return None
+
+    v = request.values  # GET e POST
     filtros = {
         "tipo":    (v.get("tipo") or "").strip(),
         "diâmetro": (v.get("diâmetro") or v.get("diametro") or "").strip(),
@@ -535,10 +547,10 @@ def index():
         "cidade":  (v.get("cidade") or "").strip(),
     }
 
-    # ====== Base: TODOS os teares da base (DEMO e reais), com empresa se houver ======
+    # ====== Base: TODOS os teares (sempre lista na home) ======
     query_base = Tear.query.outerjoin(Empresa)
 
-    # ====== Opções dos selects (sempre com base em todos os teares) ======
+    # ====== Opções dos selects (sempre a partir de todos) ======
     opcoes = {"tipo": [], "diâmetro": [], "galga": [], "estado": [], "cidade": []}
     for t_tipo, t_diam, t_fin, e_uf, e_cid in (
         query_base.with_entities(Tear.tipo, Tear.diametro, Tear.finura, Empresa.estado, Empresa.cidade).all()
@@ -564,7 +576,7 @@ def index():
     opcoes["estado"].sort()
     opcoes["cidade"].sort()
 
-    # ====== Aplica filtros progressivos (apenas quando preenchidos) ======
+    # ====== Aplica filtros progressivos ======
     q = query_base
     if filtros["tipo"]:
         q = q.filter(db.func.lower(Tear.tipo) == filtros["tipo"].lower())
@@ -591,7 +603,7 @@ def index():
     teares_paginados = q.offset((pagina - 1) * por_pagina).limit(por_pagina).all()
     total_paginas = max(1, (total + por_pagina - 1) // por_pagina)
 
-    # ====== Monta também 'resultados' (compatível com seu template em tabela) ======
+    # ====== Monta 'resultados' com CHAVES DUPLAS (compatibilidade) ======
     resultados = []
     for tear in teares_paginados:
         emp = getattr(tear, "empresa", None)
@@ -607,35 +619,53 @@ def index():
         if numero:
             contato_link = f"https://wa.me/{'55' + numero if not numero.startswith('55') else numero}"
 
-        resultados.append({
+        # valores base
+        tipo = tear.tipo or "—"
+        diam = tear.diametro if tear.diametro is not None else "—"
+        galg = tear.finura if tear.finura is not None else "—"
+        alim = getattr(tear, "alimentadores", None)
+        alim = alim if alim is not None else "—"
+        uf = (emp.estado if (emp and getattr(emp, "estado", None)) else "—")
+        cid = (emp.cidade if (emp and getattr(emp, "cidade", None)) else "—")
+
+        # dicionário com nomes em minúsculas (dot notation comum)
+        item = {
+            "empresa": apelido,
+            "tipo": tipo,
+            "galga": galg,
+            "diametro": diam,
+            "alimentadores": alim,
+            "uf": uf,
+            "estado": uf,     # oferece ambos
+            "cidade": cid,
+            "contato": contato_link,
+        }
+        # duplicatas com maiúsculas/acentos (caso o template use essas chaves)
+        item.update({
             "Empresa": apelido,
-            "Tipo": tear.tipo or "—",
-            "Diâmetro": tear.diametro if tear.diametro is not None else "—",
-            "Galga": tear.finura if tear.finura is not None else "—",
-            "Alimentadores": getattr(tear, "alimentadores", None) if getattr(tear, "alimentadores", None) is not None else "—",
-            "Estado": (emp.estado if (emp and getattr(emp, "estado", None)) else "—"),
-            "Cidade": (emp.cidade if (emp and getattr(emp, "cidade", None)) else "—"),
+            "Tipo": tipo,
+            "Galga": galg,
+            "Diâmetro": diam,
+            "Alimentadores": alim,
+            "UF": uf,
+            "Estado": uf,
+            "Cidade": cid,
             "Contato": contato_link,
         })
+        resultados.append(item)
 
-    # Log útil
-    app.logger.info({
-        "rota": "index",
-        "total_encontrado": total,
-        "pagina": pagina,
-        "total_paginas": total_paginas,
-        "filtros": filtros
-    })
+    # log rápido
+    app.logger.info({"rota": "index", "total_encontrado": total, "pagina": pagina, "filtros": filtros})
 
     return render_template(
         "index.html",
         opcoes=opcoes,
         filtros=filtros,
-        resultados=resultados,         # para renderização em tabela/lista
-        teares=teares_paginados,       # para renderização por cards (seu bloco antigo)
+        resultados=resultados,   # tabela
+        teares=teares_paginados, # cards (se houver bloco de cards)
         pagina=pagina,
         total_paginas=total_paginas,
-        modo_demo=False
+        total=total
     )
 
 @app.route("/buscar_teares", methods=["GET", "POST"])
