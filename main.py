@@ -422,6 +422,159 @@ def demo_seed_empresas():
 
     return f"OK — empresas DEMO criadas={criadas}, atualizadas={atualizadas}"
 
+# ===================== ADMIN: SEMEADURA / IMPERSONAÇÃO (versão 2) =====================
+SEED_TOKEN = os.getenv("SEED_TOKEN", "ACHETECE")
+
+def _seed_ok():
+    return request.args.get("token") == SEED_TOKEN
+
+DEMO_FILTER = or_(
+    Empresa.apelido.ilike("%[DEMO]%"),
+    Empresa.email.ilike("%@achetece.demo")
+)
+
+def _cria_teares_fake(empresa, n):
+    tipos = ["SIMPLES", "DUPLA"]
+    diametros = [18, 20, 22, 24, 26, 28, 30, 32, 34, 36]
+    galgas = [14, 18, 20, 22, 24, 26, 28, 30, 32]
+    alimentadores_pool = [2, 4, 6, 8, 12, 16, 20, 24, 30, 36]
+
+    novos = []
+    for _ in range(max(0, int(n or 0))):
+        t = Tear(
+            tipo=random.choice(tipos),
+            diametro=random.choice(diametros),
+            finura=random.choice(galgas),
+            empresa_id=empresa.id
+        )
+        try: t.alimentadores = random.choice(alimentadores_pool)
+        except Exception: pass
+        try: t.ativo = True
+        except Exception: pass
+        novos.append(t)
+
+    if novos:
+        db.session.bulk_save_objects(novos)
+        db.session.commit()
+    return len(novos)
+
+def _topup(empresa, minimo):
+    atual = Tear.query.filter_by(empresa_id=empresa.id).count()
+    if atual >= (minimo or 0):
+        return 0
+    return _cria_teares_fake(empresa, (minimo - atual))
+
+@app.route("/admin/seed_teares2")
+def admin_seed_teares2():
+    """
+    Adiciona n teares para UMA empresa.
+    Uso: /admin/seed_teares2?empresa_id=123&n=6&token=ACHETECE
+    """
+    if not _seed_ok(): return "Não autorizado", 403
+    empresa_id = request.args.get("empresa_id", type=int)
+    n = request.args.get("n", default=5, type=int)
+    if not empresa_id: return "Informe empresa_id", 400
+    emp = Empresa.query.get_or_404(empresa_id)
+    qtd = _cria_teares_fake(emp, n)
+    return f"OK: +{qtd} teares em {emp.apelido or emp.nome or getattr(emp, 'nome_fantasia', emp.id)} (id={emp.id})."
+
+@app.route("/admin/seed_teares_all2")
+def admin_seed_teares_all2():
+    """
+    Semeia em massa.
+    Parâmetros:
+      escopo=demo|pagantes|todas (default: demo)
+      uf=SC (opcional)
+      ids=1,2,3 (opcional; prioriza esta lista)
+      n=5   -> adiciona 'n' por empresa
+      min=8 -> garante pelo menos 'min' teares por empresa (top-up)
+    Ex.: /admin/seed_teares_all2?escopo=demo&min=6&token=ACHETECE
+    """
+    if not _seed_ok(): return "Não autorizado", 403
+
+    escopo = (request.args.get("escopo") or "demo").lower()
+    uf = request.args.get("uf")
+    ids = request.args.get("ids")
+    n = request.args.get("n", type=int)
+    minimo = request.args.get("min", type=int)
+
+    q = Empresa.query
+    if ids:
+        lista = [int(x) for x in ids.split(",") if x.strip().isdigit()]
+        q = q.filter(Empresa.id.in_(lista))
+    else:
+        if escopo == "demo":
+            q = q.filter(DEMO_FILTER)
+        elif escopo == "pagantes":
+            q = q.filter(Empresa.status_pagamento == "aprovado")
+        # escopo=todas -> sem filtro adicional
+
+        if uf:
+            q = q.filter(db.func.upper(Empresa.estado) == uf.upper())
+
+    empresas = q.order_by(Empresa.id.desc()).all()
+    if not empresas:
+        return "Nenhuma empresa encontrada para o filtro.", 200
+
+    total_empresas = len(empresas)
+    total_add = 0
+    rel = []
+    for e in empresas:
+        add = _topup(e, minimo) if minimo else _cria_teares_fake(e, n or 5)
+        total_add += add
+        rel.append(f"{e.id}:{add}")
+
+    return f"OK: {total_add} teares adicionados em {total_empresas} empresas. Detalhe: {'; '.join(rel)}"
+
+@app.route("/utils/empresas_json2")
+def utils_empresas_json2():
+    """Lista empresas DEMO por padrão com contagem de teares. 
+       Use ?escopo=todas|pagantes e ?uf=SC."""
+    escopo = (request.args.get("escopo") or "demo").lower()
+    uf = request.args.get("uf")
+    q = Empresa.query
+    if escopo == "demo":
+        q = q.filter(DEMO_FILTER)
+    elif escopo == "pagantes":
+        q = q.filter(Empresa.status_pagamento == "aprovado")
+    if uf:
+        q = q.filter(db.func.upper(Empresa.estado) == uf.upper())
+
+    empresas = q.order_by(Empresa.id.desc()).all()
+    data = []
+    for e in empresas:
+        cnt = Tear.query.filter_by(empresa_id=e.id).count()
+        data.append({
+            "id": e.id,
+            "apelido": e.apelido or e.nome or getattr(e, "nome_fantasia", "") or "",
+            "estado": e.estado, "cidade": e.cidade,
+            "status_pagamento": getattr(e, "status_pagamento", None),
+            "teares": cnt
+        })
+    return jsonify(data)
+
+@app.route("/admin/impersonar2/<int:empresa_id>")
+def admin_impersonar2(empresa_id):
+    """Entra como a empresa (painel da malharia) sem senha.
+       /admin/impersonar2/123?token=ACHETECE"""
+    if not _seed_ok(): return "Não autorizado", 403
+    session["admin_impersonando"] = True
+    session["perfil"] = "malharia"
+    session["empresa_id"] = empresa_id
+    try:
+        return redirect(url_for("painel_malharia"))
+    except Exception:
+        return redirect("/")
+
+@app.route("/admin/desimpersonar2")
+def admin_desimpersonar2():
+    """Sai do modo 'entrar como'."""
+    session.pop("admin_impersonando", None)
+    session.pop("perfil", None)
+    session.pop("empresa_id", None)
+    return redirect(url_for("index"))
+# =============================================================================
+
 @app.get("/utils/demo-count")
 def utils_demo_count():
     from sqlalchemy import or_, and_
