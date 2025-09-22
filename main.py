@@ -265,7 +265,7 @@ def _to_int(s):
     except Exception:
         return None
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/", methods=["GET"])
 def index():
     # ---- helpers locais (seguros com dígitos/virgula) ----
     def _num_key(x):
@@ -280,7 +280,8 @@ def index():
         except Exception:
             return None
 
-    v = request.values  # GET e POST
+    # >>> Agora só GET (request.args), nada de POST/values
+    v = request.args
     filtros = {
         "tipo":     (v.get("tipo") or "").strip(),
         "diâmetro": (v.get("diâmetro") or v.get("diametro") or "").strip(),
@@ -298,31 +299,38 @@ def index():
     except Exception:
         pass
 
-    # ===== Opções dos selects (sempre a partir de TODOS) =====
+    # ===== Opções dos selects (a partir de TODOS) =====
+    # Agora calculamos 'estado' sempre; 'cidade' fica condicionada ao estado selecionado
     opcoes = {"tipo": [], "diâmetro": [], "galga": [], "estado": [], "cidade": []}
+
+    # Vamos acumular estados e mapear cidades por UF
+    from collections import defaultdict
+    cidades_por_uf = defaultdict(set)
+    tipos_set, diam_set, galga_set, estados_set = set(), set(), set(), set()
+
     for t_tipo, t_diam, t_fin, e_uf, e_cid in q_base.with_entities(
         Tear.tipo, Tear.diametro, Tear.finura, Empresa.estado, Empresa.cidade
     ).all():
-        if t_tipo and t_tipo not in opcoes["tipo"]:
-            opcoes["tipo"].append(t_tipo)
+        if t_tipo:
+            tipos_set.add(t_tipo)
         if t_diam is not None:
-            vd = str(t_diam)
-            if vd not in opcoes["diâmetro"]:
-                opcoes["diâmetro"].append(vd)
+            diam_set.add(str(t_diam))
         if t_fin is not None:
-            vg = str(t_fin)
-            if vg not in opcoes["galga"]:
-                opcoes["galga"].append(vg)
-        if e_uf and e_uf not in opcoes["estado"]:
-            opcoes["estado"].append(e_uf)
-        if e_cid and e_cid not in opcoes["cidade"]:
-            opcoes["cidade"].append(e_cid)
+            galga_set.add(str(t_fin))
+        if e_uf:
+            estados_set.add(e_uf)
+            if e_cid:
+                cidades_por_uf[e_uf].add(e_cid)
 
-    opcoes["tipo"].sort()
-    opcoes["diâmetro"].sort(key=_num_key)
-    opcoes["galga"].sort(key=_num_key)
-    opcoes["estado"].sort()
-    opcoes["cidade"].sort()
+    opcoes["tipo"] = sorted(tipos_set)
+    opcoes["diâmetro"] = sorted(diam_set, key=_num_key)
+    opcoes["galga"] = sorted(galga_set, key=_num_key)
+    opcoes["estado"] = sorted(estados_set)
+    # cidades: só do estado selecionado; caso não tenha estado, deixamos lista vazia
+    if filtros["estado"]:
+        opcoes["cidade"] = sorted(cidades_por_uf.get(filtros["estado"], set()))
+    else:
+        opcoes["cidade"] = []
 
     # ===== Aplica filtros progressivos =====
     q = q_base
@@ -399,8 +407,9 @@ def index():
         pagina=pagina,
         por_pagina=por_pagina,
         total_paginas=total_paginas,
+        # compat: se o template ainda referenciar 'estados', entregamos a mesma lista
+        estados=opcoes["estado"],
     )
-
 
 # --------------------------------------------------------------------
 # Login / Sessão
