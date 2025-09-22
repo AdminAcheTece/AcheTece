@@ -60,7 +60,7 @@
     /* ===== LAYOUT (FILTROS + DIREITA) ===== */
     .page-outer{max-width:1280px;margin:0 auto;padding:0 16px;}
 
-    /* Mensagem orientativa (entre cabeçalho e colunas) — sem fundo e sem borda */
+    /* Mensagem orientativa */
     .page-hint{
       width:100%;
       box-sizing:border-box;
@@ -93,7 +93,6 @@
     .filter-field{margin-bottom:12px;}
     .filter-field label{display:block;font-size:14px;margin-bottom:6px;color:#444;}
     .filter-field select{width:100%;height:40px;padding:8px 10px;border:1px solid #ccc;border-radius:10px;background:#fff;color:#333;}
-    /* ➜ NOVO: deixa inputs (galga/diâmetro) com o MESMO visual do select */
     .filter-field input[type="number"],
     .filter-field input[type="text"]{
       width:100%;
@@ -128,7 +127,6 @@
         z-index:1000;display:none;
       }
       body.filters-open .filters-backdrop{display:block;}
-      /* espaço para o botão fechar dentro do painel */
       .filters-title{padding-right:30px}
     }
 
@@ -183,7 +181,7 @@
     .mensagem-campo{color:red;font-size:13px;margin-top:-10px;margin-bottom:12px;}
     @keyframes aparecer{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
 
-    /* ajuste específico do botão Buscar (coluna de filtros) */
+    /* Botão Buscar (coluna de filtros) */
     .filters-panel .filter-actions .btn-primary{
       width:240px;
       height:44px;
@@ -193,7 +191,7 @@
       margin:8px 0 0 0;
     }
 
-    /* Botão "Limpar" na coluna de filtros — ESQUERDA (igual ao da direita) */
+    /* Botão "Limpar" na coluna de filtros — ESQUERDA */
     .filters-panel .filter-actions .btn-limpar{
       display:inline-flex;
       align-items:center;
@@ -205,7 +203,7 @@
       background:#F28C00;
       color:#fff;
       font-weight:700;
-      font-size:14px;          /* fonte igual */
+      font-size:14px;
       border:0;
       border-radius:9999px;
       text-decoration:none;
@@ -237,7 +235,7 @@
     .localizacao-card .btn-limpar:hover{ background:#E57F00; transform:translateY(-1px); }
     .localizacao-card .btn-limpar svg{ width:16px;height:16px;margin-right:8px;fill:none;stroke:#fff;stroke-width:2; }
 
-    /* ====== RESULTADOS (lista de teares) ====== */
+    /* ====== RESULTADOS ====== */
     .results-card{background:#fff;border:1px solid #eee;border-radius:12px;padding:12px;}
     .results-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 4px 10px;}
     .results-head h3{margin:0;font-size:16px;font-weight:700;}
@@ -260,6 +258,19 @@
       .teares-table td[data-label]{display:flex;gap:6px}
       .teares-table td[data-label]::before{content:attr(data-label) ":";font-weight:700;min-width:110px;color:#444}
     }
+
+    /* ====== Paginação ====== */
+    .pager{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:14px 4px 6px;flex-wrap:wrap}
+    .pager .group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .pager .btn-page{
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:36px;height:36px;padding:0 10px;border:1px solid #ddd;border-radius:10px;background:#fff;color:#333;
+      text-decoration:none;font-size:14px;
+    }
+    .pager .btn-page:hover{background:#f8f8f8}
+    .pager .btn-page[aria-disabled="true"]{opacity:.5;pointer-events:none}
+    .pager .info{font-size:13px;color:#666}
+    .pager select{height:36px;border:1px solid #ddd;border-radius:10px;padding:0 10px;background:#fff}
   </style>
 </head>
 <body>
@@ -293,7 +304,7 @@
   
   <div class="page-outer">
 
-    <!-- MENSAGEM ORIENTATIVA (sem fundo e sem borda) -->
+    <!-- MENSAGEM ORIENTATIVA -->
     <div class="page-hint" role="note">
       Para encontrar o <strong>tear ideal</strong> para sua produção, use os filtros abaixo.
     </div>
@@ -406,11 +417,11 @@
           </div>
         </section>
 
-        <!-- ===== RESULTADOS (abaixo da Localização) ===== -->
+        <!-- ===== RESULTADOS ===== -->
         <section class="results-card" aria-labelledby="res-title">
           <div class="results-head">
             <h3 id="res-title">Teares disponíveis</h3>
-            {% if teares %}
+            {% if total is defined %}
               <div class="results-count">{{ total }} resultado(s)</div>
             {% endif %}
           </div>
@@ -449,6 +460,59 @@
                   {% endfor %}
                 </tbody>
               </table>
+            </div>
+
+            <!-- PAGINAÇÃO -->
+            {% set filtro_diam = filtros.get('diâmetro') or filtros.get('diametro') or '' %}
+            <div class="pager">
+              <div class="group">
+                <a class="btn-page" href="{{ url_for('index',
+                      pagina=1,
+                      pp=por_pagina,
+                      tipo=filtros.get('tipo',''),
+                      diametro=filtro_diam,
+                      galga=filtros.get('galga',''),
+                      estado=filtros.get('estado',''),
+                      cidade=filtros.get('cidade','')) }}" aria-disabled="{{ 'true' if pagina==1 else 'false' }}">« Primeira</a>
+
+                <a class="btn-page" href="{{ url_for('index',
+                      pagina=(pagina-1 if pagina>1 else 1),
+                      pp=por_pagina,
+                      tipo=filtros.get('tipo',''),
+                      diametro=filtro_diam,
+                      galga=filtros.get('galga',''),
+                      estado=filtros.get('estado',''),
+                      cidade=filtros.get('cidade','')) }}" aria-disabled="{{ 'true' if pagina==1 else 'false' }}">‹ Anterior</a>
+
+                <span class="info">Página {{ pagina }} de {{ total_paginas }}</span>
+
+                <a class="btn-page" href="{{ url_for('index',
+                      pagina=(pagina+1 if pagina<total_paginas else total_paginas),
+                      pp=por_pagina,
+                      tipo=filtros.get('tipo',''),
+                      diametro=filtro_diam,
+                      galga=filtros.get('galga',''),
+                      estado=filtros.get('estado',''),
+                      cidade=filtros.get('cidade','')) }}" aria-disabled="{{ 'true' if pagina==total_paginas else 'false' }}">Próxima ›</a>
+
+                <a class="btn-page" href="{{ url_for('index',
+                      pagina=total_paginas,
+                      pp=por_pagina,
+                      tipo=filtros.get('tipo',''),
+                      diametro=filtro_diam,
+                      galga=filtros.get('galga',''),
+                      estado=filtros.get('estado',''),
+                      cidade=filtros.get('cidade','')) }}" aria-disabled="{{ 'true' if pagina==total_paginas else 'false' }}">Última »</a>
+              </div>
+
+              <div class="group">
+                <label for="ppSelect" class="info">Itens por página:</label>
+                <select id="ppSelect">
+                  <option value="20" {% if por_pagina==20 %}selected{% endif %}>20</option>
+                  <option value="50" {% if por_pagina==50 %}selected{% endif %}>50</option>
+                  <option value="100" {% if por_pagina==100 %}selected{% endif %}>100</option>
+                </select>
+              </div>
             </div>
           {% else %}
             <div style="padding:8px 10px;">Nenhum tear encontrado para os filtros atuais.</div>
@@ -519,7 +583,8 @@
               </span>
             </a>
 
-            <a class="list-item" href="{{ url_for('quem_somos') }}">
+            <!-- corrigido: endpoint view_quem_somos -->
+            <a class="list-item" href="{{ url_for('view_quem_somos') }}">
               <span class="list-icon"><img src="/static/logo_simbolo.png" alt="AcheTece" width="28" height="28" style="display:block"></span>
               <span class="list-text">Conheça o AcheTece</span>
               <span class="arrow"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 6l6 6-6 6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
@@ -553,7 +618,7 @@
         <div class="footer-col">
           <h4>Sobre nós</h4>
           <ul>
-            <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
+            <li><a href="{{ url_for('view_quem_somos') }}">O AcheTece</a></li>
             <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
             <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
             <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
@@ -591,7 +656,6 @@
     // Popula a combo de UFs (fallback) se vier vazia do template
     function ensureUFs(selectUF, selectedUF) {
       if (!selectUF) return;
-      // Se só existe a opção placeholder, insere as UFs
       if (selectUF.options.length <= 1) {
         UFS_BR.forEach(uf => {
           const opt = document.createElement('option');
@@ -600,7 +664,6 @@
           selectUF.appendChild(opt);
         });
       } else if (selectedUF) {
-        // Se o template já injetou as UFs, respeita seleção vinda da URL
         for (const o of selectUF.options) {
           if (o.value === selectedUF) { o.selected = true; break; }
         }
@@ -617,7 +680,6 @@
       try {
         const resp = await fetch('/api/cidades?uf=' + encodeURIComponent(uf));
         const lista = await resp.json();
-        // Aceita tanto ["Cidade"] quanto { cidades: ["Cidade"] }
         const cidades = Array.isArray(lista) ? lista : (lista.cidades || lista.cities || []);
         for (const nome of cidades) {
           const opt = document.createElement('option');
@@ -635,20 +697,16 @@
       const ufSel     = document.getElementById('estado_lookup');
       const cidadeSel = document.getElementById('cidade_lookup');
   
-      // Estado inicial vindo da URL (permite deep-link e refresh)
       const url = new URL(window.location);
       const ufInicial = url.searchParams.get('estado') || '';
       const cidadeInicial = url.searchParams.get('cidade') || '';
   
-      // Garante UFs no select (fallback) e aplica seleção inicial
       ensureUFs(ufSel, ufInicial);
   
-      // Se já existe UF na URL, carrega as cidades e pré-seleciona
       if (ufInicial) {
         carregarCidades(ufInicial, cidadeSel, cidadeInicial);
       }
   
-      // Ao trocar UF: atualiza URL, limpa cidade e recarrega lista
       ufSel.addEventListener('change', () => {
         const uf = ufSel.value || '';
         updateQueryStringParam('estado', uf);
@@ -657,16 +715,13 @@
         carregarCidades(uf, cidadeSel);
       });
   
-      // Se o usuário focar em CIDADE e ainda não estiver carregado, carrega na hora
       cidadeSel.addEventListener('focus', () => {
         const uf = ufSel.value || '';
-        // Se só tem placeholder e há UF, buscamos a lista
         if (cidadeSel.options.length <= 1 && uf) {
           carregarCidades(uf, cidadeSel);
         }
       });
   
-      // Ao escolher a cidade: atualiza URL e hidden inputs
       cidadeSel.addEventListener('change', () => {
         const cidade = cidadeSel.value || '';
         updateQueryStringParam('cidade', cidade);
@@ -677,22 +732,18 @@
       const clearBtn = document.getElementById('clearLocationBtn');
       if (clearBtn) {
         clearBtn.addEventListener('click', () => {
-          // limpa selects
           if (ufSel) ufSel.value = '';
           if (cidadeSel) {
             cidadeSel.innerHTML = '<option value="">Selecione a cidade</option>';
             cidadeSel.disabled = true;
           }
-          // limpa URL e hiddens
           updateQueryStringParam('estado', '');
           updateQueryStringParam('cidade', '');
           syncHidden('', '');
-          // foco de volta no estado
           if (ufSel) ufSel.focus();
         });
       }
   
-      // Sincroniza os hiddens na carga inicial
       syncHidden(ufInicial, cidadeInicial);
     })();
 
@@ -718,9 +769,20 @@
       if (closeBtn) closeBtn.addEventListener('click', closeFilters);
       if (backdrop) backdrop.addEventListener('click', closeFilters);
 
-      // Fecha com ESC
       document.addEventListener('keydown', (e)=>{
         if (e.key === 'Escape') closeFilters();
+      });
+    })();
+
+    // ===== JS: seletor "itens por página" (pp) =====
+    (function initPerPage(){
+      const ppSel = document.getElementById('ppSelect');
+      if (!ppSel) return;
+      ppSel.addEventListener('change', ()=>{
+        const url = new URL(window.location);
+        url.searchParams.set('pp', ppSel.value);
+        url.searchParams.set('pagina', '1'); // volta para a primeira ao mudar pp
+        window.location = url.toString();
       });
     })();
   </script>
