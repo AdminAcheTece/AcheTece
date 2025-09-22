@@ -267,7 +267,20 @@ def _to_int(s):
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    v = request.values
+    # ---- helpers locais (seguros com dígitos/virgula) ----
+    def _num_key(x):
+        try:
+            return float(str(x).replace(",", "."))
+        except Exception:
+            return 0.0
+
+    def _to_int(s):
+        try:
+            return int(float(str(s).replace(",", ".").strip()))
+        except Exception:
+            return None
+
+    v = request.values  # GET e POST
     filtros = {
         "tipo":     (v.get("tipo") or "").strip(),
         "diâmetro": (v.get("diâmetro") or v.get("diametro") or "").strip(),
@@ -276,13 +289,20 @@ def index():
         "cidade":   (v.get("cidade") or "").strip(),
     }
 
-    query_base = Tear.query.outerjoin(Empresa)
+    # ===== Base SEM restrição: TODOS os teares =====
+    q_base = Tear.query.outerjoin(Empresa)
 
-    # Opções dos selects
+    # Se existir campo 'ativo' em Tear e você quiser considerar só ativos:
+    try:
+        q_base = q_base.filter(Tear.ativo.is_(True))
+    except Exception:
+        pass
+
+    # ===== Opções dos selects (sempre a partir de TODOS) =====
     opcoes = {"tipo": [], "diâmetro": [], "galga": [], "estado": [], "cidade": []}
-    for t_tipo, t_diam, t_fin, e_uf, e_cid in (
-        query_base.with_entities(Tear.tipo, Tear.diametro, Tear.finura, Empresa.estado, Empresa.cidade).all()
-    ):
+    for t_tipo, t_diam, t_fin, e_uf, e_cid in q_base.with_entities(
+        Tear.tipo, Tear.diametro, Tear.finura, Empresa.estado, Empresa.cidade
+    ).all():
         if t_tipo and t_tipo not in opcoes["tipo"]:
             opcoes["tipo"].append(t_tipo)
         if t_diam is not None:
@@ -298,37 +318,43 @@ def index():
         if e_cid and e_cid not in opcoes["cidade"]:
             opcoes["cidade"].append(e_cid)
 
-    for k in ("tipo", "estado", "cidade"):
-        opcoes[k].sort()
+    opcoes["tipo"].sort()
     opcoes["diâmetro"].sort(key=_num_key)
     opcoes["galga"].sort(key=_num_key)
+    opcoes["estado"].sort()
+    opcoes["cidade"].sort()
 
-    # Aplica filtros
-    q = query_base
+    # ===== Aplica filtros progressivos =====
+    q = q_base
     if filtros["tipo"]:
-        q = q.filter(func.lower(Tear.tipo) == filtros["tipo"].lower())
+        q = q.filter(db.func.lower(Tear.tipo) == filtros["tipo"].lower())
+
     di = _to_int(filtros["diâmetro"])
     if di is not None:
         q = q.filter(Tear.diametro == di)
+
     ga = _to_int(filtros["galga"])
     if ga is not None:
         q = q.filter(Tear.finura == ga)
-    if filtros["estado"]:
-        q = q.filter(func.lower(Empresa.estado) == filtros["estado"].lower())
-    if filtros["cidade"]:
-        q = q.filter(func.lower(Empresa.cidade) == filtros["cidade"].lower())
 
-    # Paginação
-    pagina = int(request.args.get("pagina", 1) or 1)
-    por_pagina = 5
+    if filtros["estado"]:
+        q = q.filter(db.func.lower(Empresa.estado) == filtros["estado"].lower())
+    if filtros["cidade"]:
+        q = q.filter(db.func.lower(Empresa.cidade) == filtros["cidade"].lower())
+
+    # ===== Paginação (default 20 por página; aceito ?pp=50) =====
+    pagina = max(1, int(request.args.get("pagina", 1) or 1))
+    por_pagina = int(request.args.get("pp", 20) or 20)
+    por_pagina = max(1, min(100, por_pagina))  # guarda-chuva
+
     total = q.count()
     q = q.order_by(Tear.id.desc())
-    teares_paginados = q.offset((pagina - 1) * por_pagina).limit(por_pagina).all()
+    teares_page = q.offset((pagina - 1) * por_pagina).limit(por_pagina).all()
     total_paginas = max(1, (total + por_pagina - 1) // por_pagina)
 
-    # resultados (compat chaves)
+    # ===== Monta linhas da tabela =====
     resultados = []
-    for tear in teares_paginados:
+    for tear in teares_page:
         emp = getattr(tear, "empresa", None)
         apelido = (
             (emp.apelido if emp else None)
@@ -338,36 +364,43 @@ def index():
             or "—"
         )
         numero = re.sub(r"\D", "", (emp.telefone or "")) if emp else ""
-        contato_link = None
-        if numero:
-            contato_link = f"https://wa.me/{'55' + numero if not numero.startswith('55') else numero}"
-
-        tipo = tear.tipo or "—"
-        diam = tear.diametro if tear.diametro is not None else "—"
-        galg = tear.finura if tear.finura is not None else "—"
-        alim = tear.alimentadores if tear.alimentadores is not None else "—"
-        uf = (emp.estado if (emp and getattr(emp, "estado", None)) else "—")
-        cid = (emp.cidade if (emp and getattr(emp, "cidade", None)) else "—")
+        contato_link = f"https://wa.me/{'55' + numero if numero and not numero.startswith('55') else numero}" if numero else None
 
         item = {
-            "empresa": apelido, "tipo": tipo, "galga": galg, "diametro": diam,
-            "alimentadores": alim, "uf": uf, "estado": uf, "cidade": cid,
+            "empresa": apelido,
+            "tipo": tear.tipo or "—",
+            "galga": tear.finura if tear.finura is not None else "—",
+            "diametro": tear.diametro if tear.diametro is not None else "—",
+            "alimentadores": getattr(tear, "alimentadores", None) if getattr(tear, "alimentadores", None) is not None else "—",
+            "uf": (emp.estado if emp and getattr(emp, "estado", None) else "—"),
+            "cidade": (emp.cidade if emp and getattr(emp, "cidade", None) else "—"),
             "contato": contato_link,
-        }
-        item.update({
-            "Empresa": apelido, "Tipo": tipo, "Galga": galg, "Diâmetro": diam,
-            "Alimentadores": alim, "UF": uf, "Estado": uf, "Cidade": cid,
+            # chaves duplicadas (compat possíveis no template)
+            "Empresa": apelido,
+            "Tipo": tear.tipo or "—",
+            "Galga": tear.finura if tear.finura is not None else "—",
+            "Diâmetro": tear.diametro if tear.diametro is not None else "—",
+            "Alimentadores": getattr(tear, "alimentadores", None) if getattr(tear, "alimentadores", None) is not None else "—",
+            "UF": (emp.estado if emp and getattr(emp, "estado", None) else "—"),
+            "Cidade": (emp.cidade if emp and getattr(emp, "cidade", None) else "—"),
             "Contato": contato_link,
-        })
+        }
         resultados.append(item)
 
-    app.logger.info({"rota": "index", "total_encontrado": total, "pagina": pagina, "filtros": filtros})
+    app.logger.info({"rota": "index", "total_encontrado": total, "pagina": pagina, "pp": por_pagina, "filtros": filtros})
+
     return render_template(
         "index.html",
-        opcoes=opcoes, filtros=filtros,
-        resultados=resultados, teares=teares_paginados,
-        pagina=pagina, total_paginas=total_paginas, total=total
+        opcoes=opcoes,
+        filtros=filtros,
+        resultados=resultados,   # linhas da página
+        teares=teares_page,      # se houver cards
+        total=total,             # *** use isto para exibir "N resultados"
+        pagina=pagina,
+        por_pagina=por_pagina,
+        total_paginas=total_paginas,
     )
+
 
 # --------------------------------------------------------------------
 # Login / Sessão
