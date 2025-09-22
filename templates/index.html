@@ -304,18 +304,18 @@
       <button class="btn-open-filters" id="openFiltersBtn" type="button" aria-controls="filtersPanel" aria-expanded="false">Filtros</button>
     </div>
 
-    <div class="search-layout">
+    <!-- ======= FORM ÚNICO (GET) envolvendo as duas colunas ======= -->
+    <form id="filtrosForm" method="GET" action="{{ url_for('index') }}" class="search-layout">
 
       <!-- Backdrop para o painel de filtros no mobile -->
       <div class="filters-backdrop" id="filtersBackdrop" aria-hidden="true"></div>
 
-    <!-- COLUNA ESQUERDA: FILTROS (sem Estado/Cidade) -->
-    <aside class="filters-panel" id="filtersPanel" aria-label="Filtros de teares">
-      <button class="filters-close" id="closeFiltersBtn" type="button" aria-label="Fechar filtros">×</button>
-      <h2 class="filters-title">Filtrar teares</h2>
-    
-      <!-- id para auto-submit -->
-      <form method="POST" class="formulario" action="{{ url_for('index') }}" id="filtersForm">
+      <!-- COLUNA ESQUERDA: FILTROS (sem Estado/Cidade) -->
+      <aside class="filters-panel" id="filtersPanel" aria-label="Filtros de teares">
+        <button class="filters-close" id="closeFiltersBtn" type="button" aria-label="Fechar filtros">×</button>
+        <h2 class="filters-title">Filtrar teares</h2>
+
+        <!-- Campos técnicos -->
         {% for campo, opcoes_campo in opcoes.items() %}
           {% set c = campo|lower %}
           {% if c not in ['estado','cidade'] %}
@@ -327,6 +327,7 @@
                   type="number"
                   id="{{ campo }}"
                   name="{{ campo }}"
+                  class="auto-apply"
                   inputmode="numeric"
                   step="1"
                   min="1"
@@ -334,7 +335,7 @@
                   value="{{ filtros[campo] or '' }}"
                   autocomplete="off">
               </div>
-    
+
             {% elif c in ['diâmetro','diametro'] %}
               <div class="filter-field">
                 <label for="{{ campo }}">DIÂMETRO</label>
@@ -342,6 +343,7 @@
                   type="number"
                   id="{{ campo }}"
                   name="{{ campo }}"
+                  class="auto-apply"
                   inputmode="decimal"
                   step="0.1"
                   min="1"
@@ -349,11 +351,11 @@
                   value="{{ filtros[campo] or '' }}"
                   autocomplete="off">
               </div>
-    
+
             {% else %}
               <div class="filter-field">
                 <label for="{{ campo }}">{{ campo|capitalize }}</label>
-                <select name="{{ campo }}" id="{{ campo }}">
+                <select name="{{ campo }}" id="{{ campo }}" class="auto-apply">
                   <option value="">-- Todos --</option>
                   {% for opcao in opcoes_campo %}
                     <option value="{{ opcao }}" {% if filtros[campo] == opcao %}selected{% endif %}>{{ opcao }}</option>
@@ -361,41 +363,53 @@
                 </select>
               </div>
             {% endif %}
-    
+
           {% endif %}
         {% endfor %}
 
-          <!-- inputs “espelho” para carregar a localização escolhida à direita -->
-          <input type="hidden" name="estado" id="estado_hidden" value="{{ request.args.get('estado','') }}">
-          <input type="hidden" name="cidade" id="cidade_hidden" value="{{ request.args.get('cidade','') }}">
+        <!-- Hidden para paginação/pp -->
+        <input type="hidden" name="pagina" id="pagina_hidden" value="{{ request.args.get('pagina','1') }}">
+        <input type="hidden" name="pp" id="pp_hidden" value="{% if por_pagina is defined %}{{ por_pagina }}{% else %}{{ request.args.get('pp','20') }}{% endif %}">
 
-          <div class="filter-actions">
-            <button type="submit" class="btn-primary">Buscar</button>
-            <a href="{{ url_for('index') }}" class="btn-limpar" title="Limpar filtros">Limpar</a>
-          </div>
-        </form>
+        <div class="filter-actions">
+          <button type="submit" class="btn-primary">Buscar</button>
+          <a href="{{ url_for('index') }}" class="btn-limpar" title="Limpar filtros">Limpar</a>
+        </div>
       </aside>
 
-      <!-- COLUNA DIREITA: Localização + RESULTADOS -->
+      <!-- COLUNA DIREITA: Localização + RESULTADOS (localização dentro do form) -->
       <div class="right-col">
         <section class="localizacao-card" aria-labelledby="loc-title">
           <h2 id="loc-title">Localização</h2>
-      
           <div class="row">
             <div>
-              <label for="estado_lookup">Estado</label>
-              <select id="estado_lookup">
-                <option value="">Selecione o estado</option>
-                {% for uf in estados %}
-                  {% set sel_uf = request.args.get('estado','') %}
-                  <option value="{{ uf }}" {% if sel_uf==uf %}selected{% endif %}>{{ uf }}</option>
-                {% endfor %}
+              <label for="estado">Estado</label>
+              <select id="estado" name="estado" class="auto-apply">
+                <option value="">{{ 'Selecione o estado' }}</option>
+                {% set sel_uf = (filtros.get('estado') if filtros is defined else request.args.get('estado','')) %}
+                {% if estados is defined and estados %}
+                  {% for uf in estados %}
+                    <option value="{{ uf }}" {% if sel_uf==uf %}selected{% endif %}>{{ uf }}</option>
+                  {% endfor %}
+                {% elif opcoes is defined and opcoes.estado is defined %}
+                  {% for uf in opcoes.estado %}
+                    <option value="{{ uf }}" {% if sel_uf==uf %}selected{% endif %}>{{ uf }}</option>
+                  {% endfor %}
+                {% endif %}
               </select>
             </div>
             <div>
-              <label for="cidade_lookup">Cidade</label>
-              <select id="cidade_lookup" disabled>
-                <option value="">Selecione a cidade</option>
+              <label for="cidade">Cidade</label>
+              <select id="cidade" name="cidade" class="auto-apply" {% if not sel_uf %}disabled{% endif %}>
+                <option value="">
+                  {% if not sel_uf %}Selecione o estado primeiro{% else %}Todas{% endif %}
+                </option>
+                {% if sel_uf and opcoes is defined and opcoes.cidade is defined and opcoes.cidade %}
+                  {% set sel_cidade = (filtros.get('cidade') if filtros is defined else request.args.get('cidade','')) %}
+                  {% for c in opcoes.cidade %}
+                    <option value="{{ c }}" {% if sel_cidade==c %}selected{% endif %}>{{ c }}</option>
+                  {% endfor %}
+                {% endif %}
               </select>
             </div>
           </div>
@@ -504,8 +518,9 @@
         </section>
 
       </div><!-- /right-col -->
-      
-    </div><!-- /search-layout -->
+
+    </form><!-- /filtrosForm (form único) -->
+
   </div><!-- /page-outer -->
 
 
@@ -613,143 +628,35 @@
     </div>
   </footer>
 
-  <!-- ===== JS: Localização (direita) + RESULTADOS ===== -->
+  <!-- ===== JS ===== -->
   <script>
-    // Lista oficial de UFs (fallback caso o backend não injete {{ estados }})
-    const UFS_BR = [
-      "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS",
-      "MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"
-    ];
-  
-    // Atualiza/define parâmetro na URL preservando os demais, sem recarregar
-    function updateQueryStringParam(key, value) {
-      const url = new URL(window.location);
-      if (value === '' || value == null) { url.searchParams.delete(key); }
-      else { url.searchParams.set(key, value); }
-      window.history.replaceState({}, '', url);
-    }
-  
-    // Sincroniza hidden inputs do formulário de filtros (esquerda)
-    function syncHidden(uf, cidade) {
-      const hUF = document.getElementById('estado_hidden');
-      const hCidade = document.getElementById('cidade_hidden');
-      if (hUF) hUF.value = uf || '';
-      if (hCidade) hCidade.value = cidade || '';
-    }
-
-    // Auto-submit do formulário de filtros (sem precisar clicar em "Buscar")
-    let _autoSubmitTimer = null;
-    function autoSubmitFilters(delayMs = 0){
-      clearTimeout(_autoSubmitTimer);
-      _autoSubmitTimer = setTimeout(()=>{
-        // Ao mudar localização, resetamos a paginação para 1 via URL
-        updateQueryStringParam('pagina', '1');
-        const form = document.getElementById('filtersForm');
+    // ===== Auto-aplicar filtros =====
+    (function autoApply(){
+      const form = document.getElementById('filtrosForm');
+      const paginaHidden = document.getElementById('pagina_hidden');
+      function submitResetPage(){
+        if (paginaHidden) paginaHidden.value = '1';
         if (form) form.submit();
-      }, delayMs);
-    }
-  
-    // Popula a combo de UFs (fallback) se vier vazia do template
-    function ensureUFs(selectUF, selectedUF) {
-      if (!selectUF) return;
-      if (selectUF.options.length <= 1) {
-        UFS_BR.forEach(uf => {
-          const opt = document.createElement('option');
-          opt.value = uf; opt.textContent = uf;
-          if (selectedUF && selectedUF === uf) opt.selected = true;
-          selectUF.appendChild(opt);
-        });
-      } else if (selectedUF) {
-        for (const o of selectUF.options) {
-          if (o.value === selectedUF) { o.selected = true; break; }
-        }
       }
-    }
-  
-    // Carrega cidades para uma UF
-    async function carregarCidades(uf, selectCidade, selecionarValor) {
-      if (!selectCidade) return;
-      selectCidade.innerHTML = '<option value="">Selecione a cidade</option>';
-      selectCidade.disabled = true;
-      if (!uf) return;
-  
-      try {
-        const resp = await fetch('/api/cidades?uf=' + encodeURIComponent(uf));
-        const lista = await resp.json();
-        const cidades = Array.isArray(lista) ? lista : (lista.cidades || lista.cities || []);
-        for (const nome of cidades) {
-          const opt = document.createElement('option');
-          opt.value = nome; opt.textContent = nome;
-          if (selecionarValor && selecionarValor === nome) opt.selected = true;
-          selectCidade.appendChild(opt);
-        }
-        selectCidade.disabled = false;
-      } catch (e) {
-        console.warn('Falha ao carregar cidades para', uf, e);
-      }
-    }
-  
-    (function initLocalizacaoDireita(){
-      const ufSel     = document.getElementById('estado_lookup');
-      const cidadeSel = document.getElementById('cidade_lookup');
-  
-      const url = new URL(window.location);
-      const ufInicial = url.searchParams.get('estado') || '';
-      const cidadeInicial = url.searchParams.get('cidade') || '';
-  
-      ensureUFs(ufSel, ufInicial);
-  
-      if (ufInicial) {
-        carregarCidades(ufInicial, cidadeSel, cidadeInicial);
-      }
-  
-      // Ao trocar UF: grava na URL/hidden e aplica o filtro imediatamente
-      ufSel.addEventListener('change', () => {
-        const uf = ufSel.value || '';
-        updateQueryStringParam('estado', uf);
-        updateQueryStringParam('cidade', '');
-        syncHidden(uf, '');
-        // Não precisamos carregar cidades aqui porque haverá recarregamento.
-        autoSubmitFilters(); // aplica o filtro por UF
-      });
-  
-      // Se o usuário focar em CIDADE e ainda não estiver carregado, carrega na hora
-      cidadeSel.addEventListener('focus', () => {
-        const uf = ufSel.value || '';
-        if (cidadeSel.options.length <= 1 && uf) {
-          carregarCidades(uf, cidadeSel);
+      // Submete ao mudar selects
+      document.addEventListener('change', function(e){
+        const el = e.target;
+        if (el.matches('select.auto-apply')) {
+          submitResetPage();
         }
       });
-  
-      // Ao escolher a cidade: grava e aplica o filtro imediatamente
-      cidadeSel.addEventListener('change', () => {
-        const cidade = cidadeSel.value || '';
-        updateQueryStringParam('cidade', cidade);
-        syncHidden(ufSel.value || '', cidade);
-        autoSubmitFilters(); // aplica o filtro por UF+Cidade
+      // Debounce para inputs (galga/diâmetro)
+      let t=null;
+      document.addEventListener('input', function(e){
+        const el = e.target;
+        if (el.matches('input.auto-apply')) {
+          clearTimeout(t);
+          t = setTimeout(submitResetPage, 500);
+        }
       });
-
-      // === Botão "Limpar" (direita) ===
-      const clearBtn = document.getElementById('clearLocationBtn');
-      if (clearBtn) {
-        clearBtn.addEventListener('click', () => {
-          if (ufSel) ufSel.value = '';
-          if (cidadeSel) {
-            cidadeSel.innerHTML = '<option value="">Selecione a cidade</option>';
-            cidadeSel.disabled = true;
-          }
-          updateQueryStringParam('estado', '');
-          updateQueryStringParam('cidade', '');
-          syncHidden('', '');
-          if (ufSel) ufSel.focus();
-          autoSubmitFilters(); // aplica a limpeza imediatamente
-        });
-      }
-  
-      syncHidden(ufInicial, cidadeInicial);
     })();
 
-    // ===== JS: abrir/fechar painel de filtros no mobile =====
+    // ===== Abrir/fechar painel de filtros no mobile =====
     (function initMobileFilters(){
       const openBtn = document.getElementById('openFiltersBtn');
       const closeBtn = document.getElementById('closeFiltersBtn');
@@ -776,14 +683,17 @@
       });
     })();
 
-    // ===== JS: seletor "itens por página" (pp) =====
+    // ===== Seletor "itens por página" (pp) =====
     (function initPerPage(){
       const ppSel = document.getElementById('ppSelect');
+      const ppHidden = document.getElementById('pp_hidden');
       if (!ppSel) return;
       ppSel.addEventListener('change', ()=>{
+        // Atualiza hidden e volta para a primeira página
+        if (ppHidden) ppHidden.value = ppSel.value;
         const url = new URL(window.location);
         url.searchParams.set('pp', ppSel.value);
-        url.searchParams.set('pagina', '1'); // volta para a primeira ao mudar pp
+        url.searchParams.set('pagina', '1');
         window.location = url.toString();
       });
     })();
