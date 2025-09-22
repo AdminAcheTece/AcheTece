@@ -223,7 +223,7 @@ def _get_empresa_usuario_da_sessao():
         return None, None
     u = emp.usuario or Usuario.query.filter_by(email=emp.email).first()
     if not u:
-        u = Usuario(email=emp.email, senha_hash=emp.senha, role=None, is_active=True)
+        u = Usuario(email=emp.email, senha_hash=e.senha, role=None, is_active=True)  # type: ignore
         db.session.add(u); db.session.flush()
         emp.user_id = u.id
         db.session.commit()
@@ -526,7 +526,7 @@ def exportar():
     )
 
 # --------------------------------------------------------------------
-# Cadastro/edição de empresa (mantido simples)
+# Cadastro/edição de empresa (essencial)
 # --------------------------------------------------------------------
 @app.route('/cadastrar_empresa', methods=['GET', 'POST'])
 def cadastrar_empresa():
@@ -774,7 +774,6 @@ def admin_seed_teares_all():
             q = q.filter(DEMO_FILTER)
         elif escopo == "pagantes":
             q = q.filter(Empresa.status_pagamento == "aprovado")
-        # escopo=todas -> sem filtro
         if uf:
             q = q.filter(func.upper(Empresa.estado) == uf.upper())
 
@@ -834,7 +833,7 @@ def admin_desimpersonar():
     return redirect(url_for("index"))
 
 # --------------------------------------------------------------------
-# Outras rotas utilitárias/compat leves
+# Outras rotas utilitárias/compat
 # --------------------------------------------------------------------
 @app.route('/busca', methods=['GET', 'POST'])
 def buscar_teares():
@@ -893,6 +892,11 @@ def checkout():
 def pagamento_aprovado():
     return render_template('pagamento_aprovado.html')
 
+@app.route('/pagamento_sucesso')
+def pagamento_sucesso():
+    # compat (alguns templates/links antigos usam esta rota)
+    return render_template('pagamento_aprovado.html')
+
 @app.route('/pagamento_erro')
 def pagamento_erro():
     return render_template('pagamento_erro.html')
@@ -900,6 +904,19 @@ def pagamento_erro():
 @app.route('/pagamento_pendente')
 def pagamento_pendente():
     return render_template('pagamento_pendente.html')
+
+@app.route("/webhook", methods=["GET", "POST"])
+def webhook():
+    """
+    Stub de webhook para MP/integrações: registra payload e responde 200.
+    Evita 404 do MercadoPago e facilita debug em produção.
+    """
+    try:
+        payload = request.get_json(silent=True) or {}
+        app.logger.info(f"[WEBHOOK] {payload}")
+    except Exception as e:
+        app.logger.warning(f"[WEBHOOK] parse error: {e}")
+    return jsonify({"ok": True}), 200
 
 @app.route("/contato", methods=["GET", "POST"])
 def contato():
@@ -923,16 +940,18 @@ def contato():
                 erro = f"Falha ao enviar: {e}"
     return render_template("fale_conosco.html", enviado=enviado, erro=erro)
 
-@app.route("/quem_somos")
+# >>> ALIAS CORRIGIDO: endpoint 'quem_somos' (usado no template) <<<
+@app.route("/quem_somos", endpoint="quem_somos")
 @app.route("/quem_somos/")
 @app.route("/quem-somos")
 @app.route("/quem-somos/")
 def view_quem_somos():
     return render_template("quem_somos.html")
 
+# compat .html direto
 @app.route("/quem_somos.html")
 def quem_somos_html():
-    return redirect(url_for("view_quem_somos"), code=301)
+    return redirect(url_for("quem_somos"), code=301)
 
 @app.route('/rota-teste')
 def rota_teste():
@@ -1027,7 +1046,7 @@ def redefinir_senha(token):
     return render_template('redefinir_senha.html', token_valido=True)
 
 # --------------------------------------------------------------------
-# Páginas estáticas simples
+# Páginas estáticas simples / compat
 # --------------------------------------------------------------------
 @app.route('/fale_conosco')
 @app.route('/suporte')
@@ -1040,6 +1059,11 @@ def fale_conosco():
 @app.route("/termos")
 def termos():
     return render_template("termos_politicas.html")
+
+@app.route('/malharia_info')
+def malharia_info():
+    # compat: alguns templates podem linkar para esta página estática
+    return render_template('malharia_info.html')
 
 # --------------------------------------------------------------------
 # Entry point local (Render usa gunicorn main:app)
