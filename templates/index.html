@@ -133,9 +133,10 @@
     /* Direita */
     .right-col{display:flex;flex-direction:column;gap:16px;}
 
-    /* Card Localização (direita) */
+    /* Card Localização (direita) — largura igual à de resultados */
     .localizacao-card{
-      background:#fff;border:1px solid #eee;border-radius:12px;padding:16px 16px 8px;max-width:760px;
+      background:#fff;border:1px solid #eee;border-radius:12px;padding:16px 16px 8px;
+      width:100%;max-width:100%;
     }
     .localizacao-card h2{margin:0 0 10px 0;font-size:18px;font-weight:700;}
     .localizacao-card .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
@@ -309,7 +310,7 @@
       Para encontrar o <strong>tear ideal</strong> para sua produção, use os filtros abaixo.
     </div>
 
-    <!-- Botão “Filtros” (aparece só no mobile) -->
+    <!-- Botão “Filtros” (apenas mobile) -->
     <div class="filters-toggle-bar">
       <button class="btn-open-filters" id="openFiltersBtn" type="button" aria-controls="filtersPanel" aria-expanded="false">Filtros</button>
     </div>
@@ -324,7 +325,8 @@
       <button class="filters-close" id="closeFiltersBtn" type="button" aria-label="Fechar filtros">×</button>
       <h2 class="filters-title">Filtrar teares</h2>
     
-      <form method="POST" class="formulario" action="{{ url_for('index') }}">
+      <!-- id para auto-submit -->
+      <form method="POST" class="formulario" action="{{ url_for('index') }}" id="filtersForm">
         {% for campo, opcoes_campo in opcoes.items() %}
           {% set c = campo|lower %}
           {% if c not in ['estado','cidade'] %}
@@ -652,6 +654,18 @@
       if (hUF) hUF.value = uf || '';
       if (hCidade) hCidade.value = cidade || '';
     }
+
+    // Auto-submit do formulário de filtros (sem precisar clicar em "Buscar")
+    let _autoSubmitTimer = null;
+    function autoSubmitFilters(delayMs = 0){
+      clearTimeout(_autoSubmitTimer);
+      _autoSubmitTimer = setTimeout(()=>{
+        // Ao mudar localização, resetamos a paginação para 1 via URL
+        updateQueryStringParam('pagina', '1');
+        const form = document.getElementById('filtersForm');
+        if (form) form.submit();
+      }, delayMs);
+    }
   
     // Popula a combo de UFs (fallback) se vier vazia do template
     function ensureUFs(selectUF, selectedUF) {
@@ -707,14 +721,17 @@
         carregarCidades(ufInicial, cidadeSel, cidadeInicial);
       }
   
+      // Ao trocar UF: grava na URL/hidden e aplica o filtro imediatamente
       ufSel.addEventListener('change', () => {
         const uf = ufSel.value || '';
         updateQueryStringParam('estado', uf);
         updateQueryStringParam('cidade', '');
         syncHidden(uf, '');
-        carregarCidades(uf, cidadeSel);
+        // Não precisamos carregar cidades aqui porque haverá recarregamento.
+        autoSubmitFilters(); // aplica o filtro por UF
       });
   
+      // Se o usuário focar em CIDADE e ainda não estiver carregado, carrega na hora
       cidadeSel.addEventListener('focus', () => {
         const uf = ufSel.value || '';
         if (cidadeSel.options.length <= 1 && uf) {
@@ -722,10 +739,12 @@
         }
       });
   
+      // Ao escolher a cidade: grava e aplica o filtro imediatamente
       cidadeSel.addEventListener('change', () => {
         const cidade = cidadeSel.value || '';
         updateQueryStringParam('cidade', cidade);
         syncHidden(ufSel.value || '', cidade);
+        autoSubmitFilters(); // aplica o filtro por UF+Cidade
       });
 
       // === Botão "Limpar" (direita) ===
@@ -741,6 +760,7 @@
           updateQueryStringParam('cidade', '');
           syncHidden('', '');
           if (ufSel) ufSel.focus();
+          autoSubmitFilters(); // aplica a limpeza imediatamente
         });
       }
   
