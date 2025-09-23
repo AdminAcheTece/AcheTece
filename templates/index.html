@@ -20,6 +20,10 @@
       --malharia-bg:#E6FCF4; --malharia-fg:#0BA98B;
     }
 
+    /* ===== Reset para evitar rolagem lateral no mobile ===== */
+    html, body { max-width: 100%; overflow-x: hidden; }
+    *, *::before, *::after { box-sizing: border-box; }
+
     /* ===== HEADER ===== */
     .navbar{overflow:visible;padding-top:6px;padding-bottom:6px;display:flex;align-items:center;}
     .header-left,.header-right{display:flex;align-items:center;}
@@ -146,7 +150,7 @@
     }
     .localizacao-card h2{margin:0 0 10px 0;font-size:18px;font-weight:700;}
     .localizacao-card .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-    .localizacao-card label{display:block;font-size:14px;margin:8px 0 6px;color:#444;}
+    .localizacao-card label{display:block;font-size:14px;margin:8px 0 6px;color:#444;font-weight:700;}
     .localizacao-card select{width:100%;height:40px;padding:8px 10px;border:1px solid #ccc;border-radius:10px;background:#fff;color:#333;}
     @media (max-width:620px){.localizacao-card .row{grid-template-columns:1fr}}
 
@@ -186,7 +190,7 @@
     .mensagem-erro .botao-voltar{display:inline-block;margin-top:15px;padding:10px 20px;background:#8A00FF;color:#fff;font-weight:bold;border-radius:8px;text-decoration:none;transition:.2s;cursor:pointer;}
     .erro-campo{border:2px solid red;background:#fff5f5;}
     .mensagem-campo{color:red;font-size:13px;margin-top:-10px;margin-bottom:12px;}
-    @keyframes aparecer{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+    @keyframes aparecer{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}
 
     /* Botão "Limpar" na coluna de filtros — ESQUERDA */
     .filters-panel .filter-actions .btn-limpar{
@@ -227,7 +231,8 @@
     .results-head h3{margin:0;font-size:16px;font-weight:700;}
     .results-count{font-size:13px;color:#555;}
 
-    /* tabela */
+    /* Tabela (desktop) */
+    .table-wrap{overflow-x:auto;}
     .teares-table{width:100%;border-collapse:collapse;}
     .teares-table th,.teares-table td{padding:10px;border-bottom:1px solid #f1f1f1;text-align:left;font-size:14px;}
     .teares-table th{background:#fafafa;font-weight:700;}
@@ -235,14 +240,28 @@
     .btn-whats{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid #ddd;border-radius:9999px;text-decoration:none;font-size:13px;}
     .btn-whats:hover{background:#f8f8f8}
 
+    /* ====== Cards (mobile-first, estilo OLX) ====== */
+    .cards-grid{ display:grid; grid-template-columns:1fr; gap:12px; }
+    @media (min-width:768px){ .cards-grid{ grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width:1100px){ .cards-grid{ grid-template-columns: repeat(3, 1fr); } }
+
+    .card-tear{
+      background:#fff; border:1px solid #eee; border-radius:16px;
+      padding:14px; transition: box-shadow .2s ease, border-color .2s ease;
+    }
+    .card-tear:hover{ border-color:#ddd; box-shadow:0 2px 10px rgba(0,0,0,.04); }
+    .card-titulo{
+      font-weight:700; font-size:1rem; line-height:1.35; margin:0 0 8px;
+    }
+    .card-meta{ font-size:.875rem; color:#555; display:flex; gap:16px; flex-wrap:wrap; }
+
+    /* Mostrar apenas um modo por viewport */
     @media (max-width:820px){
-      .teares-table{display:block;}
-      .teares-table thead{display:none;}
-      .teares-table tbody{display:grid;gap:10px;}
-      .teares-table tr{display:grid;background:#fff;border:1px solid #eee;border-radius:12px;padding:10px;grid-template-columns:1fr;}
-      .teares-table td{border:0;padding:4px 0;}
-      .teares-table td[data-label]{display:flex;gap:6px}
-      .teares-table td[data-label]::before{content:attr(data-label) ":";font-weight:700;min-width:110px;color:#444}
+      .table-wrap{ display:none; }
+      .cards-grid{ display:grid; }
+    }
+    @media (min-width:821px){
+      .cards-grid{ display:none; }
     }
 
     /* ====== Paginação ====== */
@@ -419,7 +438,29 @@
             {% endif %}
           </div>
 
-          {% if teares and teares|length > 0 %}
+          {% if resultados and resultados|length > 0 %}
+
+            <!-- Cards (mobile-first, estilo OLX) -->
+            <div class="cards-grid">
+              {% for r in resultados %}
+                {% set tipo_txt = (r.tipo or '')|string|lower %}
+                {% set tipo_legivel = 'Mono' if tipo_txt[:4]=='mono' else ('Dupla' if tipo_txt[:5]=='dupla' else r.tipo) %}
+                <article class="card-tear">
+                  <h3 class="card-titulo">
+                    Tear Circular — {{ tipo_legivel }} — Diâm. {{ r.diametro or '?' }} — Fin. {{ r.galga or '?' }} — {{ r.uf }}/{{ r.cidade }}
+                  </h3>
+                  <div class="card-meta">
+                    <span class="cell-empresa">{{ r.empresa }}</span>
+                    {% if r.alimentadores %}<span>{{ r.alimentadores }} alimentadores</span>{% endif %}
+                    {% if r.contato %}
+                      <a href="{{ r.contato }}" target="_blank" rel="noopener" class="btn-whats">WhatsApp</a>
+                    {% endif %}
+                  </div>
+                </article>
+              {% endfor %}
+            </div>
+
+            <!-- Tabela (desktop) -->
             <div class="table-wrap">
               <table class="teares-table">
                 <thead>
@@ -437,7 +478,7 @@
                 <tbody>
                   {% for r in resultados %}
                     <tr>
-                      <td>{{ r.empresa }}</td>
+                      <td class="cell-empresa">{{ r.empresa }}</td>
                       <td>{{ r.tipo }}</td>
                       <td>{{ r.galga }}</td>
                       <td>{{ r.diametro }}</td>
