@@ -208,6 +208,36 @@
     .pager .btn-page[aria-disabled="true"]{opacity:.5;pointer-events:none}
     .pager .info{font-size:13px;color:#666}
     .pager select{height:36px;border:1px solid #ddd;border-radius:10px;padding:0 10px;background:#fff}
+
+    /* ===== Desktop: centralizar perfeitamente os botões do topo ===== */
+    @media (min-width:821px){
+      .btn-entrar,
+      .btn-anunciar{
+        height:44px;               /* levemente mais alto (opcional) */
+        padding:0 20px;
+        display:inline-flex;       /* garante alinhamento pelo flex */
+        align-items:center;        /* centraliza verticalmente */
+        justify-content:center;    /* centraliza horizontalmente */
+        line-height:1 !important;  /* evita deslocamento por baseline */
+      }
+      .btn-anunciar svg{
+        width:18px;height:18px;    /* ícone consistente */
+        margin-right:8px;
+        flex:0 0 auto;
+      }
+      .btn-anunciar span{line-height:1;}
+    }
+    
+    /* ===== Desktop: zebra + cabeçalho mais visível na tabela ===== */
+    @media (min-width:821px){
+      .teares-table thead th{
+        background:#EEEAF8;    /* roxo bem clarinho (pode trocar p/ #ECEFF4 se preferir cinza) */
+        color:#1f1b2e;
+      }
+      .teares-table tbody tr:nth-child(odd){  background:#FFFFFF; }
+      .teares-table tbody tr:nth-child(even){ background:#F7F3FF; } /* roxinho suave */
+      .teares-table tbody tr:hover{ background:#F0EBFF; }          /* realce no hover */
+    }
   </style>
 </head>
 <body>
