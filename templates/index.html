@@ -24,6 +24,14 @@
     html, body { max-width: 100%; overflow-x: hidden; }
     *, *::before, *::after { box-sizing: border-box; }
 
+    /* ===== Helpers de visibilidade ===== */
+    .mobile-only{ display:none; }
+    .desktop-only{ display:block; }
+    @media (max-width:820px){
+      .mobile-only{ display:block; }
+      .desktop-only{ display:none; }
+    }
+
     /* ===== HEADER ===== */
     .navbar{overflow:visible;padding-top:6px;padding-bottom:6px;display:flex;align-items:center;}
     .header-left,.header-right{display:flex;align-items:center;}
@@ -190,7 +198,7 @@
     .mensagem-erro .botao-voltar{display:inline-block;margin-top:15px;padding:10px 20px;background:#8A00FF;color:#fff;font-weight:bold;border-radius:8px;text-decoration:none;transition:.2s;cursor:pointer;}
     .erro-campo{border:2px solid red;background:#fff5f5;}
     .mensagem-campo{color:red;font-size:13px;margin-top:-10px;margin-bottom:12px;}
-    @keyframes aparecer{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}
+    @keyframes aparecer{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
 
     /* Botão "Limpar" na coluna de filtros — ESQUERDA */
     .filters-panel .filter-actions .btn-limpar{
@@ -240,11 +248,8 @@
     .btn-whats{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid #ddd;border-radius:9999px;text-decoration:none;font-size:13px;}
     .btn-whats:hover{background:#f8f8f8}
 
-    /* ====== Cards (mobile-first, estilo OLX) ====== */
+    /* ====== Cards (mobile – estilo OLX) ====== */
     .cards-grid{ display:grid; grid-template-columns:1fr; gap:12px; }
-    @media (min-width:768px){ .cards-grid{ grid-template-columns: repeat(2, 1fr); } }
-    @media (min-width:1100px){ .cards-grid{ grid-template-columns: repeat(3, 1fr); } }
-
     .card-tear{
       background:#fff; border:1px solid #eee; border-radius:16px;
       padding:14px; transition: box-shadow .2s ease, border-color .2s ease;
@@ -254,28 +259,6 @@
       font-weight:700; font-size:1rem; line-height:1.35; margin:0 0 8px;
     }
     .card-meta{ font-size:.875rem; color:#555; display:flex; gap:16px; flex-wrap:wrap; }
-
-    /* Mostrar apenas um modo por viewport */
-    @media (max-width:820px){
-      .table-wrap{ display:none; }
-      .cards-grid{ display:grid; }
-    }
-    @media (min-width:821px){
-      .cards-grid{ display:none; }
-    }
-
-    /* ====== Paginação ====== */
-    .pager{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:14px 4px 6px;flex-wrap:wrap}
-    .pager .group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-    .pager .btn-page{
-      display:inline-flex;align-items:center;justify-content:center;
-      min-width:36px;height:36px;padding:0 10px;border:1px solid #ddd;border-radius:10px;background:#fff;color:#333;
-      text-decoration:none;font-size:14px;
-    }
-    .pager .btn-page:hover{background:#f8f8f8}
-    .pager .btn-page[aria-disabled="true"]{opacity:.5;pointer-events:none}
-    .pager .info{font-size:13px;color:#666}
-    .pager select{height:36px;border:1px solid #ddd;border-radius:10px;padding:0 10px;background:#fff}
   </style>
 </head>
 <body>
@@ -440,28 +423,30 @@
 
           {% if resultados and resultados|length > 0 %}
 
-            <!-- Cards (mobile-first, estilo OLX) -->
-            <div class="cards-grid">
-              {% for r in resultados %}
-                {% set tipo_txt = (r.tipo or '')|string|lower %}
-                {% set tipo_legivel = 'Mono' if tipo_txt[:4]=='mono' else ('Dupla' if tipo_txt[:5]=='dupla' else r.tipo) %}
-                <article class="card-tear">
-                  <h3 class="card-titulo">
-                    Tear Circular — {{ tipo_legivel }} — Diâm. {{ r.diametro or '?' }} — Fin. {{ r.galga or '?' }} — {{ r.uf }}/{{ r.cidade }}
-                  </h3>
-                  <div class="card-meta">
-                    <span class="cell-empresa">{{ r.empresa }}</span>
-                    {% if r.alimentadores %}<span>{{ r.alimentadores }} alimentadores</span>{% endif %}
-                    {% if r.contato %}
-                      <a href="{{ r.contato }}" target="_blank" rel="noopener" class="btn-whats">WhatsApp</a>
-                    {% endif %}
-                  </div>
-                </article>
-              {% endfor %}
+            <!-- Cards (MOBILE APENAS) -->
+            <div class="mobile-only">
+              <div class="cards-grid">
+                {% for r in resultados %}
+                  {% set tipo_txt = (r.tipo or '')|string|lower %}
+                  {% set tipo_legivel = 'Mono' if tipo_txt[:4]=='mono' else ('Dupla' if tipo_txt[:5]=='dupla' else r.tipo) %}
+                  <article class="card-tear">
+                    <h3 class="card-titulo">
+                      Tear Circular — {{ tipo_legivel }} — Diâm. {{ r.diametro or '?' }} — Fin. {{ r.galga or '?' }} — {{ r.uf }}/{{ r.cidade }}
+                    </h3>
+                    <div class="card-meta">
+                      <span class="cell-empresa">{{ r.empresa }}</span>
+                      {% if r.alimentadores %}<span>{{ r.alimentadores }} alimentadores</span>{% endif %}
+                      {% if r.contato %}
+                        <a href="{{ r.contato }}" target="_blank" rel="noopener" class="btn-whats">WhatsApp</a>
+                      {% endif %}
+                    </div>
+                  </article>
+                {% endfor %}
+              </div>
             </div>
 
-            <!-- Tabela (desktop) -->
-            <div class="table-wrap">
+            <!-- Tabela (DESKTOP APENAS) -->
+            <div class="table-wrap desktop-only">
               <table class="teares-table">
                 <thead>
                   <tr>
