@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Digite o código - AcheTece</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="/static/favicon_final.ico">
+  <link rel="icon" type="image/png" href="/static/favicon_final.png">
+  <link rel="stylesheet" href="/static/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root{ --laranja:#F28C00; --laranja-hover:#E57F00; }
+    body{ background:#fafafa; }
+    .navbar{ padding:8px 12px; display:flex; align-items:center; }
+    .logo img{ height:48px; }
+    .auth-wrap{ min-height:calc(100vh - 110px); display:flex; justify-content:center; padding:24px 16px; }
+    .card{ width:100%; max-width:460px; background:#fff; border:1px solid #eee; border-radius:16px; padding:28px 24px; box-shadow:0 4px 14px rgba(0,0,0,.04); }
+    .title{ font-size:26px; font-weight:800; text-align:center; margin:0 0 6px; }
+    .sub{ text-align:center; color:#555; }
+    .pill{ display:inline-flex; align-items:center; justify-content:center; background:#f4f1ff; border:1px solid #e6ddff; color:#4b2ac7; border-radius:9999px; padding:6px 12px; font-weight:700; }
+    .email-row{ text-align:center; margin-top:6px; }
+    .digits{ display:flex; gap:12px; justify-content:center; margin:20px 0; }
+    .digits input{ width:48px; height:58px; border:2px solid #dcd6ff; border-radius:12px; text-align:center; font-size:24px; font-weight:800; outline:none; }
+    .digits input:focus{ border-color:#a895ff; box-shadow:0 0 0 3px #f1ecff; }
+    .btn{ display:inline-flex; align-items:center; justify-content:center; height:48px; width:100%; border-radius:9999px; border:0; cursor:pointer; font-weight:800; text-decoration:none; background:var(--laranja); color:#fff; }
+    .btn:hover{ background:var(--laranja-hover); }
+    .links{ display:flex; justify-content:center; gap:16px; margin-top:12px; }
+    .links a{ color:#5b2fff; text-decoration:none; font-weight:700; }
+  </style>
+</head>
+<body>
+  <header class="navbar"><div class="logo"><img src="/static/logo.jpg" alt="AcheTece"></div></header>
+
+  <main class="auth-wrap">
+    <section class="card" aria-labelledby="t">
+      <h1 id="t" class="title">Acesse sua conta</h1>
+      <div class="sub">Digite o código enviado para</div>
+      <div class="email-row"><span class="pill">{{ email or request.args.get('email','') }}</span></div>
+
+      <form action="/login/codigo/validar" method="POST" id="otpForm">
+        <input type="hidden" name="email" value="{{ email or request.args.get('email','') }}">
+        <div class="digits">
+          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" name="d1" autofocus>
+          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" name="d2">
+          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" name="d3">
+          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" name="d4">
+          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" name="d5">
+          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" name="d6">
+        </div>
+        <button class="btn" type="submit">Confirmar</button>
+      </form>
+
+      <div class="links">
+        <a href="/login/codigo/reenviar?email={{ email or request.args.get('email','') }}">Reenviar código</a>
+        <a href="/login/metodo?email={{ email or request.args.get('email','') }}">Voltar</a>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function(){
+      const inputs=[...document.querySelectorAll('.digits input')];
+      inputs.forEach((inp,i)=>{
+        inp.addEventListener('input', e=>{
+          e.target.value=e.target.value.replace(/\D/g,'').slice(0,1);
+          if(e.target.value && i<inputs.length-1) inputs[i+1].focus();
+        });
+        inp.addEventListener('keydown', e=>{
+          if(e.key==='Backspace' && !inp.value && i>0){ inputs[i-1].focus(); }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
