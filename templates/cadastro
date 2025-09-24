@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Cadastro - AcheTece</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="/static/favicon_final.ico">
+  <link rel="icon" type="image/png" href="/static/favicon_final.png">
+  <link rel="stylesheet" href="/static/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root{ --roxo:#8A00FF; --roxo-hover:#A63DFF; --laranja:#F28C00; --laranja-hover:#E57F00; }
+    body{background:#fafafa;}
+    .navbar{padding:6px 12px;display:flex;align-items:center;}
+    .logo img{height:48px}
+    .wrap{max-width:720px;margin:24px auto;padding:0 16px;}
+    .card{background:#fff;border:1px solid #eee;border-radius:16px;padding:24px;}
+    h1{font-size:24px;font-weight:800;margin:0 0 12px;text-align:center;}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width:680px){ .row{grid-template-columns:1fr} }
+    .label{font-size:14px;font-weight:700;margin:12px 0 6px;display:block}
+    .input,.select{width:100%;height:44px;border:1px solid #ccc;border-radius:10px;padding:0 12px;background:#fff}
+    .radios{display:flex;gap:16px;align-items:center}
+    .hint{font-size:12px;color:#666;margin-top:4px}
+    .btn{display:inline-flex;align-items:center;justify-content:center;height:46px;padding:0 18px;border-radius:9999px;font-weight:800;border:0;cursor:pointer;text-decoration:none;background:var(--laranja);color:#fff;width:100%;margin-top:16px}
+    .btn:hover{background:var(--laranja-hover)}
+    .back{display:inline-block;margin-top:10px;color:#5b2fff;text-decoration:none;font-weight:700;text-align:center;width:100%}
+  </style>
+</head>
+<body>
+  <header class="navbar"><div class="logo"><img src="/static/logo.jpg" alt="AcheTece"></div></header>
+
+  <main class="wrap">
+    <section class="card">
+      <h1>Crie a sua conta. É grátis!</h1>
+
+      <div class="row" style="margin:10px 0 8px">
+        <a class="input" style="display:flex;align-items:center;justify-content:center;height:48px;border:1px solid #ddd;border-radius:12px;text-decoration:none;color:#222" href="/oauth/google">
+          <img src="/static/ico_google.svg" alt="" width="20" height="20" style="margin-right:8px"> Entrar com Google
+        </a>
+        <a class="input" style="display:flex;align-items:center;justify-content:center;height:48px;border:1px solid #ddd;border-radius:12px;text-decoration:none;color:#222" href="/oauth/facebook">
+          <img src="/static/ico_facebook.svg" alt="" width="18" height="18" style="margin-right:8px"> Entrar com Facebook
+        </a>
+      </div>
+
+      <form action="/cadastro" method="POST" autocomplete="on">
+        <span class="label">Escolha o tipo da sua conta</span>
+        <div class="radios">
+          <label><input type="radio" name="tipo_pessoa" value="pf" checked> Pessoa Física</label>
+          <label><input type="radio" name="tipo_pessoa" value="pj"> Pessoa Jurídica</label>
+        </div>
+
+        <label class="label" for="cpf_cnpj">CPF/CNPJ</label>
+        <input class="input" id="cpf_cnpj" name="cpf_cnpj" placeholder="000.000.000-00">
+
+        <label class="label" for="nome">Nome completo</label>
+        <input class="input" id="nome" name="nome" required>
+
+        <label class="label" for="apelido">Como você quer ser chamado(a)?</label>
+        <input class="input" id="apelido" name="apelido" placeholder="Ex.: João S.">
+        <div class="hint">Aparecerá em seu perfil, anúncios e chats.</div>
+
+        <label class="label" for="nascimento">Data de nascimento</label>
+        <input class="input" id="nascimento" name="nascimento" placeholder="dd/mm/aaaa">
+
+        <label class="label" for="email">E-mail</label>
+        <input class="input" id="email" name="email" type="email" required>
+
+        <label class="label" for="senha">Crie uma senha</label>
+        <input class="input" id="senha" name="senha" type="password" required>
+
+        <button class="btn" type="submit">Criar conta</button>
+      </form>
+
+      <a class="back" href="/login">Voltar para o login</a>
+    </section>
+  </main>
+</body>
+</html>
