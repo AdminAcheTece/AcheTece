@@ -575,8 +575,9 @@ def index():
 # Login / Sessão  (fluxo multi-etapas)
 # --------------------------------------------------------------------
 
-# /login (somente GET). Mantém endpoint 'login' para compatibilidade com url_for('login')
-@app.route("/login", methods=["GET", "POST"])
+# /login (GET mostra a tela | POST recebe o e-mail)
+# Mantém endpoint 'login' para compatibilidade com url_for('login')
+@app.route("/login", methods=["GET", "POST"], endpoint="login")
 def view_login():
     if request.method == "GET":
         # permite pré-preencher via ?email=
@@ -585,53 +586,56 @@ def view_login():
 
     # POST (clicou Continuar)
     email = (request.form.get("email") or "").strip().lower()
-    if not email:
+    if not email or "@" not in email:
         return render_template("login.html", email=email, error="Informe um e-mail válido.")
 
+    # valida se existe conta antes de avançar (comportamento estilo OLX)
     existe = Empresa.query.filter(func.lower(Empresa.email) == email).first()
     if not existe:
         # não avança — mostra banner "não existe conta"
         return render_template("login.html", email=email, no_account=True)
 
     # ok, segue para escolha do método
-    return redirect(url_for("view_login_method", email=email))
+    return redirect(url_for("login_method", email=email))
 
-# Alias de compatibilidade: /login/ e /login/ (com barra)
+
+# Alias de compatibilidade: /login/ (barra no final)
 @app.get("/login/")
 def view_login_trailing():
     return redirect(url_for("login"), code=301)
 
+
 # Escolha do método (código por e-mail ou senha)
-@app.get("/login/metodo")
+@app.get("/login/metodo", endpoint="login_method")
 def view_login_method():
     email = (request.args.get("email") or "").strip().lower()
     if not email:
         flash("Informe um e-mail para continuar.", "warning")
-        return redirect(url_for("view_login"))
+        return redirect(url_for("login"))
     return render_template("login_method.html", email=email)
 
-# Aliases: com acento e com barra
+
+# Aliases da rota de método: com acento e com barra final
 @app.get("/login/método")
 def view_login_method_alias_accent():
-    # preserva query string (email)
-    return redirect(url_for("view_login_method", **request.args), code=301)
+    return redirect(url_for("login_method", **request.args), code=301)
 
 @app.get("/login/metodo/")
 def view_login_method_alias_trailing():
-    return redirect(url_for("view_login_method", **request.args), code=301)
+    return redirect(url_for("login_method", **request.args), code=301)
 
-# Dispara envio do código
+
+# Dispara envio do código (POST)
 @app.post("/login/codigo")
 def post_login_code():
     email = (request.form.get("email") or "").strip().lower()
     if not email:
         flash("Informe um e-mail válido.", "warning")
-        return redirect(url_for("view_login"))
+        return redirect(url_for("login"))
 
-    # NOVO: só envia código se existir conta
+    # só envia código se existir conta
     existe = Empresa.query.filter(func.lower(Empresa.email) == email).first()
     if not existe:
-        # volta para o login com o mesmo alerta da 1ª tela
         return render_template("login.html", email=email, no_account=True)
 
     ok, msg = _otp_send(
@@ -640,39 +644,45 @@ def post_login_code():
         ua=request.headers.get("User-Agent", ""),
     )
     flash(msg, "success" if ok else "error")
-    return redirect(url_for("get_login_code", email=email))
+    return redirect(url_for("login_code", email=email))
 
-# Tela para digitar o código
-@app.get("/login/codigo", endpoint="get_login_code")
+
+# Tela para digitar o código (GET)
+@app.get("/login/codigo", endpoint="login_code")
 def get_login_code():
     email = (request.args.get("email") or "").strip()
     if not email:
         return redirect(url_for("login"))
     return render_template("login_code.html", email=email)
 
-# Reenviar código
-@app.get("/login/codigo/reenviar")
+
+# Reenviar código (GET)
+@app.get("/login/codigo/reenviar", endpoint="resend_login_code")
 def resend_login_code():
     email = (request.args.get("email") or "").strip().lower()
     if not email:
         return redirect(url_for("login"))
-    ok, msg = _otp_send(email, ip=request.headers.get("X-Forwarded-For", request.remote_addr), ua=request.headers.get("User-Agent",""))
+    ok, msg = _otp_send(
+        email,
+        ip=request.headers.get("X-Forwarded-For", request.remote_addr),
+        ua=request.headers.get("User-Agent", "")
+    )
     flash(msg, "success" if ok else "error")
-    return redirect(url_for("get_login_code", email=email))
+    return redirect(url_for("login_code", email=email))
 
-# Validar código
-@app.post("/login/codigo/validar")
+
+# Validar código (POST)
+@app.post("/login/codigo/validar", endpoint="validate_login_code")
 def validate_login_code():
     email = (request.form.get("email") or "").strip().lower()
     code = "".join((request.form.get(k, "") for k in ("d1","d2","d3","d4","d5","d6")))
     ok, msg = _otp_validate(email, code)
     if not ok:
         flash(msg, "error")
-        return redirect(url_for("get_login_code", email=email))
+        return redirect(url_for("login_code", email=email))
 
     # Autenticação por e-mail (malharia)
     emp = Empresa.query.filter(func.lower(Empresa.email) == email).first()
-
     if emp:
         session["empresa_id"] = emp.id
         session["empresa_apelido"] = emp.apelido or emp.nome or emp.email.split("@")[0]
@@ -681,10 +691,10 @@ def validate_login_code():
 
     # Se não existir empresa, empurra para cadastro com e-mail pré-preenchido
     flash("E-mail ainda não cadastrado. Conclua seu cadastro para continuar.", "info")
-    # Caso seu template de cadastro suporte 'email' via query string:
-    return redirect(url_for("cadastro_get") + f"?email={email}")
+    return redirect(url_for("cadastro_get", email=email))
 
-# Senha: tela
+
+# Senha: tela (GET)
 @app.get("/login/senha")
 def view_login_password():
     email = (request.args.get("email") or "").strip()
@@ -692,7 +702,8 @@ def view_login_password():
         return redirect(url_for("login"))
     return render_template("login_password.html", email=email)
 
-# Senha: autenticar (é a sua lógica antiga de POST /login movida pra cá)
+
+# Senha: autenticar (POST)
 @app.post("/login/senha/entrar")
 def post_login_password():
     email = (request.form.get("email") or "").strip().lower()
@@ -717,6 +728,7 @@ def post_login_password():
     session["empresa_apelido"] = user.apelido or user.nome or user.email.split("@")[0]
     return redirect(url_for("painel_malharia"))
 
+
 # Logout
 @app.route("/logout")
 def logout():
@@ -724,15 +736,18 @@ def logout():
     session.pop("empresa_apelido", None)
     return redirect(url_for("index"))
 
-# Cadastro (mínimo para não dar 404)
+
+# Cadastro (atalho para não dar 404; reaproveita /cadastrar_empresa)
 @app.get("/cadastro")
 def cadastro_get():
-    return render_template("cadastro.html")
+    qs = request.query_string.decode()  # preserva ?email=...
+    destino = url_for("cadastrar_empresa")
+    return redirect(destino + (("?" + qs) if qs else ""))
 
 @app.post("/cadastro")
 def cadastro_post():
-    flash("Cadastro recebido.", "success")
-    return redirect(url_for("login"))
+    return redirect(url_for("cadastrar_empresa"))
+
 
 # ====== OAuth Google (stub para não dar 404 por enquanto) ======
 @app.get("/oauth/google")
