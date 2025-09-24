@@ -1,358 +1,62 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <title>Login da Malharia</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- Ícone da aba (favicon) -->
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
-    
-    <!-- Tipografia e seu CSS principal -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
-    <style>
-        /* =========================
-           BASE (igual ao busca.html)
-           ========================= */
-        body{ font-family:'Inter',sans-serif; background-color:#f2f2f2; margin:0; padding:0; color:#444; }
-
-        /* Não usar .container aqui p/ não conflitar com a busca */
-        .auth-container{
-          max-width:400px; margin:30px auto; padding:0 20px;
-        }
-
-        /* =========================
-           CABEÇALHO – igual ao index/busca
-           ========================= */
-        .navbar{ overflow:visible; padding-top:6px; padding-bottom:6px; background:#fff; border-bottom:1px solid #eee; }
-        .header-left,.header-right{ display:flex; align-items:center; }
-        .header-right{ margin-left:auto; gap:20px; }
-        .logo img{ max-height:40px; height:auto; width:auto; display:block; }
-
-        /* Links ao lado da logo não são exibidos */
-        .top-nav{ display:none; }
-
-        /* ===========================================================
-           MENU SUSPENSO — desktop ancorado; mobile centralizado
-           =========================================================== */
-        .menu-wrap{ position: relative; }
-        .hamburger{ position: relative; z-index: 10002; }
-        .hamburger{
-          display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
-          width:36px; height:36px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
-          box-shadow:none !important;
-        }
-        .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
-        .hamburger span + span{ margin-top:4px; }
-        @media (max-width: 768px){
-          .hamburger{ width:28px; height:28px; border-radius:8px; }
-          .hamburger span{ width:16px; height:2px; }
-          .hamburger span + span{ margin-top:3px; }
-        }
-
-        .menu-dropdown{
-          background:#fff; border:1px solid #eaeaea; border-radius:12px; box-shadow:none !important;
-          z-index:10001; max-height:80vh; overflow:auto;
-          opacity:0; pointer-events:none; transform: translateY(8px) scale(.98);
-          transition: opacity .18s ease, transform .18s ease;
-        }
-        .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
-
-        .menu-dropdown .menu-header{
-          display:flex; justify-content:flex-end; align-items:center; padding:8px 10px; background:transparent;
-        }
-        .menu-dropdown .menu-header span{ display:none; }
-        .menu-dropdown .menu-close{
-          display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px;
-          background:#f0f2f5; border:0; border-radius:10px; cursor:pointer;
-        }
-        .menu-dropdown .menu-close:hover{ background:#e9ebee; }
-        .menu-dropdown .menu-close:active{ background:#e3e5e9; }
-
-        .menu-dropdown .menu-item{ font-weight:400; display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222; }
-        .menu-dropdown .menu-item .icon{ width:18px; height:18px; color:#222; }
-        .menu-dropdown .menu-item:hover{ background:#f5f7ff; color:#8A00FF; border-radius:8px; }
-
-        /* DESKTOP (ancorado ao botão) */
-        @media (min-width:769px){
-          .menu-dropdown{
-            position:absolute; top:calc(100% + 8px); right:0; left:auto;
-            width:auto; min-width:220px; max-width:320px; padding-right:2px; transform-origin: top right;
-          }
-        }
-
-        /* MOBILE (centralizado) */
-        @media (max-width:768px){
-          .menu-wrap{ position: static; }
-          .menu-dropdown{
-            position: fixed;
-            top: calc(var(--nav-h, 64px) + 8px);
-            left: 50%;
-            right: auto;
-            width: max-content;
-            max-width: 90vw;
-            min-width: 160px;
-            padding: 4px 0;
-            max-height: calc(100vh - var(--nav-h, 64px) - 24px);
-            transform: translate(-50%, 8px) scale(.98);
-            transform-origin: top center;
-            -webkit-overflow-scrolling: touch;
-            border-radius:14px;
-          }
-          .menu-dropdown.open{ transform: translate(-50%, 0) scale(1); }
-        }
-
-        /* Casinha */
-        .icon-btn{
-          display:inline-flex; align-items:center; justify-content:center;
-          width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px;
-          background:#fff; cursor:pointer; transition:box-shadow .2s, transform .02s, background .2s;
-        }
-        .icon-btn:hover{ box-shadow:none !important; background:#f7f7f7; }
-        .icon-btn:active{ transform:translateY(1px); }
-        .icon{ width:20px; height:20px; color:#222; }
-
-        /* =========================
-           ESTILO ESPECÍFICO do login
-           ========================= */
-        .card{
-          background:#fff; padding:24px; border-radius:12px; box-shadow:none !important;
-        }
-        .titulo{ text-align:center; font-size:22px; font-weight:700; margin:0 0 8px; color:#8A00FF; }
-        .sub{ text-align:center; font-size:13px; color:#666; margin:0 0 18px; }
-        .formulario input{
-          width:100%; padding:12px; margin-bottom:12px; border:1px solid #ccc; border-radius:8px; font-size:14px;
-          background:#fff;
-        }
-        .esqueci-senha{ text-align:right; margin-top:-4px; margin-bottom:16px; }
-        .esqueci-senha a{ font-size:12px; color:#555; text-decoration:none; }
-        .botoes{ display:flex; justify-content:center; margin-top:8px; }
-        .formulario button{
-          width:100%; padding:12px; border:none; border-radius:8px; background-color:#8A00FF; color:#fff;
-          font-weight:700; font-size:14px; cursor:pointer;
-        }
-        .formulario button:hover{ background-color:#336be3; }
-        .cadastro-link{
-          display:block; text-align:center; margin-top:18px; padding:12px; border:2px solid #000; border-radius:8px;
-          font-weight:700; text-decoration:none; color:#000; background:#fff;
-        }
-        .cadastro-link:hover{ background-color:#f0f0f0; }
-        .mensagem-erro{
-          background-color:#ffe6e6; color:#b30000; border:1px solid #ff4d4d; padding:12px; border-radius:8px;
-          margin:0 0 16px; text-align:center;
-        }
-
-        /* ======= NOVO: botão Google ======= */
-        .btn-google {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-          background: #fff;
-          border: 1px solid #ddd;
-          border-radius: 50px;
-          padding: 8px 16px;
-          font-size: 14px;
-          font-weight: 500;
-          color: #444;
-          text-decoration: none;
-          cursor: pointer;
-          width: 100%;   /* para ocupar toda a largura como no exemplo */
-          box-sizing: border-box;
-          margin-bottom: 16px; /* <<< adiciona espaço abaixo */  
-        }
-        
-        .btn-google:hover {
-          background: #f7f7f7;
-        }
-        
-        .google-icon {
-          width: 20px;
-          height: 20px;
-        }
-
-    </style>
+  <meta charset="UTF-8">
+  <title>Entrar - AcheTece</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="/static/favicon_final.ico">
+  <link rel="icon" type="image/png" href="/static/favicon_final.png">
+  <link rel="stylesheet" href="/static/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root{ --roxo:#8A00FF; --roxo-hover:#A63DFF; --laranja:#F28C00; --laranja-hover:#E57F00; }
+    body{background:#fafafa;}
+    .navbar{padding:6px 12px;display:flex;align-items:center;}
+    .logo img{height:48px}
+    .auth-wrap{max-width:980px;margin:24px auto;padding:0 16px;display:grid;grid-template-columns:1fr 420px;gap:24px;}
+    @media (max-width:980px){ .auth-wrap{grid-template-columns:1fr} }
+    .card{background:#fff;border:1px solid #eee;border-radius:16px;padding:24px;}
+    .auth-title{font-size:24px;font-weight:800;margin:0 0 8px 0;text-align:center;}
+    .form-label{font-weight:700;font-size:14px;margin:12px 0 6px;display:block;}
+    .input{width:100%;height:44px;border:1px solid #ccc;border-radius:10px;padding:0 12px;}
+    .btn{display:inline-flex;align-items:center;justify-content:center;height:46px;padding:0 18px;border-radius:9999px;font-weight:800;border:0;cursor:pointer;text-decoration:none}
+    .btn-primary{background:var(--laranja);color:#fff;width:100%}
+    .btn-primary:hover{background:var(--laranja-hover)}
+    .or{display:flex;align-items:center;gap:12px;color:#777;margin:18px 0}
+    .or::before,.or::after{content:"";height:1px;background:#e6e6e6;flex:1}
+    .oauth{display:flex;gap:12px;justify-content:center}
+    .oauth a{display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:50%;border:1px solid #ddd;background:#fff}
+    .muted{color:#666;font-size:14px;text-align:center;margin-top:10px}
+    .muted a{color:#5b2fff;text-decoration:none}
+    .muted a:hover{text-decoration:underline}
+  </style>
 </head>
 <body>
-
-  <!-- ===== Cabeçalho (idêntico ao index/busca) ===== -->
+  <!-- Cabeçalho simples -->
   <header class="navbar">
-    <div class="header-left">
-      <div class="logo">
-        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece" decoding="async" fetchpriority="high">
-      </div>
-    </div>
-
-    <div class="header-right">
-      <!-- Casinha -->
-      <a href="{{ url_for('index') }}" class="icon-btn" aria-label="Página inicial" title="Página inicial">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 10.5 12 3l9 7.5"></path>
-          <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
-          <path d="M9 21V12h6v9"></path>
-        </svg>
-      </a>
-
-      <!-- Menu sanduíche -->
-      <div class="menu-wrap">
-        <button class="hamburger" id="hamburger" type="button" aria-label="Abrir menu" aria-controls="menu-lateral" aria-haspopup="menu" aria-expanded="false">
-          <span></span><span></span><span></span>
-        </button>
-
-        <nav class="menu-dropdown" id="menu-lateral" role="menu" aria-label="Menu rápido">
-          <div class="menu-header">
-            <span>Menu</span>
-            <button type="button" class="menu-close" aria-label="Fechar menu">
-              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
-              </svg>
-            </button>
-          </div>
-
-          <a href="{{ url_for('buscar_teares') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="11" cy="11" r="7"></circle>
-              <line x1="16.65" y1="16.65" x2="21" y2="21"></line>
-            </svg>
-            <span>Buscar Tear</span>
-          </a>
-
-          <a href="{{ url_for('malharia_info') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"></circle>
-              <path d="M9.5 9a2.5 2.5 0 1 1 4.1 2A3 3 0 0 0 12 13.6"></path>
-              <circle cx="12" cy="17" r="1.2" fill="currentColor"></circle>
-            </svg>
-            <span>Como Funciona</span>
-          </a>
-
-          <a href="{{ url_for('login') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="8" r="4"></circle>
-              <path d="M4 20a8 8 0 0 1 16 0"></path>
-            </svg>
-            <span>Já sou cadastrado</span>
-          </a>
-
-          <a href="{{ url_for('quem_somos') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"></circle>
-              <circle cx="12" cy="8" r="1.5" fill="currentColor"></circle>
-              <path d="M11 11h2v6h-2z" fill="currentColor"></path>
-            </svg>
-            <span>Quem Somos</span>
-          </a>
-
-          <a href="{{ url_for('contato') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 4h16v12H4z"></path>
-              <path d="M22 20H2"></path>
-              <path d="M22 8l-10 6L2 8" fill="none"></path>
-            </svg>
-            <span>Fale conosco</span>
-          </a>
-
-          <a href="{{ url_for('termos') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="4" y="4" width="16" height="16" rx="2"></rect>
-              <path d="M8 8h8M8 12h8M8 16h5"></path>
-            </svg>
-            <span>Termos e Políticas</span>
-          </a>
-        </nav>
-      </div>
-    </div>
+    <div class="logo"><img src="/static/logo.jpg" alt="AcheTece"></div>
   </header>
 
-  <!-- ===== Conteúdo do LOGIN ===== -->
-  <div class="auth-container">
-    <div class="card">
-      <h1 class="titulo" style="margin-bottom: 4px;">Já tem conta? Entre aqui</h1>
-      <p class="sub">(somente para malharias)</p>
+  <main class="auth-wrap">
+    <div></div><!-- coluna vazia p/ equilibrar layout desktop -->
+    <section class="card" aria-labelledby="t">
+      <h1 id="t" class="auth-title">Acesse a sua conta</h1>
 
-      {% if erro %}
-      <div class="mensagem-erro">{{ erro }}</div>
-      {% endif %}
-
-      <!-- Botão Google -->
-      <a href="{{ url_for('login_google') }}" class="btn-google">
-        <img src="{{ url_for('static', filename='icone_google.png') }}" alt="Google" class="google-icon">
-        <span>Entrar com Google</span>
-      </a>
-
-      <form method="POST" action="{{ url_for('login') }}" class="formulario">
-        <input type="email" name="email" placeholder="E-mail" required>
-        <input type="password" name="senha" placeholder="Senha" required>
-
-        <div class="esqueci-senha">
-          <a href="{{ url_for('esqueci_senha') }}">Esqueceu a senha?</a>
-        </div>
-
-        <div class="botoes">
-          <button type="submit">Entrar</button>
-        </div>
+      <form action="/login/metodo" method="GET" autocomplete="on">
+        <label class="form-label" for="email">E-mail</label>
+        <input class="input" id="email" name="email" type="email" placeholder="seuemail@empresa.com" required>
+        <div style="height:10px"></div>
+        <button class="btn btn-primary" type="submit">Continuar</button>
       </form>
 
-      <a class="cadastro-link" href="{{ url_for('cadastrar_empresa') }}">
-        Não tem um conta? Criar conta
-      </a>
-    </div>
-  </div>
+      <div class="or"><span>Ou conecte com</span></div>
+      <div class="oauth">
+        <a href="/oauth/google" aria-label="Entrar com Google"><img src="/static/ico_google.svg" alt="" width="24" height="24"></a>
+        <a href="/oauth/facebook" aria-label="Entrar com Facebook"><img src="/static/ico_facebook.svg" alt="" width="22" height="22"></a>
+      </div>
 
-  <!-- ===== Scripts do MENU (copiados do busca.html) ===== -->
-  <script>
-    (function () {
-      function closeAll() {
-        document.querySelectorAll('.menu-wrap .menu-dropdown.open').forEach(m => {
-          m.classList.remove('open');
-          const b = m.closest('.menu-wrap')?.querySelector('.hamburger');
-          if (b) b.setAttribute('aria-expanded', 'false');
-        });
-      }
-
-      document.querySelectorAll('.menu-wrap').forEach(wrap => {
-        const btn  = wrap.querySelector('#hamburger');
-        const menu = wrap.querySelector('#menu-lateral');
-        const xBtn = wrap.querySelector('.menu-close');
-        if (!btn || !menu) return;
-
-        btn.addEventListener('click', e => {
-          e.stopPropagation();
-          const willOpen = !menu.classList.contains('open');
-          closeAll();
-          menu.classList.toggle('open', willOpen);
-          btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-        });
-
-        xBtn?.addEventListener('click', e => {
-          e.stopPropagation();
-          menu.classList.remove('open');
-          btn.setAttribute('aria-expanded', 'false');
-        });
-
-        menu.addEventListener('click', e => e.stopPropagation());
-      });
-
-      document.addEventListener('click', closeAll);
-      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
-    })();
-  </script>
-
-  <!-- Mede altura do topo para posicionar o menu no mobile -->
-  <script>
-    (function(){
-      function setNavH(){
-        const promo = document.querySelector('.promo-bar'); // pode não existir
-        const nav   = document.querySelector('.navbar');
-        const total = (promo?.offsetHeight || 0) + (nav?.offsetHeight || 0);
-        document.documentElement.style.setProperty('--nav-h', total + 'px');
-      }
-      setNavH();
-      window.addEventListener('resize', setNavH);
-    })();
-  </script>
+      <p class="muted">Não tem uma conta? <a href="/cadastro">Cadastre-se</a></p>
+    </section>
+  </main>
 </body>
 </html>
