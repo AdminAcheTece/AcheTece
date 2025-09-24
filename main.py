@@ -576,9 +576,25 @@ def index():
 # --------------------------------------------------------------------
 
 # /login (somente GET). Mantém endpoint 'login' para compatibilidade com url_for('login')
-@app.get("/login", endpoint="login")
+@app.route("/login", methods=["GET", "POST"])
 def view_login():
-    return render_template("login.html")
+    if request.method == "GET":
+        # permite pré-preencher via ?email=
+        email = (request.args.get("email") or "").strip().lower()
+        return render_template("login.html", email=email)
+
+    # POST (clicou Continuar)
+    email = (request.form.get("email") or "").strip().lower()
+    if not email:
+        return render_template("login.html", email=email, error="Informe um e-mail válido.")
+
+    existe = Empresa.query.filter(func.lower(Empresa.email) == email).first()
+    if not existe:
+        # não avança — mostra banner "não existe conta"
+        return render_template("login.html", email=email, no_account=True)
+
+    # ok, segue para escolha do método
+    return redirect(url_for("view_login_method", email=email))
 
 # Alias de compatibilidade: /login/ e /login/ (com barra)
 @app.get("/login/")
@@ -588,10 +604,10 @@ def view_login_trailing():
 # Escolha do método (código por e-mail ou senha)
 @app.get("/login/metodo")
 def view_login_method():
-    email = (request.args.get("email") or "").strip()
+    email = (request.args.get("email") or "").strip().lower()
     if not email:
         flash("Informe um e-mail para continuar.", "warning")
-        return redirect(url_for("login"))
+        return redirect(url_for("view_login"))
     return render_template("login_method.html", email=email)
 
 # Aliases: com acento e com barra
@@ -610,8 +626,19 @@ def post_login_code():
     email = (request.form.get("email") or "").strip().lower()
     if not email:
         flash("Informe um e-mail válido.", "warning")
-        return redirect(url_for("login"))
-    ok, msg = _otp_send(email, ip=request.headers.get("X-Forwarded-For", request.remote_addr), ua=request.headers.get("User-Agent",""))
+        return redirect(url_for("view_login"))
+
+    # NOVO: só envia código se existir conta
+    existe = Empresa.query.filter(func.lower(Empresa.email) == email).first()
+    if not existe:
+        # volta para o login com o mesmo alerta da 1ª tela
+        return render_template("login.html", email=email, no_account=True)
+
+    ok, msg = _otp_send(
+        email,
+        ip=request.headers.get("X-Forwarded-For", request.remote_addr),
+        ua=request.headers.get("User-Agent", ""),
+    )
     flash(msg, "success" if ok else "error")
     return redirect(url_for("get_login_code", email=email))
 
