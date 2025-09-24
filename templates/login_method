@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Método de acesso - AcheTece</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="/static/favicon_final.ico">
+  <link rel="icon" type="image/png" href="/static/favicon_final.png">
+  <link rel="stylesheet" href="/static/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root{ --roxo:#8A00FF; --roxo-hover:#A63DFF; --laranja:#F28C00; --laranja-hover:#E57F00; }
+    body{background:#fafafa;}
+    .navbar{padding:6px 12px;display:flex;align-items:center;}
+    .logo img{height:48px}
+    .wrap{max-width:980px;margin:24px auto;padding:0 16px;display:grid;grid-template-columns:1fr 420px;gap:24px;}
+    @media (max-width:980px){ .wrap{grid-template-columns:1fr} }
+    .card{background:#fff;border:1px solid #eee;border-radius:16px;padding:24px;}
+    .title{font-size:24px;font-weight:800;margin:0 0 12px;text-align:center;}
+    .pill{display:inline-flex;align-items:center;justify-content:center;background:#f4f1ff;border:1px solid #e6ddff;color:#4b2ac7;border-radius:9999px;padding:6px 12px;font-weight:700;gap:8px}
+    .option{display:flex;align-items:center;justify-content:space-between;border:1px solid #eee;border-radius:12px;padding:14px 16px;margin:12px 0;background:#fff;cursor:pointer;text-decoration:none;color:#222}
+    .option:hover{border-color:#e2d9ff;background:#faf8ff}
+    .back{display:inline-block;margin-top:8px;color:#5b2fff;text-decoration:none;font-weight:700}
+  </style>
+</head>
+<body>
+  <header class="navbar"><div class="logo"><img src="/static/logo.jpg" alt="AcheTece"></div></header>
+
+  <main class="wrap">
+    <div></div>
+    <section class="card" aria-labelledby="t">
+      <h1 id="t" class="title">Acesse sua conta</h1>
+
+      <div style="text-align:center;margin-bottom:16px;">
+        <span class="pill">{{ email or request.args.get('email','') }}</span>
+      </div>
+
+      <!-- E-mail (código) -->
+      <form action="/login/codigo" method="POST">
+        <input type="hidden" name="email" value="{{ email or request.args.get('email','') }}">
+        <button class="option" type="submit" aria-label="Receber código por e-mail">
+          <div>
+            <div style="font-weight:800">E-mail</div>
+            <div style="font-size:13px;color:#666">Enviaremos um código para o seu e-mail</div>
+          </div>
+          <span style="font-size:20px;opacity:.6">›</span>
+        </button>
+      </form>
+
+      <!-- Senha -->
+      <form action="/login/senha" method="GET">
+        <input type="hidden" name="email" value="{{ email or request.args.get('email','') }}">
+        <button class="option" type="submit" aria-label="Entrar com senha">
+          <div>
+            <div style="font-weight:800">Senha</div>
+            <div style="font-size:13px;color:#666">Informe sua senha</div>
+          </div>
+          <span style="font-size:20px;opacity:.6">›</span>
+        </button>
+      </form>
+
+      <a href="/login" class="back">Voltar</a>
+    </section>
+  </main>
+</body>
+</html>
