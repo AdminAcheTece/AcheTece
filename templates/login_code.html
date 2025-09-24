@@ -1,63 +1,145 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Digite o código - AcheTece</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" type="image/x-icon" href="/static/favicon_final.ico">
-  <link rel="icon" type="image/png" href="/static/favicon_final.png">
-  <link rel="stylesheet" href="/static/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/x-icon" href="/static/favicon_final.ico" />
+  <link rel="icon" type="image/png" href="/static/favicon_final.png" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet" />
   <style>
-    :root{ --laranja:#F28C00; --laranja-hover:#E57F00; }
-    body{ background:#fafafa; }
+    :root { --roxo:#8A00FF; --roxo-hover:#A63DFF; --laranja:#F28C00; --laranja-hover:#E57F00; }
+    body{ background:#fafafa; font-family:'Inter', system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial, sans-serif; }
     .navbar{ padding:8px 12px; display:flex; align-items:center; }
-    .logo img{ height:48px; }
+    .logo img{ height:48px; width:auto; display:block; }
+
     .auth-wrap{ min-height:calc(100vh - 110px); display:flex; justify-content:center; padding:24px 16px; }
-    .card{ width:100%; max-width:460px; background:#fff; border:1px solid #eee; border-radius:16px; padding:28px 24px; box-shadow:0 4px 14px rgba(0,0,0,.04); }
-    .title{ font-size:26px; font-weight:800; text-align:center; margin:0 0 6px; }
-    .sub{ text-align:center; color:#555; }
-    .pill{ display:inline-flex; align-items:center; justify-content:center; background:#f4f1ff; border:1px solid #e6ddff; color:#4b2ac7; border-radius:9999px; padding:6px 12px; font-weight:700; }
-    .email-row{ text-align:center; margin-top:6px; }
-    .digits{ display:flex; gap:12px; justify-content:center; margin:20px 0; }
-    .digits input{ width:48px; height:58px; border:2px solid #dcd6ff; border-radius:12px; text-align:center; font-size:24px; font-weight:800; outline:none; }
-    .digits input:focus{ border-color:#a895ff; box-shadow:0 0 0 3px #f1ecff; }
-    .btn{ display:inline-flex; align-items:center; justify-content:center; height:48px; width:100%; border-radius:9999px; border:0; cursor:pointer; font-weight:800; text-decoration:none; background:var(--laranja); color:#fff; }
+    .card{
+      width:100%; max-width:560px;
+      background:#fff; border:1px solid #eee; border-radius:16px;
+      padding:26px 24px 18px; box-shadow:0 4px 14px rgba(0,0,0,.04);
+    }
+    .title{ font-size:28px; font-weight:800; text-align:center; margin:0 0 6px; color:#1e1b2b; }
+    .subtitle{ text-align:center; color:#555; margin:0 0 12px; }
+
+    .pill{
+      display:inline-flex; align-items:center; justify-content:center;
+      background:#f5f0ff; border:1px solid #e5dbff; color:#4b2ac7;
+      border-radius:9999px; padding:10px 18px; font-weight:800;
+      max-width:100%; margin:0 auto 12px; font-size:15px;
+    }
+    .email-row{ text-align:center; }
+
+    .digits{ display:flex; gap:12px; justify-content:center; margin:18px 0 18px; }
+    .digits input{
+      width:54px; height:62px; border:2px solid #e2d9ff; border-radius:12px;
+      text-align:center; font-size:24px; font-weight:800; outline:none; caret-color:#6e42ff;
+      box-shadow:0 0 0 0 rgba(0,0,0,0); transition:border-color .15s, box-shadow .15s;
+    }
+    .digits input:focus{ border-color:#a895ff; box-shadow:0 0 0 4px #f3eeff; }
+
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      height:50px; width:100%; border-radius:9999px; border:0; cursor:pointer;
+      font-weight:800; color:#fff; background:var(--laranja);
+    }
     .btn:hover{ background:var(--laranja-hover); }
-    .links{ display:flex; justify-content:center; gap:16px; margin-top:12px; }
-    .links a{ color:#5b2fff; text-decoration:none; font-weight:700; }
+
+    .links{ display:flex; justify-content:center; gap:22px; margin:12px 0 10px; font-weight:800; }
+    .links a{ color:#5b2fff; text-decoration:none; }
+    .links a:hover{ text-decoration:underline; }
+
+    /* quadros informativos (como OLX) */
+    .tips{ margin-top:6px; display:grid; gap:10px; }
+    .tip{
+      display:grid; grid-template-columns:40px 1fr; align-items:center; gap:12px;
+      background:#f6f6f9; border:1px solid #eee; border-radius:12px; padding:14px 14px;
+    }
+    .tip .i{
+      width:40px; height:40px; border-radius:10px; background:#fff;
+      display:flex; align-items:center; justify-content:center; border:1px solid #e9e9ef;
+    }
+    .tip p{ margin:0; color:#434343; font-size:14px; line-height:1.35; }
+
+    .back{ display:inline-block; margin-top:6px; color:#5b2fff; text-decoration:none; font-weight:800; }
+    .back:hover{ text-decoration:underline; }
+
+    .help{ margin:14px 0 0; text-align:center; font-size:14px; }
+    .help a{ color:#5b2fff; text-decoration:none; font-weight:700; }
+    .help a:hover{ text-decoration:underline; }
+
+    .legal{
+      margin-top:6px; font-size:12.5px; color:#6f6f6f; text-align:center; line-height:1.45;
+    }
+    .legal a{ color:#5b2fff; text-decoration:none; }
+    .legal a:hover{ text-decoration:underline; }
   </style>
 </head>
 <body>
-  <header class="navbar"><div class="logo"><img src="/static/logo.jpg" alt="AcheTece"></div></header>
+  <header class="navbar">
+    <div class="logo"><img src="/static/logo.jpg" alt="AcheTece"></div>
+  </header>
 
   <main class="auth-wrap">
     <section class="card" aria-labelledby="t">
       <h1 id="t" class="title">Acesse sua conta</h1>
-      <div class="sub">Digite o código enviado para</div>
+      <p class="subtitle">Digite o código enviado para</p>
       <div class="email-row"><span class="pill">{{ email or request.args.get('email','') }}</span></div>
 
-      <form action="/login/codigo/validar" method="POST" id="otpForm">
+      <form action="{{ url_for('validate_login_code') }}" method="POST" id="otpForm">
         <input type="hidden" name="email" value="{{ email or request.args.get('email','') }}">
         <div class="digits">
-          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" name="d1" autofocus>
-          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" name="d2">
-          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" name="d3">
-          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" name="d4">
-          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" name="d5">
-          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" name="d6">
+          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" name="d1" autofocus />
+          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" name="d2" />
+          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" name="d3" />
+          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" name="d4" />
+          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" name="d5" />
+          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" name="d6" />
         </div>
         <button class="btn" type="submit">Confirmar</button>
       </form>
 
       <div class="links">
-        <a href="/login/codigo/reenviar?email={{ email or request.args.get('email','') }}">Reenviar código</a>
-        <a href="/login/metodo?email={{ email or request.args.get('email','') }}">Voltar</a>
+        <a href="{{ url_for('resend_login_code', email=(email or request.args.get('email',''))) }}">Reenviar código</a>
+        <a href="{{ url_for('view_login_method', email=(email or request.args.get('email',''))) }}">Voltar</a>
       </div>
+
+      <div class="tips" aria-label="Orientações">
+        <div class="tip">
+          <div class="i" aria-hidden="true">
+            <!-- ícone envelope -->
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6e42ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 6h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/>
+              <path d="m22 8-10 6L2 8"/>
+            </svg>
+          </div>
+          <p>Caso não tenha encontrado o e-mail, verifique sua caixa de Spam.</p>
+        </div>
+        <div class="tip">
+          <div class="i" aria-hidden="true">
+            <!-- ícone info -->
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6e42ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12" y2="8"></line>
+            </svg>
+          </div>
+          <p>O código é privado. Não compartilhe essa informação com ninguém.</p>
+        </div>
+      </div>
+
+      <p class="help">Precisa de ajuda? <a href="{{ url_for('contato') }}">Fale conosco</a></p>
+      <p class="legal">
+        Ao continuar, você concorda com os
+        <a href="{{ url_for('termos') }}">Termos de Uso</a> e a
+        <a href="{{ url_for('termos') }}">Política de Privacidade</a> do AcheTece.
+      </p>
     </section>
   </main>
 
   <script>
+    // comportamento do OTP (avanço automático e backspace)
     (function(){
       const inputs=[...document.querySelectorAll('.digits input')];
       inputs.forEach((inp,i)=>{
@@ -67,6 +149,8 @@
         });
         inp.addEventListener('keydown', e=>{
           if(e.key==='Backspace' && !inp.value && i>0){ inputs[i-1].focus(); }
+          if(e.key==='ArrowLeft' && i>0){ inputs[i-1].focus(); e.preventDefault(); }
+          if(e.key==='ArrowRight' && i<inputs.length-1){ inputs[i+1].focus(); e.preventDefault(); }
         });
       });
     })();
