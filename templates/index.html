@@ -425,6 +425,11 @@
                       <div class="lbl">Diâmetro:</div><div>{{ r.diametro or '—' }}</div>
                       <div class="lbl">Galga:</div><div>{{ r.galga or '—' }}</div>
                       <div class="lbl">Alimentadores:</div><div>{{ r.alimentadores or '—' }}</div>
+                      <div class="lbl">Kit elastano:</div>
+                      <div>
+                        {% set kit = r.kit_elastano %}
+                        {{ 'Sim' if kit in [True, 'Sim', 'SIM', 'sim', 1, '1'] else ('Não' if kit in [False, 'Não', 'NAO', 'NÃO', 0, '0'] else '—') }}
+                      </div>
                     </div>
                     <div class="card-empresa">
                       <div class="empresa-info">
@@ -462,6 +467,7 @@
                     <th>Galga</th>
                     <th>Diâmetro</th>
                     <th>Alimentadores</th>
+                    <th>Kit elastano</th>
                     <th>UF</th>
                     <th>Cidade</th>
                     <th>Contato</th>
@@ -475,6 +481,10 @@
                       <td>{{ r.galga }}</td>
                       <td>{{ r.diametro }}</td>
                       <td>{{ r.alimentadores }}</td>
+                      <td>
+                        {% set kit = r.kit_elastano %}
+                        {{ 'Sim' if kit in [True, 'Sim', 'SIM', 'sim', 1, '1'] else ('Não' if kit in [False, 'Não', 'NAO', 'NÃO', 0, '0'] else '—') }}
+                      </td>
                       <td>{{ r.uf }}</td>
                       <td>{{ r.cidade }}</td>
                       <td>
