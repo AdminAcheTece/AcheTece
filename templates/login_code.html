@@ -9,69 +9,69 @@
   <link rel="stylesheet" href="/static/style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet" />
   <style>
-    :root { --roxo:#8A00FF; --roxo-hover:#A63DFF; --laranja:#F28C00; --laranja-hover:#E57F00; }
-    body{ background:#fafafa; font-family:'Inter', system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial, sans-serif; }
+    :root{ --roxo:#8A00FF; --laranja:#F28C00; --laranja-hover:#E57F00; }
+    body{ background:#fafafa; font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; }
     .navbar{ padding:8px 12px; display:flex; align-items:center; }
-    .logo img{ height:48px; width:auto; display:block; }
+    .logo img{ height:48px; width:auto; }
 
     .auth-wrap{ min-height:calc(100vh - 110px); display:flex; justify-content:center; padding:24px 16px; }
     .card{
-      width:100%; max-width:560px;
+      width:100%; max-width:520px;
       background:#fff; border:1px solid #eee; border-radius:16px;
-      padding:26px 24px 18px; box-shadow:0 4px 14px rgba(0,0,0,.04);
+      padding:24px 22px 18px; box-shadow:0 4px 14px rgba(0,0,0,.04);
     }
     .title{ font-size:28px; font-weight:800; text-align:center; margin:0 0 6px; color:#1e1b2b; }
-    .subtitle{ text-align:center; color:#555; margin:0 0 12px; }
-
+    .subtitle{ text-align:center; color:#555; margin:0 0 14px; }
     .pill{
       display:inline-flex; align-items:center; justify-content:center;
       background:#f5f0ff; border:1px solid #e5dbff; color:#4b2ac7;
-      border-radius:9999px; padding:10px 18px; font-weight:800;
-      max-width:100%; margin:0 auto 12px; font-size:15px;
+      border-radius:9999px; padding:10px 18px; font-weight:800; font-size:15px;
     }
-    .email-row{ text-align:center; }
+    .email-row{ text-align:center; margin-bottom:12px; }
 
-    .digits{ display:flex; gap:12px; justify-content:center; margin:18px 0 18px; }
-    .digits input{
-      width:54px; height:62px; border:2px solid #e2d9ff; border-radius:12px;
-      text-align:center; font-size:24px; font-weight:800; outline:none; caret-color:#6e42ff;
-      box-shadow:0 0 0 0 rgba(0,0,0,0); transition:border-color .15s, box-shadow .15s;
+    /* ===== OTP responsivo ===== */
+    .otp{ display:flex; justify-content:center; gap:clamp(6px, 2.3vw, 12px); margin:6px 0 14px; }
+    .otp input{
+      width:  clamp(36px, 11vw, 56px);
+      height: clamp(42px, 12.5vw, 64px);
+      font-size: clamp(18px, 6vw, 28px);
+      text-align:center; border:1.5px solid #ded8ff; border-radius:12px;
+      background:#fbfaff; outline:none; font-weight:800; letter-spacing:1px;
+      transition:border-color .15s, box-shadow .15s;
     }
-    .digits input:focus{ border-color:#a895ff; box-shadow:0 0 0 4px #f3eeff; }
+    .otp input:focus{
+      border-color:#bfa9ff;
+      box-shadow:0 0 0 4px #efeaff;
+    }
+    @media (max-width:360px){
+      .otp input{ border-radius:10px; }
+    }
 
     .btn{
-      display:inline-flex; align-items:center; justify-content:center;
-      height:50px; width:100%; border-radius:9999px; border:0; cursor:pointer;
-      font-weight:800; color:#fff; background:var(--laranja);
+      width:100%; height:46px; border:0; border-radius:9999px;
+      background:var(--laranja); color:#fff; font-weight:800; margin:12px 0 10px; cursor:pointer;
     }
     .btn:hover{ background:var(--laranja-hover); }
 
-    .links{ display:flex; justify-content:center; gap:22px; margin:12px 0 10px; font-weight:800; }
-    .links a{ color:#5b2fff; text-decoration:none; }
-    .links a:hover{ text-decoration:underline; }
+    .links-row{ display:flex; justify-content:center; gap:18px; margin:8px 0 8px; font-weight:800; }
+    .links-row a{ color:#5b2fff; text-decoration:none; }
+    .links-row a:hover{ text-decoration:underline; }
 
-    /* quadros informativos (como OLX) */
-    .tips{ margin-top:6px; display:grid; gap:10px; }
-    .tip{
-      display:grid; grid-template-columns:40px 1fr; align-items:center; gap:12px;
-      background:#f6f6f9; border:1px solid #eee; border-radius:12px; padding:14px 14px;
+    .info{
+      display:grid; gap:10px; margin-top:8px;
     }
-    .tip .i{
-      width:40px; height:40px; border-radius:10px; background:#fff;
-      display:flex; align-items:center; justify-content:center; border:1px solid #e9e9ef;
+    .info .box{
+      display:grid; grid-template-columns:auto 1fr; gap:10px; align-items:flex-start;
+      background:#f5f3ff; border:1px solid #e6defe; border-radius:12px; padding:12px;
+      color:#38334a; font-size:14px;
     }
-    .tip p{ margin:0; color:#434343; font-size:14px; line-height:1.35; }
+    .i{ width:22px; height:22px; display:flex; align-items:center; justify-content:center; }
 
-    .back{ display:inline-block; margin-top:6px; color:#5b2fff; text-decoration:none; font-weight:800; }
-    .back:hover{ text-decoration:underline; }
-
-    .help{ margin:14px 0 0; text-align:center; font-size:14px; }
+    .help{ margin:12px 0 6px; text-align:center; font-size:14px; }
     .help a{ color:#5b2fff; text-decoration:none; font-weight:700; }
     .help a:hover{ text-decoration:underline; }
 
-    .legal{
-      margin-top:6px; font-size:12.5px; color:#6f6f6f; text-align:center; line-height:1.45;
-    }
+    .legal{ margin-top:6px; font-size:12.5px; color:#6f6f6f; text-align:center; line-height:1.45; }
     .legal a{ color:#5b2fff; text-decoration:none; }
     .legal a:hover{ text-decoration:underline; }
   </style>
@@ -85,47 +85,45 @@
     <section class="card" aria-labelledby="t">
       <h1 id="t" class="title">Acesse sua conta</h1>
       <p class="subtitle">Digite o código enviado para</p>
-      <div class="email-row"><span class="pill">{{ email or request.args.get('email','') }}</span></div>
+      <div class="email-row"><span class="pill">{{ email }}</span></div>
 
-      <form action="{{ url_for('validate_login_code') }}" method="POST" id="otpForm">
-        <input type="hidden" name="email" value="{{ email or request.args.get('email','') }}">
-        <div class="digits">
-          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" name="d1" autofocus />
-          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" name="d2" />
-          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" name="d3" />
-          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" name="d4" />
-          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" name="d5" />
-          <input maxlength="1" inputmode="numeric" pattern="[0-9]*" name="d6" />
+      <form action="{{ url_for('validate_login_code') }}" method="POST" id="otpForm" novalidate>
+        <input type="hidden" name="email" value="{{ email }}">
+
+        <div class="otp" id="otp">
+          <input inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="one-time-code" name="d1" class="otp-digit" aria-label="Primeiro dígito" />
+          <input inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="one-time-code" name="d2" class="otp-digit" aria-label="Segundo dígito" />
+          <input inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="one-time-code" name="d3" class="otp-digit" aria-label="Terceiro dígito" />
+          <input inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="one-time-code" name="d4" class="otp-digit" aria-label="Quarto dígito" />
+          <input inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="one-time-code" name="d5" class="otp-digit" aria-label="Quinto dígito" />
+          <input inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="one-time-code" name="d6" class="otp-digit" aria-label="Sexto dígito" />
         </div>
+
         <button class="btn" type="submit">Confirmar</button>
+
+        <div class="links-row">
+          <a href="{{ url_for('resend_login_code', email=email) }}">Reenviar código</a>
+          <a href="{{ url_for('view_login_method', email=email) }}">Voltar</a>
+        </div>
       </form>
 
-      <div class="links">
-        <a href="{{ url_for('resend_login_code', email=(email or request.args.get('email',''))) }}">Reenviar código</a>
-        <a href="{{ url_for('view_login_method', email=(email or request.args.get('email',''))) }}">Voltar</a>
-      </div>
-
-      <div class="tips" aria-label="Orientações">
-        <div class="tip">
-          <div class="i" aria-hidden="true">
-            <!-- ícone envelope -->
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6e42ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <div class="info">
+        <div class="box">
+          <span class="i" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6e42ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <path d="M4 6h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/>
               <path d="m22 8-10 6L2 8"/>
             </svg>
-          </div>
-          <p>Caso não tenha encontrado o e-mail, verifique sua caixa de Spam.</p>
+          </span>
+          <div>Caso não tenha encontrado o e-mail, verifique sua caixa de Spam.</div>
         </div>
-        <div class="tip">
-          <div class="i" aria-hidden="true">
-            <!-- ícone info -->
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6e42ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="16" x2="12" y2="12"></line>
-              <line x1="12" y1="8" x2="12" y2="8"></line>
+        <div class="box">
+          <span class="i" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6e42ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
-          </div>
-          <p>O código é privado. Não compartilhe essa informação com ninguém.</p>
+          </span>
+          <div>O código é privado. Não compartilhe essa informação com ninguém.</div>
         </div>
       </div>
 
@@ -139,19 +137,27 @@
   </main>
 
   <script>
-    // comportamento do OTP (avanço automático e backspace)
+    // Auto-avançar, backspace e colar 6 dígitos
     (function(){
-      const inputs=[...document.querySelectorAll('.digits input')];
-      inputs.forEach((inp,i)=>{
-        inp.addEventListener('input', e=>{
-          e.target.value=e.target.value.replace(/\D/g,'').slice(0,1);
-          if(e.target.value && i<inputs.length-1) inputs[i+1].focus();
+      const inputs = Array.from(document.querySelectorAll('.otp-digit'));
+      inputs[0]?.focus();
+
+      inputs.forEach((inp, idx) => {
+        inp.addEventListener('input', e => {
+          inp.value = inp.value.replace(/\D/g,'').slice(0,1);
+          if (inp.value && idx < inputs.length - 1) inputs[idx+1].focus();
         });
-        inp.addEventListener('keydown', e=>{
-          if(e.key==='Backspace' && !inp.value && i>0){ inputs[i-1].focus(); }
-          if(e.key==='ArrowLeft' && i>0){ inputs[i-1].focus(); e.preventDefault(); }
-          if(e.key==='ArrowRight' && i<inputs.length-1){ inputs[i+1].focus(); e.preventDefault(); }
+        inp.addEventListener('keydown', e => {
+          if (e.key === 'Backspace' && !inp.value && idx > 0) inputs[idx-1].focus();
         });
+      });
+
+      document.getElementById('otp').addEventListener('paste', e => {
+        const txt = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g,'').slice(0,6);
+        if (!txt) return;
+        e.preventDefault();
+        for (let i=0;i<Math.min(6, txt.length);i++){ inputs[i].value = txt[i]; }
+        if (txt.length === 6) document.getElementById('otpForm').submit();
       });
     })();
   </script>
