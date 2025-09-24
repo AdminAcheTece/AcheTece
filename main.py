@@ -8,6 +8,7 @@ from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from datetime import datetime
+from datetime import datetime, timedelta
 import mercadopago
 import os
 import csv
@@ -164,6 +165,19 @@ class ClienteProfile(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     usuario = db.relationship('Usuario', backref=db.backref('cliente_profile', uselist=False))
 
+class OtpToken(db.Model):
+    __tablename__ = "otp_token"
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(255), index=True, nullable=False)
+    code_hash = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    expires_at = db.Column(db.DateTime, index=True)
+    used_at = db.Column(db.DateTime, nullable=True)
+    attempts = db.Column(db.Integer, default=0)
+    last_sent_at = db.Column(db.DateTime, nullable=True)
+    ip = db.Column(db.String(64))
+    user_agent = db.Column(db.String(255))
+
 # --------------------------------------------------------------------
 # Setup inicial (idempotente)
 # --------------------------------------------------------------------
@@ -249,6 +263,152 @@ def assinatura_ativa_requerida(f):
             return redirect(url_for("painel_malharia"))
         return f(*args, **kwargs)
     return wrapper
+
+def _otp_generate():
+    return f"{random.randint(0, 999999):06d}"
+
+def _otp_cleanup(email: str):
+    """Remove tokens antigos/consumidos (higiene básica)."""
+    limite = datetime.utcnow() - timedelta(days=2)
+    try:
+        OtpToken.query.filter(
+            (OtpToken.email == email) & (
+                (OtpToken.expires_at < datetime.utcnow()) | (OtpToken.used_at.isnot(None))
+            )
+        ).delete(synchronize_session=False)
+        OtpToken.query.filter(OtpToken.created_at < limite).delete(synchronize_session=False)
+        db.session.commit()
+    except Exception as e:
+        app.logger.warning(f"[OTP] cleanup falhou: {e}")
+        db.session.rollback()
+
+def _otp_can_send(email: str, cooldown_s: int = 45, max_per_hour: int = 5):
+    """Enforce cooldown + rate por hora (por e-mail)."""
+    now = datetime.utcnow()
+    # Cooldown: último envio < 45s?
+    last = (OtpToken.query
+            .filter_by(email=email)
+            .order_by(OtpToken.created_at.desc())
+            .first())
+    if last and last.last_sent_at and (now - last.last_sent_at).total_seconds() < cooldown_s:
+        wait = cooldown_s - int((now - last.last_sent_at).total_seconds())
+        return False, max(1, wait)
+    # Rate por hora
+    hour_ago = now - timedelta(hours=1)
+    sent_last_hour = (OtpToken.query
+                      .filter(OtpToken.email == email,
+                              OtpToken.created_at >= hour_ago)
+                      .count())
+    if sent_last_hour >= max_per_hour:
+        return False, -1  # estourou limite por hora
+    return True, 0
+
+def _otp_email_html(email: str, code: str):
+    # HTML simples, no estilo da referência que você enviou
+    return render_template_string("""
+    <div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:auto;padding:24px;border:1px solid #eee;border-radius:12px">
+      <h2 style="margin:0 0 12px;color:#1e1b2b">Seu código para acessar a sua conta</h2>
+      <p style="margin:0 0 16px;color:#333">Recebemos uma solicitação de acesso ao AcheTece para:</p>
+      <p style="margin:0 0 18px;font-weight:700;color:#4b2ac7">{{ email }}</p>
+      <div style="text-align:center;margin:18px 0 12px">
+        <div style="display:inline-block;padding:16px 20px;border:1px dashed #d9cffd;border-radius:12px;background:#f8f6ff;font-size:28px;font-weight:800;letter-spacing:6px;color:#3b2fa6">{{ code }}</div>
+      </div>
+      <p style="margin:12px 0 0;color:#666">Código válido por <strong>30 minutos</strong> e de uso único.</p>
+      <p style="margin:8px 0 0;color:#666">Se você não fez esta solicitação, ignore este e-mail.</p>
+      <hr style="border:none;border-top:1px solid #eee;margin:18px 0">
+      <p style="margin:0;color:#888;font-size:12px">AcheTece • Portal de Malharias</p>
+    </div>
+    """, email=email, code=code)
+
+def _otp_send(email: str, ip: str = "", ua: str = "") -> tuple[bool, str]:
+    """Gera, grava, envia. Retorna (ok, msg)."""
+    email = (email or "").strip().lower()
+    if not email:
+        return False, "Informe um e-mail válido."
+
+    _otp_cleanup(email)
+
+    ok, wait = _otp_can_send(email)
+    if not ok and wait == -1:
+        return False, "Você solicitou muitos códigos na última hora. Tente novamente mais tarde."
+    if not ok:
+        return False, f"Aguarde {wait}s para solicitar um novo código."
+
+    code = _otp_generate()
+    token = OtpToken(
+        email=email,
+        code_hash=generate_password_hash(code),
+        created_at=datetime.utcnow(),
+        expires_at=datetime.utcnow() + timedelta(minutes=30),
+        last_sent_at=datetime.utcnow(),
+        ip=(ip or "")[:64],
+        user_agent=(ua or "")[:255],
+    )
+    # zera tokens antigos ainda abertos (um código ativo por vez)
+    try:
+        OtpToken.query.filter(
+            (OtpToken.email == email) & (OtpToken.used_at.is_(None))
+        ).delete(synchronize_session=False)
+        db.session.add(token)
+        db.session.commit()
+    except Exception as e:
+        app.logger.exception(f"[OTP] erro ao persistir token: {e}")
+        db.session.rollback()
+        return False, "Falha ao gerar o código. Tente novamente."
+
+    try:
+        msg = Message(
+            subject="Seu código de acesso • AcheTece",
+            sender=app.config.get("MAIL_USERNAME") or "no-reply@achetece",
+            recipients=[email],
+        )
+        msg.html = _otp_email_html(email, code)
+        msg.body = f"Seu código AcheTece: {code}\nVálido por 30 minutos."
+        mail.send(msg)
+        return True, "Código enviado para o seu e-mail."
+    except Exception as e:
+        app.logger.exception(f"[OTP] erro ao enviar e-mail: {e}")
+        # não invalida o token; usuário pode tentar novamente (cooldown impede spam)
+        return False, "Não foi possível enviar o e-mail agora. Tente novamente em instantes."
+
+def _otp_validate(email: str, code: str) -> tuple[bool, str]:
+    email = (email or "").strip().lower()
+    code = (code or "").strip()
+    if not (email and code and len(code) == 6 and code.isdigit()):
+        return False, "Código inválido."
+
+    token = (OtpToken.query
+             .filter(OtpToken.email == email, OtpToken.used_at.is_(None))
+             .order_by(OtpToken.created_at.desc())
+             .first())
+    if not token:
+        return False, "Solicite um novo código."
+
+    now = datetime.utcnow()
+    if token.expires_at and now > token.expires_at:
+        token.used_at = now
+        db.session.commit()
+        return False, "O código expirou. Solicite um novo."
+
+    token.attempts = (token.attempts or 0) + 1
+    if token.attempts > 10:
+        token.used_at = now
+        db.session.commit()
+        return False, "Muitas tentativas. Geramos um novo código para você."
+
+    ok = False
+    try:
+        ok = check_password_hash(token.code_hash, code)
+    except Exception as e:
+        app.logger.warning(f"[OTP] check hash falhou: {e}")
+
+    if not ok:
+        db.session.commit()  # salva incremento de attempts
+        return False, "Código incorreto. Verifique os dígitos."
+
+    token.used_at = now
+    db.session.commit()
+    return True, "Código validado com sucesso."
 
 # --------------------------------------------------------------------
 # INDEX: sempre lista e filtra progressivamente
@@ -444,14 +604,15 @@ def view_login_method_alias_accent():
 def view_login_method_alias_trailing():
     return redirect(url_for("view_login_method", **request.args), code=301)
 
-# Dispara envio do código (implementação real entraremos depois)
+# Dispara envio do código
 @app.post("/login/codigo")
 def post_login_code():
-    email = (request.form.get("email") or "").strip()
+    email = (request.form.get("email") or "").strip().lower()
     if not email:
         flash("Informe um e-mail válido.", "warning")
         return redirect(url_for("login"))
-    # (envio real do OTP virá no próximo passo)
+    ok, msg = _otp_send(email, ip=request.headers.get("X-Forwarded-For", request.remote_addr), ua=request.headers.get("User-Agent",""))
+    flash(msg, "success" if ok else "error")
     return redirect(url_for("get_login_code", email=email))
 
 # Tela para digitar o código
@@ -465,19 +626,36 @@ def get_login_code():
 # Reenviar código
 @app.get("/login/codigo/reenviar")
 def resend_login_code():
-    email = (request.args.get("email") or "").strip()
+    email = (request.args.get("email") or "").strip().lower()
     if not email:
         return redirect(url_for("login"))
-    flash("Enviamos um novo código para o seu e-mail.", "success")
+    ok, msg = _otp_send(email, ip=request.headers.get("X-Forwarded-For", request.remote_addr), ua=request.headers.get("User-Agent",""))
+    flash(msg, "success" if ok else "error")
     return redirect(url_for("get_login_code", email=email))
 
-# Validar código (stub por enquanto)
+# Validar código
 @app.post("/login/codigo/validar")
 def validate_login_code():
-    email = (request.form.get("email") or "").strip()
-    _otp = "".join((request.form.get(k, "") for k in ("d1","d2","d3","d4","d5","d6")))
-    flash("Validação do código pendente.", "info")
-    return redirect(url_for("get_login_code", email=email))
+    email = (request.form.get("email") or "").strip().lower()
+    code = "".join((request.form.get(k, "") for k in ("d1","d2","d3","d4","d5","d6")))
+    ok, msg = _otp_validate(email, code)
+    if not ok:
+        flash(msg, "error")
+        return redirect(url_for("get_login_code", email=email))
+
+    # Autenticação por e-mail (malharia)
+    emp = Empresa.query.filter(func.lower(Empresa.email) == email).first()
+
+    if emp:
+        session["empresa_id"] = emp.id
+        session["empresa_apelido"] = emp.apelido or emp.nome or emp.email.split("@")[0]
+        flash("Bem-vindo!", "success")
+        return redirect(url_for("painel_malharia"))
+
+    # Se não existir empresa, empurra para cadastro com e-mail pré-preenchido
+    flash("E-mail ainda não cadastrado. Conclua seu cadastro para continuar.", "info")
+    # Caso seu template de cadastro suporte 'email' via query string:
+    return redirect(url_for("cadastro_get") + f"?email={email}")
 
 # Senha: tela
 @app.get("/login/senha")
