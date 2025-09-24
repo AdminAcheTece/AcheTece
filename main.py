@@ -412,37 +412,113 @@ def index():
     )
 
 # --------------------------------------------------------------------
-# Login / Sessão
+# Login / Sessão  (FLUXO MULTI-ETAPAS OLX-LIKE)
 # --------------------------------------------------------------------
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'GET':
-        return render_template('login.html')
-    email = (request.form.get('email') or '').strip().lower()
-    senha = (request.form.get('senha') or '')
+
+# 1) /login (somente GET) – mantém endpoint 'login' para compatibilidade
+@app.get("/login", endpoint="login")
+def view_login():
+    return render_template("login.html")
+
+# 2) Escolher método de acesso (código por e-mail ou senha)
+@app.get("/login/metodo")
+def view_login_method():
+    email = (request.args.get("email") or "").strip()
+    if not email:
+        flash("Informe um e-mail para continuar.", "warning")
+        return redirect(url_for("login"))
+    return render_template("login_method.html", email=email)
+
+# 3) Código por e-mail – POST dispara envio (por ora, apenas redireciona; enviaremos de fato no próximo passo)
+@app.post("/login/codigo")
+def post_login_code():
+    email = (request.form.get("email") or "").strip()
+    if not email:
+        flash("Informe um e-mail válido.", "warning")
+        return redirect(url_for("login"))
+    # (envio real do e-mail e gravação de OTP entram na próxima etapa)
+    return redirect(url_for("get_login_code", email=email))
+
+# 4) Tela para digitar o código
+@app.get("/login/codigo", endpoint="get_login_code")
+def get_login_code():
+    email = (request.args.get("email") or "").strip()
+    if not email:
+        return redirect(url_for("login"))
+    return render_template("login_code.html", email=email)
+
+# 5) Reenviar código
+@app.get("/login/codigo/reenviar")
+def resend_login_code():
+    email = (request.args.get("email") or "").strip()
+    if not email:
+        return redirect(url_for("login"))
+    # (reenviar de fato entraremos na próxima etapa)
+    flash("Enviamos um novo código para o seu e-mail.", "success")
+    return redirect(url_for("get_login_code", email=email))
+
+# 6) Validar código (por enquanto apenas mantém fluxo sem 404)
+@app.post("/login/codigo/validar")
+def validate_login_code():
+    email = (request.form.get("email") or "").strip()
+    _otp = "".join((request.form.get(k, "") for k in ("d1","d2","d3","d4","d5","d6")))
+    # (validação real entraremos na próxima etapa)
+    flash("Validação do código pendente.", "info")
+    return redirect(url_for("get_login_code", email=email))
+
+# 7) Entrar com senha (GET da tela)
+@app.get("/login/senha")
+def view_login_password():
+    email = (request.args.get("email") or "").strip()
+    if not email:
+        return redirect(url_for("login"))
+    return render_template("login_password.html", email=email)
+
+# 8) Entrar com senha (POST) – lógica antiga movida pra cá
+@app.post("/login/senha/entrar")
+def post_login_password():
+    email = (request.form.get("email") or "").strip().lower()
+    senha = (request.form.get("senha") or "")
     user = Empresa.query.filter(func.lower(Empresa.email) == email).first()
-    GENERIC_FAIL = 'E-mail ou senha incorretos. Tente novamente.'
+    GENERIC_FAIL = "E-mail ou senha incorretos. Tente novamente."
     if not user:
-        flash(GENERIC_FAIL); return redirect(url_for('login'))
+        flash(GENERIC_FAIL)
+        return redirect(url_for("view_login_password", email=email))
     ok = False
     try:
         ok = check_password_hash(user.senha, senha)
     except Exception as e:
         app.logger.warning(f"[LOGIN WARN] check_password_hash: {e}")
     if not ok:
-        flash(GENERIC_FAIL); return redirect(url_for('login'))
+        flash(GENERIC_FAIL)
+        return redirect(url_for("view_login_password", email=email))
     # Gate de pagamento (exceto DEMO)
-    if not DEMO_MODE and (user.status_pagamento or '').lower() not in ('aprovado', 'ativo'):
-        flash('Pagamento ainda não aprovado.'); return redirect(url_for('login'))
-    session['empresa_id'] = user.id
-    session['empresa_apelido'] = user.apelido or user.nome or user.email.split('@')[0]
-    return redirect(url_for('painel_malharia'))
+    if not DEMO_MODE and (user.status_pagamento or "").lower() not in ("aprovado", "ativo"):
+        flash("Pagamento ainda não aprovado.")
+        return redirect(url_for("login"))
+    # autentica sessão
+    session["empresa_id"] = user.id
+    session["empresa_apelido"] = user.apelido or user.nome or user.email.split("@")[0]
+    return redirect(url_for("painel_malharia"))
 
-@app.route('/logout')
+# 9) Logout (mantido)
+@app.route("/logout")
 def logout():
-    session.pop('empresa_id', None)
-    session.pop('empresa_apelido', None)
-    return redirect(url_for('index'))
+    session.pop("empresa_id", None)
+    session.pop("empresa_apelido", None)
+    return redirect(url_for("index"))
+
+# 10) Cadastro (mínimo para não dar 404) – tela nova que você já tem
+@app.get("/cadastro")
+def cadastro_get():
+    return render_template("cadastro.html")
+
+@app.post("/cadastro")
+def cadastro_post():
+    # (implementação completa depois; por ora evita 404 e mantém o fluxo)
+    flash("Cadastro recebido.", "success")
+    return redirect(url_for("login"))
+
 
 # --------------------------------------------------------------------
 # Painel da malharia + CRUD de teares
@@ -1106,25 +1182,6 @@ def termos():
 def malharia_info():
     # compat: alguns templates podem linkar para esta página estática
     return render_template('malharia_info.html')
-
-# --- LOGIN: páginas (mínimo para funcionar o fluxo) ---
-
-from flask import render_template, request, redirect, url_for, flash
-
-@app.get("/login")
-def view_login():
-    # renderiza o template acima
-    return render_template("login.html")
-
-@app.get("/login/metodo")
-def view_login_method():
-    email = (request.args.get("email") or "").strip()
-    if not email:
-        # se o usuário entrou sem e-mail, volta ao login
-        flash("Informe um e-mail para continuar.", "warning")
-        return redirect(url_for("view_login"))
-    # você já tem o template login_method.html; se preferir te mando novamente
-    return render_template("login_method.html", email=email)
 
 # --------------------------------------------------------------------
 # Entry point local (Render usa gunicorn main:app)
