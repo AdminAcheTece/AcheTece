@@ -2,64 +2,101 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>Entrar - AcheTece</title>
+  <title>Acesse sua conta - AcheTece</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/x-icon" href="/static/favicon_final.ico">
   <link rel="icon" type="image/png" href="/static/favicon_final.png">
   <link rel="stylesheet" href="/static/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
   <style>
-    :root{ --roxo:#8A00FF; --roxo-hover:#A63DFF; --laranja:#F28C00; --laranja-hover:#E57F00; }
-    body{ background:#fafafa; }
+    :root{ --roxo:#8A00FF; --laranja:#F28C00; --laranja-hover:#E57F00; }
+    body{ background:#fafafa; font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; }
     .navbar{ padding:8px 12px; display:flex; align-items:center; }
-    .logo img{ height:48px; width:auto; display:block; }
-    .auth-wrap{ min-height:calc(100vh - 110px); display:flex; align-items:flex-start; justify-content:center; padding:24px 16px; }
-    .card{ width:100%; max-width:460px; background:#fff; border:1px solid #eee; border-radius:16px; padding:28px 24px; box-shadow:0 4px 14px rgba(0,0,0,.04); }
-    .auth-title{ font-size:26px; font-weight:800; text-align:center; margin:0 0 18px; }
-    .form-label{ display:block; font-weight:700; font-size:14px; margin:6px 0 8px; color:#333; }
-    .input{ width:100%; height:48px; border:1px solid #ccc; border-radius:10px; padding:0 12px; font-size:16px; background:#fff; color:#222; }
-    .btn{ display:inline-flex; align-items:center; justify-content:center; height:48px; width:100%; border-radius:9999px; border:0; cursor:pointer; font-weight:800; text-decoration:none; }
-    .btn-primary{ background:var(--laranja); color:#fff; margin-top:16px; }
-    .btn-primary:hover{ background:var(--laranja-hover); }
-    .or{ display:flex; align-items:center; gap:12px; color:#777; margin:26px 0 16px; }
-    .or::before, .or::after{ content:""; height:1px; background:#e8e8e8; flex:1; }
-    .oauth{ display:flex; justify-content:center; }
-    .oauth a{ display:inline-flex; align-items:center; justify-content:center; width:54px; height:54px; border-radius:50%; background:#fff; border:1px solid #ddd; box-shadow:0 2px 8px rgba(0,0,0,.04); }
-    .oauth img{ width:26px; height:26px; display:block; }
-    .muted{ color:#666; font-size:14px; text-align:center; margin:18px 0 0; }
-    .muted a{ color:#5b2fff; text-decoration:none; font-weight:700; }
-    .muted a:hover{ text-decoration:underline; }
-    .legal{ margin-top:18px; font-size:12.5px; color:#6f6f6f; text-align:center; line-height:1.4; }
+    .logo img{ height:48px; width:auto; }
+
+    .auth-wrap{ min-height:calc(100vh - 110px); display:flex; justify-content:center; padding:24px 16px; }
+    .card{
+      width:100%; max-width:520px;
+      background:#fff; border:1px solid #eee; border-radius:16px;
+      padding:24px 22px 18px; box-shadow:0 4px 14px rgba(0,0,0,.04);
+    }
+    h1.title{ font-size:28px; font-weight:800; text-align:center; margin:0 0 18px; color:#1e1b2b; }
+
+    .alert{
+      border-radius:12px; padding:12px 14px; margin:0 0 16px;
+      border:1px solid #ffd7d7; background:#fff3f3; color:#7a2222; font-size:14px;
+    }
+    .alert b{ display:block; margin-bottom:2px; }
+
+    label{ font-weight:700; color:#2a233a; font-size:14px; display:block; margin:10px 0 6px; }
+    .input{
+      width:100%; height:44px; border-radius:10px; padding:10px 12px;
+      border:1px solid #cfd3dc; background:#f9faff;
+    }
+    .btn{
+      width:100%; height:46px; border:0; border-radius:9999px;
+      background:var(--laranja); color:#fff; font-weight:800; margin:16px 0 18px; cursor:pointer;
+    }
+    .btn:hover{ background:var(--laranja-hover); }
+
+    .sep{ display:flex; align-items:center; gap:10px; color:#777; margin:4px 0 12px; }
+    .sep:before,.sep:after{ content:""; flex:1; height:1px; background:#eee; }
+
+    .oauth{
+      display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:10px;
+    }
+    .oauth a{ display:inline-flex; align-items:center; justify-content:center; width:56px; height:56px; border:1px solid #eee; border-radius:50%; background:#fff; }
+    .oauth img{ width:28px; height:28px; }
+
+    .signup{ text-align:center; margin:8px 0 6px; }
+    .signup a{ color:#5b2fff; text-decoration:none; font-weight:700; }
+    .signup a:hover{ text-decoration:underline; }
+
+    .help{ text-align:center; font-size:14px; margin:12px 0 6px; }
+    .help a{ color:#5b2fff; text-decoration:none; font-weight:700; }
+    .help a:hover{ text-decoration:underline; }
+
+    .legal{ margin-top:8px; font-size:12.5px; color:#6f6f6f; text-align:center; line-height:1.45; }
     .legal a{ color:#5b2fff; text-decoration:none; }
     .legal a:hover{ text-decoration:underline; }
   </style>
 </head>
 <body>
-  <header class="navbar"><div class="logo"><img src="/static/logo.jpg" alt="AcheTece"></div></header>
+  <header class="navbar">
+    <div class="logo"><img src="/static/logo.jpg" alt="AcheTece"></div>
+  </header>
 
   <main class="auth-wrap">
     <section class="card" aria-labelledby="t">
-      <h1 id="t" class="auth-title">Acesse a sua conta</h1>
+      <h1 id="t" class="title">Acesse a sua conta</h1>
 
-      <form action="{{ url_for('view_login_method') }}" method="GET" autocomplete="on">
-        <label class="form-label" for="email">E-mail</label>
-        <input class="input" id="email" name="email" type="email" placeholder="seuemail@empresa.com" required>
-        <button class="btn btn-primary" type="submit">Continuar</button>
+      {% if no_account %}
+      <div class="alert" role="alert">
+        <b>Não existe uma conta com este e-mail.</b>
+        Não tem conta? <a href="{{ url_for('cadastrar_empresa') }}">Cadastre-se</a>.
+      </div>
+      {% elif error %}
+      <div class="alert" role="alert">
+        <b>{{ error }}</b>
+      </div>
+      {% endif %}
+
+      <form method="POST" action="{{ url_for('view_login') }}" novalidate>
+        <label for="email">E-mail</label>
+        <input id="email" name="email" type="email" class="input" autocomplete="email" required
+               value="{{ email or request.args.get('email','') }}">
+        <button type="submit" class="btn">Continuar</button>
       </form>
 
-      <div class="or"><span>Ou conecte com</span></div>
-
+      <div class="sep">Ou conecte com</div>
       <div class="oauth">
         <a href="{{ url_for('oauth_google') }}" aria-label="Entrar com Google">
-          <img
-            src="/static/icone_google.png"
-            data-alt="/static/ícone_google.png,/estatico/icone_google.png,/estático/ícone_google.png"
-            alt="Google"
-            onerror="(function(img){var s=img.getAttribute('data-alt');if(!s){img.onerror=null;return;}var a=s.split(',');img.setAttribute('data-alt', a.slice(1).join(','));img.src=a[0];})(this);">
+          <img src="/static/icone_google.png" alt="Google">
         </a>
       </div>
 
-      <p class="muted">Não tem uma conta? <a href="{{ url_for('cadastro_get') }}">Cadastre-se</a></p>
+      <p class="signup">Não tem uma conta? <a href="{{ url_for('cadastrar_empresa') }}">Cadastre-se</a></p>
+      <p class="help">Precisa de ajuda? <a href="{{ url_for('contato') }}">Fale conosco</a></p>
 
       <p class="legal">
         Ao continuar, você concorda com os
@@ -70,3 +107,4 @@
   </main>
 </body>
 </html>
+
