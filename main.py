@@ -412,15 +412,20 @@ def index():
     )
 
 # --------------------------------------------------------------------
-# Login / Sessão  (FLUXO MULTI-ETAPAS OLX-LIKE)
+# Login / Sessão  (fluxo multi-etapas)
 # --------------------------------------------------------------------
 
-# 1) /login (somente GET) – mantém endpoint 'login' para compatibilidade
+# /login (somente GET). Mantém endpoint 'login' para compatibilidade com url_for('login')
 @app.get("/login", endpoint="login")
 def view_login():
     return render_template("login.html")
 
-# 2) Escolher método de acesso (código por e-mail ou senha)
+# Alias de compatibilidade: /login/ e /login/ (com barra)
+@app.get("/login/")
+def view_login_trailing():
+    return redirect(url_for("login"), code=301)
+
+# Escolha do método (código por e-mail ou senha)
 @app.get("/login/metodo")
 def view_login_method():
     email = (request.args.get("email") or "").strip()
@@ -429,17 +434,27 @@ def view_login_method():
         return redirect(url_for("login"))
     return render_template("login_method.html", email=email)
 
-# 3) Código por e-mail – POST dispara envio (por ora, apenas redireciona; enviaremos de fato no próximo passo)
+# Aliases: com acento e com barra
+@app.get("/login/método")
+def view_login_method_alias_accent():
+    # preserva query string (email)
+    return redirect(url_for("view_login_method", **request.args), code=301)
+
+@app.get("/login/metodo/")
+def view_login_method_alias_trailing():
+    return redirect(url_for("view_login_method", **request.args), code=301)
+
+# Dispara envio do código (implementação real entraremos depois)
 @app.post("/login/codigo")
 def post_login_code():
     email = (request.form.get("email") or "").strip()
     if not email:
         flash("Informe um e-mail válido.", "warning")
         return redirect(url_for("login"))
-    # (envio real do e-mail e gravação de OTP entram na próxima etapa)
+    # (envio real do OTP virá no próximo passo)
     return redirect(url_for("get_login_code", email=email))
 
-# 4) Tela para digitar o código
+# Tela para digitar o código
 @app.get("/login/codigo", endpoint="get_login_code")
 def get_login_code():
     email = (request.args.get("email") or "").strip()
@@ -447,26 +462,24 @@ def get_login_code():
         return redirect(url_for("login"))
     return render_template("login_code.html", email=email)
 
-# 5) Reenviar código
+# Reenviar código
 @app.get("/login/codigo/reenviar")
 def resend_login_code():
     email = (request.args.get("email") or "").strip()
     if not email:
         return redirect(url_for("login"))
-    # (reenviar de fato entraremos na próxima etapa)
     flash("Enviamos um novo código para o seu e-mail.", "success")
     return redirect(url_for("get_login_code", email=email))
 
-# 6) Validar código (por enquanto apenas mantém fluxo sem 404)
+# Validar código (stub por enquanto)
 @app.post("/login/codigo/validar")
 def validate_login_code():
     email = (request.form.get("email") or "").strip()
     _otp = "".join((request.form.get(k, "") for k in ("d1","d2","d3","d4","d5","d6")))
-    # (validação real entraremos na próxima etapa)
     flash("Validação do código pendente.", "info")
     return redirect(url_for("get_login_code", email=email))
 
-# 7) Entrar com senha (GET da tela)
+# Senha: tela
 @app.get("/login/senha")
 def view_login_password():
     email = (request.args.get("email") or "").strip()
@@ -474,7 +487,7 @@ def view_login_password():
         return redirect(url_for("login"))
     return render_template("login_password.html", email=email)
 
-# 8) Entrar com senha (POST) – lógica antiga movida pra cá
+# Senha: autenticar (é a sua lógica antiga de POST /login movida pra cá)
 @app.post("/login/senha/entrar")
 def post_login_password():
     email = (request.form.get("email") or "").strip().lower()
@@ -492,33 +505,35 @@ def post_login_password():
     if not ok:
         flash(GENERIC_FAIL)
         return redirect(url_for("view_login_password", email=email))
-    # Gate de pagamento (exceto DEMO)
     if not DEMO_MODE and (user.status_pagamento or "").lower() not in ("aprovado", "ativo"):
         flash("Pagamento ainda não aprovado.")
         return redirect(url_for("login"))
-    # autentica sessão
     session["empresa_id"] = user.id
     session["empresa_apelido"] = user.apelido or user.nome or user.email.split("@")[0]
     return redirect(url_for("painel_malharia"))
 
-# 9) Logout (mantido)
+# Logout
 @app.route("/logout")
 def logout():
     session.pop("empresa_id", None)
     session.pop("empresa_apelido", None)
     return redirect(url_for("index"))
 
-# 10) Cadastro (mínimo para não dar 404) – tela nova que você já tem
+# Cadastro (mínimo para não dar 404)
 @app.get("/cadastro")
 def cadastro_get():
     return render_template("cadastro.html")
 
 @app.post("/cadastro")
 def cadastro_post():
-    # (implementação completa depois; por ora evita 404 e mantém o fluxo)
     flash("Cadastro recebido.", "success")
     return redirect(url_for("login"))
 
+# ====== OAuth Google (stub para não dar 404 por enquanto) ======
+@app.get("/oauth/google")
+def oauth_google():
+    flash("Login com Google ainda não está habilitado. Use o acesso por e-mail/senha.", "info")
+    return redirect(url_for("login"))
 
 # --------------------------------------------------------------------
 # Painel da malharia + CRUD de teares
