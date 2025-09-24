@@ -1107,6 +1107,25 @@ def malharia_info():
     # compat: alguns templates podem linkar para esta página estática
     return render_template('malharia_info.html')
 
+# --- LOGIN: páginas (mínimo para funcionar o fluxo) ---
+
+from flask import render_template, request, redirect, url_for, flash
+
+@app.get("/login")
+def view_login():
+    # renderiza o template acima
+    return render_template("login.html")
+
+@app.get("/login/metodo")
+def view_login_method():
+    email = (request.args.get("email") or "").strip()
+    if not email:
+        # se o usuário entrou sem e-mail, volta ao login
+        flash("Informe um e-mail para continuar.", "warning")
+        return redirect(url_for("view_login"))
+    # você já tem o template login_method.html; se preferir te mando novamente
+    return render_template("login_method.html", email=email)
+
 # --------------------------------------------------------------------
 # Entry point local (Render usa gunicorn main:app)
 # --------------------------------------------------------------------
