@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Entrar com senha - AcheTece</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="/static/favicon_final.ico">
+  <link rel="icon" type="image/png" href="/static/favicon_final.png">
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    body{ background:#fafafa; font-family:Inter,system-ui,Arial; }
+    .navbar{ padding:8px 12px; display:flex; align-items:center; }
+    .logo img{ height:48px; }
+    .wrap{ min-height:calc(100vh - 110px); display:flex; justify-content:center; padding:24px 16px; }
+    .card{ width:100%; max-width:460px; background:#fff; border:1px solid #eee; border-radius:16px; padding:28px 24px; box-shadow:0 4px 14px rgba(0,0,0,.04); }
+    .title{ font-size:26px; font-weight:800; text-align:center; margin:0 0 12px; }
+    .pill{ display:inline-flex; align-items:center; justify-content:center; background:#f4f1ff; border:1px solid #e6ddff; color:#4b2ac7; border-radius:9999px; padding:6px 12px; font-weight:700; }
+    .email-row{ text-align:center; margin-bottom:16px; }
+    label{ display:block; font-weight:700; margin-bottom:6px; }
+    input[type="password"]{ width:100%; height:48px; border:2px solid #dcd6ff; border-radius:12px; padding:0 12px; font-size:16px; }
+    input[type="password"]:focus{ border-color:#a895ff; box-shadow:0 0 0 3px #f1ecff; outline:none; }
+    .btn{ margin-top:14px; width:100%; height:48px; border-radius:9999px; border:0; background:#F28C00; color:#fff; font-weight:800; cursor:pointer; }
+    .btn:hover{ background:#E57F00; }
+    .links{ display:flex; justify-content:center; gap:16px; margin-top:12px; }
+    .links a{ color:#5b2fff; text-decoration:none; font-weight:700; }
+  </style>
+</head>
+<body>
+  <header class="navbar"><div class="logo"><img src="/static/logo.jpg" alt="AcheTece"></div></header>
+  <main class="wrap">
+    <section class="card" aria-labelledby="t">
+      <h1 id="t" class="title">Entrar com senha</h1>
+      <div class="email-row"><span class="pill">{{ email or request.args.get('email','') }}</span></div>
+
+      <form action="{{ url_for('post_login_password') }}" method="POST">
+        <input type="hidden" name="email" value="{{ email or request.args.get('email','') }}">
+        <label for="senha">Senha</label>
+        <input id="senha" name="senha" type="password" autocomplete="current-password" required>
+        <button class="btn" type="submit">Entrar</button>
+      </form>
+
+      <div class="links">
+        <a href="/esqueci_senha">Esqueci minha senha</a>
+        <a href="/login/metodo?email={{ email or request.args.get('email','') }}">Voltar</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
