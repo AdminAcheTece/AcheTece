@@ -22,6 +22,8 @@ from sqlalchemy import inspect, text, or_, func
 from pathlib import Path
 import random
 from jinja2 import TemplateNotFound
+import os, smtplib, ssl
+from email.message import EmailMessage
 
 # --------------------------------------------------------------------
 # Configuração básica
@@ -31,6 +33,12 @@ app.logger.setLevel(logging.INFO)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-unsafe')
 app.config['PREFERRED_URL_SCHEME'] = 'https'
 
+SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER = os.getenv("SMTP_USER")              # ex.: conta de envio
+SMTP_PASS = os.getenv("SMTP_PASS")              # ex.: app password
+SMTP_FROM = os.getenv("SMTP_FROM", SMTP_USER or "no-reply@achetece.com.br")
+MAIL_SUPPRESS_SEND = (os.getenv("MAIL_SUPPRESS_SEND", "").lower() in ("1", "true", "yes"))
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
 CACHE_DIR = os.path.join(BASE_DIR, 'cache_ibge')
@@ -270,6 +278,31 @@ def assinatura_ativa_requerida(f):
         return f(*args, **kwargs)
     return wrapper
 
+def _send_email(to: str, subject: str, html: str, text_fallback: str = None):
+    """Envia e-mail via SMTP. Retorna (ok, msg)."""
+    if MAIL_SUPPRESS_SEND or not (SMTP_USER and SMTP_PASS):
+        app.logger.info(f"[MAIL SUPRIMIDO] to={to} subject={subject}")
+        return False, "Envio de e-mail está desabilitado neste ambiente."
+
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = SMTP_FROM
+    msg["To"] = to
+    if text_fallback:
+        msg.set_content(text_fallback)
+    else:
+        msg.set_content("Veja este e-mail em HTML.")
+    msg.add_alternative(html, subtype="html")
+
+    ctx = ssl.create_default_context()
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=20) as s:
+        # STARTTLS (587)
+        s.starttls(context=ctx)
+        s.login(SMTP_USER, SMTP_PASS)
+        s.send_message(msg)
+
+    return True, "E-mail enviado."
+
 # OTP helpers
 def _otp_generate():
     return f"{random.randint(0, 999999):06d}"
@@ -323,6 +356,7 @@ def _otp_email_html(email: str, code: str):
     """, email=email, code=code)
 
 def _otp_send(email: str, ip: str = "", ua: str = "") -> tuple[bool, str]:
+    import os  # usado para ler MAIL_SUPPRESS_SEND do ambiente
     email = (email or "").strip().lower()
     if not email:
         return False, "Informe um e-mail válido."
@@ -356,22 +390,57 @@ def _otp_send(email: str, ip: str = "", ua: str = "") -> tuple[bool, str]:
         db.session.rollback()
         return False, "Falha ao gerar o código. Tente novamente."
 
-    # Se envio de e-mail está suprimido, só loga o código e retorna OK rápido
-    if app.config.get('MAIL_SUPPRESS_SEND'):
-        app.logger.info(f"[OTP SUPPRESSED] {email} code={code}")
-        return True, "Código gerado. Verifique seu e-mail."
+    # ---------- envio de e-mail ----------
+    # Se o envio estiver suprimido, não finja sucesso.
+    suppress = bool(
+        app.config.get("MAIL_SUPPRESS_SEND")
+        or (os.getenv("MAIL_SUPPRESS_SEND", "").lower() in ("1", "true", "yes"))
+    )
+    if suppress:
+        app.logger.info(f"[OTP SUPRIMIDO] {email} code={code}")
+        return False, "Envio de e-mail desabilitado neste ambiente. Configure o SMTP e tente 'Reenviar código'."
 
+    # Conteúdos do e-mail
+    subject = "Seu código de acesso • AcheTece"
     try:
-        msg = Message(
-            subject="Seu código de acesso • AcheTece",
-            recipients=[email],
-        )
-        msg.html = _otp_email_html(email, code)
-        msg.body = f"Seu código AcheTece: {code}\nVálido por 30 minutos."
-        mail.send(msg)
-        return True, "Código enviado para o seu e-mail."
+        html = _otp_email_html(email, code)
+    except Exception:
+        html = f"""
+        <div style="font-family:Inter,Arial,sans-serif">
+          <p>Olá,</p>
+          <p>Seu código de acesso é:</p>
+          <p style="font-size:28px;font-weight:800;letter-spacing:6px">{code}</p>
+          <p>Válido por 30 minutos.</p>
+        </div>
+        """
+    text_body = f"Seu código AcheTece: {code}\nVálido por 30 minutos."
+
+    # 1ª tentativa: Flask-Mail (se estiver disponível/configurado)
+    sent = False
+    try:
+        mail_obj = globals().get("mail")
+        MessageCls = globals().get("Message")
+        if mail_obj and MessageCls:
+            msg = MessageCls(subject=subject, recipients=[email])
+            msg.html = html
+            msg.body = text_body
+            mail_obj.send(msg)
+            sent = True
     except Exception as e:
-        app.logger.exception(f"[OTP] erro ao enviar e-mail: {e}")
+        app.logger.warning(f"[OTP] Flask-Mail falhou: {e}")
+
+    # 2ª tentativa (fallback): helper SMTP _send_email (se você adicionou)
+    if not sent:
+        send_helper = globals().get("_send_email")
+        if callable(send_helper):
+            try:
+                sent, _ = send_helper(email, subject, html, text_fallback=text_body)
+            except Exception as e:
+                app.logger.warning(f"[OTP] SMTP fallback falhou: {e}")
+
+    if sent:
+        return True, "Código enviado para o seu e-mail."
+    else:
         return False, "Não foi possível enviar o e-mail agora. Tente novamente em instantes."
 
 def _otp_validate(email: str, code: str) -> tuple[bool, str]:
