@@ -736,18 +736,17 @@ def logout():
     session.pop("empresa_apelido", None)
     return redirect(url_for("index"))
 
-
-# Cadastro (atalho para não dar 404; reaproveita /cadastrar_empresa)
-@app.get("/cadastro")
+# Cadastro (página unificada AcheTece/Modelos/cadastro.html)
+@app.get("/cadastro", endpoint="cadastro_get")
 def cadastro_get():
-    qs = request.query_string.decode()  # preserva ?email=...
-    destino = url_for("cadastrar_empresa")
-    return redirect(destino + (("?" + qs) if qs else ""))
+    email = (request.args.get("email") or "").strip().lower()
+    return render_template("AcheTece/Modelos/cadastro.html", email=email)
 
 @app.post("/cadastro")
 def cadastro_post():
-    return redirect(url_for("cadastrar_empresa"))
-
+    # Em caso de POST, apenas redireciona para o GET mantendo o e-mail (se enviado)
+    email = (request.form.get("email") or "").strip().lower()
+    return redirect(url_for("cadastro_get", email=email) if email else url_for("cadastro_get"))
 
 # ====== OAuth Google (stub para não dar 404 por enquanto) ======
 @app.get("/oauth/google")
