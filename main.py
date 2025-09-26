@@ -197,15 +197,15 @@ def _ensure_auth_layer_and_link():
         app.logger.warning(f"add user_id to empresa failed: {e}")
     try:
         empresas = Empresa.query.all()
-        for e in empresas:
-            if e.user_id:
+        for emp in empresas:
+            if emp.user_id:
                 continue
-            u = Usuario.query.filter_by(email=e.email).first()
+            u = Usuario.query.filter_by(email=emp.email).first()
             if not u:
-                u = Usuario(email=e.email, senha_hash=e.senha, role=None, is_active=True)
+                u = Usuario(email=emp.email, senha_hash=emp.senha, role=None, is_active=True)
                 db.session.add(u)
                 db.session.flush()
-            e.user_id = u.id
+            emp.user_id = u.id
         db.session.commit()
     except Exception as e:
         app.logger.warning(f"backfill usuarios from empresas failed: {e}")
@@ -238,7 +238,7 @@ def _get_empresa_usuario_da_sessao():
         return None, None
     u = emp.usuario or Usuario.query.filter_by(email=emp.email).first()
     if not u:
-        u = Usuario(email=emp.email, senha_hash=e.senha, role=None, is_active=True)  # type: ignore
+        u = Usuario(email=emp.email, senha_hash=emp.senha, role=None, is_active=True)  # fix: emp.senha
         db.session.add(u); db.session.flush()
         emp.user_id = u.id
         db.session.commit()
@@ -729,8 +729,7 @@ def post_login_password():
     session["empresa_apelido"] = user.apelido or user.nome or user.email.split("@")[0]
     return redirect(url_for("painel_malharia"))
 
-# ==== Helpers de onboarding (cole em "Sessão / Regras de acesso", perto dos outros helpers) ====
-
+# ==== Helpers de onboarding ====
 def _empresa_basica_completa(emp: Empresa) -> bool:
     """Considera perfil básico completo quando tem pelo menos cidade, estado e responsável."""
     ok_resp = bool((emp.responsavel_nome or "").strip())
@@ -752,8 +751,7 @@ def _proximo_step(emp: Empresa) -> str:
         return "teares"
     return "resumo"
 
-# ==== Ajuste no painel_malharia: aceitar 'step' calculado automaticamente ====
-
+# ==== painel_malharia com 'step' automático ====
 @app.route('/painel_malharia')
 def painel_malharia():
     emp, u = _get_empresa_usuario_da_sessao()
@@ -767,7 +765,6 @@ def painel_malharia():
     teares = Tear.query.filter_by(empresa_id=emp.id).all()
     is_ativa = (emp.status_pagamento or "pendente") in ("ativo", "aprovado")
 
-    # Você pode usar esses flags no template para mostrar checklist/abas ativas:
     checklist = {
         "perfil_ok": _empresa_basica_completa(emp),
         "teares_ok": _conta_teares(emp.id) > 0,
@@ -784,40 +781,6 @@ def painel_malharia():
         step=step
     )
 
-# ==== Trocar redirecionamentos após autenticação para abrir a etapa certa ====
-
-# 1) Cadastro (já existia no seu código recente)
-@app.post("/cadastro", endpoint="cadastro_post")
-def cadastro_post():
-    # ... (seu código de validação/criação da empresa permanece)
-    # no final, após criar 'nova' e fazer session:
-    session["empresa_id"] = nova.id
-    session["empresa_apelido"] = nova.apelido or nova.nome or email.split("@")[0]
-    flash("Conta criada! Complete os dados da sua malharia.", "success")
-    return redirect(url_for("painel_malharia", step=_proximo_step(nova)))
-
-# 2) Login por senha (ajuste o redirect final)
-@app.post("/login/senha/entrar")
-def post_login_password():
-    # ... (sua validação atual)
-    session["empresa_id"] = user.id
-    session["empresa_apelido"] = user.apelido or user.nome or user.email.split("@")[0]
-    return redirect(url_for("painel_malharia", step=_proximo_step(user)))
-
-# 3) Login por código (ajuste o redirect final)
-@app.post("/login/codigo/validar")
-def validate_login_code():
-    # ... (sua validação OTP atual)
-    if emp:
-        session["empresa_id"] = emp.id
-        session["empresa_apelido"] = emp.apelido or emp.nome or emp.email.split("@")[0]
-        flash("Bem-vindo!", "success")
-        return redirect(url_for("painel_malharia", step=_proximo_step(emp)))
-
-    # se não houver empresa, mantém seu fluxo para cadastro:
-    flash("E-mail ainda não cadastrado. Conclua seu cadastro para continuar.", "info")
-    return redirect(url_for("cadastro_get", email=email))
-
 # Logout
 @app.route("/logout")
 def logout():
@@ -825,14 +788,9 @@ def logout():
     session.pop("empresa_apelido", None)
     return redirect(url_for("index"))
 
-# no topo (já deve existir, mas garanto aqui)
-from jinja2 import TemplateNotFound
-import re
-
 # --------------------------------------------------------------------
 # Cadastro
 # --------------------------------------------------------------------
-
 @app.get("/cadastro", endpoint="cadastro_get")
 def cadastro_get():
     email = (request.args.get("email") or "").strip().lower()
@@ -926,10 +884,6 @@ def cadastro_post():
     flash("Conta criada! Complete os dados da sua empresa para continuar.", "success")
     return redirect(url_for("editar_empresa"))
 
-    # >>> Se preferir levar para o login em vez do onboarding,
-    # troque a linha acima por:
-    # return redirect(url_for("view_login", email=email))
-
 # ====== OAuth Google (stub para não dar 404 por enquanto) ======
 @app.get("/oauth/google")
 def oauth_google():
@@ -939,15 +893,6 @@ def oauth_google():
 # --------------------------------------------------------------------
 # Painel da malharia + CRUD de teares
 # --------------------------------------------------------------------
-@app.route('/painel_malharia')
-def painel_malharia():
-    emp, u = _get_empresa_usuario_da_sessao()
-    if not emp or not u:
-        return redirect(url_for('login'))
-    teares = Tear.query.filter_by(empresa_id=emp.id).all()
-    is_ativa = (emp.status_pagamento or "pendente") == "ativo"
-    return render_template('painel_malharia.html', empresa=emp, teares=teares, assinatura_ativa=is_ativa)
-
 @app.route('/cadastrar_teares', methods=['GET', 'POST'])
 @assinatura_ativa_requerida
 def cadastrar_teares():
