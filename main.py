@@ -22,6 +22,7 @@ from unicodedata import normalize
 from sqlalchemy import inspect, text, or_, func
 from pathlib import Path
 import random
+from jinja2 import TemplateNotFound
 
 # --------------------------------------------------------------------
 # Configuração básica
@@ -736,15 +737,21 @@ def logout():
     session.pop("empresa_apelido", None)
     return redirect(url_for("index"))
 
-# Cadastro (página unificada AcheTece/Modelos/cadastro.html)
+# Cadastro (página unificada). Tenta AcheTece/Modelos/cadastro.html e,
+# se não existir, usa o cadastrar_empresa.html para não quebrar.
 @app.get("/cadastro", endpoint="cadastro_get")
 def cadastro_get():
     email = (request.args.get("email") or "").strip().lower()
-    return render_template("AcheTece/Modelos/cadastro.html", email=email)
+    try:
+        return render_template("AcheTece/Modelos/cadastro.html", email=email)
+    except TemplateNotFound:
+        return render_template("cadastrar_empresa.html", estados=[
+            'AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT',
+            'PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'
+        ], email=email)
 
 @app.post("/cadastro")
 def cadastro_post():
-    # Em caso de POST, apenas redireciona para o GET mantendo o e-mail (se enviado)
     email = (request.form.get("email") or "").strip().lower()
     return redirect(url_for("cadastro_get", email=email) if email else url_for("cadastro_get"))
 
