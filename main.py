@@ -55,17 +55,6 @@ if db_url.startswith('postgresql+psycopg://') and 'sslmode=' not in db_url:
     db_url += ('&' if '?' in db_url else '?') + 'sslmode=require'
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# FIX: conexões estáveis com Postgres (evita "ssl decryption failure / bad record mac")
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    'pool_pre_ping': True,
-    'pool_recycle': int(os.getenv('DB_POOL_RECYCLE', '280')),
-    'pool_timeout': int(os.getenv('DB_POOL_TIMEOUT', '30')),
-    # tamanhos conservadores para Render
-    'pool_size': int(os.getenv('DB_POOL_SIZE', '5')),
-    'max_overflow': int(os.getenv('DB_MAX_OVERFLOW', '5')),
-}
-
 db = SQLAlchemy(app)
 
 # E-mail
@@ -74,13 +63,10 @@ app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
 app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'true').lower() == 'true'
 app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
 app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
-# FIX: evitar travar worker quando SMTP está indisponível/bloqueado
+# NOVO: respeita ambiente (evita travar worker se não houver SMTP)
+app.config['MAIL_SUPPRESS_SEND'] = os.getenv('MAIL_SUPPRESS_SEND', 'false').lower() == 'true'
 app.config['MAIL_TIMEOUT'] = int(os.getenv('MAIL_TIMEOUT', '6'))
-# Se não houver credenciais ou for definido explicitamente, não tenta enviar de verdade
-app.config['MAIL_SUPPRESS_SEND'] = (
-    os.getenv('MAIL_SUPPRESS_SEND', 'false').lower() == 'true'
-    or not app.config['MAIL_USERNAME']
-)
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER') or app.config.get('MAIL_USERNAME')
 mail = Mail(app)
 
 # Mercado Pago (mantido para compat)
@@ -106,9 +92,11 @@ def gerar_token(email):
 def enviar_email_recuperacao(email, nome_empresa=""):
     token = gerar_token(email)
     link = f"{base_url()}{url_for('redefinir_senha', token=token)}"
+    if app.config.get('MAIL_SUPPRESS_SEND'):
+        app.logger.info(f"[RESET SUPPRESSED] {email} link={link}")
+        return
     msg = Message(
         subject="Redefinição de Senha - AcheTece",
-        sender=app.config['MAIL_USERNAME'],
         recipients=[email]
     )
     msg.html = render_template_string("""
@@ -119,15 +107,7 @@ def enviar_email_recuperacao(email, nome_empresa=""):
       <p><a href="{{ link }}" target="_blank">Redefinir Senha</a></p>
     </body></html>
     """, nome=nome_empresa or email, link=link)
-    # FIX: honrar SUPPRESS_SEND e timeout curto
-    try:
-        if app.config['MAIL_SUPPRESS_SEND']:
-            app.logger.info(f"[MAIL SUPPRESSED] Recuperação → {email} {link}")
-            return
-        mail.send(msg)
-    except Exception as e:
-        app.logger.exception(f"[MAIL] erro ao enviar recuperação: {e}")
-        raise
+    mail.send(msg)
 
 def login_admin_requerido(f):
     @wraps(f)
@@ -222,15 +202,15 @@ def _ensure_auth_layer_and_link():
         app.logger.warning(f"add user_id to empresa failed: {e}")
     try:
         empresas = Empresa.query.all()
-        for emp in empresas:
-            if emp.user_id:
+        for e in empresas:
+            if e.user_id:
                 continue
-            u = Usuario.query.filter_by(email=emp.email).first()
+            u = Usuario.query.filter_by(email=e.email).first()
             if not u:
-                u = Usuario(email=emp.email, senha_hash=emp.senha, role=None, is_active=True)
+                u = Usuario(email=e.email, senha_hash=e.senha, role=None, is_active=True)
                 db.session.add(u)
                 db.session.flush()
-            emp.user_id = u.id
+            e.user_id = u.id
         db.session.commit()
     except Exception as e:
         app.logger.warning(f"backfill usuarios from empresas failed: {e}")
@@ -263,7 +243,6 @@ def _get_empresa_usuario_da_sessao():
         return None, None
     u = emp.usuario or Usuario.query.filter_by(email=emp.email).first()
     if not u:
-        # FIX: referência correta a emp.senha
         u = Usuario(email=emp.email, senha_hash=emp.senha, role=None, is_active=True)
         db.session.add(u); db.session.flush()
         emp.user_id = u.id
@@ -291,11 +270,11 @@ def assinatura_ativa_requerida(f):
         return f(*args, **kwargs)
     return wrapper
 
+# OTP helpers
 def _otp_generate():
     return f"{random.randint(0, 999999):06d}"
 
 def _otp_cleanup(email: str):
-    """Remove tokens antigos/consumidos (higiene básica)."""
     limite = datetime.utcnow() - timedelta(days=2)
     try:
         OtpToken.query.filter(
@@ -310,7 +289,6 @@ def _otp_cleanup(email: str):
         db.session.rollback()
 
 def _otp_can_send(email: str, cooldown_s: int = 45, max_per_hour: int = 5):
-    """Enforce cooldown + rate por hora (por e-mail)."""
     now = datetime.utcnow()
     last = (OtpToken.query
             .filter_by(email=email)
@@ -345,7 +323,6 @@ def _otp_email_html(email: str, code: str):
     """, email=email, code=code)
 
 def _otp_send(email: str, ip: str = "", ua: str = "") -> tuple[bool, str]:
-    """Gera, grava, envia. Retorna (ok, msg)."""
     email = (email or "").strip().lower()
     if not email:
         return False, "Informe um e-mail válido."
@@ -379,14 +356,14 @@ def _otp_send(email: str, ip: str = "", ua: str = "") -> tuple[bool, str]:
         db.session.rollback()
         return False, "Falha ao gerar o código. Tente novamente."
 
-    # FIX: envio resiliente + SUPPRESS_SEND
+    # Se envio de e-mail está suprimido, só loga o código e retorna OK rápido
+    if app.config.get('MAIL_SUPPRESS_SEND'):
+        app.logger.info(f"[OTP SUPPRESSED] {email} code={code}")
+        return True, "Código gerado. Verifique seu e-mail."
+
     try:
-        if app.config['MAIL_SUPPRESS_SEND']:
-            app.logger.info(f"[OTP SUPPRESSED] {email} code={code}")
-            return True, "Código gerado. Enviamos instruções ao seu e-mail."
         msg = Message(
             subject="Seu código de acesso • AcheTece",
-            sender=app.config.get("MAIL_USERNAME") or "no-reply@achetece",
             recipients=[email],
         )
         msg.html = _otp_email_html(email, code)
@@ -422,11 +399,11 @@ def _otp_validate(email: str, code: str) -> tuple[bool, str]:
         db.session.commit()
         return False, "Muitas tentativas. Geramos um novo código para você."
 
-    ok = False
     try:
         ok = check_password_hash(token.code_hash, code)
     except Exception as e:
         app.logger.warning(f"[OTP] check hash falhou: {e}")
+        ok = False
 
     if not ok:
         db.session.commit()
@@ -436,10 +413,10 @@ def _otp_validate(email: str, code: str) -> tuple[bool, str]:
     db.session.commit()
     return True, "Código validado com sucesso."
 
-# --- ADICIONE PERTO DAS OUTRAS FUNÇÕES HELPER (ex.: após _otp_validate) ---
-
+# --------------------------------------------------------------------
+# Fallback de templates (evita 500 se faltar HTML)
+# --------------------------------------------------------------------
 def _render_or_fallback(name: str, **ctx):
-    """Tenta carregar um template. Se não existir, renderiza um fallback mínimo."""
     try:
         return render_template(name, **ctx)
     except TemplateNotFound:
@@ -457,7 +434,7 @@ def _render_or_fallback(name: str, **ctx):
                 <input type="hidden" name="email" value="{{ email }}">
                 <button type="submit">Entrar com senha</button>
               </form>
-              <p style="color:#888;margin-top:18px">Tela simples (fallback). Crie <code>templates/login_method.html</code> para personalizar.</p>
+              <p style="color:#888;margin-top:18px">Tela fallback simples.</p>
             </div>
             """, email=email)
 
@@ -477,7 +454,7 @@ def _render_or_fallback(name: str, **ctx):
                 <button type="submit">Validar código</button>
               </form>
               <a href="{{ url_for('resend_login_code', email=email) }}">Reenviar código</a>
-              <p style="color:#888;margin-top:18px">Tela simples (fallback). Crie <code>templates/login_code.html</code> para personalizar.</p>
+              <p style="color:#888;margin-top:18px">Tela fallback simples.</p>
             </div>
             """, email=email)
 
@@ -491,11 +468,10 @@ def _render_or_fallback(name: str, **ctx):
                 <input type="password" name="senha" placeholder="Sua senha" required style="width:100%;height:44px">
                 <button type="submit" style="margin-top:12px">Entrar</button>
               </form>
-              <p style="color:#888;margin-top:18px">Tela simples (fallback). Crie <code>templates/login_password.html</code> para personalizar.</p>
+              <p style="color:#888;margin-top:18px">Tela fallback simples.</p>
             </div>
             """, email=email)
 
-        # fallback genérico se pedirem outro template
         return render_template_string("<h2>Página</h2><p>Template '{{name}}' não encontrado.</p>", name=name, **ctx)
 
 # --------------------------------------------------------------------
@@ -515,18 +491,6 @@ def _to_int(s):
 
 @app.route("/", methods=["GET"])
 def index():
-    def _num_key(x):
-        try:
-            return float(str(x).replace(",", "."))
-        except Exception:
-            return 0.0
-
-    def _to_int(s):
-        try:
-            return int(float(str(s).replace(",", ".").strip()))
-        except Exception:
-            return None
-
     v = request.args
     filtros = {
         "tipo":     (v.get("tipo") or "").strip(),
@@ -570,15 +534,12 @@ def index():
     q = q_base
     if filtros["tipo"]:
         q = q.filter(db.func.lower(Tear.tipo) == filtros["tipo"].lower())
-
     di = _to_int(filtros["diâmetro"])
     if di is not None:
         q = q.filter(Tear.diametro == di)
-
     ga = _to_int(filtros["galga"])
     if ga is not None:
         q = q.filter(Tear.finura == ga)
-
     if filtros["estado"]:
         q = q.filter(db.func.lower(Empresa.estado) == filtros["estado"].lower())
     if filtros["cidade"]:
@@ -654,13 +615,7 @@ def view_login():
     if not email or "@" not in email:
         return render_template("login.html", email=email, error="Informe um e-mail válido.")
 
-    try:
-        existe = Empresa.query.filter(func.lower(Empresa.email) == email).first()
-    except Exception as e:
-        app.logger.exception(f"[LOGIN] erro buscando empresa: {e}")
-        flash("Falha temporária ao acessar o banco. Tente novamente.", "error")
-        return redirect(url_for("login"))
-
+    existe = Empresa.query.filter(func.lower(Empresa.email) == email).first()
     if not existe:
         return render_template("login.html", email=email, no_account=True)
 
@@ -670,7 +625,6 @@ def view_login():
 def view_login_trailing():
     return redirect(url_for("login"), code=301)
 
-# --- /login/metodo (GET) ---
 @app.get("/login/metodo", endpoint="login_method")
 def view_login_method():
     email = (request.args.get("email") or "").strip().lower()
@@ -679,41 +633,44 @@ def view_login_method():
         return redirect(url_for("login"))
     return _render_or_fallback("login_method.html", email=email)
 
-@app.get("/login/método")
+@app.get("/login/método", endpoint="login_method_accent")
 def view_login_method_alias_accent():
     return redirect(url_for("login_method", **request.args), code=301)
 
-@app.get("/login/metodo/")
+@app.get("/login/metodo/", endpoint="login_method_trailing")
 def view_login_method_alias_trailing():
     return redirect(url_for("login_method", **request.args), code=301)
 
-# --- /login/codigo (GET) ---
+@app.post("/login/codigo", endpoint="post_login_code")
+def post_login_code():
+    email = (request.form.get("email") or "").strip().lower()
+    if not email:
+        flash("Informe um e-mail válido.", "warning")
+        return redirect(url_for("login"))
+
+    existe = Empresa.query.filter(func.lower(Empresa.email) == email).first()
+    if not existe:
+        return render_template("login.html", email=email, no_account=True)
+
+    ok, msg = _otp_send(
+        email,
+        ip=request.headers.get("X-Forwarded-For", request.remote_addr or "")[:64],
+        ua=(request.headers.get("User-Agent") or "")[:255],
+    )
+    flash(msg, "success" if ok else "error")
+    return redirect(url_for("login_code", email=email))
+
+# Alias com acento (POST) que reaproveita a mesma lógica
+@app.post("/login/código", endpoint="post_login_code_accent")
+def post_login_code_accent():
+    return post_login_code()
+
 @app.get("/login/codigo", endpoint="login_code")
 def get_login_code():
     email = (request.args.get("email") or "").strip()
     if not email:
         return redirect(url_for("login"))
     return _render_or_fallback("login_code.html", email=email)
-
-    existe = Empresa.query.filter(func.lower(Empresa.email) == email).first()
-    if not existe:
-        return render_template("login.html", email=email, no_account=True)
-
-    # FIX: headers corretos (evita None e strings traduzidas)
-    ok, msg = _otp_send(
-        email,
-        ip=(request.headers.get("X-Forwarded-For") or request.remote_addr or "")[:64],
-        ua=(request.headers.get("User-Agent") or "")[:255],
-    )
-    flash(msg, "success" if ok else "error")
-    return redirect(url_for("login_code", email=email))
-
-@app.get("/login/codigo", endpoint="login_code")
-def get_login_code():
-    email = (request.args.get("email") or "").strip()
-    if not email:
-        return redirect(url_for("login"))
-    return render_template("login_code.html", email=email)
 
 @app.get("/login/codigo/reenviar", endpoint="resend_login_code")
 def resend_login_code():
@@ -722,7 +679,7 @@ def resend_login_code():
         return redirect(url_for("login"))
     ok, msg = _otp_send(
         email,
-        ip=(request.headers.get("X-Forwarded-For") or request.remote_addr or "")[:64],
+        ip=request.headers.get("X-Forwarded-For", request.remote_addr or "")[:64],
         ua=(request.headers.get("User-Agent") or "")[:255]
     )
     flash(msg, "success" if ok else "error")
@@ -747,15 +704,14 @@ def validate_login_code():
     flash("E-mail ainda não cadastrado. Conclua seu cadastro para continuar.", "info")
     return redirect(url_for("cadastro_get", email=email))
 
-# --- /login/senha (GET) ---
-@app.get("/login/senha")
+@app.get("/login/senha", endpoint="view_login_password")
 def view_login_password():
     email = (request.args.get("email") or "").strip()
     if not email:
         return redirect(url_for("login"))
     return _render_or_fallback("login_password.html", email=email)
 
-@app.post("/login/senha/entrar")
+@app.post("/login/senha/entrar", endpoint="post_login_password")
 def post_login_password():
     email = (request.form.get("email") or "").strip().lower()
     senha = (request.form.get("senha") or "")
@@ -779,7 +735,15 @@ def post_login_password():
     session["empresa_apelido"] = user.apelido or user.nome or user.email.split("@")[0]
     return redirect(url_for("painel_malharia"))
 
-# ==== Helpers de onboarding ====
+@app.route("/logout")
+def logout():
+    session.pop("empresa_id", None)
+    session.pop("empresa_apelido", None)
+    return redirect(url_for("index"))
+
+# --------------------------------------------------------------------
+# Onboarding helpers + Painel
+# --------------------------------------------------------------------
 def _empresa_basica_completa(emp: Empresa) -> bool:
     ok_resp = bool((emp.responsavel_nome or "").strip())
     ok_local = bool((emp.cidade or "").strip()) and bool((emp.estado or "").strip())
@@ -799,7 +763,7 @@ def _proximo_step(emp: Empresa) -> str:
         return "teares"
     return "resumo"
 
-@app.route('/painel_malharia')
+@app.route('/painel_malharia', endpoint="painel_malharia")
 def painel_malharia():
     emp, u = _get_empresa_usuario_da_sessao()
     if not emp or not u:
@@ -824,12 +788,6 @@ def painel_malharia():
         checklist=checklist,
         step=step
     )
-
-@app.route("/logout")
-def logout():
-    session.pop("empresa_id", None)
-    session.pop("empresa_apelido", None)
-    return redirect(url_for("index"))
 
 # --------------------------------------------------------------------
 # Cadastro
@@ -917,11 +875,6 @@ def cadastro_post():
     session["empresa_apelido"] = nova.apelido or nova.nome or email.split("@")[0]
     flash("Conta criada! Complete os dados da sua empresa para continuar.", "success")
     return redirect(url_for("editar_empresa"))
-
-@app.get("/oauth/google")
-def oauth_google():
-    flash("Login com Google ainda não está habilitado. Use o acesso por e-mail/senha.", "info")
-    return redirect(url_for("login"))
 
 # --------------------------------------------------------------------
 # Painel da malharia + CRUD de teares
@@ -1038,7 +991,7 @@ def exportar():
     )
 
 # --------------------------------------------------------------------
-# Cadastro/edição de empresa
+# Cadastro/edição de empresa (essencial)
 # --------------------------------------------------------------------
 @app.route('/cadastrar_empresa', methods=['GET', 'POST'])
 def cadastrar_empresa():
@@ -1141,7 +1094,7 @@ def editar_empresa():
     return redirect(url_for('editar_empresa', ok=1))
 
 # --------------------------------------------------------------------
-# Admin
+# Admin: empresas
 # --------------------------------------------------------------------
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
@@ -1270,7 +1223,7 @@ def admin_seed_teares():
 @app.route("/admin/seed_teares_all")
 def admin_seed_teares_all():
     if not _seed_ok(): return "Não autorizado", 403
-    escopo = (request.args.get("escopo") or "demo").lower()
+    escopo = (request.args.get("escopo") or "demo").lower()  # demo|pagantes|todas
     uf = request.args.get("uf")
     ids = request.args.get("ids")
     n = request.args.get("n", type=int)
@@ -1435,16 +1388,16 @@ def contato():
             erro = "Preencha todos os campos."
         else:
             try:
-                msg = Message(
-                    subject=f"[AcheTece] Novo contato — {nome}",
-                    recipients=[os.getenv("CONTACT_TO", app.config.get("MAIL_USERNAME") or "")],
-                    reply_to=email
-                )
-                msg.body = f"Nome: {nome}\nE-mail: {email}\n\nMensagem:\n{mensagem}"
-                if app.config['MAIL_SUPPRESS_SEND']:
-                    app.logger.info(f"[MAIL SUPPRESSED] Contato de {email}")
+                if app.config.get('MAIL_SUPPRESS_SEND'):
+                    app.logger.info(f"[CONTATO SUPPRESSED] {nome} <{email}> msg={mensagem[:60]}")
                     enviado = True
                 else:
+                    msg = Message(
+                        subject=f"[AcheTece] Novo contato — {nome}",
+                        recipients=[os.getenv("CONTACT_TO", app.config.get("MAIL_USERNAME") or "")],
+                        reply_to=email
+                    )
+                    msg.body = f"Nome: {nome}\nE-mail: {email}\n\nMensagem:\n{mensagem}"
                     mail.send(msg); enviado = True
             except Exception as e:
                 erro = f"Falha ao enviar: {e}"
@@ -1576,5 +1529,4 @@ def malharia_info():
 # Entry point local
 # --------------------------------------------------------------------
 if __name__ == '__main__':
-    # Dica: em dev você pode definir MAIL_SUPPRESS_SEND=true pra não depender de SMTP
     app.run(debug=True, host='0.0.0.0', port=5000)
