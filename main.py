@@ -729,6 +729,94 @@ def post_login_password():
     session["empresa_apelido"] = user.apelido or user.nome or user.email.split("@")[0]
     return redirect(url_for("painel_malharia"))
 
+# ==== Helpers de onboarding (cole em "Sessão / Regras de acesso", perto dos outros helpers) ====
+
+def _empresa_basica_completa(emp: Empresa) -> bool:
+    """Considera perfil básico completo quando tem pelo menos cidade, estado e responsável."""
+    ok_resp = bool((emp.responsavel_nome or "").strip())
+    ok_local = bool((emp.cidade or "").strip()) and bool((emp.estado or "").strip())
+    ok_tel   = bool((emp.telefone or "").strip())  # opcional? deixe True se quiser flexibilizar
+    return ok_resp and ok_local and ok_tel
+
+def _conta_teares(emp_id: int) -> int:
+    try:
+        return Tear.query.filter_by(empresa_id=emp_id).count()
+    except Exception:
+        return 0
+
+def _proximo_step(emp: Empresa) -> str:
+    """Decide qual etapa abrir primeiro dentro do painel."""
+    if not _empresa_basica_completa(emp):
+        return "perfil"
+    if _conta_teares(emp.id) == 0:
+        return "teares"
+    return "resumo"
+
+# ==== Ajuste no painel_malharia: aceitar 'step' calculado automaticamente ====
+
+@app.route('/painel_malharia')
+def painel_malharia():
+    emp, u = _get_empresa_usuario_da_sessao()
+    if not emp or not u:
+        return redirect(url_for('login'))
+
+    step = request.args.get("step")
+    if not step:
+        step = _proximo_step(emp)
+
+    teares = Tear.query.filter_by(empresa_id=emp.id).all()
+    is_ativa = (emp.status_pagamento or "pendente") in ("ativo", "aprovado")
+
+    # Você pode usar esses flags no template para mostrar checklist/abas ativas:
+    checklist = {
+        "perfil_ok": _empresa_basica_completa(emp),
+        "teares_ok": _conta_teares(emp.id) > 0,
+        "plano_ok": is_ativa or DEMO_MODE,
+        "step": step,
+    }
+
+    return render_template(
+        'painel_malharia.html',
+        empresa=emp,
+        teares=teares,
+        assinatura_ativa=is_ativa,
+        checklist=checklist,
+        step=step
+    )
+
+# ==== Trocar redirecionamentos após autenticação para abrir a etapa certa ====
+
+# 1) Cadastro (já existia no seu código recente)
+@app.post("/cadastro", endpoint="cadastro_post")
+def cadastro_post():
+    # ... (seu código de validação/criação da empresa permanece)
+    # no final, após criar 'nova' e fazer session:
+    session["empresa_id"] = nova.id
+    session["empresa_apelido"] = nova.apelido or nova.nome or email.split("@")[0]
+    flash("Conta criada! Complete os dados da sua malharia.", "success")
+    return redirect(url_for("painel_malharia", step=_proximo_step(nova)))
+
+# 2) Login por senha (ajuste o redirect final)
+@app.post("/login/senha/entrar")
+def post_login_password():
+    # ... (sua validação atual)
+    session["empresa_id"] = user.id
+    session["empresa_apelido"] = user.apelido or user.nome or user.email.split("@")[0]
+    return redirect(url_for("painel_malharia", step=_proximo_step(user)))
+
+# 3) Login por código (ajuste o redirect final)
+@app.post("/login/codigo/validar")
+def validate_login_code():
+    # ... (sua validação OTP atual)
+    if emp:
+        session["empresa_id"] = emp.id
+        session["empresa_apelido"] = emp.apelido or emp.nome or emp.email.split("@")[0]
+        flash("Bem-vindo!", "success")
+        return redirect(url_for("painel_malharia", step=_proximo_step(emp)))
+
+    # se não houver empresa, mantém seu fluxo para cadastro:
+    flash("E-mail ainda não cadastrado. Conclua seu cadastro para continuar.", "info")
+    return redirect(url_for("cadastro_get", email=email))
 
 # Logout
 @app.route("/logout")
