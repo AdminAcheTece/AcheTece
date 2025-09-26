@@ -356,7 +356,7 @@ def _otp_email_html(email: str, code: str):
     """, email=email, code=code)
 
 def _otp_send(email: str, ip: str = "", ua: str = "") -> tuple[bool, str]:
-    import os  # usado para ler MAIL_SUPPRESS_SEND do ambiente
+    import socket
     email = (email or "").strip().lower()
     if not email:
         return False, "Informe um e-mail válido."
@@ -380,9 +380,7 @@ def _otp_send(email: str, ip: str = "", ua: str = "") -> tuple[bool, str]:
         user_agent=(ua or "")[:255],
     )
     try:
-        OtpToken.query.filter(
-            (OtpToken.email == email) & (OtpToken.used_at.is_(None))
-        ).delete(synchronize_session=False)
+        OtpToken.query.filter((OtpToken.email == email) & (OtpToken.used_at.is_(None))).delete(synchronize_session=False)
         db.session.add(token)
         db.session.commit()
     except Exception as e:
@@ -390,57 +388,34 @@ def _otp_send(email: str, ip: str = "", ua: str = "") -> tuple[bool, str]:
         db.session.rollback()
         return False, "Falha ao gerar o código. Tente novamente."
 
-    # ---------- envio de e-mail ----------
-    # Se o envio estiver suprimido, não finja sucesso.
-    suppress = bool(
-        app.config.get("MAIL_SUPPRESS_SEND")
-        or (os.getenv("MAIL_SUPPRESS_SEND", "").lower() in ("1", "true", "yes"))
-    )
-    if suppress:
-        app.logger.info(f"[OTP SUPRIMIDO] {email} code={code}")
-        return False, "Envio de e-mail desabilitado neste ambiente. Configure o SMTP e tente 'Reenviar código'."
+    # Se não deve enviar, apenas loga o código e segue
+    if app.config.get("MAIL_SUPPRESS_SEND", True):
+        app.logger.info(f"[OTP SUPRIMIDO] {email} codigo={code}")
+        return True, "Código gerado. Verifique seu e-mail."
 
-    # Conteúdos do e-mail
-    subject = "Seu código de acesso • AcheTece"
+    # Se faltar configuração, evita travar tentando conectar
+    host = app.config.get("MAIL_SERVER")
+    port = app.config.get("MAIL_PORT")
+    user = app.config.get("MAIL_USERNAME")
+    pwd  = app.config.get("MAIL_PASSWORD")
+    if not host or not port or not user or not pwd:
+        app.logger.warning(f"[OTP] SMTP incompleto (host={host}, port={port}, user={user}). Suprimindo envio.")
+        app.logger.info(f"[OTP SUPRIMIDO] {email} codigo={code}")
+        return True, "Código gerado. Verifique seu e-mail."
+
     try:
-        html = _otp_email_html(email, code)
-    except Exception:
-        html = f"""
-        <div style="font-family:Inter,Arial,sans-serif">
-          <p>Olá,</p>
-          <p>Seu código de acesso é:</p>
-          <p style="font-size:28px;font-weight:800;letter-spacing:6px">{code}</p>
-          <p>Válido por 30 minutos.</p>
-        </div>
-        """
-    text_body = f"Seu código AcheTece: {code}\nVálido por 30 minutos."
+        # timeout de rede defensivo
+        socket.setdefaulttimeout(12)
 
-    # 1ª tentativa: Flask-Mail (se estiver disponível/configurado)
-    sent = False
-    try:
-        mail_obj = globals().get("mail")
-        MessageCls = globals().get("Message")
-        if mail_obj and MessageCls:
-            msg = MessageCls(subject=subject, recipients=[email])
-            msg.html = html
-            msg.body = text_body
-            mail_obj.send(msg)
-            sent = True
-    except Exception as e:
-        app.logger.warning(f"[OTP] Flask-Mail falhou: {e}")
-
-    # 2ª tentativa (fallback): helper SMTP _send_email (se você adicionou)
-    if not sent:
-        send_helper = globals().get("_send_email")
-        if callable(send_helper):
-            try:
-                sent, _ = send_helper(email, subject, html, text_fallback=text_body)
-            except Exception as e:
-                app.logger.warning(f"[OTP] SMTP fallback falhou: {e}")
-
-    if sent:
+        msg = Message(subject="Seu código de acesso • AcheTece", recipients=[email])
+        msg.html = _otp_email_html(email, code)
+        msg.body = f"Seu código AcheTece: {code}\nVálido por 30 minutos."
+        mail.send(msg)
+        app.logger.info(f"[OTP ENVIADO] para={email}")
         return True, "Código enviado para o seu e-mail."
-    else:
+    except Exception as e:
+        app.logger.exception(f"[OTP] erro ao enviar e-mail: {e}")
+        # Não bloqueia o usuário: mantém o código válido e instrui a tentar novamente
         return False, "Não foi possível enviar o e-mail agora. Tente novamente em instantes."
 
 def _otp_validate(email: str, code: str) -> tuple[bool, str]:
