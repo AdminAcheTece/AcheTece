@@ -73,6 +73,7 @@ app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
 app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 # NOVO: respeita ambiente (evita travar worker se não houver SMTP)
 app.config['MAIL_SUPPRESS_SEND'] = os.getenv('MAIL_SUPPRESS_SEND', 'false').lower() == 'true'
+app.config["MAIL_SUPPRESS_SEND"] = str(os.getenv("MAIL_SUPPRESS_SEND", "1")).strip().lower() in {"1","true","yes","on"}
 app.config['MAIL_TIMEOUT'] = int(os.getenv('MAIL_TIMEOUT', '6'))
 app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER') or app.config.get('MAIL_USERNAME')
 mail = Mail(app)
