@@ -737,21 +737,34 @@ def logout():
     session.pop("empresa_apelido", None)
     return redirect(url_for("index"))
 
-# Cadastro (página unificada). Tenta AcheTece/Modelos/cadastro.html e,
-# se não existir, usa o cadastrar_empresa.html para não quebrar.
+# Cadastro (abre sempre o novo cadastro.html; cai para o antigo só se faltar o arquivo)
 @app.get("/cadastro", endpoint="cadastro_get")
 def cadastro_get():
     email = (request.args.get("email") or "").strip().lower()
+
+    # 1ª preferência: templates/cadastro.html
+    try:
+        return render_template("cadastro.html", email=email)
+    except TemplateNotFound:
+        pass
+
+    # 2ª preferência: templates/AcheTece/Modelos/cadastro.html
     try:
         return render_template("AcheTece/Modelos/cadastro.html", email=email)
     except TemplateNotFound:
-        return render_template("cadastrar_empresa.html", estados=[
-            'AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT',
-            'PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'
-        ], email=email)
+        # Fallback final: não quebra e usa o formulário antigo
+        return render_template(
+            "cadastrar_empresa.html",
+            estados=[
+                'AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT',
+                'PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'
+            ],
+            email=email
+        )
 
 @app.post("/cadastro")
 def cadastro_post():
+    # Por enquanto, apenas redireciona de volta (ou para onde você quiser tratar o POST)
     email = (request.form.get("email") or "").strip().lower()
     return redirect(url_for("cadastro_get", email=email) if email else url_for("cadastro_get"))
 
