@@ -436,6 +436,68 @@ def _otp_validate(email: str, code: str) -> tuple[bool, str]:
     db.session.commit()
     return True, "Código validado com sucesso."
 
+# --- ADICIONE PERTO DAS OUTRAS FUNÇÕES HELPER (ex.: após _otp_validate) ---
+
+def _render_or_fallback(name: str, **ctx):
+    """Tenta carregar um template. Se não existir, renderiza um fallback mínimo."""
+    try:
+        return render_template(name, **ctx)
+    except TemplateNotFound:
+        email = ctx.get("email", "")
+        if name == "login_method.html":
+            return render_template_string("""
+            <div style="max-width:520px;margin:32px auto;font-family:system-ui,Arial">
+              <h2>Entrar</h2>
+              <p>E-mail: <strong>{{ email }}</strong></p>
+              <form method="post" action="{{ url_for('post_login_code') }}" style="margin:16px 0">
+                <input type="hidden" name="email" value="{{ email }}">
+                <button type="submit">Receber código por e-mail</button>
+              </form>
+              <form method="get" action="{{ url_for('view_login_password') }}">
+                <input type="hidden" name="email" value="{{ email }}">
+                <button type="submit">Entrar com senha</button>
+              </form>
+              <p style="color:#888;margin-top:18px">Tela simples (fallback). Crie <code>templates/login_method.html</code> para personalizar.</p>
+            </div>
+            """, email=email)
+
+        if name == "login_code.html":
+            return render_template_string("""
+            <div style="max-width:520px;margin:32px auto;font-family:system-ui,Arial">
+              <h2>Digite o código enviado por e-mail</h2>
+              <p>E-mail: <strong>{{ email }}</strong></p>
+              <form method="post" action="{{ url_for('validate_login_code') }}" style="margin:16px 0">
+                <input type="hidden" name="email" value="{{ email }}">
+                <div style="display:flex;gap:8px;margin:12px 0">
+                  {% for i in range(1,7) %}
+                    <input name="d{{i}}" maxlength="1" inputmode="numeric" pattern="[0-9]*"
+                           style="width:40px;height:48px;text-align:center;font-size:22px">
+                  {% endfor %}
+                </div>
+                <button type="submit">Validar código</button>
+              </form>
+              <a href="{{ url_for('resend_login_code', email=email) }}">Reenviar código</a>
+              <p style="color:#888;margin-top:18px">Tela simples (fallback). Crie <code>templates/login_code.html</code> para personalizar.</p>
+            </div>
+            """, email=email)
+
+        if name == "login_password.html":
+            return render_template_string("""
+            <div style="max-width:520px;margin:32px auto;font-family:system-ui,Arial">
+              <h2>Entrar com senha</h2>
+              <p>E-mail: <strong>{{ email }}</strong></p>
+              <form method="post" action="{{ url_for('post_login_password') }}" style="margin:16px 0">
+                <input type="hidden" name="email" value="{{ email }}">
+                <input type="password" name="senha" placeholder="Sua senha" required style="width:100%;height:44px">
+                <button type="submit" style="margin-top:12px">Entrar</button>
+              </form>
+              <p style="color:#888;margin-top:18px">Tela simples (fallback). Crie <code>templates/login_password.html</code> para personalizar.</p>
+            </div>
+            """, email=email)
+
+        # fallback genérico se pedirem outro template
+        return render_template_string("<h2>Página</h2><p>Template '{{name}}' não encontrado.</p>", name=name, **ctx)
+
 # --------------------------------------------------------------------
 # INDEX
 # --------------------------------------------------------------------
@@ -608,13 +670,14 @@ def view_login():
 def view_login_trailing():
     return redirect(url_for("login"), code=301)
 
+# --- /login/metodo (GET) ---
 @app.get("/login/metodo", endpoint="login_method")
 def view_login_method():
     email = (request.args.get("email") or "").strip().lower()
     if not email:
         flash("Informe um e-mail para continuar.", "warning")
         return redirect(url_for("login"))
-    return render_template("login_method.html", email=email)
+    return _render_or_fallback("login_method.html", email=email)
 
 @app.get("/login/método")
 def view_login_method_alias_accent():
@@ -624,12 +687,13 @@ def view_login_method_alias_accent():
 def view_login_method_alias_trailing():
     return redirect(url_for("login_method", **request.args), code=301)
 
-@app.post("/login/codigo")
-def post_login_code():
-    email = (request.form.get("email") or "").strip().lower()
+# --- /login/codigo (GET) ---
+@app.get("/login/codigo", endpoint="login_code")
+def get_login_code():
+    email = (request.args.get("email") or "").strip()
     if not email:
-        flash("Informe um e-mail válido.", "warning")
         return redirect(url_for("login"))
+    return _render_or_fallback("login_code.html", email=email)
 
     existe = Empresa.query.filter(func.lower(Empresa.email) == email).first()
     if not existe:
@@ -683,12 +747,13 @@ def validate_login_code():
     flash("E-mail ainda não cadastrado. Conclua seu cadastro para continuar.", "info")
     return redirect(url_for("cadastro_get", email=email))
 
+# --- /login/senha (GET) ---
 @app.get("/login/senha")
 def view_login_password():
     email = (request.args.get("email") or "").strip()
     if not email:
         return redirect(url_for("login"))
-    return render_template("login_password.html", email=email)
+    return _render_or_fallback("login_password.html", email=email)
 
 @app.post("/login/senha/entrar")
 def post_login_password():
