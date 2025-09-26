@@ -474,6 +474,17 @@ def _render_or_fallback(name: str, **ctx):
 
         return render_template_string("<h2>Página</h2><p>Template '{{name}}' não encontrado.</p>", name=name, **ctx)
 
+def _render_try(candidatos: list[str], **ctx):
+    """Tenta renderizar o primeiro template existente na lista.
+       Se nenhum existir, cai num HTML mínimo para não 500."""
+    for nome in candidatos:
+        try:
+            return render_template(nome, **ctx)
+        except TemplateNotFound:
+            continue
+    # Fallback mínimo para não quebrar
+    return render_template_string("<h2>Página temporária</h2><p>Conteúdo indisponível.</p>")
+
 # --------------------------------------------------------------------
 # INDEX
 # --------------------------------------------------------------------
