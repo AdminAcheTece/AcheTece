@@ -735,6 +735,12 @@ def post_login_password():
     session["empresa_apelido"] = user.apelido or user.nome or user.email.split("@")[0]
     return redirect(url_for("painel_malharia"))
 
+@app.get("/oauth/google", endpoint="oauth_google")
+def oauth_google_disabled():
+    # Mantém o URL existente funcionando sem 500.
+    # Quando você ativar OAuth de verdade, substitua esta view.
+    return ("Login com Google está desabilitado no momento.", 501)
+
 @app.route("/logout")
 def logout():
     session.pop("empresa_id", None)
