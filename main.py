@@ -33,12 +33,6 @@ app.logger.setLevel(logging.INFO)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-unsafe')
 app.config['PREFERRED_URL_SCHEME'] = 'https'
 
-SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USER = os.getenv("SMTP_USER")              # ex.: conta de envio
-SMTP_PASS = os.getenv("SMTP_PASS")              # ex.: app password
-SMTP_FROM = os.getenv("SMTP_FROM", SMTP_USER or "no-reply@achetece.com.br")
-MAIL_SUPPRESS_SEND = (os.getenv("MAIL_SUPPRESS_SEND", "").lower() in ("1", "true", "yes"))
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
 CACHE_DIR = os.path.join(BASE_DIR, 'cache_ibge')
@@ -65,17 +59,22 @@ app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# E-mail
-app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
-app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
-app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'true').lower() == 'true'
-app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
-app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
-# NOVO: respeita ambiente (evita travar worker se não houver SMTP)
-app.config['MAIL_SUPPRESS_SEND'] = os.getenv('MAIL_SUPPRESS_SEND', 'false').lower() == 'true'
-app.config["MAIL_SUPPRESS_SEND"] = str(os.getenv("MAIL_SUPPRESS_SEND", "1")).strip().lower() in {"1","true","yes","on"}
-app.config['MAIL_TIMEOUT'] = int(os.getenv('MAIL_TIMEOUT', '6'))
-app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER') or app.config.get('MAIL_USERNAME')
+# --------------------------------------------------------------------
+# E-mail (Flask-Mail) — usa apenas variáveis SMTP_* do ambiente
+# --------------------------------------------------------------------
+app.config.update(
+    MAIL_SERVER=os.getenv("SMTP_HOST", "smtp.gmail.com"),
+    MAIL_PORT=int(os.getenv("SMTP_PORT", "587")),
+    MAIL_USE_TLS=True,
+    MAIL_USE_SSL=False,
+    MAIL_USERNAME=os.getenv("SMTP_USER", ""),
+    MAIL_PASSWORD=os.getenv("SMTP_PASS", ""),
+    MAIL_DEFAULT_SENDER=os.getenv("SMTP_FROM", "AcheTece <no-reply@achetece.com.br>"),
+)
+
+# 0/false = envia; 1/true = suprime envio (útil para testes)
+app.config["MAIL_SUPPRESS_SEND"] = str(os.getenv("MAIL_SUPPRESS_SEND", "1")).strip().lower() in {"1", "true", "yes", "on"}
+
 mail = Mail(app)
 
 # Mercado Pago (mantido para compat)
