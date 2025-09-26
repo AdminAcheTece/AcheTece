@@ -685,10 +685,9 @@ def get_login_code():
     email = (request.args.get("email") or "").strip().lower()
     if not email:
         return redirect(url_for("login"))
-    # Você me enviou um arquivo OTP que está salvo como "login_password.html".
-    # Usamos como fallback aqui, para não quebrar.
+    # Fallback correto para o template de código
     return _render_try(
-        ["login_code.html", "AcheTece/Modelos/login_password.html"],
+        ["login_code.html", "AcheTece/Modelos/login_code.html"],
         email=email
     )
 
@@ -726,13 +725,12 @@ def validate_login_code():
     flash("E-mail ainda não cadastrado. Conclua seu cadastro para continuar.", "info")
     return redirect(url_for("cadastro_get", email=email))
 
-# Senha: TELA (GET)  -> agora **não** usa o arquivo OTP
+# Senha: TELA (GET)
 @app.get("/login/senha", endpoint="view_login_password")
 def view_login_password():
     email = (request.args.get("email") or "").strip().lower()
     if not email:
         return redirect(url_for("login"))
-    # Procuramos por um template de senha; se não existir, mostramos um formulário mínimo
     return _render_try(
         ["login_senha.html", "AcheTece/Modelos/login_senha.html"],
         email=email
@@ -770,8 +768,6 @@ def post_login_password():
 
 @app.get("/oauth/google", endpoint="oauth_google")
 def oauth_google_disabled():
-    # Mantém o URL existente funcionando sem 500.
-    # Quando você ativar OAuth de verdade, substitua esta view.
     return ("Login com Google está desabilitado no momento.", 501)
 
 @app.route("/logout")
