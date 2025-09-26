@@ -1527,6 +1527,10 @@ def fale_conosco():
 def termos():
     return render_template("termos_politicas.html")
 
+@app.get("/static/icone_whatsapp.png")
+def static_alias_whatsapp():
+    return redirect(url_for('static', filename='ícone_whatsapp.png'), code=302)
+
 @app.route('/malharia_info')
 def malharia_info():
     return render_template('malharia_info.html')
