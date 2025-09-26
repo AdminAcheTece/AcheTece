@@ -81,7 +81,8 @@
       </div>
       {% endif %}
 
-      <form method="POST" action="{{ url_for('view_login') }}" novalidate>
+      <!-- CORRIGIDO: action aponta para o endpoint 'login' -->
+      <form method="POST" action="{{ url_for('login') }}" novalidate>
         <label for="email">E-mail</label>
         <input id="email" name="email" type="email" class="input" autocomplete="email" required
                value="{{ email or request.args.get('email','') }}">
@@ -107,4 +108,3 @@
   </main>
 </body>
 </html>
-
