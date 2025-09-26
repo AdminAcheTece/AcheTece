@@ -737,22 +737,27 @@ def logout():
     session.pop("empresa_apelido", None)
     return redirect(url_for("index"))
 
-# Cadastro (abre sempre o novo cadastro.html; cai para o antigo só se faltar o arquivo)
+# no topo (já deve existir, mas garanto aqui)
+from jinja2 import TemplateNotFound
+import re
+
+# --------------------------------------------------------------------
+# Cadastro
+# --------------------------------------------------------------------
+
 @app.get("/cadastro", endpoint="cadastro_get")
 def cadastro_get():
     email = (request.args.get("email") or "").strip().lower()
-
-    # 1ª preferência: templates/cadastro.html
+    # 1ª opção: novo template
     try:
         return render_template("cadastro.html", email=email)
     except TemplateNotFound:
         pass
-
-    # 2ª preferência: templates/AcheTece/Modelos/cadastro.html
+    # 2ª opção: caminho alternativo (se você mantiver a pasta)
     try:
         return render_template("AcheTece/Modelos/cadastro.html", email=email)
     except TemplateNotFound:
-        # Fallback final: não quebra e usa o formulário antigo
+        # Fallback final (não quebra)
         return render_template(
             "cadastrar_empresa.html",
             estados=[
@@ -762,11 +767,80 @@ def cadastro_get():
             email=email
         )
 
-@app.post("/cadastro")
+@app.post("/cadastro", endpoint="cadastro_post")
 def cadastro_post():
-    # Por enquanto, apenas redireciona de volta (ou para onde você quiser tratar o POST)
+    # Campos do formulário
+    tipo = (request.form.get("tipo_pessoa") or "pf").lower()
+    cpf_cnpj = (request.form.get("cpf_cnpj") or "").strip()
+    nome_completo = (request.form.get("nome") or "").strip()
+    apelido = (request.form.get("apelido") or "").strip()
+    nascimento = (request.form.get("nascimento") or "").strip()
+    telefone = re.sub(r"\D+", "", request.form.get("telefone", "") or "")
     email = (request.form.get("email") or "").strip().lower()
-    return redirect(url_for("cadastro_get", email=email) if email else url_for("cadastro_get"))
+    senha = (request.form.get("senha") or "")
+
+    # Validações mínimas
+    erros = {}
+    if not email:
+        erros["email"] = "Informe um e-mail válido."
+    elif Empresa.query.filter(func.lower(Empresa.email) == email).first():
+        erros["email"] = "Este e-mail já está cadastrado."
+    if len(nome_completo) < 2:
+        erros["nome"] = "Informe seu nome completo."
+    if len(senha) < 6:
+        erros["senha"] = "Crie uma senha com pelo menos 6 caracteres."
+
+    if erros:
+        # volta para o mesmo template de cadastro, preservando valores
+        try:
+            return render_template(
+                "cadastro.html",
+                erros=erros, email=email, nome=nome_completo, apelido=apelido,
+                telefone=telefone, cpf_cnpj=cpf_cnpj, tipo_pessoa=tipo,
+                nascimento=nascimento
+            )
+        except TemplateNotFound:
+            flash(next(iter(erros.values())), "error")
+            return redirect(url_for("cadastro_get", email=email))
+
+    # Quebra do nome em primeiro nome e sobrenome
+    partes = nome_completo.split()
+    responsavel_nome = partes[0]
+    responsavel_sobrenome = " ".join(partes[1:]) if len(partes) > 1 else None
+
+    # Cria Empresa (rascunho) + vincula Usuario
+    nova = Empresa(
+        nome=apelido or nome_completo,
+        apelido=apelido or None,
+        email=email,
+        senha=generate_password_hash(senha),
+        cidade=None,
+        estado=None,
+        telefone=telefone or None,
+        status_pagamento="pendente",
+        responsavel_nome=responsavel_nome,
+        responsavel_sobrenome=responsavel_sobrenome
+    )
+    db.session.add(nova)
+    db.session.flush()
+
+    u = Usuario.query.filter_by(email=email).first()
+    if not u:
+        u = Usuario(email=email, senha_hash=nova.senha, role=None, is_active=True)
+        db.session.add(u)
+        db.session.flush()
+    nova.user_id = u.id
+    db.session.commit()
+
+    # Autentica e manda para o onboarding (editar empresa)
+    session["empresa_id"] = nova.id
+    session["empresa_apelido"] = nova.apelido or nova.nome or email.split("@")[0]
+    flash("Conta criada! Complete os dados da sua empresa para continuar.", "success")
+    return redirect(url_for("editar_empresa"))
+
+    # >>> Se preferir levar para o login em vez do onboarding,
+    # troque a linha acima por:
+    # return redirect(url_for("view_login", email=email))
 
 # ====== OAuth Google (stub para não dar 404 por enquanto) ======
 @app.get("/oauth/google")
