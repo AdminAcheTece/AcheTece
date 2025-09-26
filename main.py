@@ -356,7 +356,6 @@ def _otp_email_html(email: str, code: str):
     """, email=email, code=code)
 
 def _otp_send(email: str, ip: str = "", ua: str = "") -> tuple[bool, str]:
-    import socket
     email = (email or "").strip().lower()
     if not email:
         return False, "Informe um e-mail válido."
@@ -380,7 +379,9 @@ def _otp_send(email: str, ip: str = "", ua: str = "") -> tuple[bool, str]:
         user_agent=(ua or "")[:255],
     )
     try:
-        OtpToken.query.filter((OtpToken.email == email) & (OtpToken.used_at.is_(None))).delete(synchronize_session=False)
+        OtpToken.query.filter(
+            (OtpToken.email == email) & (OtpToken.used_at.is_(None))
+        ).delete(synchronize_session=False)
         db.session.add(token)
         db.session.commit()
     except Exception as e:
@@ -388,34 +389,39 @@ def _otp_send(email: str, ip: str = "", ua: str = "") -> tuple[bool, str]:
         db.session.rollback()
         return False, "Falha ao gerar o código. Tente novamente."
 
-    # Se não deve enviar, apenas loga o código e segue
-    if app.config.get("MAIL_SUPPRESS_SEND", True):
-        app.logger.info(f"[OTP SUPRIMIDO] {email} codigo={code}")
-        return True, "Código gerado. Verifique seu e-mail."
+    # --- Envio / Modo teste / Fallback ---
+    suppressed = bool(app.config.get("MAIL_SUPPRESS_SEND"))
+    dev_fallback = bool(app.config.get("OTP_DEV_FALLBACK"))
 
-    # Se faltar configuração, evita travar tentando conectar
-    host = app.config.get("MAIL_SERVER")
-    port = app.config.get("MAIL_PORT")
-    user = app.config.get("MAIL_USERNAME")
-    pwd  = app.config.get("MAIL_PASSWORD")
-    if not host or not port or not user or not pwd:
-        app.logger.warning(f"[OTP] SMTP incompleto (host={host}, port={port}, user={user}). Suprimindo envio.")
-        app.logger.info(f"[OTP SUPRIMIDO] {email} codigo={code}")
-        return True, "Código gerado. Verifique seu e-mail."
+    # Em modo teste: não tenta SMTP; só loga o código e segue
+    if suppressed:
+        app.logger.info(f"[OTP SUPPRESSED] {email} code={code}")
+        return True, "Código gerado. Siga para digitar o código."
 
     try:
-        # timeout de rede defensivo
-        socket.setdefaulttimeout(12)
+        # Timeout curto para não travar o worker
+        timeout = int(app.config.get("MAIL_TIMEOUT", 8))
+        # alguns provedores ignoram, mas mantemos por clareza
+        mail_state = mail
+        mail_state.mail.timeout = timeout
 
-        msg = Message(subject="Seu código de acesso • AcheTece", recipients=[email])
+        msg = Message(
+            subject="Seu código de acesso • AcheTece",
+            recipients=[email],
+            sender=app.config.get("MAIL_DEFAULT_SENDER"),
+        )
         msg.html = _otp_email_html(email, code)
         msg.body = f"Seu código AcheTece: {code}\nVálido por 30 minutos."
         mail.send(msg)
-        app.logger.info(f"[OTP ENVIADO] para={email}")
         return True, "Código enviado para o seu e-mail."
+
     except Exception as e:
+        # Falhou SMTP (ex.: rede inacessível/porta bloqueada)
         app.logger.exception(f"[OTP] erro ao enviar e-mail: {e}")
-        # Não bloqueia o usuário: mantém o código válido e instrui a tentar novamente
+        if dev_fallback:
+            app.logger.warning(f"[OTP FALLBACK] envio falhou; usando modo dev. {email} code={code}")
+            # Importante: o código foi logado. Usuário consegue seguir digitando.
+            return True, "Não foi possível enviar o e-mail agora. Como estamos testando, o código foi gerado e registrado nos logs."
         return False, "Não foi possível enviar o e-mail agora. Tente novamente em instantes."
 
 def _otp_validate(email: str, code: str) -> tuple[bool, str]:
