@@ -613,22 +613,22 @@ def index():
         estados=opcoes["estado"],
     )
 
-# --------------------------------------------------------------------
-# Login / Sessão  (fluxo multi-etapas)
-# --------------------------------------------------------------------
+# /login
 @app.route("/login", methods=["GET", "POST"], endpoint="login")
 def view_login():
     if request.method == "GET":
         email = (request.args.get("email") or "").strip().lower()
-        return render_template("login.html", email=email)
+        # tenta templates do projeto; cai em AcheTece/Modelos/login.html se existir
+        return _render_try(["login.html", "AcheTece/Modelos/login.html"], email=email)
 
+    # POST (clicou Continuar)
     email = (request.form.get("email") or "").strip().lower()
     if not email or "@" not in email:
-        return render_template("login.html", email=email, error="Informe um e-mail válido.")
+        return _render_try(["login.html", "AcheTece/Modelos/login.html"], email=email, error="Informe um e-mail válido.")
 
     existe = Empresa.query.filter(func.lower(Empresa.email) == email).first()
     if not existe:
-        return render_template("login.html", email=email, no_account=True)
+        return _render_try(["login.html", "AcheTece/Modelos/login.html"], email=email, no_account=True)
 
     return redirect(url_for("login_method", email=email))
 
@@ -636,13 +636,15 @@ def view_login():
 def view_login_trailing():
     return redirect(url_for("login"), code=301)
 
+# /login/metodo (escolha)
 @app.get("/login/metodo", endpoint="login_method")
 def view_login_method():
     email = (request.args.get("email") or "").strip().lower()
     if not email:
         flash("Informe um e-mail para continuar.", "warning")
         return redirect(url_for("login"))
-    return _render_or_fallback("login_method.html", email=email)
+    # seu arquivo existe em AcheTece/Modelos/login_method.html
+    return _render_try(["login_method.html", "AcheTece/Modelos/login_method.html"], email=email)
 
 @app.get("/login/método", endpoint="login_method_accent")
 def view_login_method_alias_accent():
@@ -652,6 +654,7 @@ def view_login_method_alias_accent():
 def view_login_method_alias_trailing():
     return redirect(url_for("login_method", **request.args), code=301)
 
+# Disparar envio do código (POST)
 @app.post("/login/codigo", endpoint="post_login_code")
 def post_login_code():
     email = (request.form.get("email") or "").strip().lower()
@@ -661,11 +664,11 @@ def post_login_code():
 
     existe = Empresa.query.filter(func.lower(Empresa.email) == email).first()
     if not existe:
-        return render_template("login.html", email=email, no_account=True)
+        return _render_try(["login.html", "AcheTece/Modelos/login.html"], email=email, no_account=True)
 
     ok, msg = _otp_send(
         email,
-        ip=request.headers.get("X-Forwarded-For", request.remote_addr or "")[:64],
+        ip=(request.headers.get("X-Forwarded-For") or request.remote_addr or "")[:64],
         ua=(request.headers.get("User-Agent") or "")[:255],
     )
     flash(msg, "success" if ok else "error")
@@ -676,13 +679,20 @@ def post_login_code():
 def post_login_code_accent():
     return post_login_code()
 
+# Tela para digitar o código (GET)
 @app.get("/login/codigo", endpoint="login_code")
 def get_login_code():
-    email = (request.args.get("email") or "").strip()
+    email = (request.args.get("email") or "").strip().lower()
     if not email:
         return redirect(url_for("login"))
-    return _render_or_fallback("login_code.html", email=email)
+    # Você me enviou um arquivo OTP que está salvo como "login_password.html".
+    # Usamos como fallback aqui, para não quebrar.
+    return _render_try(
+        ["login_code.html", "AcheTece/Modelos/login_password.html"],
+        email=email
+    )
 
+# Reenviar código (GET)
 @app.get("/login/codigo/reenviar", endpoint="resend_login_code")
 def resend_login_code():
     email = (request.args.get("email") or "").strip().lower()
@@ -690,12 +700,13 @@ def resend_login_code():
         return redirect(url_for("login"))
     ok, msg = _otp_send(
         email,
-        ip=request.headers.get("X-Forwarded-For", request.remote_addr or "")[:64],
-        ua=(request.headers.get("User-Agent") or "")[:255]
+        ip=(request.headers.get("X-Forwarded-For") or request.remote_addr or "")[:64],
+        ua=(request.headers.get("User-Agent") or "")[:255],
     )
     flash(msg, "success" if ok else "error")
     return redirect(url_for("login_code", email=email))
 
+# Validar código (POST)
 @app.post("/login/codigo/validar", endpoint="validate_login_code")
 def validate_login_code():
     email = (request.form.get("email") or "").strip().lower()
@@ -715,33 +726,44 @@ def validate_login_code():
     flash("E-mail ainda não cadastrado. Conclua seu cadastro para continuar.", "info")
     return redirect(url_for("cadastro_get", email=email))
 
+# Senha: TELA (GET)  -> agora **não** usa o arquivo OTP
 @app.get("/login/senha", endpoint="view_login_password")
 def view_login_password():
-    email = (request.args.get("email") or "").strip()
+    email = (request.args.get("email") or "").strip().lower()
     if not email:
         return redirect(url_for("login"))
-    return _render_or_fallback("login_password.html", email=email)
+    # Procuramos por um template de senha; se não existir, mostramos um formulário mínimo
+    return _render_try(
+        ["login_senha.html", "AcheTece/Modelos/login_senha.html"],
+        email=email
+    )
 
+# Senha: AUTENTICAR (POST)
 @app.post("/login/senha/entrar", endpoint="post_login_password")
 def post_login_password():
     email = (request.form.get("email") or "").strip().lower()
     senha = (request.form.get("senha") or "")
     user = Empresa.query.filter(func.lower(Empresa.email) == email).first()
     GENERIC_FAIL = "E-mail ou senha incorretos. Tente novamente."
+
     if not user:
-        flash(GENERIC_FAIL)
+        flash(GENERIC_FAIL, "error")
         return redirect(url_for("view_login_password", email=email))
+
+    ok = False
     try:
         ok = check_password_hash(user.senha, senha)
     except Exception as e:
         app.logger.warning(f"[LOGIN WARN] check_password_hash: {e}")
-        ok = False
+
     if not ok:
-        flash(GENERIC_FAIL)
+        flash(GENERIC_FAIL, "error")
         return redirect(url_for("view_login_password", email=email))
+
     if not DEMO_MODE and (user.status_pagamento or "").lower() not in ("aprovado", "ativo"):
-        flash("Pagamento ainda não aprovado.")
-        return redirect(url_for("login"))
+        flash("Pagamento ainda não aprovado.", "warning")
+        return redirect(url_for("login_method", email=email))
+
     session["empresa_id"] = user.id
     session["empresa_apelido"] = user.apelido or user.nome or user.email.split("@")[0]
     return redirect(url_for("painel_malharia"))
