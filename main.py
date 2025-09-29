@@ -2,7 +2,8 @@ from flask import (
     Flask, render_template, request, redirect, url_for, flash, session,
     render_template_string, send_file, jsonify, abort
 )
-from flask_mail import Mail, Message
+# Removido o uso de Flask-Mail para envio (vamos usar smtplib com timeout)
+# from flask_mail import Mail, Message
 from flask_sqlalchemy import SQLAlchemy
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -22,6 +23,8 @@ from sqlalchemy import inspect, text, or_, func
 from pathlib import Path
 import random
 from jinja2 import TemplateNotFound
+
+# Envio SMTP direto (estável na Render)
 import smtplib, ssl
 from email.message import EmailMessage
 
@@ -37,6 +40,10 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
 CACHE_DIR = os.path.join(BASE_DIR, 'cache_ibge')
 os.makedirs(CACHE_DIR, exist_ok=True)
+
+def _env_bool(name: str, default: bool = False) -> bool:
+    v = str(os.getenv(name, str(default))).strip().lower()
+    return v in {"1", "true", "yes", "on"}
 
 def base_url():
     env_url = os.getenv('APP_BASE_URL')
@@ -57,132 +64,72 @@ if db_url.startswith('postgresql+psycopg://') and 'sslmode=' not in db_url:
     db_url += ('&' if '?' in db_url else '?') + 'sslmode=require'
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Evita erros de conexão "SSL decryption failed" quando o worker reinicia
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    "pool_pre_ping": True,
+    "pool_recycle": 280,
+    "pool_timeout": 30,
+}
+
 db = SQLAlchemy(app)
 
 # --------------------------------------------------------------------
-# E-mail — Config SMTP (fallback/local) + Mailgun (principal em produção)
+# E-mail (SMTP direto) — usa variáveis SMTP_* do ambiente
 # --------------------------------------------------------------------
-# Flask-Mail (para uso local ou fallback)
 app.config.update(
-    MAIL_SERVER=os.getenv("SMTP_HOST", "smtp.gmail.com"),
-    MAIL_PORT=int(os.getenv("SMTP_PORT", "587")),
-    MAIL_USE_TLS=True,
-    MAIL_USE_SSL=False,
-    MAIL_USERNAME=os.getenv("SMTP_USER", ""),
-    MAIL_PASSWORD=os.getenv("SMTP_PASS", ""),
-    MAIL_DEFAULT_SENDER=os.getenv("SMTP_FROM", "AcheTece <no-reply@achetece.com.br>"),
+    SMTP_HOST=os.getenv("SMTP_HOST", "smtp.gmail.com"),
+    SMTP_PORT=int(os.getenv("SMTP_PORT", "465")),  # 465 SSL é mais estável na Render
+    SMTP_USER=os.getenv("SMTP_USER", ""),
+    SMTP_PASS=os.getenv("SMTP_PASS", ""),
+    SMTP_FROM=os.getenv("SMTP_FROM", os.getenv("SMTP_USER", "")),
+    MAIL_TIMEOUT=int(os.getenv("MAIL_TIMEOUT", "8")),             # segundos
+    MAIL_SUPPRESS_SEND=_env_bool("MAIL_SUPPRESS_SEND", False),    # True = NÃO envia (modo teste)
+    OTP_DEV_FALLBACK=_env_bool("OTP_DEV_FALLBACK", False),        # True = loga e deixa seguir
 )
-# 0/false = envia; 1/true = suprime envio (útil para testes)
-app.config["MAIL_SUPPRESS_SEND"] = str(os.getenv("MAIL_SUPPRESS_SEND", "1")).strip().lower() in {"1", "true", "yes", "on"}
-mail = Mail(app)
 
-# Mailgun (API HTTP) — recomendado na Render Free
-MAILGUN_DOMAIN   = os.getenv("MAILGUN_DOMAIN", "")
-MAILGUN_API_KEY  = os.getenv("MAILGUN_API_KEY", "")
-MAILGUN_BASE_URL = os.getenv("MAILGUN_BASE_URL", "https://api.mailgun.net/v3").rstrip("/")
-MAILGUN_FROM     = os.getenv("MAILGUN_FROM", app.config.get("MAIL_DEFAULT_SENDER"))
-
-def _mailgun_config_ok() -> bool:
-    return bool(MAILGUN_DOMAIN and MAILGUN_API_KEY and MAILGUN_FROM)
-
-def send_email_mailgun(to_email: str, subject: str, html: str = None, text: str = None, reply_to: str = None) -> tuple[bool, str]:
-    """Envia via Mailgun API HTTP. Retorna (ok, msg)."""
-    try:
-        url = f"{MAILGUN_BASE_URL}/{MAILGUN_DOMAIN}/messages"
-        data = {
-            "from": MAILGUN_FROM,
-            "to": [to_email],
-            "subject": subject,
-        }
-        if text:
-            data["text"] = text
-        if html:
-            data["html"] = html
-        if reply_to:
-            data["h:Reply-To"] = reply_to
-
-        resp = requests.post(url, auth=("api", MAILGUN_API_KEY), data=data, timeout=12)
-        if 200 <= resp.status_code < 300:
-            return True, "Enviado via Mailgun."
-        return False, f"Mailgun falhou ({resp.status_code}): {resp.text[:200]}"
-    except Exception as e:
-        app.logger.exception("[MAILGUN] exceção no envio")
-        return False, f"Mailgun exceção: {e}"
-
-def send_email_smtp(to_email: str, subject: str, html: str = None, text: str = None, reply_to: str = None) -> tuple[bool, str]:
-    """Fallback SMTP manual usando smtplib (para ambiente local)."""
-    try:
-        cfg = app.config
-        username = cfg.get("MAIL_USERNAME")
-        password = cfg.get("MAIL_PASSWORD")
-        host     = cfg.get("MAIL_SERVER")
-        port     = int(cfg.get("MAIL_PORT") or 587)
-        sender   = cfg.get("MAIL_DEFAULT_SENDER") or username
-
-        if not (username and password and host and port and sender):
-            return False, "SMTP não configurado."
-
-        msg = EmailMessage()
-        msg["Subject"] = subject
-        msg["From"] = sender
-        msg["To"] = to_email
-        if reply_to:
-            msg["Reply-To"] = reply_to
-        if text:
-            msg.set_content(text)
-        else:
-            msg.set_content("Veja este e-mail em HTML.")
-        if html:
-            msg.add_alternative(html, subtype="html")
-
-        ctx = ssl.create_default_context()
-        with smtplib.SMTP(host, port, timeout=20) as s:
-            s.starttls(context=ctx)
-            s.login(username, password)
-            s.send_message(msg)
-        return True, "Enviado via SMTP."
-    except Exception as e:
-        app.logger.exception("[SMTP] exceção no envio")
-        return False, f"SMTP exceção: {e}"
-
-def send_email_unified(to_email: str, subject: str, html: str = None, text: str = None, reply_to: str = None) -> tuple[bool, str]:
+def _smtp_send_direct(to: str, subject: str, html: str, text: str | None = None) -> tuple[bool, str]:
     """
-    Envio unificado:
-      - Se MAIL_SUPPRESS_SEND=1: apenas loga e retorna sucesso (modo teste).
-      - Se Mailgun configurado: usa Mailgun (HTTPS/porta 443 — funciona na Render Free).
-      - Fallback: Flask-Mail (se houver) ou SMTP manual.
+    Envia e-mail via SMTP (Gmail) com timeout curto.
+    Suporta SSL (465) ou STARTTLS (587). Retorna (ok, mensagem).
     """
     if app.config.get("MAIL_SUPPRESS_SEND"):
-        app.logger.info(f"[MAIL SUPPRESSED] to={to_email} subject={subject}")
+        app.logger.info(f"[SMTP SUPPRESSED] to={to} subj={subject}")
         return True, "Envio suprimido (teste)."
 
-    if _mailgun_config_ok():
-        ok, msg = send_email_mailgun(to_email, subject, html=html, text=text, reply_to=reply_to)
-        if ok:
-            return True, msg
-        # se Mailgun falhar, tenta fallback
-        app.logger.warning(f"[MAILGUN->FALLBACK] {msg}")
+    host = app.config.get("SMTP_HOST") or "smtp.gmail.com"
+    port = int(app.config.get("SMTP_PORT") or 465)
+    user = app.config.get("SMTP_USER") or ""
+    pwd  = app.config.get("SMTP_PASS") or ""
+    sender = app.config.get("SMTP_FROM") or user
+    timeout = int(app.config.get("MAIL_TIMEOUT") or 8)
 
-    # Fallback 1: Flask-Mail (se inicializado e com credenciais)
+    if not (user and pwd and sender and to):
+        return False, "SMTP não configurado."
+
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = sender
+    msg["To"] = to
+    msg.set_content(text or "Veja este e-mail em HTML.")
+    msg.add_alternative(html, subtype="html")
+
     try:
-        # Verifica credenciais mínimas
-        if app.config.get("MAIL_USERNAME") and app.config.get("MAIL_PASSWORD"):
-            m = Message(subject=subject,
-                        recipients=[to_email],
-                        sender=app.config.get("MAIL_DEFAULT_SENDER"))
-            if reply_to:
-                m.reply_to = reply_to
-            if html:
-                m.html = html
-            if text:
-                m.body = text
-            mail.send(m)
-            return True, "Enviado via Flask-Mail."
+        if port == 465:
+            with smtplib.SMTP_SSL(host, port, timeout=timeout) as s:
+                s.login(user, pwd)
+                s.send_message(msg)
+        else:
+            ctx = ssl.create_default_context()
+            with smtplib.SMTP(host, port, timeout=timeout) as s:
+                s.ehlo()
+                s.starttls(context=ctx)
+                s.login(user, pwd)
+                s.send_message(msg)
+        return True, "E-mail enviado."
     except Exception as e:
-        app.logger.warning(f"[Flask-Mail FALLBACK] falhou: {e}")
-
-    # Fallback 2: SMTP manual
-    return send_email_smtp(to_email, subject, html=html, text=text, reply_to=reply_to)
+        app.logger.exception(f"[SMTP] Falha ao enviar para {to}: {e}")
+        return False, f"Falha SMTP: {e}"
 
 # Mercado Pago (mantido para compat)
 MP_ACCESS_TOKEN = os.getenv("MP_ACCESS_TOKEN") or os.getenv("MERCADO_PAGO_TOKEN", "")
@@ -194,10 +141,6 @@ PLAN_YEARLY = float(os.getenv("PLAN_YEARLY", "2.00"))
 DEMO_MODE = os.getenv("DEMO_MODE", "true").lower() == "true"
 DEMO_TOKEN = os.getenv("DEMO_TOKEN", "localdemo")
 SEED_TOKEN = os.getenv("SEED_TOKEN", "ACHETECE")
-
-# Admin (ajuste: agora via env, com default para manter compatibilidade)
-ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "gestao.achetece@gmail.com")
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "123adm@achetece")
 
 # --------------------------------------------------------------------
 # Helpers
@@ -211,7 +154,6 @@ def gerar_token(email):
 def enviar_email_recuperacao(email, nome_empresa=""):
     token = gerar_token(email)
     link = f"{base_url()}{url_for('redefinir_senha', token=token)}"
-    subj = "Redefinição de Senha - AcheTece"
     html = render_template_string("""
     <html><body style="font-family:Arial,sans-serif">
       <h2>Redefinição de Senha</h2>
@@ -220,14 +162,19 @@ def enviar_email_recuperacao(email, nome_empresa=""):
       <p><a href="{{ link }}" target="_blank">Redefinir Senha</a></p>
     </body></html>
     """, nome=nome_empresa or email, link=link)
-    ok, msg = send_email_unified(email, subj, html=html, text=None)
+    ok, _ = _smtp_send_direct(
+        to=email,
+        subject="Redefinição de Senha - AcheTece",
+        html=html,
+        text=f"Para redefinir sua senha, acesse: {link}",
+    )
     if not ok:
-        raise RuntimeError(msg)
+        raise RuntimeError("Falha ao enviar e-mail de recuperação.")
 
 def login_admin_requerido(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if session.get('admin_email') != ADMIN_EMAIL:
+        if session.get('admin_email') != 'gestao.achetece@gmail.com':
             flash('Acesso não autorizado.')
             return redirect(url_for('admin_login'))
         return f(*args, **kwargs)
@@ -385,9 +332,7 @@ def assinatura_ativa_requerida(f):
         return f(*args, **kwargs)
     return wrapper
 
-# --------------------------------------------------------------------
-# OTP + e-mails unificados
-# --------------------------------------------------------------------
+# OTP helpers
 def _otp_generate():
     return f"{random.randint(0, 999999):06d}"
 
@@ -473,19 +418,25 @@ def _otp_send(email: str, ip: str = "", ua: str = "") -> tuple[bool, str]:
         db.session.rollback()
         return False, "Falha ao gerar o código. Tente novamente."
 
-    # Envio unificado (sem mexer em timeouts internos / sem SMTP direto na Render)
+    # Envio
+    if app.config.get("MAIL_SUPPRESS_SEND"):
+        app.logger.info(f"[OTP SUPPRESSED] {email} code={code}")
+        return True, "Código gerado. Siga para digitar o código."
+
     subj = "Seu código de acesso • AcheTece"
     html = _otp_email_html(email, code)
-    text = f"Seu código AcheTece: {code}\nVálido por 30 minutos."
-    ok, msg = send_email_unified(email, subj, html=html, text=text)
-    if ok:
+    texto = f"Seu código AcheTece: {code}\nVálido por 30 minutos."
+
+    ok_envio, msg_envio = _smtp_send_direct(email, subj, html, texto)
+    if ok_envio:
         return True, "Código enviado para o seu e-mail."
-    else:
-        # Modo dev opcional: permitir seguir mesmo sem enviar (logado)
-        if bool(app.config.get("OTP_DEV_FALLBACK")):
-            app.logger.warning(f"[OTP FALLBACK DEV] envio falhou; usando modo dev. {email} code={code}")
-            return True, "Não foi possível enviar o e-mail agora, mas o código foi gerado (ambiente de teste)."
-        return False, "Não foi possível enviar o e-mail agora. Tente novamente em instantes."
+
+    # Fallback amigável (somente em teste)
+    if app.config.get("OTP_DEV_FALLBACK"):
+        app.logger.warning(f"[OTP FALLBACK] envio falhou; código logado. {email} code={code} err={msg_envio}")
+        return True, "Não foi possível enviar o e-mail agora. Como estamos testando, o código foi gerado e registrado nos logs."
+
+    return False, "Não foi possível enviar o e-mail agora. Tente novamente em instantes."
 
 def _otp_validate(email: str, code: str) -> tuple[bool, str]:
     email = (email or "").strip().lower()
@@ -588,11 +539,14 @@ def _render_or_fallback(name: str, **ctx):
         return render_template_string("<h2>Página</h2><p>Template '{{name}}' não encontrado.</p>", name=name, **ctx)
 
 def _render_try(candidatos: list[str], **ctx):
+    """Tenta renderizar o primeiro template existente na lista.
+       Se nenhum existir, cai num HTML mínimo para não 500."""
     for nome in candidatos:
         try:
             return render_template(nome, **ctx)
         except TemplateNotFound:
             continue
+    # Fallback mínimo para não quebrar
     return render_template_string("<h2>Página temporária</h2><p>Conteúdo indisponível.</p>")
 
 # --------------------------------------------------------------------
@@ -730,6 +684,7 @@ def view_login():
         email = (request.args.get("email") or "").strip().lower()
         return _render_try(["login.html", "AcheTece/Modelos/login.html"], email=email)
 
+    # POST (clicou Continuar)
     email = (request.form.get("email") or "").strip().lower()
     if not email or "@" not in email:
         return _render_try(["login.html", "AcheTece/Modelos/login.html"], email=email, error="Informe um e-mail válido.")
@@ -757,7 +712,7 @@ def view_login_method():
 def view_login_method_alias_accent():
     return redirect(url_for("login_method", **request.args), code=301)
 
-@app.get("/login/metodo/", endpoint="login_method_alias_trailing")
+@app.get("/login/metodo/", endpoint="login_method_trailing")
 def view_login_method_alias_trailing():
     return redirect(url_for("login_method", **request.args), code=301)
 
@@ -781,6 +736,7 @@ def post_login_code():
     flash(msg, "success" if ok else "error")
     return redirect(url_for("login_code", email=email))
 
+# Alias com acento (POST)
 @app.post("/login/código", endpoint="post_login_code_accent")
 def post_login_code_accent():
     return post_login_code()
@@ -888,7 +844,7 @@ def _empresa_basica_completa(emp: Empresa) -> bool:
     ok_resp = bool((emp.responsavel_nome or "").strip())
     ok_local = bool((emp.cidade or "").strip()) and bool((emp.estado or "").strip())
     ok_tel   = bool((emp.telefone or "").strip())
-    return ok_resp and ok_local and ok_tel
+    return ok_resp, ok_local, ok_tel
 
 def _conta_teares(emp_id: int) -> int:
     try:
@@ -897,7 +853,8 @@ def _conta_teares(emp_id: int) -> int:
         return 0
 
 def _proximo_step(emp: Empresa) -> str:
-    if not _empresa_basica_completa(emp):
+    ok_resp, ok_local, ok_tel = _empresa_basica_completa(emp)
+    if not (ok_resp and ok_local and ok_tel):
         return "perfil"
     if _conta_teares(emp.id) == 0:
         return "teares"
@@ -914,7 +871,7 @@ def painel_malharia():
     is_ativa = (emp.status_pagamento or "pendente") in ("ativo", "aprovado")
 
     checklist = {
-        "perfil_ok": _empresa_basica_completa(emp),
+        "perfil_ok": all(_empresa_basica_completa(emp)),
         "teares_ok": _conta_teares(emp.id) > 0,
         "plano_ok": is_ativa or DEMO_MODE,
         "step": step,
@@ -1240,7 +1197,7 @@ def editar_empresa():
 def admin_login():
     if request.method == 'POST':
         email = request.form.get('email'); senha = request.form.get('senha')
-        if email == ADMIN_EMAIL and senha == ADMIN_PASSWORD:
+        if email == 'gestao.achetece@gmail.com' and senha == '123adm@achetece':
             session['admin_email'] = email
             flash('Login de administrador realizado.', 'success')
             return redirect(url_for('admin_empresas'))
@@ -1302,7 +1259,7 @@ def admin_editar_status(empresa_id):
 @app.route('/admin/excluir_empresa/<int:empresa_id>', methods=['POST'])
 @login_admin_requerido
 def excluir_empresa(empresa_id):
-    if session.get('admin_email') != ADMIN_EMAIL:
+    if session.get('admin_email') != 'gestao.achetece@gmail.com':
         flash('Acesso não autorizado.')
         return redirect(url_for('login'))
     empresa = Empresa.query.get_or_404(empresa_id)
@@ -1528,16 +1485,21 @@ def contato():
             erro = "Preencha todos os campos."
         else:
             try:
-                subj = f"[AcheTece] Novo contato — {nome}"
-                text = f"Nome: {nome}\nE-mail: {email}\n\nMensagem:\n{mensagem}"
-                to_admin = os.getenv("CONTACT_TO", app.config.get("MAIL_USERNAME") or "")
-                if not to_admin:
-                    raise RuntimeError("CONTACT_TO não configurado.")
-                ok, msg = send_email_unified(to_admin, subj, html=None, text=text, reply_to=email)
-                if ok:
-                    enviado = True
-                else:
-                    erro = f"Falha ao enviar: {msg}"
+                html = render_template_string("""
+                <p>Nome: <strong>{{nome}}</strong></p>
+                <p>E-mail: <strong>{{email}}</strong></p>
+                <hr>
+                <p>{{mensagem}}</p>
+                """, nome=nome, email=email, mensagem=mensagem)
+                ok, _ = _smtp_send_direct(
+                    to=os.getenv("CONTACT_TO", app.config.get("SMTP_USER") or ""),
+                    subject=f"[AcheTece] Novo contato — {nome}",
+                    html=html,
+                    text=f"Nome: {nome}\nE-mail: {email}\n\nMensagem:\n{mensagem}"
+                )
+                enviado = ok
+                if not ok:
+                    erro = "Falha ao enviar. Tente novamente."
             except Exception as e:
                 erro = f"Falha ao enviar: {e}"
     return render_template("fale_conosco.html", enviado=enviado, erro=erro)
