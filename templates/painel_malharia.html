@@ -272,12 +272,12 @@
         {% endif %}
 
         <!-- Seção de exclusão de conta (exibe apenas se houver empresa cadastrada) -->
-        {% if empresa %}
-        <div style="margin:28px 0; display:flex; justify-content:center;">
-            <form method="POST" action="{{ url_for('excluir_empresa') }}" onsubmit="return confirm('Deseja realmente excluir sua conta? Esta ação é irreversível.');">
-                <button type="submit" class="btn-perigo">Excluir conta</button>
-            </form>
-        </div>
+        {% if empresa and empresa.id %}
+          <form method="POST"
+                action="{{ url_for('excluir_empresa', empresa_id=empresa.id) }}"
+                onsubmit="return confirm('Deseja realmente excluir sua conta? Esta ação é irreversível.');">
+            <button type="submit" class="btn-perigo">Excluir conta</button>
+          </form>
         {% endif %}
 
         {% if empresa and not _assin_ativa %}
