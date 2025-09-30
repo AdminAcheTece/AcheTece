@@ -5,16 +5,13 @@
     <title>Painel da Malharia</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
     <!-- Ícone da aba (favicon) -->
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
-    
+
     <style>
-        :root{
-          --roxo:#8A00FF;
-          --roxo-hover:#A63DFF;
-        }
+        :root{ --roxo:#8A00FF; --roxo-hover:#A63DFF; }
 
         th, td { text-align: center; }
 
@@ -137,31 +134,46 @@
     <header>
         <div class="logo">
             <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
-            <!-- Removido: nome da empresa no cabeçalho -->
         </div>
     </header>
+
+    {% set nome_empresa =
+        (empresa.apelido if empresa and empresa.apelido else
+         (empresa.nome_fantasia if empresa and empresa.nome_fantasia else
+          (empresa.razao_social if empresa and empresa.razao_social else 'Minha Malharia'))) %}
+    {% set _assin_ativa = (assinatura_ativa if assinatura_ativa is defined else False) %}
+    {% set lista_teares =
+        (teares if teares is defined and teares is not none
+         else (empresa.teares if empresa and empresa.teares else [])) %}
 
     <!-- Conteúdo principal -->
     <div class="container">
         <h1 class="titulo">Painel da Malharia</h1>
-        <p style="text-align:center;">Bem-vindo(a), <strong>{{ empresa.nome }}</strong>!</p>
+        <p style="text-align:center;">Bem-vindo(a), <strong>{{ nome_empresa }}</strong>!</p>
 
-        <!-- Status da assinatura -->
-        <div class="status-wrap">
-            {% if assinatura_ativa %}
-              <span class="badge badge-ativa">Assinatura ativa</span>
-              <a href="{{ url_for('checkout', plano=empresa.plano or 'mensal') }}" class="badge badge-ativa">Gerenciar pagamento</a>
-            {% else %}
-              <span class="badge badge-pendente">Assinatura pendente</span>
-              <a href="{{ url_for('checkout', plano='mensal') }}" class="badge badge-pendente">Ativar plano (Mensal)</a>
-              <!-- Removido: Ativar plano (Anual) -->
-            {% endif %}
-        </div>
+        <!-- Status / Ações principais -->
+        {% if empresa %}
+          <div class="status-wrap">
+              {% if _assin_ativa %}
+                <span class="badge badge-ativa">Assinatura ativa</span>
+                <a href="{{ url_for('checkout', plano=empresa.plano or 'mensal') }}" class="badge badge-ativa">Gerenciar pagamento</a>
+              {% else %}
+                <span class="badge badge-pendente">Assinatura pendente</span>
+                <a href="{{ url_for('checkout', plano='mensal') }}" class="badge badge-pendente">Ativar plano (Mensal)</a>
+              {% endif %}
+          </div>
 
-        <!-- Ação principal solicitada -->
-        <div class="acoes-topo">
-          <a href="{{ url_for('cadastrar_teares') }}" class="btn-roxo">Editar/Cadastrar Teares</a>
-        </div>
+          <div class="acoes-topo">
+            <a href="{{ url_for('cadastrar_teares') }}" class="btn-roxo">Editar/Cadastrar Teares</a>
+          </div>
+        {% else %}
+          <div class="status-wrap">
+            <span class="badge badge-pendente">Cadastre sua malharia para liberar o painel</span>
+          </div>
+          <div class="acoes-topo">
+            <a href="{{ url_for('cadastrar_empresa') }}" class="btn-roxo">Cadastrar minha malharia</a>
+          </div>
+        {% endif %}
 
         <!-- Menu em estilo cards -->
         <section class="painel-menu">
@@ -169,11 +181,11 @@
           <div class="painel-card perfil-card">
             <div class="perfil-top">
               <div class="perfil-avatar">
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-7 8-7s8 3 8 7"/></svg>
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path></svg>
               </div>
               <div class="perfil-info">
-                <strong class="perfil-nome">{{ empresa.apelido or empresa.nome_fantasia or 'Minha Malharia' }}</strong>
-                <span class="perfil-email">{{ empresa.email }}</span>
+                <strong class="perfil-nome">{{ nome_empresa }}</strong>
+                <span class="perfil-email">{{ empresa.email if empresa else '' }}</span>
               </div>
             </div>
 
@@ -186,7 +198,11 @@
             </div>
 
             <ul class="perfil-links">
-              <li><a href="{{ url_for('editar_empresa') }}">Editar cadastro</a></li>
+              {% if empresa %}
+                <li><a href="{{ url_for('editar_empresa') }}">Editar cadastro</a></li>
+              {% else %}
+                <li><a href="{{ url_for('cadastrar_empresa') }}">Cadastrar minha malharia</a></li>
+              {% endif %}
               <li><a href="{{ url_for('logout') }}">Sair</a></li>
               {% if session.get('admin') %}
                 <li><a href="{{ url_for('admin_empresas') }}">Painel Administrativo</a></li>
@@ -194,13 +210,17 @@
             </ul>
           </div>
 
-          <!-- Coluna direita (sem "Facilidades" e sem card Buscar Teares) -->
+          <!-- Coluna direita -->
           <div class="painel-col-direita">
             <div class="painel-listas">
               <h3>Mais opções</h3>
               <ul class="lista-opcoes">
                 <li><a href="{{ url_for('planos') }}">Assinatura e pagamentos</a></li>
-                <li><a href="{{ url_for('editar_empresa') }}">Editar dados da empresa</a></li>
+                {% if empresa %}
+                  <li><a href="{{ url_for('editar_empresa') }}">Editar dados da empresa</a></li>
+                {% else %}
+                  <li><a href="{{ url_for('cadastrar_empresa') }}">Cadastrar dados da empresa</a></li>
+                {% endif %}
                 <li><a href="{{ url_for('fale_conosco') }}">Suporte AcheTece</a></li>
               </ul>
             </div>
@@ -208,7 +228,7 @@
         </section>
 
         <h2>Teares Cadastrados:</h2>
-        {% if empresa.teares %}
+        {% if lista_teares|length %}
         <div class="table-wrapper">
             <table>
                 <thead>
@@ -224,15 +244,15 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for tear in empresa.teares %}
+                    {% for tear in lista_teares %}
                     <tr>
-                        <td>{{ tear.marca }}</td>
-                        <td>{{ tear.modelo }}</td>
-                        <td>{{ tear.tipo }}</td>
-                        <td>{{ tear.finura }}</td>
-                        <td>{{ tear.diametro }}</td>
-                        <td>{{ tear.alimentadores }}</td>
-                        <td>{{ tear.elastano }}</td>
+                        <td>{{ tear.marca or '-' }}</td>
+                        <td>{{ tear.modelo or '-' }}</td>
+                        <td>{{ tear.tipo or '-' }}</td>
+                        <td>{{ tear.finura if tear.finura is not none else '-' }}</td>
+                        <td>{{ tear.diametro if tear.diametro is not none else '-' }}</td>
+                        <td>{{ tear.alimentadores if tear.alimentadores is not none else '-' }}</td>
+                        <td>{{ 'Sim' if (tear.elastano or tear.kit_elastano) else 'Não' }}</td>
                         <td>
                           <a href="{{ url_for('editar_tear', id=tear.id) }}" class="botao-editar">Editar Tear</a>
                         </td>
@@ -245,14 +265,16 @@
             <p style="margin-top: 20px; text-align:center;">Nenhum tear cadastrado ainda.</p>
         {% endif %}
 
-        <!-- Seção de exclusão de conta -->
+        <!-- Seção de exclusão de conta (exibe apenas se houver empresa cadastrada) -->
+        {% if empresa %}
         <div style="margin:28px 0; display:flex; justify-content:center;">
             <form method="POST" action="{{ url_for('excluir_empresa_self') }}" onsubmit="return confirm('Deseja realmente excluir sua conta? Esta ação é irreversível.');">
                 <button type="submit" class="btn-perigo">Excluir conta</button>
             </form>
         </div>
+        {% endif %}
 
-        {% if not assinatura_ativa %}
+        {% if empresa and not _assin_ativa %}
             <p class="mini" style="text-align:center; max-width:760px; margin:0 auto 24px;">
                 Se sua conta for DEMO, o botão acima já está liberado para testes. Em produção,
                 ative o plano para gerenciar seus teares normalmente.
