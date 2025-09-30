@@ -2,7 +2,7 @@ from flask import (
     Flask, render_template, request, redirect, url_for, flash, session,
     render_template_string, send_file, jsonify, abort
 )
-# Removido o uso de Flask-Mail para envio (vamos usar smtplib com timeout)
+# Removido o uso de Flask-Mail para envio (vamos usar Resend + SMTP com timeout)
 # from flask_mail import Mail, Message
 from flask_sqlalchemy import SQLAlchemy
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
@@ -23,9 +23,9 @@ from sqlalchemy import inspect, text, or_, func
 from pathlib import Path
 import random
 from jinja2 import TemplateNotFound
-import resend  # <<< NOVO
+import resend  # biblioteca do Resend
 
-# Envio SMTP direto (estável na Render)
+# SMTP direto (fallback)
 import smtplib, ssl
 from email.message import EmailMessage
 
@@ -76,8 +76,7 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 db = SQLAlchemy(app)
 
 # --------------------------------------------------------------------
-# E-mail (SMTP direto) — usa variáveis SMTP_* do ambiente
-# (mantido por compat, mas redirecionado ao Resend mais abaixo)
+# E-mail — Config + helpers (Resend + SMTP fallback)
 # --------------------------------------------------------------------
 app.config.update(
     SMTP_HOST=os.getenv("SMTP_HOST", "smtp.gmail.com"),
@@ -90,16 +89,50 @@ app.config.update(
     OTP_DEV_FALLBACK=_env_bool("OTP_DEV_FALLBACK", False),        # True = loga e deixa seguir
 )
 
-def _smtp_send_direct(to: str, subject: str, html: str, text: str | None = None) -> tuple[bool, str]:
-    """
-    Envia e-mail via SMTP (Gmail) com timeout curto.
-    Suporta SSL (465) ou STARTTLS (587). Retorna (ok, mensagem).
-    (Mantido apenas como referência; logo abaixo substituímos por Resend)
-    """
-    if app.config.get("MAIL_SUPPRESS_SEND"):
-        app.logger.info(f"[SMTP SUPPRESSED] to={to} subj={subject}")
-        return True, "Envio suprimido (teste)."
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+RESEND_DOMAIN  = os.getenv("RESEND_DOMAIN", "achetece.com.br")   # defina o domínio verificado
+EMAIL_FROM     = os.getenv("EMAIL_FROM", f"AcheTece <no-reply@{RESEND_DOMAIN}>")
+REPLY_TO       = os.getenv("REPLY_TO", "")
 
+if RESEND_API_KEY:
+    resend.api_key = RESEND_API_KEY
+else:
+    logging.warning("[EMAIL] RESEND_API_KEY não configurada — envio via Resend desativado.")
+
+def _extract_email(addr: str) -> str:
+    m = re.search(r"<([^>]+)>", addr or "")
+    s = m.group(1) if m else (addr or "")
+    return s.strip()
+
+def _domain_of(addr: str) -> str:
+    e = _extract_email(addr)
+    return e.split("@")[-1].lower() if "@" in e else ""
+
+def _send_via_resend(to: str, subject: str, html: str, text: str | None = None) -> tuple[bool, str]:
+    if not RESEND_API_KEY:
+        return False, "RESEND_API_KEY ausente"
+    try:
+        safe_from = EMAIL_FROM
+        from_domain = _domain_of(EMAIL_FROM)
+        # força remetente do domínio verificado
+        if RESEND_DOMAIN and from_domain != RESEND_DOMAIN:
+            safe_from = f"AcheTece <no-reply@{RESEND_DOMAIN}>"
+
+        payload = {"from": safe_from, "to": [to], "subject": subject, "html": html}
+        if text:
+            payload["text"] = text
+        if REPLY_TO:
+            payload["reply_to"] = REPLY_TO
+
+        resp = resend.Emails.send(payload)
+        logging.info(f"[EMAIL/RESEND] Enviado para {to}. resp={resp}")
+        return True, "ok"
+    except Exception as e:
+        logging.exception(f"[EMAIL/RESEND] Falha ao enviar para {to}: {e}")
+        return False, f"resend_error: {e}"
+
+def _send_via_smtp(to: str, subject: str, html: str, text: str | None = None) -> tuple[bool, str]:
+    """Envio direto via SMTP (SSL/TLS) — fallback."""
     host = app.config.get("SMTP_HOST") or "smtp.gmail.com"
     port = int(app.config.get("SMTP_PORT") or 465)
     user = app.config.get("SMTP_USER") or ""
@@ -114,6 +147,8 @@ def _smtp_send_direct(to: str, subject: str, html: str, text: str | None = None)
     msg["Subject"] = subject
     msg["From"] = sender
     msg["To"] = to
+    if REPLY_TO:
+        msg["Reply-To"] = REPLY_TO
     msg.set_content(text or "Veja este e-mail em HTML.")
     msg.add_alternative(html, subtype="html")
 
@@ -129,19 +164,36 @@ def _smtp_send_direct(to: str, subject: str, html: str, text: str | None = None)
                 s.starttls(context=ctx)
                 s.login(user, pwd)
                 s.send_message(msg)
-        return True, "E-mail enviado."
+        return True, "ok"
     except Exception as e:
-        app.logger.exception(f"[SMTP] Falha ao enviar para {to}: {e}")
-        return False, f"Falha SMTP: {e}"
+        app.logger.exception(f"[EMAIL/SMTP] Falha ao enviar para {to}: {e}")
+        return False, f"smtp_error: {e}"
 
-# --- Wrapper temporário: usa Resend mantendo a assinatura antiga do SMTP ---
-def _smtp_send_direct(to: str, subject: str, html: str, text: str | None = None):
+def _smtp_send_direct(to: str, subject: str, html: str, text: str | None = None) -> tuple[bool, str]:
     """
-    Redireciona o antigo envio SMTP para Resend (HTTP).
-    Mantém retorno (ok, err) para não quebrar rotas antigas.
+    Envia e-mail preferencialmente via Resend (com FROM seguro) e faz fallback para SMTP.
+    Retorna (ok, mensagem).
     """
-    ok = send_email(to=to, subject=subject, html=html, text=text)
-    return (ok, None if ok else "resend_send_failed")
+    if app.config.get("MAIL_SUPPRESS_SEND"):
+        app.logger.info(f"[EMAIL SUPPRESSED] to={to} subj={subject}")
+        return True, "suppress"
+
+    # 1) Tenta Resend
+    ok, msg = _send_via_resend(to, subject, html, text)
+    if ok:
+        return True, "resend_ok"
+
+    # 2) Fallback para SMTP
+    ok2, msg2 = _send_via_smtp(to, subject, html, text)
+    if ok2:
+        return True, "smtp_ok"
+
+    return False, f"{msg} | {msg2}"
+
+def send_email(to: str, subject: str, html: str, text: str | None = None) -> bool:
+    """Wrapper simples usado em /contato etc. Retorna True/False."""
+    ok, _ = _smtp_send_direct(to=to, subject=subject, html=html, text=text)
+    return ok
 
 # Mercado Pago (mantido para compat)
 MP_ACCESS_TOKEN = os.getenv("MP_ACCESS_TOKEN") or os.getenv("MERCADO_PAGO_TOKEN", "")
@@ -561,52 +613,6 @@ def _render_try(candidatos: list[str], **ctx):
     # Fallback mínimo para não quebrar
     return render_template_string("<h2>Página temporária</h2><p>Conteúdo indisponível.</p>")
 
-# === EMAIL (Resend) :: BEGIN ===
-RESEND_API_KEY = os.getenv("RESEND_API_KEY")
-RESEND_DOMAIN  = os.getenv("RESEND_DOMAIN")  # ex.: achetece.com.br
-EMAIL_FROM     = os.getenv("EMAIL_FROM", "AcheTece <no-reply@achetece.com.br>")
-REPLY_TO       = os.getenv("REPLY_TO", "")
-
-if RESEND_API_KEY:
-    resend.api_key = RESEND_API_KEY
-else:
-    logging.warning("[EMAIL] RESEND_API_KEY não configurada — envio desativado.")
-
-def _extract_email(addr: str) -> str:
-    m = re.search(r"<([^>]+)>", addr or "")
-    s = m.group(1) if m else (addr or "")
-    return s.strip()
-
-def _domain_of(addr: str) -> str:
-    e = _extract_email(addr)
-    return e.split("@")[-1].lower() if "@" in e else ""
-
-def send_email(to: str, subject: str, html: str, text: str | None = None) -> bool:
-    """Envia e-mail via Resend (API HTTP). Retorna True/False."""
-    if not RESEND_API_KEY:
-        logging.error("[EMAIL] RESEND_API_KEY ausente.")
-        return False
-    try:
-        safe_from = EMAIL_FROM
-        from_domain = _domain_of(EMAIL_FROM)
-        if RESEND_DOMAIN and from_domain != RESEND_DOMAIN:
-            # força um remetente do domínio verificado
-            safe_from = f"AcheTece <no-reply@{RESEND_DOMAIN}>"
-
-        payload = {"from": safe_from, "to": [to], "subject": subject, "html": html}
-        if text:
-            payload["text"] = text
-        if REPLY_TO:
-            payload["reply_to"] = REPLY_TO  # respostas vão para este endereço
-
-        resp = resend.Emails.send(payload)
-        logging.info(f"[EMAIL] Enviado para {to}. resp={resp}")
-        return True
-    except Exception as e:
-        logging.exception(f"[EMAIL] Falha ao enviar para {to}: {e}")
-        return False
-# === EMAIL (Resend) :: END ===
-
 # --------------------------------------------------------------------
 # INDEX
 # --------------------------------------------------------------------
@@ -709,6 +715,7 @@ def index():
             "uf": (emp.estado if emp and getattr(emp, "estado", None) else "—"),
             "cidade": (emp.cidade if emp and getattr(emp, "cidade", None) else "—"),
             "contato": contato_link,
+            # Aliases para CSV antigo
             "Empresa": apelido,
             "Tipo": tear.tipo or "—",
             "Galga": tear.finura if tear.finura is not None else "—",
@@ -770,7 +777,7 @@ def view_login_method():
 def view_login_method_alias_accent():
     return redirect(url_for("login_method", **request.args), code=301)
 
-@app.get("/login/metodo/", endpoint="login_method_trailing")
+@app.get("/login/metodo/", endpoint="login_method_alias_trailing")
 def view_login_method_alias_trailing():
     return redirect(url_for("login_method", **request.args), code=301)
 
@@ -1197,7 +1204,7 @@ def editar_empresa():
     if request.method == 'GET':
         return render_template('editar_empresa.html',
                                estados=estados,
-                               nome=empresa.nome ou '', apelido=empresa.apelido or '',
+                               nome=empresa.nome or '', apelido=empresa.apelido or '',
                                email=empresa.email or '', cidade=empresa.cidade or '',
                                estado=empresa.estado or '', telefone=empresa.telefone or '',
                                responsavel_nome=(empresa.responsavel_nome or ''),
@@ -1450,6 +1457,20 @@ def admin_desimpersonar():
     session.pop("perfil", None)
     session.pop("empresa_id", None)
     return redirect(url_for("index"))
+
+# --------------------------------------------------------------------
+# Rota de teste de e-mail (manual)
+# --------------------------------------------------------------------
+@app.get("/admin/test-email")
+def admin_test_email():
+    if not _seed_ok():
+        return "Não autorizado", 403
+    to_addr = (request.args.get("to") or os.getenv("CONTACT_TO") or os.getenv("EMAIL_FROM") or os.getenv("SMTP_FROM") or "").strip()
+    if not to_addr:
+        return "Informe ?to=destinatario@dominio", 400
+    html = "<h3>Teste de e-mail AcheTece</h3><p>Se você recebeu isto, o envio está funcionando.</p>"
+    ok, msg = _smtp_send_direct(to_addr, "Teste AcheTece", html, "Teste AcheTece")
+    return (f"OK: {msg}", 200) if ok else (f"ERRO: {msg}", 500)
 
 # --------------------------------------------------------------------
 # Outras rotas utilitárias/compat
