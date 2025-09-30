@@ -2,107 +2,80 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Cadastrar Tear</title>
+    <title>{{ 'Editar Tear' if tear else 'Cadastrar Tear' }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- Ícone da aba (favicon) -->
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
-    
+
     <style>
-        :root{
-          --roxo:#8A00FF;
-          --roxo-hover:#A63DFF;
-        }
+        :root{ --roxo:#8A00FF; --roxo-hover:#A63DFF; }
         body{background:#f7f7fb;color:#111;font-family:Inter,Arial,system-ui,sans-serif}
-        header {
-            background-color: #fff;
-            padding: 16px 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #ddd;
-        }
-        .logo img { max-height: 48px; height: auto; width: auto; }
-        .container { max-width: 760px; margin: 40px auto; background:#fff; border:1px solid #eee; border-radius:12px; padding:18px; }
-
-        h1.titulo{ margin:0 0 16px; font-size:22px; font-weight:700; }
-
-        /* Campos do formulário (aproveita sua classe .formulario) */
-        .formulario label{ display:block; margin:10px 0 6px; font-weight:700; }
-        .formulario input, .formulario select{
-          width:100%; height:40px; border:1px solid #ccc; border-radius:10px; padding:0 10px; background:#fff;
-        }
-
-        /* === Botão SALVAR (visível e roxo) === */
-        .formulario .botao-salvar{
-          display:inline-flex; align-items:center; justify-content:center;
-          height:44px; padding:0 18px; border:0; border-radius:9999px;
-          background:var(--roxo); color:#f2f2f5; font-weight:700; font-size:14px;
-          cursor:pointer; transition:.2s; margin-top:6px;
-        }
-        .formulario .botao-salvar:hover{ background:var(--roxo-hover); transform:translateY(-1px); }
-        .formulario .botao-salvar:focus-visible{ outline:3px solid rgba(138,0,255,.25); outline-offset:2px; }
-
-        .voltar-link{ display:inline-block; margin-top:14px; text-decoration:none; color:#555; }
-        .voltar-link:hover{ text-decoration:underline; }
+        header{background:#fff;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #ddd;}
+        .logo img{max-height:48px;height:auto;width:auto;}
+        .container{max-width:760px;margin:40px auto;background:#fff;border:1px solid #eee;border-radius:12px;padding:18px;}
+        h1.titulo{margin:0 0 16px;font-size:22px;font-weight:700;}
+        .formulario label{display:block;margin:10px 0 6px;font-weight:700;}
+        .formulario input,.formulario select{width:100%;height:40px;border:1px solid #ccc;border-radius:10px;padding:0 10px;background:#fff;}
+        .botao-roxo{display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 18px;border:0;border-radius:9999px;background:var(--roxo);color:#fff;font-weight:700;font-size:14px;cursor:pointer;transition:.2s;margin-top:10px;}
+        .botao-roxo:hover{background:var(--roxo-hover);transform:translateY(-1px);}
+        .voltar-link{display:inline-block;margin-top:14px;text-decoration:none;color:#555;}
+        .voltar-link:hover{text-decoration:underline;}
     </style>
 </head>
 <body>
-
-    <!-- Cabeçalho -->
-    <header>
-        <div class="logo">
-            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
-        </div>
-     </header>
-
-    <!-- Conteúdo principal -->
-    <div class="container">
-        <h1 class="titulo">Cadastrar Tear</h1>
-
-        <form method="POST" class="formulario">
-            <label for="marca">Marca:</label>
-            <input type="text" id="marca" name="marca" required>
-
-            <label for="modelo">Modelo:</label>
-            <input type="text" id="modelo" name="modelo" required>
-
-            <label for="tipo">Tipo:</label>
-            <select id="tipo" name="tipo" required>
-                <option value="">-- Selecione --</option>
-                <option value="MONO">MONO</option>
-                <option value="DUPLA">DUPLA</option>
-            </select>
-
-            <label for="finura">Finura:</label>
-            <input type="number" id="finura" name="finura" required>
-
-            <label for="diametro">Diâmetro:</label>
-            <input type="number" id="diametro" name="diametro" required>
-
-            <!-- Corrigido: ids/names sem espaço -->
-            <label for="pistas_cilindro">Pistas Cilindro:</label>
-            <input type="number" id="pistas_cilindro" name="pistas_cilindro" required>
-
-            <label for="pistas_disco">Pistas Disco:</label>
-            <input type="number" id="pistas_disco" name="pistas_disco" required>
-            
-            <label for="alimentadores">Alimentadores:</label>
-            <input type="number" id="alimentadores" name="alimentadores" required>
-
-            <label for="elastano">Elastano:</label>
-            <select id="elastano" name="elastano" required>
-                <option value="">-- Selecione --</option>
-                <option value="Sim">Sim</option>
-                <option value="Não">Não</option>
-            </select>
-
-            <button type="submit" class="botao-salvar">Salvar Tear</button>
-        </form>
-
-        <a class="voltar-link" href="{{ url_for('painel_malharia') }}">← Voltar ao Painel</a>
+  <header>
+    <div class="logo">
+      <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
     </div>
+  </header>
+
+  <div class="container">
+    <h1 class="titulo">{{ 'Editar Tear' if tear else 'Cadastrar Tear' }}</h1>
+
+    <form method="POST" class="formulario"
+          action="{{ url_for('editar_tear', id=tear.id) if tear else url_for('cadastrar_teares') }}">
+      <label for="marca">Marca:</label>
+      <input type="text" id="marca" name="marca" value="{{ tear.marca if tear else '' }}" required>
+
+      <label for="modelo">Modelo:</label>
+      <input type="text" id="modelo" name="modelo" value="{{ tear.modelo if tear else '' }}" required>
+
+      <label for="tipo">Tipo:</label>
+      <select id="tipo" name="tipo" required>
+        {% set _tipo = tear.tipo if tear else '' %}
+        <option value="">-- Selecione --</option>
+        <option value="MONO"  {{ 'selected' if _tipo=='MONO' else '' }}>MONO</option>
+        <option value="DUPLA" {{ 'selected' if _tipo=='DUPLA' else '' }}>DUPLA</option>
+      </select>
+
+      <label for="finura">Finura:</label>
+      <input type="number" id="finura" name="finura" value="{{ tear.finura if tear and tear.finura is not none else '' }}" required>
+
+      <label for="diametro">Diâmetro:</label>
+      <input type="number" id="diametro" name="diametro" value="{{ tear.diametro if tear and tear.diametro is not none else '' }}" required>
+
+      <label for="pistas_cilindro">Pistas Cilindro:</label>
+      <input type="number" id="pistas_cilindro" name="pistas_cilindro" value="{{ tear.pistas_cilindro if tear and tear.pistas_cilindro is not none else '' }}" required>
+
+      <label for="pistas_disco">Pistas Disco:</label>
+      <input type="number" id="pistas_disco" name="pistas_disco" value="{{ tear.pistas_disco if tear and tear.pistas_disco is not none else '' }}" required>
+
+      <label for="alimentadores">Alimentadores:</label>
+      <input type="number" id="alimentadores" name="alimentadores" value="{{ tear.alimentadores if tear and tear.alimentadores is not none else '' }}" required>
+
+      <label for="elastano">Elastano:</label>
+      {% set _elas = (tear.elastano if tear else '') %}
+      <select id="elastano" name="elastano" required>
+        <option value="">-- Selecione --</option>
+        <option value="Sim" {{ 'selected' if _elas in ['Sim', 'S', True, 'True', 1] else '' }}>Sim</option>
+        <option value="Não" {{ 'selected' if _elas in ['Não', 'N', False, 'False', 0] else '' }}>Não</option>
+      </select>
+
+      <button type="submit" class="botao-roxo">{{ 'Salvar alterações' if tear else 'Salvar Tear' }}</button>
+    </form>
+
+    <a class="voltar-link" href="{{ url_for('painel_malharia') }}">← Voltar ao Painel</a>
+  </div>
 </body>
 </html>
