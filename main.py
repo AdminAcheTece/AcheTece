@@ -24,6 +24,7 @@ from pathlib import Path
 import random
 from jinja2 import TemplateNotFound
 import resend  # biblioteca do Resend
+from flask_login import current_user
 
 # SMTP direto (fallback)
 import smtplib, ssl
@@ -309,6 +310,39 @@ class OtpToken(db.Model):
     last_sent_at = db.Column(db.DateTime, nullable=True)
     ip = db.Column(db.String(64))
     user_agent = db.Column(db.String(255))
+
+# ===== helpers de autenticação/empresa =====
+def _whoami():
+    uid = None; email = None
+    try:
+        if hasattr(current_user, "is_authenticated") and current_user.is_authenticated:
+            uid = getattr(current_user, "id", None)
+            email = getattr(current_user, "email", None)
+    except Exception:
+        pass
+    if not uid:
+        uid = session.get("user_id") or session.get("auth_user_id")
+    if not email:
+        email = session.get("auth_email") or session.get("login_email")
+    return uid, email
+
+def _pegar_empresa_do_usuario(required=True):
+    uid, email = _whoami()
+    empresa = None
+    if uid:
+        empresa = Empresa.query.filter_by(owner_id=uid).first()
+    if not empresa and email:
+        empresa = Empresa.query.filter(
+            or_(Empresa.email == email, Empresa.email_contato == email)
+        ).first()
+    if required and not empresa:
+        flash("Cadastre sua malharia para continuar.")
+        return redirect(url_for("cadastrar_empresa"))
+    return empresa
+
+def _to_int(val):
+    try: return int(val)
+    except: return None
 
 # --------------------------------------------------------------------
 # Setup inicial (idempotente)
@@ -1041,63 +1075,73 @@ def cadastro_post():
 # --------------------------------------------------------------------
 # Painel da malharia + CRUD de teares
 # --------------------------------------------------------------------
-@app.route('/cadastrar_teares', methods=['GET', 'POST'])
-@assinatura_ativa_requerida
+@app.route("/cadastrar_teares", methods=["GET", "POST"])
 def cadastrar_teares():
-    emp, _ = _get_empresa_usuario_da_sessao()
-    if request.method == 'POST':
-        try:
-            novo_tear = Tear(
-                marca=(request.form['marca'] or '').strip(),
-                modelo=(request.form['modelo'] or '').strip(),
-                tipo=(request.form['tipo'] or '').strip(),
-                finura=int(request.form['finura']),
-                diametro=int(request.form['diametro']),
-                alimentadores=int(request.form['alimentadores']),
-                elastano=(request.form['elastano'] or '').strip(),
-                empresa_id=emp.id
-            )
-        except Exception as e:
-            flash(f"Campos inválidos: {e}", "error")
-            return render_template('cadastrar_teares.html')
-        db.session.add(novo_tear)
-        db.session.commit()
-        return redirect(url_for('painel_malharia'))
-    return render_template('cadastrar_teares.html')
+    empresa = _pegar_empresa_do_usuario(required=True)
+    if not isinstance(empresa, Empresa):
+        # foi retornado um redirect (quando não tem empresa)
+        return empresa
 
-@app.route('/editar_tear/<int:id>', methods=['GET', 'POST'])
-@assinatura_ativa_requerida
+    if request.method == "POST":
+        tear = Tear(
+            empresa_id     = empresa.id,
+            marca          = request.form.get("marca") or None,
+            modelo         = request.form.get("modelo") or None,
+            tipo           = request.form.get("tipo") or None,
+            finura         = _to_int(request.form.get("finura")),
+            diametro       = _to_int(request.form.get("diametro")),
+            pistas_cilindro= _to_int(request.form.get("pistas_cilindro")),
+            pistas_disco   = _to_int(request.form.get("pistas_disco")),
+            alimentadores  = _to_int(request.form.get("alimentadores")),
+            elastano       = request.form.get("elastano") or None,  # "Sim"/"Não"
+        )
+        db.session.add(tear)
+        db.session.commit()
+        flash("Tear cadastrado com sucesso!")
+        return redirect(url_for("painel_malharia"))
+
+    return render_template("cadastrar_teares.html", empresa=empresa, tear=None)
+
+@app.route("/editar_tear/<int:id>", methods=["GET", "POST"])
 def editar_tear(id):
-    emp, _ = _get_empresa_usuario_da_sessao()
-    tear = Tear.query.get_or_404(id)
-    if tear.empresa_id != emp.id:
-        return redirect(url_for('login'))
-    if request.method == 'POST':
-        try:
-            tear.marca = (request.form['marca'] or '').strip()
-            tear.modelo = (request.form['modelo'] or '').strip()
-            tear.tipo = (request.form['tipo'] or '').strip()
-            tear.finura = int(request.form['finura'])
-            tear.diametro = int(request.form['diametro'])
-            tear.alimentadores = int(request.form['alimentadores'])
-            tear.elastano = (request.form['elastano'] or '').strip()
-        except Exception as e:
-            flash(f"Campos inválidos: {e}", "error")
-            return render_template('editar_tear.html', tear=tear)
-        db.session.commit()
-        return redirect(url_for('painel_malharia'))
-    return render_template('editar_tear.html', tear=tear)
+    empresa = _pegar_empresa_do_usuario(required=True)
+    if not isinstance(empresa, Empresa):
+        return empresa
 
-@app.route('/excluir_tear/<int:id>', methods=['POST'])
-@assinatura_ativa_requerida
-def excluir_tear(id):
-    emp, _ = _get_empresa_usuario_da_sessao()
     tear = Tear.query.get_or_404(id)
-    if tear.empresa_id != emp.id:
-        return redirect(url_for('login'))
+    if tear.empresa_id != empresa.id:
+        abort(403)
+
+    if request.method == "POST":
+        tear.marca           = request.form.get("marca") or None
+        tear.modelo          = request.form.get("modelo") or None
+        tear.tipo            = request.form.get("tipo") or None
+        tear.finura          = _to_int(request.form.get("finura"))
+        tear.diametro        = _to_int(request.form.get("diametro"))
+        tear.pistas_cilindro = _to_int(request.form.get("pistas_cilindro"))
+        tear.pistas_disco    = _to_int(request.form.get("pistas_disco"))
+        tear.alimentadores   = _to_int(request.form.get("alimentadores"))
+        tear.elastano        = request.form.get("elastano") or None
+        db.session.commit()
+        flash("Tear atualizado com sucesso!")
+        return redirect(url_for("painel_malharia"))
+
+    return render_template("cadastrar_teares.html", empresa=empresa, tear=tear)
+
+@app.post("/excluir_tear/<int:id>")
+def excluir_tear(id):
+    empresa = _pegar_empresa_do_usuario(required=True)
+    if not isinstance(empresa, Empresa):
+        return empresa
+
+    tear = Tear.query.get_or_404(id)
+    if tear.empresa_id != empresa.id:
+        abort(403)
+
     db.session.delete(tear)
     db.session.commit()
-    return redirect(url_for('painel_malharia'))
+    flash("Tear excluído.")
+    return redirect(url_for("painel_malharia"))
 
 # --------------------------------------------------------------------
 # Exportação CSV (usa filtros da home)
