@@ -1378,6 +1378,29 @@ def excluir_empresa(empresa_id):
     flash(f'Empresa "{empresa.nome}" excluída com sucesso!')
     return redirect(url_for('admin_empresas'))
 
+@app.post("/empresa/<int:empresa_id>/excluir")
+def excluir_empresa(empresa_id):
+    empresa = _pegar_empresa_do_usuario(required=True)
+    if not isinstance(empresa, Empresa):
+        return empresa
+    if empresa.id != empresa_id:
+        # impede excluir empresa de outro usuário
+        from flask import abort
+        abort(403)
+
+    # Se não tiver cascade, remova os teares antes:
+    Tear.query.filter_by(empresa_id=empresa.id).delete()
+
+    db.session.delete(empresa)
+    db.session.commit()
+
+    # opcional: limpar infos de sessão relacionadas
+    for k in ("auth_user_id", "login_email", "auth_email"):
+        session.pop(k, None)
+
+    flash("Conta da malharia excluída.")
+    return redirect(url_for("index"))
+
 # --------------------------------------------------------------------
 # Admin: seed/impersonação
 # --------------------------------------------------------------------
