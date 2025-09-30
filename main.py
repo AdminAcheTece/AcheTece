@@ -132,6 +132,15 @@ def _smtp_send_direct(to: str, subject: str, html: str, text: str | None = None)
         app.logger.exception(f"[SMTP] Falha ao enviar para {to}: {e}")
         return False, f"Falha SMTP: {e}"
 
+# --- Wrapper temporário: usa Resend mantendo a assinatura antiga do SMTP ---
+def _smtp_send_direct(to: str, subject: str, html: str, text: str | None = None):
+    """
+    Redireciona o antigo envio SMTP para Resend (HTTP).
+    Mantém retorno (ok, err) para não quebrar rotas antigas.
+    """
+    ok = send_email(to=to, subject=subject, html=html, text=text)
+    return (ok, None if ok else "resend_send_failed")
+
 # Mercado Pago (mantido para compat)
 MP_ACCESS_TOKEN = os.getenv("MP_ACCESS_TOKEN") or os.getenv("MERCADO_PAGO_TOKEN", "")
 sdk = mercadopago.SDK(MP_ACCESS_TOKEN)
