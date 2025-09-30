@@ -24,7 +24,7 @@ from pathlib import Path
 import random
 from jinja2 import TemplateNotFound
 import resend  # biblioteca do Resend
-from flask_login import current_user
+from flask import session
 
 # SMTP direto (fallback)
 import smtplib, ssl
@@ -314,12 +314,14 @@ class OtpToken(db.Model):
 # ===== helpers de autenticação/empresa =====
 def _whoami():
     uid = None; email = None
+    # se Flask-Login estiver disponível e autenticado
     try:
-        if hasattr(current_user, "is_authenticated") and current_user.is_authenticated:
+        if getattr(current_user, "is_authenticated", False):
             uid = getattr(current_user, "id", None)
             email = getattr(current_user, "email", None)
     except Exception:
         pass
+    # fallback para sua sessão
     if not uid:
         uid = session.get("user_id") or session.get("auth_user_id")
     if not email:
