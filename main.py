@@ -23,6 +23,7 @@ from sqlalchemy import inspect, text, or_, func
 from pathlib import Path
 import random
 from jinja2 import TemplateNotFound
+import resend  # <<< NOVO
 
 # Envio SMTP direto (estável na Render)
 import smtplib, ssl
@@ -548,6 +549,34 @@ def _render_try(candidatos: list[str], **ctx):
             continue
     # Fallback mínimo para não quebrar
     return render_template_string("<h2>Página temporária</h2><p>Conteúdo indisponível.</p>")
+
+# === EMAIL (Resend) :: BEGIN ===
+import os, logging
+
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+EMAIL_FROM = os.getenv("EMAIL_FROM", "AcheTece <no-reply@achetece.com.br>")
+
+if RESEND_API_KEY:
+    resend.api_key = RESEND_API_KEY
+else:
+    logging.warning("[EMAIL] RESEND_API_KEY não configurada — envio desativado.")
+
+def send_email(to: str, subject: str, html: str, text: str | None = None) -> bool:
+    """Envia e-mail via Resend (API HTTP). Retorna True/False."""
+    if not RESEND_API_KEY:
+        logging.error("[EMAIL] RESEND_API_KEY ausente.")
+        return False
+    try:
+        payload = {"from": EMAIL_FROM, "to": [to], "subject": subject, "html": html}
+        if text:
+            payload["text"] = text
+        resp = resend.Emails.send(payload)
+        logging.info(f"[EMAIL] Enviado para {to}. resp={resp}")
+        return True
+    except Exception as e:
+        logging.exception(f"[EMAIL] Falha ao enviar para {to}: {e}")
+        return False
+# === EMAIL (Resend) :: END ===
 
 # --------------------------------------------------------------------
 # INDEX
@@ -1491,8 +1520,14 @@ def contato():
                 <hr>
                 <p>{{mensagem}}</p>
                 """, nome=nome, email=email, mensagem=mensagem)
-                ok, _ = _smtp_send_direct(
-                    to=os.getenv("CONTACT_TO", app.config.get("SMTP_USER") or ""),
+
+                # destino do formulário de contato (defina CONTACT_TO no Render)
+                contato_to = os.getenv("CONTACT_TO") or os.getenv("EMAIL_FROM") or ""
+                if not contato_to:
+                    raise RuntimeError("CONTACT_TO/EMAIL_FROM não configurado no ambiente.")
+
+                ok = send_email(
+                    to=contato_to,
                     subject=f"[AcheTece] Novo contato — {nome}",
                     html=html,
                     text=f"Nome: {nome}\nE-mail: {email}\n\nMensagem:\n{mensagem}"
