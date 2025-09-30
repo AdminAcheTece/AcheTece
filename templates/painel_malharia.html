@@ -254,7 +254,13 @@
                         <td>{{ tear.alimentadores if tear.alimentadores is not none else '-' }}</td>
                         <td>{{ 'Sim' if (tear.elastano or tear.kit_elastano) else 'Não' }}</td>
                         <td>
-                          <a href="{{ url_for('editar_tear', id=tear.id) }}" class="botao-editar">Editar Tear</a>
+                          <a href="{{ url_for('editar_tear', id=tear.id) }}" class="botao-editar">Editar</a>
+                          <form method="post"
+                                action="{{ url_for('excluir_tear', id=tear.id) }}"
+                                style="display:inline"
+                                onsubmit="return confirm('Confirma excluir este tear? Essa ação é irreversível.');">
+                            <button type="submit" class="btn-perigo" style="height:32px;padding:0 12px;border-radius:9999px;">Excluir</button>
+                          </form>
                         </td>
                     </tr>
                     {% endfor %}
