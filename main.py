@@ -562,40 +562,24 @@ def _render_try(candidatos: list[str], **ctx):
     return render_template_string("<h2>Página temporária</h2><p>Conteúdo indisponível.</p>")
 
 # === EMAIL (Resend) :: BEGIN ===
-# Garante que o "from" use um domínio verificado no Resend.
-VERIFIED_DOMAIN = (os.getenv("RESEND_DOMAIN") or "achetece.com.br").lower()
-
-def _sanitize_from(raw_from: str) -> str:
-    """
-    Se o EMAIL_FROM vier com Gmail (ou outro domínio não verificado),
-    força 'no-reply@<VERIFIED_DOMAIN>' e mantém o display name.
-    """
-    raw_from = (raw_from or "").strip() or f"AcheTece <no-reply@{VERIFIED_DOMAIN}>"
-    m = re.match(r'\s*(?:(.*?)\s*)?<\s*([^>]+)\s*>\s*$', raw_from)
-    if m:
-        display = (m.group(1) or "AcheTece").strip()
-        addr = (m.group(2) or "").strip()
-    else:
-        display = "AcheTece"
-        addr = raw_from
-
-    dom = addr.split("@")[-1].lower() if "@" in addr else ""
-    if dom != VERIFIED_DOMAIN:
-        app.logger.warning(
-            f"[EMAIL] 'from' ({addr}) não usa domínio verificado '{VERIFIED_DOMAIN}'. "
-            f"Forçando no-reply@{VERIFIED_DOMAIN} (reply-to preservado, se houver)."
-        )
-        addr = f"no-reply@{VERIFIED_DOMAIN}"
-    return f"{display} <{addr}>"
-
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
-REPLY_TO = os.getenv("REPLY_TO") or os.getenv("CONTACT_REPLY_TO") or ""
-EMAIL_FROM = _sanitize_from(os.getenv("EMAIL_FROM") or f"AcheTece <no-reply@{VERIFIED_DOMAIN}>")
+RESEND_DOMAIN  = os.getenv("RESEND_DOMAIN")  # ex.: achetece.com.br
+EMAIL_FROM     = os.getenv("EMAIL_FROM", "AcheTece <no-reply@achetece.com.br>")
+REPLY_TO       = os.getenv("REPLY_TO", "")
 
 if RESEND_API_KEY:
     resend.api_key = RESEND_API_KEY
 else:
     logging.warning("[EMAIL] RESEND_API_KEY não configurada — envio desativado.")
+
+def _extract_email(addr: str) -> str:
+    m = re.search(r"<([^>]+)>", addr or "")
+    s = m.group(1) if m else (addr or "")
+    return s.strip()
+
+def _domain_of(addr: str) -> str:
+    e = _extract_email(addr)
+    return e.split("@")[-1].lower() if "@" in e else ""
 
 def send_email(to: str, subject: str, html: str, text: str | None = None) -> bool:
     """Envia e-mail via Resend (API HTTP). Retorna True/False."""
@@ -603,16 +587,18 @@ def send_email(to: str, subject: str, html: str, text: str | None = None) -> boo
         logging.error("[EMAIL] RESEND_API_KEY ausente.")
         return False
     try:
-        payload = {
-            "from": EMAIL_FROM,
-            "to": [to],
-            "subject": subject,
-            "html": html
-        }
+        safe_from = EMAIL_FROM
+        from_domain = _domain_of(EMAIL_FROM)
+        if RESEND_DOMAIN and from_domain != RESEND_DOMAIN:
+            # força um remetente do domínio verificado
+            safe_from = f"AcheTece <no-reply@{RESEND_DOMAIN}>"
+
+        payload = {"from": safe_from, "to": [to], "subject": subject, "html": html}
         if text:
             payload["text"] = text
         if REPLY_TO:
-            payload["reply_to"] = REPLY_TO  # assim você pode usar seu Gmail para respostas
+            payload["reply_to"] = REPLY_TO  # respostas vão para este endereço
+
         resp = resend.Emails.send(payload)
         logging.info(f"[EMAIL] Enviado para {to}. resp={resp}")
         return True
@@ -1018,7 +1004,7 @@ def cadastro_post():
     responsavel_sobrenome = " ".join(partes[1:]) if len(partes) > 1 else None
 
     nova = Empresa(
-        nome=apelido ou nome_completo,
+        nome=apelido or nome_completo,
         apelido=apelido or None,
         email=email,
         senha=generate_password_hash(senha),
