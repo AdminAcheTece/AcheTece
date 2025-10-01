@@ -1378,17 +1378,18 @@ def empresa_excluir(empresa_id):
     flash(f'Empresa "{empresa.nome}" excluída com sucesso!')
     return redirect(url_for('admin_empresas'))
 
-# --- EXCLUIR EMPRESA (com parâmetro) ---
+# --- EXCLUIR EMPRESA (usuário logado; com parâmetro) ---
 @app.post("/empresa/<int:empresa_id>/excluir")
-def empresa_excluir(empresa_id):
+def empresa_excluir_by_id(empresa_id):
     empresa = _pegar_empresa_do_usuario(required=True)
     if not isinstance(empresa, Empresa):
         return empresa
+
     if empresa.id != empresa_id:
         from flask import abort
         abort(403)
 
-    # Se não tiver cascade, elimine os teares antes:
+    # Se não tiver cascade no relacionamento, elimine os teares antes:
     try:
         Tear.query.filter_by(empresa_id=empresa.id).delete()
     except Exception:
@@ -1403,7 +1404,6 @@ def empresa_excluir(empresa_id):
 
     flash("Conta da malharia excluída.")
     return redirect(url_for("index"))
-
 
 # --------------------------------------------------------------------
 # Admin: seed/impersonação
