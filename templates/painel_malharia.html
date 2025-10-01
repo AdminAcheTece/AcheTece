@@ -168,8 +168,9 @@
           </div>
 
           <div class="acoes-topo">
-            <!-- Mantido o endpoint atual; se sua rota exigir parâmetro, ajuste aqui -->
-            <a href="{{ url_for('cadastrar_teares') }}" class="btn-roxo" title="Abrir formulário de cadastro/lista de teares">Editar/Cadastrar Teares</a>
+            <a href="{{ url_for('cadastro_teares') }}" class="btn-roxo" title="Abrir formulário de cadastro/lista de teares">
+              Editar/Cadastrar Teares
+            </a>
           </div>
         {% else %}
           <div class="status-wrap">
@@ -239,7 +240,7 @@
         <div class="sec-title" style="margin-top:10px;">
           <h2 style="margin:0 auto 0 0;">Teares Cadastrados:</h2>
           {% if empresa %}
-            <a href="{{ url_for('cadastrar_teares') }}" class="btn-roxo">+ Cadastrar Tear</a>
+            <a href="{{ url_for('cadastro_teares') }}" class="btn-roxo">+ Cadastrar Tear</a>
           {% endif %}
         </div>
 
@@ -284,7 +285,7 @@
                   <td colspan="8" style="text-align:center;">
                     Nenhum tear cadastrado ainda.
                     {% if empresa %}
-                      <a href="{{ url_for('cadastrar_teares') }}" class="botao-editar" style="margin-left:8px;">Cadastrar um tear</a>
+                      <a href="{{ url_for('cadastro_teares') }}" class="botao-editar" style="margin-left:8px;">Cadastrar um tear</a>
                     {% endif %}
                   </td>
                 </tr>
