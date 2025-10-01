@@ -274,7 +274,7 @@
         <!-- Seção de exclusão de conta (exibe apenas se houver empresa cadastrada) -->
         {% if empresa and empresa.id %}
           <form method="POST"
-                action="{{ url_for('excluir_empresa', empresa_id=empresa.id) }}"
+                action="{{ url_for('empresa_excluir', empresa_id=empresa.id) }}"
                 onsubmit="return confirm('Deseja realmente excluir sua conta? Esta ação é irreversível.');">
             <button type="submit" class="btn-perigo">Excluir conta</button>
           </form>
