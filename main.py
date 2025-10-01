@@ -1077,11 +1077,12 @@ def cadastro_post():
 # --------------------------------------------------------------------
 # Painel da malharia + CRUD de teares
 # --------------------------------------------------------------------
-@app.route("/cadastrar_teares", methods=["GET", "POST"])
+@app.route("/teares/cadastrar", methods=["GET", "POST"])
 def cadastrar_teares():
+    # Se você usa helper, mantenha — mas ele NÃO deve renderizar cadastrar_empresa
     empresa = _pegar_empresa_do_usuario(required=True)
     if not isinstance(empresa, Empresa):
-        # foi retornado um redirect (quando não tem empresa)
+        # se o helper retorna um redirect quando não há empresa/logado, respeite:
         return empresa
 
     if request.method == "POST":
@@ -1101,9 +1102,8 @@ def cadastrar_teares():
         db.session.commit()
         flash("Tear cadastrado com sucesso!")
         return redirect(url_for("painel_malharia"))
-
-    return render_template("cadastrar_teares.html", empresa=empresa, tear=None)
-
+    return render_template("cadastro_teares.html", empresa=empresa, teares=teares)
+    
 @app.route("/editar_tear/<int:id>", methods=["GET", "POST"])
 def editar_tear(id):
     empresa = _pegar_empresa_do_usuario(required=True)
