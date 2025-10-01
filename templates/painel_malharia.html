@@ -6,300 +6,213 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Ícone da aba (favicon) -->
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
 
     <style>
         :root{ --roxo:#8A00FF; --roxo-hover:#A63DFF; }
-
         th, td { text-align: center; }
 
-        .btn-roxo{
-          display:inline-flex; align-items:center; justify-content:center;
+        .btn-roxo{ display:inline-flex; align-items:center; justify-content:center;
           height:40px; padding:0 16px; border:0; border-radius:9999px;
           background:var(--roxo); color:#fff; font-weight:700; font-size:14px;
-          text-decoration:none; cursor:pointer; transition:.2s;
-        }
+          text-decoration:none; cursor:pointer; transition:.2s; }
         .btn-roxo:hover{ background:var(--roxo-hover); transform:translateY(-1px); }
         .btn-roxo:focus-visible{ outline:3px solid rgba(138,0,255,.25); outline-offset:2px; }
 
-        .botao-editar {
-            background-color: var(--roxo); color: #fff; padding: 6px 12px;
-            font-size: 13px; border-radius: 9999px; text-decoration: none; display: inline-block;
-        }
-        .botao-editar:hover { background-color: var(--roxo-hover); }
+        .botao-editar{ background-color: var(--roxo); color:#fff; padding:6px 12px;
+          font-size:13px; border-radius:9999px; text-decoration:none; display:inline-block; }
+        .botao-editar:hover{ background-color: var(--roxo-hover); }
 
-        .btn-perigo{
-          display:inline-flex; align-items:center; justify-content:center;
+        .btn-perigo{ display:inline-flex; align-items:center; justify-content:center;
           height:32px; padding:0 12px; border:0; border-radius:9999px;
-          background:#e53935; color:#fff; font-weight:700; cursor:pointer;
-        }
+          background:#e53935; color:#fff; font-weight:700; cursor:pointer; }
         .btn-perigo:hover{ filter:brightness(.95); }
 
-        .table-wrapper { overflow-x: auto; margin-top: 18px; }
-        table { width: 100%; border-collapse: collapse; background-color: #fff; }
-        th, td { padding: 10px; border: 1px solid #ccc; }
+        .table-wrapper{ overflow-x:auto; margin-top:18px; }
+        table{ width:100%; border-collapse:collapse; background-color:#fff; }
+        th, td{ padding:10px; border:1px solid #ccc; }
 
-        .logo { text-align: center; margin-top: 12px; }
-        .logo img { max-height: 72px; }
+        .logo{ text-align:center; margin-top:12px; }
+        .logo img{ max-height:72px; }
 
-        h1.titulo { text-align: center; margin: 6px 0 4px; }
-        h2 { margin-top: 24px; text-align: center; }
+        h1.titulo{ text-align:center; margin:6px 0 4px; }
+        h2{ margin:0; }
 
-        /* Badge de status */
-        .status-wrap { display:flex; align-items:center; justify-content:center; gap:10px; margin:6px 0 12px; }
-        .badge { display:inline-block; padding:6px 12px; border-radius:999px; font-size:13px; font-weight:700; }
-        .badge-ativa { background:#e8f7ed; color:#137a2a; }
-        .badge-pendente { background:#fff3e7; color:#b85e00; }
+        .status-wrap{ display:flex; align-items:center; justify-content:center; gap:10px; margin:6px 0 12px; }
+        .badge{ display:inline-block; padding:6px 12px; border-radius:999px; font-size:13px; font-weight:700; }
+        .badge-ativa{ background:#e8f7ed; color:#137a2a; }
+        .badge-pendente{ background:#fff3e7; color:#b85e00; }
 
-        /* Aviso pequeno */
-        .mini { font-size: 12px; color:#666; }
-
-        /* ===== layout do painel ===== */
         .container{ max-width:1100px; margin:0 auto; padding:0 16px 28px; }
-        .painel-menu{
-          display:grid; grid-template-columns: 1fr 1fr; gap:24px;
-          margin:18px auto 8px;
-        }
-        @media (max-width: 900px){
-          .painel-menu{ grid-template-columns: 1fr; }
-        }
+        .painel-menu{ display:grid; grid-template-columns:1fr 1fr; gap:24px; margin:18px auto 8px; }
+        @media (max-width:900px){ .painel-menu{ grid-template-columns:1fr; } }
 
-        .painel-card{
-          background:#fff; border:1px solid rgba(0,0,0,.06);
-          border-radius:20px; padding:18px;
-          box-shadow:0 6px 24px rgba(0,0,0,.05);
-        }
+        .painel-card{ background:#fff; border:1px solid rgba(0,0,0,.06);
+          border-radius:20px; padding:18px; box-shadow:0 6px 24px rgba(0,0,0,.05); }
 
-        /* perfil */
         .perfil-card{ display:flex; flex-direction:column; gap:16px; }
         .perfil-top{ display:flex; gap:12px; align-items:center; }
-        .perfil-avatar{
-          width:52px; height:52px; border-radius:50%;
-          background:#f1efff; display:grid; place-items:center;
-        }
+        .perfil-avatar{ width:52px; height:52px; border-radius:50%; background:#f1efff; display:grid; place-items:center; }
         .perfil-avatar svg{ width:28px; height:28px; stroke:var(--roxo); fill:none; stroke-width:1.8; }
         .perfil-info{ min-width:0; }
         .perfil-nome{ display:block; color:#1f1f1f; font-size:1.05rem; }
         .perfil-email{ color:#6b6b6b; font-size:.92rem; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
-        .perfil-metricas{
-          display:grid; grid-template-columns: repeat(3, 1fr); align-items:center;
-          gap:12px; padding:12px 0; border-top:1px solid rgba(0,0,0,.06); border-bottom:1px solid rgba(0,0,0,.06);
-        }
-        .metrica{ text-align:center; }
-        .metrica strong{ display:block; font-size:1.15rem; }
-        .metrica span{ color:#777; font-size:.85rem; }
+        .perfil-metricas{ display:grid; grid-template-columns:repeat(3,1fr); align-items:center;
+          gap:12px; padding:12px 0; border-top:1px solid rgba(0,0,0,.06); border-bottom:1px solid rgba(0,0,0,.06); }
+        .metrica{text-align:center;} .metrica strong{ display:block; font-size:1.15rem; } .metrica span{ color:#777; font-size:.85rem; }
 
-        .btn-indicar{
-          width:100%; display:flex; align-items:center; justify-content:center; gap:8px;
-          background:#111; color:#fff; padding:10px 12px; border:0; border-radius:12px; font-weight:700; cursor:pointer;
-        }
-        .btn-indicar svg{ width:20px; height:20px; stroke:#fff; fill:none; stroke-width:1.8; }
+        .btn-indicar{ width:100%; display:flex; align-items:center; justify-content:center; gap:8px;
+          background:#111; color:#fff; padding:10px 12px; border:0; border-radius:12px; font-weight:700; cursor:pointer; }
 
         .perfil-links{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
-        .perfil-links a{
-          display:flex; align-items:center; gap:12px; text-decoration:none; color:#222;
-          padding:12px; border-radius:12px;
-        }
+        .perfil-links a{ display:flex; align-items:center; gap:12px; text-decoration:none; color:#222;
+          padding:12px; border-radius:12px; }
         .perfil-links a:hover{ background:#f6f2ff; color:#5f0adf; }
-        .perfil-links svg{ width:22px; height:22px; stroke:#5f5f66; fill:none; stroke-width:1.8; }
-        .perfil-links .seta{ margin-left:auto; stroke:var(--roxo); }
 
         .painel-col-direita{ display:flex; flex-direction:column; gap:22px; }
-        .painel-listas h3{ margin:0 0 10px 0; color:#1f1f1f; }
-
         .lista-opcoes{ list-style:none; margin:0; padding:0; border-top:1px solid rgba(0,0,0,.06); }
         .lista-opcoes li{ border-bottom:1px solid rgba(0,0,0,.06); }
-        .lista-opcoes a{
-          display:flex; align-items:center; gap:12px; text-decoration:none; color:#222;
-          padding:14px 6px; border-radius:10px;
-        }
+        .lista-opcoes a{ display:flex; align-items:center; gap:12px; text-decoration:none; color:#222;
+          padding:14px 6px; border-radius:10px; }
         .lista-opcoes a:hover{ background:#faf7ff; }
-        .lista-opcoes .icone{
-          width:36px; height:36px; border-radius:10px; background:#f3f3f5; display:grid; place-items:center;
-        }
-        .lista-opcoes .icone svg{ width:20px; height:20px; stroke:#5f5f66; fill:none; stroke-width:1.8; }
-        .lista-opcoes .seta{ margin-left:auto; stroke:var(--roxo); }
 
-        /* barra de ações (botão Editar/Cadastrar Teares) */
-        .acoes-topo{
-          display:flex; justify-content:flex-end; gap:10px;
-          max-width:1100px; margin:8px auto 0; padding:0 16px;
-        }
-
-        /* título da seção */
-        .sec-title { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+        /* Cabeçalho da seção da tabela (título + único botão) */
+        .sec-title{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:10px; }
     </style>
 </head>
 <body>
 
-    <!-- Cabeçalho -->
-    <header>
-        <div class="logo">
-            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
-        </div>
-    </header>
+<header>
+  <div class="logo">
+    <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
+  </div>
+</header>
 
-    {% set nome_empresa =
-        (empresa.apelido if empresa and empresa.apelido else
-         (empresa.nome_fantasia if empresa and empresa.nome_fantasia else
-          (empresa.razao_social if empresa and empresa.razao_social else 'Minha Malharia'))) %}
-    {% set _assin_ativa = (assinatura_ativa if assinatura_ativa is defined else False) %}
-    {% set lista_teares =
-        (teares if teares is defined and teares is not none
-         else (empresa.teares if empresa and empresa.teares else [])) %}
+{% set nome_empresa =
+    (empresa.apelido if empresa and empresa.apelido else
+     (empresa.nome_fantasia if empresa and empresa.nome_fantasia else
+      (empresa.razao_social if empresa and empresa.razao_social else 'Minha Malharia'))) %}
+{% set _assin_ativa = (assinatura_ativa if assinatura_ativa is defined else False) %}
+{% set lista_teares =
+    (teares if teares is defined and teares is not none
+     else (empresa.teares if empresa and empresa.teares else [])) %}
 
-    <div class="container">
-        <h1 class="titulo">Painel da Malharia</h1>
-        <p style="text-align:center;">Bem-vindo(a), <strong>{{ nome_empresa }}</strong>!</p>
+<div class="container">
+  <h1 class="titulo">Painel da Malharia</h1>
+  <p style="text-align:center;">Bem-vindo(a), <strong>{{ nome_empresa }}</strong>!</p>
 
-        <!-- Status / Ações principais -->
-        {% if empresa %}
-          <div class="status-wrap">
-              {% if _assin_ativa %}
-                <span class="badge badge-ativa">Assinatura ativa</span>
-                <a href="{{ url_for('checkout', plano=empresa.plano or 'mensal') }}" class="badge badge-ativa">Gerenciar pagamento</a>
-              {% else %}
-                <span class="badge badge-pendente">Assinatura pendente</span>
-                <a href="{{ url_for('checkout', plano='mensal') }}" class="badge badge-pendente">Ativar plano (Mensal)</a>
-              {% endif %}
-          </div>
-
-          <div class="acoes-topo">
-            <a href="{{ url_for('cadastrar_teares') }}" class="btn-roxo" title="Abrir formulário de cadastro/lista de teares">
-              Editar/Cadastrar Teares
-            </a>
-          </div>
-        {% else %}
-          <div class="status-wrap">
-            <span class="badge badge-pendente">Cadastre sua malharia para liberar o painel</span>
-          </div>
-          <div class="acoes-topo">
-            <a href="{{ url_for('cadastrar_empresa') }}" class="btn-roxo">Cadastrar minha malharia</a>
-          </div>
-        {% endif %}
-
-        <!-- Cards do topo -->
-        <section class="painel-menu">
-          <!-- Perfil -->
-          <div class="painel-card perfil-card">
-            <div class="perfil-top">
-              <div class="perfil-avatar">
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path></svg>
-              </div>
-              <div class="perfil-info">
-                <strong class="perfil-nome">{{ nome_empresa }}</strong>
-                <span class="perfil-email">{{ empresa.email if empresa else '' }}</span>
-              </div>
-            </div>
-
-            <div class="perfil-metricas">
-              <div class="metrica"><strong>0</strong><span>Buscas</span></div>
-              <div class="metrica"><strong>0</strong><span>Contatos</span></div>
-              <div class="indicar">
-                <button type="button" class="btn-indicar">Convidar</button>
-              </div>
-            </div>
-
-            <ul class="perfil-links">
-              {% if empresa %}
-                <li><a href="{{ url_for('editar_empresa') }}">Editar cadastro</a></li>
-              {% else %}
-                <li><a href="{{ url_for('cadastrar_empresa') }}">Cadastrar minha malharia</a></li>
-              {% endif %}
-              <li><a href="{{ url_for('logout') }}">Sair</a></li>
-              {% if session.get('admin') %}
-                <li><a href="{{ url_for('admin_empresas') }}">Painel Administrativo</a></li>
-              {% endif %}
-            </ul>
-          </div>
-
-          <!-- Coluna direita -->
-          <div class="painel-col-direita">
-            <div class="painel-listas painel-card">
-              <h3>Mais opções</h3>
-              <ul class="lista-opcoes">
-                <!-- Removidos: Assinatura/Pagamentos e Editar dados -->
-                <li>
-                  <a href="{{ url_for('fale_conosco') }}">
-                    <span class="icone">
-                      <svg viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path></svg>
-                    </span>
-                    Suporte AcheTece
-                    <svg class="seta" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"></path></svg>
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        <!-- Tabela de teares (sempre visível) -->
-        <div class="sec-title" style="margin-top:10px;">
-          <h2 style="margin:0 auto 0 0;">Teares Cadastrados:</h2>
-          {% if empresa %}
-            <a href="{{ url_for('cadastrar_teares') }}" class="btn-roxo">+ Cadastrar Tear</a>
-          {% endif %}
-        </div>
-
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Marca</th>
-                <th>Modelo</th>
-                <th>Tipo</th>
-                <th>Finura</th>
-                <th>Diâmetro</th>
-                <th>Alimentadores</th>
-                <th>Elastano</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% if lista_teares|length %}
-                {% for tear in lista_teares %}
-                <tr>
-                  <td>{{ tear.marca or '-' }}</td>
-                  <td>{{ tear.modelo or '-' }}</td>
-                  <td>{{ tear.tipo or '-' }}</td>
-                  <td>{{ tear.finura if tear.finura is not none else '-' }}</td>
-                  <td>{{ tear.diametro if tear.diametro is not none else '-' }}</td>
-                  <td>{{ tear.alimentadores if tear.alimentadores is not none else '-' }}</td>
-                  <td>{{ 'Sim' if (tear.elastano or tear.kit_elastano) else 'Não' }}</td>
-                  <td>
-                    <a href="{{ url_for('editar_tear', id=tear.id) }}" class="botao-editar">Editar</a>
-                    <form method="post"
-                          action="{{ url_for('excluir_tear', id=tear.id) }}"
-                          style="display:inline"
-                          onsubmit="return confirm('Confirma excluir este tear? Essa ação é irreversível.');">
-                      <button type="submit" class="btn-perigo">Excluir</button>
-                    </form>
-                  </td>
-                </tr>
-                {% endfor %}
-              {% else %}
-                <tr>
-                  <td colspan="8" style="text-align:center;">
-                    Nenhum tear cadastrado ainda.
-                    {% if empresa %}
-                      <a href="{{ url_for('cadastrar_teares') }}" class="botao-editar" style="margin-left:8px;">Cadastrar um tear</a>
-                    {% endif %}
-                  </td>
-                </tr>
-              {% endif %}
-            </tbody>
-          </table>
-        </div>
-
-        {% if empresa and not _assin_ativa %}
-          <p class="mini" style="text-align:center; max-width:760px; margin:10px auto 0;">
-              Se sua conta for DEMO, o botão de cadastro de teares já está liberado para testes. Em produção,
-              ative o plano para gerenciar seus teares normalmente.
-          </p>
-        {% endif %}
+  {% if empresa %}
+    <div class="status-wrap">
+      {% if _assin_ativa %}
+        <span class="badge badge-ativa">Assinatura ativa</span>
+        <a href="{{ url_for('checkout', plano=empresa.plano or 'mensal') }}" class="badge badge-ativa">Gerenciar pagamento</a>
+      {% else %}
+        <span class="badge badge-pendente">Assinatura pendente</span>
+        <a href="{{ url_for('checkout', plano='mensal') }}" class="badge badge-pendente">Ativar plano (Mensal)</a>
+      {% endif %}
     </div>
+  {% else %}
+    <div class="status-wrap">
+      <span class="badge badge-pendente">Cadastre sua malharia para liberar o painel</span>
+    </div>
+  {% endif %}
+
+  <!-- Cards -->
+  <section class="painel-menu">
+    <div class="painel-card perfil-card">
+      <div class="perfil-top">
+        <div class="perfil-avatar">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path></svg>
+        </div>
+        <div class="perfil-info">
+          <strong class="perfil-nome">{{ nome_empresa }}</strong>
+          <span class="perfil-email">{{ empresa.email if empresa else '' }}</span>
+        </div>
+      </div>
+
+      <div class="perfil-metricas">
+        <div class="metrica"><strong>0</strong><span>Buscas</span></div>
+        <div class="metrica"><strong>0</strong><span>Contatos</span></div>
+        <div class="indicar"><button type="button" class="btn-indicar">Convidar</button></div>
+      </div>
+
+      <ul class="perfil-links">
+        {% if empresa %}
+          <li><a href="{{ url_for('editar_empresa') }}">Editar cadastro</a></li>
+        {% else %}
+          <li><a href="{{ url_for('cadastrar_empresa') }}">Cadastrar minha malharia</a></li>
+        {% endif %}
+        <li><a href="{{ url_for('logout') }}">Sair</a></li>
+        {% if session.get('admin') %}
+          <li><a href="{{ url_for('admin_empresas') }}">Painel Administrativo</a></li>
+        {% endif %}
+      </ul>
+    </div>
+
+    <div class="painel-col-direita">
+      <div class="painel-card">
+        <h3 style="margin:0 0 10px 0;">Mais opções</h3>
+        <ul class="lista-opcoes">
+          <li><a href="{{ url_for('fale_conosco') }}">Suporte AcheTece</a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ÚNICO botão de teares junto do título da tabela -->
+  <div class="sec-title">
+    <h2>Teares Cadastrados:</h2>
+    {% if empresa %}
+      <a href="{{ url_for('cadastrar_teares') }}" class="btn-roxo">Editar/Cadastrar Teares</a>
+    {% endif %}
+  </div>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Marca</th><th>Modelo</th><th>Tipo</th>
+          <th>Finura</th><th>Diâmetro</th>
+          <th>Alimentadores</th><th>Elastano</th><th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if lista_teares|length %}
+          {% for tear in lista_teares %}
+          <tr>
+            <td>{{ tear.marca or '-' }}</td>
+            <td>{{ tear.modelo or '-' }}</td>
+            <td>{{ tear.tipo or '-' }}</td>
+            <td>{{ tear.finura if tear.finura is not none else '-' }}</td>
+            <td>{{ tear.diametro if tear.diametro is not none else '-' }}</td>
+            <td>{{ tear.alimentadores if tear.alimentadores is not none else '-' }}</td>
+            <td>{{ 'Sim' if (tear.elastano or tear.kit_elastano) else 'Não' }}</td>
+            <td>
+              <a href="{{ url_for('editar_tear', id=tear.id) }}" class="botao-editar">Editar</a>
+              <form method="post" action="{{ url_for('excluir_tear', id=tear.id) }}" style="display:inline"
+                    onsubmit="return confirm('Confirma excluir este tear? Essa ação é irreversível.');">
+                <button type="submit" class="btn-perigo">Excluir</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="8">Nenhum tear cadastrado ainda.</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if empresa and not _assin_ativa %}
+    <p class="mini" style="text-align:center; max-width:760px; margin:10px auto 0;">
+      Se sua conta for DEMO, o botão de cadastro de teares já está liberado para testes. Em produção,
+      ative o plano para gerenciar seus teares normalmente.
+    </p>
+  {% endif %}
+</div>
 </body>
 </html>
