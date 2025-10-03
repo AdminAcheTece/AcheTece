@@ -113,13 +113,17 @@
         {% if erros and erros.get('estado') %}<div class="mensagem-campo">{{ erros.get('estado') }}</div>{% endif %}
 
         <label for="cidade">Cidade:</label>
-        <select id="cidade" name="cidade" class="{% if erros and erros.get('cidade') %}erro-campo{% endif %}">
-            <option value="">Selecione a cidade</option>
-            {% for c in cidades %}
-                <option value="{{ c }}" {% if cidade == c %}selected{% endif %}>{{ c }}</option>
-            {% endfor %}
+        <select id="cidade" name="cidade"
+                class="{% if erros and erros.get('cidade') %}erro-campo{% endif %}"
+                data-selected="{{ cidade or '' }}">
+          <option value="">Selecione a cidade</option>
+          {% for c in cidades %}
+            <option value="{{ c }}" {% if cidade == c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
         </select>
-        {% if erros and erros.get('cidade') %}<div class="mensagem-campo">{{ erros.get('cidade') }}</div>{% endif %}
+        {% if erros and erros.get('cidade') %}
+          <div class="mensagem-campo">{{ erros.get('cidade') }}</div>
+        {% endif %}
 
         <label for="telefone">Telefone:</label>
         <input type="tel" id="telefone" name="telefone"
