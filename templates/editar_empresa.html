@@ -9,68 +9,177 @@
     <!-- Ícone da aba (favicon) -->
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
-    
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f9f9f9; margin: 0; padding: 0; }
-        header {
-            background-color: #fff; padding: 16px 24px; display: flex; justify-content: center; align-items: center;
-            border-bottom: 1px solid #ddd; position: relative;
-        }
-        .logo img { max-height: 48px; height: auto; width: auto; }
-        .icone-home { position: absolute; right: 24px; top: 50%; transform: translateY(-50%); }
-        .container {
-            max-width: 500px; margin: 60px auto; background: #fff; padding: 32px; border-radius: 12px;
-            box-shadow: none !important;
-        }
-        h1.titulo { text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 24px; }
-        .formulario label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 14px; }
-        .formulario input, .formulario select {
-            width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px;
-        }
-        .formulario button.botao-salvar {
-            width: 100%; padding: 12px; border: none; border-radius: 8px; background-color: #003bb3; color: white;
-            font-weight: bold; font-size: 14px; cursor: pointer;
-        }
-        .formulario button.botao-salvar:hover { background-color: #003bb3; }
-        .mensagem-erro {
-            background-color: #ffe6e6; color: #b30000; border: 1px solid #ff4d4d; padding: 20px; border-radius: 10px;
-            margin-bottom: 20px; text-align: center; animation: aparecer 0.4s ease-in-out;
-        }
-        .mensagem-erro .icone { font-size: 30px; display: block; margin-bottom: 10px; }
-        .mensagem-erro .botao-voltar {
-            display: inline-block; margin-top: 15px; padding: 10px 20px; background-color: #003bb3; color: #fff;
-            font-weight: bold; border-radius: 8px; text-decoration: none; transition: background-color 0.2s ease; cursor: pointer;
-        }
-        .mensagem-erro .botao-voltar:hover { background-color: #003bb3; }
-        .erro-campo { border: 2px solid red; background-color: #fff5f5; }
-        .mensagem-campo { color: red; font-size: 13px; margin-top: -10px; margin-bottom: 12px; }
-        @keyframes aparecer { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 
-        /* Banner simples de sucesso, só aparece se ok=1 na URL */
-        .mensagem-sucesso {
-            background-color: #e8f5e9; color: #1b5e20; border: 1px solid #81c784; padding: 16px; border-radius: 10px;
-            margin-bottom: 20px; text-align: center; animation: aparecer 0.4s ease-in-out;
+    <style>
+      :root{
+        --azul:#003bb3;
+        --cinza-bg:#f9f9f9;
+        --cinza-texto:#444;
+      }
+
+      body{ font-family: Arial, sans-serif; background-color: var(--cinza-bg); margin:0; padding:0; color:#444; }
+
+      /* === NAVBAR branca (igual ao cadastrar_empresa) === */
+      .navbar{
+        overflow:visible; padding-top:6px; padding-bottom:6px;
+        background:#fff; border-bottom:1px solid #eee;
+        display:flex; align-items:center;
+      }
+      .header-left,.header-right{ display:flex; align-items:center; }
+      .header-right{ margin-left:auto; gap:20px; }
+      .logo img{ max-height:48px; height:auto; width:auto; display:block; }
+
+      .menu-wrap{ position: relative; }
+      .hamburger{
+        display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
+        width:36px; height:36px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
+        box-shadow:none !important; cursor:pointer; position:relative; z-index:10002;
+      }
+      .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
+      .hamburger span + span{ margin-top:4px; }
+
+      .menu-dropdown{
+        background:#fff; border:1px solid #eaeaea; border-radius:12px; box-shadow:none !important;
+        z-index:10001; max-height:80vh; overflow:auto;
+        opacity:0; pointer-events:none; transform: translateY(8px) scale(.98);
+        transition: opacity .18s ease, transform .18s ease;
+      }
+      .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
+
+      .menu-dropdown .menu-header{
+        display:flex; justify-content:flex-end; align-items:center; padding:8px 10px;
+      }
+      .menu-dropdown .menu-close{
+        display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px;
+        background:#f0f2f5; border:0; border-radius:10px; cursor:pointer;
+      }
+      .menu-dropdown .menu-item{
+        font-weight:400; display:flex; align-items:center; gap:10px; padding:10px 12px;
+        text-decoration:none; color:#222;
+      }
+      .menu-dropdown .menu-item:hover{ background:#f5f7ff; color:var(--azul); border-radius:8px; }
+
+      @media (min-width:769px){
+        .menu-dropdown{
+          position:absolute; top:calc(100% + 8px); right:0; min-width:220px; max-width:320px;
+          padding-right:2px; transform-origin: top right;
         }
+      }
+      @media (max-width:768px){
+        .menu-wrap{ position: static; }
+        .menu-dropdown{
+          position: fixed;
+          top: calc(var(--nav-h, 64px) + 8px);
+          left: 50%;
+          width: max-content; max-width: 90vw; min-width: 160px; padding: 4px 0;
+          max-height: calc(100vh - var(--nav-h, 64px) - 24px);
+          transform: translate(-50%, 8px) scale(.98); transform-origin: top center;
+          border-radius:14px; -webkit-overflow-scrolling: touch;
+        }
+        .menu-dropdown.open{ transform: translate(-50%, 0) scale(1); }
+      }
+
+      /* Botão da casinha (home) */
+      .icon-btn{
+        display:inline-flex; align-items:center; justify-content:center;
+        width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px;
+        background:#fff; cursor:pointer; transition:box-shadow .2s, transform .02s, background .2s;
+      }
+      .icon-btn:hover{ box-shadow:none !important; background:#f7f7f7; }
+      .icon{ width:20px; height:20px; color:#222; }
+
+      /* Conteúdo */
+      .container {
+        max-width: 500px; margin: 32px auto 60px; background: #fff;
+        padding: 32px; border-radius: 12px; box-shadow: none !important;
+      }
+      h1.titulo { text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 24px; }
+      .formulario label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 14px; }
+      .formulario input, .formulario select {
+        width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px;
+      }
+      .formulario button.botao-salvar {
+        width: 100%; padding: 12px; border: none; border-radius: 8px; background-color: #003bb3; color: white;
+        font-weight: bold; font-size: 14px; cursor: pointer;
+      }
+      .formulario button.botao-salvar:hover { background-color: #003bb3; }
+      .link-voltar-painel{
+        display:inline-block; width:100%; text-align:center; margin-top:10px; text-decoration:none;
+        font-weight:700; color:#003bb3;
+      }
+      .link-voltar-painel:hover{ text-decoration:underline; }
+
+      .mensagem-erro {
+        background-color: #ffe6e6; color: #b30000; border: 1px solid #ff4d4d; padding: 20px; border-radius: 10px;
+        margin-bottom: 20px; text-align: center; animation: aparecer 0.4s ease-in-out;
+      }
+      .mensagem-erro .icone { font-size: 30px; display: block; margin-bottom: 10px; }
+      .mensagem-erro .botao-voltar {
+        display: inline-block; margin-top: 15px; padding: 10px 20px; background-color: #003bb3; color: #fff;
+        font-weight: bold; border-radius: 8px; text-decoration: none; transition: background-color 0.2s ease; cursor: pointer;
+      }
+      .mensagem-erro .botao-voltar:hover { background-color: #003bb3; }
+      .erro-campo { border: 2px solid red; background-color: #fff5f5; }
+      .mensagem-campo { color: red; font-size: 13px; margin-top: -10px; margin-bottom: 12px; }
+      @keyframes aparecer { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+      .mensagem-sucesso {
+        background-color: #e8f5e9; color: #1b5e20; border: 1px solid #81c784; padding: 16px; border-radius: 10px;
+        margin-bottom: 20px; text-align: center; animation: aparecer 0.4s ease-in-out;
+      }
     </style>
 </head>
 <body>
 
-<header>
-    <div class="logo">
-        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
+  <!-- === NAVBAR branca, igual ao cadastrar_empresa === -->
+  <header class="navbar">
+    <div class="header-left">
+      <div class="logo">
+        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece" decoding="async" fetchpriority="high">
+      </div>
     </div>
-    <a href="/" class="icone-home" title="Página Inicial">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="#003bb3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-home">
-            <path d="M3 9L12 2l9 7v11a2 2 0 0 1-2 2h-3a1 1 0 0 1-1-1v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V9z"/>
-        </svg>
-    </a>
-</header>
 
-<div class="container">
+    <div class="header-right">
+      <!-- Casinha -->
+      <a href="{{ url_for('index') }}" class="icon-btn" aria-label="Página inicial" title="Página inicial">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 10.5 12 3l9 7.5"></path>
+          <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
+          <path d="M9 21V12h6v9"></path>
+        </svg>
+      </a>
+
+      <!-- Menu sanduíche -->
+      <div class="menu-wrap">
+        <button class="hamburger" id="hamburger" type="button" aria-label="Abrir menu" aria-controls="menu-lateral" aria-haspopup="menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+
+        <nav class="menu-dropdown" id="menu-lateral" role="menu" aria-label="Menu rápido">
+          <div class="menu-header">
+            <button type="button" class="menu-close" aria-label="Fechar menu">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+              </svg>
+            </button>
+          </div>
+
+          <a href="{{ url_for('buscar_teares') }}" class="menu-item" role="menuitem">Buscar Tear</a>
+          <a href="{{ url_for('malharia_info') }}" class="menu-item" role="menuitem">Como Funciona</a>
+          <a href="{{ url_for('login') }}" class="menu-item" role="menuitem">Já sou cadastrado</a>
+          <a href="{{ url_for('quem_somos') }}" class="menu-item" role="menuitem">Quem Somos</a>
+          <a href="{{ url_for('contato') }}" class="menu-item" role="menuitem">Fale conosco</a>
+          <a href="{{ url_for('termos') }}" class="menu-item" role="menuitem">Termos e Políticas</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
     <h1 class="titulo">Editar Dados da Malharia</h1>
 
     {% if request.args.get('ok') == '1' %}
-    <div class="mensagem-sucesso">Alterações salvas com sucesso!</div>
+      <div class="mensagem-sucesso">Alterações salvas com sucesso! Redirecionando…</div>
     {% endif %}
 
     {% if erro %}
@@ -90,7 +199,7 @@
         <input type="text" id="apelido" name="apelido" value="{{ apelido or '' }}" class="{% if erros and erros.get('apelido') %}erro-campo{% endif %}">
         {% if erros and erros.get('apelido') %}<div class="mensagem-campo">{{ erros.get('apelido') }}</div>{% endif %}
 
-        <!-- Nome do responsável (usado no payer.first_name) -->
+        <!-- Nome do responsável -->
         <label for="responsavel_nome">Nome do responsável *</label>
         <input type="text" id="responsavel_nome" name="responsavel_nome"
                value="{{ responsavel_nome or '' }}" placeholder="Ex.: Maria"
@@ -117,7 +226,6 @@
                 class="{% if erros and erros.get('cidade') %}erro-campo{% endif %}"
                 data-inicial="{{ cidade or '' }}">
           <option value="">Selecione a cidade</option>
-          {# As opções serão substituídas pelo JS após o fetch, mas você pode manter este loop se desejar #}
           {% for c in cidades %}
             <option value="{{ c }}" {% if cidade == c %}selected{% endif %}>{{ c }}</option>
           {% endfor %}
@@ -141,59 +249,122 @@
         <input type="password" id="senha" name="senha" autocomplete="new-password" placeholder="Deixe em branco para manter a atual">
 
         <button type="submit" class="botao-salvar">Salvar Alterações</button>
+        <a class="link-voltar-painel" href="{{ url_for('painel_malharia') }}">← Voltar ao Painel da Malharia</a>
     </form>
-</div>
+  </div>
 
-<!-- JS: carrega as cidades no editar e mantém a cidade salva (igual ao cadastro) -->
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const ufSelect     = document.getElementById('estado');
-  const cidadeSelect = document.getElementById('cidade');
-  if (!ufSelect || !cidadeSelect) return;
+  <!-- ===== Scripts do MENU (iguais ao cadastro) ===== -->
+  <script>
+    (function () {
+      function closeAll() {
+        document.querySelectorAll('.menu-wrap .menu-dropdown.open').forEach(m => {
+          m.classList.remove('open');
+          const b = m.closest('.menu-wrap')?.querySelector('.hamburger');
+          if (b) b.setAttribute('aria-expanded', 'false');
+        });
+      }
 
-  async function carregarCidades(uf, preselecionada = '') {
-    if (!uf) {
-      cidadeSelect.innerHTML = '<option value="">Selecione a cidade</option>';
-      cidadeSelect.disabled = true;
-      return;
-    }
-    cidadeSelect.disabled = true;
-    cidadeSelect.innerHTML = '<option value="">Carregando...</option>';
-    try {
-      // Mesmo endpoint do cadastro:
-      const resp = await fetch(`/api/cidades?uf=${encodeURIComponent(uf)}`);
-      if (!resp.ok) throw new Error('Falha na resposta da API');
-      const cidades = await resp.json();
+      document.querySelectorAll('.menu-wrap').forEach(wrap => {
+        const btn  = wrap.querySelector('#hamburger');
+        const menu = wrap.querySelector('#menu-lateral');
+        const xBtn = wrap.querySelector('.menu-close');
+        if (!btn || !menu) return;
 
-      const options = ['<option value="">Selecione a cidade</option>']
-        .concat(cidades.map(c => {
-          const safe = String(c).replace(/"/g, '&quot;');
-          const sel  = preselecionada && preselecionada === c ? ' selected' : '';
-          return `<option value="${safe}"${sel}>${c}</option>`;
-        }));
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const willOpen = !menu.classList.contains('open');
+          closeAll();
+          menu.classList.toggle('open', willOpen);
+          btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        });
 
-      cidadeSelect.innerHTML = options.join('');
-      cidadeSelect.disabled = false;
-    } catch (err) {
-      console.error(err);
-      cidadeSelect.innerHTML = '<option value="">Falha ao carregar cidades</option>';
-      cidadeSelect.disabled = false;
-    }
-  }
+        xBtn?.addEventListener('click', e => {
+          e.stopPropagation();
+          menu.classList.remove('open');
+          btn.setAttribute('aria-expanded', 'false');
+        });
 
-  // Troca de UF -> recarrega cidades
-  ufSelect.addEventListener('change', () => {
-    carregarCidades(ufSelect.value, '');
-  });
+        menu.addEventListener('click', e => e.stopPropagation());
+      });
 
-  // Ao abrir: se já houver UF, carrega e re-seleciona a cidade salva
-  const ufInicial      = ufSelect.value;
-  const cidadeInicial  = cidadeSelect.getAttribute('data-inicial') || '';
-  if (ufInicial) {
-    carregarCidades(ufInicial, cidadeInicial);
-  }
-});
-</script>
+      document.addEventListener('click', closeAll);
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
+    })();
+  </script>
+
+  <!-- Mede altura do topo (apenas navbar aqui; topbar inexistente volta 0) -->
+  <script>
+    (function(){
+      function setNavH(){
+        const topbar = 0;
+        const nav    = document.querySelector('.navbar')?.offsetHeight || 0;
+        const total  = topbar + nav;
+        document.documentElement.style.setProperty('--nav-h', total + 'px');
+      }
+      setNavH();
+      window.addEventListener('resize', setNavH);
+    })();
+  </script>
+
+  <!-- ===== Script: cidades dinâmicas por UF (igual ao cadastro) ===== -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const ufSelect = document.getElementById('estado');
+      const cidadeSelect = document.getElementById('cidade');
+
+      async function carregarCidades(uf, preselecionada = '') {
+        if (!uf) {
+          cidadeSelect.innerHTML = '<option value="">Selecione a cidade</option>';
+          cidadeSelect.disabled = true;
+          return;
+        }
+        cidadeSelect.disabled = true;
+        cidadeSelect.innerHTML = '<option value="">Carregando...</option>';
+        try {
+          const resp = await fetch(`/api/cidades?uf=${encodeURIComponent(uf)}`);
+          if (!resp.ok) throw new Error('Falha na resposta da API');
+          const cidades = await resp.json();
+
+          const options = ['<option value="">Selecione a cidade</option>']
+            .concat(cidades.map(c => {
+              const safe = String(c).replace(/"/g,'&quot;');
+              const sel  = (preselecionada && preselecionada === c) ? ' selected' : '';
+              return `<option value="${safe}"${sel}>${c}</option>`;
+            }));
+          cidadeSelect.innerHTML = options.join('');
+          cidadeSelect.disabled = false;
+        } catch (err) {
+          console.error(err);
+          cidadeSelect.innerHTML = '<option value="">Falha ao carregar cidades</option>';
+          cidadeSelect.disabled = false;
+        }
+      }
+
+      // Atualiza cidades ao mudar o UF
+      ufSelect.addEventListener('change', () => {
+        carregarCidades(ufSelect.value);
+      });
+
+      // Pré-carrega se já veio UF selecionado (ex.: edição)
+      const ufInicial = ufSelect.value;
+      const cidadeInicial = cidadeSelect.getAttribute('data-inicial') || '';
+      if (ufInicial) {
+        carregarCidades(ufInicial, cidadeInicial);
+      }
+    });
+  </script>
+
+  <!-- ===== Redirect automático ao painel após ok=1 ===== -->
+  <script>
+    (function(){
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('ok') === '1') {
+        setTimeout(function(){
+          window.location.assign("{{ url_for('painel_malharia') }}");
+        }, 800); // pequeno delay para o usuário ver a mensagem
+      }
+    })();
+  </script>
 
 </body>
 </html>
