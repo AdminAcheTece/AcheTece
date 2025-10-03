@@ -1077,18 +1077,26 @@ def cadastro_post():
 # --- CADASTRAR / LISTAR / SALVAR TEARES ---
 @app.route("/teares/cadastrar", methods=["GET", "POST"], endpoint="cadastrar_teares")
 def cadastrar_teares():
-    # Se você usa login, mantenha seu decorator de login aqui ^
+    # Deixe o helper exigir login/empresa
+    res = _pegar_empresa_do_usuario(required=True)
 
-    # NÃO redirecione para cadastrar_empresa se já há empresa;
-    # só faça isso quando realmente não existir.
-    empresa = _pegar_empresa_do_usuario(required=False)
-    if not isinstance(empresa, Empresa) or not empresa:
-        # usuário sem empresa -> aí sim manda criar empresa
-        from flask import flash, redirect, url_for
-        flash("Cadastre sua malharia antes de cadastrar teares.")
-        return redirect(url_for("cadastrar_empresa"))
+    # Se o helper devolveu um redirect/resposta, apenas retorne-o
+    # (ex.: não logado, sem empresa, etc.)
+    from flask import Response as FlaskResponse
+    try:
+        from werkzeug.wrappers.response import Response as WkResponse
+        if isinstance(res, (FlaskResponse, WkResponse)):
+            return res
+    except Exception:
+        # fallback simples: se não tiver atributo "id", trate como falta de empresa
+        if not getattr(res, "id", None):
+            from flask import redirect, url_for, flash
+            flash("Cadastre sua malharia antes de cadastrar teares.")
+            return redirect(url_for("cadastrar_empresa"))
 
-    # POST: salvar novo tear
+    # A partir daqui, garantimos que temos a Empresa
+    empresa = res
+
     if request.method == "POST":
         t = Tear(
             empresa_id=empresa.id,
@@ -1107,7 +1115,7 @@ def cadastrar_teares():
         flash("Tear cadastrado com sucesso!")
         return redirect(url_for("painel_malharia"))
 
-    # GET: abrir a página correta
+    # GET: abre a página CORRETA
     teares = Tear.query.filter_by(empresa_id=empresa.id).all()
     return render_template("cadastrar_teares.html", empresa=empresa, teares=teares, tear=None)
     
