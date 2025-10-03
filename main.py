@@ -329,22 +329,45 @@ def _whoami():
     return uid, email
 
 def _pegar_empresa_do_usuario(required=True):
+    """
+    Retorna a Empresa do usuário, priorizando a sessão. Corrige o campo user_id
+    (antes estava 'owner_id') e evita redirecionar para cadastro quando já há login.
+    """
+    # 1) Primeiro: sessão
+    emp_id = session.get("empresa_id")
+    if emp_id:
+        emp = Empresa.query.get(emp_id)
+        if emp:
+            return emp
+
+    # 2) Fallback: identidade do usuário (id/email)
     uid, email = _whoami()
     empresa = None
-    if uid:
-        empresa = Empresa.query.filter_by(owner_id=uid).first()
-    if not empresa and email:
-        empresa = Empresa.query.filter(
-            or_(Empresa.email == email, Empresa.email_contato == email)
-        ).first()
-    if required and not empresa:
-        flash("Cadastre sua malharia para continuar.")
-        return redirect(url_for("cadastrar_empresa"))
-    return empresa
 
-def _to_int(val):
-    try: return int(val)
-    except: return None
+    if uid:
+        # CORREÇÃO principal: o campo é user_id (não owner_id)
+        empresa = Empresa.query.filter_by(user_id=uid).first()
+        if empresa:
+            session["empresa_id"] = empresa.id
+            session["empresa_apelido"] = empresa.apelido or empresa.nome or (
+                empresa.email.split("@")[0] if empresa.email else ""
+            )
+            return empresa
+
+    if email:
+        empresa = Empresa.query.filter(func.lower(Empresa.email) == email.lower()).first()
+        if empresa:
+            session["empresa_id"] = empresa.id
+            session["empresa_apelido"] = empresa.apelido or empresa.nome or (
+                empresa.email.split("@")[0] if empresa.email else ""
+            )
+            return empresa
+
+    if required:
+        flash("Faça login para continuar.", "warning")
+        return redirect(url_for("login"))
+
+    return None
 
 # --------------------------------------------------------------------
 # Setup inicial (idempotente)
@@ -991,31 +1014,14 @@ def painel_malharia():
 @app.route("/teares/cadastrar", methods=["GET", "POST"], endpoint="cadastrar_teares")
 def cadastrar_teares():
     """
-    Acesso liberado para quem já está no painel (tem empresa).
-    Não verifica assinatura_ativa: usuário pode cadastrar teares antes de pagar.
+    SEM checagem de assinatura. Se o usuário está no painel (tem empresa na sessão),
+    pode cadastrar/editar teares à vontade.
     """
-    # 1) Empresa do usuário (pode retornar redirect se não logado)
-    res = _pegar_empresa_do_usuario(required=True)
+    emp, _user = _get_empresa_usuario_da_sessao()
+    if not emp:
+        flash("Faça login para continuar.", "warning")
+        return redirect(url_for("login"))
 
-    # Se o helper devolveu um Response (ex.: redirect para login), apenas retorne
-    try:
-        from flask import Response as FlaskResponse
-        from werkzeug.wrappers.response import Response as WkResponse
-        if isinstance(res, (FlaskResponse, WkResponse)):
-            return res
-    except Exception:
-        pass
-
-    empresa = res if getattr(res, "id", None) else None
-    if not empresa:
-        from flask import redirect, url_for, flash
-        flash("Cadastre sua malharia antes de cadastrar teares.")
-        return redirect(url_for("cadastrar_empresa"))
-
-    # (Opcional) ainda passamos assinatura_ativa se o template quiser mostrar algo
-    assinatura_ativa = bool(getattr(empresa, "assinatura_ativa", False))
-
-    # 2) POST: cria/atualiza registro
     if request.method == "POST":
         def _to_int(val):
             try:
@@ -1023,39 +1029,59 @@ def cadastrar_teares():
             except Exception:
                 return None
 
-        def _to_bool(val):
-            if val is None:
-                return False
-            return str(val).strip().lower() in {"1", "true", "on", "sim", "s", "y", "yes"}
+        # O form manda 'Sim'/'Não'; garantimos um valor consistente em string
+        elas_raw = (request.form.get("elastano") or "").strip().lower()
+        if elas_raw in {"sim", "s", "1", "true", "on"}:
+            elastano_str = "Sim"
+        elif elas_raw in {"não", "nao", "n", "0", "false", "off"}:
+            elastano_str = "Não"
+        else:
+            # se vier "Sim"/"Não" já normal, mantém
+            elastano_str = request.form.get("elastano") or None
 
         t = Tear(
-            empresa_id=empresa.id,
+            empresa_id=emp.id,
             marca=(request.form.get("marca") or None),
             modelo=(request.form.get("modelo") or None),
             tipo=(request.form.get("tipo") or None),
             finura=_to_int(request.form.get("finura")),
             diametro=_to_int(request.form.get("diametro")),
-            pistas_cilindro=_to_int(request.form.get("pistas_cilindro")),
-            pistas_disco=_to_int(request.form.get("pistas_disco")),
             alimentadores=_to_int(request.form.get("alimentadores")),
-            elastano=_to_bool(request.form.get("elastano")),
-            kit_elastano=_to_bool(request.form.get("kit_elastano")),
+            elastano=elastano_str,
         )
         db.session.add(t)
+
+        # Campos extras que podem existir no seu banco (se não existirem no modelo, ignora sem quebrar)
+        try:
+            v = _to_int(request.form.get("pistas_cilindro"))
+            if v is not None: setattr(t, "pistas_cilindro", v)
+        except Exception:
+            pass
+        try:
+            v = _to_int(request.form.get("pistas_disco"))
+            if v is not None: setattr(t, "pistas_disco", v)
+        except Exception:
+            pass
+
         db.session.commit()
         flash("Tear cadastrado com sucesso!")
-        # Escolhi voltar ao painel; se preferir ficar na própria página para cadastrar vários, troque para url_for("cadastrar_teares")
-        return redirect(url_for("painel_malharia"))
+        # volta para o próprio formulário para permitir múltiplos cadastros em sequência
+        return redirect(url_for("teares_form"))
 
-    # 3) GET: renderiza a página correta
-    teares = Tear.query.filter_by(empresa_id=empresa.id).order_by(Tear.id.desc()).all()
+    # GET: lista para apoiar edição/novos cadastros em série
+    teares = Tear.query.filter_by(empresa_id=emp.id).order_by(Tear.id.desc()).all()
     return render_template(
         "cadastrar_teares.html",
-        empresa=empresa,
+        empresa=emp,
         teares=teares,
         tear=None,
-        assinatura_ativa=assinatura_ativa,
+        assinatura_ativa=(emp.status_pagamento or "pendente") in ("ativo", "aprovado"),
     )
+
+# Alias amigável do painel: /painel/teares
+@app.route("/painel/teares", methods=["GET", "POST"], endpoint="teares_form")
+def teares_form():
+    return cadastrar_teares()
 
 # --------------------------------------------------------------------
 # Cadastro
@@ -1146,44 +1172,71 @@ def cadastro_post():
 
 @app.route("/editar_tear/<int:id>", methods=["GET", "POST"])
 def editar_tear(id):
-    empresa = _pegar_empresa_do_usuario(required=True)
-    if not isinstance(empresa, Empresa):
-        return empresa
+    emp, _user = _get_empresa_usuario_da_sessao()
+    if not emp:
+        flash("Faça login para continuar.", "warning")
+        return redirect(url_for("login"))
 
     tear = Tear.query.get_or_404(id)
-    if tear.empresa_id != empresa.id:
+    if tear.empresa_id != emp.id:
         abort(403)
 
     if request.method == "POST":
+        def _to_int(val):
+            try:
+                return int(float(str(val).replace(",", ".").strip()))
+            except Exception:
+                return None
+
         tear.marca           = request.form.get("marca") or None
         tear.modelo          = request.form.get("modelo") or None
         tear.tipo            = request.form.get("tipo") or None
         tear.finura          = _to_int(request.form.get("finura"))
         tear.diametro        = _to_int(request.form.get("diametro"))
-        tear.pistas_cilindro = _to_int(request.form.get("pistas_cilindro"))
-        tear.pistas_disco    = _to_int(request.form.get("pistas_disco"))
         tear.alimentadores   = _to_int(request.form.get("alimentadores"))
-        tear.elastano        = request.form.get("elastano") or None
+
+        elas_raw = (request.form.get("elastano") or "").strip().lower()
+        if elas_raw in {"sim", "s", "1", "true", "on"}:
+            tear.elastano = "Sim"
+        elif elas_raw in {"não", "nao", "n", "0", "false", "off"}:
+            tear.elastano = "Não"
+        else:
+            tear.elastano = request.form.get("elastano") or None
+
+        # extras opcionais
+        try:
+            v = _to_int(request.form.get("pistas_cilindro"))
+            setattr(tear, "pistas_cilindro", v)
+        except Exception:
+            pass
+        try:
+            v = _to_int(request.form.get("pistas_disco"))
+            setattr(tear, "pistas_disco", v)
+        except Exception:
+            pass
+
         db.session.commit()
         flash("Tear atualizado com sucesso!")
-        return redirect(url_for("painel_malharia"))
+        return redirect(url_for("teares_form"))
 
-    return render_template("cadastrar_teares.html", empresa=empresa, tear=tear)
+    teares = Tear.query.filter_by(empresa_id=emp.id).order_by(Tear.id.desc()).all()
+    return render_template("cadastrar_teares.html", empresa=emp, tear=tear, teares=teares)
 
 @app.post("/excluir_tear/<int:id>")
 def excluir_tear(id):
-    empresa = _pegar_empresa_do_usuario(required=True)
-    if not isinstance(empresa, Empresa):
-        return empresa
+    emp, _user = _get_empresa_usuario_da_sessao()
+    if not emp:
+        flash("Faça login para continuar.", "warning")
+        return redirect(url_for("login"))
 
     tear = Tear.query.get_or_404(id)
-    if tear.empresa_id != empresa.id:
+    if tear.empresa_id != emp.id:
         abort(403)
 
     db.session.delete(tear)
     db.session.commit()
     flash("Tear excluído.")
-    return redirect(url_for("painel_malharia"))
+    return redirect(url_for("teares_form"))
 
 # --------------------------------------------------------------------
 # Exportação CSV (usa filtros da home)
