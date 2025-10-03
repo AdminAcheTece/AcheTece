@@ -1172,6 +1172,7 @@ def cadastro_post():
 
 @app.route("/editar_tear/<int:id>", methods=["GET", "POST"])
 def editar_tear(id):
+    # usa sessão; não há gate de pagamento
     emp, _user = _get_empresa_usuario_da_sessao()
     if not emp:
         flash("Faça login para continuar.", "warning")
@@ -1188,39 +1189,28 @@ def editar_tear(id):
             except Exception:
                 return None
 
-        tear.marca           = request.form.get("marca") or None
-        tear.modelo          = request.form.get("modelo") or None
-        tear.tipo            = request.form.get("tipo") or None
-        tear.finura          = _to_int(request.form.get("finura"))
-        tear.diametro        = _to_int(request.form.get("diametro"))
-        tear.alimentadores   = _to_int(request.form.get("alimentadores"))
+        tear.marca         = request.form.get("marca") or None
+        tear.modelo        = request.form.get("modelo") or None
+        tear.tipo          = request.form.get("tipo") or None
+        tear.finura        = _to_int(request.form.get("finura"))
+        tear.diametro      = _to_int(request.form.get("diametro"))
+        tear.alimentadores = _to_int(request.form.get("alimentadores"))
 
         elas_raw = (request.form.get("elastano") or "").strip().lower()
-        if elas_raw in {"sim", "s", "1", "true", "on"}:
+        if elas_raw in {"sim","s","1","true","on"}:
             tear.elastano = "Sim"
-        elif elas_raw in {"não", "nao", "n", "0", "false", "off"}:
+        elif elas_raw in {"não","nao","n","0","false","off"}:
             tear.elastano = "Não"
         else:
             tear.elastano = request.form.get("elastano") or None
-
-        # extras opcionais
-        try:
-            v = _to_int(request.form.get("pistas_cilindro"))
-            setattr(tear, "pistas_cilindro", v)
-        except Exception:
-            pass
-        try:
-            v = _to_int(request.form.get("pistas_disco"))
-            setattr(tear, "pistas_disco", v)
-        except Exception:
-            pass
 
         db.session.commit()
         flash("Tear atualizado com sucesso!")
         return redirect(url_for("teares_form"))
 
+    # GET: página dedicada de edição
     teares = Tear.query.filter_by(empresa_id=emp.id).order_by(Tear.id.desc()).all()
-    return render_template("cadastrar_teares.html", empresa=emp, tear=tear, teares=teares)
+    return render_template("editar_tear.html", empresa=emp, tear=tear, teares=teares)
 
 @app.post("/excluir_tear/<int:id>")
 def excluir_tear(id):
