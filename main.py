@@ -1074,35 +1074,42 @@ def cadastro_post():
     flash("Conta criada! Complete os dados da sua empresa para continuar.", "success")
     return redirect(url_for("editar_empresa"))
 
-# --------------------------------------------------------------------
-# Painel da malharia + CRUD de teares
-# --------------------------------------------------------------------
-@app.route("/teares/cadastrar", methods=["GET", "POST"])
+# --- CADASTRAR / LISTAR / SALVAR TEARES ---
+@app.route("/teares/cadastrar", methods=["GET", "POST"], endpoint="cadastrar_teares")
 def cadastrar_teares():
-    # Se você usa helper, mantenha — mas ele NÃO deve renderizar cadastrar_empresa
-    empresa = _pegar_empresa_do_usuario(required=True)
-    if not isinstance(empresa, Empresa):
-        # se o helper retorna um redirect quando não há empresa/logado, respeite:
-        return empresa
+    # Se você usa login, mantenha seu decorator de login aqui ^
 
+    # NÃO redirecione para cadastrar_empresa se já há empresa;
+    # só faça isso quando realmente não existir.
+    empresa = _pegar_empresa_do_usuario(required=False)
+    if not isinstance(empresa, Empresa) or not empresa:
+        # usuário sem empresa -> aí sim manda criar empresa
+        from flask import flash, redirect, url_for
+        flash("Cadastre sua malharia antes de cadastrar teares.")
+        return redirect(url_for("cadastrar_empresa"))
+
+    # POST: salvar novo tear
     if request.method == "POST":
-        tear = Tear(
-            empresa_id     = empresa.id,
-            marca          = request.form.get("marca") or None,
-            modelo         = request.form.get("modelo") or None,
-            tipo           = request.form.get("tipo") or None,
-            finura         = _to_int(request.form.get("finura")),
-            diametro       = _to_int(request.form.get("diametro")),
-            pistas_cilindro= _to_int(request.form.get("pistas_cilindro")),
-            pistas_disco   = _to_int(request.form.get("pistas_disco")),
-            alimentadores  = _to_int(request.form.get("alimentadores")),
-            elastano       = request.form.get("elastano") or None,  # "Sim"/"Não"
+        t = Tear(
+            empresa_id=empresa.id,
+            marca=request.form.get("marca") or None,
+            modelo=request.form.get("modelo") or None,
+            tipo=request.form.get("tipo") or None,
+            finura=int(request.form.get("finura")) if request.form.get("finura") else None,
+            diametro=int(request.form.get("diametro")) if request.form.get("diametro") else None,
+            pistas_cilindro=int(request.form.get("pistas_cilindro")) if request.form.get("pistas_cilindro") else None,
+            pistas_disco=int(request.form.get("pistas_disco")) if request.form.get("pistas_disco") else None,
+            alimentadores=int(request.form.get("alimentadores")) if request.form.get("alimentadores") else None,
+            elastano=True if (request.form.get("elastano") in ["Sim","S","True","1",True,1]) else False,
         )
-        db.session.add(tear)
+        db.session.add(t)
         db.session.commit()
         flash("Tear cadastrado com sucesso!")
         return redirect(url_for("painel_malharia"))
-    return render_template("cadastro_teares.html", empresa=empresa, teares=teares)
+
+    # GET: abrir a página correta
+    teares = Tear.query.filter_by(empresa_id=empresa.id).all()
+    return render_template("cadastrar_teares.html", empresa=empresa, teares=teares, tear=None)
     
 @app.route("/editar_tear/<int:id>", methods=["GET", "POST"])
 def editar_tear(id):
