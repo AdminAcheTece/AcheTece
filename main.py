@@ -987,6 +987,76 @@ def painel_malharia():
         step=step
     )
 
+# --- CADASTRAR / LISTAR / SALVAR TEARES (SEM GATE DE ASSINATURA) ---
+@app.route("/teares/cadastrar", methods=["GET", "POST"], endpoint="cadastrar_teares")
+def cadastrar_teares():
+    """
+    Acesso liberado para quem já está no painel (tem empresa).
+    Não verifica assinatura_ativa: usuário pode cadastrar teares antes de pagar.
+    """
+    # 1) Empresa do usuário (pode retornar redirect se não logado)
+    res = _pegar_empresa_do_usuario(required=True)
+
+    # Se o helper devolveu um Response (ex.: redirect para login), apenas retorne
+    try:
+        from flask import Response as FlaskResponse
+        from werkzeug.wrappers.response import Response as WkResponse
+        if isinstance(res, (FlaskResponse, WkResponse)):
+            return res
+    except Exception:
+        pass
+
+    empresa = res if getattr(res, "id", None) else None
+    if not empresa:
+        from flask import redirect, url_for, flash
+        flash("Cadastre sua malharia antes de cadastrar teares.")
+        return redirect(url_for("cadastrar_empresa"))
+
+    # (Opcional) ainda passamos assinatura_ativa se o template quiser mostrar algo
+    assinatura_ativa = bool(getattr(empresa, "assinatura_ativa", False))
+
+    # 2) POST: cria/atualiza registro
+    if request.method == "POST":
+        def _to_int(val):
+            try:
+                return int(float(str(val).replace(",", ".").strip()))
+            except Exception:
+                return None
+
+        def _to_bool(val):
+            if val is None:
+                return False
+            return str(val).strip().lower() in {"1", "true", "on", "sim", "s", "y", "yes"}
+
+        t = Tear(
+            empresa_id=empresa.id,
+            marca=(request.form.get("marca") or None),
+            modelo=(request.form.get("modelo") or None),
+            tipo=(request.form.get("tipo") or None),
+            finura=_to_int(request.form.get("finura")),
+            diametro=_to_int(request.form.get("diametro")),
+            pistas_cilindro=_to_int(request.form.get("pistas_cilindro")),
+            pistas_disco=_to_int(request.form.get("pistas_disco")),
+            alimentadores=_to_int(request.form.get("alimentadores")),
+            elastano=_to_bool(request.form.get("elastano")),
+            kit_elastano=_to_bool(request.form.get("kit_elastano")),
+        )
+        db.session.add(t)
+        db.session.commit()
+        flash("Tear cadastrado com sucesso!")
+        # Escolhi voltar ao painel; se preferir ficar na própria página para cadastrar vários, troque para url_for("cadastrar_teares")
+        return redirect(url_for("painel_malharia"))
+
+    # 3) GET: renderiza a página correta
+    teares = Tear.query.filter_by(empresa_id=empresa.id).order_by(Tear.id.desc()).all()
+    return render_template(
+        "cadastrar_teares.html",
+        empresa=empresa,
+        teares=teares,
+        tear=None,
+        assinatura_ativa=assinatura_ativa,
+    )
+
 # --------------------------------------------------------------------
 # Cadastro
 # --------------------------------------------------------------------
