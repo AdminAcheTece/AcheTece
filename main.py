@@ -1077,47 +1077,86 @@ def cadastro_post():
 # --- CADASTRAR / LISTAR / SALVAR TEARES ---
 @app.route("/teares/cadastrar", methods=["GET", "POST"], endpoint="cadastrar_teares")
 def cadastrar_teares():
-    # Deixe o helper exigir login/empresa
+    """
+    Fluxo:
+      - Exige login/empresa via helper.
+      - Libera acesso se assinatura ativa OU conta demo.
+      - Se pendente real, redireciona para checkout (não para cadastrar_empresa).
+      - GET: renderiza cadastrar_teares.html
+      - POST: cria Tear e volta ao painel.
+    """
+    # 1) Tenta obter a empresa do usuário (pode retornar um Response)
     res = _pegar_empresa_do_usuario(required=True)
 
-    # Se o helper devolveu um redirect/resposta, apenas retorne-o
-    # (ex.: não logado, sem empresa, etc.)
-    from flask import Response as FlaskResponse
+    # Se o helper devolveu um Response (ex.: redirect para login), apenas retorne
     try:
+        from flask import Response as FlaskResponse
         from werkzeug.wrappers.response import Response as WkResponse
         if isinstance(res, (FlaskResponse, WkResponse)):
             return res
     except Exception:
-        # fallback simples: se não tiver atributo "id", trate como falta de empresa
-        if not getattr(res, "id", None):
-            from flask import redirect, url_for, flash
-            flash("Cadastre sua malharia antes de cadastrar teares.")
-            return redirect(url_for("cadastrar_empresa"))
+        pass
 
-    # A partir daqui, garantimos que temos a Empresa
-    empresa = res
+    # 2) Garante objeto Empresa
+    empresa = res if getattr(res, "id", None) else None
+    if not empresa:
+        from flask import redirect, url_for, flash
+        flash("Cadastre sua malharia antes de cadastrar teares.")
+        return redirect(url_for("cadastrar_empresa"))
 
+    # 3) Gate de assinatura: libera DEMO, bloqueia pendente real
+    assinatura_ativa = bool(getattr(empresa, "assinatura_ativa", False))
+    plano = (getattr(empresa, "plano", "") or "").lower()
+    is_demo = bool(getattr(empresa, "is_demo", False) or plano == "demo")
+
+    if not (assinatura_ativa or is_demo):
+        flash("Para cadastrar teares, ative seu plano. Contas DEMO estão liberadas para testes.")
+        return redirect(url_for("checkout", plano=(plano or "mensal")))
+
+    # 4) POST: cadastrar novo tear
     if request.method == "POST":
+        def _to_int(val):
+            try:
+                return int(float(str(val).replace(",", ".").strip()))
+            except Exception:
+                return None
+
+        def _to_bool(val):
+            if val is None:
+                return False
+            return str(val).strip().lower() in {"1", "true", "on", "sim", "s", "y", "yes"}
+
         t = Tear(
             empresa_id=empresa.id,
-            marca=request.form.get("marca") or None,
-            modelo=request.form.get("modelo") or None,
-            tipo=request.form.get("tipo") or None,
-            finura=int(request.form.get("finura")) if request.form.get("finura") else None,
-            diametro=int(request.form.get("diametro")) if request.form.get("diametro") else None,
-            pistas_cilindro=int(request.form.get("pistas_cilindro")) if request.form.get("pistas_cilindro") else None,
-            pistas_disco=int(request.form.get("pistas_disco")) if request.form.get("pistas_disco") else None,
-            alimentadores=int(request.form.get("alimentadores")) if request.form.get("alimentadores") else None,
-            elastano=True if (request.form.get("elastano") in ["Sim","S","True","1",True,1]) else False,
+            marca=(request.form.get("marca") or None),
+            modelo=(request.form.get("modelo") or None),
+            tipo=(request.form.get("tipo") or None),
+            finura=_to_int(request.form.get("finura")),
+            diametro=_to_int(request.form.get("diametro")),
+            pistas_cilindro=_to_int(request.form.get("pistas_cilindro")),
+            pistas_disco=_to_int(request.form.get("pistas_disco")),
+            alimentadores=_to_int(request.form.get("alimentadores")),
+            elastano=_to_bool(request.form.get("elastano")),
+            kit_elastano=_to_bool(request.form.get("kit_elastano")),
         )
         db.session.add(t)
         db.session.commit()
         flash("Tear cadastrado com sucesso!")
         return redirect(url_for("painel_malharia"))
 
-    # GET: abre a página CORRETA
-    teares = Tear.query.filter_by(empresa_id=empresa.id).all()
-    return render_template("cadastrar_teares.html", empresa=empresa, teares=teares, tear=None)
+    # 5) GET: listar teares e abrir a página CORRETA
+    teares = (
+        Tear.query.filter_by(empresa_id=empresa.id)
+        .order_by(Tear.id.desc())
+        .all()
+    )
+    return render_template(
+        "cadastrar_teares.html",
+        empresa=empresa,
+        teares=teares,
+        tear=None,
+        assinatura_ativa=assinatura_ativa,
+    )
     
 @app.route("/editar_tear/<int:id>", methods=["GET", "POST"])
 def editar_tear(id):
