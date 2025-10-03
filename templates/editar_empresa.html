@@ -143,5 +143,47 @@
     </form>
 </div>
 
+<!-- JS: carrega as cidades no editar e mantém a cidade salva -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const ufSel  = document.getElementById('estado');
+  const cidSel = document.getElementById('cidade');
+  if (!ufSel || !cidSel) return;
+
+  const selectedCity = cidSel.dataset.selected || '';
+
+  function fillCities(uf, preselect) {
+    if (!uf) {
+      cidSel.innerHTML = '<option value="">Selecione a cidade</option>';
+      cidSel.disabled = true;
+      return;
+    }
+    cidSel.disabled = true;
+    cidSel.innerHTML = '<option value="">Carregando...</option>';
+
+    // >>> Use aqui a MESMA rota usada no cadastro <<<
+    // Ex.: '/api/cidades/SC' retorna ["Blumenau","Brusque",...]
+    fetch('/api/cidades/' + encodeURIComponent(uf))
+      .then(r => r.json())
+      .then(lista => {
+        cidSel.innerHTML = '<option value="">Selecione a cidade</option>' +
+          lista.map(c => `<option value="${c}">${c}</option>`).join('');
+        if (preselect) cidSel.value = preselect;
+        cidSel.disabled = false;
+      })
+      .catch(() => {
+        cidSel.innerHTML = '<option value="">(Falha ao carregar)</option>';
+        cidSel.disabled = false;
+      });
+  }
+
+  // Carrega na abertura para o UF atual e re-seleciona a cidade salva
+  if (ufSel.value) fillCities(ufSel.value, selectedCity);
+
+  // Quando o usuário trocar o Estado
+  ufSel.addEventListener('change', () => fillCities(ufSel.value, ''));
+});
+</script>
+
 </body>
 </html>
