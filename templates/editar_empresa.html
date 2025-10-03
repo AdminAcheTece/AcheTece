@@ -115,8 +115,9 @@
         <label for="cidade">Cidade:</label>
         <select id="cidade" name="cidade"
                 class="{% if erros and erros.get('cidade') %}erro-campo{% endif %}"
-                data-selected="{{ cidade or '' }}">
+                data-inicial="{{ cidade or '' }}">
           <option value="">Selecione a cidade</option>
+          {# As opções serão substituídas pelo JS após o fetch, mas você pode manter este loop se desejar #}
           {% for c in cidades %}
             <option value="{{ c }}" {% if cidade == c %}selected{% endif %}>{{ c }}</option>
           {% endfor %}
@@ -143,45 +144,54 @@
     </form>
 </div>
 
-<!-- JS: carrega as cidades no editar e mantém a cidade salva -->
+<!-- JS: carrega as cidades no editar e mantém a cidade salva (igual ao cadastro) -->
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-  const ufSel  = document.getElementById('estado');
-  const cidSel = document.getElementById('cidade');
-  if (!ufSel || !cidSel) return;
+document.addEventListener('DOMContentLoaded', () => {
+  const ufSelect     = document.getElementById('estado');
+  const cidadeSelect = document.getElementById('cidade');
+  if (!ufSelect || !cidadeSelect) return;
 
-  const selectedCity = cidSel.dataset.selected || '';
-
-  function fillCities(uf, preselect) {
+  async function carregarCidades(uf, preselecionada = '') {
     if (!uf) {
-      cidSel.innerHTML = '<option value="">Selecione a cidade</option>';
-      cidSel.disabled = true;
+      cidadeSelect.innerHTML = '<option value="">Selecione a cidade</option>';
+      cidadeSelect.disabled = true;
       return;
     }
-    cidSel.disabled = true;
-    cidSel.innerHTML = '<option value="">Carregando...</option>';
+    cidadeSelect.disabled = true;
+    cidadeSelect.innerHTML = '<option value="">Carregando...</option>';
+    try {
+      // Mesmo endpoint do cadastro:
+      const resp = await fetch(`/api/cidades?uf=${encodeURIComponent(uf)}`);
+      if (!resp.ok) throw new Error('Falha na resposta da API');
+      const cidades = await resp.json();
 
-    // >>> Use aqui a MESMA rota usada no cadastro <<<
-    // Ex.: '/api/cidades/SC' retorna ["Blumenau","Brusque",...]
-    fetch('/api/cidades/' + encodeURIComponent(uf))
-      .then(r => r.json())
-      .then(lista => {
-        cidSel.innerHTML = '<option value="">Selecione a cidade</option>' +
-          lista.map(c => `<option value="${c}">${c}</option>`).join('');
-        if (preselect) cidSel.value = preselect;
-        cidSel.disabled = false;
-      })
-      .catch(() => {
-        cidSel.innerHTML = '<option value="">(Falha ao carregar)</option>';
-        cidSel.disabled = false;
-      });
+      const options = ['<option value="">Selecione a cidade</option>']
+        .concat(cidades.map(c => {
+          const safe = String(c).replace(/"/g, '&quot;');
+          const sel  = preselecionada && preselecionada === c ? ' selected' : '';
+          return `<option value="${safe}"${sel}>${c}</option>`;
+        }));
+
+      cidadeSelect.innerHTML = options.join('');
+      cidadeSelect.disabled = false;
+    } catch (err) {
+      console.error(err);
+      cidadeSelect.innerHTML = '<option value="">Falha ao carregar cidades</option>';
+      cidadeSelect.disabled = false;
+    }
   }
 
-  // Carrega na abertura para o UF atual e re-seleciona a cidade salva
-  if (ufSel.value) fillCities(ufSel.value, selectedCity);
+  // Troca de UF -> recarrega cidades
+  ufSelect.addEventListener('change', () => {
+    carregarCidades(ufSelect.value, '');
+  });
 
-  // Quando o usuário trocar o Estado
-  ufSel.addEventListener('change', () => fillCities(ufSel.value, ''));
+  // Ao abrir: se já houver UF, carrega e re-seleciona a cidade salva
+  const ufInicial      = ufSelect.value;
+  const cidadeInicial  = cidadeSelect.getAttribute('data-inicial') || '';
+  if (ufInicial) {
+    carregarCidades(ufInicial, cidadeInicial);
+  }
 });
 </script>
 
