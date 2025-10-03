@@ -24,6 +24,13 @@
           font-size:13px; border-radius:9999px; text-decoration:none; display:inline-block; }
         .botao-editar:hover{ background-color: var(--roxo-hover); }
 
+        /* Botão mais compacto em ações, bom para mobile */
+        .botao-editar{ padding:6px 12px; font-size:13px; border-radius:9999px; }
+        @media (max-width: 560px){
+          .botao-editar{ padding:6px 10px; font-size:12px; }
+          .hero-actions{ gap:8px; } /* compacta a barra de ações do topo */
+        }
+                
         .btn-perigo{ display:inline-flex; align-items:center; justify-content:center;
           height:32px; padding:0 12px; border:0; border-radius:9999px;
           background:#e53935; color:#fff; font-weight:700; cursor:pointer; }
@@ -191,7 +198,7 @@
   <!-- Cabeçalho da tabela (sem botão de teares) -->
   <div class="sec-title">
     <h2>Teares Cadastrados:</h2>
-    <a href="{{ url_for('teares_form') }}" class="btn-roxo"> + Cadastrar Teares</a>
+    <a href="{{ url_for('teares_form') }}" class="btn-roxo">+ Cadastrar Tear</a>
   </div>
     
   <div class="table-wrapper">
@@ -200,7 +207,7 @@
         <tr>
           <th>Marca</th><th>Modelo</th><th>Tipo</th>
           <th>Finura</th><th>Diâmetro</th>
-          <th>Alimentadores</th><th>Elastano</th>
+          <th>Alimentadores</th><th>Elastano</th><th>Ações</th>
         </tr>
       </thead>
       <tbody>
@@ -214,6 +221,7 @@
             <td>{{ tear.diametro if tear.diametro is not none else '-' }}</td>
             <td>{{ tear.alimentadores if tear.alimentadores is not none else '-' }}</td>
             <td>{{ 'Sim' if (tear.elastano or tear.kit_elastano) else 'Não' }}</td>
+            <td><a href="{{ url_for('editar_tear', id=tear.id) }}" class="botao-editar">Editar</a></td>
           </tr>
           {% endfor %}
         {% else %}
