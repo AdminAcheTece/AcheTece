@@ -42,7 +42,7 @@
         /* container geral */
         .container{ max-width:1100px; margin:0 auto; padding:0 16px 28px; }
 
-        /* Cabeçalho da seção da tabela (título + único botão) */
+        /* Cabeçalho da seção da tabela */
         .sec-title{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:10px; }
 
         /* === NOVO topo moderno (hero) === */
@@ -94,6 +94,23 @@
         .hero-metric{ display:flex; flex-direction:column; align-items:flex-start; }
         .hero-metric strong{ font-size:1.05rem; }
         .hero-metric span{ font-size:.8rem; color:#777; }
+
+        /* ===== Novos botões: WhatsApp e Laranja ===== */
+        .btn-whatsapp{
+          display:inline-flex; align-items:center; justify-content:center;
+          height:40px; padding:0 14px; border-radius:9999px; border:0;
+          background:var(--verde-whats, #25D366); color:#fff; font-weight:700; text-decoration:none;
+        }
+        .btn-whatsapp:hover{ filter:brightness(.95); transform:translateY(-1px); }
+        .btn-whatsapp:focus-visible{ outline:3px solid rgba(37,211,102,.35); outline-offset:2px; }
+
+        .btn-laranja{
+          display:inline-flex; align-items:center; justify-content:center;
+          height:40px; padding:0 14px; border-radius:9999px; border:0;
+          background:var(--laranja, #ff7a00); color:#fff; font-weight:700; text-decoration:none;
+        }
+        .btn-laranja:hover{ filter:brightness(.95); transform:translateY(-1px); }
+        .btn-laranja:focus-visible{ outline:3px solid rgba(255,122,0,.30); outline-offset:2px; }
     </style>
 </head>
 <body>
@@ -117,7 +134,7 @@
   <h1 class="titulo">Painel da Malharia</h1>
   <p style="text-align:center;">Bem-vindo(a), <strong>{{ nome_empresa }}</strong>!</p>
 
-  <!-- ===== Topo moderno (substitui os cards antigos e o "Mais opções") ===== -->
+  <!-- ===== Topo moderno ===== -->
   <div class="hero-card">
     <!-- Identidade + status -->
     <div class="hero-col-left">
@@ -153,7 +170,7 @@
       </div>
     </div>
 
-    <!-- Ações rápidas (sem duplicar botão de Teares) -->
+    <!-- Ações rápidas -->
     <div class="hero-col-right">
       <div class="hero-actions">
         {% if empresa %}
@@ -161,8 +178,8 @@
         {% else %}
           <a href="{{ url_for('cadastrar_empresa') }}" class="btn-roxo">Cadastrar minha malharia</a>
         {% endif %}
-        <a href="{{ url_for('fale_conosco') }}" class="btn-ghost">Suporte AcheTece</a>
-        <a href="{{ url_for('logout') }}" class="btn-ghost" title="Encerrar sessão">Sair</a>
+        <a href="{{ url_for('fale_conosco') }}" class="btn-whatsapp">Suporte AcheTece</a>
+        <a href="{{ url_for('logout') }}" class="btn-laranja" title="Encerrar sessão">Sair</a>
         {% if session.get('admin') %}
           <a href="{{ url_for('admin_empresas') }}" class="btn-ghost">Admin</a>
         {% endif %}
@@ -171,12 +188,9 @@
   </div>
   <!-- ===== /Topo moderno ===== -->
 
-  <!-- ÚNICO botão de teares junto do título da tabela (mantido) -->
+  <!-- Cabeçalho da tabela (sem botão de teares) -->
   <div class="sec-title">
     <h2>Teares Cadastrados:</h2>
-    {% if empresa %}
-      <a href="{{ url_for('cadastrar_teares') }}" class="btn-roxo">Editar/Cadastrar Teares</a>
-    {% endif %}
   </div>
 
   <div class="table-wrapper">
@@ -185,7 +199,7 @@
         <tr>
           <th>Marca</th><th>Modelo</th><th>Tipo</th>
           <th>Finura</th><th>Diâmetro</th>
-          <th>Alimentadores</th><th>Elastano</th><th>Ações</th>
+          <th>Alimentadores</th><th>Elastano</th>
         </tr>
       </thead>
       <tbody>
@@ -199,30 +213,18 @@
             <td>{{ tear.diametro if tear.diametro is not none else '-' }}</td>
             <td>{{ tear.alimentadores if tear.alimentadores is not none else '-' }}</td>
             <td>{{ 'Sim' if (tear.elastano or tear.kit_elastano) else 'Não' }}</td>
-            <td>
-              <a href="{{ url_for('editar_tear', id=tear.id) }}" class="botao-editar">Editar</a>
-              <form method="post" action="{{ url_for('excluir_tear', id=tear.id) }}" style="display:inline"
-                    onsubmit="return confirm('Confirma excluir este tear? Essa ação é irreversível.');">
-                <button type="submit" class="btn-perigo">Excluir</button>
-              </form>
-            </td>
           </tr>
           {% endfor %}
         {% else %}
           <tr>
-            <td colspan="8">Nenhum tear cadastrado ainda.</td>
+            <td colspan="7">Nenhum tear cadastrado ainda.</td>
           </tr>
         {% endif %}
       </tbody>
     </table>
   </div>
 
-  {% if empresa and not _assin_ativa %}
-    <p class="mini" style="text-align:center; max-width:760px; margin:10px auto 0;">
-      Se sua conta for DEMO, o botão de cadastro de teares já está liberado para testes. Em produção,
-      ative o plano para gerenciar seus teares normalmente.
-    </p>
-  {% endif %}
+  {# Removido o aviso sobre DEMO/botão de teares #}
 </div>
 </body>
 </html>
