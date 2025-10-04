@@ -132,39 +132,7 @@
     .icon{ width:20px; height:20px; color:#222; }
 
     /* =========================
-       ORIENTAÇÃO (passo a passo)
-       ========================= */
-    .guia{
-      max-width: 880px;
-      margin: 24px auto 8px;
-      background:#F5E6FF;
-      padding: 18px 16px;
-      border-radius:12px;
-      box-shadow: none !important;
-    }
-    .guia h2{
-      margin:0 0 8px 0; font-size:18px; font-weight:800; color:#111; text-align:center;
-    }
-    .steps{
-      display:grid; grid-template-columns: repeat(5,1fr); gap:10px;
-    }
-    .step{
-      text-align:center; background:#fff; border:1px solid #8A00FF; border-radius:12px; padding:10px 8px;
-    }
-    .step .dot{
-      width:30px; height:30px; line-height:30px; margin:0 auto 8px;
-      border-radius:999px; background:#8A00FF; color:#fff; font-weight:800;
-      box-shadow:none !important;
-    }
-    .step p{ margin:0; font-size:13px; color:#333; }
-    @media (max-width:760px){
-      .steps{ grid-template-columns:1fr; }
-      .step{ display:flex; align-items:center; gap:10px; text-align:left; }
-      .step .dot{ margin:0; flex:0 0 30px; text-align:center; }
-    }
-
-    /* =========================
-       CONTEÚDO (formulário original)
+       CONTEÚDO (formulário)
        ========================= */
     .container {
       max-width: 500px;
@@ -300,7 +268,7 @@
       <a class="topbar-action" href="{{ url_for('contato') }}" aria-label="Fale conosco">
         <!-- WhatsApp -->
         <svg class="ic-top ic-wa" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M20.52 3.48A11.94 11.94 0 0 0 12.06 0C5.7 0 .5 5.19.5 11.6c0 2.05.54 4.05 1.58 5.82L0 24l6.76-2.01a11.6 11.6 0 0 0 5.3 1.29h.01c6.36 0 11.56-5.19 11.56-11.6 0-3.09-1.22-6-3.11-8.2Zm-8.46 18.1h-.01a9.7 9.7 0 0 1-4.95-1.34l-.35-.2-4.01 1.2 1.16-3.9-.23-.4a9.66 9.66 0 0 1-1.41-5.08c0-5.36 4.38-9.71 9.77-9.71 2.61 0 5.07 1.02 6.91 2.87a9.73 9.73 0 0 1 2.86 6.95c0 5.36-4.38 9.71-9.75 9.71Zm5.6-7.27c-.31-.16-1.81-.9-2.09-1-.28-.1-.49-.16-.7.16-.2.31-.8 1-.98 1.21-.18.2-.36.22-.67.06-.31-.16-1.3-.48-2.48-1.53-.92-.8-1.54-1.77-1.72-2.07-.18-.31-.02-.48.13-.64.13-.13.31-.36.46-.54.15-.18.2-.31.31-.52.1-.22.05-.41-.02-.57-.16-.16-.7-1.69-.95-2.3-.25-.6-.51-.52-.7-.52-.18 0-.39-.02-.6-.02-.2 0-.52.07-.79.36-.28.31-1.07 1.05-1.07 2.56 0 1.51 1.1 2.97 1.25 3.18.15.2 2.17 3.3 5.25 4.61.73.32 1.3.5 1.75.64.74.24 1.4.2 1.93.12.59-.09 1.81-.74 2.07-1.45.26-.72.26-1.33.18-1.45-.08-.12-.28-.2-.59-.36Z"/>
+          <path d="M20.52 3.48A11.94 11.94 0 0 0 12.06 0C5.7 0 .5 5.19.5 11.6c0 2.05.54 4.05 1.58 5.82L0 24l6.76-2.01a11.6 11.6 0 0 0 5.3 1.29h.01c6.36 0 11.56-5.19 11.56-11.6 0-3.09-1.22-6-3.11-8.2Zm-8.46 18.1h-.01a9.7 9.7 0 0 1-4.95-1.34l-.35-.2-4.01 1.2 1.16-3.9-.23-.4a9.66 9.66 0 0 1-1.41-5.08c0-5.36 4.38-9.71 9.77-9.71 2.61 0 5.07 1.02 6.91 2.87a9.73 9.73 0  0 1 2.86 6.95c0 5.36-4.38 9.71-9.75 9.71Zm5.6-7.27c-.31-.16-1.81-.9-2.09-1-.28-.1-.49-.16-.7.16-.2.31-.8 1-.98 1.21-.18.2-.36.22-.67.06-.31-.16-1.3-.48-2.48-1.53-.92-.8-1.54-1.77-1.72-2.07-.18-.31-.02-.48.13-.64.13-.13.31-.36.46-.54.15-.18.2-.31.31-.52.1-.22.05-.41-.02-.57-.16-.16-.7-1.69-.95-2.3-.25-.6-.51-.52-.7-.52-.18 0-.39-.02-.6-.02-.2 0-.52.07-.79.36-.28.31-1.07 1.05-1.07 2.56 0 1.51 1.1 2.97 1.25 3.18.15.2 2.17 3.3 5.25 4.61.73.32 1.3.5 1.75.64.74.24 1.4.2 1.93.12.59-.09 1.81-.74 2.07-1.45.26-.72.26-1.33.18-1.45-.08-.12-.28-.2-.59-.36Z"/>
         </svg>
         <!-- Email -->
         <svg class="ic-top ic-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -355,17 +323,7 @@
     </div>
   </header>
 
-  <!-- ===== Orientação dos passos ===== -->
-  <section class="guia" aria-label="Guia rápido de ativação">
-    <h2>Como ativar sua presença no AcheTece</h2>
-    <div class="steps">
-      <div class="step"><div class="dot">1</div><p><strong>Cadastro</strong><br>Preencha os dados da malharia.</p></div>
-      <div class="step"><div class="dot">2</div><p><strong>Pagamento</strong><br>Conclua a mensalidade.</p></div>
-      <div class="step"><div class="dot">3</div><p><strong>Confirmação</strong><br>Receba o e‑mail de ativação.</p></div>
-      <div class="step"><div class="dot">4</div><p><strong>Acesso</strong><br>Entre no <em>login</em> e edite o perfil.</p></div>
-      <div class="step"><div class="dot">5</div><p><strong>Teares</strong><br>Cadastre seus teares e comece a aparecer.</p></div>
-    </div>
-  </section>
+  <!-- (Seção de passos removida) -->
 
   <!-- ===== Conteúdo do CADASTRO ===== -->
   <div class="container">
