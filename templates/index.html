@@ -236,10 +236,12 @@
         <img src="/static/logo.jpg" alt="Logo AcheTece" decoding="async" fetchpriority="high">
       </div>
     </div>
+  
     <div class="header-right">
       <div class="hdr-actions">
-        <!-- Único botão no topo: Perfil Malharia -->
-        <a href="/login" class="btn-perfil" aria-label="Acessar perfil da malharia">
+        <!-- Único botão no topo: Perfil Malharia  →  /criar-conta -->
+        <a href="{{ url_for('criar_conta') }}" class="btn-perfil"
+           aria-label="Criar conta e acessar o painel" title="Criar conta e acessar o painel">
           <span>Perfil Malharia</span>
         </a>
       </div>
