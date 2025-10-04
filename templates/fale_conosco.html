@@ -255,55 +255,72 @@
     }
 
     /* ===== Faixa preta (CTA alinhada à esquerda) ===== */
-  .cta-bar{
-    background:#000;              /* fundo preto */
-    color:#fff;
-    padding:20px 16px;
-    display:flex;
-    align-items:center;
-    gap:16px;                     /* espaço entre texto e botão */
-    flex-wrap:wrap;
-    border-top:1px solid rgba(255,255,255,0.06);
-    margin-top:32px;
-    justify-content:flex-start;   /* tudo alinhado à esquerda */
-  }
+    .cta-bar{
+      background:#000;              /* fundo preto */
+      color:#fff;
+      padding:20px 16px;
+      display:flex;
+      align-items:center;
+      gap:16px;                     /* espaço entre texto e botão */
+      flex-wrap:wrap;
+      border-top:1px solid rgba(255,255,255,0.06);
+      margin-top:32px;
+      justify-content:flex-start;   /* tudo alinhado à esquerda */
+    }
   
-  .cta-text h3{
-    margin:0 0 4px 0;
-    font-size:18px;
-    font-weight:700;
-    line-height:1.2;
-  }
+    .cta-text h3{
+      margin:0 0 4px 0;
+      font-size:18px;
+      font-weight:700;
+      line-height:1.2;
+    }
   
-  .cta-text p{
-    margin:0;
-    font-size:15px;
-    opacity:.9;
-  }
+    .cta-text p{
+      margin:0;
+      font-size:15px;
+      opacity:.9;
+    }
   
-  /* Botão estilo pílula */
-  .cta-btn{
-    display:inline-block;
-    background:#fff;
-    color:#000;
-    text-decoration:none;
-    padding:10px 22px;
-    border-radius:9999px;          /* pílula */
-    font-weight:700;
-    box-shadow:none !important;
-    transition:transform .12s ease, background .2s ease, box-shadow .2s ease;
-    white-space:nowrap;
-  }
-  .cta-btn:hover{
-    background:#f2f2f5;
-    transform:translateY(-1px);
-    box-shadow:none !important;
-  }
-  .btn-home svg {
-    width: 30px;
-    height: 30px;
-  }
-  
+    /* Botão estilo pílula */
+    .cta-btn{
+      display:inline-block;
+      background:#fff;
+      color:#000;
+      text-decoration:none;
+      padding:10px 22px;
+      border-radius:9999px;          /* pílula */
+      font-weight:700;
+      box-shadow:none !important;
+      transition:transform .12s ease, background .2s ease, box-shadow .2s ease;
+      white-space:nowrap;
+    }
+    .cta-btn:hover{
+      background:#f2f2f5;
+      transform:translateY(-1px);
+      box-shadow:none !important;
+    }
+
+    /* Tamanho padrão (desktop/tablet) do ícone home */
+    .btn-home svg {
+      width: 30px;
+      height: 30px;
+    }
+
+    /* ===== AJUSTE SOLICITADO: dobrar casinha no celular ===== */
+    @media (max-width: 900px){
+      /* aumenta o botão para comportar o ícone maior */
+      .topbar-right .icon-btn{
+        height: 48px;
+        min-width: 48px;
+        padding: 8px;
+        border-radius: 12px;
+      }
+      /* dobra o tamanho da casinha (~2x do padrão 18px) */
+      .topbar-right .btn-home svg{
+        width: 36px;
+        height: 36px;
+      }
+    }
   </style>
 </head>
 <body>
