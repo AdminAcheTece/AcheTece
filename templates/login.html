@@ -73,7 +73,7 @@
       {% if no_account %}
       <div class="alert" role="alert">
         <b>Não existe uma conta com este e-mail.</b>
-        Não tem conta? <a href="{{ url_for('cadastro_get') }}">Cadastre-se</a>.
+        Não tem conta? <a href="/cadastrar_empresa">Cadastre-se</a>.
       </div>
       {% elif error %}
       <div class="alert" role="alert">
@@ -96,7 +96,7 @@
         </a>
       </div>
 
-      <p class="signup">Não tem uma conta? <a href="{{ url_for('cadastro_get') }}">Cadastre-se</a></p>
+      <p class="signup">Não tem uma conta? <a href="/cadastrar_empresa">Cadastre-se</a></p>
       <p class="help">Precisa de ajuda? <a href="{{ url_for('contato') }}">Fale conosco</a></p>
 
       <p class="legal">
