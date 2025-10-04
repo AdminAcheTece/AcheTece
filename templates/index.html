@@ -240,7 +240,7 @@
     <div class="header-right">
       <div class="hdr-actions">
         <!-- Único botão no topo: Perfil Malharia  →  /criar-conta -->
-        <a href="{{ url_for('criar_conta') }}" class="btn-perfil"
+        <a href="/criar-conta" class="btn-perfil"
            aria-label="Criar conta e acessar o painel" title="Criar conta e acessar o painel">
           <span>Perfil Malharia</span>
         </a>
@@ -544,7 +544,8 @@
       <h3>É proprietário de uma malharia?</h3>
       <p>Cadastre sua malharia e comece a receber novos pedidos.</p>
     </div>
-    <a href="{{ url_for('malharia_info') }}" class="cta-btn">Cadastrar</a>
+    <!-- Botão CADASTRAR → /criar-conta -->
+    <a href="/criar-conta" class="cta-btn">Cadastrar</a>
   </section>
   
   <!-- Rodapé -->
