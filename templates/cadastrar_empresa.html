@@ -22,7 +22,7 @@
     }
 
     /* =========================
-       BASE DA PÁGINA (como no original)
+       BASE DA PÁGINA
        ========================= */
     body {
       font-family: Arial, sans-serif;
@@ -33,35 +33,10 @@
     }
 
     /* =========================
-       TOPBAR (faixa preta) – igual ao malharia_info
-       ========================= */
-    .topbar{
-      background:#0b0b0b;
-      color:#fff;
-      padding:6px 14px;
-      border-bottom:1px solid #111;
-    }
-    .topbar-inner{
-      max-width:1000px; margin:0 auto;
-      display:flex; align-items:center; justify-content:flex-end; gap:12px;
-    }
-    .topbar-action{
-      display:inline-flex; align-items:center; gap:10px;
-      color:#fff; text-decoration:none;
-      padding:6px 10px; border-radius:10px;
-      background:#111; border:1px solid rgba(255,255,255,.12);
-      transition:background .2s, transform .02s;
-    }
-    .topbar-action:hover{ background:#161616; }
-    .ic-top{ width:18px; height:18px; display:block; }
-    .ic-wa{ color:#22c55e; }
-    .ic-mail{ color:#fff; }
-
-    /* =========================
-       CABEÇALHO branco (navbar) – igual ao malharia_info
+       CABEÇALHO (apenas logo + casinha)
        ========================= */
     .navbar{
-      overflow:visible; padding-top:6px; padding-bottom:6px;
+      overflow:visible; padding:6px 12px;
       background:#fff; border-bottom:1px solid #eee;
       display:flex; align-items:center;
     }
@@ -69,66 +44,13 @@
     .header-right{ margin-left:auto; gap:20px; }
     .logo img{ max-height:48px; height:auto; width:auto; display:block; }
 
-    .menu-wrap{ position: relative; }
-    .hamburger{
-      display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
-      width:36px; height:36px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
-      box-shadow:none !important; cursor:pointer; position:relative; z-index:10002;
-    }
-    .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
-    .hamburger span + span{ margin-top:4px; }
-
-    .menu-dropdown{
-      background:#fff; border:1px solid #eaeaea; border-radius:12px; box-shadow:none !important;
-      z-index:10001; max-height:80vh; overflow:auto;
-      opacity:0; pointer-events:none; transform: translateY(8px) scale(.98);
-      transition: opacity .18s ease, transform .18s ease;
-    }
-    .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
-
-    .menu-dropdown .menu-header{
-      display:flex; justify-content:flex-end; align-items:center; padding:8px 10px;
-    }
-    .menu-dropdown .menu-close{
-      display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px;
-      background:#f0f2f5; border:0; border-radius:10px; cursor:pointer;
-    }
-
-    .menu-dropdown .menu-item{
-      font-weight:400; display:flex; align-items:center; gap:10px; padding:10px 12px;
-      text-decoration:none; color:#222;
-    }
-    .menu-dropdown .menu-item:hover{ background:#f5f7ff; color:var(--azul); border-radius:8px; }
-
-    /* Desktop: dropdown ancorado ao botão */
-    @media (min-width:769px){
-      .menu-dropdown{
-        position:absolute; top:calc(100% + 8px); right:0; min-width:220px; max-width:320px;
-        padding-right:2px; transform-origin: top right;
-      }
-    }
-    /* Mobile: centralizado e limitado à tela */
-    @media (max-width:768px){
-      .menu-wrap{ position: static; }
-      .menu-dropdown{
-        position: fixed;
-        top: calc(var(--nav-h, 64px) + 8px);
-        left: 50%;
-        width: max-content; max-width: 90vw; min-width: 160px; padding: 4px 0;
-        max-height: calc(100vh - var(--nav-h, 64px) - 24px);
-        transform: translate(-50%, 8px) scale(.98); transform-origin: top center;
-        border-radius:14px; -webkit-overflow-scrolling: touch;
-      }
-      .menu-dropdown.open{ transform: translate(-50%, 0) scale(1); }
-    }
-
     /* Botão da casinha (home) */
     .icon-btn{
       display:inline-flex; align-items:center; justify-content:center;
       width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px;
       background:#fff; cursor:pointer; transition:box-shadow .2s, transform .02s, background .2s;
     }
-    .icon-btn:hover{ box-shadow:none !important; background:#f7f7f7; }
+    .icon-btn:hover{ background:#f7f7f7; }
     .icon{ width:20px; height:20px; color:#222; }
 
     /* =========================
@@ -262,24 +184,7 @@
 </head>
 <body>
 
-  <!-- ===== TOPBAR preta (igual ao malharia_info) ===== -->
-  <div class="topbar">
-    <div class="topbar-inner">
-      <a class="topbar-action" href="{{ url_for('contato') }}" aria-label="Fale conosco">
-        <!-- WhatsApp -->
-        <svg class="ic-top ic-wa" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M20.52 3.48A11.94 11.94 0 0 0 12.06 0C5.7 0 .5 5.19.5 11.6c0 2.05.54 4.05 1.58 5.82L0 24l6.76-2.01a11.6 11.6 0 0 0 5.3 1.29h.01c6.36 0 11.56-5.19 11.56-11.6 0-3.09-1.22-6-3.11-8.2Zm-8.46 18.1h-.01a9.7 9.7 0 0 1-4.95-1.34l-.35-.2-4.01 1.2 1.16-3.9-.23-.4a9.66 9.66 0 0 1-1.41-5.08c0-5.36 4.38-9.71 9.77-9.71 2.61 0 5.07 1.02 6.91 2.87a9.73 9.73 0  0 1 2.86 6.95c0 5.36-4.38 9.71-9.75 9.71Zm5.6-7.27c-.31-.16-1.81-.9-2.09-1-.28-.1-.49-.16-.7.16-.2.31-.8 1-.98 1.21-.18.2-.36.22-.67.06-.31-.16-1.3-.48-2.48-1.53-.92-.8-1.54-1.77-1.72-2.07-.18-.31-.02-.48.13-.64.13-.13.31-.36.46-.54.15-.18.2-.31.31-.52.1-.22.05-.41-.02-.57-.16-.16-.7-1.69-.95-2.3-.25-.6-.51-.52-.7-.52-.18 0-.39-.02-.6-.02-.2 0-.52.07-.79.36-.28.31-1.07 1.05-1.07 2.56 0 1.51 1.1 2.97 1.25 3.18.15.2 2.17 3.3 5.25 4.61.73.32 1.3.5 1.75.64.74.24 1.4.2 1.93.12.59-.09 1.81-.74 2.07-1.45.26-.72.26-1.33.18-1.45-.08-.12-.28-.2-.59-.36Z"/>
-        </svg>
-        <!-- Email -->
-        <svg class="ic-top ic-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/>
-        </svg>
-        <span style="font-weight:700;">Fale conosco</span>
-      </a>
-    </div>
-  </div>
-
-  <!-- ===== NAVBAR branca (igual ao malharia_info) ===== -->
+  <!-- ===== NAVBAR (logo + casinha) ===== -->
   <header class="navbar">
     <div class="header-left">
       <div class="logo">
@@ -296,34 +201,8 @@
           <path d="M9 21V12h6v9"></path>
         </svg>
       </a>
-
-      <!-- Menu sanduíche -->
-      <div class="menu-wrap">
-        <button class="hamburger" id="hamburger" type="button" aria-label="Abrir menu" aria-controls="menu-lateral" aria-haspopup="menu" aria-expanded="false">
-          <span></span><span></span><span></span>
-        </button>
-
-        <nav class="menu-dropdown" id="menu-lateral" role="menu" aria-label="Menu rápido">
-          <div class="menu-header">
-            <button type="button" class="menu-close" aria-label="Fechar menu">
-              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
-              </svg>
-            </button>
-          </div>
-
-          <a href="{{ url_for('buscar_teares') }}" class="menu-item" role="menuitem">Buscar Tear</a>
-          <a href="{{ url_for('malharia_info') }}" class="menu-item" role="menuitem">Como Funciona</a>
-          <a href="{{ url_for('login') }}" class="menu-item" role="menuitem">Já sou cadastrado</a>
-          <a href="{{ url_for('quem_somos') }}" class="menu-item" role="menuitem">Quem Somos</a>
-          <a href="{{ url_for('contato') }}" class="menu-item" role="menuitem">Fale conosco</a>
-          <a href="{{ url_for('termos') }}" class="menu-item" role="menuitem">Termos e Políticas</a>
-        </nav>
-      </div>
     </div>
   </header>
-
-  <!-- (Seção de passos removida) -->
 
   <!-- ===== Conteúdo do CADASTRO ===== -->
   <div class="container">
@@ -442,59 +321,6 @@
     </div>
   </footer>
   
-  <!-- ===== Scripts do MENU ===== -->
-  <script>
-    (function () {
-      function closeAll() {
-        document.querySelectorAll('.menu-wrap .menu-dropdown.open').forEach(m => {
-          m.classList.remove('open');
-          const b = m.closest('.menu-wrap')?.querySelector('.hamburger');
-          if (b) b.setAttribute('aria-expanded', 'false');
-        });
-      }
-
-      document.querySelectorAll('.menu-wrap').forEach(wrap => {
-        const btn  = wrap.querySelector('#hamburger');
-        const menu = wrap.querySelector('#menu-lateral');
-        const xBtn = wrap.querySelector('.menu-close');
-        if (!btn || !menu) return;
-
-        btn.addEventListener('click', e => {
-          e.stopPropagation();
-          const willOpen = !menu.classList.contains('open');
-          closeAll();
-          menu.classList.toggle('open', willOpen);
-          btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-        });
-
-        xBtn?.addEventListener('click', e => {
-          e.stopPropagation();
-          menu.classList.remove('open');
-          btn.setAttribute('aria-expanded', 'false');
-        });
-
-        menu.addEventListener('click', e => e.stopPropagation());
-      });
-
-      document.addEventListener('click', closeAll);
-      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
-    })();
-  </script>
-
-  <!-- Mede altura do topo (TOPBAR + NAVBAR) para posicionar o menu no mobile -->
-  <script>
-    (function(){
-      function setNavH(){
-        const topbar = document.querySelector('.topbar')?.offsetHeight || 0;
-        const nav    = document.querySelector('.navbar')?.offsetHeight || 0;
-        const total  = topbar + nav;
-        document.documentElement.style.setProperty('--nav-h', total + 'px');
-      }
-      setNavH();
-      window.addEventListener('resize', setNavH);
-    })();
-  </script>
-
   <!-- ===== Script: cidades dinâmicas por UF ===== -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
