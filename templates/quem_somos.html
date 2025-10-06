@@ -154,6 +154,16 @@
     .contato-item{ display:flex; align-items:center; gap:10px; padding:6px 0; }
     .contato-item svg{ color:#fff; flex:0 0 22px; }
     .contato a{ color:#fff; text-decoration:none; }
+
+    /* Frase (lead) do bloco "Como o AcheTece resolve" alinhada à esquerda */
+    #sec-solucao .lead{
+      text-align: left !important;
+      max-width: 920px;
+      margin-left: 0;   /* garante início à esquerda */
+      margin-right: auto;
+      color: var(--cinza-900); /* preto mais nítido */
+    }
+    
   </style>
 </head>
 <body>
@@ -258,10 +268,10 @@
   </section>
 
   <!-- ===== SOLUÇÃO (mesma cor da home; texto à esquerda) ===== -->
-  <section class="faixa bg-site">
+  <section id="sec-solucao" class="faixa bg-site">
     <div class="wrap">
       <h2 class="subtitulo">Como o AcheTece resolve</h2>
-      <p class="lead" style="text-align:left; max-width:920px;">
+      <p class="lead">
         O <strong>AcheTece</strong> organiza as informações de teares e capacidades em um único lugar, com
         <strong>filtros inteligentes</strong> para você encontrar rapidamente quem pode atender sua demanda e falar
         <strong>direto com a malharia</strong>. Horas de procura viram minutos.
