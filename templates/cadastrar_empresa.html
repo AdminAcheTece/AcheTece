@@ -19,6 +19,7 @@
       --azul-2:#336be3;
       --cinza-bg:#f9f9f9;
       --cinza-texto:#444;
+      --roxo:#8A00FF;
     }
 
     /* =========================
@@ -33,7 +34,7 @@
     }
 
     /* =========================
-       CABEÇALHO (apenas logo + casinha)
+       CABEÇALHO (logo clicável + casinha)
        ========================= */
     .navbar{
       overflow:visible; padding:6px 12px;
@@ -43,6 +44,12 @@
     .header-left,.header-right{ display:flex; align-items:center; }
     .header-right{ margin-left:auto; gap:20px; }
     .logo img{ max-height:48px; height:auto; width:auto; display:block; }
+    .logo-link{ display:inline-flex; align-items:center; text-decoration:none; }
+    .logo-link:focus-visible{
+      outline:2px solid var(--roxo);
+      outline-offset:3px;
+      border-radius:6px;
+    }
 
     /* Botão da casinha (home) */
     .icon-btn{
@@ -184,11 +191,13 @@
 </head>
 <body>
 
-  <!-- ===== NAVBAR (logo + casinha) ===== -->
+  <!-- ===== NAVBAR (logo link + casinha) ===== -->
   <header class="navbar">
     <div class="header-left">
       <div class="logo">
-        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece" decoding="async" fetchpriority="high">
+        <a href="{{ url_for('index') }}" class="logo-link" aria-label="Página inicial AcheTece" title="Ir para a página inicial">
+          <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece" decoding="async" fetchpriority="high">
+        </a>
       </div>
     </div>
 
