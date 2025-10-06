@@ -12,7 +12,18 @@
   <!-- CSS principal -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+
   <style>
+    /* =================== TOKENS =================== */
+    :root{
+      --roxo:#8A00FF;
+      --roxo-hover:#A63DFF;
+      --cinza-900:#1F2937;
+      --cinza-700:#374151;
+      --cinza-500:#6B7280;
+      --card-borda:#E8EAF1;
+    }
+
     /* ===== Cabeçalho padrão busca.html ===== */
     .navbar{ overflow:visible; padding-top:6px; padding-bottom:6px; background:#fff; border-bottom:1px solid #eee; }
     .header-left,.header-right{ display:flex; align-items:center; }
@@ -52,7 +63,7 @@
     .menu-dropdown .menu-item{
       display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222;
     }
-    .menu-dropdown .menu-item:hover{ background:#f5f7ff; color:#8A00FF; border-radius:8px; }
+    .menu-dropdown .menu-item:hover{ background:#f5f7ff; color:var(--roxo); border-radius:8px; }
 
     @media (min-width:769px){
       .menu-dropdown{ position:absolute; top:calc(100% + 8px); right:0; min-width:220px; transform-origin: top right; }
@@ -78,11 +89,11 @@
     /* ===== Estilos específicos desta página ===== */
     .container{ 
       max-width:1080px; 
-      margin:20px auto 0; /* AFASTAMENTO ADICIONADO */
+      margin:20px auto 0;             /* afastamento do topo */
       padding:22px 16px; 
     }
-    .titulo{ text-align:center; margin:10px 0 6px; font-size:28px; }
-    .sub{ text-align:center; max-width:780px; margin:0 auto 22px; color:#444; }
+    .titulo{ text-align:center; margin:10px 0 0; font-size:28px; color:var(--cinza-900); }
+    .sub{ text-align:center; max-width:780px; margin:16px auto 22px; color:var(--cinza-500); line-height:1.6; } /* + espaço após título */
 
     /* Bloco PROBLEMA */
     .pain-hero{
@@ -92,15 +103,15 @@
     }
     .pain-grid{ display:grid; grid-template-columns:1fr; gap:12px; margin-top:10px; }
     .pain-card{
-      background:#fff; border:1px solid #eef0f6; border-radius:12px; padding:12px 14px;
+      background:#fff; border:1px solid var(--card-borda); border-radius:12px; padding:12px 14px;
       box-shadow:none !important;
     }
     .pill{
       display:inline-block; font-size:12px; padding:4px 8px; border-radius:999px;
-      background:#8A00FF; color:#fff; letter-spacing:.2px;
+      background:var(--roxo); color:#fff; letter-spacing:.2px;
     }
-    .pain-title{ font-weight:700; margin:10px 0 6px; }
-    .pain-item{ margin:4px 0 0 0; color:#444; }
+    .pain-title{ font-weight:700; margin:10px 0 6px; color:var(--cinza-900); }
+    .pain-item{ margin:4px 0 0 0; color:var(--cinza-700); }
 
     @media(min-width:820px){
       .pain-grid{ grid-template-columns:repeat(3,1fr); }
@@ -111,39 +122,40 @@
       margin:26px auto; max-width:980px; background:#ffffff; border:1px solid #e9eefc;
       border-radius:14px; padding:18px; box-shadow:none !important;
     }
-    .solucao h3{ margin:0 0 8px 0; }
+    .solucao h3{ margin:0 0 8px 0; color:var(--cinza-900); }
     .cta-row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
 
     /* === PADRÃO DOS BOTÕES (pill) === */
     .btn{
       display:inline-block;
       padding:10px 18px;
-      border-radius:50px;          /* <-- arredondado tipo "pill" */
+      border-radius:50px;
       text-decoration:none;
-      border:1px solid #8A00FF;
-      color:#8A00FF;
+      border:2px solid var(--roxo);
+      color:var(--roxo);
       font-weight:700;
-      transition:all .3s ease;
+      transition:all .18s ease-in-out;
     }
-    .btn-primary{
-      background:#8A00FF;
-      color:#fff;
-    }
+    .btn:focus-visible{ outline:3px solid var(--roxo-hover); outline-offset:2px; }
+    .btn-primary{ background:var(--roxo); color:#fff; }
 
-    /* Caixas existentes para Missão / Contato */
+    /* === Troca de cores no hover (swap) para os dois botões === */
+    .solucao .btn.btn-primary:hover{ background:#fff; color:var(--roxo); }
+    .solucao .btn:not(.btn-primary):hover{ background:var(--roxo); color:#fff; }
+
+    /* Caixas existentes para Missão / Como funciona */
     .plano-box{ background:#eaf2ff; border:1px solid #1f51ff; border-radius:12px; padding:18px; margin:26px auto; }
-    .plano-titulo{ font-weight:700; font-size:18px; margin-bottom:8px; }
+    .plano-titulo{ font-weight:700; font-size:18px; margin-bottom:8px; color:var(--cinza-900); }
 
-    /* "Como funciona" – reaproveita container com visual clean */
     .como{
       background:#fff; border:1px solid #eee; border-radius:12px; padding:18px; margin:18px auto 26px;
       box-shadow:none !important; max-width:980px;
     }
     .como h3{ margin:0 0 10px 0; }
     .como ul{ margin:0; padding-left:18px; }
-    .como li{ margin:6px 0; }
+    .como li{ margin:6px 0; color:var(--cinza-700); }
 
-    /* Opcional — estilo para um botão "home" com borda forte (não altera o atual) */
+    /* Botão home (não altera os demais) */
     .btn-home {
       display:inline-flex; align-items:center; justify-content:center;
       width:48px; height:48px; border:2px solid #888; border-radius:12px;
@@ -152,31 +164,38 @@
     }
     .btn-home:hover { border-color:#333; }
 
-    <!-- ===== Rodapé ===== -->
-    <footer>
-      <div class="footer-container">
-        <div class="footer-block">
-          <!-- Logo símbolo igual ao index -->
-          <img
-            src="{{ url_for('static', filename='logo_simbolo.png') }}"
-            alt="AcheTece"
-            class="footer-logo"
-            width="32"
-            height="32"
-          />
-          <div>
-            <h4 class="footer-title">Sobre nós</h4>
-            <ul class="footer-links">
-              <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
-              <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
-              <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
-              <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </footer>
-    
+    /* ====== NOVO BLOCO DE CONTATO (Fale Conosco) ====== */
+    .qs-contact{
+      position:relative;
+      padding: 28px 24px;
+      border-radius:18px;
+      background: #F4F7FF;
+      border: 1px solid #CFE0FF;
+      box-shadow: 0 1px 0 #E2E8FF inset;
+      max-width:980px;
+      margin:26px auto 0;
+    }
+    .qs-contact:before{
+      content:""; position:absolute; left:0; top:0; right:0; height:4px;
+      background: linear-gradient(90deg, var(--roxo), var(--roxo-hover));
+      border-top-left-radius:18px; border-top-right-radius:18px;
+    }
+    .qs-contact h3{ margin:0 0 10px 0; color:var(--cinza-900); }
+    .qs-contact p.sub{ margin:0 0 16px 0; color:var(--cinza-500); }
+
+    .qs-contact .items{ display:grid; gap:12px; }
+    .qs-contact .item{
+      display:flex; align-items:center; gap:12px;
+      background:#fff; border:1px solid var(--card-borda);
+      border-radius:12px; padding:12px 14px;
+    }
+    .qs-contact .item svg{ flex:0 0 22px; color:var(--roxo); }
+
+    .qs-contact .actions{ display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; }
+    @media (max-width:720px){
+      .cta-row .btn{ width:100%; }
+      .qs-contact .actions .btn{ width:100%; }
+    }
   </style>
 </head>
 <body>
@@ -317,7 +336,7 @@
       <p>Elevar a eficiência da cadeia de malharia, reduzindo ociosidade e aproximando oferta e demanda com transparência.</p>
     </div>
 
-    <!-- COMO FUNCIONA (mantido com novo visual) -->
+    <!-- COMO FUNCIONA (mantido com visual clean) -->
     <div class="como" style="max-width:980px;">
       <h3 class="plano-titulo">Como funciona</h3>
       <ul>
@@ -327,11 +346,44 @@
       </ul>
     </div>
 
-    <!-- CONTATO (mantido) -->
-    <div class="plano-box" style="max-width:980px;">
-      <div class="plano-titulo">Contato</div>
-      <p>E-mail: gestao.achetece@gmail.com<br>Whatsapp: (47) 99112-0670</p>
-    </div>
+    <!-- CONTATO (novo design) -->
+    <section class="qs-contact" aria-labelledby="tit-contato">
+      <h3 id="tit-contato">Fale com a gente</h3>
+      <p class="sub">Dúvidas, parcerias ou suporte? Escolha o canal abaixo.</p>
+
+      <div class="items">
+        <div class="item">
+          <!-- Ícone e-mail -->
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
+            <path d="M4 6h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.6" />
+            <path d="m4 7.5 8 6 8-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div>
+            <strong>E-mail</strong><br>
+            <a href="mailto:gestao.achetece@gmail.com">gestao.achetece@gmail.com</a>
+          </div>
+        </div>
+
+        <div class="item">
+          <!-- Ícone WhatsApp/Telefone -->
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
+            <path d="M20 11.5a8.5 8.5 0 1 1-3.2-6.7l.2.2" stroke="currentColor" stroke-width="1.6" />
+            <path d="m6 18-1.2 3.5L8.5 20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M9.5 8.8c0 .9 1.4 2.7 2.6 3.4 1.1.6 1.7.4 2.1 0 .5-.5.8-.7 1.3-.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          <div>
+            <strong>WhatsApp</strong><br>
+            <a href="https://wa.me/5547991120670" target="_blank" rel="noopener">+55 (47) 99112-0670</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <a class="btn" href="mailto:gestao.achetece@gmail.com">Enviar e-mail</a>
+        <a class="btn btn-primary" href="https://wa.me/5547991120670" target="_blank" rel="noopener">Falar no WhatsApp</a>
+      </div>
+    </section>
+
   </section>
 
   <!-- ===== Rodapé ===== -->
