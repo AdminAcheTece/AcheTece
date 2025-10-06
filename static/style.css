@@ -1049,4 +1049,87 @@ thead tr{ background:#f2f2f2; }
      font-weight:700; font-size:1rem; line-height:1.35; margin:0 0 8px;
    }
    .card-meta{ font-size:.875rem; color:#555; display:flex; gap:16px; flex-wrap:wrap; }
+
+   /* =====================  QUEM SOMOS – AJUSTES  ===================== */
+   :root{
+     --roxo:#8A00FF;
+     --roxo-hover:#A63DFF;
+     --cinza-900:#1F2937;
+     --cinza-700:#374151;
+     --cinza-500:#6B7280;
+     --cinza-200:#E5E7EB;
+     --card-borda:#E8EAF1;
+   }
    
+   /* Espaço entre título e frase (lead) */
+   .qs-hero h2{ margin:0; color:var(--cinza-900); letter-spacing:-0.01em; }
+   .qs-hero .lead{
+     margin-top: 12px;            /* <= aumenta o espaço solicitado */
+     color: var(--cinza-500);
+     line-height: 1.6;
+   }
+   
+   /* Container do bloco “Como o AcheTece resolve” */
+   .qs-hero{
+     padding: 24px;
+     border:1px solid var(--card-borda);
+     border-radius: 18px;
+     background:#fff;
+   }
+   
+   /* CTAs com troca de cores no hover (swap) */
+   .qs-ctas{ display:flex; gap:14px; flex-wrap:wrap; margin-top:16px; }
+   .btn-swap{
+     display:inline-flex; align-items:center; justify-content:center;
+     height:46px; padding:0 20px; border-radius:9999px;
+     font-weight:700; border:2px solid var(--roxo);
+     transition: all .18s ease-in-out; cursor:pointer; text-decoration:none;
+   }
+   .btn-swap:focus-visible{ outline:3px solid var(--roxo-hover); outline-offset:2px; }
+   
+   /* Primário (roxo) -> branco no hover */
+   .btn-swap.principal{ background:var(--roxo); color:#fff; }
+   .btn-swap.principal:hover{ background:#fff; color:var(--roxo); }
+   
+   /* Secundário (branco) -> roxo no hover */
+   .btn-swap.secundario{ background:#fff; color:var(--roxo); }
+   .btn-swap.secundario:hover{ background:var(--roxo); color:#fff; }
+   
+   /* Bloco de contato com cara de “Fale Conosco” */
+   .qs-contact{
+     position:relative;
+     padding: 28px 24px;
+     border-radius:18px;
+     background: #F4F7FF;
+     border: 1px solid #CFE0FF;
+     box-shadow: 0 1px 0 #E2E8FF inset;
+   }
+   .qs-contact:before{
+     content:""; position:absolute; left:0; top:0; right:0; height:4px;
+     background: linear-gradient(90deg, var(--roxo), var(--roxo-hover));
+     border-top-left-radius:18px; border-top-right-radius:18px;
+   }
+   .qs-contact h3{ margin:0 0 10px 0; color:var(--cinza-900); }
+   .qs-contact p.sub{ margin:0 0 16px 0; color:var(--cinza-500); }
+   
+   .qs-contact .items{ display:grid; gap:12px; }
+   .qs-contact .item{
+     display:flex; align-items:center; gap:12px;
+     background:#fff; border:1px solid var(--card-borda);
+     border-radius:12px; padding:12px 14px;
+   }
+   .qs-contact .item svg{ flex:0 0 22px; color:var(--roxo); }
+   
+   /* Mini-CTAs no contato */
+   .qs-contact .actions{ display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; }
+   .qs-contact .actions a{ text-decoration:none; }
+   
+   /* Cartões gerais desta página (bordas/contorno sugestão) */
+   .qs-card{
+     background:#fff; border:1px solid var(--card-borda); border-radius:16px;
+   }
+   @media (max-width: 720px){
+     .qs-ctas .btn-swap{ width:100%; }
+   }
+   
+         
