@@ -217,6 +217,57 @@
       background: var(--roxo);
       color: #fff;
     }
+
+    /* ====== CONTATO EM FAIXA PRETA (compacto) ====== */
+    .qs-contact--dark{
+      background:#0B0B0B;          /* fundo preto */
+      border:1px solid #1a1a1a;    /* sem faixa roxa */
+      box-shadow:none;
+      color:#fff;
+      padding:16px 18px;           /* mais baixo/estreito */
+      border-radius:18px;
+      max-width:980px;
+      margin:18px auto 0;
+    }
+    .qs-contact--dark:before{ display:none; }      /* remove a linha superior */
+    .qs-contact--dark h3{ margin:0 0 6px 0; color:#fff; }
+    .qs-contact--dark .items{ display:grid; gap:6px; }
+    .qs-contact--dark .item{
+      display:flex; align-items:center; gap:10px;
+      background:transparent; border:0; padding:4px 0; /* linhas enxutas */
+    }
+    .qs-contact--dark .item svg{ color:#fff; flex:0 0 22px; }
+    .qs-contact--dark a{
+      color:#fff; text-decoration:underline; text-underline-offset:2px;
+    }
+    .qs-contact--dark .actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+    
+    /* ====== Botões P&B com inversão sincronizada ====== */
+    .btn-bw{
+      display:inline-flex; align-items:center; justify-content:center;
+      height:44px; padding:0 18px; border-radius:9999px;
+      border:2px solid; font-weight:700; text-decoration:none;
+      transition:all .18s ease-in-out;
+    }
+    .btn-bw.primary{   /* preto cheio */
+      background:#000; color:#fff; border-color:#000;
+    }
+    .btn-bw.secondary{ /* branco cheio */
+      background:#fff; color:#000; border-color:#fff;
+    }
+    
+    /* Inverte AMBOS quando qualquer um recebe hover/foco */
+    .bw-row:has(.btn-bw:hover) .btn-bw.primary,
+    .bw-row:has(.btn-bw:focus-visible) .btn-bw.primary{
+      background:#fff; color:#000; border-color:#fff;
+    }
+    .bw-row:has(.btn-bw:hover) .btn-bw.secondary,
+    .bw-row:has(.btn-bw:focus-visible) .btn-bw.secondary{
+      background:#000; color:#fff; border-color:#000;
+    }
+    
+    /* Acessibilidade de foco visível */
+    .btn-bw:focus-visible{ outline:3px solid #fff; outline-offset:2px; }
     
   </style>
 </head>
@@ -369,40 +420,38 @@
     </div>
 
     <!-- CONTATO (novo design) -->
-    <section class="qs-contact" aria-labelledby="tit-contato">
+    <section class="qs-contact qs-contact--dark" aria-labelledby="tit-contato">
       <h3 id="tit-contato">Fale com a gente</h3>
-      <p class="sub">Dúvidas, parcerias ou suporte? Escolha o canal abaixo.</p>
-
+    
       <div class="items">
         <div class="item">
           <!-- Ícone e-mail -->
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
-            <path d="M4 6h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.6" />
-            <path d="m4 7.5 8 6 8-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/>
+            <path d="M3 7l9 7 9-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           <div>
-            <strong>E-mail</strong><br>
+            <strong>E-mail</strong> —
             <a href="mailto:gestao.achetece@gmail.com">gestao.achetece@gmail.com</a>
           </div>
         </div>
-
+    
         <div class="item">
-          <!-- Ícone WhatsApp/Telefone -->
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
-            <path d="M20 11.5a8.5 8.5 0 1 1-3.2-6.7l.2.2" stroke="currentColor" stroke-width="1.6" />
-            <path d="m6 18-1.2 3.5L8.5 20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M9.5 8.8c0 .9 1.4 2.7 2.6 3.4 1.1.6 1.7.4 2.1 0 .5-.5.8-.7 1.3-.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          <!-- Ícone oficial WhatsApp (SVG) -->
+          <svg viewBox="0 0 32 32" width="22" height="22" fill="none" aria-hidden="true">
+            <path d="M27.6 4.4A15.9 15.9 0 0 0 16 .7C7.6.7.8 7.4.8 15.6c0 2.7.7 5.2 2 7.5L1 31l7-1.8a15.5 15.5 0 0 0 7.9 2.1h.1c8.2 0 14.9-6.7 14.9-14.9 0-4-1.6-7.7-4.3-10.4Z" stroke="currentColor" stroke-width="1.6"/>
+            <path d="M22.8 18.5c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.3-.7.1-1.9-1-3.2-1.8-4.5-4-.3-.4 0-.6.2-.8.2-.2.3-.4.5-.6.2-.3.2-.5 0-.8-.1-.2-.7-1.7-.9-2.3-.2-.5-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.3-.8.8-1.1 2-1.1 3.1 0 .4.1.9.3 1.3.5 1.1 1.2 2 2.1 3.1 1.3 1.6 2.9 2.7 4.7 3.6.5.2 1 .4 1.5.6.6.2 1.1.2 1.5.1.5-.1 1.8-.7 2.1-1.4.3-.7.3-1.3.2-1.4Z" fill="currentColor"/>
           </svg>
           <div>
-            <strong>WhatsApp</strong><br>
+            <strong>WhatsApp</strong> —
             <a href="https://wa.me/5547991120670" target="_blank" rel="noopener">+55 (47) 99112-0670</a>
           </div>
         </div>
       </div>
-
-      <div class="actions">
-        <a class="btn" href="mailto:gestao.achetece@gmail.com">Enviar e-mail</a>
-        <a class="btn btn-primary" href="https://wa.me/5547991120670" target="_blank" rel="noopener">Falar no WhatsApp</a>
+    
+      <div class="actions bw-row">
+        <a class="btn-bw secondary" href="mailto:gestao.achetece@gmail.com">Enviar e-mail</a>
+        <a class="btn-bw primary" href="https://wa.me/5547991120670" target="_blank" rel="noopener">Falar no WhatsApp</a>
       </div>
     </section>
 
