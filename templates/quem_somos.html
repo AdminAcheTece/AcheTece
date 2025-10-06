@@ -196,6 +196,28 @@
       .cta-row .btn{ width:100%; }
       .qs-contact .actions .btn{ width:100%; }
     }
+
+    /* ===== Inversão dupla no hover do botão branco ===== */
+
+    /* Mantém o primário (roxo) roxo quando ele mesmo é hover */
+    .solucao .btn.btn-primary:hover{
+      background: var(--roxo);
+      color: #fff;
+    }
+    
+    /* Quando o botão branco (secundário) está em hover/foco, inverte os dois */
+    .cta-row:has(.btn:not(.btn-primary):hover) .btn.btn-primary,
+    .cta-row:has(.btn:not(.btn-primary):focus-visible) .btn.btn-primary{
+      background: #fff;
+      color: var(--roxo);
+    }
+    
+    .cta-row:has(.btn:not(.btn-primary):hover) .btn:not(.btn-primary),
+    .cta-row:has(.btn:not(.btn-primary):focus-visible) .btn:not(.btn-primary){
+      background: var(--roxo);
+      color: #fff;
+    }
+    
   </style>
 </head>
 <body>
