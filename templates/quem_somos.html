@@ -5,37 +5,40 @@
   <title>Quem Somos - AcheTece</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <!-- Ícone da aba (favicon) -->
+  <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
-  
+
   <!-- CSS principal -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet" />
 
   <style>
-    /* =================== TOKENS =================== */
+    /* =================== TOKENS / BASE =================== */
     :root{
       --roxo:#8A00FF;
       --roxo-hover:#A63DFF;
-      --cinza-900:#1F2937;
+      --laranja:#FF7A00;
+      --cinza-hero:#FAFBFD;       /* cinza claro para faixas */
+      --cinza-900:#111827;
       --cinza-700:#374151;
       --cinza-500:#6B7280;
-      --card-borda:#E8EAF1;
+      --maxw: 1100px;
     }
+    *{ box-sizing:border-box; }
+    body{ color:var(--cinza-900); }
 
-    /* ===== Cabeçalho padrão busca.html ===== */
-    .navbar{ overflow:visible; padding-top:6px; padding-bottom:6px; background:#fff; border-bottom:1px solid #eee; }
+    /* ===== Header (igual aos demais) ===== */
+    .navbar{ overflow:visible; padding:6px 0; background:#fff; border-bottom:1px solid #eee; }
     .header-left,.header-right{ display:flex; align-items:center; }
     .header-right{ margin-left:auto; gap:20px; }
-    .logo img{ max-height:48px; height:auto; width:auto; display:block; }
+    .logo img{ max-height:48px; display:block; }
     .top-nav{ display:none; }
 
     .menu-wrap{ position: relative; }
     .hamburger{
       display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
       width:36px; height:36px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
-      box-shadow:none !important;
       position:relative; z-index:10002;
     }
     .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
@@ -45,253 +48,149 @@
       .hamburger span{ width:16px; height:2px; }
       .hamburger span + span{ margin-top:3px; }
     }
-
     .menu-dropdown{
-      background:#fff; border:1px solid #eaeaea; border-radius:12px; box-shadow:none !important;
+      background:#fff; border:1px solid #eaeaea; border-radius:12px;
       z-index:10001; max-height:80vh; overflow:auto;
       opacity:0; pointer-events:none; transform: translateY(8px) scale(.98);
       transition: opacity .18s ease, transform .18s ease;
     }
     .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
-    .menu-dropdown .menu-header{
-      display:flex; justify-content:flex-end; align-items:center; padding:8px 10px;
-    }
-    .menu-dropdown .menu-close{
-      display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px;
-      background:#f0f2f5; border:0; border-radius:10px; cursor:pointer;
-    }
-    .menu-dropdown .menu-item{
-      display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222;
-    }
+    .menu-dropdown .menu-header{ display:flex; justify-content:flex-end; align-items:center; padding:8px 10px; }
+    .menu-dropdown .menu-close{ display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; background:#f0f2f5; border:0; border-radius:10px; cursor:pointer; }
+    .menu-dropdown .menu-item{ display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222; }
     .menu-dropdown .menu-item:hover{ background:#f5f7ff; color:var(--roxo); border-radius:8px; }
-
-    @media (min-width:769px){
-      .menu-dropdown{ position:absolute; top:calc(100% + 8px); right:0; min-width:220px; transform-origin: top right; }
-    }
+    @media (min-width:769px){ .menu-dropdown{ position:absolute; top:calc(100% + 8px); right:0; min-width:220px; transform-origin: top right; } }
     @media (max-width:768px){
       .menu-wrap{ position: static; }
-      .menu-dropdown{
-        position: fixed;
-        top: calc(var(--nav-h, 64px) + 8px);
-        left: 50%; transform: translate(-50%, 8px) scale(.98);
-        width:max-content; max-width:90vw; min-width:160px; border-radius:14px;
-      }
+      .menu-dropdown{ position: fixed; top: calc(var(--nav-h, 64px) + 8px); left: 50%; transform: translate(-50%, 8px) scale(.98); width:max-content; max-width:90vw; min-width:160px; border-radius:14px; }
       .menu-dropdown.open{ transform: translate(-50%,0) scale(1); }
     }
-
-    .icon-btn{
-      display:inline-flex; align-items:center; justify-content:center;
-      width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px;
-      background:#fff; cursor:pointer;
-    }
+    .icon-btn{ display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px; background:#fff; cursor:pointer; }
     .icon{ width:20px; height:20px; color:#222; }
 
-    /* ===== Estilos específicos desta página ===== */
-    .container{ 
-      max-width:1080px; 
-      margin:20px auto 0;             /* afastamento do topo */
-      padding:22px 16px; 
-    }
-    .titulo{ text-align:center; margin:10px 0 0; font-size:28px; color:var(--cinza-900); }
-    .sub{ text-align:center; max-width:780px; margin:16px auto 22px; color:var(--cinza-500); line-height:1.6; } /* + espaço após título */
+    /* =================== LAYOUT DE FAIXAS =================== */
+    .faixa{ width:100%; padding: clamp(36px, 5vw, 72px) 16px; }
+    .wrap{ max-width:var(--maxw); margin:0 auto; }
 
-    /* Bloco PROBLEMA */
-    .pain-hero{
-      background: linear-gradient(180deg,#f7f9ff 0%, #eef3ff 100%);
-      border:1px solid #e6ecff; border-radius:14px;
-      padding:18px; margin:26px auto; max-width:980px;
+    .bg-white{ background:#fff; }
+    .bg-cinza{ background:var(--cinza-hero); }
+    .bg-roxo-soft{ background:linear-gradient(180deg,#FBF8FF 0%, #F4EEFF 100%); }
+    .bg-preto{ background:#0B0B0B; color:#fff; }
+
+    /* =================== TIPOGRAFIA =================== */
+    .titulo{
+      text-align:center;
+      margin:0;
+      font-size: clamp(28px, 4vw, 44px);
+      letter-spacing:-0.01em;
     }
-    .pain-grid{ display:grid; grid-template-columns:1fr; gap:12px; margin-top:10px; }
+    .lead{
+      text-align:center;
+      max-width:780px;
+      margin:12px auto 0;
+      color:var(--cinza-500);
+      line-height:1.6;
+      font-size: clamp(16px, 2.1vw, 20px);
+    }
+
+    /* Missão com mesmo visual do título/lead */
+    .missao{ margin-top: clamp(18px, 3vw, 28px); }
+    .missao .titulo{ font-size: clamp(28px, 4vw, 44px); }
+    .missao .lead{ margin-top:12px; }
+
+    /* Subtítulos de seção (maiores, claros) */
+    .subtitulo{
+      font-size: clamp(22px, 3vw, 28px);
+      margin:0 0 8px 0;
+      color:var(--cinza-900);
+      text-align:left;
+    }
+
+    /* =================== PROBLEMA =================== */
+    .pain-grid{
+      display:grid; grid-template-columns:1fr; gap:12px; margin-top:16px;
+    }
     .pain-card{
-      background:#fff; border:1px solid var(--card-borda); border-radius:12px; padding:12px 14px;
-      box-shadow:none !important;
+      background:#fff; border-radius:14px; padding:14px 16px;
+      border:0; /* sem borda */
+      box-shadow: 0 1px 0 #EFF2F8 inset;
     }
-    .pill{
-      display:inline-block; font-size:12px; padding:4px 8px; border-radius:999px;
-      background:var(--roxo); color:#fff; letter-spacing:.2px;
-    }
-    .pain-title{ font-weight:700; margin:10px 0 6px; color:var(--cinza-900); }
-    .pain-item{ margin:4px 0 0 0; color:var(--cinza-700); }
+    .pill{ display:inline-block; font-size:12px; padding:4px 8px; border-radius:999px; background:var(--laranja); color:#fff; letter-spacing:.2px; }
 
-    @media(min-width:820px){
-      .pain-grid{ grid-template-columns:repeat(3,1fr); }
-    }
+    @media(min-width:840px){ .pain-grid{ grid-template-columns:repeat(3,1fr); } }
 
-    /* Bloco SOLUÇÃO */
-    .solucao{
-      margin:26px auto; max-width:980px; background:#ffffff; border:1px solid #e9eefc;
-      border-radius:14px; padding:18px; box-shadow:none !important;
-    }
-    .solucao h3{ margin:0 0 8px 0; color:var(--cinza-900); }
-    .cta-row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+    /* =================== SOLUÇÃO + CTAs =================== */
+    .cta-row{ display:flex; gap:12px; flex-wrap:wrap; margin-top:14px; }
 
-    /* === PADRÃO DOS BOTÕES (pill) === */
     .btn{
-      display:inline-block;
-      padding:10px 18px;
-      border-radius:50px;
-      text-decoration:none;
-      border:2px solid var(--roxo);
-      color:var(--roxo);
-      font-weight:700;
-      transition:all .18s ease-in-out;
+      display:inline-block; padding:12px 22px; border-radius:9999px;
+      text-decoration:none; font-weight:700; border:2px solid var(--roxo);
+      transition:all .18s ease-in-out; font-size:16px;
     }
-    .btn:focus-visible{ outline:3px solid var(--roxo-hover); outline-offset:2px; }
     .btn-primary{ background:var(--roxo); color:#fff; }
+    .btn-ghost{ background:#fff; color:var(--roxo); }
 
-    /* === Troca de cores no hover (swap) para os dois botões === */
-    .solucao .btn.btn-primary:hover{ background:#fff; color:var(--roxo); }
-    .solucao .btn:not(.btn-primary):hover{ background:var(--roxo); color:#fff; }
-
-    /* Caixas existentes para Missão / Como funciona */
-    .plano-box{ background:#eaf2ff; border:1px solid #1f51ff; border-radius:12px; padding:18px; margin:26px auto; }
-    .plano-titulo{ font-weight:700; font-size:18px; margin-bottom:8px; color:var(--cinza-900); }
-
-    .como{
-      background:#fff; border:1px solid #eee; border-radius:12px; padding:18px; margin:18px auto 26px;
-      box-shadow:none !important; max-width:980px;
+    /* Inverte ambos quando o cursor está sobre o botão branco (ghost) */
+    .cta-row:has(.btn-ghost:hover) .btn-primary,
+    .cta-row:has(.btn-ghost:focus-visible) .btn-primary{
+      background:#fff; color:var(--roxo);
     }
-    .como h3{ margin:0 0 10px 0; }
-    .como ul{ margin:0; padding-left:18px; }
-    .como li{ margin:6px 0; color:var(--cinza-700); }
-
-    /* Botão home (não altera os demais) */
-    .btn-home {
-      display:inline-flex; align-items:center; justify-content:center;
-      width:48px; height:48px; border:2px solid #888; border-radius:12px;
-      background:#fff; box-shadow:none !important; cursor:pointer;
-      transition:border-color .3s ease;
+    .cta-row:has(.btn-ghost:hover) .btn-ghost,
+    .cta-row:has(.btn-ghost:focus-visible) .btn-ghost{
+      background:var(--roxo); color:#fff;
     }
-    .btn-home:hover { border-color:#333; }
 
-    /* ====== NOVO BLOCO DE CONTATO (Fale Conosco) ====== */
-    .qs-contact{
+    /* =================== COMO FUNCIONA (ETAPAS) =================== */
+    .steps{
+      margin-top:16px;
+      display:grid; grid-template-columns:1fr; gap:14px;
+    }
+    .step{
+      display:flex; align-items:flex-start; gap:12px; padding:14px 0;
       position:relative;
-      padding: 28px 24px;
-      border-radius:18px;
-      background: #F4F7FF;
-      border: 1px solid #CFE0FF;
-      box-shadow: 0 1px 0 #E2E8FF inset;
-      max-width:980px;
-      margin:26px auto 0;
     }
-    .qs-contact:before{
-      content:""; position:absolute; left:0; top:0; right:0; height:4px;
-      background: linear-gradient(90deg, var(--roxo), var(--roxo-hover));
-      border-top-left-radius:18px; border-top-right-radius:18px;
-    }
-    .qs-contact h3{ margin:0 0 10px 0; color:var(--cinza-900); }
-    .qs-contact p.sub{ margin:0 0 16px 0; color:var(--cinza-500); }
-
-    .qs-contact .items{ display:grid; gap:12px; }
-    .qs-contact .item{
-      display:flex; align-items:center; gap:12px;
-      background:#fff; border:1px solid var(--card-borda);
-      border-radius:12px; padding:12px 14px;
-    }
-    .qs-contact .item svg{ flex:0 0 22px; color:var(--roxo); }
-
-    .qs-contact .actions{ display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; }
-    @media (max-width:720px){
-      .cta-row .btn{ width:100%; }
-      .qs-contact .actions .btn{ width:100%; }
-    }
-
-    /* ===== Inversão dupla no hover do botão branco ===== */
-
-    /* Mantém o primário (roxo) roxo quando ele mesmo é hover */
-    .solucao .btn.btn-primary:hover{
-      background: var(--roxo);
-      color: #fff;
-    }
-    
-    /* Quando o botão branco (secundário) está em hover/foco, inverte os dois */
-    .cta-row:has(.btn:not(.btn-primary):hover) .btn.btn-primary,
-    .cta-row:has(.btn:not(.btn-primary):focus-visible) .btn.btn-primary{
-      background: #fff;
-      color: var(--roxo);
-    }
-    
-    .cta-row:has(.btn:not(.btn-primary):hover) .btn:not(.btn-primary),
-    .cta-row:has(.btn:not(.btn-primary):focus-visible) .btn:not(.btn-primary){
-      background: var(--roxo);
-      color: #fff;
-    }
-
-    /* ====== CONTATO EM FAIXA PRETA (compacto) ====== */
-    .qs-contact--dark{
-      background:#0B0B0B;          /* fundo preto */
-      border:1px solid #1a1a1a;    /* sem faixa roxa */
-      box-shadow:none;
-      color:#fff;
-      padding:16px 18px;           /* mais baixo/estreito */
-      border-radius:18px;
-      max-width:980px;
-      margin:18px auto 0;
-    }
-    .qs-contact--dark:before{ display:none; }      /* remove a linha superior */
-    .qs-contact--dark h3{ margin:0 0 6px 0; color:#fff; }
-    .qs-contact--dark .items{ display:grid; gap:6px; }
-    .qs-contact--dark .item{
-      display:flex; align-items:center; gap:10px;
-      background:transparent; border:0; padding:4px 0; /* linhas enxutas */
-    }
-    .qs-contact--dark .item svg{ color:#fff; flex:0 0 22px; }
-    .qs-contact--dark a{
-      color:#fff; text-decoration:underline; text-underline-offset:2px;
-    }
-    .qs-contact--dark .actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
-    
-    /* ====== Botões P&B com inversão sincronizada ====== */
-    .btn-bw{
+    .step .num{
+      flex:0 0 34px; height:34px; width:34px; border-radius:999px;
+      background:var(--roxo); color:#fff; font-weight:700;
       display:inline-flex; align-items:center; justify-content:center;
-      height:44px; padding:0 18px; border-radius:9999px;
-      border:2px solid; font-weight:700; text-decoration:none;
-      transition:all .18s ease-in-out;
+      font-size:16px;
     }
-    .btn-bw.primary{   /* preto cheio */
-      background:#000; color:#fff; border-color:#000;
+    .step p{ margin:4px 0 0; color:var(--cinza-700); font-size: clamp(16px, 2vw, 18px); }
+    /* Linha conectora à direita (desktop) */
+    @media (min-width:900px){
+      .steps{ grid-template-columns:repeat(3,1fr); align-items:stretch; }
+      .step{ padding:24px 18px; background:#fff; border-radius:14px; box-shadow:0 1px 0 #EFF2F8 inset; }
+      .step:not(:last-child)::after{
+        content:""; position:absolute; right:-9px; top:50%; transform:translateY(-50%);
+        width:18px; height:2px; background:linear-gradient(90deg, var(--roxo), var(--laranja));
+        border-radius:2px;
+      }
     }
-    .btn-bw.secondary{ /* branco cheio */
-      background:#fff; color:#000; border-color:#fff;
-    }
-    
-    /* Inverte AMBOS quando qualquer um recebe hover/foco */
-    .bw-row:has(.btn-bw:hover) .btn-bw.primary,
-    .bw-row:has(.btn-bw:focus-visible) .btn-bw.primary{
-      background:#fff; color:#000; border-color:#fff;
-    }
-    .bw-row:has(.btn-bw:hover) .btn-bw.secondary,
-    .bw-row:has(.btn-bw:focus-visible) .btn-bw.secondary{
-      background:#000; color:#fff; border-color:#000;
-    }
-    
-    /* Acessibilidade de foco visível */
-    .btn-bw:focus-visible{ outline:3px solid #fff; outline-offset:2px; }
-    
+
+    /* =================== CONTATO (faixa preta) =================== */
+    .contato-items{ display:grid; gap:8px; margin-top:10px; }
+    .contato-item{ display:flex; align-items:center; gap:10px; padding:6px 0; }
+    .contato-item svg{ color:#fff; flex:0 0 22px; }
+    .contato a{ color:#fff; text-decoration:none; }
   </style>
 </head>
 <body>
 
-  <!-- ===== Cabeçalho (igual ao busca.html) ===== -->
+  <!-- ===== Cabeçalho ===== -->
   <header class="navbar">
     <div class="header-left">
       <div class="logo">
-        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
+        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
       </div>
     </div>
 
     <div class="header-right">
-      <!-- Botão home -->
       <a href="{{ url_for('index') }}" class="icon-btn" aria-label="Página inicial" title="Página inicial">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 10.5 12 3l9 7.5"></path>
-          <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
-          <path d="M9 21V12h6v9"></path>
+          <path d="M3 10.5 12 3l9 7.5"></path><path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path><path d="M9 21V12h6v9"></path>
         </svg>
       </a>
 
-      <!-- Menu sanduíche -->
       <div class="menu-wrap">
         <button class="hamburger" id="hamburger" type="button" aria-label="Abrir menu" aria-controls="menu-lateral" aria-haspopup="menu" aria-expanded="false">
           <span></span><span></span><span></span>
@@ -308,53 +207,27 @@
           </div>
 
           <a href="{{ url_for('buscar_teares') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="11" cy="11" r="7"></circle>
-              <line x1="16.65" y1="16.65" x2="21" y2="21"></line>
-            </svg>
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="16.65" y1="16.65" x2="21" y2="21"></line></svg>
             <span>Buscar Tear</span>
           </a>
-
           <a href="{{ url_for('malharia_info') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"></circle>
-              <path d="M9.5 9a2.5 2.5 0 1 1 4.1 2A3 3 0 0 0 12 13.6"></path>
-              <circle cx="12" cy="17" r="1.2" fill="currentColor"></circle>
-            </svg>
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.5 9a2.5 2.5 0 1 1 4.1 2A3 3 0 0 0 12 13.6"></path><circle cx="12" cy="17" r="1.2" fill="currentColor"></circle></svg>
             <span>Como Funciona</span>
           </a>
-
           <a href="{{ url_for('login') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="8" r="4"></circle>
-              <path d="M4 20a8 8 0 0 1 16 0"></path>
-            </svg>
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 20a8 8 0 0 1 16 0"></path></svg>
             <span>Já sou cadastrado</span>
           </a>
-
           <a href="{{ url_for('quem_somos') }}" class="menu-item" role="menuitem" aria-current="page">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"></circle>
-              <circle cx="12" cy="8" r="1.5" fill="currentColor"></circle>
-              <path d="M11 11h2v6h-2z" fill="currentColor"></path>
-            </svg>
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="8" r="1.5" fill="currentColor"></circle><path d="M11 11h2v6h-2z" fill="currentColor"></path></svg>
             <span>Quem Somos</span>
           </a>
-
           <a href="{{ url_for('contato') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 4h16v12H4z"></path>
-              <path d="M22 20H2"></path>
-              <path d="M22 8l-10 6L2 8" fill="none"></path>
-            </svg>
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v12H4z"></path><path d="M22 20H2"></path><path d="M22 8l-10 6L2 8" fill="none"></path></svg>
             <span>Fale conosco</span>
           </a>
-
           <a href="{{ url_for('termos') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="4" y="4" width="16" height="16" rx="2"></rect>
-              <path d="M8 8h8M8 12h8M8 16h5"></path>
-            </svg>
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M8 8h8M8 12h8M8 16h5"></path></svg>
             <span>Termos e Políticas</span>
           </a>
         </nav>
@@ -362,113 +235,110 @@
     </div>
   </header>
 
-  <!-- ===== Conteúdo ===== -->
-  <section class="container">
-    <h1 class="titulo">Quem Somos</h1>
-    <p class="sub">
-      Uma <strong>Plataforma de Malharias — </strong>Conectamos malharias com capacidade disponível a empresas que precisam produzir malhas — com agilidade, transparência e confiança.
-    </p>
+  <!-- ===== HERO ===== -->
+  <section class="faixa bg-white">
+    <div class="wrap">
+      <h1 class="titulo">Quem Somos</h1>
+      <p class="lead">Uma <strong>Plataforma de Malharias</strong> — conectamos malharias com capacidade disponível a empresas que precisam produzir malhas, com agilidade, transparência e confiança.</p>
 
-    <!-- DOR / PROBLEMA -->
-    <div class="pain-hero" aria-label="O desafio do mercado">
+      <!-- Missão (mesmo estilo) -->
+      <div class="missao">
+        <h2 class="titulo">Nossa missão</h2>
+        <p class="lead">Elevar a eficiência da cadeia de malharia, reduzindo ociosidade e aproximando oferta e demanda com transparência.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PROBLEMA ===== -->
+  <section class="faixa bg-cinza">
+    <div class="wrap">
       <span class="pill">O problema real</span>
-      <h3 class="pain-title">Buscar a malharia certa consome tempo e atrasa a produção</h3>
+      <h2 class="subtitulo" style="margin-top:10px;">Buscar a malharia certa consome tempo e atrasa a produção</h2>
+
       <div class="pain-grid">
         <div class="pain-card">
           <strong>Contato com muitas malharias</strong>
-          <p class="pain-item">É preciso ligar e enviar mensagens para vários fornecedores até descobrir quem tem o tear adequado.</p>
+          <p>É preciso ligar e enviar mensagens para vários fornecedores até descobrir quem tem o tear adequado.</p>
         </div>
         <div class="pain-card">
           <strong>Informação técnica difusa</strong>
-          <p class="pain-item">Finura, diâmetro, tipo de malha, localização... dados ficam espalhados e difíceis de comparar.</p>
+          <p>Finura, diâmetro, tipo de malha, localização... dados ficam espalhados e difíceis de comparar.</p>
         </div>
         <div class="pain-card">
           <strong>Tempo perdido = custo</strong>
-          <p class="pain-item">A busca manual atrasa prazos e aumenta o custo da operação.</p>
+          <p>A busca manual atrasa prazos e aumenta o custo da operação.</p>
         </div>
       </div>
     </div>
+  </section>
 
-    <!-- SOLUÇÃO -->
-    <div class="solucao">
-      <h3>Como o AcheTece resolve</h3>
-      <p>
+  <!-- ===== SOLUÇÃO ===== -->
+  <section class="faixa bg-roxo-soft">
+    <div class="wrap">
+      <h2 class="subtitulo">Como o AcheTece resolve</h2>
+      <p class="lead" style="margin-top:6px;">
         O <strong>AcheTece</strong> organiza as informações de teares e capacidades em um único lugar, com
-        <strong>filtros inteligentes</strong> para você encontrar rapidamente quem pode atender sua demanda
-        e falar <strong>direto com a malharia</strong>. Horas de procura viram minutos.
+        <strong>filtros inteligentes</strong> para você encontrar rapidamente quem pode atender sua demanda e falar
+        <strong>direto com a malharia</strong>. Horas de procura viram minutos.
       </p>
+
       <div class="cta-row">
         <a href="{{ url_for('buscar_teares') }}" class="btn btn-primary">Encontrar tear agora</a>
-        <a href="{{ url_for('malharia_info') }}" class="btn">Como funciona</a>
+        <a href="{{ url_for('malharia_info') }}" class="btn btn-ghost">Como funciona</a>
       </div>
     </div>
+  </section>
 
-    <!-- MISSÃO (mantida) -->
-    <div class="plano-box" style="max-width:980px;">
-      <div class="plano-titulo">Nossa missão</div>
-      <p>Elevar a eficiência da cadeia de malharia, reduzindo ociosidade e aproximando oferta e demanda com transparência.</p>
+  <!-- ===== COMO FUNCIONA (ETAPAS) ===== -->
+  <section class="faixa bg-white">
+    <div class="wrap">
+      <h2 class="subtitulo">Como funciona</h2>
+      <div class="steps">
+        <div class="step">
+          <span class="num">1</span>
+          <p>Malharias se cadastram e informam seus teares e características.</p>
+        </div>
+        <div class="step">
+          <span class="num">2</span>
+          <p>Empresas buscam por tipo de malha, finura, diâmetro, localização e mais.</p>
+        </div>
+        <div class="step">
+          <span class="num">3</span>
+          <p>Conectamos as partes e facilitamos o contato para produção.</p>
+        </div>
+      </div>
     </div>
+  </section>
 
-    <!-- COMO FUNCIONA (mantido com visual clean) -->
-    <div class="como" style="max-width:980px;">
-      <h3 class="plano-titulo">Como funciona</h3>
-      <ul>
-        <li>Malharias se cadastram e informam seus teares e características.</li>
-        <li>Empresas buscam por tipo de malha, finura, diâmetro, localização e mais.</li>
-        <li>Conectamos as partes e facilitamos o contato para produção.</li>
-      </ul>
-    </div>
-
-    <!-- CONTATO (novo design) -->
-    <section class="qs-contact qs-contact--dark" aria-labelledby="tit-contato">
-      <h3 id="tit-contato">Fale com a gente</h3>
-    
-      <div class="items">
-        <div class="item">
-          <!-- Ícone e-mail -->
+  <!-- ===== CONTATO (FAIXA PRETA) ===== -->
+  <section class="faixa bg-preto contato">
+    <div class="wrap">
+      <h2 class="subtitulo" style="color:#fff;">Fale com a gente</h2>
+      <div class="contato-items">
+        <div class="contato-item">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
             <rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/>
             <path d="M3 7l9 7 9-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <div>
-            <strong>E-mail</strong> —
-            <a href="mailto:gestao.achetece@gmail.com">gestao.achetece@gmail.com</a>
-          </div>
+          <div><strong>E-mail</strong> — <a href="mailto:gestao.achetece@gmail.com">gestao.achetece@gmail.com</a></div>
         </div>
-    
-        <div class="item">
-          <!-- Ícone oficial WhatsApp (SVG) -->
+        <div class="contato-item">
+          <!-- Ícone oficial WhatsApp -->
           <svg viewBox="0 0 32 32" width="22" height="22" fill="none" aria-hidden="true">
             <path d="M27.6 4.4A15.9 15.9 0 0 0 16 .7C7.6.7.8 7.4.8 15.6c0 2.7.7 5.2 2 7.5L1 31l7-1.8a15.5 15.5 0 0 0 7.9 2.1h.1c8.2 0 14.9-6.7 14.9-14.9 0-4-1.6-7.7-4.3-10.4Z" stroke="currentColor" stroke-width="1.6"/>
             <path d="M22.8 18.5c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.3-.7.1-1.9-1-3.2-1.8-4.5-4-.3-.4 0-.6.2-.8.2-.2.3-.4.5-.6.2-.3.2-.5 0-.8-.1-.2-.7-1.7-.9-2.3-.2-.5-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.3-.8.8-1.1 2-1.1 3.1 0 .4.1.9.3 1.3.5 1.1 1.2 2 2.1 3.1 1.3 1.6 2.9 2.7 4.7 3.6.5.2 1 .4 1.5.6.6.2 1.1.2 1.5.1.5-.1 1.8-.7 2.1-1.4.3-.7.3-1.3.2-1.4Z" fill="currentColor"/>
           </svg>
-          <div>
-            <strong>WhatsApp</strong> —
-            <a href="https://wa.me/5547991120670" target="_blank" rel="noopener">+55 (47) 99112-0670</a>
-          </div>
+          <div><strong>WhatsApp</strong> — <a href="https://wa.me/5547991120670" target="_blank" rel="noopener">+55 (47) 99112-0670</a></div>
         </div>
       </div>
-    
-      <div class="actions bw-row">
-        <a class="btn-bw secondary" href="mailto:gestao.achetece@gmail.com">Enviar e-mail</a>
-        <a class="btn-bw primary" href="https://wa.me/5547991120670" target="_blank" rel="noopener">Falar no WhatsApp</a>
-      </div>
-    </section>
-
+    </div>
   </section>
 
   <!-- ===== Rodapé ===== -->
   <footer>
     <div class="footer-container">
       <div class="footer-block">
-        <!-- Logo símbolo igual ao index -->
-        <img
-          src="{{ url_for('static', filename='logo_simbolo.png') }}"
-          alt="AcheTece"
-          class="footer-logo"
-          width="32"
-          height="32"
-        />
+        <img src="{{ url_for('static', filename='logo_simbolo.png') }}" alt="AcheTece" class="footer-logo" width="32" height="32"/>
         <div>
           <h4 class="footer-title">Sobre nós</h4>
           <ul class="footer-links">
@@ -481,7 +351,7 @@
       </div>
     </div>
   </footer>
-  
+
   <!-- Script do menu (mesmo do busca.html) -->
   <script>
     (function () {
