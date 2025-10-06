@@ -19,21 +19,23 @@
       --roxo:#8A00FF;
       --roxo-hover:#A63DFF;
       --laranja:#FF7A00;
-      --cinza-hero:#FAFBFD;       /* cinza claro para faixas */
+      --faixa-index:#FAFBFD;      /* mesma cor clara da home (ajuste aqui se sua home tiver outra cor) */
       --cinza-900:#111827;
       --cinza-700:#374151;
       --cinza-500:#6B7280;
       --maxw: 1100px;
+      --borda-card:#D6DDE8;       /* borda um pouco mais escura */
+      --borda-steps:#E4E9F3;
     }
     *{ box-sizing:border-box; }
     body{ color:var(--cinza-900); }
 
-    /* ===== Header (igual aos demais) ===== */
+    /* ===== Header ===== */
     .navbar{ overflow:visible; padding:6px 0; background:#fff; border-bottom:1px solid #eee; }
     .header-left,.header-right{ display:flex; align-items:center; }
     .header-right{ margin-left:auto; gap:20px; }
     .logo img{ max-height:48px; display:block; }
-    .top-nav{ display:none; }
+    .logo{ display:inline-flex; align-items:center; } /* agora é link */
 
     .menu-wrap{ position: relative; }
     .hamburger{
@@ -73,8 +75,7 @@
     .wrap{ max-width:var(--maxw); margin:0 auto; }
 
     .bg-white{ background:#fff; }
-    .bg-cinza{ background:var(--cinza-hero); }
-    .bg-roxo-soft{ background:linear-gradient(180deg,#FBF8FF 0%, #F4EEFF 100%); }
+    .bg-site{ background:var(--faixa-index); }  /* mesma cor da home */
     .bg-preto{ background:#0B0B0B; color:#fff; }
 
     /* =================== TIPOGRAFIA =================== */
@@ -88,40 +89,31 @@
       text-align:center;
       max-width:780px;
       margin:12px auto 0;
-      color:var(--cinza-500);
+      color:var(--cinza-900);     /* preto mais nítido */
       line-height:1.6;
       font-size: clamp(16px, 2.1vw, 20px);
     }
-
-    /* Missão com mesmo visual do título/lead */
-    .missao{ margin-top: clamp(18px, 3vw, 28px); }
-    .missao .titulo{ font-size: clamp(28px, 4vw, 44px); }
-    .missao .lead{ margin-top:12px; }
-
-    /* Subtítulos de seção (maiores, claros) */
+    /* subtítulos grandes das seções */
     .subtitulo{
-      font-size: clamp(22px, 3vw, 28px);
+      font-size: clamp(26px, 3.4vw, 40px);
       margin:0 0 8px 0;
       color:var(--cinza-900);
       text-align:left;
+      letter-spacing:-0.02em;
     }
 
     /* =================== PROBLEMA =================== */
-    .pain-grid{
-      display:grid; grid-template-columns:1fr; gap:12px; margin-top:16px;
-    }
+    .pain-grid{ display:grid; grid-template-columns:1fr; gap:12px; margin-top:16px; }
     .pain-card{
       background:#fff; border-radius:14px; padding:14px 16px;
-      border:0; /* sem borda */
-      box-shadow: 0 1px 0 #EFF2F8 inset;
+      border:1px solid var(--borda-card);                 /* borda mais escura */
     }
-    .pill{ display:inline-block; font-size:12px; padding:4px 8px; border-radius:999px; background:var(--laranja); color:#fff; letter-spacing:.2px; }
-
+    .pain-card p{ color:var(--cinza-700); }
+    .pill{ display:inline-block; font-size:12px; padding:4px 10px; border-radius:999px; background:var(--laranja); color:#fff; letter-spacing:.2px; }
     @media(min-width:840px){ .pain-grid{ grid-template-columns:repeat(3,1fr); } }
 
     /* =================== SOLUÇÃO + CTAs =================== */
     .cta-row{ display:flex; gap:12px; flex-wrap:wrap; margin-top:14px; }
-
     .btn{
       display:inline-block; padding:12px 22px; border-radius:9999px;
       text-decoration:none; font-weight:700; border:2px solid var(--roxo);
@@ -129,45 +121,35 @@
     }
     .btn-primary{ background:var(--roxo); color:#fff; }
     .btn-ghost{ background:#fff; color:var(--roxo); }
-
-    /* Inverte ambos quando o cursor está sobre o botão branco (ghost) */
+    /* Inversão sincronizada quando hover no botão branco */
     .cta-row:has(.btn-ghost:hover) .btn-primary,
-    .cta-row:has(.btn-ghost:focus-visible) .btn-primary{
-      background:#fff; color:var(--roxo);
-    }
+    .cta-row:has(.btn-ghost:focus-visible) .btn-primary{ background:#fff; color:var(--roxo); }
     .cta-row:has(.btn-ghost:hover) .btn-ghost,
-    .cta-row:has(.btn-ghost:focus-visible) .btn-ghost{
-      background:var(--roxo); color:#fff;
-    }
+    .cta-row:has(.btn-ghost:focus-visible) .btn-ghost{ background:var(--roxo); color:#fff; }
 
     /* =================== COMO FUNCIONA (ETAPAS) =================== */
-    .steps{
-      margin-top:16px;
-      display:grid; grid-template-columns:1fr; gap:14px;
-    }
+    .steps{ margin-top:16px; display:grid; grid-template-columns:1fr; gap:14px; }
     .step{
-      display:flex; align-items:flex-start; gap:12px; padding:14px 0;
-      position:relative;
+      position:relative; display:flex; align-items:flex-start; gap:12px;
+      background:#fff; border:1px solid var(--borda-steps); border-radius:14px; 
+      padding:14px 16px;
     }
     .step .num{
       flex:0 0 34px; height:34px; width:34px; border-radius:999px;
       background:var(--roxo); color:#fff; font-weight:700;
       display:inline-flex; align-items:center; justify-content:center;
-      font-size:16px;
+      font-size:16px; margin-left:8px;           /* puxa o número mais para dentro em mobile */
     }
     .step p{ margin:4px 0 0; color:var(--cinza-700); font-size: clamp(16px, 2vw, 18px); }
-    /* Linha conectora à direita (desktop) */
+    /* layout em 3 colunas no desktop; sem conectores entre os cards */
     @media (min-width:900px){
       .steps{ grid-template-columns:repeat(3,1fr); align-items:stretch; }
-      .step{ padding:24px 18px; background:#fff; border-radius:14px; box-shadow:0 1px 0 #EFF2F8 inset; }
-      .step:not(:last-child)::after{
-        content:""; position:absolute; right:-9px; top:50%; transform:translateY(-50%);
-        width:18px; height:2px; background:linear-gradient(90deg, var(--roxo), var(--laranja));
-        border-radius:2px;
-      }
+      .step{ padding:24px 18px; }
+      .step .num{ margin-left:0; }               /* centraliza a bolinha dentro do card no desktop */
+      /* conectores REMOVIDOS */
     }
 
-    /* =================== CONTATO (faixa preta) =================== */
+    /* =================== CONTATO (FAIXA PRETA) =================== */
     .contato-items{ display:grid; gap:8px; margin-top:10px; }
     .contato-item{ display:flex; align-items:center; gap:10px; padding:6px 0; }
     .contato-item svg{ color:#fff; flex:0 0 22px; }
@@ -179,9 +161,10 @@
   <!-- ===== Cabeçalho ===== -->
   <header class="navbar">
     <div class="header-left">
-      <div class="logo">
+      <!-- LOGO AGORA É LINK PARA A HOME -->
+      <a class="logo" href="{{ url_for('index') }}" aria-label="Página inicial">
         <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
-      </div>
+      </a>
     </div>
 
     <div class="header-right">
@@ -235,22 +218,24 @@
     </div>
   </header>
 
-  <!-- ===== HERO ===== -->
-  <section class="faixa bg-white">
+  <!-- ===== HERO (faixa da cor da home) ===== -->
+  <section class="faixa bg-site">
     <div class="wrap">
       <h1 class="titulo">Quem Somos</h1>
       <p class="lead">Uma <strong>Plataforma de Malharias</strong> — conectamos malharias com capacidade disponível a empresas que precisam produzir malhas, com agilidade, transparência e confiança.</p>
-
-      <!-- Missão (mesmo estilo) -->
-      <div class="missao">
-        <h2 class="titulo">Nossa missão</h2>
-        <p class="lead"><strong>Elevar a eficiência</strong> da cadeia de malharia, reduzindo ociosidade e aproximando oferta e demanda com transparência.</p>
-      </div>
     </div>
   </section>
 
-  <!-- ===== PROBLEMA ===== -->
-  <section class="faixa bg-cinza">
+  <!-- ===== NOSSA MISSÃO (faixa branca para destacar) ===== -->
+  <section class="faixa bg-white">
+    <div class="wrap">
+      <h2 class="titulo">Nossa missão</h2>
+      <p class="lead">Elevar a eficiência da cadeia de malharia, reduzindo ociosidade e aproximando oferta e demanda com transparência.</p>
+    </div>
+  </section>
+
+  <!-- ===== PROBLEMA (faixa cor da home) ===== -->
+  <section class="faixa bg-site">
     <div class="wrap">
       <span class="pill">O problema real</span>
       <h2 class="subtitulo" style="margin-top:10px;">Buscar a malharia certa consome tempo e atrasa a produção</h2>
@@ -272,11 +257,11 @@
     </div>
   </section>
 
-  <!-- ===== SOLUÇÃO ===== -->
-  <section class="faixa bg-roxo-soft">
+  <!-- ===== SOLUÇÃO (mesma cor da home; texto à esquerda) ===== -->
+  <section class="faixa bg-site">
     <div class="wrap">
       <h2 class="subtitulo">Como o AcheTece resolve</h2>
-      <p class="lead" style="margin-top:6px;">
+      <p class="lead" style="text-align:left; max-width:920px;">
         O <strong>AcheTece</strong> organiza as informações de teares e capacidades em um único lugar, com
         <strong>filtros inteligentes</strong> para você encontrar rapidamente quem pode atender sua demanda e falar
         <strong>direto com a malharia</strong>. Horas de procura viram minutos.
@@ -289,7 +274,7 @@
     </div>
   </section>
 
-  <!-- ===== COMO FUNCIONA (ETAPAS) ===== -->
+  <!-- ===== COMO FUNCIONA (etapas sem linhas entre cards) ===== -->
   <section class="faixa bg-white">
     <div class="wrap">
       <h2 class="subtitulo">Como funciona</h2>
@@ -352,7 +337,7 @@
     </div>
   </footer>
 
-  <!-- Script do menu (mesmo do busca.html) -->
+  <!-- Script do menu -->
   <script>
     (function () {
       function closeAll() {
