@@ -9,10 +9,35 @@
   <link rel="stylesheet" href="/static/style.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
   <style>
-    :root{ --roxo:#8A00FF; --laranja:#F28C00; --laranja-hover:#E57F00; }
-    body{ background:#fafafa; font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; }
-    .navbar{ padding:8px 12px; display:flex; align-items:center; }
-    .logo img{ height:48px; width:auto; }
+    :root{
+      --roxo:#8A00FF;
+      --laranja:#F28C00;
+      --laranja-hover:#E57F00;
+      /* mesmo cinza 150 usado nas demais páginas */
+      --site-bg:#F7F7FA;
+    }
+
+    html, body {
+      background: var(--site-bg);
+      font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      margin:0;
+    }
+
+    /* Header padronizado */
+    .navbar{ padding:6px 12px; display:flex; align-items:center; background:#fff; border-bottom:1px solid #eee; }
+    .logo{ display:inline-flex; align-items:center; }
+    .logo a{ display:inline-flex; align-items:center; text-decoration:none; }
+    .logo img{ display:block; height:auto; width:auto; }
+
+    /* Desktop: logo igual às outras páginas */
+    @media (min-width:901px){
+      .navbar .logo img{ height:44px; width:auto; }
+    }
+    /* Mobile: logo 54px (igual ao index/quem_somos) */
+    @media (max-width:900px){
+      .navbar{ padding-right:22px; min-height:56px; }
+      .navbar .logo img{ height:54px !important; width:auto !important; }
+    }
 
     .auth-wrap{ min-height:calc(100vh - 110px); display:flex; justify-content:center; padding:24px 16px; }
     .card{
@@ -63,7 +88,12 @@
 </head>
 <body>
   <header class="navbar">
-    <div class="logo"><img src="/static/logo.jpg" alt="AcheTece"></div>
+    <!-- Logo vira botão/link para a home -->
+    <div class="logo">
+      <a href="{{ url_for('index') }}" aria-label="Página inicial">
+        <img src="/static/logo.jpg" alt="AcheTece">
+      </a>
+    </div>
   </header>
 
   <main class="auth-wrap">
