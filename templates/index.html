@@ -31,29 +31,26 @@
     }
 
     /* ===== HEADER ===== */
-    .navbar{overflow:visible;padding:6px 12px;display:flex;align-items:center;}
+    .navbar{
+      overflow:visible; padding:6px 12px; display:flex; align-items:center;
+      background:#fff;                       /* header branco */
+      border-bottom:1px solid #e7eaf0;       /* separação sutil */
+    }
     .header-left,.header-right{display:flex;align-items:center;}
     .header-right{margin-left:auto;gap:16px;}
     .hdr-actions{display:flex;align-items:center;gap:10px}
-    /* removido .btn-entrar; apenas o botão de perfil */
     .btn-perfil{
-      height:40px;line-height:40px;border-radius:9999px;padding:0 18px;
-      font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:10px;white-space:nowrap;
-      background:var(--laranja);color:#fff;border:0;
+      height:40px; line-height:40px; border-radius:9999px; padding:0 18px;
+      font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:10px; white-space:nowrap;
+      background:var(--laranja); color:#fff; border:0;
     }
     .btn-perfil:hover{background:var(--laranja-hover)}
-    /* no mobile continua aparecendo (não escondemos mais) */
-    @media (max-width:820px){
-      .hdr-actions{display:flex}
-    }
+    @media (max-width:820px){ .hdr-actions{display:flex} }
 
-    /* AUMENTO REAL ~30% NO MOBILE (forçando prioridade) */
+    /* AUMENTO REAL ~30% NO MOBILE */
     @media (max-width:900px){
       .navbar{padding-right:22px; min-height:56px;}
-      .navbar .logo img{
-        height:54px !important;
-        width:auto !important;
-      }
+      .navbar .logo img{ height:54px !important; width:auto !important; }
     }
 
     /* ===== PROMO ===== */
@@ -164,7 +161,6 @@
       border-radius:16px;
       padding:14px;
     }
-    /* borda mais escura no mobile (igual aos selects) */
     @media (max-width:820px){
       .card-tear{ border-color:#ccc; }
     }
@@ -177,14 +173,11 @@
       padding:8px 12px;border-radius:12px;background:var(--roxinho);
       border:1px solid #eadbff; gap:10px;
     }
-    .card-empresa .nome{font-weight:800;}
-    /* bloco da empresa (nome + localização) */
     .empresa-info{display:flex;flex-direction:column;gap:2px;min-width:0;}
     .empresa-info .nome{font-weight:800;font-size:0.98rem;line-height:1.1;}
     .empresa-info .loc{display:flex;align-items:center;gap:6px;font-size:12px;line-height:1;color:#616161;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .empresa-info .loc .pin{width:14px;height:14px;flex:0 0 14px;color:#6a6a6a;}
 
-    /* Mostrar cards só no mobile; tabela só no desktop */
     @media (max-width:820px){ .table-wrap{display:none;} }
     @media (min-width:821px){ .mobile-only{display:none;} }
 
@@ -197,46 +190,28 @@
     .pager .info{font-size:13px;color:#666}
     .pager select{height:36px;border:1px solid #ddd;border-radius:10px;padding:0 10px;background:#fff}
 
-    /* ===== Desktop: centralizar o botão do topo ===== */
     @media (min-width:821px){
-      .btn-perfil{
-        height:44px;
-        padding:0 20px;
-        display:inline-flex;
-        align-items:center;
-        justify-content:center;
-        line-height:1 !important;
-      }
+      .btn-perfil{ height:44px; padding:0 20px; display:inline-flex; align-items:center; justify-content:center; line-height:1 !important; }
     }
-    
-    /* ===== Desktop: zebra + cabeçalho mais visível na tabela ===== */
     @media (min-width:821px){
       .teares-table thead th{
-        background:#EEEAF8;
-        color:#1f1b2e;
+        background:#EEEAF8; color:#1f1b2e;
       }
       .teares-table tbody tr:nth-child(odd){  background:#FFFFFF; }
       .teares-table tbody tr:nth-child(even){ background:#F7F3FF; }
-      .teares-table tbody tr:hover{ background:#F0EBFF; }
+      .teares-table tbody tr:nth-child(even):hover,
+      .teares-table tbody tr:nth-child(odd):hover{ background:#F0EBFF; }
     }
 
     /* =========================================================
-       HOME (is-home) — Header branco + “herói” cinza (A.2)
+       HOME (is-home) — fundo CINZA em toda a página
        ========================================================= */
-    /* marca visual logo abaixo do header */
-    .is-home .page-outer{
-      background: var(--site-bg);          /* mesmo cinza da home (#f6f8fa) */
-      padding-top: 12px;                   /* respiro */
-      padding-bottom: 12px;                /* respiro */
-      border-top: 1px solid #e5e5e5;       /* linha sutil separando do header */
+    body.is-home{
+      /* usa o mesmo cinza definido no style.css → --site-bg (#f6f8fa) */
+      background: var(--site-bg) !important;
     }
-    /* mantém cards/caixas internas com fundo branco visível */
-    .is-home .localizacao-card,
-    .is-home .results-card,
-    .is-home .filters-panel,
-    .is-home .card-tear{
-      background:#fff;
-    }
+    /* conteúdo sem fundo extra (os cards continuam brancos) */
+    .is-home .page-outer{ background: transparent; padding-top:12px; padding-bottom:12px; }
   </style>
 </head>
 <body class="is-home">
@@ -257,9 +232,7 @@
   
     <div class="header-right">
       <div class="hdr-actions">
-        <!-- Único botão no topo: CONTA MALHARIA  →  /login -->
-        <a href="/login" class="btn-perfil"
-           aria-label="Acessar sua conta da malharia" title="Acessar sua conta da malharia">
+        <a href="/login" class="btn-perfil" aria-label="Acessar sua conta da malharia" title="Acessar sua conta da malharia">
           <span>Conta Malharia</span>
         </a>
       </div>
@@ -268,12 +241,10 @@
   
   <div class="page-outer">
 
-    <!-- Mensagem orientativa -->
     <div class="page-hint" role="note">
       Para encontrar o <strong>tear ideal</strong> para sua produção, use os filtros abaixo.
     </div>
 
-    <!-- Botões topo (mobile) -->
     <div class="filters-toggle-bar">
       <button class="btn-pill btn-open-filters" id="openFiltersBtn" type="button" aria-controls="filtersPanel" aria-expanded="false">
         <svg class="ico-funil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -287,10 +258,9 @@
     <!-- ===== FORM ÚNICO (GET) ===== -->
     <form id="filtrosForm" method="GET" action="{{ url_for('index') }}" class="search-layout">
 
-      <!-- Backdrop painel filtros mobile -->
       <div class="filters-backdrop" id="filtersBackdrop" aria-hidden="true"></div>
 
-      <!-- COLUNA ESQUERDA: FILTROS (sem Estado/Cidade) -->
+      <!-- COLUNA ESQUERDA: FILTROS -->
       <aside class="filters-panel" id="filtersPanel" aria-label="Filtros de teares">
         <button class="filters-close" id="closeFiltersBtn" type="button" aria-label="Fechar filtros">×</button>
         <h2 class="filters-title">Filtrar teares</h2>
@@ -322,7 +292,6 @@
           {% endif %}
         {% endfor %}
 
-        <!-- Hidden paginação -->
         <input type="hidden" name="pagina" id="pagina_hidden" value="{{ request.args.get('pagina','1') }}">
         <input type="hidden" name="pp" id="pp_hidden" value="{% if por_pagina is defined %}{{ por_pagina }}{% else %}{{ request.args.get('pp','20') }}{% endif %}">
 
@@ -331,7 +300,7 @@
         </div>
       </aside>
 
-      <!-- COLUNA DIREITA: Localização + RESULTADOS -->
+      <!-- COLUNA DIREITA -->
       <div class="right-col">
         <section class="localizacao-card" aria-labelledby="loc-title">
           <h2 id="loc-title">Localização</h2>
@@ -554,15 +523,12 @@
 
   </div><!-- /page-outer -->
 
-  <!-- (REMOVIDO) Menu overlay/hambúrguer -->
-
   <!-- CTA -->
   <section class="cta-bar" aria-label="Convite para cadastro">
     <div class="cta-text">
       <h3>É proprietário de uma malharia?</h3>
       <p>Cadastre sua malharia e comece a receber novos pedidos.</p>
     </div>
-    <!-- Botão CADASTRAR → /cadastrar_empresa (mantido) -->
     <a href="/cadastrar_empresa" class="cta-btn">Cadastrar</a>
   </section>
   
