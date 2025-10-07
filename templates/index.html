@@ -219,9 +219,27 @@
       .teares-table tbody tr:nth-child(even){ background:#F7F3FF; }
       .teares-table tbody tr:hover{ background:#F0EBFF; }
     }
+
+    /* =========================================================
+       HOME (is-home) — Header branco + “herói” cinza (A.2)
+       ========================================================= */
+    /* marca visual logo abaixo do header */
+    .is-home .page-outer{
+      background: var(--site-bg);          /* mesmo cinza da home (#f6f8fa) */
+      padding-top: 12px;                   /* respiro */
+      padding-bottom: 12px;                /* respiro */
+      border-top: 1px solid #e5e5e5;       /* linha sutil separando do header */
+    }
+    /* mantém cards/caixas internas com fundo branco visível */
+    .is-home .localizacao-card,
+    .is-home .results-card,
+    .is-home .filters-panel,
+    .is-home .card-tear{
+      background:#fff;
+    }
   </style>
 </head>
-<body>
+<body class="is-home">
 
   <!-- Promo topo -->
   <section class="promo-bar" aria-label="Oferta para malharias">
