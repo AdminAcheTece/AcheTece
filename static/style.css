@@ -1131,5 +1131,26 @@ thead tr{ background:#f2f2f2; }
    @media (max-width: 720px){
      .qs-ctas .btn-swap{ width:100%; }
    }
+
+   /* === Fundo global do site (mesmo da home) === */
+   :root{
+     /* Use a variável da sua paleta... */
+     --site-bg: var(--cinza-150);      /* <- se a home usa o cinza-150 */
    
-         
+     /* ...ou cole o HEX exato da home:
+     --site-bg: #F6F8FA;
+     */
+   }
+   
+   /* Fundo global sempre igual à home */
+   html{ color-scheme: light; }        /* evita dark mode automático do celular */
+   html, body{
+     background: var(--site-bg);
+     color: var(--cinza-900);
+   }
+   
+   /* Qualquer seção/faixa que deva ter o mesmo fundo da home */
+   .bg-site{
+     background: var(--site-bg);
+   }
+      
