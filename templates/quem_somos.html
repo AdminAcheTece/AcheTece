@@ -23,7 +23,7 @@
       /* fundo global igual ao index */
       --site-bg:#F7F7FA;
 
-      /* espaçamento vertical das seções (mais compacto e responsivo) */
+      /* espaçamento vertical das seções */
       --sec-pad: clamp(24px, 3.8vw, 48px);
 
       --cinza-900:#111827;
@@ -35,7 +35,6 @@
     }
     *{ box-sizing:border-box; }
 
-    /* Mantém a UI clara */
     html{ color-scheme: light; }
     html, body{
       background: var(--site-bg) !important;
@@ -43,13 +42,24 @@
       margin:0;
     }
 
-    /* ===== Header ===== */
-    .navbar{ overflow:visible; padding:6px 0; background:#fff; border-bottom:1px solid #eee; }
+    /* ===== Header (padronizado com o index) ===== */
+    .navbar{
+      overflow:visible;
+      padding:6px 12px;                 /* mesmo padding lateral do index */
+      background:#fff;
+      border-bottom:1px solid #eee;
+      display:flex; align-items:center;
+    }
     .header-left,.header-right{ display:flex; align-items:center; }
-    .header-right{ margin-left:auto; gap:20px; }
-    .logo img{ max-height:48px; display:block; }
-    .logo{ display:inline-flex; align-items:center; } /* link */
+    .header-right{
+      margin-left:auto;
+      gap:10px;                         /* mais próximo do botão casinha */
+      padding-right:12px;               /* traz o hambúrguer para dentro */
+    }
+    .logo{ display:inline-flex; align-items:center; }
+    .logo img{ display:block; height:auto; }   /* sem limitar desktop (igual index) */
 
+    /* Botão hambúrguer */
     .menu-wrap{ position: relative; }
     .hamburger{
       display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
@@ -58,11 +68,20 @@
     }
     .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
     .hamburger span + span{ margin-top:4px; }
-    @media (max-width:768px){
-      .hamburger{ width:28px; height:28px; border-radius:8px; }
-      .hamburger span{ width:16px; height:2px; }
-      .hamburger span + span{ margin-top:3px; }
+
+    /* Tamanho do logo no MOBILE igual ao index */
+    @media (max-width:900px){
+      .navbar{ padding-right:22px; min-height:56px; }
+      .navbar .logo img{
+        height:54px !important;        /* mesma regra do index */
+        width:auto !important;
+      }
+      .header-right{ gap:8px; padding-right:12px; }
+      .hamburger{ width:32px; height:32px; border-radius:9px; }
+      .hamburger span{ width:18px; }
     }
+
+    /* Menu dropdown */
     .menu-dropdown{
       background:#fff; border:1px solid #eaeaea; border-radius:12px;
       z-index:10001; max-height:80vh; overflow:auto;
@@ -80,11 +99,12 @@
       .menu-dropdown{ position: fixed; top: calc(var(--nav-h, 64px) + 8px); left: 50%; transform: translate(-50%, 8px) scale(.98); width:max-content; max-width:90vw; min-width:160px; border-radius:14px; }
       .menu-dropdown.open{ transform: translate(-50%,0) scale(1); }
     }
+
     .icon-btn{ display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px; background:#fff; cursor:pointer; }
     .icon{ width:20px; height:20px; color:#222; }
 
     /* =================== LAYOUT DE FAIXAS =================== */
-    .faixa{ width:100%; padding: var(--sec-pad) 16px; }             /* <-- enxugado */
+    .faixa{ width:100%; padding: var(--sec-pad) 16px; }
     .wrap{ max-width:var(--maxw); margin:0 auto; }
 
     .bg-white{ background:#fff; }
@@ -101,21 +121,19 @@
     .lead{
       text-align:center;
       max-width:780px;
-      margin:8px auto 0;     /* era 12px -> aproxima um pouco */
+      margin:8px auto 0;
       color:var(--cinza-900);
-      line-height:1.5;       /* era 1.6 -> mais compacto sem perder leitura */
+      line-height:1.5;
       font-size: clamp(16px, 2.1vw, 20px);
     }
     .subtitulo{
       font-size: clamp(26px, 3.4vw, 40px);
-      margin:0 0 6px 0;      /* era 8px -> ligeiramente menor */
+      margin:0 0 6px 0;
       color:var(--cinza-900);
       text-align:left;
       letter-spacing:-0.02em;
       line-height:1.15;
     }
-
-    /* Mobile: ainda mais otimizado */
     @media (max-width:520px){
       :root{ --sec-pad: 20px; }
       .lead{ margin-top:6px; line-height:1.48; }
@@ -135,7 +153,7 @@
     .cta-row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
     .btn{
       display:inline-block; padding:12px 22px; border-radius:9999px;
-      text-decoration:none; font-weight:700; border:2px solid (var(--roxo));
+      text-decoration:none; font-weight:700; border:2px solid var(--roxo);
       transition:all .18s ease-in-out; font-size:16px;
     }
     .btn-primary{ background:var(--roxo); color:#fff; }
@@ -161,7 +179,7 @@
     .step p{ margin:4px 0 0; color:var(--cinza-700); font-size: clamp(16px, 2vw, 18px); }
     @media (min-width:900px){
       .steps{ grid-template-columns:repeat(3,1fr); align-items:stretch; }
-      .step{ padding:20px 18px; }   /* levemente mais compacto */
+      .step{ padding:20px 18px; }
       .step .num{ margin-left:0; }
     }
 
@@ -171,7 +189,7 @@
     .contato-item svg{ color:#fff; flex:0 0 22px; }
     .contato a{ color:#fff; text-decoration:none; }
 
-    /* ===== Frase da seção "Como o AcheTece resolve" alinhada à esquerda ===== */
+    /* Frase da solução alinhada à esquerda */
     #sec-solucao .lead{
       text-align: left !important;
       max-width: 920px;
@@ -192,6 +210,7 @@
   <!-- ===== Cabeçalho ===== -->
   <header class="navbar">
     <div class="header-left">
+      <!-- LOGO link para a home -->
       <a class="logo" href="{{ url_for('index') }}" aria-label="Página inicial">
         <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
       </a>
