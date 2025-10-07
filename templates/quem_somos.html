@@ -57,7 +57,15 @@
       padding-right:12px;               /* traz o hambúrguer para dentro */
     }
     .logo{ display:inline-flex; align-items:center; }
-    .logo img{ display:block; height:auto; }   /* sem limitar desktop (igual index) */
+    .logo img{ display:block; }
+
+    /* >>> DESKTOP: altura do logo igual ao index <<< */
+    @media (min-width:901px){
+      .navbar .logo img{
+        height:44px;                    /* padronizado com a home */
+        width:auto;
+      }
+    }
 
     /* Botão hambúrguer */
     .menu-wrap{ position: relative; }
@@ -69,11 +77,11 @@
     .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
     .hamburger span + span{ margin-top:4px; }
 
-    /* Tamanho do logo no MOBILE igual ao index */
+    /* MOBILE: igual ao index (não alterei) */
     @media (max-width:900px){
       .navbar{ padding-right:22px; min-height:56px; }
       .navbar .logo img{
-        height:54px !important;        /* mesma regra do index */
+        height:54px !important;         /* mesma regra do index */
         width:auto !important;
       }
       .header-right{ gap:8px; padding-right:12px; }
