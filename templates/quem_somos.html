@@ -19,16 +19,26 @@
       --roxo:#8A00FF;
       --roxo-hover:#A63DFF;
       --laranja:#FF7A00;
-      --faixa-index:#FAFBFD;      /* mesma cor clara da home (ajuste aqui se sua home tiver outra cor) */
+
+      /* >>> COR GLOBAL DA PÁGINA (USE A MESMA DO INDEX) <<< */
+      --site-bg:#FAFBFD;        /* TROQUE este HEX pelo mesmo usado no index.html */
+
       --cinza-900:#111827;
       --cinza-700:#374151;
       --cinza-500:#6B7280;
       --maxw: 1100px;
-      --borda-card:#D6DDE8;       /* borda um pouco mais escura */
+      --borda-card:#D6DDE8;     /* borda um pouco mais escura */
       --borda-steps:#E4E9F3;
     }
     *{ box-sizing:border-box; }
-    body{ color:var(--cinza-900); }
+
+    /* Mantém a UI sempre clara (evita variação em dark mode do SO) */
+    html{ color-scheme: light; }
+    html, body{
+      background: var(--site-bg) !important;   /* fundo global = mesmo da home */
+      color:var(--cinza-900);
+      margin:0;
+    }
 
     /* ===== Header ===== */
     .navbar{ overflow:visible; padding:6px 0; background:#fff; border-bottom:1px solid #eee; }
@@ -75,7 +85,7 @@
     .wrap{ max-width:var(--maxw); margin:0 auto; }
 
     .bg-white{ background:#fff; }
-    .bg-site{ background:var(--faixa-index); }  /* mesma cor da home */
+    .bg-site{ background:var(--site-bg) !important; }  /* usa a mesma cor da home */
     .bg-preto{ background:#0B0B0B; color:#fff; }
 
     /* =================== TIPOGRAFIA =================== */
@@ -145,8 +155,7 @@
     @media (min-width:900px){
       .steps{ grid-template-columns:repeat(3,1fr); align-items:stretch; }
       .step{ padding:24px 18px; }
-      .step .num{ margin-left:0; }               /* centraliza a bolinha dentro do card no desktop */
-      /* conectores REMOVIDOS */
+      .step .num{ margin-left:0; }
     }
 
     /* =================== CONTATO (FAIXA PRETA) =================== */
@@ -155,15 +164,20 @@
     .contato-item svg{ color:#fff; flex:0 0 22px; }
     .contato a{ color:#fff; text-decoration:none; }
 
-    /* Frase (lead) do bloco "Como o AcheTece resolve" alinhada à esquerda */
+    /* ===== Frase da seção "Como o AcheTece resolve" alinhada à esquerda ===== */
     #sec-solucao .lead{
       text-align: left !important;
       max-width: 920px;
-      margin-left: 0;   /* garante início à esquerda */
+      margin-left: 0;
       margin-right: auto;
-      color: var(--cinza-900); /* preto mais nítido */
+      color: var(--cinza-900);
     }
-    
+
+    /* Opcional: se o SO estiver em dark-mode, mantemos a mesma cor da home */
+    @media (prefers-color-scheme: dark) {
+      html, body{ background: var(--site-bg) !important; color: var(--cinza-900); }
+      .bg-site{ background: var(--site-bg) !important; }
+    }
   </style>
 </head>
 <body>
@@ -228,7 +242,7 @@
     </div>
   </header>
 
-  <!-- ===== HERO (faixa da cor da home) ===== -->
+  <!-- ===== HERO (faixa = mesma cor da home) ===== -->
   <section class="faixa bg-site">
     <div class="wrap">
       <h1 class="titulo">Quem Somos</h1>
@@ -244,7 +258,7 @@
     </div>
   </section>
 
-  <!-- ===== PROBLEMA (faixa cor da home) ===== -->
+  <!-- ===== PROBLEMA (faixa = mesma cor da home) ===== -->
   <section class="faixa bg-site">
     <div class="wrap">
       <span class="pill">O problema real</span>
@@ -267,7 +281,7 @@
     </div>
   </section>
 
-  <!-- ===== SOLUÇÃO (mesma cor da home; texto à esquerda) ===== -->
+  <!-- ===== SOLUÇÃO (mesma cor da home; frase alinhada à esquerda) ===== -->
   <section id="sec-solucao" class="faixa bg-site">
     <div class="wrap">
       <h2 class="subtitulo">Como o AcheTece resolve</h2>
