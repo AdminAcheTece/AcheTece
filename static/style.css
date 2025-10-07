@@ -1148,3 +1148,35 @@ thead tr{ background:#f2f2f2; }
    .bg-site{
      background: var(--site-bg);
    }
+
+   :root{
+     /* use seu cinza 150; troque o hex se já tiver outra referência */
+     --cinza-150: #F3F4F6;
+   }
+   
+   /* Faixa cinza que envolve todo o conteúdo até a faixa preta */
+   .faixa-cinza {
+     background: var(--cinza-150);
+     padding: 24px 0 56px;   /* respiro acima/abaixo */
+   }
+   
+   /* Se houver alguma regra global pintando as sections/container de branco, neutraliza aqui */
+   .faixa-cinza section,
+   .faixa-cinza .container {
+     background: transparent !important;
+   }
+   
+   /* Garante que só os cartões/caixas continuem brancos */
+   .card, .box, .painel, .tabela, .filtros, .lista-teares, .table-wrap {
+     background: #fff;
+     border-radius: 16px;
+     box-shadow: 0 1px 2px rgba(0,0,0,.04);
+   }
+   
+   /* Título/hero dentro do cinza */
+   .hero-miolo {
+     margin: 0 auto 16px;
+     max-width: 1200px;
+     padding: 16px 16px 0;
+     background: transparent;
+   }
