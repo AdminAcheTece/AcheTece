@@ -18,6 +18,8 @@
       --roxo:#8A00FF; --roxo-hover:#A63DFF; --preto:#000;
       --laranja:#F28C00; --laranja-hover:#E57F00;
       --roxinho:#F3E9FF;
+      /* novo: cinza do miolo */
+      --cinza-150:#F3F4F6;
     }
 
     html, body { max-width:100%; overflow-x:hidden; }
@@ -31,7 +33,7 @@
     }
 
     /* ===== HEADER ===== */
-    .navbar{overflow:visible;padding:6px 12px;display:flex;align-items:center;}
+    .navbar{overflow:visible;padding:6px 12px;display:flex;align-items:center;background:#fff;}
     .header-left,.header-right{display:flex;align-items:center;}
     .header-right{margin-left:auto;gap:16px;}
     .hdr-actions{display:flex;align-items:center;gap:10px}
@@ -62,8 +64,20 @@
     .promo-cta:hover{background:#A63DFF;transform:translateY(-1px);}
     @media (max-width:600px){.promo-bar{flex-wrap:wrap;row-gap:6px}}
 
+    /* ===== FAIXA CINZA DO MIolo ===== */
+    .faixa-cinza{
+      background:var(--cinza-150);
+      padding:16px 0 48px;
+    }
+    /* Se algum CSS global colocar branco nas sections/containers, neutraliza dentro da faixa cinza */
+    .faixa-cinza section,
+    .faixa-cinza .container,
+    .faixa-cinza .page-outer{
+      background:transparent !important;
+    }
+
     /* ===== CTA + FOOTER ===== */
-    .cta-bar{background:#000;color:#fff;padding:20px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,0.06);margin-top:32px;justify-content:flex-start;}
+    .cta-bar{background:#000;color:#fff;padding:20px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,0.06);margin-top:0;justify-content:flex-start;}
     .cta-text h3{margin:0 0 4px 0;font-size:18px;font-weight:700;}
     .cta-text p{margin:0;font-size:15px;opacity:.9;}
     .cta-btn{display:inline-block;background:#fff;color:#000;text-decoration:none;padding:10px 22px;border-radius:9999px;font-weight:700;}
@@ -247,294 +261,297 @@
       </div>
     </div>
   </header>
-  
-  <div class="page-outer">
 
-    <!-- Mensagem orientativa -->
-    <div class="page-hint" role="note">
-      Para encontrar o <strong>tear ideal</strong> para sua produção, use os filtros abaixo.
-    </div>
+  <!-- ===== MIolo em CINZA (envólucro) ===== -->
+  <div class="faixa-cinza">
+    <div class="page-outer">
 
-    <!-- Botões topo (mobile) -->
-    <div class="filters-toggle-bar">
-      <button class="btn-pill btn-open-filters" id="openFiltersBtn" type="button" aria-controls="filtersPanel" aria-expanded="false">
-        <svg class="ico-funil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M3 5h18M6 11h12M10 17h4"/>
-        </svg>
-        Filtros
-      </button>
-      <a class="btn-pill btn-new-search" href="{{ url_for('index') }}">Nova busca</a>
-    </div>
+      <!-- Mensagem orientativa -->
+      <div class="page-hint" role="note">
+        Para encontrar o <strong>tear ideal</strong> para sua produção, use os filtros abaixo.
+      </div>
 
-    <!-- ===== FORM ÚNICO (GET) ===== -->
-    <form id="filtrosForm" method="GET" action="{{ url_for('index') }}" class="search-layout">
+      <!-- Botões topo (mobile) -->
+      <div class="filters-toggle-bar">
+        <button class="btn-pill btn-open-filters" id="openFiltersBtn" type="button" aria-controls="filtersPanel" aria-expanded="false">
+          <svg class="ico-funil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 5h18M6 11h12M10 17h4"/>
+          </svg>
+          Filtros
+        </button>
+        <a class="btn-pill btn-new-search" href="{{ url_for('index') }}">Nova busca</a>
+      </div>
 
-      <!-- Backdrop painel filtros mobile -->
-      <div class="filters-backdrop" id="filtersBackdrop" aria-hidden="true"></div>
+      <!-- ===== FORM ÚNICO (GET) ===== -->
+      <form id="filtrosForm" method="GET" action="{{ url_for('index') }}" class="search-layout">
 
-      <!-- COLUNA ESQUERDA: FILTROS (sem Estado/Cidade) -->
-      <aside class="filters-panel" id="filtersPanel" aria-label="Filtros de teares">
-        <button class="filters-close" id="closeFiltersBtn" type="button" aria-label="Fechar filtros">×</button>
-        <h2 class="filters-title">Filtrar teares</h2>
+        <!-- Backdrop painel filtros mobile -->
+        <div class="filters-backdrop" id="filtersBackdrop" aria-hidden="true"></div>
 
-        {% for campo, opcoes_campo in opcoes.items() %}
-          {% set c = campo|lower %}
-          {% if c not in ['estado','cidade'] %}
-            {% if c == 'galga' %}
-              <div class="filter-field">
-                <label for="{{ campo }}">Galga/Finura</label>
-                <input type="number" id="{{ campo }}" name="{{ campo }}" class="auto-apply" inputmode="numeric" step="1" min="1" placeholder="Digite a galga (ex.: 28)" value="{{ filtros[campo] or '' }}" autocomplete="off">
-              </div>
-            {% elif c in ['diâmetro','diametro'] %}
-              <div class="filter-field">
-                <label for="{{ campo }}">Diâmetro</label>
-                <input type="number" id="{{ campo }}" name="{{ campo }}" class="auto-apply" inputmode="decimal" step="0.1" min="1" placeholder="Digite o diâmetro (ex.: 30)" value="{{ filtros[campo] or '' }}" autocomplete="off">
-              </div>
-            {% else %}
-              <div class="filter-field">
-                <label for="{{ campo }}">{{ campo|capitalize }}</label>
-                <select name="{{ campo }}" id="{{ campo }}" class="auto-apply">
-                  <option value="">-- Todos --</option>
-                  {% for opcao in opcoes_campo %}
-                    <option value="{{ opcao }}" {% if filtros[campo] == opcao %}selected{% endif %}>{{ opcao }}</option>
-                  {% endfor %}
+        <!-- COLUNA ESQUERDA: FILTROS (sem Estado/Cidade) -->
+        <aside class="filters-panel" id="filtersPanel" aria-label="Filtros de teares">
+          <button class="filters-close" id="closeFiltersBtn" type="button" aria-label="Fechar filtros">×</button>
+          <h2 class="filters-title">Filtrar teares</h2>
+
+          {% for campo, opcoes_campo in opcoes.items() %}
+            {% set c = campo|lower %}
+            {% if c not in ['estado','cidade'] %}
+              {% if c == 'galga' %}
+                <div class="filter-field">
+                  <label for="{{ campo }}">Galga/Finura</label>
+                  <input type="number" id="{{ campo }}" name="{{ campo }}" class="auto-apply" inputmode="numeric" step="1" min="1" placeholder="Digite a galga (ex.: 28)" value="{{ filtros[campo] or '' }}" autocomplete="off">
+                </div>
+              {% elif c in ['diâmetro','diametro'] %}
+                <div class="filter-field">
+                  <label for="{{ campo }}">Diâmetro</label>
+                  <input type="number" id="{{ campo }}" name="{{ campo }}" class="auto-apply" inputmode="decimal" step="0.1" min="1" placeholder="Digite o diâmetro (ex.: 30)" value="{{ filtros[campo] or '' }}" autocomplete="off">
+                </div>
+              {% else %}
+                <div class="filter-field">
+                  <label for="{{ campo }}">{{ campo|capitalize }}</label>
+                  <select name="{{ campo }}" id="{{ campo }}" class="auto-apply">
+                    <option value="">-- Todos --</option>
+                    {% for opcao in opcoes_campo %}
+                      <option value="{{ opcao }}" {% if filtros[campo] == opcao %}selected{% endif %}>{{ opcao }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+
+          <!-- Hidden paginação -->
+          <input type="hidden" name="pagina" id="pagina_hidden" value="{{ request.args.get('pagina','1') }}">
+          <input type="hidden" name="pp" id="pp_hidden" value="{% if por_pagina is defined %}{{ por_pagina }}{% else %}{{ request.args.get('pp','20') }}{% endif %}">
+
+          <div class="filter-actions">
+            <a href="{{ url_for('index') }}" class="btn-limpar" title="Limpar filtros" style="display:inline-flex;align-items:center;gap:6px;background:var(--laranja);color:#fff;border-radius:9999px;height:36px;line-height:36px;padding:0 16px;text-decoration:none;font-weight:700;">Limpar</a>
+          </div>
+        </aside>
+
+        <!-- COLUNA DIREITA: Localização + RESULTADOS -->
+        <div class="right-col">
+          <section class="localizacao-card" aria-labelledby="loc-title">
+            <h2 id="loc-title">Localização</h2>
+            <div class="row">
+              <div>
+                <label for="estado">Estado</label>
+                <select id="estado" name="estado" class="auto-apply">
+                  <option value="">Selecione o estado</option>
+                  {% set sel_uf = (filtros.get('estado') if filtros is defined else request.args.get('estado','')) %}
+                  {% if estados is defined and estados %}
+                    {% for uf in estados %}
+                      <option value="{{ uf }}" {% if sel_uf==uf %}selected{% endif %}>{{ uf }}</option>
+                    {% endfor %}
+                  {% elif opcoes is defined and opcoes.estado is defined %}
+                    {% for uf in opcoes.estado %}
+                      <option value="{{ uf }}" {% if sel_uf==uf %}selected{% endif %}>{{ uf }}</option>
+                    {% endfor %}
+                  {% endif %}
                 </select>
               </div>
-            {% endif %}
-          {% endif %}
-        {% endfor %}
-
-        <!-- Hidden paginação -->
-        <input type="hidden" name="pagina" id="pagina_hidden" value="{{ request.args.get('pagina','1') }}">
-        <input type="hidden" name="pp" id="pp_hidden" value="{% if por_pagina is defined %}{{ por_pagina }}{% else %}{{ request.args.get('pp','20') }}{% endif %}">
-
-        <div class="filter-actions">
-          <a href="{{ url_for('index') }}" class="btn-limpar" title="Limpar filtros" style="display:inline-flex;align-items:center;gap:6px;background:var(--laranja);color:#fff;border-radius:9999px;height:36px;line-height:36px;padding:0 16px;text-decoration:none;font-weight:700;">Limpar</a>
-        </div>
-      </aside>
-
-      <!-- COLUNA DIREITA: Localização + RESULTADOS -->
-      <div class="right-col">
-        <section class="localizacao-card" aria-labelledby="loc-title">
-          <h2 id="loc-title">Localização</h2>
-          <div class="row">
-            <div>
-              <label for="estado">Estado</label>
-              <select id="estado" name="estado" class="auto-apply">
-                <option value="">Selecione o estado</option>
-                {% set sel_uf = (filtros.get('estado') if filtros is defined else request.args.get('estado','')) %}
-                {% if estados is defined and estados %}
-                  {% for uf in estados %}
-                    <option value="{{ uf }}" {% if sel_uf==uf %}selected{% endif %}>{{ uf }}</option>
-                  {% endfor %}
-                {% elif opcoes is defined and opcoes.estado is defined %}
-                  {% for uf in opcoes.estado %}
-                    <option value="{{ uf }}" {% if sel_uf==uf %}selected{% endif %}>{{ uf }}</option>
-                  {% endfor %}
-                {% endif %}
-              </select>
+              <div>
+                <label for="cidade">Cidade</label>
+                <select id="cidade" name="cidade" class="auto-apply" {% if not sel_uf %}disabled{% endif %}>
+                  <option value="">{% if not sel_uf %}Selecione o estado primeiro{% else %}Todas{% endif %}</option>
+                  {% if sel_uf and opcoes is defined and opcoes.cidade is defined and opcoes.cidade %}
+                    {% set sel_cidade = (filtros.get('cidade') if filtros is defined else request.args.get('cidade','')) %}
+                    {% for c in opcoes.cidade %}
+                      <option value="{{ c }}" {% if sel_cidade==c %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                  {% endif %}
+                </select>
+              </div>
             </div>
-            <div>
-              <label for="cidade">Cidade</label>
-              <select id="cidade" name="cidade" class="auto-apply" {% if not sel_uf %}disabled{% endif %}>
-                <option value="">{% if not sel_uf %}Selecione o estado primeiro{% else %}Todas{% endif %}</option>
-                {% if sel_uf and opcoes is defined and opcoes.cidade is defined and opcoes.cidade %}
-                  {% set sel_cidade = (filtros.get('cidade') if filtros is defined else request.args.get('cidade','')) %}
-                  {% for c in opcoes.cidade %}
-                    <option value="{{ c }}" {% if sel_cidade==c %}selected{% endif %}>{{ c }}</option>
-                  {% endfor %}
-                {% endif %}
-              </select>
+          </section>
+
+          <!-- ===== RESULTADOS ===== -->
+          <section class="results-card" aria-labelledby="res-title">
+            <div class="results-head">
+              <h3 id="res-title">Teares disponíveis</h3>
+              {% if total is defined %}
+                <div class="results-count">{{ total }} resultado(s)</div>
+              {% endif %}
             </div>
-          </div>
-        </section>
 
-        <!-- ===== RESULTADOS ===== -->
-        <section class="results-card" aria-labelledby="res-title">
-          <div class="results-head">
-            <h3 id="res-title">Teares disponíveis</h3>
-            {% if total is defined %}
-              <div class="results-count">{{ total }} resultado(s)</div>
-            {% endif %}
-          </div>
+            {% if resultados and resultados|length > 0 %}
 
-          {% if resultados and resultados|length > 0 %}
-
-            <!-- BREADCRUMB -->
-            <div class="crumbs" aria-label="Navegação">
-              {% set filtro_diam = filtros.get('diâmetro') or filtros.get('diametro') or '' %}
-              <a href="{{ url_for('index',
-                   pagina=1, pp=por_pagina,
-                   tipo=filtros.get('tipo',''),
-                   diametro=filtro_diam,
-                   galga=filtros.get('galga',''),
-                   estado='',
-                   cidade='') }}">Brasil</a>
-              {% if filtros.get('estado') %}
-                <span class="sep">›</span>
+              <!-- BREADCRUMB -->
+              <div class="crumbs" aria-label="Navegação">
+                {% set filtro_diam = filtros.get('diâmetro') or filtros.get('diametro') or '' %}
                 <a href="{{ url_for('index',
                      pagina=1, pp=por_pagina,
                      tipo=filtros.get('tipo',''),
                      diametro=filtro_diam,
                      galga=filtros.get('galga',''),
-                     estado=filtros.get('estado',''),
-                     cidade='') }}">{{ filtros.get('estado') }}</a>
-              {% endif %}
-              {% if filtros.get('cidade') %}
-                <span class="sep">›</span>
-                <span class="current">{{ filtros.get('cidade') }}</span>
-              {% endif %}
-            </div>
+                     estado='',
+                     cidade='') }}">Brasil</a>
+                {% if filtros.get('estado') %}
+                  <span class="sep">›</span>
+                  <a href="{{ url_for('index',
+                       pagina=1, pp=por_pagina,
+                       tipo=filtros.get('tipo',''),
+                       diametro=filtro_diam,
+                       galga=filtros.get('galga',''),
+                       estado=filtros.get('estado',''),
+                       cidade='') }}">{{ filtros.get('estado') }}</a>
+                {% endif %}
+                {% if filtros.get('cidade') %}
+                  <span class="sep">›</span>
+                  <span class="current">{{ filtros.get('cidade') }}</span>
+                {% endif %}
+              </div>
 
-            <!-- CARDS (mobile) -->
-            <div class="mobile-only">
-              <div class="cards-grid">
-                {% for r in resultados %}
-                  {% set tipo_txt = (r.tipo or '')|string|lower %}
-                  {% set tipo_legivel = 'Mono' if tipo_txt[:4]=='mono' else ('Dupla' if tipo_txt[:5]=='dupla' else r.tipo) %}
-                  <article class="card-tear">
-                    <h3 class="card-title">Tear Malharia Circular</h3>
-                    <div class="card-info">
-                      <div class="lbl">Tipo:</div><div>{{ tipo_legivel or '—' }}</div>
-                      <div class="lbl">Diâmetro:</div><div>{{ r.diametro or '—' }}</div>
-                      <div class="lbl">Galga:</div><div>{{ r.galga or '—' }}</div>
-                      <div class="lbl">Alimentadores:</div><div>{{ r.alimentadores or '—' }}</div>
-                      <div class="lbl">Kit elastano:</div>
-                      <div>
-                        {% set kit = r.kit_elastano %}
-                        {{ 'Sim' if kit in [True, 'Sim', 'SIM', 'sim', 1, '1'] else ('Não' if kit in [False, 'Não', 'NAO', 'NÃO', 0, '0'] else '—') }}
-                      </div>
-                    </div>
-                    <div class="card-empresa">
-                      <div class="empresa-info">
-                        <div class="nome">{{ r.empresa }}</div>
-                        <div class="loc" title="{{ (r.cidade or '') }}{% if r.uf %}/{{ r.uf }}{% endif %}">
-                          <svg class="pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0Z"/>
-                            <circle cx="12" cy="10" r="3"/>
-                          </svg>
-                          <span>{{ r.cidade }}{% if r.uf %}/{{ r.uf }}{% endif %}</span>
+              <!-- CARDS (mobile) -->
+              <div class="mobile-only">
+                <div class="cards-grid">
+                  {% for r in resultados %}
+                    {% set tipo_txt = (r.tipo or '')|string|lower %}
+                    {% set tipo_legivel = 'Mono' if tipo_txt[:4]=='mono' else ('Dupla' if tipo_txt[:5]=='dupla' else r.tipo) %}
+                    <article class="card-tear">
+                      <h3 class="card-title">Tear Malharia Circular</h3>
+                      <div class="card-info">
+                        <div class="lbl">Tipo:</div><div>{{ tipo_legivel or '—' }}</div>
+                        <div class="lbl">Diâmetro:</div><div>{{ r.diametro or '—' }}</div>
+                        <div class="lbl">Galga:</div><div>{{ r.galga or '—' }}</div>
+                        <div class="lbl">Alimentadores:</div><div>{{ r.alimentadores or '—' }}</div>
+                        <div class="lbl">Kit elastano:</div>
+                        <div>
+                          {% set kit = r.kit_elastano %}
+                          {{ 'Sim' if kit in [True, 'Sim', 'SIM', 'sim', 1, '1'] else ('Não' if kit in [False, 'Não', 'NAO', 'NÃO', 0, '0'] else '—') }}
                         </div>
                       </div>
-                      {% if r.contato %}
-                        <a class="wa-link" href="{{ r.contato }}" target="_blank" rel="noopener" aria-label="WhatsApp">
-                          <img class="wa-icon"
-                               src="/static/icone_whatsapp.png"
-                               data-alt="/static/ícone_whatsapp.png,/estatico/icone_whatsapp.png,/estático/ícone_whatsapp.png"
-                               alt="WhatsApp"
-                               onerror="(function(img){var s=img.getAttribute('data-alt');if(!s){img.onerror=null;return;}var a=s.split(',');img.setAttribute('data-alt', a.slice(1).join(','));img.src=a[0];})(this);">
-                        </a>
-                      {% endif %}
-                    </div>
-                  </article>
-                {% endfor %}
-              </div>
-            </div>
-
-            <!-- TABELA (desktop) -->
-            <div class="table-wrap desktop-only">
-              <table class="teares-table">
-                <thead>
-                  <tr>
-                    <th>Empresa</th>
-                    <th>Tipo</th>
-                    <th>Galga</th>
-                    <th>Diâmetro</th>
-                    <th>Alimentadores</th>
-                    <th>Kit elastano</th>
-                    <th>UF</th>
-                    <th>Cidade</th>
-                    <th>Contato</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for r in resultados %}
-                    <tr>
-                      <td class="cell-empresa">{{ r.empresa }}</td>
-                      <td>{{ r.tipo }}</td>
-                      <td>{{ r.galga }}</td>
-                      <td>{{ r.diametro }}</td>
-                      <td>{{ r.alimentadores }}</td>
-                      <td>
-                        {% set kit = r.kit_elastano %}
-                        {{ 'Sim' if kit in [True, 'Sim', 'SIM', 'sim', 1, '1'] else ('Não' if kit in [False, 'Não', 'NAO', 'NÃO', 0, '0'] else '—') }}
-                      </td>
-                      <td>{{ r.uf }}</td>
-                      <td>{{ r.cidade }}</td>
-                      <td>
+                      <div class="card-empresa">
+                        <div class="empresa-info">
+                          <div class="nome">{{ r.empresa }}</div>
+                          <div class="loc" title="{{ (r.cidade or '') }}{% if r.uf %}/{{ r.uf }}{% endif %}">
+                            <svg class="pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                              <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0Z"/>
+                              <circle cx="12" cy="10" r="3"/>
+                            </svg>
+                            <span>{{ r.cidade }}{% if r.uf %}/{{ r.uf }}{% endif %}</span>
+                          </div>
+                        </div>
                         {% if r.contato %}
-                          <a href="{{ r.contato }}" target="_blank" rel="noopener" class="wa-link" aria-label="WhatsApp">
+                          <a class="wa-link" href="{{ r.contato }}" target="_blank" rel="noopener" aria-label="WhatsApp">
                             <img class="wa-icon"
                                  src="/static/icone_whatsapp.png"
                                  data-alt="/static/ícone_whatsapp.png,/estatico/icone_whatsapp.png,/estático/ícone_whatsapp.png"
                                  alt="WhatsApp"
                                  onerror="(function(img){var s=img.getAttribute('data-alt');if(!s){img.onerror=null;return;}var a=s.split(',');img.setAttribute('data-alt', a.slice(1).join(','));img.src=a[0];})(this);">
                           </a>
-                        {% else %} — {% endif %}
-                      </td>
-                    </tr>
+                        {% endif %}
+                      </div>
+                    </article>
                   {% endfor %}
-                </tbody>
-              </table>
-            </div>
-
-            <!-- PAGINAÇÃO -->
-            {% set filtro_diam_ = filtros.get('diâmetro') or filtros.get('diametro') or '' %}
-            <div class="pager">
-              <div class="group">
-                <a class="btn-page" href="{{ url_for('index',
-                      pagina=1, pp=por_pagina,
-                      tipo=filtros.get('tipo',''),
-                      diametro=filtro_diam_,
-                      galga=filtros.get('galga',''),
-                      estado=filtros.get('estado',''),
-                      cidade=filtros.get('cidade','')) }}" aria-disabled="{{ 'true' if pagina==1 else 'false' }}">« Primeira</a>
-
-                <a class="btn-page" href="{{ url_for('index',
-                      pagina=(pagina-1 if pagina>1 else 1), pp=por_pagina,
-                      tipo=filtros.get('tipo',''),
-                      diametro=filtro_diam_,
-                      galga=filtros.get('galga',''),
-                      estado=filtros.get('estado',''),
-                      cidade=filtros.get('cidade','')) }}" aria-disabled="{{ 'true' if pagina==1 else 'false' }}">‹ Anterior</a>
-
-                <span class="info">Página {{ pagina }} de {{ total_paginas }}</span>
-
-                <a class="btn-page" href="{{ url_for('index',
-                      pagina=(pagina+1 if pagina<total_paginas else total_paginas), pp=por_pagina,
-                      tipo=filtros.get('tipo',''),
-                      diametro=filtro_diam_,
-                      galga=filtros.get('galga',''),
-                      estado=filtros.get('estado',''),
-                      cidade=filtros.get('cidade','')) }}" aria-disabled="{{ 'true' if pagina==total_paginas else 'false' }}">Próxima ›</a>
-
-                <a class="btn-page" href="{{ url_for('index',
-                      pagina=total_paginas, pp=por_pagina,
-                      tipo=filtros.get('tipo',''),
-                      diametro=filtro_diam_,
-                      galga=filtros.get('galga',''),
-                      estado=filtros.get('estado',''),
-                      cidade=filtros.get('cidade','')) }}" aria-disabled="{{ 'true' if pagina==total_paginas else 'false' }}">Última »</a>
+                </div>
               </div>
 
-              <div class="group">
-                <label for="ppSelect" class="info">Itens por página:</label>
-                <select id="ppSelect">
-                  <option value="20" {% if por_pagina==20 %}selected{% endif %}>20</option>
-                  <option value="50" {% if por_pagina==50 %}selected{% endif %}>50</option>
-                  <option value="100" {% if por_pagina==100 %}selected{% endif %}>100</option>
-                </select>
+              <!-- TABELA (desktop) -->
+              <div class="table-wrap desktop-only">
+                <table class="teares-table">
+                  <thead>
+                    <tr>
+                      <th>Empresa</th>
+                      <th>Tipo</th>
+                      <th>Galga</th>
+                      <th>Diâmetro</th>
+                      <th>Alimentadores</th>
+                      <th>Kit elastano</th>
+                      <th>UF</th>
+                      <th>Cidade</th>
+                      <th>Contato</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for r in resultados %}
+                      <tr>
+                        <td class="cell-empresa">{{ r.empresa }}</td>
+                        <td>{{ r.tipo }}</td>
+                        <td>{{ r.galga }}</td>
+                        <td>{{ r.diametro }}</td>
+                        <td>{{ r.alimentadores }}</td>
+                        <td>
+                          {% set kit = r.kit_elastano %}
+                          {{ 'Sim' if kit in [True, 'Sim', 'SIM', 'sim', 1, '1'] else ('Não' if kit in [False, 'Não', 'NAO', 'NÃO', 0, '0'] else '—') }}
+                        </td>
+                        <td>{{ r.uf }}</td>
+                        <td>{{ r.cidade }}</td>
+                        <td>
+                          {% if r.contato %}
+                            <a href="{{ r.contato }}" target="_blank" rel="noopener" class="wa-link" aria-label="WhatsApp">
+                              <img class="wa-icon"
+                                   src="/static/icone_whatsapp.png"
+                                   data-alt="/static/ícone_whatsapp.png,/estatico/icone_whatsapp.png,/estático/ícone_whatsapp.png"
+                                   alt="WhatsApp"
+                                   onerror="(function(img){var s=img.getAttribute('data-alt');if(!s){img.onerror=null;return;}var a=s.split(',');img.setAttribute('data-alt', a.slice(1).join(','));img.src=a[0];})(this);">
+                            </a>
+                          {% else %} — {% endif %}
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
               </div>
-            </div>
-          {% else %}
-            <div style="padding:8px 10px;">Nenhum tear encontrado para os filtros atuais.</div>
-          {% endif %}
-        </section>
 
-      </div><!-- /right-col -->
-    </form><!-- /filtrosForm -->
+              <!-- PAGINAÇÃO -->
+              {% set filtro_diam_ = filtros.get('diâmetro') or filtros.get('diametro') or '' %}
+              <div class="pager">
+                <div class="group">
+                  <a class="btn-page" href="{{ url_for('index',
+                        pagina=1, pp=por_pagina,
+                        tipo=filtros.get('tipo',''),
+                        diametro=filtro_diam_,
+                        galga=filtros.get('galga',''),
+                        estado=filtros.get('estado',''),
+                        cidade=filtros.get('cidade','')) }}" aria-disabled="{{ 'true' if pagina==1 else 'false' }}">« Primeira</a>
 
-  </div><!-- /page-outer -->
+                  <a class="btn-page" href="{{ url_for('index',
+                        pagina=(pagina-1 if pagina>1 else 1), pp=por_pagina,
+                        tipo=filtros.get('tipo',''),
+                        diametro=filtro_diam_,
+                        galga=filtros.get('galga',''),
+                        estado=filtros.get('estado',''),
+                        cidade=filtros.get('cidade','')) }}" aria-disabled="{{ 'true' if pagina==1 else 'false' }}">‹ Anterior</a>
+
+                  <span class="info">Página {{ pagina }} de {{ total_paginas }}</span>
+
+                  <a class="btn-page" href="{{ url_for('index',
+                        pagina=(pagina+1 if pagina<total_paginas else total_paginas), pp=por_pagina,
+                        tipo=filtros.get('tipo',''),
+                        diametro=filtro_diam_,
+                        galga=filtros.get('galga',''),
+                        estado=filtros.get('estado',''),
+                        cidade=filtros.get('cidade','')) }}" aria-disabled="{{ 'true' if pagina==total_paginas else 'false' }}">Próxima ›</a>
+
+                  <a class="btn-page" href="{{ url_for('index',
+                        pagina=total_paginas, pp=por_pagina,
+                        tipo=filtros.get('tipo',''),
+                        diametro=filtro_diam_,
+                        galga=filtros.get('galga',''),
+                        estado=filtros.get('estado',''),
+                        cidade=filtros.get('cidade','')) }}" aria-disabled="{{ 'true' if pagina==total_paginas else 'false' }}">Última »</a>
+                </div>
+
+                <div class="group">
+                  <label for="ppSelect" class="info">Itens por página:</label>
+                  <select id="ppSelect">
+                    <option value="20" {% if por_pagina==20 %}selected{% endif %}>20</option>
+                    <option value="50" {% if por_pagina==50 %}selected{% endif %}>50</option>
+                    <option value="100" {% if por_pagina==100 %}selected{% endif %}>100</option>
+                  </select>
+                </div>
+              </div>
+            {% else %}
+              <div style="padding:8px 10px;">Nenhum tear encontrado para os filtros atuais.</div>
+            {% endif %}
+          </section>
+
+        </div><!-- /right-col -->
+      </form><!-- /filtrosForm -->
+
+    </div><!-- /page-outer -->
+  </div><!-- /faixa-cinza -->
 
   <!-- (REMOVIDO) Menu overlay/hambúrguer -->
 
