@@ -20,22 +20,25 @@
       --roxo-hover:#A63DFF;
       --laranja:#FF7A00;
 
-      /* >>> COR GLOBAL DA PÁGINA = MESMA DO INDEX (--cinza-150) <<< */
-      --site-bg:#F7F7FA;  /* idêntico ao index.html */
+      /* fundo global igual ao index */
+      --site-bg:#F7F7FA;
+
+      /* espaçamento vertical das seções (mais compacto e responsivo) */
+      --sec-pad: clamp(24px, 3.8vw, 48px);
 
       --cinza-900:#111827;
       --cinza-700:#374151;
       --cinza-500:#6B7280;
       --maxw: 1100px;
-      --borda-card:#D6DDE8;     /* borda um pouco mais escura */
+      --borda-card:#D6DDE8;
       --borda-steps:#E4E9F3;
     }
     *{ box-sizing:border-box; }
 
-    /* Mantém a UI sempre clara (evita variação em dark mode do SO) */
+    /* Mantém a UI clara */
     html{ color-scheme: light; }
     html, body{
-      background: var(--site-bg) !important;   /* fundo global = mesmo da home */
+      background: var(--site-bg) !important;
       color:var(--cinza-900);
       margin:0;
     }
@@ -45,7 +48,7 @@
     .header-left,.header-right{ display:flex; align-items:center; }
     .header-right{ margin-left:auto; gap:20px; }
     .logo img{ max-height:48px; display:block; }
-    .logo{ display:inline-flex; align-items:center; } /* agora é link */
+    .logo{ display:inline-flex; align-items:center; } /* link */
 
     .menu-wrap{ position: relative; }
     .hamburger{
@@ -81,11 +84,11 @@
     .icon{ width:20px; height:20px; color:#222; }
 
     /* =================== LAYOUT DE FAIXAS =================== */
-    .faixa{ width:100%; padding: clamp(36px, 5vw, 72px) 16px; }
+    .faixa{ width:100%; padding: var(--sec-pad) 16px; }             /* <-- enxugado */
     .wrap{ max-width:var(--maxw); margin:0 auto; }
 
     .bg-white{ background:#fff; }
-    .bg-site{ background:var(--site-bg) !important; }  /* usa a mesma cor da home */
+    .bg-site{ background:var(--site-bg) !important; }
     .bg-preto{ background:#0B0B0B; color:#fff; }
 
     /* =================== TIPOGRAFIA =================== */
@@ -98,47 +101,52 @@
     .lead{
       text-align:center;
       max-width:780px;
-      margin:12px auto 0;
-      color:var(--cinza-900);     /* preto mais nítido */
-      line-height:1.6;
+      margin:8px auto 0;     /* era 12px -> aproxima um pouco */
+      color:var(--cinza-900);
+      line-height:1.5;       /* era 1.6 -> mais compacto sem perder leitura */
       font-size: clamp(16px, 2.1vw, 20px);
     }
-    /* subtítulos grandes das seções */
     .subtitulo{
       font-size: clamp(26px, 3.4vw, 40px);
-      margin:0 0 8px 0;
+      margin:0 0 6px 0;      /* era 8px -> ligeiramente menor */
       color:var(--cinza-900);
       text-align:left;
       letter-spacing:-0.02em;
+      line-height:1.15;
+    }
+
+    /* Mobile: ainda mais otimizado */
+    @media (max-width:520px){
+      :root{ --sec-pad: 20px; }
+      .lead{ margin-top:6px; line-height:1.48; }
     }
 
     /* =================== PROBLEMA =================== */
-    .pain-grid{ display:grid; grid-template-columns:1fr; gap:12px; margin-top:16px; }
+    .pain-grid{ display:grid; grid-template-columns:1fr; gap:12px; margin-top:12px; }
     .pain-card{
       background:#fff; border-radius:14px; padding:14px 16px;
-      border:1px solid var(--borda-card);                 /* borda mais escura */
+      border:1px solid var(--borda-card);
     }
     .pain-card p{ color:var(--cinza-700); }
     .pill{ display:inline-block; font-size:12px; padding:4px 10px; border-radius:999px; background:var(--laranja); color:#fff; letter-spacing:.2px; }
     @media(min-width:840px){ .pain-grid{ grid-template-columns:repeat(3,1fr); } }
 
     /* =================== SOLUÇÃO + CTAs =================== */
-    .cta-row{ display:flex; gap:12px; flex-wrap:wrap; margin-top:14px; }
+    .cta-row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
     .btn{
       display:inline-block; padding:12px 22px; border-radius:9999px;
-      text-decoration:none; font-weight:700; border:2px solid var(--roxo);
+      text-decoration:none; font-weight:700; border:2px solid (var(--roxo));
       transition:all .18s ease-in-out; font-size:16px;
     }
     .btn-primary{ background:var(--roxo); color:#fff; }
     .btn-ghost{ background:#fff; color:var(--roxo); }
-    /* Inversão sincronizada quando hover no botão branco */
     .cta-row:has(.btn-ghost:hover) .btn-primary,
     .cta-row:has(.btn-ghost:focus-visible) .btn-primary{ background:#fff; color:var(--roxo); }
     .cta-row:has(.btn-ghost:hover) .btn-ghost,
     .cta-row:has(.btn-ghost:focus-visible) .btn-ghost{ background:var(--roxo); color:#fff; }
 
-    /* =================== COMO FUNCIONA (ETAPAS) =================== */
-    .steps{ margin-top:16px; display:grid; grid-template-columns:1fr; gap:14px; }
+    /* =================== COMO FUNCIONA =================== */
+    .steps{ margin-top:12px; display:grid; grid-template-columns:1fr; gap:12px; }
     .step{
       position:relative; display:flex; align-items:flex-start; gap:12px;
       background:#fff; border:1px solid var(--borda-steps); border-radius:14px; 
@@ -148,18 +156,17 @@
       flex:0 0 34px; height:34px; width:34px; border-radius:999px;
       background:var(--roxo); color:#fff; font-weight:700;
       display:inline-flex; align-items:center; justify-content:center;
-      font-size:16px; margin-left:8px;           /* puxa o número mais para dentro em mobile */
+      font-size:16px; margin-left:8px;
     }
     .step p{ margin:4px 0 0; color:var(--cinza-700); font-size: clamp(16px, 2vw, 18px); }
-    /* layout em 3 colunas no desktop; sem conectores entre os cards */
     @media (min-width:900px){
       .steps{ grid-template-columns:repeat(3,1fr); align-items:stretch; }
-      .step{ padding:24px 18px; }
+      .step{ padding:20px 18px; }   /* levemente mais compacto */
       .step .num{ margin-left:0; }
     }
 
     /* =================== CONTATO (FAIXA PRETA) =================== */
-    .contato-items{ display:grid; gap:8px; margin-top:10px; }
+    .contato-items{ display:grid; gap:8px; margin-top:8px; }
     .contato-item{ display:flex; align-items:center; gap:10px; padding:6px 0; }
     .contato-item svg{ color:#fff; flex:0 0 22px; }
     .contato a{ color:#fff; text-decoration:none; }
@@ -173,7 +180,7 @@
       color: var(--cinza-900);
     }
 
-    /* Opcional: se o SO estiver em dark-mode, mantemos a mesma cor da home */
+    /* Dark mode do SO: mantemos as cores claras */
     @media (prefers-color-scheme: dark) {
       html, body{ background: var(--site-bg) !important; color: var(--cinza-900); }
       .bg-site{ background: var(--site-bg) !important; }
@@ -185,7 +192,6 @@
   <!-- ===== Cabeçalho ===== -->
   <header class="navbar">
     <div class="header-left">
-      <!-- LOGO AGORA É LINK PARA A HOME -->
       <a class="logo" href="{{ url_for('index') }}" aria-label="Página inicial">
         <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
       </a>
@@ -242,7 +248,7 @@
     </div>
   </header>
 
-  <!-- ===== HERO (faixa = mesma cor da home) ===== -->
+  <!-- ===== HERO ===== -->
   <section class="faixa bg-site">
     <div class="wrap">
       <h1 class="titulo">Quem Somos</h1>
@@ -250,7 +256,7 @@
     </div>
   </section>
 
-  <!-- ===== NOSSA MISSÃO (faixa branca para destacar) ===== -->
+  <!-- ===== NOSSA MISSÃO ===== -->
   <section class="faixa bg-white">
     <div class="wrap">
       <h2 class="titulo">Nossa missão</h2>
@@ -258,7 +264,7 @@
     </div>
   </section>
 
-  <!-- ===== PROBLEMA (faixa = mesma cor da home) ===== -->
+  <!-- ===== PROBLEMA ===== -->
   <section class="faixa bg-site">
     <div class="wrap">
       <span class="pill">O problema real</span>
@@ -281,7 +287,7 @@
     </div>
   </section>
 
-  <!-- ===== SOLUÇÃO (mesma cor da home; frase alinhada à esquerda) ===== -->
+  <!-- ===== SOLUÇÃO ===== -->
   <section id="sec-solucao" class="faixa bg-site">
     <div class="wrap">
       <h2 class="subtitulo">Como o AcheTece resolve</h2>
@@ -298,7 +304,7 @@
     </div>
   </section>
 
-  <!-- ===== COMO FUNCIONA (etapas sem linhas entre cards) ===== -->
+  <!-- ===== COMO FUNCIONA ===== -->
   <section class="faixa bg-white">
     <div class="wrap">
       <h2 class="subtitulo">Como funciona</h2>
@@ -319,7 +325,7 @@
     </div>
   </section>
 
-  <!-- ===== CONTATO (FAIXA PRETA) ===== -->
+  <!-- ===== CONTATO ===== -->
   <section class="faixa bg-preto contato">
     <div class="wrap">
       <h2 class="subtitulo" style="color:#fff;">Fale com a gente</h2>
