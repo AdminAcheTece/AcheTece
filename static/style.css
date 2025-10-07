@@ -7,7 +7,7 @@
   --roxo: #8A00FF;
   --azul-hover: #336be3;
   --cinza-100: #f9f9f9;
-  --cinza-150: #f6f8fa;
+  --cinza-150: #f6f8fa;   /* Fundo padrão da HOME */
   --cinza-200: #f2f2f2;
   --cinza-300: #eaeaea;
   --cinza-400: #ddd;
@@ -38,7 +38,7 @@ img{ max-width:100%; height:auto; display:block; }
 body{
   font-family:'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   color: var(--cinza-texto);
-  background: var(--cinza-100);
+  background: var(--site-bg); /* <- padronizado para o mesmo fundo da HOME */
   line-height:1.4;
 }
 
@@ -1134,12 +1134,7 @@ thead tr{ background:#f2f2f2; }
 
    /* === Fundo global do site (mesmo da home) === */
    :root{
-     /* Use a variável da sua paleta... */
-     --site-bg: var(--cinza-150);      /* <- se a home usa o cinza-150 */
-   
-     /* ...ou cole o HEX exato da home:
-     --site-bg: #F6F8FA;
-     */
+     --site-bg: var(--cinza-150);  /* usa exatamente o cinza da HOME (#f6f8fa) */
    }
    
    /* Fundo global sempre igual à home */
@@ -1153,4 +1148,3 @@ thead tr{ background:#f2f2f2; }
    .bg-site{
      background: var(--site-bg);
    }
-      
