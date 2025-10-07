@@ -20,13 +20,6 @@
       --roxinho:#F3E9FF;
     }
 
-    /* === Esta página: header/rodapé brancos e conteúdo em cinza (var(--site-bg)) === */
-    body.home-page{ background:#fff; }                 /* header/rodapé brancos */
-    main.bg-site{ background:var(--site-bg); }         /* mesmo cinza do style.css */
-    main.bg-site .page-outer{ padding: 8px 16px 28px; }
-    main.bg-site{ border-top:1px solid #eee; }         /* leve separação visual sob o header */
-    .home-page .cta-bar{ margin-top:0; }               /* evita “vão” branco antes da faixa preta */
-
     html, body { max-width:100%; overflow-x:hidden; }
     *, *::before, *::after { box-sizing:border-box; }
 
@@ -38,22 +31,29 @@
     }
 
     /* ===== HEADER ===== */
-    .navbar{overflow:visible;padding:6px 12px;display:flex;align-items:center;background:#fff;}
+    .navbar{overflow:visible;padding:6px 12px;display:flex;align-items:center;}
     .header-left,.header-right{display:flex;align-items:center;}
     .header-right{margin-left:auto;gap:16px;}
     .hdr-actions{display:flex;align-items:center;gap:10px}
+    /* removido .btn-entrar; apenas o botão de perfil */
     .btn-perfil{
       height:40px;line-height:40px;border-radius:9999px;padding:0 18px;
       font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:10px;white-space:nowrap;
       background:var(--laranja);color:#fff;border:0;
     }
     .btn-perfil:hover{background:var(--laranja-hover)}
-    @media (max-width:820px){ .hdr-actions{display:flex} }
+    /* no mobile continua aparecendo (não escondemos mais) */
+    @media (max-width:820px){
+      .hdr-actions{display:flex}
+    }
 
     /* AUMENTO REAL ~30% NO MOBILE (forçando prioridade) */
     @media (max-width:900px){
       .navbar{padding-right:22px; min-height:56px;}
-      .navbar .logo img{ height:54px !important; width:auto !important; }
+      .navbar .logo img{
+        height:54px !important;
+        width:auto !important;
+      }
     }
 
     /* ===== PROMO ===== */
@@ -63,7 +63,7 @@
     @media (max-width:600px){.promo-bar{flex-wrap:wrap;row-gap:6px}}
 
     /* ===== CTA + FOOTER ===== */
-    .cta-bar{background:#000;color:#fff;padding:20px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,0.06);justify-content:flex-start;}
+    .cta-bar{background:#000;color:#fff;padding:20px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,0.06);margin-top:32px;justify-content:flex-start;}
     .cta-text h3{margin:0 0 4px 0;font-size:18px;font-weight:700;}
     .cta-text p{margin:0;font-size:15px;opacity:.9;}
     .cta-btn{display:inline-block;background:#fff;color:#000;text-decoration:none;padding:10px 22px;border-radius:9999px;font-weight:700;}
@@ -79,8 +79,8 @@
     .footer-col a:hover{text-decoration:underline;}
 
     /* ===== LAYOUT ===== */
-    .page-outer{max-width:1280px;margin:0 auto;}
-    .page-hint{margin:10px 0 12px;padding:12px 0;text-align:center;font-size:25px;color:#000;}
+    .page-outer{max-width:1280px;margin:0 auto;padding:0 16px;}
+    .page-hint{margin:10px 0 6px;padding:6px 0;text-align:center;font-size:25px;color:#000;}
     @media (max-width:600px){ .page-hint{font-size:14px;margin-top:8px} }
 
     /* Botões topo (mobile) */
@@ -164,7 +164,10 @@
       border-radius:16px;
       padding:14px;
     }
-    @media (max-width:820px){ .card-tear{ border-color:#ccc; } }
+    /* borda mais escura no mobile (igual aos selects) */
+    @media (max-width:820px){
+      .card-tear{ border-color:#ccc; }
+    }
     .card-title{font-weight:800;font-size:1.02rem;margin:0 0 6px;}
     .card-info{display:grid;grid-template-columns:auto 1fr;column-gap:8px;row-gap:2px;font-size:.93rem;color:#333;}
     .card-info .lbl{color:#666;}
@@ -174,6 +177,8 @@
       padding:8px 12px;border-radius:12px;background:var(--roxinho);
       border:1px solid #eadbff; gap:10px;
     }
+    .card-empresa .nome{font-weight:800;}
+    /* bloco da empresa (nome + localização) */
     .empresa-info{display:flex;flex-direction:column;gap:2px;min-width:0;}
     .empresa-info .nome{font-weight:800;font-size:0.98rem;line-height:1.1;}
     .empresa-info .loc{display:flex;align-items:center;gap:6px;font-size:12px;line-height:1;color:#616161;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -192,7 +197,7 @@
     .pager .info{font-size:13px;color:#666}
     .pager select{height:36px;border:1px solid #ddd;border-radius:10px;padding:0 10px;background:#fff}
 
-    /* Desktop: centralizar o botão do topo */
+    /* ===== Desktop: centralizar o botão do topo ===== */
     @media (min-width:821px){
       .btn-perfil{
         height:44px;
@@ -203,17 +208,20 @@
         line-height:1 !important;
       }
     }
-    /* Desktop: zebra + cabeçalho mais visível na tabela */
+    
+    /* ===== Desktop: zebra + cabeçalho mais visível na tabela ===== */
     @media (min-width:821px){
-      .teares-table thead th{ background:#EEEAF8; color:#1f1b2e; }
+      .teares-table thead th{
+        background:#EEEAF8;
+        color:#1f1b2e;
+      }
       .teares-table tbody tr:nth-child(odd){  background:#FFFFFF; }
       .teares-table tbody tr:nth-child(even){ background:#F7F3FF; }
       .teares-table tbody tr:hover{ background:#F0EBFF; }
     }
   </style>
 </head>
-
-<body class="home-page">
+<body>
 
   <!-- Promo topo -->
   <section class="promo-bar" aria-label="Oferta para malharias">
@@ -221,323 +229,326 @@
     <a class="promo-cta" href="/malharia_info">Saiba como</a>
   </section>
 
-  <!-- Cabeçalho (branco) -->
+  <!-- Cabeçalho -->
   <header class="navbar">
     <div class="header-left">
       <div class="logo">
         <img src="/static/logo.jpg" alt="Logo AcheTece" decoding="async" fetchpriority="high">
       </div>
     </div>
+  
     <div class="header-right">
       <div class="hdr-actions">
-        <a href="/login" class="btn-perfil" aria-label="Acessar sua conta da malharia" title="Acessar sua conta da malharia">
+        <!-- Único botão no topo: CONTA MALHARIA  →  /login -->
+        <a href="/login" class="btn-perfil"
+           aria-label="Acessar sua conta da malharia" title="Acessar sua conta da malharia">
           <span>Conta Malharia</span>
         </a>
       </div>
     </div>
   </header>
+  
+  <div class="page-outer">
 
-  <!-- CONTEÚDO EM CINZA: do texto “Para encontrar…” até antes da faixa preta -->
-  <main class="bg-site" aria-label="Busca de teares">
-    <div class="page-outer">
+    <!-- Mensagem orientativa -->
+    <div class="page-hint" role="note">
+      Para encontrar o <strong>tear ideal</strong> para sua produção, use os filtros abaixo.
+    </div>
 
-      <!-- Mensagem orientativa -->
-      <div class="page-hint" role="note">
-        Para encontrar o <strong>tear ideal</strong> para sua produção, use os filtros abaixo.
-      </div>
+    <!-- Botões topo (mobile) -->
+    <div class="filters-toggle-bar">
+      <button class="btn-pill btn-open-filters" id="openFiltersBtn" type="button" aria-controls="filtersPanel" aria-expanded="false">
+        <svg class="ico-funil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 5h18M6 11h12M10 17h4"/>
+        </svg>
+        Filtros
+      </button>
+      <a class="btn-pill btn-new-search" href="{{ url_for('index') }}">Nova busca</a>
+    </div>
 
-      <!-- Botões topo (mobile) -->
-      <div class="filters-toggle-bar">
-        <button class="btn-pill btn-open-filters" id="openFiltersBtn" type="button" aria-controls="filtersPanel" aria-expanded="false">
-          <svg class="ico-funil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M3 5h18M6 11h12M10 17h4"/>
-          </svg>
-          Filtros
-        </button>
-        <a class="btn-pill btn-new-search" href="{{ url_for('index') }}">Nova busca</a>
-      </div>
+    <!-- ===== FORM ÚNICO (GET) ===== -->
+    <form id="filtrosForm" method="GET" action="{{ url_for('index') }}" class="search-layout">
 
-      <!-- ===== FORM ÚNICO (GET) ===== -->
-      <form id="filtrosForm" method="GET" action="{{ url_for('index') }}" class="search-layout">
+      <!-- Backdrop painel filtros mobile -->
+      <div class="filters-backdrop" id="filtersBackdrop" aria-hidden="true"></div>
 
-        <!-- Backdrop painel filtros mobile -->
-        <div class="filters-backdrop" id="filtersBackdrop" aria-hidden="true"></div>
+      <!-- COLUNA ESQUERDA: FILTROS (sem Estado/Cidade) -->
+      <aside class="filters-panel" id="filtersPanel" aria-label="Filtros de teares">
+        <button class="filters-close" id="closeFiltersBtn" type="button" aria-label="Fechar filtros">×</button>
+        <h2 class="filters-title">Filtrar teares</h2>
 
-        <!-- COLUNA ESQUERDA: FILTROS (sem Estado/Cidade) -->
-        <aside class="filters-panel" id="filtersPanel" aria-label="Filtros de teares">
-          <button class="filters-close" id="closeFiltersBtn" type="button" aria-label="Fechar filtros">×</button>
-          <h2 class="filters-title">Filtrar teares</h2>
-
-          {% for campo, opcoes_campo in opcoes.items() %}
-            {% set c = campo|lower %}
-            {% if c not in ['estado','cidade'] %}
-              {% if c == 'galga' %}
-                <div class="filter-field">
-                  <label for="{{ campo }}">Galga/Finura</label>
-                  <input type="number" id="{{ campo }}" name="{{ campo }}" class="auto-apply" inputmode="numeric" step="1" min="1" placeholder="Digite a galga (ex.: 28)" value="{{ filtros[campo] or '' }}" autocomplete="off">
-                </div>
-              {% elif c in ['diâmetro','diametro'] %}
-                <div class="filter-field">
-                  <label for="{{ campo }}">Diâmetro</label>
-                  <input type="number" id="{{ campo }}" name="{{ campo }}" class="auto-apply" inputmode="decimal" step="0.1" min="1" placeholder="Digite o diâmetro (ex.: 30)" value="{{ filtros[campo] or '' }}" autocomplete="off">
-                </div>
-              {% else %}
-                <div class="filter-field">
-                  <label for="{{ campo }}">{{ campo|capitalize }}</label>
-                  <select name="{{ campo }}" id="{{ campo }}" class="auto-apply">
-                    <option value="">-- Todos --</option>
-                    {% for opcao in opcoes_campo %}
-                      <option value="{{ opcao }}" {% if filtros[campo] == opcao %}selected{% endif %}>{{ opcao }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-              {% endif %}
+        {% for campo, opcoes_campo in opcoes.items() %}
+          {% set c = campo|lower %}
+          {% if c not in ['estado','cidade'] %}
+            {% if c == 'galga' %}
+              <div class="filter-field">
+                <label for="{{ campo }}">Galga/Finura</label>
+                <input type="number" id="{{ campo }}" name="{{ campo }}" class="auto-apply" inputmode="numeric" step="1" min="1" placeholder="Digite a galga (ex.: 28)" value="{{ filtros[campo] or '' }}" autocomplete="off">
+              </div>
+            {% elif c in ['diâmetro','diametro'] %}
+              <div class="filter-field">
+                <label for="{{ campo }}">Diâmetro</label>
+                <input type="number" id="{{ campo }}" name="{{ campo }}" class="auto-apply" inputmode="decimal" step="0.1" min="1" placeholder="Digite o diâmetro (ex.: 30)" value="{{ filtros[campo] or '' }}" autocomplete="off">
+              </div>
+            {% else %}
+              <div class="filter-field">
+                <label for="{{ campo }}">{{ campo|capitalize }}</label>
+                <select name="{{ campo }}" id="{{ campo }}" class="auto-apply">
+                  <option value="">-- Todos --</option>
+                  {% for opcao in opcoes_campo %}
+                    <option value="{{ opcao }}" {% if filtros[campo] == opcao %}selected{% endif %}>{{ opcao }}</option>
+                  {% endfor %}
+                </select>
+              </div>
             {% endif %}
-          {% endfor %}
+          {% endif %}
+        {% endfor %}
 
-          <!-- Hidden paginação -->
-          <input type="hidden" name="pagina" id="pagina_hidden" value="{{ request.args.get('pagina','1') }}">
-          <input type="hidden" name="pp" id="pp_hidden" value="{% if por_pagina is defined %}{{ por_pagina }}{% else %}{{ request.args.get('pp','20') }}{% endif %}">
+        <!-- Hidden paginação -->
+        <input type="hidden" name="pagina" id="pagina_hidden" value="{{ request.args.get('pagina','1') }}">
+        <input type="hidden" name="pp" id="pp_hidden" value="{% if por_pagina is defined %}{{ por_pagina }}{% else %}{{ request.args.get('pp','20') }}{% endif %}">
 
-          <div class="filter-actions">
-            <a href="{{ url_for('index') }}" class="btn-limpar" title="Limpar filtros" style="display:inline-flex;align-items:center;gap:6px;background:var(--laranja);color:#fff;border-radius:9999px;height:36px;line-height:36px;padding:0 16px;text-decoration:none;font-weight:700;">Limpar</a>
+        <div class="filter-actions">
+          <a href="{{ url_for('index') }}" class="btn-limpar" title="Limpar filtros" style="display:inline-flex;align-items:center;gap:6px;background:var(--laranja);color:#fff;border-radius:9999px;height:36px;line-height:36px;padding:0 16px;text-decoration:none;font-weight:700;">Limpar</a>
+        </div>
+      </aside>
+
+      <!-- COLUNA DIREITA: Localização + RESULTADOS -->
+      <div class="right-col">
+        <section class="localizacao-card" aria-labelledby="loc-title">
+          <h2 id="loc-title">Localização</h2>
+          <div class="row">
+            <div>
+              <label for="estado">Estado</label>
+              <select id="estado" name="estado" class="auto-apply">
+                <option value="">Selecione o estado</option>
+                {% set sel_uf = (filtros.get('estado') if filtros is defined else request.args.get('estado','')) %}
+                {% if estados is defined and estados %}
+                  {% for uf in estados %}
+                    <option value="{{ uf }}" {% if sel_uf==uf %}selected{% endif %}>{{ uf }}</option>
+                  {% endfor %}
+                {% elif opcoes is defined and opcoes.estado is defined %}
+                  {% for uf in opcoes.estado %}
+                    <option value="{{ uf }}" {% if sel_uf==uf %}selected{% endif %}>{{ uf }}</option>
+                  {% endfor %}
+                {% endif %}
+              </select>
+            </div>
+            <div>
+              <label for="cidade">Cidade</label>
+              <select id="cidade" name="cidade" class="auto-apply" {% if not sel_uf %}disabled{% endif %}>
+                <option value="">{% if not sel_uf %}Selecione o estado primeiro{% else %}Todas{% endif %}</option>
+                {% if sel_uf and opcoes is defined and opcoes.cidade is defined and opcoes.cidade %}
+                  {% set sel_cidade = (filtros.get('cidade') if filtros is defined else request.args.get('cidade','')) %}
+                  {% for c in opcoes.cidade %}
+                    <option value="{{ c }}" {% if sel_cidade==c %}selected{% endif %}>{{ c }}</option>
+                  {% endfor %}
+                {% endif %}
+              </select>
+            </div>
           </div>
-        </aside>
+        </section>
 
-        <!-- COLUNA DIREITA: Localização + RESULTADOS -->
-        <div class="right-col">
-          <section class="localizacao-card" aria-labelledby="loc-title">
-            <h2 id="loc-title">Localização</h2>
-            <div class="row">
-              <div>
-                <label for="estado">Estado</label>
-                <select id="estado" name="estado" class="auto-apply">
-                  <option value="">Selecione o estado</option>
-                  {% set sel_uf = (filtros.get('estado') if filtros is defined else request.args.get('estado','')) %}
-                  {% if estados is defined and estados %}
-                    {% for uf in estados %}
-                      <option value="{{ uf }}" {% if sel_uf==uf %}selected{% endif %}>{{ uf }}</option>
-                    {% endfor %}
-                  {% elif opcoes is defined and opcoes.estado is defined %}
-                    {% for uf in opcoes.estado %}
-                      <option value="{{ uf }}" {% if sel_uf==uf %}selected{% endif %}>{{ uf }}</option>
-                    {% endfor %}
-                  {% endif %}
-                </select>
-              </div>
-              <div>
-                <label for="cidade">Cidade</label>
-                <select id="cidade" name="cidade" class="auto-apply" {% if not sel_uf %}disabled{% endif %}>
-                  <option value="">{% if not sel_uf %}Selecione o estado primeiro{% else %}Todas{% endif %}</option>
-                  {% if sel_uf and opcoes is defined and opcoes.cidade is defined and opcoes.cidade %}
-                    {% set sel_cidade = (filtros.get('cidade') if filtros is defined else request.args.get('cidade','')) %}
-                    {% for c in opcoes.cidade %}
-                      <option value="{{ c }}" {% if sel_cidade==c %}selected{% endif %}>{{ c }}</option>
-                    {% endfor %}
-                  {% endif %}
-                </select>
-              </div>
-            </div>
-          </section>
+        <!-- ===== RESULTADOS ===== -->
+        <section class="results-card" aria-labelledby="res-title">
+          <div class="results-head">
+            <h3 id="res-title">Teares disponíveis</h3>
+            {% if total is defined %}
+              <div class="results-count">{{ total }} resultado(s)</div>
+            {% endif %}
+          </div>
 
-          <!-- ===== RESULTADOS ===== -->
-          <section class="results-card" aria-labelledby="res-title">
-            <div class="results-head">
-              <h3 id="res-title">Teares disponíveis</h3>
-              {% if total is defined %}
-                <div class="results-count">{{ total }} resultado(s)</div>
-              {% endif %}
-            </div>
+          {% if resultados and resultados|length > 0 %}
 
-            {% if resultados and resultados|length > 0 %}
-
-              <!-- BREADCRUMB -->
-              <div class="crumbs" aria-label="Navegação">
-                {% set filtro_diam = filtros.get('diâmetro') or filtros.get('diametro') or '' %}
+            <!-- BREADCRUMB -->
+            <div class="crumbs" aria-label="Navegação">
+              {% set filtro_diam = filtros.get('diâmetro') or filtros.get('diametro') or '' %}
+              <a href="{{ url_for('index',
+                   pagina=1, pp=por_pagina,
+                   tipo=filtros.get('tipo',''),
+                   diametro=filtro_diam,
+                   galga=filtros.get('galga',''),
+                   estado='',
+                   cidade='') }}">Brasil</a>
+              {% if filtros.get('estado') %}
+                <span class="sep">›</span>
                 <a href="{{ url_for('index',
                      pagina=1, pp=por_pagina,
                      tipo=filtros.get('tipo',''),
                      diametro=filtro_diam,
                      galga=filtros.get('galga',''),
-                     estado='',
-                     cidade='') }}">Brasil</a>
-                {% if filtros.get('estado') %}
-                  <span class="sep">›</span>
-                  <a href="{{ url_for('index',
-                       pagina=1, pp=por_pagina,
-                       tipo=filtros.get('tipo',''),
-                       diametro=filtro_diam,
-                       galga=filtros.get('galga',''),
-                       estado=filtros.get('estado',''),
-                       cidade='') }}">{{ filtros.get('estado') }}</a>
-                {% endif %}
-                {% if filtros.get('cidade') %}
-                  <span class="sep">›</span>
-                  <span class="current">{{ filtros.get('cidade') }}</span>
-                {% endif %}
-              </div>
+                     estado=filtros.get('estado',''),
+                     cidade='') }}">{{ filtros.get('estado') }}</a>
+              {% endif %}
+              {% if filtros.get('cidade') %}
+                <span class="sep">›</span>
+                <span class="current">{{ filtros.get('cidade') }}</span>
+              {% endif %}
+            </div>
 
-              <!-- CARDS (mobile) -->
-              <div class="mobile-only">
-                <div class="cards-grid">
-                  {% for r in resultados %}
-                    {% set tipo_txt = (r.tipo or '')|string|lower %}
-                    {% set tipo_legivel = 'Mono' if tipo_txt[:4]=='mono' else ('Dupla' if tipo_txt[:5]=='dupla' else r.tipo) %}
-                    <article class="card-tear">
-                      <h3 class="card-title">Tear Malharia Circular</h3>
-                      <div class="card-info">
-                        <div class="lbl">Tipo:</div><div>{{ tipo_legivel or '—' }}</div>
-                        <div class="lbl">Diâmetro:</div><div>{{ r.diametro or '—' }}</div>
-                        <div class="lbl">Galga:</div><div>{{ r.galga or '—' }}</div>
-                        <div class="lbl">Alimentadores:</div><div>{{ r.alimentadores or '—' }}</div>
-                        <div class="lbl">Kit elastano:</div>
-                        <div>
-                          {% set kit = r.kit_elastano %}
-                          {{ 'Sim' if kit in [True, 'Sim', 'SIM', 'sim', 1, '1'] else ('Não' if kit in [False, 'Não', 'NAO', 'NÃO', 0, '0'] else '—') }}
+            <!-- CARDS (mobile) -->
+            <div class="mobile-only">
+              <div class="cards-grid">
+                {% for r in resultados %}
+                  {% set tipo_txt = (r.tipo or '')|string|lower %}
+                  {% set tipo_legivel = 'Mono' if tipo_txt[:4]=='mono' else ('Dupla' if tipo_txt[:5]=='dupla' else r.tipo) %}
+                  <article class="card-tear">
+                    <h3 class="card-title">Tear Malharia Circular</h3>
+                    <div class="card-info">
+                      <div class="lbl">Tipo:</div><div>{{ tipo_legivel or '—' }}</div>
+                      <div class="lbl">Diâmetro:</div><div>{{ r.diametro or '—' }}</div>
+                      <div class="lbl">Galga:</div><div>{{ r.galga or '—' }}</div>
+                      <div class="lbl">Alimentadores:</div><div>{{ r.alimentadores or '—' }}</div>
+                      <div class="lbl">Kit elastano:</div>
+                      <div>
+                        {% set kit = r.kit_elastano %}
+                        {{ 'Sim' if kit in [True, 'Sim', 'SIM', 'sim', 1, '1'] else ('Não' if kit in [False, 'Não', 'NAO', 'NÃO', 0, '0'] else '—') }}
+                      </div>
+                    </div>
+                    <div class="card-empresa">
+                      <div class="empresa-info">
+                        <div class="nome">{{ r.empresa }}</div>
+                        <div class="loc" title="{{ (r.cidade or '') }}{% if r.uf %}/{{ r.uf }}{% endif %}">
+                          <svg class="pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0Z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                          </svg>
+                          <span>{{ r.cidade }}{% if r.uf %}/{{ r.uf }}{% endif %}</span>
                         </div>
                       </div>
-                      <div class="card-empresa">
-                        <div class="empresa-info">
-                          <div class="nome">{{ r.empresa }}</div>
-                          <div class="loc" title="{{ (r.cidade or '') }}{% if r.uf %}/{{ r.uf }}{% endif %}">
-                            <svg class="pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                              <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0Z"/>
-                              <circle cx="12" cy="10" r="3"/>
-                            </svg>
-                            <span>{{ r.cidade }}{% if r.uf %}/{{ r.uf }}{% endif %}</span>
-                          </div>
-                        </div>
+                      {% if r.contato %}
+                        <a class="wa-link" href="{{ r.contato }}" target="_blank" rel="noopener" aria-label="WhatsApp">
+                          <img class="wa-icon"
+                               src="/static/icone_whatsapp.png"
+                               data-alt="/static/ícone_whatsapp.png,/estatico/icone_whatsapp.png,/estático/ícone_whatsapp.png"
+                               alt="WhatsApp"
+                               onerror="(function(img){var s=img.getAttribute('data-alt');if(!s){img.onerror=null;return;}var a=s.split(',');img.setAttribute('data-alt', a.slice(1).join(','));img.src=a[0];})(this);">
+                        </a>
+                      {% endif %}
+                    </div>
+                  </article>
+                {% endfor %}
+              </div>
+            </div>
+
+            <!-- TABELA (desktop) -->
+            <div class="table-wrap desktop-only">
+              <table class="teares-table">
+                <thead>
+                  <tr>
+                    <th>Empresa</th>
+                    <th>Tipo</th>
+                    <th>Galga</th>
+                    <th>Diâmetro</th>
+                    <th>Alimentadores</th>
+                    <th>Kit elastano</th>
+                    <th>UF</th>
+                    <th>Cidade</th>
+                    <th>Contato</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for r in resultados %}
+                    <tr>
+                      <td class="cell-empresa">{{ r.empresa }}</td>
+                      <td>{{ r.tipo }}</td>
+                      <td>{{ r.galga }}</td>
+                      <td>{{ r.diametro }}</td>
+                      <td>{{ r.alimentadores }}</td>
+                      <td>
+                        {% set kit = r.kit_elastano %}
+                        {{ 'Sim' if kit in [True, 'Sim', 'SIM', 'sim', 1, '1'] else ('Não' if kit in [False, 'Não', 'NAO', 'NÃO', 0, '0'] else '—') }}
+                      </td>
+                      <td>{{ r.uf }}</td>
+                      <td>{{ r.cidade }}</td>
+                      <td>
                         {% if r.contato %}
-                          <a class="wa-link" href="{{ r.contato }}" target="_blank" rel="noopener" aria-label="WhatsApp">
+                          <a href="{{ r.contato }}" target="_blank" rel="noopener" class="wa-link" aria-label="WhatsApp">
                             <img class="wa-icon"
                                  src="/static/icone_whatsapp.png"
                                  data-alt="/static/ícone_whatsapp.png,/estatico/icone_whatsapp.png,/estático/ícone_whatsapp.png"
                                  alt="WhatsApp"
                                  onerror="(function(img){var s=img.getAttribute('data-alt');if(!s){img.onerror=null;return;}var a=s.split(',');img.setAttribute('data-alt', a.slice(1).join(','));img.src=a[0];})(this);">
                           </a>
-                        {% endif %}
-                      </div>
-                    </article>
-                  {% endfor %}
-                </div>
-              </div>
-
-              <!-- TABELA (desktop) -->
-              <div class="table-wrap desktop-only">
-                <table class="teares-table">
-                  <thead>
-                    <tr>
-                      <th>Empresa</th>
-                      <th>Tipo</th>
-                      <th>Galga</th>
-                      <th>Diâmetro</th>
-                      <th>Alimentadores</th>
-                      <th>Kit elastano</th>
-                      <th>UF</th>
-                      <th>Cidade</th>
-                      <th>Contato</th>
+                        {% else %} — {% endif %}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {% for r in resultados %}
-                      <tr>
-                        <td class="cell-empresa">{{ r.empresa }}</td>
-                        <td>{{ r.tipo }}</td>
-                        <td>{{ r.galga }}</td>
-                        <td>{{ r.diametro }}</td>
-                        <td>{{ r.alimentadores }}</td>
-                        <td>
-                          {% set kit = r.kit_elastano %}
-                          {{ 'Sim' if kit in [True, 'Sim', 'SIM', 'sim', 1, '1'] else ('Não' if kit in [False, 'Não', 'NAO', 'NÃO', 0, '0'] else '—') }}
-                        </td>
-                        <td>{{ r.uf }}</td>
-                        <td>{{ r.cidade }}</td>
-                        <td>
-                          {% if r.contato %}
-                            <a href="{{ r.contato }}" target="_blank" rel="noopener" class="wa-link" aria-label="WhatsApp">
-                              <img class="wa-icon"
-                                   src="/static/icone_whatsapp.png"
-                                   data-alt="/static/ícone_whatsapp.png,/estatico/icone_whatsapp.png,/estático/ícone_whatsapp.png"
-                                   alt="WhatsApp"
-                                   onerror="(function(img){var s=img.getAttribute('data-alt');if(!s){img.onerror=null;return;}var a=s.split(',');img.setAttribute('data-alt', a.slice(1).join(','));img.src=a[0];})(this);">
-                            </a>
-                          {% else %} — {% endif %}
-                        </td>
-                      </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            <!-- PAGINAÇÃO -->
+            {% set filtro_diam_ = filtros.get('diâmetro') or filtros.get('diametro') or '' %}
+            <div class="pager">
+              <div class="group">
+                <a class="btn-page" href="{{ url_for('index',
+                      pagina=1, pp=por_pagina,
+                      tipo=filtros.get('tipo',''),
+                      diametro=filtro_diam_,
+                      galga=filtros.get('galga',''),
+                      estado=filtros.get('estado',''),
+                      cidade=filtros.get('cidade','')) }}" aria-disabled="{{ 'true' if pagina==1 else 'false' }}">« Primeira</a>
+
+                <a class="btn-page" href="{{ url_for('index',
+                      pagina=(pagina-1 if pagina>1 else 1), pp=por_pagina,
+                      tipo=filtros.get('tipo',''),
+                      diametro=filtro_diam_,
+                      galga=filtros.get('galga',''),
+                      estado=filtros.get('estado',''),
+                      cidade=filtros.get('cidade','')) }}" aria-disabled="{{ 'true' if pagina==1 else 'false' }}">‹ Anterior</a>
+
+                <span class="info">Página {{ pagina }} de {{ total_paginas }}</span>
+
+                <a class="btn-page" href="{{ url_for('index',
+                      pagina=(pagina+1 if pagina<total_paginas else total_paginas), pp=por_pagina,
+                      tipo=filtros.get('tipo',''),
+                      diametro=filtro_diam_,
+                      galga=filtros.get('galga',''),
+                      estado=filtros.get('estado',''),
+                      cidade=filtros.get('cidade','')) }}" aria-disabled="{{ 'true' if pagina==total_paginas else 'false' }}">Próxima ›</a>
+
+                <a class="btn-page" href="{{ url_for('index',
+                      pagina=total_paginas, pp=por_pagina,
+                      tipo=filtros.get('tipo',''),
+                      diametro=filtro_diam_,
+                      galga=filtros.get('galga',''),
+                      estado=filtros.get('estado',''),
+                      cidade=filtros.get('cidade','')) }}" aria-disabled="{{ 'true' if pagina==total_paginas else 'false' }}">Última »</a>
               </div>
 
-              <!-- PAGINAÇÃO -->
-              {% set filtro_diam_ = filtros.get('diâmetro') or filtros.get('diametro') or '' %}
-              <div class="pager">
-                <div class="group">
-                  <a class="btn-page" href="{{ url_for('index',
-                        pagina=1, pp=por_pagina,
-                        tipo=filtros.get('tipo',''),
-                        diametro=filtro_diam_,
-                        galga=filtros.get('galga',''),
-                        estado=filtros.get('estado',''),
-                        cidade=filtros.get('cidade','')) }}" aria-disabled="{{ 'true' if pagina==1 else 'false' }}">« Primeira</a>
-
-                  <a class="btn-page" href="{{ url_for('index',
-                        pagina=(pagina-1 if pagina>1 else 1), pp=por_pagina,
-                        tipo=filtros.get('tipo',''),
-                        diametro=filtro_diam_,
-                        galga=filtros.get('galga',''),
-                        estado=filtros.get('estado',''),
-                        cidade=filtros.get('cidade','')) }}" aria-disabled="{{ 'true' if pagina==1 else 'false' }}">‹ Anterior</a>
-
-                  <span class="info">Página {{ pagina }} de {{ total_paginas }}</span>
-
-                  <a class="btn-page" href="{{ url_for('index',
-                        pagina=(pagina+1 if pagina<total_paginas else total_paginas), pp=por_pagina,
-                        tipo=filtros.get('tipo',''),
-                        diametro=filtro_diam_,
-                        galga=filtros.get('galga',''),
-                        estado=filtros.get('estado',''),
-                        cidade=filtros.get('cidade','')) }}" aria-disabled="{{ 'true' if pagina==total_paginas else 'false' }}">Próxima ›</a>
-
-                  <a class="btn-page" href="{{ url_for('index',
-                        pagina=total_paginas, pp=por_pagina,
-                        tipo=filtros.get('tipo',''),
-                        diametro=filtro_diam_,
-                        galga=filtros.get('galga',''),
-                        estado=filtros.get('estado',''),
-                        cidade=filtros.get('cidade','')) }}" aria-disabled="{{ 'true' if pagina==total_paginas else 'false' }}">Última »</a>
-                </div>
-
-                <div class="group">
-                  <label for="ppSelect" class="info">Itens por página:</label>
-                  <select id="ppSelect">
-                    <option value="20" {% if por_pagina==20 %}selected{% endif %}>20</option>
-                    <option value="50" {% if por_pagina==50 %}selected{% endif %}>50</option>
-                    <option value="100" {% if por_pagina==100 %}selected{% endif %}>100</option>
-                  </select>
-                </div>
+              <div class="group">
+                <label for="ppSelect" class="info">Itens por página:</label>
+                <select id="ppSelect">
+                  <option value="20" {% if por_pagina==20 %}selected{% endif %}>20</option>
+                  <option value="50" {% if por_pagina==50 %}selected{% endif %}>50</option>
+                  <option value="100" {% if por_pagina==100 %}selected{% endif %}>100</option>
+                </select>
               </div>
-            {% else %}
-              <div style="padding:8px 10px;">Nenhum tear encontrado para os filtros atuais.</div>
-            {% endif %}
-          </section>
+            </div>
+          {% else %}
+            <div style="padding:8px 10px;">Nenhum tear encontrado para os filtros atuais.</div>
+          {% endif %}
+        </section>
 
-        </div><!-- /right-col -->
-      </form><!-- /filtrosForm -->
+      </div><!-- /right-col -->
+    </form><!-- /filtrosForm -->
 
-    </div><!-- /page-outer -->
-  </main><!-- /bg-site (cinza) -->
+  </div><!-- /page-outer -->
 
-  <!-- CTA PRETA -->
+  <!-- (REMOVIDO) Menu overlay/hambúrguer -->
+
+  <!-- CTA -->
   <section class="cta-bar" aria-label="Convite para cadastro">
     <div class="cta-text">
       <h3>É proprietário de uma malharia?</h3>
       <p>Cadastre sua malharia e comece a receber novos pedidos.</p>
     </div>
+    <!-- Botão CADASTRAR → /cadastrar_empresa (mantido) -->
     <a href="/cadastrar_empresa" class="cta-btn">Cadastrar</a>
   </section>
   
-  <!-- Rodapé (branco) -->
+  <!-- Rodapé -->
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-brand"><img src="/static/logo_simbolo.png" alt="AcheTece"></div>
