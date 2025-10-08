@@ -3,24 +3,37 @@
 <head>
   <meta charset="UTF-8">
   <title>Como Funciona - AcheTece para Malharias</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Ícone da aba (favicon) -->
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
-  
+
+  <!-- CSS principal -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
+
   <style>
     :root{
-      --azul:#8A00FF;
-      --azul-2:#336be3;
-      --verde:#16a34a;     /* verde principal */
-      --verde-2:#22c55e;   /* gradiente */
-      --cinza-bg:#f9f9f9;
+      --roxo:#8A00FF;
+      --roxo-2:#336be3;
+      --verde:#16a34a;
+      --verde-2:#22c55e;
+
+      /* fundo padrão do site (cinza 150) */
+      --site-bg:#F7F7FA;
+
+      --cinza-900:#111827;
       --cinza-texto:#444;
+      --maxw:1180px;
     }
 
-    body { font-family: Arial, sans-serif; margin:0; padding:0; background:var(--cinza-bg); color:var(--cinza-texto); }
+    html, body{
+      background:var(--site-bg);
+      color:var(--cinza-texto);
+      margin:0;
+      font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    }
 
     /* ===== TOPBAR (faixa preta) ===== */
     .topbar{
@@ -30,7 +43,8 @@
       border-bottom:1px solid #111;
     }
     .topbar-inner{
-      max-width:1000px; margin:0 auto;
+      max-width:var(--maxw);
+      margin:0 auto;
       display:flex; align-items:center; justify-content:flex-end; gap:12px;
     }
     .topbar-action{
@@ -38,83 +52,89 @@
       color:#fff; text-decoration:none;
       padding:6px 10px; border-radius:10px;
       background:#111; border:1px solid rgba(255,255,255,.12);
-      transition:background .2s, transform .02s;
+      transition:background .2s;
     }
     .topbar-action:hover{ background:#161616; }
     .ic-top{ width:18px; height:18px; display:block; }
-    .ic-wa{ color:#22c55e; }  /* WhatsApp verde */
+    .ic-wa{ color:#22c55e; }
     .ic-mail{ color:#fff; }
 
-    /* ===== Cabeçalho padrão busca.html ===== */
-    .navbar{ overflow:visible; padding-top:6px; padding-bottom:6px; background:#fff; border-bottom:1px solid #eee; display:flex; align-items:center; }
+    /* ===== HEADER (igual ao quem_somos) ===== */
+    .navbar{
+      overflow:visible;
+      padding:6px 12px;
+      background:#fff;
+      border-bottom:1px solid #eee;
+      display:flex; align-items:center;
+    }
     .header-left,.header-right{ display:flex; align-items:center; }
-    .header-right{ margin-left:auto; gap:20px; }
-    .logo img{ max-height:48px; height:auto; width:auto; display:block; }
-    .top-nav{ display:none; }
+    .header-right{ margin-left:auto; gap:10px; padding-right:12px; }
+    .logo{ display:inline-flex; align-items:center; }
+    .logo a{ display:inline-flex; align-items:center; text-decoration:none; }
+    .logo img{ display:block; height:auto; width:auto; }
 
+    /* Desktop: logo 44px */
+    @media (min-width:901px){
+      .navbar .logo img{ height:44px; width:auto; }
+    }
+    /* Mobile: logo 54px */
+    @media (max-width:900px){
+      .navbar{ padding-right:22px; min-height:56px; }
+      .navbar .logo img{ height:54px !important; width:auto !important; }
+      .header-right{ gap:8px; }
+    }
+
+    .icon-btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px; background:#fff; cursor:pointer;
+    }
+    .icon{ width:20px; height:20px; color:#222; }
+
+    /* Menu sanduíche */
     .menu-wrap{ position: relative; }
     .hamburger{
       display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
       width:36px; height:36px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
-      box-shadow:none !important;
-      cursor:pointer;
+      position:relative; z-index:10002;
     }
     .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
     .hamburger span + span{ margin-top:4px; }
+    @media (max-width:900px){
+      .hamburger{ width:32px; height:32px; border-radius:9px; }
+      .hamburger span{ width:18px; }
+    }
 
     .menu-dropdown{
-      background:#fff; border:1px solid #eaeaea; border-radius:12px; box-shadow:none !important;
+      background:#fff; border:1px solid #eaeaea; border-radius:12px;
       z-index:10001; max-height:80vh; overflow:auto;
       opacity:0; pointer-events:none; transform: translateY(8px) scale(.98);
       transition: opacity .18s ease, transform .18s ease;
     }
     .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
-
     .menu-dropdown .menu-header{ display:flex; justify-content:flex-end; align-items:center; padding:8px 10px; }
-    .menu-dropdown .menu-header span{ display:none; }
-    .menu-dropdown .menu-close{
-      display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px;
-      background:#f0f2f5; border:0; border-radius:10px; cursor:pointer;
-    }
-
-    .menu-dropdown .menu-item{ font-weight:400; display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222; }
-    .menu-dropdown .menu-item:hover{ background:#f5f7ff; color:var(--azul); border-radius:8px; }
-
-    @media (min-width:769px){
-      .menu-dropdown{ position:absolute; top:calc(100% + 8px); right:0; min-width:220px; max-width:320px; padding-right:2px; transform-origin: top right; }
-    }
+    .menu-dropdown .menu-close{ display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; background:#f0f2f5; border:0; border-radius:10px; cursor:pointer; }
+    .menu-dropdown .menu-item{ display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222; }
+    .menu-dropdown .menu-item:hover{ background:#f5f7ff; color:var(--roxo); border-radius:8px; }
+    @media (min-width:769px){ .menu-dropdown{ position:absolute; top:calc(100% + 8px); right:0; min-width:220px; transform-origin: top right; } }
     @media (max-width:768px){
       .menu-wrap{ position: static; }
-      .menu-dropdown{
-        position: fixed; top: calc(var(--nav-h, 64px) + 8px); left: 50%;
-        width:max-content; max-width:90vw; min-width:160px; padding:4px 0;
-        max-height: calc(100vh - var(--nav-h, 64px) - 24px);
-        transform: translate(-50%, 8px) scale(.98); transform-origin: top center;
-        border-radius:14px; -webkit-overflow-scrolling:touch;
-      }
+      .menu-dropdown{ position: fixed; top: calc(var(--nav-h, 64px) + 8px); left: 50%; transform: translate(-50%, 8px) scale(.98); width:max-content; max-width:90vw; min-width:160px; border-radius:14px; }
       .menu-dropdown.open{ transform: translate(-50%,0) scale(1); }
     }
 
-    .icon-btn{
-      display:inline-flex; align-items:center; justify-content:center;
-      width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px;
-      background:#fff; cursor:pointer; transition:box-shadow .2s, transform .02s, background .2s;
-    }
-    .icon-btn:hover{ box-shadow:none !important; background:#f7f7f7; }
-    .icon{ width:20px; height:20px; color:#222; }
-
-    /* ===== Container conteúdo ===== */
-    .container {
+    /* ===== CONTEÚDO ===== */
+    .container{
       max-width: 880px;
       margin: 40px auto;
-      background: #fff;
+      background:#fff;
       padding: 40px 36px;
-      border-radius: 14px;
-      box-shadow: none !important;
+      border-radius: 16px;
+      /* >>> borda igual às demais páginas <<< */
+      border:1px solid #eee;
+      box-shadow:none !important;
       text-align:center;
     }
-
-    h1 {
+    h1{
       font-size: clamp(26px, 3.4vw, 36px);
       margin: 0 0 12px 0;
       color: #222;
@@ -127,7 +147,6 @@
       max-width: 700px;
     }
 
-    /* Destaques Simples • Direta • Profissional */
     .bullet-highlights{
       display:grid; grid-template-columns: repeat(3,1fr); gap:10px; margin: 8px auto 22px; max-width:740px;
     }
@@ -138,7 +157,7 @@
     }
     @media (max-width:680px){ .bullet-highlights{ grid-template-columns:1fr; } }
 
-    p { font-size: 16px; line-height: 1.6; margin-bottom: 20px; }
+    p{ font-size:16px; line-height:1.6; margin-bottom:20px; }
 
     .section-title{
       font-size: clamp(18px, 2.4vw, 22px);
@@ -147,7 +166,6 @@
       color:#111;
     }
 
-    /* Lista de benefícios centralizada */
     .benefits{
       list-style:none; padding:0; margin:0 auto 24px; max-width:760px; text-align:left;
     }
@@ -158,11 +176,11 @@
     .benefits li::before{
       content:''; display:inline-block; flex:0 0 18px; width:18px; height:18px; border-radius:50%;
       margin-top:3px;
-      background: radial-gradient(circle at 30% 30%, #fff 0 40%, transparent 41%), var(--azul);
-      box-shadow: none !important;
+      background: radial-gradient(circle at 30% 30%, #fff 0 40%, transparent 41%), var(--roxo);
+      box-shadow:none !important;
     }
 
-    /* ===== Card de Preço (VERDE) ===== */
+    /* ===== Card de Preço ===== */
     .pricing-card{
       position:relative;
       margin: 28px auto 16px;
@@ -177,74 +195,19 @@
     }
     .badge-top{
       position:absolute; left:50%; top:-12px; transform: translateX(-50%);
-      background:#fff; color:#000;
-      border-radius: 999px; padding:6px 12px; font-size:12px; font-weight:800;
-      box-shadow: none !important;
+      background:#fff; color:#000; border-radius: 999px; padding:6px 12px; font-size:12px; font-weight:800;
     }
-    .pricing-value{
-      margin: 0; line-height:1;
-      font-size: clamp(38px, 6.2vw, 56px); font-weight:800; letter-spacing: -.5px;
-    }
-    .pricing-value small{ font-size: .35em; font-weight:700; opacity:1; color:#fff; }
+    .pricing-value{ margin:0; line-height:1; font-size: clamp(38px, 6.2vw, 56px); font-weight:800; letter-spacing: -.5px; }
+    .pricing-value small{ font-size:.35em; font-weight:700; color:#fff; }
 
-    /* CTA central e mais estreito que o card */
-    .botao-cadastrar {
-      display: inline-block;
-      width: 100%;
-      max-width: 440px;
-      text-align: center;
-      background: var(--azul);
-      color: white;
-      font-weight: 700;
-      padding: 14px 20px;
-      border-radius: 12px;
-      text-decoration: none;
-      font-size: 18px;
-      transition: transform .15s ease, box-shadow .2s ease, background .2s ease;
-      box-shadow: none !important;
-      margin-left:auto; margin-right:auto;
+    .botao-cadastrar{
+      display:inline-block; width:100%; max-width:440px; text-align:center;
+      background:var(--roxo); color:#fff; font-weight:700; padding:14px 20px; border-radius:12px; text-decoration:none; font-size:18px;
+      transition: transform .15s ease, background .2s ease; box-shadow:none !important; margin-left:auto; margin-right:auto;
     }
-    .botao-cadastrar:hover { background:#002c80; transform: translateY(-2px); box-shadow:none !important; }
+    .botao-cadastrar:hover{ background:#6e00cc; transform:translateY(-2px); }
 
-    /* ===== Fluxo visual de etapas ===== */
-    .flow-wrap{ margin-top:16px; }
-    .flow-title{ font-weight:800; text-align:left; margin: 24px 0 10px; }
-    .flow{
-      position:relative;
-      display:grid; grid-template-columns: repeat(5, 1fr); gap:16px;
-      align-items:start;
-    }
-    .flow::before{
-      content:''; position:absolute; top:20px; left:8px; right:8px; height:4px;
-      background: linear-gradient(90deg, var(--azul), var(--azul-2));
-      border-radius:4px; z-index:0;
-    }
-    .step{ position:relative; text-align:center; z-index:1; }
-    .dot{
-      width:38px; height:38px; border-radius:999px; margin:0 auto 10px;
-      display:flex; align-items:center; justify-content:center;
-      background: var(--azul); color:#fff; font-weight:800; box-shadow: none !important;
-    }
-    .card{
-      background:#fff; border:1px solid #e8ecf5; border-radius:14px; padding:14px 12px;
-      min-height:72px; display:flex; align-items:center; justify-content:center;
-      font-size:14px; color:#333;
-    }
-
-    @media (max-width:700px){
-      .flow{ display:flex; flex-direction:column; gap:14px; }
-      .flow::before{
-        left:19px; right:auto; width:4px; top:6px; bottom:6px; height:auto;
-        background: linear-gradient(180deg, var(--azul), var(--azul-2));
-      }
-      .step{ display:flex; align-items:flex-start; gap:12px; text-align:left; }
-      .dot{ margin:0; }
-      .card{ flex:1; min-height:auto; }
-    }
-
-    /* =========================
-       ORIENTAÇÃO (passo a passo)
-       ========================= */
+    /* ===== Guia (passos) ===== */
     .guia{
       max-width: 880px;
       margin: 24px auto 8px;
@@ -253,27 +216,17 @@
       border-radius:12px;
       box-shadow: none !important;
     }
-    .guia h2{
-      margin:0 0 8px 0; font-size:18px; font-weight:800; color:#111; text-align:center;
-    }
-    .steps{
-      display:grid; grid-template-columns: repeat(5,1fr); gap:10px;
-    }
-    .step{
-      text-align:center; background:#fff; border:1px solid #8A00FF; border-radius:12px; padding:10px 8px;
-    }
-    .step .dot{
-      width:30px; height:30px; line-height:30px; margin:0 auto 8px;
-      border-radius:999px; background:#8A00FF; color:#fff; font-weight:800;
-      box-shadow:none !important;
-    }
+    .guia h2{ margin:0 0 8px 0; font-size:18px; font-weight:800; color:#111; text-align:center; }
+    .steps{ display:grid; grid-template-columns: repeat(5,1fr); gap:10px; }
+    .step{ text-align:center; background:#fff; border:1px solid #8A00FF; border-radius:12px; padding:10px 8px; }
+    .step .dot{ width:30px; height:30px; line-height:30px; margin:0 auto 8px; border-radius:999px; background:#8A00FF; color:#fff; font-weight:800; }
     .step p{ margin:0; font-size:13px; color:#333; }
     @media (max-width:760px){
       .steps{ grid-template-columns:1fr; }
       .step{ display:flex; align-items:center; gap:10px; text-align:left; }
       .step .dot{ margin:0; flex:0 0 30px; text-align:center; }
     }
-    
+
     /* ===== Rodapé ===== */
     footer{
       background:#fff;
@@ -282,69 +235,50 @@
       margin-top:40px;
     }
     .footer-container{
-      max-width:1000px;
+      max-width:var(--maxw);
       margin:0 auto;
       display:grid;
       grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
       gap:30px;
     }
-    .footer-col h4{
-      font-size:15px;
-      font-weight:700;
-      margin-bottom:14px;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      color:#111;
-    }
-    .footer-col ul{list-style:none;padding:0;margin:0;}
-    .footer-col ul li{margin-bottom:8px;}
-    .footer-col ul li a{
-      text-decoration:none;
-      color:#222;
-      font-size:14px;
-      transition:color .2s;
-    }
-    .footer-col ul li a:hover{color:var(--azul);}
-    .footer-icon{width:18px;height:18px;flex-shrink:0;}
+    .footer-title{ font-size:15px; font-weight:700; margin-bottom:14px; color:#111; }
+    .footer-links{ list-style:none; padding:0; margin:0; }
+    .footer-links li{ margin-bottom:8px; }
+    .footer-links a{ text-decoration:none; color:#222; font-size:14px; }
+    .footer-links a:hover{ color:var(--roxo); }
   </style>
 </head>
 <body>
 
-  <!-- ===== TOPBAR ===== -->
+  <!-- ===== TOPBAR (preta) ===== -->
   <div class="topbar">
     <div class="topbar-inner">
       <a class="topbar-action" href="{{ url_for('contato') }}" aria-label="Fale conosco">
-        <!-- WhatsApp -->
-        <svg class="ic-top ic-wa" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M20.52 3.48A11.94 11.94 0 0 0 12.06 0C5.7 0 .5 5.19.5 11.6c0 2.05.54 4.05 1.58 5.82L0 24l6.76-2.01a11.6 11.6 0 0 0 5.3 1.29h.01c6.36 0 11.56-5.19 11.56-11.6 0-3.09-1.22-6-3.11-8.2Zm-8.46 18.1h-.01a9.7 9.7 0 0 1-4.95-1.34l-.35-.2-4.01 1.2 1.16-3.9-.23-.4a9.66 9.66 0 0 1-1.41-5.08c0-5.36 4.38-9.71 9.77-9.71 2.61 0 5.07 1.02 6.91 2.87a9.73 9.73 0 0 1 2.86 6.95c0 5.36-4.38 9.71-9.75 9.71Zm5.6-7.27c-.31-.16-1.81-.9-2.09-1-.28-.1-.49-.16-.7.16-.2.31-.8 1-.98 1.21-.18.2-.36.22-.67.06-.31-.16-1.3-.48-2.48-1.53-.92-.8-1.54-1.77-1.72-2.07-.18-.31-.02-.48.13-.64.13-.13.31-.36.46-.54.15-.18.2-.31.31-.52.1-.22.05-.41-.02-.57-.16-.16-.7-1.69-.95-2.3-.25-.6-.51-.52-.7-.52-.18 0-.39-.02-.6-.02-.2 0-.52.07-.79.36-.28.31-1.07 1.05-1.07 2.56 0 1.51 1.1 2.97 1.25 3.18.15.2 2.17 3.3 5.25 4.61.73.32 1.3.5 1.75.64.74.24 1.4.2 1.93.12.59-.09 1.81-.74 2.07-1.45.26-.72.26-1.33.18-1.45-.08-.12-.28-.2-.59-.36Z"/>
-        </svg>
-        <!-- Email -->
-        <svg class="ic-top ic-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/>
-        </svg>
+        <svg class="ic-top ic-wa" viewBox="0 0 24 24" fill="currentColor"><path d="M20.52 3.48A11.94 11.94 0 0 0 12.06 0C5.7 0 .5 5.19.5 11.6c0 2.05.54 4.05 1.58 5.82L0 24l6.76-2.01a11.6 11.6 0 0 0 5.3 1.29h.01c6.36 0 11.56-5.19 11.56-11.6 0-3.09-1.22-6-3.11-8.2Zm-8.46 18.1h-.01a9.7 9.7 0 0 1-4.95-1.34l-.35-.2-4.01 1.2 1.16-3.9-.23-.4a9.66 9.66 0 0 1-1.41-5.08c0-5.36 4.38-9.71 9.77-9.71 2.61 0 5.07 1.02 6.91 2.87a9.73 9.73 0 0 1 2.86 6.95c0 5.36-4.38 9.71-9.75 9.71Zm5.6-7.27c-.31-.16-1.81-.9-2.09-1-.28-.1-.49-.16-.7.16-.2.31-.8 1-.98 1.21-.18.2-.36.22-.67.06-.31-.16-1.3-.48-2.48-1.53-.92-.8-1.54-1.77-1.72-2.07-.18-.31-.02-.48.13-.64.13-.13.31-.36.46-.54.15-.18.2-.31.31-.52.1-.22.05-.41-.02-.57-.16-.16-.7-1.69-.95-2.3-.25-.6-.51-.52-.7-.52-.18 0-.39-.02-.6-.02-.2 0-.52.07-.79.36-.28.31-1.07 1.05-1.07 2.56 0 1.51 1.1 2.97 1.25 3.18.15.2 2.17 3.3 5.25 4.61.73.32 1.3.5 1.75.64.74.24 1.4.2 1.93.12.59-.09 1.81-.74 2.07-1.45.26-.72.26-1.33.18-1.45-.08-.12-.28-.2-.59-.36Z"/></svg>
+        <svg class="ic-top ic-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/></svg>
         <span style="font-weight:700;">Fale conosco</span>
       </a>
     </div>
   </div>
 
-  <!-- ===== Cabeçalho ===== -->
+  <!-- ===== Cabeçalho (igual quem_somos) ===== -->
   <header class="navbar">
     <div class="header-left">
-      <div class="logo">
-        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
-      </div>
+      <!-- LOGO como botão para a home -->
+      <a class="logo" href="{{ url_for('index') }}" aria-label="Página inicial">
+        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
+      </a>
     </div>
 
     <div class="header-right">
+      <!-- Botão casinha -->
       <a href="{{ url_for('index') }}" class="icon-btn" aria-label="Página inicial" title="Página inicial">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 10.5 12 3l9 7.5"></path>
-          <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
-          <path d="M9 21V12h6v9"></path>
+          <path d="M3 10.5 12 3l9 7.5"></path><path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path><path d="M9 21V12h6v9"></path>
         </svg>
       </a>
 
+      <!-- Menu sanduíche -->
       <div class="menu-wrap">
         <button class="hamburger" id="hamburger" type="button" aria-label="Abrir menu" aria-controls="menu-lateral" aria-haspopup="menu" aria-expanded="false">
           <span></span><span></span><span></span>
@@ -360,12 +294,30 @@
             </button>
           </div>
 
-          <a href="{{ url_for('buscar_teares') }}" class="menu-item" role="menuitem">Buscar Tear</a>
-          <a href="{{ url_for('malharia_info') }}" class="menu-item" role="menuitem">Como Funciona</a>
-          <a href="{{ url_for('login') }}" class="menu-item" role="menuitem">Já sou cadastrado</a>
-          <a href="{{ url_for('quem_somos') }}" class="menu-item" role="menuitem">Quem Somos</a>
-          <a href="{{ url_for('contato') }}" class="menu-item" role="menuitem">Fale conosco</a>
-          <a href="{{ url_for('termos') }}" class="menu-item" role="menuitem">Termos e Políticas</a>
+          <a href="{{ url_for('buscar_teares') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="16.65" y1="16.65" x2="21" y2="21"></line></svg>
+            <span>Buscar Tear</span>
+          </a>
+          <a href="{{ url_for('malharia_info') }}" class="menu-item" role="menuitem" aria-current="page">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.5 9a2.5 2.5 0 1 1 4.1 2A3 3 0 0 0 12 13.6"></path><circle cx="12" cy="17" r="1.2" fill="currentColor"></circle></svg>
+            <span>Como Funciona</span>
+          </a>
+          <a href="{{ url_for('login') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 20a8 8 0 0 1 16 0"></path></svg>
+            <span>Já sou cadastrado</span>
+          </a>
+          <a href="{{ url_for('quem_somos') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="8" r="1.5" fill="currentColor"></circle><path d="M11 11h2v6h-2z" fill="currentColor"></path></svg>
+            <span>Quem Somos</span>
+          </a>
+          <a href="{{ url_for('contato') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v12H4z"></path><path d="M22 20H2"></path><path d="M22 8l-10 6L2 8" fill="none"></path></svg>
+            <span>Fale conosco</span>
+          </a>
+          <a href="{{ url_for('termos') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M8 8h8M8 12h8M8 16h5"></path></svg>
+            <span>Termos e Políticas</span>
+          </a>
         </nav>
       </div>
     </div>
@@ -392,7 +344,7 @@
       <li>Atualizar suas informações a qualquer momento via painel da malharia.</li>
     </ul>
 
-    <!-- ===== CARD DE PREÇO (verde) ===== -->
+    <!-- Plano -->
     <div class="pricing-card" aria-label="Plano mensal AcheTece">
       <span class="badge-top">Oferta Exclusiva</span>
       <h2 class="pricing-value">R$49,90 <small>/ mês</small></h2>
@@ -400,31 +352,24 @@
 
     <a href="{{ url_for('cadastrar_empresa') }}" class="botao-cadastrar">Quero cadastrar minha malharia</a>
 
-    <!-- ===== Orientação dos passos ===== -->
+    <!-- Passos -->
     <div class="guia" aria-label="Guia rápido de ativação">
       <h2>Como funciona</h2>
       <div class="steps">
         <div class="step"><div class="dot">1</div><p><strong>Cadastro</strong><br>Preencha os dados da malharia.</p></div>
         <div class="step"><div class="dot">2</div><p><strong>Pagamento</strong><br>Conclua a mensalidade.</p></div>
-        <div class="step"><div class="dot">3</div><p><strong>Confirmação</strong><br>Receba o e‑mail de ativação.</p></div>
+        <div class="step"><div class="dot">3</div><p><strong>Confirmação</strong><br>Receba o e-mail de ativação.</p></div>
         <div class="step"><div class="dot">4</div><p><strong>Acesso</strong><br>Entre no <em>login</em> e edite o perfil.</p></div>
         <div class="step"><div class="dot">5</div><p><strong>Teares</strong><br>Cadastre seus teares e comece a aparecer.</p></div>
       </div>
     </div>
   </div>
-      
+
   <!-- ===== Rodapé ===== -->
   <footer>
     <div class="footer-container">
       <div class="footer-block">
-        <!-- Logo símbolo igual ao index -->
-        <img
-          src="{{ url_for('static', filename='logo_simbolo.png') }}"
-          alt="AcheTece"
-          class="footer-logo"
-          width="32"
-          height="32"
-        />
+        <img src="{{ url_for('static', filename='logo_simbolo.png') }}" alt="AcheTece" class="footer-logo" width="32" height="32"/>
         <div>
           <h4 class="footer-title">Sobre nós</h4>
           <ul class="footer-links">
@@ -438,7 +383,7 @@
     </div>
   </footer>
 
-  <!-- ===== Scripts ===== -->
+  <!-- ===== Script do menu (igual ao quem_somos) ===== -->
   <script>
     (function () {
       function closeAll() {
@@ -470,12 +415,13 @@
 
         menu.addEventListener('click', e => e.stopPropagation());
       });
+
       document.addEventListener('click', closeAll);
       document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
     })();
   </script>
 
-  <!-- Ajuste de altura: considera TOPBAR + HEADER -->
+  <!-- Ajuste: considera a altura da TOPBAR + HEADER para o dropdown mobile -->
   <script>
     (function(){
       function setNavH(){
