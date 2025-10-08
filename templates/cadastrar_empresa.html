@@ -4,155 +4,139 @@
   <meta charset="UTF-8">
   <title>Cadastrar Malharia</title>
 
-  <!-- Ícone da aba (favicon) -->
+  <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
-  
+
   <!-- CSS principal -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
     :root{
-      --azul:#003bb3;
-      --azul-2:#336be3;
-      --cinza-bg:#f9f9f9;
-      --cinza-texto:#444;
       --roxo:#8A00FF;
+      --site-bg:#F7F7FA;        /* cinza 150 padronizado */
+      --cinza-texto:#444;
     }
 
-    /* =========================
-       BASE DA PÁGINA
-       ========================= */
-    body {
-      font-family: Arial, sans-serif;
-      background-color: var(--cinza-bg);
-      margin: 0;
-      padding: 0;
-      color:#444;
+    /* ===== Base ===== */
+    html, body{
+      background:var(--site-bg);
+      color:var(--cinza-texto);
+      margin:0;
+      font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
     }
 
-    /* =========================
-       CABEÇALHO (logo clicável + casinha)
-       ========================= */
+    /* ===== HEADER (igual ao quem_somos) ===== */
     .navbar{
-      overflow:visible; padding:6px 12px;
-      background:#fff; border-bottom:1px solid #eee;
+      overflow:visible;
+      padding:6px 12px;
+      background:#fff;
+      border-bottom:1px solid #eee;
       display:flex; align-items:center;
     }
     .header-left,.header-right{ display:flex; align-items:center; }
-    .header-right{ margin-left:auto; gap:20px; }
-    .logo img{ max-height:48px; height:auto; width:auto; display:block; }
-    .logo-link{ display:inline-flex; align-items:center; text-decoration:none; }
-    .logo-link:focus-visible{
-      outline:2px solid var(--roxo);
-      outline-offset:3px;
-      border-radius:6px;
+    .header-right{ margin-left:auto; gap:10px; padding-right:12px; }
+    .logo{ display:inline-flex; align-items:center; }
+    .logo a{ display:inline-flex; align-items:center; text-decoration:none; }
+    .logo img{ display:block; height:auto; width:auto; }
+
+    /* Desktop: logo 44px */
+    @media (min-width:901px){
+      .navbar .logo img{ height:44px; width:auto; }
+    }
+    /* Mobile: logo 54px */
+    @media (max-width:900px){
+      .navbar{ padding-right:22px; min-height:56px; }
+      .navbar .logo img{ height:54px !important; width:auto !important; }
+      .header-right{ gap:8px; }
     }
 
-    /* Botão da casinha (home) */
     .icon-btn{
       display:inline-flex; align-items:center; justify-content:center;
       width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px;
-      background:#fff; cursor:pointer; transition:box-shadow .2s, transform .02s, background .2s;
+      background:#fff; cursor:pointer;
     }
-    .icon-btn:hover{ background:#f7f7f7; }
     .icon{ width:20px; height:20px; color:#222; }
 
-    /* =========================
-       CONTEÚDO (formulário)
-       ========================= */
-    .container {
-      max-width: 500px;
-      margin: 32px auto 60px;
-      background: #fff;
-      padding: 32px;
-      border-radius: 12px;
-      box-shadow: none !important;
+    /* Menu sanduíche */
+    .menu-wrap{ position: relative; }
+    .hamburger{
+      display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
+      width:36px; height:36px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
+      position:relative; z-index:10002;
     }
-    h1.titulo {
-      text-align: center;
-      font-size: 24px;
-      font-weight: bold;
-      margin-bottom: 24px;
-    }
-    .formulario label {
-      display: block;
-      margin-bottom: 6px;
-      font-weight: bold;
-      font-size: 14px;
-    }
-    .formulario input,
-    .formulario select {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 16px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 14px;
-    }
-    /* Placeholder azul no select */
-    select option[disabled] {
-      color: #003bb3; /* azul AcheTece */
-      font-weight: 500;
-    }
-    .formulario button.botao-salvar {
-      width: 100%;
-      padding: 12px;
-      border: none;
-      border-radius: 8px;
-      background-color: #8A00FF;
-      color: white;
-      font-weight: bold;
-      font-size: 14px;
-      cursor: pointer;
-    }
-    .formulario button.botao-salvar:hover {
-      background-color: #8A00FF;
+    .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
+    .hamburger span + span{ margin-top:4px; }
+    @media (max-width:900px){
+      .hamburger{ width:32px; height:32px; border-radius:9px; }
+      .hamburger span{ width:18px; }
     }
 
-    .mensagem-erro {
-      background-color: #ffe6e6;
-      color: #b30000;
-      border: 1px solid #ff4d4d;
-      padding: 20px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      text-align: center;
-      animation: aparecer 0.4s ease-in-out;
+    .menu-dropdown{
+      background:#fff; border:1px solid #eaeaea; border-radius:12px;
+      z-index:10001; max-height:80vh; overflow:auto;
+      opacity:0; pointer-events:none; transform: translateY(8px) scale(.98);
+      transition: opacity .18s ease, transform .18s ease;
     }
-    .mensagem-erro .icone {
-      font-size: 30px;
-      display: block;
-      margin-bottom: 10px;
+    .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
+    .menu-dropdown .menu-header{ display:flex; justify-content:flex-end; align-items:center; padding:8px 10px; }
+    .menu-dropdown .menu-close{ display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; background:#f0f2f5; border:0; border-radius:10px; cursor:pointer; }
+    .menu-dropdown .menu-item{ display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222; }
+    .menu-dropdown .menu-item:hover{ background:#f5f7ff; color:var(--roxo); border-radius:8px; }
+    @media (min-width:769px){ .menu-dropdown{ position:absolute; top:calc(100% + 8px); right:0; min-width:220px; transform-origin: top right; } }
+    @media (max-width:768px){
+      .menu-wrap{ position: static; }
+      .menu-dropdown{ position: fixed; top: calc(var(--nav-h, 64px) + 8px); left: 50%; transform: translate(-50%, 8px) scale(.98); width:max-content; max-width:90vw; min-width:160px; border-radius:14px; }
+      .menu-dropdown.open{ transform: translate(-50%,0) scale(1); }
     }
-    .mensagem-erro .botao-voltar {
-      display: inline-block;
-      margin-top: 15px;
-      padding: 10px 20px;
-      background-color: #8A00FF;
-      color: #fff;
-      font-weight: bold;
-      border-radius: 8px;
-      text-decoration: none;
-      transition: background-color 0.2s ease;
-      cursor: pointer;
+
+    /* ===== Card / Form ===== */
+    .container{
+      max-width:520px;
+      margin:32px auto 60px;
+      background:#fff;
+      padding:32px 28px;
+      border-radius:16px;
+      border:1px solid #eee;         /* borda padronizada */
+      box-shadow:none !important;
     }
-    .mensagem-erro .botao-voltar:hover {
-      background-color: #8A00FF;
+    h1.titulo{
+      text-align:center;
+      font-size:24px;
+      font-weight:800;
+      margin:0 0 22px;
+      color:#1e1b2b;
     }
-    .erro-campo { border: 2px solid red; background-color: #fff5f5; }
-    .mensagem-campo {
-      color: red;
-      font-size: 13px;
-      margin-top: -10px;
-      margin-bottom: 12px;
+    .formulario label{
+      display:block; margin-bottom:6px; font-weight:700; font-size:14px; color:#2a233a;
     }
-    @keyframes aparecer {
-      from { opacity: 0; transform: scale(0.95); }
-      to { opacity: 1; transform: scale(1); }
+    .formulario input, .formulario select{
+      width:100%; padding:12px; margin-bottom:16px;
+      border:1px solid #cfd3dc; border-radius:10px; font-size:14px; background:#fff;
     }
+    select option[disabled]{ color:#003bb3; font-weight:500; }
+    .formulario button.botao-salvar{
+      width:100%; padding:12px; border:none; border-radius:9999px;
+      background:var(--roxo); color:#fff; font-weight:800; font-size:14px; cursor:pointer;
+      margin-top:4px;
+    }
+    .formulario button.botao-salvar:hover{ background:#6e00cc; }
+
+    .mensagem-erro{
+      background:#ffe6e6; color:#b30000; border:1px solid #ff4d4d;
+      padding:16px; border-radius:12px; margin-bottom:20px; text-align:center; animation:aparecer .4s ease-in-out;
+    }
+    .mensagem-erro .icone{ font-size:28px; display:block; margin-bottom:8px; }
+    .mensagem-erro .botao-voltar{
+      display:inline-block; margin-top:10px; padding:10px 18px; background:var(--roxo); color:#fff; font-weight:700; border-radius:9999px; text-decoration:none;
+    }
+    .mensagem-erro .botao-voltar:hover{ background:#6e00cc; }
+    .erro-campo{ border:2px solid #e11d48; background:#fff5f5; }
+    .mensagem-campo{ color:#e11d48; font-size:13px; margin-top:-10px; margin-bottom:12px; }
+    @keyframes aparecer{ from{opacity:0; transform:scale(.98)} to{opacity:1; transform:scale(1)} }
 
     /* ===== Rodapé ===== */
     footer{
@@ -168,52 +152,79 @@
       grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
       gap:30px;
     }
-    .footer-col h4{
-      font-size:15px;
-      font-weight:700;
-      margin-bottom:14px;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      color:#111;
-    }
-    .footer-col ul{list-style:none;padding:0;margin:0;}
-    .footer-col ul li{margin-bottom:8px;}
-    .footer-col ul li a{
-      text-decoration:none;
-      color:#222;
-      font-size:14px;
-      transition:color .2s;
-    }
-    .footer-col ul li a:hover{color:var(--azul);}
-    .footer-icon{width:18px;height:18px;flex-shrink:0;}
+    .footer-title{ font-size:15px; font-weight:700; margin-bottom:14px; color:#111; }
+    .footer-links{ list-style:none; padding:0; margin:0; }
+    .footer-links li{ margin-bottom:8px; }
+    .footer-links a{ text-decoration:none; color:#222; font-size:14px; }
+    .footer-links a:hover{ color:var(--roxo); }
   </style>
 </head>
 <body>
 
-  <!-- ===== NAVBAR (logo link + casinha) ===== -->
+  <!-- ===== HEADER ===== -->
   <header class="navbar">
     <div class="header-left">
-      <div class="logo">
-        <a href="{{ url_for('index') }}" class="logo-link" aria-label="Página inicial AcheTece" title="Ir para a página inicial">
-          <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece" decoding="async" fetchpriority="high">
-        </a>
-      </div>
+      <!-- Logo como botão para a home -->
+      <a class="logo" href="{{ url_for('index') }}" aria-label="Página inicial">
+        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
+      </a>
     </div>
 
     <div class="header-right">
       <!-- Casinha -->
       <a href="{{ url_for('index') }}" class="icon-btn" aria-label="Página inicial" title="Página inicial">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 10.5 12 3l9 7.5"></path>
           <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
           <path d="M9 21V12h6v9"></path>
         </svg>
       </a>
+
+      <!-- Menu sanduíche -->
+      <div class="menu-wrap">
+        <button class="hamburger" id="hamburger" type="button" aria-label="Abrir menu" aria-controls="menu-lateral" aria-haspopup="menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+
+        <nav class="menu-dropdown" id="menu-lateral" role="menu" aria-label="Menu rápido">
+          <div class="menu-header">
+            <button type="button" class="menu-close" aria-label="Fechar menu">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+              </svg>
+            </button>
+          </div>
+
+          <a href="{{ url_for('buscar_teares') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="16.65" y1="16.65" x2="21" y2="21"></line></svg>
+            <span>Buscar Tear</span>
+          </a>
+          <a href="{{ url_for('malharia_info') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.5 9a2.5 2.5 0 1 1 4.1 2A3 3 0 0 0 12 13.6"></path><circle cx="12" cy="17" r="1.2" fill="currentColor"></circle></svg>
+            <span>Como Funciona</span>
+          </a>
+          <a href="{{ url_for('login') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 20a8 8 0 0 1 16 0"></path></svg>
+            <span>Já sou cadastrado</span>
+          </a>
+          <a href="{{ url_for('quem_somos') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="8" r="1.5" fill="currentColor"></circle><path d="M11 11h2v6h-2z" fill="currentColor"></path></svg>
+            <span>Quem Somos</span>
+          </a>
+          <a href="{{ url_for('contato') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v12H4z"></path><path d="M22 20H2"></path><path d="M22 8l-10 6L2 8" fill="none"></path></svg>
+            <span>Fale conosco</span>
+          </a>
+          <a href="{{ url_for('termos') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M8 8h8M8 12h8M8 16h5"></path></svg>
+            <span>Termos e Políticas</span>
+          </a>
+        </nav>
+      </div>
     </div>
   </header>
 
-  <!-- ===== Conteúdo do CADASTRO ===== -->
+  <!-- ===== Conteúdo do cadastro ===== -->
   <div class="container">
     <h1 class="titulo">Crie sua conta. Cadastre sua Malharia</h1>
 
@@ -229,74 +240,48 @@
       <label for="nome">Nome da Empresa <span style="color:#d00000">*</span></label>
       <input type="text" id="nome" name="nome" required
              value="{{ nome or '' }}" class="{% if erros and erros.get('nome') %}erro-campo{% endif %}">
-      {% if erros and erros.get('nome') %}
-        <div class="mensagem-campo">{{ erros.get('nome') }}</div>
-      {% endif %}
+      {% if erros and erros.get('nome') %}<div class="mensagem-campo">{{ erros.get('nome') }}</div>{% endif %}
 
       <label for="apelido">Apelido da Empresa:</label>
       <input type="text" id="apelido" name="apelido" value="{{ apelido or '' }}" class="{% if erros and erros.get('apelido') %}erro-campo{% endif %}">
-      {% if erros and erros.get('apelido') %}
-        <div class="mensagem-campo">{{ erros.get('apelido') }}</div>
-      {% endif %}
+      {% if erros and erros.get('apelido') %}<div class="mensagem-campo">{{ erros.get('apelido') }}</div>{% endif %}
 
-      <!-- Nome do responsável -->
       <label for="responsavel_nome">Nome do responsável <span style="color:#d00000">*</span></label>
       <input type="text" id="responsavel_nome" name="responsavel_nome" autocomplete="given-name" required
-             placeholder="Ex.: Maria"
-             value="{{ responsavel_nome or '' }}"
+             placeholder="Ex.: Maria" value="{{ responsavel_nome or '' }}"
              class="{% if erros and erros.get('responsavel_nome') %}erro-campo{% endif %}">
-      {% if erros and erros.get('responsavel_nome') %}
-        <div class="mensagem-campo">{{ erros.get('responsavel_nome') }}</div>
-      {% endif %}
+      {% if erros and erros.get('responsavel_nome') %}<div class="mensagem-campo">{{ erros.get('responsavel_nome') }}</div>{% endif %}
 
-      <!-- Sobrenome (opcional) -->
       <label for="responsavel_sobrenome">Sobrenome do responsável (opcional)</label>
       <input type="text" id="responsavel_sobrenome" name="responsavel_sobrenome" autocomplete="family-name"
-             placeholder="Ex.: Silva"
-             value="{{ responsavel_sobrenome or '' }}"
+             placeholder="Ex.: Silva" value="{{ responsavel_sobrenome or '' }}"
              class="{% if erros and erros.get('responsavel_sobrenome') %}erro-campo{% endif %}">
-      {% if erros and erros.get('responsavel_sobrenome') %}
-        <div class="mensagem-campo">{{ erros.get('responsavel_sobrenome') }}</div>
-      {% endif %}
+      {% if erros and erros.get('responsavel_sobrenome') %}<div class="mensagem-campo">{{ erros.get('responsavel_sobrenome') }}</div>{% endif %}
 
       <label for="estado">Estado <span style="color:#d00000">*</span></label>
       <select id="estado" name="estado" required class="{% if erros and erros.get('estado') %}erro-campo{% endif %}">
         <option value="">Selecione o estado</option>
-        {% for uf in estados %}
-          <option value="{{ uf }}" {% if estado == uf %}selected{% endif %}>{{ uf }}</option>
-        {% endfor %}
+        {% for uf in estados %}<option value="{{ uf }}" {% if estado == uf %}selected{% endif %}>{{ uf }}</option>{% endfor %}
       </select>
-      {% if erros and erros.get('estado') %}
-        <div class="mensagem-campo">{{ erros.get('estado') }}</div>
-      {% endif %}
+      {% if erros and erros.get('estado') %}<div class="mensagem-campo">{{ erros.get('estado') }}</div>{% endif %}
 
       <label for="cidade">Cidade <span style="color:#d00000">*</span></label>
-      <!-- Agora a lista é preenchida via JS a partir de /api/cidades -->
-      <select id="cidade" name="cidade" required
-              data-inicial="{{ cidade or '' }}"
+      <select id="cidade" name="cidade" required data-inicial="{{ cidade or '' }}"
               class="{% if erros and erros.get('cidade') %}erro-campo{% endif %}">
         <option value="">Selecione a cidade</option>
       </select>
-      {% if erros and erros.get('cidade') %}
-        <div class="mensagem-campo">{{ erros.get('cidade') }}</div>
-      {% endif %}
+      {% if erros and erros.get('cidade') %}<div class="mensagem-campo">{{ erros.get('cidade') }}</div>{% endif %}
 
       <label for="telefone">Telefone <span style="color:#d00000">*</span></label>
-      <input type="tel" id="telefone" name="telefone"
-             pattern="[0-9]{10,13}" placeholder="47999991234"
-             title="Digite apenas números, ex: 47999991234"
-             value="{{ telefone or '' }}" required
+      <input type="tel" id="telefone" name="telefone" pattern="[0-9]{10,13}" placeholder="47999991234"
+             title="Digite apenas números, ex: 47999991234" value="{{ telefone or '' }}" required
              class="{% if erros and erros.get('telefone') %}erro-campo{% endif %}">
-      {% if erros and erros.get('telefone') %}
-        <div class="mensagem-campo">{{ erros.get('telefone') }}</div>
-      {% endif %}
+      {% if erros and erros.get('telefone') %}<div class="mensagem-campo">{{ erros.get('telefone') }}</div>{% endif %}
 
       <label for="email">E-mail <span style="color:#d00000">*</span></label>
       <input type="email" id="email" name="email" value="{{ email or '' }}" required
              class="{% if erros and erros.get('email') %}erro-campo{% endif %}">
-      {% if erros and erros.get('email') %}
-        <div class="mensagem-campo">{{ erros.get('email') }}</div>
-      {% endif %}
+      {% if erros and erros.get('email') %}<div class="mensagem-campo">{{ erros.get('email') }}</div>{% endif %}
 
       <label for="senha">Senha <span style="color:#d00000">*</span></label>
       <input type="password" id="senha" name="senha" autocomplete="new-password" required>
@@ -309,14 +294,7 @@
   <footer>
     <div class="footer-container">
       <div class="footer-block">
-        <!-- Logo símbolo igual ao index -->
-        <img
-          src="{{ url_for('static', filename='logo_simbolo.png') }}"
-          alt="AcheTece"
-          class="footer-logo"
-          width="32"
-          height="32"
-        />
+        <img src="{{ url_for('static', filename='logo_simbolo.png') }}" alt="AcheTece" class="footer-logo" width="32" height="32"/>
         <div>
           <h4 class="footer-title">Sobre nós</h4>
           <ul class="footer-links">
@@ -329,7 +307,52 @@
       </div>
     </div>
   </footer>
-  
+
+  <!-- ===== Script: menu sanduíche (igual ao quem_somos) ===== -->
+  <script>
+    (function () {
+      function closeAll() {
+        document.querySelectorAll('.menu-wrap .menu-dropdown.open').forEach(m => {
+          m.classList.remove('open');
+          const b = m.closest('.menu-wrap')?.querySelector('.hamburger');
+          if (b) b.setAttribute('aria-expanded', 'false');
+        });
+      }
+      document.querySelectorAll('.menu-wrap').forEach(wrap => {
+        const btn  = wrap.querySelector('#hamburger');
+        const menu = wrap.querySelector('#menu-lateral');
+        const xBtn = wrap.querySelector('.menu-close');
+        if (!btn || !menu) return;
+
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const willOpen = !menu.classList.contains('open');
+          closeAll();
+          menu.classList.toggle('open', willOpen);
+          btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        });
+
+        xBtn?.addEventListener('click', e => {
+          e.stopPropagation();
+          menu.classList.remove('open');
+          btn.setAttribute('aria-expanded', 'false');
+        });
+
+        menu.addEventListener('click', e => e.stopPropagation());
+      });
+
+      document.addEventListener('click', closeAll);
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
+
+      // ajuda o dropdown no mobile a considerar a altura do header
+      function setNavH(){
+        const nav = document.querySelector('.navbar')?.offsetHeight || 0;
+        document.documentElement.style.setProperty('--nav-h', nav + 'px');
+      }
+      setNavH(); window.addEventListener('resize', setNavH);
+    })();
+  </script>
+
   <!-- ===== Script: cidades dinâmicas por UF ===== -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -346,8 +369,6 @@
           const resp = await fetch(`/api/cidades?uf=${encodeURIComponent(uf)}`);
           if (!resp.ok) throw new Error('Falha na resposta da API');
           const cidades = await resp.json();
-
-          // Monta as opções
           const options = ['<option value="">Selecione a cidade</option>']
             .concat(cidades.map(c => {
               const sel = (preselecionada && preselecionada === c) ? ' selected' : '';
@@ -360,17 +381,11 @@
         }
       }
 
-      // Atualiza cidades ao mudar o UF
-      ufSelect.addEventListener('change', () => {
-        carregarCidades(ufSelect.value);
-      });
+      ufSelect.addEventListener('change', () => { carregarCidades(ufSelect.value); });
 
-      // Pré-carrega se já veio UF selecionado (ex.: retorno por erro de validação)
       const ufInicial = ufSelect.value;
       const cidadeInicial = cidadeSelect.getAttribute('data-inicial') || '';
-      if (ufInicial) {
-        carregarCidades(ufInicial, cidadeInicial);
-      }
+      if (ufInicial) { carregarCidades(ufInicial, cidadeInicial); }
     });
   </script>
 </body>
