@@ -211,6 +211,16 @@
       html, body{ background: var(--site-bg) !important; color: var(--cinza-900); }
       .bg-site{ background: var(--site-bg) !important; }
     }
+
+    /* Espaçamento padronizado entre o pill e o título/frasão abaixo */
+    .pill{ display:inline-block; } /* garante que a margem funcione certinho */
+    .pill + .subtitulo,
+    .pill + .titulo,
+    .pill + h1,
+    .pill + h2{
+      margin-top:16px !important;  /* ajuste fino – deixe 14–18px se quiser calibrar */
+    }
+
   </style>
 </head>
 <body>
