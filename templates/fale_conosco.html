@@ -9,109 +9,98 @@
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
   
-  <!-- Usa seu CSS principal -->
+  <!-- CSS principal -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
 
   <style>
-    /* ===== Barra fixa no topo (logo à esquerda, ações à direita) ===== */
-    .topbar-fixa{
-      position: sticky;
-      top: 0;
-      z-index: 999;
-      background: #0f0714;
-      color: #fff;
-      padding: 6px 12px; /* altura enxuta */
-      border-bottom: 1px solid rgba(255,255,255,.1);
-    }
-    .topbar-wrap{
-      max-width: 1180px;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      min-height: 56px;
-    }
-    /* Logo APENAS imagem (sem link) */
-    .topbar-left img{
-      height: 48px;
-      width: auto;
-      display: block;
-      user-select: none;
-      -webkit-user-drag: none;
-      pointer-events: none; /* garante que não pareça clicável */
-    }
-    
-    .topbar-right{
-      display: flex;
-      align-items: center;
-      gap: 10px;
+    :root{
+      --roxo:#8A00FF;
+      --roxo-hover:#A63DFF;
+      --laranja:#F28C00;
+      --laranja-hover:#E57F00;
+
+      /* Fundo padrão (cinza 150) */
+      --site-bg:#F7F7FA;
+
+      --cinza-900:#111827;
+      --maxw:1180px;
     }
 
-    /* ===== Botões/ícones (base) ===== */
+    html, body{
+      background:var(--site-bg);
+      color:var(--cinza-900);
+      margin:0;
+      font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    }
+
+    /* ========= HEADER (igual ao quem_somos) ========= */
+    .navbar{
+      overflow:visible;
+      padding:6px 12px;
+      background:#fff;
+      border-bottom:1px solid #eee;
+      display:flex; align-items:center;
+    }
+    .header-left,.header-right{ display:flex; align-items:center; }
+    .header-right{ margin-left:auto; gap:10px; padding-right:12px; }
+    .logo{ display:inline-flex; align-items:center; }
+    .logo a{ display:inline-flex; align-items:center; text-decoration:none; }
+    .logo img{ display:block; height:auto; width:auto; }
+
+    /* Desktop: logo 44px (padrão) */
+    @media (min-width:901px){
+      .navbar .logo img{ height:44px; width:auto; }
+    }
+    /* Mobile: logo 54px (padrão) */
+    @media (max-width:900px){
+      .navbar{ padding-right:22px; min-height:56px; }
+      .navbar .logo img{ height:54px !important; width:auto !important; }
+      .header-right{ gap:8px; }
+    }
+
+    /* Ícones header */
     .icon-btn{
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 36px;
-      min-width: 36px;
-      padding: 6px 10px;
-      border-radius: 10px;
-      color: #fff;
-      background: #2a2535;
-      transition: transform .12s ease, background .2s ease, box-shadow .2s ease, border-color .2s ease;
-      border: 1px solid rgba(255,255,255,.35);
-      box-shadow: none;
+      display:inline-flex; align-items:center; justify-content:center;
+      width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px; background:#fff; cursor:pointer;
     }
-    .icon-btn:hover{
-      background: #403852;
-      transform: translateY(-1px);
-      box-shadow: none !important;
-      border-color: rgba(255,255,255,.5);
+    .icon{ width:20px; height:20px; color:#222; }
+
+    /* Menu sanduíche */
+    .menu-wrap{ position: relative; }
+    .hamburger{
+      display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
+      width:36px; height:36px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
+      position:relative; z-index:10002;
     }
-    .icon-btn svg{
-      width: 18px;
-      height: 18px;
-      display: block;
-      fill: currentColor;
+    .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
+    .hamburger span + span{ margin-top:4px; }
+    @media (max-width:900px){
+      .hamburger{ width:32px; height:32px; border-radius:9px; }
+      .hamburger span{ width:18px; }
     }
 
-    /* ===== Estilo específico: botão da casinha ===== */
-    .btn-home{
-      background: #000000;         /* fundo preto puro */
-      border: 3px solid #ffffff;   /* borda branca pura e mais grossa */
-      color: #ffffff;
+    .menu-dropdown{
+      background:#fff; border:1px solid #eaeaea; border-radius:12px;
+      z-index:10001; max-height:80vh; overflow:auto;
+      opacity:0; pointer-events:none; transform: translateY(8px) scale(.98);
+      transition: opacity .18s ease, transform .18s ease;
     }
-    .btn-home:hover{
-      background: #000000;         /* mantém preto no hover */
-      border: 2px solid #ffffff;   /* mantém borda branca grossa */
-      transform: translateY(-1px);
-      box-shadow: 0 3px 10px rgba(255,255,255,.25); /* leve brilho branco (opcional) */
-    }
-
-    /* ===== WhatsApp: sem borda, apenas fundo verde ===== */
-    .whatsapp-btn{
-      background: #25D366;
-      border: none;          /* remove a borda */
-      outline: none;         /* remove qualquer outline */
-      box-shadow: none !important;
-      color: #fff;
-    }
-    .whatsapp-btn:hover{
-      background: #1ebe5d;
-      transform: translateY(-1px);
-      box-shadow: none !important;
-    }
-    .whatsapp-btn svg{
-      width: 18px;
-      height: 18px;
-      fill: currentColor;
-      display: block;
+    .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
+    .menu-dropdown .menu-header{ display:flex; justify-content:flex-end; align-items:center; padding:8px 10px; }
+    .menu-dropdown .menu-close{ display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; background:#f0f2f5; border:0; border-radius:10px; cursor:pointer; }
+    .menu-dropdown .menu-item{ display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222; }
+    .menu-dropdown .menu-item:hover{ background:#f5f7ff; color:var(--roxo); border-radius:8px; }
+    @media (min-width:769px){ .menu-dropdown{ position:absolute; top:calc(100% + 8px); right:0; min-width:220px; transform-origin: top right; } }
+    @media (max-width:768px){
+      .menu-wrap{ position: static; }
+      .menu-dropdown{ position: fixed; top: calc(var(--nav-h, 64px) + 8px); left: 50%; transform: translate(-50%, 8px) scale(.98); width:max-content; max-width:90vw; min-width:160px; border-radius:14px; }
+      .menu-dropdown.open{ transform: translate(-50%,0) scale(1); }
     }
 
-    /* ===== Container principal ===== */
+    /* ========= CONTEÚDO ========= */
     .page-wrap{
-      max-width: 1180px;
+      max-width: var(--maxw);
       margin: 18px auto;
       padding: 0 16px 16px;
     }
@@ -125,7 +114,6 @@
       color: #555;
     }
 
-    /* ===== Grid: Mapa + Informações + Form ===== */
     .grid-contato{
       display: grid;
       grid-template-columns: 1.2fr .8fr;
@@ -170,7 +158,6 @@
     }
     .infos a:hover{ text-decoration: underline; }
 
-    /* ===== Bloco do formulário ===== */
     .box-form{
       margin-top: 18px;
       background: #fff;
@@ -191,45 +178,29 @@
     form.contato textarea{ min-height:140px; resize: vertical }
     .acoes{ margin-top:16px; display:flex; gap:10px; }
     .btn-enviar{
-      background:#7d00ff;          /* roxo do seu padrão (ajuste se preferir) */
-      color:#fff;
-      border:none;
-      border-radius:9999px;         /* pílula */
-      padding:12px 22px;            /* mais “cheio” como o da imagem 2 */
-      font-weight:700;
-      cursor:pointer;
-      line-height:1;                /* deixa o texto centralizado verticalmente */
-      display:inline-block;
+      background:#7d00ff; color:#fff; border:none; border-radius:9999px;
+      padding:12px 22px; font-weight:700; cursor:pointer; line-height:1; display:inline-block;
     }
-    .btn-enviar:hover{
-      background:#8f1aff;          /* leve variação no hover */
-    }
+    .btn-enviar:hover{ background:#8f1aff; }
 
     .msg-erro{
       margin:12px 0 0; padding:10px 12px; border-radius:8px;
       background:#ffe8e8; border:1px solid #ffc7c7; color:#8a1f1f; font-size:14px;
     }
 
-    /* ===== Faixa preta (CTA) + rodapé branco ===== */
+    /* ========= CTA & RODAPÉ ========= */
     .cta-bar{
-      background:#000;              /* preto puro, como na index */
-      color:#fff;
-      padding:20px 16px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:16px;
-      flex-wrap:wrap;
-      border-top:1px solid rgba(255,255,255,0.06);
-      margin-top:32px;
+      background:#000; color:#fff; padding:20px 16px;
+      display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+      border-top:1px solid rgba(255,255,255,0.06); margin-top:32px; justify-content:flex-start;
     }
-    .cta-text h3{ margin:0 0 4px 0;font-size:18px;font-weight:700;line-height:1.2; }
-    .cta-text p{ margin:0;font-size:15px;opacity:.9; }
-    .cta-btn{ display:inline-block;background:#fff;color:#2a2535;text-decoration:none;padding:10px 18px;border-radius:10px;font-weight:600;box-shadow:none !important;transition:transform .12s ease, background .2s ease, box-shadow .2s ease;white-space:nowrap; }
-    .cta-btn:hover{ background:#f2f2f5;transform:translateY(-1px);box-shadow:none !important; }
+    .cta-text h3{ margin:0 0 4px 0; font-size:18px; font-weight:700; line-height:1.2; }
+    .cta-text p{ margin:0; font-size:15px; opacity:.9; }
+    .cta-btn{ display:inline-block; background:#fff; color:#000; text-decoration:none; padding:10px 22px; border-radius:9999px; font-weight:700; }
+    .cta-btn:hover{ background:#f2f2f5; transform:translateY(-1px); }
 
     .site-footer{ background:#fff;color:#211a2a;border-top:1px solid #eee;padding:18px 16px 28px; }
-    .footer-inner{ max-width:1180px;margin:0 auto;display:grid;grid-template-columns:auto 1fr;gap:20px 28px;align-items:start; }
+    .footer-inner{ max-width:var(--maxw);margin:0 auto;display:grid;grid-template-columns:auto 1fr;gap:20px 28px;align-items:start; }
     .footer-brand img{ height:44px;width:auto;display:block; }
     .footer-cols{ display:grid;grid-template-columns: repeat(2, minmax(180px, 240px));gap:12px 28px; }
     .footer-col h4{ margin:0 0 8px 0;font-size:14px;font-weight:700;color:#251c33; }
@@ -238,121 +209,88 @@
     .footer-col a{ color:#2a2535;text-decoration:none;font-size:14px; }
     .footer-col a:hover{ text-decoration:underline; }
 
-    /* ===== Responsividade ===== */
+    /* ========= Responsividade ========= */
     @media (max-width: 900px){
       .grid-contato{ grid-template-columns: 1fr; }
       .mapa iframe{ height: 300px; }
-    }
-    @media (max-width: 720px){
       .footer-inner{ grid-template-columns:1fr; }
       .footer-cols{ grid-template-columns:1fr; }
-      .cta-text h3{ font-size:16px; }
-      .cta-text p{ font-size:14px; }
-    }
-    @media (max-width: 720px){
-      .topbar-left img{
-        height: 36px; }
     }
 
-    /* ===== Faixa preta (CTA alinhada à esquerda) ===== */
-    .cta-bar{
-      background:#000;              /* fundo preto */
-      color:#fff;
-      padding:20px 16px;
-      display:flex;
-      align-items:center;
-      gap:16px;                     /* espaço entre texto e botão */
-      flex-wrap:wrap;
-      border-top:1px solid rgba(255,255,255,0.06);
-      margin-top:32px;
-      justify-content:flex-start;   /* tudo alinhado à esquerda */
-    }
-  
-    .cta-text h3{
-      margin:0 0 4px 0;
-      font-size:18px;
-      font-weight:700;
-      line-height:1.2;
-    }
-  
-    .cta-text p{
-      margin:0;
-      font-size:15px;
-      opacity:.9;
-    }
-  
-    /* Botão estilo pílula */
-    .cta-btn{
-      display:inline-block;
-      background:#fff;
-      color:#000;
-      text-decoration:none;
-      padding:10px 22px;
-      border-radius:9999px;          /* pílula */
-      font-weight:700;
-      box-shadow:none !important;
-      transition:transform .12s ease, background .2s ease, box-shadow .2s ease;
-      white-space:nowrap;
-    }
-    .cta-btn:hover{
-      background:#f2f2f5;
-      transform:translateY(-1px);
-      box-shadow:none !important;
-    }
-
-    /* Tamanho padrão (desktop/tablet) do ícone home */
-    .btn-home svg {
-      width: 30px;
-      height: 30px;
-    }
-
-    /* ===== AJUSTE SOLICITADO: dobrar casinha no celular ===== */
-    @media (max-width: 900px){
-      /* aumenta o botão para comportar o ícone maior */
-      .topbar-right .icon-btn{
-        height: 48px;
-        min-width: 48px;
-        padding: 8px;
-        border-radius: 12px;
-      }
-      /* dobra o tamanho da casinha (~2x do padrão 18px) */
-      .topbar-right .btn-home svg{
-        width: 36px;
-        height: 36px;
-      }
+    /* Mantém cores claras mesmo em dark mode do SO */
+    @media (prefers-color-scheme: dark){
+      html, body{ background: var(--site-bg) !important; color: var(--cinza-900); }
     }
   </style>
 </head>
 <body>
 
-  <!-- Barra fixa no topo com logo e ícones -->
-  <div class="topbar-fixa">
-    <div class="topbar-wrap">
-      <div class="topbar-left">
-        <!-- Logo apenas imagem, sem link -->
-        <img src="{{ url_for('static', filename='Logo Branco_fundo preto.png') }}" alt="AcheTece">
-      </div>
-      <div class="topbar-right">
-        <!-- Casinha (Home) com fundo preto e borda branca grossa -->
-        <a href="{{ url_for('index') }}" class="icon-btn btn-home" aria-label="Página Inicial">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-            <path d="M3 9.5L12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5z"/>
-          </svg>
-        </a>
-        <!-- WhatsApp (independente, sem borda) -->
-        <a href="https://wa.me/5547996660450?text=Olá,%20quero%20falar%20com%20a%20AcheTece" target="_blank" rel="noopener" class="icon-btn whatsapp-btn" aria-label="WhatsApp">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true">
-            <path d="M16 .396c-8.837 0-16 7.163-16 16 0 2.819.734 5.566 2.126 7.996l-2.209 8.021 8.182-2.146c2.356 1.289 5.029 1.969 7.901 1.969h.001c8.837 0 16-7.163 16-16s-7.163-16-16-16zm0 29.104h-.001c-2.479 0-4.884-.66-6.975-1.907l-.5-.297-4.857 1.274 1.295-4.711-.324-.484c-1.295-1.937-1.979-4.2-1.979-6.545 0-6.617 5.383-12 12-12 3.2 0 6.209 1.248 8.477 3.515s3.523 5.277 3.523 8.477c0 6.617-5.383 12-12 12zm6.596-9.064c-.362-.181-2.145-1.057-2.479-1.176-.334-.124-.579-.181-.824.181s-.945 1.176-1.159 1.421c-.215.248-.423.277-.785.096-.362-.181-1.528-.562-2.91-1.791-1.076-.962-1.8-2.144-2.012-2.505-.215-.362-.023-.558.159-.739.164-.163.362-.423.543-.634.181-.21.241-.362.362-.604.124-.248.062-.466-.03-.647-.091-.181-.824-1.996-1.13-2.725-.297-.715-.6-.619-.824-.629-.215-.009-.466-.011-.715-.011s-.647.091-.985.466c-.334.372-1.295 1.266-1.295 3.084 0 1.819 1.326 3.575 1.511 3.822.181.248 2.611 3.981 6.327 5.58.885.381 1.575.609 2.113.781.889.283 1.698.243 2.34.148.714-.106 2.145-.876 2.447-1.72.302-.843.302-1.562.211-1.72-.091-.163-.334-.248-.696-.429z"/>
-          </svg>
-        </a>
+  <!-- ===== Cabeçalho (idêntico ao quem_somos) ===== -->
+  <header class="navbar">
+    <div class="header-left">
+      <a class="logo" href="{{ url_for('index') }}" aria-label="Página inicial">
+        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
+      </a>
+    </div>
+
+    <div class="header-right">
+      <!-- Botão casinha -->
+      <a href="{{ url_for('index') }}" class="icon-btn" aria-label="Página inicial" title="Página inicial">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 10.5 12 3l9 7.5"></path><path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path><path d="M9 21V12h6v9"></path>
+        </svg>
+      </a>
+
+      <!-- Menu sanduíche -->
+      <div class="menu-wrap">
+        <button class="hamburger" id="hamburger" type="button" aria-label="Abrir menu" aria-controls="menu-lateral" aria-haspopup="menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+
+        <nav class="menu-dropdown" id="menu-lateral" role="menu" aria-label="Menu rápido">
+          <div class="menu-header">
+            <span>Menu</span>
+            <button type="button" class="menu-close" aria-label="Fechar menu">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+              </svg>
+            </button>
+          </div>
+
+          <a href="{{ url_for('buscar_teares') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="16.65" y1="16.65" x2="21" y2="21"></line></svg>
+            <span>Buscar Tear</span>
+          </a>
+          <a href="{{ url_for('malharia_info') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.5 9a2.5 2.5 0 1 1 4.1 2A3 3 0 0 0 12 13.6"></path><circle cx="12" cy="17" r="1.2" fill="currentColor"></circle></svg>
+            <span>Como Funciona</span>
+          </a>
+          <a href="{{ url_for('login') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 20a8 8 0 0 1 16 0"></path></svg>
+            <span>Já sou cadastrado</span>
+          </a>
+          <a href="{{ url_for('quem_somos') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="8" r="1.5" fill="currentColor"></circle><path d="M11 11h2v6h-2z" fill="currentColor"></path></svg>
+            <span>Quem Somos</span>
+          </a>
+          <a href="{{ url_for('contato') }}" class="menu-item" role="menuitem" aria-current="page">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v12H4z"></path><path d="M22 20H2"></path><path d="M22 8l-10 6L2 8" fill="none"></path></svg>
+            <span>Fale conosco</span>
+          </a>
+          <a href="{{ url_for('termos') }}" class="menu-item" role="menuitem">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M8 8h8M8 12h8M8 16h5"></path></svg>
+            <span>Termos e Políticas</span>
+          </a>
+        </nav>
       </div>
     </div>
-  </div>
+  </header>
 
+  <!-- ===== Conteúdo ===== -->
   <div class="page-wrap">
     <h1 class="titulo">Fale Conosco</h1>
-
     <p class="sub">Envie uma mensagem. Preencha o formulário abaixo.</p>
+
     <section class="box-form">
       <h3>Envie sua mensagem</h3>
 
@@ -379,7 +317,7 @@
     </section>
   </div>
 
-  <!-- Faixa preta (CTA) -->
+  <!-- ===== Faixa preta (CTA) ===== -->
   <section class="cta-bar">
     <div class="cta-text">
       <h3>É proprietário de uma malharia?</h3>
@@ -388,7 +326,7 @@
     <a href="{{ url_for('malharia_info') }}" class="cta-btn">Cadastrar</a>
   </section>
 
-  <!-- Rodapé branco -->
+  <!-- ===== Rodapé ===== -->
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-brand">
@@ -409,5 +347,42 @@
     </div>
   </footer>
 
+  <!-- ===== Script do menu (igual ao quem_somos) ===== -->
+  <script>
+    (function () {
+      function closeAll() {
+        document.querySelectorAll('.menu-wrap .menu-dropdown.open').forEach(m => {
+          m.classList.remove('open');
+          const b = m.closest('.menu-wrap')?.querySelector('.hamburger');
+          if (b) b.setAttribute('aria-expanded', 'false');
+        });
+      }
+      document.querySelectorAll('.menu-wrap').forEach(wrap => {
+        const btn  = wrap.querySelector('#hamburger');
+        const menu = wrap.querySelector('#menu-lateral');
+        const xBtn = wrap.querySelector('.menu-close');
+        if (!btn || !menu) return;
+
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const willOpen = !menu.classList.contains('open');
+          closeAll();
+          menu.classList.toggle('open', willOpen);
+          btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        });
+
+        xBtn?.addEventListener('click', e => {
+          e.stopPropagation();
+          menu.classList.remove('open');
+          btn.setAttribute('aria-expanded', 'false');
+        });
+
+        menu.addEventListener('click', e => e.stopPropagation());
+      });
+
+      document.addEventListener('click', closeAll);
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
+    })();
+  </script>
 </body>
 </html>
