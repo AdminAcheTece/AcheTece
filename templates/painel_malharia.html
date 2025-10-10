@@ -13,30 +13,35 @@
         :root{ --roxo:#8A00FF; --roxo-hover:#A63DFF; }
         th, td { text-align: center; }
 
-        .btn-roxo{ display:inline-flex; align-items:center; justify-content:center;
+        .btn-roxo{
+          display:inline-flex; align-items:center; justify-content:center;
           height:40px; padding:0 16px; border:0; border-radius:9999px;
           background:var(--roxo); color:#fff; font-weight:700; font-size:14px;
-          text-decoration:none; cursor:pointer; transition:.2s; }
+          text-decoration:none; cursor:pointer; transition:.2s;
+        }
         .btn-roxo:hover{ background:var(--roxo-hover); transform:translateY(-1px); }
         .btn-roxo:focus-visible{ outline:3px solid rgba(138,0,255,.25); outline-offset:2px; }
 
-        .botao-editar{ background-color: var(--roxo); color:#fff; padding:6px 12px;
-          font-size:13px; border-radius:9999px; text-decoration:none; display:inline-block; }
+        .botao-editar{
+          background-color: var(--roxo); color:#fff; padding:6px 12px;
+          font-size:13px; border-radius:9999px; text-decoration:none; display:inline-block;
+        }
         .botao-editar:hover{ background-color: var(--roxo-hover); }
 
-        /* Botão mais compacto em ações, bom para mobile */
-        .botao-editar{ padding:6px 12px; font-size:13px; border-radius:9999px; }
-        @media (max-width: 560px){
-          .botao-editar{ padding:6px 10px; font-size:12px; }
-          .hero-actions{ gap:8px; } /* compacta a barra de ações do topo */
+        /* Novo: botão Excluir e wrapper das ações */
+        .acoes-wrap{ display:flex; justify-content:center; gap:8px; flex-wrap:wrap; }
+        .botao-excluir{
+          background:#e53935; color:#fff; padding:6px 12px; font-size:13px;
+          border-radius:9999px; border:0; cursor:pointer;
         }
-                
-        .btn-perigo{ display:inline-flex; align-items:center; justify-content:center;
-          height:32px; padding:0 12px; border:0; border-radius:9999px;
-          background:#e53935; color:#fff; font-weight:700; cursor:pointer; }
-        .btn-perigo:hover{ filter:brightness(.95); }
+        .botao-excluir:hover{ filter:brightness(.95); }
 
-        .table-wrapper{ overflow-x:auto; margin-top:18px; }
+        @media (max-width: 560px){
+          .botao-editar, .botao-excluir{ padding:6px 10px; font-size:12px; }
+          .hero-actions{ gap:8px; }
+        }
+
+        .table-wrapper{ overflow-x:auto; margin-top:8px; } /* mais perto do título */
         table{ width:100%; border-collapse:collapse; background-color:#fff; }
         th, td{ padding:10px; border:1px solid #ccc; }
 
@@ -49,10 +54,15 @@
         /* container geral */
         .container{ max-width:1100px; margin:0 auto; padding:0 16px 28px; }
 
-        /* Cabeçalho da seção da tabela */
-        .sec-title{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:10px; }
+        /* Cabeçalho da seção da tabela
+           — mais afastado do card de perfil e mais próximo da tabela */
+        .sec-title{
+          display:flex; align-items:center; justify-content:space-between; gap:12px;
+          margin-top:28px;          /* ↑ aumenta a distância do card de perfil */
+          margin-bottom:4px;        /* ↓ encurta distância da tabela */
+        }
 
-        /* === NOVO topo moderno (hero) === */
+        /* === Topo moderno (hero) === */
         .hero-card{
           max-width:1100px; margin:14px auto 8px;
           background:#fff; border:1px solid rgba(0,0,0,.06);
@@ -96,13 +106,11 @@
         }
         .btn-ghost:hover{ background:#efeff7; }
 
-        /* mini métricas discretas */
         .hero-metrics{ display:flex; gap:16px; margin-top:10px; }
         .hero-metric{ display:flex; flex-direction:column; align-items:flex-start; }
         .hero-metric strong{ font-size:1.05rem; }
         .hero-metric span{ font-size:.8rem; color:#777; }
 
-        /* ===== Novos botões: WhatsApp e Laranja ===== */
         .btn-whatsapp{
           display:inline-flex; align-items:center; justify-content:center;
           height:40px; padding:0 14px; border-radius:9999px; border:0;
@@ -168,7 +176,6 @@
             {% endif %}
           </div>
 
-          <!-- mini métricas (opcional) -->
           <div class="hero-metrics">
             <div class="hero-metric"><strong>0</strong><span>Buscas</span></div>
             <div class="hero-metric"><strong>0</strong><span>Contatos</span></div>
@@ -195,7 +202,7 @@
   </div>
   <!-- ===== /Topo moderno ===== -->
 
-  <!-- Cabeçalho da tabela (sem botão de teares) -->
+  <!-- Cabeçalho da tabela -->
   <div class="sec-title">
     <h2>Teares Cadastrados:</h2>
     <a href="{{ url_for('teares_form') }}" class="btn-roxo">+ Cadastrar Tear</a>
@@ -221,19 +228,25 @@
             <td>{{ tear.diametro if tear.diametro is not none else '-' }}</td>
             <td>{{ tear.alimentadores if tear.alimentadores is not none else '-' }}</td>
             <td>{{ 'Sim' if (tear.elastano or tear.kit_elastano) else 'Não' }}</td>
-            <td><a href="{{ url_for('editar_tear', id=tear.id) }}" class="botao-editar">Editar</a></td>
+            <td>
+              <div class="acoes-wrap">
+                <a href="{{ url_for('editar_tear', id=tear.id) }}" class="botao-editar">Editar</a>
+                <form method="POST" action="{{ url_for('excluir_tear', id=tear.id) }}"
+                      onsubmit="return confirm('Confirma excluir este tear? Essa ação é irreversível.');" style="display:inline">
+                  <button type="submit" class="botao-excluir">Excluir</button>
+                </form>
+              </div>
+            </td>
           </tr>
           {% endfor %}
         {% else %}
           <tr>
-            <td colspan="7">Nenhum tear cadastrado ainda.</td>
+            <td colspan="8">Nenhum tear cadastrado ainda.</td>
           </tr>
         {% endif %}
       </tbody>
     </table>
   </div>
-
-  {# Removido o aviso sobre DEMO/botão de teares #}
 </div>
 </body>
 </html>
