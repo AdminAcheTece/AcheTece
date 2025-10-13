@@ -214,8 +214,8 @@
     <!-- Perfil (abre menu) -->
     <button class="profile-pill" id="profileToggle" type="button" aria-haspopup="menu" aria-expanded="false" title="Abrir menu do perfil">
       <span class="avatar">
-        {% if empresa and empresa.foto_url %}
-          <img src="{{ empresa.foto_url }}" alt="Foto do perfil">
+        {% if foto_url %}
+          <img src="{{ foto_url }}" alt="Foto do perfil">
         {% else %}
           <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#6a5acd" fill="none" stroke-width="1.8"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7" stroke="#6a5acd" fill="none" stroke-width="1.8"></path></svg>
         {% endif %}
@@ -229,8 +229,8 @@
   <nav class="profile-menu" id="profileMenu" role="menu" aria-label="Menu de perfil">
     <div class="pm-header">
       <span class="avatar">
-        {% if empresa and empresa.foto_url %}
-          <img src="{{ empresa.foto_url }}" alt="Foto do perfil">
+        {% if foto_url %}
+          <img src="{{ foto_url }}" alt="Foto do perfil">
         {% else %}
           <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#6a5acd" fill="none" stroke-width="1.8"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7" stroke="#6a5acd" fill="none" stroke-width="1.8"></path></svg>
         {% endif %}
@@ -301,8 +301,8 @@
     <div class="hero-col-left">
       <div class="hero-ident">
         <div class="hero-avatar" aria-label="Foto do perfil" title="Clique no lápis para alterar a foto">
-          {% if empresa and empresa.foto_url %}
-            <img src="{{ empresa.foto_url }}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+          {% if foto_url %}
+            <img src="{{ foto_url }}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
           {% else %}
             <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path></svg>
           {% endif %}
