@@ -1,140 +1,140 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <title>Painel da Malharia</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>Painel da Malharia</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
 
-    <style>
-        :root{ --roxo:#8A00FF; --roxo-hover:#A63DFF; }
-        th, td { text-align: center; }
+  <style>
+    :root{
+      --roxo:#8A00FF; --roxo-hover:#A63DFF;
+      --text:#1f1f1f; --muted:#6b6b6b;
+      --line:#e6e6eb; --line-strong:#d8d8de;
+      --bg-soft:#f7f7fb; --bg:#ffffff;
+      --success:#2e7d32; --warn:#b85e00; --danger:#b00020;
+    }
 
-        .btn-roxo{
-          display:inline-flex; align-items:center; justify-content:center;
-          height:40px; padding:0 16px; border:0; border-radius:9999px;
-          background:var(--roxo); color:#fff; font-weight:700; font-size:14px;
-          text-decoration:none; cursor:pointer; transition:.2s;
-        }
-        .btn-roxo:hover{ background:var(--roxo-hover); transform:translateY(-1px); }
-        .btn-roxo:focus-visible{ outline:3px solid rgba(138,0,255,.25); outline-offset:2px; }
+    /* util */
+    .sr-only{ position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0; }
 
-        .botao-editar{
-          background-color: var(--roxo); color:#fff; padding:6px 12px;
-          font-size:13px; border-radius:9999px; text-decoration:none; display:inline-block;
-        }
-        .botao-editar:hover{ background-color: var(--roxo-hover); }
+    body{ color:var(--text); }
+    th, td{ text-align:center; }
 
-        /* Novo: botão Excluir e wrapper das ações */
-        .acoes-wrap{ display:flex; justify-content:center; gap:8px; flex-wrap:wrap; }
-        .botao-excluir{
-          background:#e53935; color:#fff; padding:6px 12px; font-size:13px;
-          border-radius:9999px; border:0; cursor:pointer;
-        }
-        .botao-excluir:hover{ filter:brightness(.95); }
+    /* CTA primário = roxo */
+    .btn-roxo{
+      display:inline-flex;align-items:center;justify-content:center;
+      height:40px;padding:0 16px;border:0;border-radius:9999px;
+      background:var(--roxo);color:#fff;font-weight:700;font-size:14px;
+      text-decoration:none;cursor:pointer;transition:.2s;
+    }
+    .btn-roxo:hover{ background:var(--roxo-hover); transform:translateY(-1px); }
+    .btn-roxo:focus-visible{ outline:3px solid rgba(138,0,255,.25); outline-offset:2px; }
 
-        @media (max-width: 560px){
-          .botao-editar, .botao-excluir{ padding:6px 10px; font-size:12px; }
-          .hero-actions{ gap:8px; }
-        }
+    /* Secundários neutros */
+    .btn-outline{
+      display:inline-flex;align-items:center;justify-content:center;
+      height:40px;padding:0 14px;border-radius:9999px;
+      border:1.5px solid var(--line); background:#fff;color:#1f1f1f;
+      font-weight:700;text-decoration:none; transition:.18s;
+    }
+    .btn-outline:hover{ background:#fafafa; }
+    .btn-outline:focus-visible{ outline:3px solid rgba(0,0,0,.08); outline-offset:2px; }
 
-        .table-wrapper{ overflow-x:auto; margin-top:8px; } /* mais perto do título */
-        table{ width:100%; border-collapse:collapse; background-color:#fff; }
-        th, td{ padding:10px; border:1px solid #ccc; }
+    .btn-ghost{
+      display:inline-flex;align-items:center;justify-content:center;
+      height:40px;padding:0 14px;border-radius:9999px;border:0;
+      background:var(--bg-soft);color:#2a2a2a;font-weight:700;text-decoration:none;transition:.18s;
+    }
+    .btn-ghost:hover{ background:#efeff7; }
 
-        .logo{ text-align:center; margin-top:12px; }
-        .logo img{ max-height:72px; }
-        .logo a{ display:inline-flex; align-items:center; text-decoration:none; }
+    /* Ações por ícone (tabela) */
+    .acoes-wrap{ display:flex;justify-content:center;gap:8px;flex-wrap:wrap; }
+    .icon-btn{
+      width:36px;height:36px;border-radius:9999px;border:1px solid var(--line);
+      background:#fff;display:inline-flex;align-items:center;justify-content:center;
+      cursor:pointer;transition:.18s;
+    }
+    .icon-btn:hover{ background:var(--bg-soft); }
+    .icon-btn:focus-visible{ outline:3px solid rgba(138,0,255,.25); outline-offset:2px; }
+    .icon-btn svg{ width:18px;height:18px; stroke:#555; fill:none; stroke-width:1.8; }
+    .icon-btn.edit:hover svg{ stroke:var(--roxo); }
+    .icon-btn.danger:hover svg{ stroke:var(--danger); }
 
-        h1.titulo{ text-align:center; margin:6px 0 4px; }
-        h2{ margin:0; }
+    @media (max-width:560px){
+      .icon-btn{ width:40px;height:40px; }
+      .hero-actions{ gap:8px; }
+    }
 
-        /* container geral */
-        .container{ max-width:1100px; margin:0 auto; padding:0 16px 28px; }
+    /* Tabela */
+    .table-wrapper{ overflow-x:auto; margin-top:8px; }
+    table{ width:100%; border-collapse:collapse; background:#fff; }
+    thead th{ background:#fafafa; }
+    th, td{ padding:10px; border:1px solid var(--line); }
+    tbody tr:hover{ background:#fcfcff; }
 
-        /* Cabeçalho da seção da tabela
-           — mais afastado do card de perfil e mais próximo da tabela */
-        .sec-title{
-          display:flex; align-items:center; justify-content:space-between; gap:12px;
-          margin-top:28px;          /* ↑ aumenta a distância do card de perfil */
-          margin-bottom:4px;        /* ↓ encurta distância da tabela */
-        }
+    /* topo */
+    .logo{ text-align:center; margin-top:12px; }
+    .logo img{ max-height:72px; }
+    .logo a{ display:inline-flex; align-items:center; text-decoration:none; }
 
-        /* === Topo moderno (hero) === */
-        .hero-card{
-          max-width:1100px; margin:14px auto 8px;
-          background:#fff; border:1px solid rgba(0,0,0,.06);
-          border-radius:22px; padding:18px 18px;
-          box-shadow:0 8px 28px rgba(0,0,0,.06);
-          display:grid; grid-template-columns:1.3fr 1fr; gap:20px; align-items:center;
-        }
-        @media (max-width: 920px){ .hero-card{ grid-template-columns:1fr; } }
-        
-        .hero-ident{ display:flex; gap:14px; align-items:flex-start; min-width:0; }
-        .hero-avatar{
-          width:64px; height:64px; border-radius:50%;
-          background: radial-gradient(120% 120% at 10% 10%, #f1efff, #efe7ff 60%, #e9e3ff 100%);
-          display:grid; place-items:center; flex:0 0 64px; border:1px solid #eee;
-        }
-        .hero-avatar svg{ width:30px; height:30px; stroke:var(--roxo); fill:none; stroke-width:1.8; }
-        .hero-nome{ font-size:1.25rem; font-weight:800; color:#161616; line-height:1.2; }
-        .hero-email{ color:#6b6b6b; font-size:.95rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block; }
-        
-        .hero-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
-        .chip{
-          display:inline-flex; align-items:center; gap:8px; height:32px; padding:0 12px;
-          border-radius:999px; font-weight:700; font-size:.85rem; border:1px solid transparent;
-        }
-        .chip-ativa{ background:#e8f7ed; color:#137a2a; }
-        .chip-pendente{ background:#fff3e7; color:#b85e00; }
-        .chip-link{ background:#f4f0ff; color:#5f0adf; border-color:#ece6ff; text-decoration:none; }
-        
-        .hero-actions{ display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; }
-        .btn-outline{
-          display:inline-flex; align-items:center; justify-content:center;
-          height:40px; padding:0 14px; border-radius:9999px;
-          border:1.5px solid #e3e3e7; background:#fff; color:#1f1f1f; font-weight:700; text-decoration:none;
-        }
-        .btn-outline:hover{ background:#fafafa; }
-        
-        .btn-ghost{
-          display:inline-flex; align-items:center; justify-content:center;
-          height:40px; padding:0 14px; border-radius:9999px; border:0;
-          background:#f7f7fb; color:#2a2a2a; font-weight:700; text-decoration:none;
-        }
-        .btn-ghost:hover{ background:#efeff7; }
+    h1.titulo{ text-align:center; margin:6px 0 4px; }
+    h2{ margin:0; }
 
-        .hero-metrics{ display:flex; gap:16px; margin-top:10px; }
-        .hero-metric{ display:flex; flex-direction:column; align-items:flex-start; }
-        .hero-metric strong{ font-size:1.05rem; }
-        .hero-metric span{ font-size:.8rem; color:#777; }
+    .container{ max-width:1100px; margin:0 auto; padding:0 16px 28px; }
 
-        .btn-whatsapp{
-          display:inline-flex; align-items:center; justify-content:center;
-          height:40px; padding:0 14px; border-radius:9999px; border:0;
-          background:var(--verde-whats, #25D366); color:#fff; font-weight:700; text-decoration:none;
-        }
-        .btn-whatsapp:hover{ filter:brightness(.95); transform:translateY(-1px); }
-        .btn-whatsapp:focus-visible{ outline:3px solid rgba(37,211,102,.35); outline-offset:2px; }
+    .sec-title{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      margin-top:28px; margin-bottom:4px;
+    }
 
-        .btn-laranja{
-          display:inline-flex; align-items:center; justify-content:center;
-          height:40px; padding:0 14px; border-radius:9999px; border:0;
-          background:var(--laranja, #ff7a00); color:#fff; font-weight:700; text-decoration:none;
-        }
-        .btn-laranja:hover{ filter:brightness(.95); transform:translateY(-1px); }
-        .btn-laranja:focus-visible{ outline:3px solid rgba(255,122,0,.30); outline-offset:2px; }
-    </style>
+    /* hero */
+    .hero-card{
+      max-width:1100px; margin:14px auto 8px;
+      background:#fff; border:1px solid rgba(0,0,0,.06);
+      border-radius:22px; padding:18px 18px;
+      box-shadow:0 8px 28px rgba(0,0,0,.05);
+      display:grid; grid-template-columns:1.3fr 1fr; gap:20px; align-items:center;
+    }
+    @media (max-width:920px){ .hero-card{ grid-template-columns:1fr; } }
+
+    .hero-ident{ display:flex; gap:14px; align-items:flex-start; min-width:0; }
+    .hero-avatar{
+      width:64px; height:64px; border-radius:50%;
+      background: radial-gradient(120% 120% at 10% 10%, #f4f3ff, #f0ecff 60%, #ebe6ff 100%);
+      display:grid; place-items:center; flex:0 0 64px; border:1px solid #eee;
+    }
+    .hero-avatar svg{ width:30px; height:30px; stroke:var(--roxo); fill:none; stroke-width:1.8; }
+    .hero-nome{ font-size:1.25rem; font-weight:800; color:#161616; line-height:1.2; }
+    .hero-email{ color:var(--muted); font-size:.95rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block; }
+
+    .hero-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+    .chip{
+      display:inline-flex; align-items:center; gap:8px; height:32px; padding:0 12px;
+      border-radius:999px; font-weight:700; font-size:.85rem; border:1px solid var(--line);
+      background:#fff; color:#333;
+    }
+    .chip .dot{ width:8px;height:8px;border-radius:50%; }
+    .dot-success{ background:var(--success); }
+    .dot-warn{ background:var(--warn); }
+    .chip-link{ background:#fff; color:var(--roxo); border-color:#ece6ff; text-decoration:none; }
+
+    .hero-actions{ display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; }
+
+    .hero-metrics{ display:flex; gap:16px; margin-top:10px; }
+    .hero-metric{ display:flex; flex-direction:column; align-items:flex-start; }
+    .hero-metric strong{ font-size:1.05rem; }
+    .hero-metric span{ font-size:.8rem; color:#777; }
+  </style>
 </head>
 <body>
 
 <header>
   <div class="logo">
-    <!-- Logo agora é link para a home -->
-    <a href="{{ url_for('index') }}" class="" aria-label="Página inicial" title="Página inicial">
+    <a href="{{ url_for('index') }}" aria-label="Página inicial" title="Página inicial">
       <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
     </a>
   </div>
@@ -153,7 +153,7 @@
   <h1 class="titulo">Painel da Malharia</h1>
   <p style="text-align:center;">Bem-vindo(a), <strong>{{ nome_empresa }}</strong>!</p>
 
-  <!-- ===== Topo moderno ===== -->
+  <!-- ===== Topo ===== -->
   <div class="hero-card">
     <!-- Identidade + status -->
     <div class="hero-col-left">
@@ -168,14 +168,14 @@
           <div class="hero-chips">
             {% if empresa %}
               {% if _assin_ativa %}
-                <span class="chip chip-ativa">Assinatura ativa</span>
+                <span class="chip"><span class="dot dot-success"></span>Assinatura ativa</span>
                 <a class="chip chip-link" href="{{ url_for('checkout', plano=empresa.plano or 'mensal') }}">Gerenciar pagamento</a>
               {% else %}
-                <span class="chip chip-pendente">Assinatura pendente</span>
+                <span class="chip"><span class="dot dot-warn"></span>Assinatura pendente</span>
                 <a class="chip chip-link" href="{{ url_for('checkout', plano='mensal') }}">Ativar plano (Mensal)</a>
               {% endif %}
             {% else %}
-              <span class="chip chip-pendente">Cadastre sua malharia</span>
+              <span class="chip"><span class="dot dot-warn"></span>Cadastre sua malharia</span>
               <a class="chip chip-link" href="{{ url_for('cadastrar_empresa') }}">Criar cadastro</a>
             {% endif %}
           </div>
@@ -188,7 +188,7 @@
       </div>
     </div>
 
-    <!-- Ações rápidas -->
+    <!-- Ações -->
     <div class="hero-col-right">
       <div class="hero-actions">
         {% if empresa %}
@@ -196,22 +196,22 @@
         {% else %}
           <a href="{{ url_for('cadastrar_empresa') }}" class="btn-roxo">Cadastrar minha malharia</a>
         {% endif %}
-        <a href="{{ url_for('fale_conosco') }}" class="btn-whatsapp">Suporte AcheTece</a>
-        <a href="{{ url_for('logout') }}" class="btn-laranja" title="Encerrar sessão">Sair</a>
+        <a href="{{ url_for('fale_conosco') }}" class="btn-outline" title="Falar com o suporte">Suporte AcheTece</a>
+        <a href="{{ url_for('logout') }}" class="btn-outline" title="Encerrar sessão">Sair</a>
         {% if session.get('admin') %}
           <a href="{{ url_for('admin_empresas') }}" class="btn-ghost">Admin</a>
         {% endif %}
       </div>
     </div>
   </div>
-  <!-- ===== /Topo moderno ===== -->
+  <!-- ===== /Topo ===== -->
 
   <!-- Cabeçalho da tabela -->
   <div class="sec-title">
     <h2>Teares Cadastrados:</h2>
     <a href="{{ url_for('teares_form') }}" class="btn-roxo">+ Cadastrar Tear</a>
   </div>
-    
+
   <div class="table-wrapper">
     <table>
       <thead>
@@ -234,10 +234,18 @@
             <td>{{ 'Sim' if (tear.elastano or tear.kit_elastano) else 'Não' }}</td>
             <td>
               <div class="acoes-wrap">
-                <a href="{{ url_for('editar_tear', id=tear.id) }}" class="botao-editar">Editar</a>
+                <!-- Editar -->
+                <a href="{{ url_for('editar_tear', id=tear.id) }}" class="icon-btn edit" title="Editar tear" aria-label="Editar">
+                  <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                  <span class="sr-only">Editar</span>
+                </a>
+                <!-- Excluir -->
                 <form method="POST" action="{{ url_for('excluir_tear', id=tear.id) }}"
                       onsubmit="return confirm('Confirma excluir este tear? Essa ação é irreversível.');" style="display:inline">
-                  <button type="submit" class="botao-excluir">Excluir</button>
+                  <button type="submit" class="icon-btn danger" title="Excluir tear" aria-label="Excluir">
+                    <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path></svg>
+                    <span class="sr-only">Excluir</span>
+                  </button>
                 </form>
               </div>
             </td>
