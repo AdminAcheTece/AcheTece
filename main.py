@@ -654,6 +654,19 @@ def _otp_validate(email: str, code: str) -> tuple[bool, str]:
     db.session.commit()
     return True, "Código validado com sucesso."
 
+import os, time  # (se ainda não tiver)
+
+def _foto_url_runtime(emp_id: int) -> str | None:
+    """Procura emp_<id>.(png|jpg|jpeg|webp|gif) e devolve a URL com cache-buster."""
+    base = os.path.join(app.root_path, "static", "uploads", "perfil")
+    for ext in ("png", "jpg", "jpeg", "webp", "gif"):
+        fn = f"emp_{emp_id}.{ext}"
+        path = os.path.join(base, fn)
+        if os.path.exists(path):
+            v = int(os.path.getmtime(path))
+            return url_for("static", filename=f"uploads/perfil/{fn}") + f"?v={v}"
+    return None
+
 # --------------------------------------------------------------------
 # Fallback de templates (evita 500 se faltar HTML)
 # --------------------------------------------------------------------
@@ -1065,6 +1078,9 @@ def painel_malharia():
     notif_count, notif_lista = _get_notificacoes(emp.id)
     chat_nao_lidos = 0  # ajuste aqui se tiver chat real
 
+    # tenta usar o que veio do BD; se vazio, detecta no filesystem
+    foto_url = getattr(emp, "foto_url", None) or _foto_url_runtime(emp.id)
+    
     return render_template(
         'painel_malharia.html',
         empresa=emp,
@@ -1072,10 +1088,10 @@ def painel_malharia():
         assinatura_ativa=is_ativa,
         checklist=checklist,
         step=step,
-        # --- adicionados ---
         notificacoes=notif_count,
         notificacoes_lista=notif_lista,
-        chat_nao_lidos=chat_nao_lidos
+        chat_nao_lidos=chat_nao_lidos,
+        foto_url=foto_url,          # <<< AQUI
     )
 
 # --- CADASTRAR / LISTAR / SALVAR TEARES (SEM GATE DE ASSINATURA) ---
