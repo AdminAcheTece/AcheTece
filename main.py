@@ -25,6 +25,7 @@ import random
 from jinja2 import TemplateNotFound
 import resend  # biblioteca do Resend
 from flask import session
+from urllib.parse import urlparse
 
 # SMTP direto (fallback)
 import smtplib, ssl
@@ -1261,21 +1262,28 @@ def editar_tear(id):
     teares = Tear.query.filter_by(empresa_id=emp.id).order_by(Tear.id.desc()).all()
     return render_template("editar_tear.html", empresa=emp, tear=tear, teares=teares)
 
-@app.post("/excluir_tear/<int:id>")
+@app.post("/tear/<int:id>/excluir")
 def excluir_tear(id):
-    emp, _user = _get_empresa_usuario_da_sessao()
-    if not emp:
-        flash("Faça login para continuar.", "warning")
-        return redirect(url_for("login"))
-
+    empresa = _pegar_empresa_do_usuario(required=True)
+    if not isinstance(empresa, Empresa):
+        return empresa
     tear = Tear.query.get_or_404(id)
-    if tear.empresa_id != emp.id:
+    if tear.empresa_id != empresa.id:
         abort(403)
 
     db.session.delete(tear)
     db.session.commit()
-    flash("Tear excluído.")
-    return redirect(url_for("teares_form"))
+    flash("Tear excluído com sucesso!", "success")
+
+    next_url = request.args.get("next") or request.form.get("next")
+    if next_url:
+        try:
+            # evita open redirect
+            if urlparse(next_url).netloc in ("", request.host):
+                return redirect(next_url)
+        except Exception:
+            pass
+    return redirect(url_for("painel_malharia"))
 
 # --------------------------------------------------------------------
 # Exportação CSV (usa filtros da home)
