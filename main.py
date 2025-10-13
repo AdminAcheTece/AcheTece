@@ -27,6 +27,7 @@ import resend  # biblioteca do Resend
 from flask import session
 from urllib.parse import urlparse
 from werkzeug.utils import secure_filename
+import time
 
 # SMTP direto (fallback)
 import smtplib, ssl
@@ -1513,7 +1514,7 @@ def perfil_foto_upload():
 
     # cache-buster para a imagem nova aparecer na hora
     v = int(time.time())
-    emp.foto_url = url_for("static", filename=f"uploads/perfil/{final_name}") + f"?v={v}"
+    emp.foto_url = url_for("static", filename=f"uploads/perfil/{final_name}") + f"?v={int(time.time())}"
     db.session.commit()
 
     flash("Foto atualizada com sucesso!", "success")
