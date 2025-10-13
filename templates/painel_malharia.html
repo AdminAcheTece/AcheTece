@@ -278,6 +278,7 @@
 
   <!-- form oculto para upload de foto -->
   <form id="fotoForm" action="{{ url_for('perfil_foto_upload') }}" method="POST" enctype="multipart/form-data" class="sr-only">
+    {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
     <input type="file" id="fotoInput" name="foto" accept="image/*">
   </form>
 </header>
@@ -423,17 +424,30 @@
     menu?.addEventListener('click', (e)=> e.stopPropagation());
     npanel?.addEventListener('click', (e)=> e.stopPropagation());
 
-    // upload de foto via LÁPIS
+    // ===== upload de foto via LÁPIS (robusto) =====
     const fotoForm  = document.getElementById('fotoForm');
     const fotoInput = document.getElementById('fotoInput');
     const pencil    = document.getElementById('pencilToggle');
 
-    function abrirSeletor(){ fotoInput?.click(); }
-    pencil?.addEventListener('click', function(e){ e.stopPropagation(); abrirSeletor(); });
+    function abrirSeletor(){
+      if (!fotoInput) return;
+      // reset para garantir que escolher o MESMO arquivo dispare "change"
+      fotoInput.value = "";
+      fotoInput.click();
+    }
+    pencil?.addEventListener('click', function(e){
+      e.stopPropagation();
+      abrirSeletor();
+    });
 
     fotoInput?.addEventListener('change', function(){
-      if(this.files && this.files[0]){
-        fotoForm.submit();
+      if (this.files && this.files.length > 0){
+        // requestSubmit respeita validações/CSRF melhor que submit()
+        if (fotoForm?.requestSubmit) {
+          fotoForm.requestSubmit();
+        } else {
+          fotoForm?.submit();
+        }
       }
     });
   })();
