@@ -1480,6 +1480,31 @@ def editar_empresa():
     session['empresa_apelido'] = empresa.apelido or empresa.nome or empresa.email.split('@')[0]
     return redirect(url_for('editar_empresa', ok=1))
 
+# --- ROTA DA PERFORMANCE (adicione no main.py) ---
+@app.route('/performance', methods=['GET'], endpoint='performance_acesso')
+def performance_acesso():
+    emp, u = _get_empresa_usuario_da_sessao()
+    if not emp or not u:
+        return redirect(url_for('login'))
+
+    # Exemplo estático; troque por dados reais depois
+    series = [
+        {"data": "2025-10-01", "visitas": 4, "contatos": 1},
+        {"data": "2025-10-02", "visitas": 7, "contatos": 3},
+        {"data": "2025-10-03", "visitas": 2, "contatos": 0},
+    ]
+    total_visitas  = sum(x["visitas"] for x in series)
+    total_contatos = sum(x["contatos"] for x in series)
+
+    return render_template(
+        'performance_acesso.html',
+        empresa=emp,
+        series=series,
+        total_visitas=total_visitas,
+        total_contatos=total_contatos
+    )
+
+
 # --------------------------------------------------------------------
 # Admin: empresas
 # --------------------------------------------------------------------
