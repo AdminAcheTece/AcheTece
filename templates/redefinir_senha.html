@@ -1,95 +1,264 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <title>Redefinir Senha</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- Ícone da aba (favicon) -->
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
-    
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f9f9f9;
-            margin: 0;
-            padding: 40px 20px;
-        }
+  <meta charset="UTF-8">
+  <title>Redefinir Senha - AcheTece</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        .container {
-            max-width: 400px;
-            margin: auto;
-            background: #fff;
-            padding: 32px;
-            border-radius: 12px;
-            box-shadow: none !important;
-        }
+  <!-- Favicons -->
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
 
-        h2 {
-            text-align: center;
-            margin-bottom: 20px;
-            font-size: 22px;
-        }
+  <!-- CSS base (opcional) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
 
-        .mensagem {
-            background-color: #ffe0e0;
-            color: #900;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 16px;
-            font-size: 14px;
-            text-align: center;
-        }
+  <style>
+    :root{
+      --roxo:#8A00FF;
+      --roxo-hover:#A63DFF;
+      --laranja:#F28C00;
+      --laranja-hover:#E57F00;
+      --site-bg:#F7F7FA; /* cinza 150 padronizado */
+    }
 
-        form input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 16px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            font-size: 14px;
-        }
+    html, body{
+      margin:0;
+      background:var(--site-bg);
+      font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      color:#1e1b2b;
+    }
 
-        button {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            background-color: #8A00FF;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-        }
+    /* ===== NAVBAR (padrão) ===== */
+    .navbar{
+      overflow:visible; padding:6px 12px;
+      background:#fff; border-bottom:1px solid #eee;
+      display:flex; align-items:center;
+    }
+    .header-left,.header-right{ display:flex; align-items:center; }
+    .header-right{ margin-left:auto; gap:20px; }
+    .logo a{ display:inline-flex; align-items:center; text-decoration:none; }
+    .logo img{ height:44px; width:auto; display:block; }
+    @media (max-width:900px){
+      .logo img{ height:54px; }
+    }
 
-        button:hover {
-            background-color: #002a80;
-        }
+    .icon-btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px;
+      background:#fff; cursor:pointer; transition:box-shadow .2s, transform .02s, background .2s;
+    }
+    .icon-btn:hover{ background:#f7f7f7; }
+    .icon{ width:20px; height:20px; color:#222; }
 
-        .voltar {
-            display: block;
-            text-align: center;
-            margin-top: 20px;
-            font-size: 14px;
-            text-decoration: none;
-            color: #555;
-        }
-    </style>
+    .menu-wrap{ position:relative; }
+    .hamburger{
+      display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
+      width:36px; height:36px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
+      box-shadow:none !important; cursor:pointer; position:relative; z-index:10002;
+    }
+    .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
+    .hamburger span + span{ margin-top:4px; }
+
+    .menu-dropdown{
+      background:#fff; border:1px solid #eaeaea; border-radius:12px; box-shadow:none !important;
+      z-index:10001; max-height:80vh; overflow:auto;
+      opacity:0; pointer-events:none; transform: translateY(8px) scale(.98);
+      transition: opacity .18s ease, transform .18s ease;
+    }
+    .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
+
+    .menu-dropdown .menu-header{ display:flex; justify-content:flex-end; align-items:center; padding:8px 10px; }
+    .menu-dropdown .menu-close{
+      display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px;
+      background:#f0f2f5; border:0; border-radius:10px; cursor:pointer;
+    }
+    .menu-dropdown .menu-item{
+      font-weight:400; display:flex; align-items:center; gap:10px; padding:10px 12px;
+      text-decoration:none; color:#222;
+    }
+    .menu-dropdown .menu-item:hover{ background:#f5f7ff; color:var(--roxo); border-radius:8px; }
+
+    @media (min-width:769px){
+      .menu-dropdown{ position:absolute; top:calc(100% + 8px); right:0; min-width:220px; max-width:320px; padding-right:2px; transform-origin: top right; }
+    }
+    @media (max-width:768px){
+      .menu-wrap{ position: static; }
+      .menu-dropdown{
+        position: fixed; top: calc(var(--nav-h, 64px) + 8px); left: 50%;
+        width:max-content; max-width:90vw; min-width:160px; padding:4px 0;
+        max-height: calc(100vh - var(--nav-h, 64px) - 24px);
+        transform: translate(-50%, 8px) scale(.98); transform-origin: top center;
+        border-radius:14px; -webkit-overflow-scrolling:touch;
+      }
+      .menu-dropdown.open{ transform: translate(-50%,0) scale(1); }
+    }
+
+    /* ===== LAYOUT do card ===== */
+    .wrap{
+      min-height:calc(100vh - 110px);
+      display:flex; justify-content:center;
+      padding:24px 16px;
+    }
+    .card{
+      width:100%; max-width:520px;
+      background:#fff; border:1px solid #eee; border-radius:16px;
+      padding:28px 24px; box-shadow:0 4px 14px rgba(0,0,0,.04);
+    }
+    h1.title{ font-size:28px; font-weight:800; text-align:center; margin:0 0 12px; color:#1e1b2b; }
+
+    label{ display:block; font-weight:700; color:#2a233a; font-size:14px; margin:10px 0 6px; }
+    .input{
+      width:100%; height:44px; border-radius:12px; padding:10px 12px;
+      border:1.5px solid #cfd3dc; background:#fbfaff; font-size:15px;
+    }
+    .input:focus{ outline:none; border-color:#a895ff; box-shadow:0 0 0 4px #f1ecff; }
+
+    .btn{
+      width:100%; height:48px; border-radius:9999px; border:0;
+      background:var(--laranja); color:#fff; font-weight:800; cursor:pointer;
+      margin-top:12px; font-size:16px; /* desktop base */
+      line-height:1.1;
+    }
+    .btn:hover{ background:var(--laranja-hover); }
+    /* Celular: mantém legível sem estourar o botão */
+    @media (max-width:900px){
+      .btn{ font-size:16px; }
+    }
+    @media (max-width:360px){
+      .btn{ font-size:15px; }
+    }
+
+    .alert{
+      border-radius:12px; padding:12px 14px; margin:0 0 14px;
+      border:1px solid #e9e9e9; background:#f8f9ff; color:#1e1b2b; font-size:14px;
+      text-align:center;
+    }
+
+    .links-row{
+      display:flex; justify-content:center; gap:18px; margin:12px 0 6px; font-weight:800;
+    }
+    .links-row a{ color:#5b2fff; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
+    .links-row a:hover{ text-decoration:underline; }
+    .links-row .back:before{ content:"‹"; font-size:18px; line-height:1; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Redefinir Senha</h2>
 
-        {% if mensagem %}
-            <div class="mensagem">{{ mensagem }}</div>
-        {% endif %}
-
-        <form method="POST">
-            <input type="password" name="senha" placeholder="Nova senha" required>
-            <button type="submit">Salvar nova senha</button>
-        </form>
-
-        <a class="voltar" href="{{ url_for('login') }}">← Voltar ao login</a>
+  <!-- ===== NAVBAR ===== -->
+  <header class="navbar">
+    <div class="header-left">
+      <div class="logo">
+        <a href="{{ url_for('index') }}" aria-label="Página inicial" title="Página inicial">
+          <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
+        </a>
+      </div>
     </div>
+
+    <div class="header-right">
+      <!-- Casinha -->
+      <a href="{{ url_for('index') }}" class="icon-btn" aria-label="Página inicial" title="Página inicial">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 10.5 12 3l9 7.5"></path>
+          <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
+          <path d="M9 21V12h6v9"></path>
+        </svg>
+      </a>
+
+      <!-- Menu sanduíche -->
+      <div class="menu-wrap">
+        <button class="hamburger" id="hamburger" type="button" aria-label="Abrir menu" aria-controls="menu-lateral" aria-haspopup="menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+
+        <nav class="menu-dropdown" id="menu-lateral" role="menu" aria-label="Menu rápido">
+          <div class="menu-header">
+            <button type="button" class="menu-close" aria-label="Fechar menu">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+              </svg>
+            </button>
+          </div>
+
+          <a href="{{ url_for('buscar_teares') }}" class="menu-item" role="menuitem">Buscar Tear</a>
+          <a href="{{ url_for('malharia_info') }}" class="menu-item" role="menuitem">Como Funciona</a>
+          <a href="{{ url_for('login') }}" class="menu-item" role="menuitem">Já sou cadastrado</a>
+          <a href="{{ url_for('quem_somos') }}" class="menu-item" role="menuitem">Quem Somos</a>
+          <a href="{{ url_for('contato') }}" class="menu-item" role="menuitem">Fale conosco</a>
+          <a href="{{ url_for('termos') }}" class="menu-item" role="menuitem">Termos e Políticas</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== CONTEÚDO ===== -->
+  <main class="wrap" role="main">
+    <section class="card" aria-labelledby="t">
+      <h1 id="t" class="title">Redefinir Senha</h1>
+
+      {% if mensagem %}
+        <div class="alert">{{ mensagem }}</div>
+      {% endif %}
+
+      <form method="POST" novalidate>
+        <label for="senha">Nova senha</label>
+        <input id="senha" class="input" type="password" name="senha" placeholder="Digite a nova senha" required>
+        <button class="btn" type="submit">Salvar nova senha</button>
+      </form>
+
+      <div class="links-row">
+        <a class="back" href="{{ url_for('login') }}">Voltar ao login</a>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== Scripts do menu ===== -->
+  <script>
+    (function () {
+      function closeAll() {
+        document.querySelectorAll('.menu-wrap .menu-dropdown.open').forEach(m => {
+          m.classList.remove('open');
+          const b = m.closest('.menu-wrap')?.querySelector('.hamburger');
+          if (b) b.setAttribute('aria-expanded', 'false');
+        });
+      }
+      document.querySelectorAll('.menu-wrap').forEach(wrap => {
+        const btn  = wrap.querySelector('#hamburger');
+        const menu = wrap.querySelector('#menu-lateral');
+        const xBtn = wrap.querySelector('.menu-close');
+        if (!btn || !menu) return;
+
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const willOpen = !menu.classList.contains('open');
+          closeAll();
+          menu.classList.toggle('open', willOpen);
+          btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        });
+
+        xBtn?.addEventListener('click', e => {
+          e.stopPropagation();
+          menu.classList.remove('open');
+          btn.setAttribute('aria-expanded', 'false');
+        });
+
+        menu.addEventListener('click', e => e.stopPropagation());
+      });
+      document.addEventListener('click', closeAll);
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
+    })();
+  </script>
+
+  <!-- Medir altura do topo para popover mobile -->
+  <script>
+    (function(){
+      function setNavH(){
+        const nav = document.querySelector('.navbar')?.offsetHeight || 0;
+        document.documentElement.style.setProperty('--nav-h', nav + 'px');
+      }
+      setNavH();
+      window.addEventListener('resize', setNavH);
+    })();
+  </script>
 </body>
 </html>
