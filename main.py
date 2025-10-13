@@ -1009,28 +1009,6 @@ def post_login_password():
     session["empresa_apelido"] = user.apelido or user.nome or user.email.split("@")[0]
     return redirect(url_for("painel_malharia"))
 
-@app.post("/perfil/foto")
-def perfil_foto_upload():
-    empresa = _pegar_empresa_do_usuario(required=True)
-    if not isinstance(empresa, Empresa):
-        return empresa
-
-    file = request.files.get("foto")
-    if not file or file.filename == "":
-        flash("Nenhuma imagem selecionada.", "warning")
-        return redirect(url_for("painel_malharia"))
-
-    filename = secure_filename(file.filename)
-    name, ext = os.path.splitext(filename)
-    final_name = f"emp_{empresa.id}{ext.lower() or '.jpg'}"
-    path = os.path.join(UPLOAD_DIR, final_name)
-    file.save(path)
-
-    empresa.foto_url = url_for("static", filename=f"uploads/perfil/{final_name}", _external=False)
-    db.session.commit()
-    flash("Foto atualizada com sucesso!", "success")
-    return redirect(url_for("painel_malharia"))
-
 @app.get("/oauth/google", endpoint="oauth_google")
 def oauth_google_disabled():
     return ("Login com Google está desabilitado no momento.", 501)
