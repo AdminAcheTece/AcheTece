@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Performance de Acesso</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
+  <style>
+    :root{ --line:#e6e6eb; --text:#1f1f1f; --bg:#fff; --muted:#6b6b6b; --roxo:#8A00FF; }
+    body{ margin:0; color:var(--text); font-family:Inter,system-ui,Segoe UI,Roboto,Arial; background:#f7f7fb; }
+    .wrap{ max-width:1100px; margin:0 auto; padding:16px; }
+    .top{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .back{ text-decoration:none; color:#333; border:1px solid var(--line); padding:8px 12px; border-radius:9999px; }
+    h1{ margin:8px 0 12px; }
+    .cards{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+    .card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:14px; }
+    .card h3{ margin:0 0 6px; font-size:14px; color:var(--muted); }
+    .card .big{ font-size:24px; font-weight:800; }
+    @media (max-width:800px){ .cards{ grid-template-columns:1fr; } }
+    table{ width:100%; border-collapse:collapse; background:#fff; margin-top:14px; }
+    th,td{ border:1px solid var(--line); padding:10px; text-align:center; }
+    thead th{ background:#fafafa; }
+    .hint{ color:#777; font-size:13px; margin-top:6px; }
+    .pill{ display:inline-block; padding:2px 8px; border-radius:9999px; border:1px solid var(--line); background:#fff; }
+    .btn{ background:var(--roxo); color:#fff; text-decoration:none; padding:8px 14px; border-radius:9999px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <a class="back" href="{{ url_for('painel_malharia') }}">← Voltar ao painel</a>
+      <a class="btn" href="{{ url_for('painel_malharia') }}">Cadastrar novo Tear</a>
+    </div>
+    <h1>Performance de Acesso</h1>
+
+    <div class="cards">
+      <div class="card">
+        <h3>Total de visitas</h3>
+        <div class="big">{{ total_visitas }}</div>
+      </div>
+      <div class="card">
+        <h3>Total de contatos</h3>
+        <div class="big">{{ total_contatos }}</div>
+      </div>
+      <div class="card">
+        <h3>Taxa de conversão</h3>
+        <div class="big">
+          {% if total_visitas>0 %} {{ ('%.1f' % (100*total_contatos/total_visitas)) }}% {% else %} 0% {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <p class="hint">Futuramente, este painel exibirá gráficos por período, origem do acesso e contatos, e permitirá exportar CSV.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Visitas</th>
+          <th>Contatos</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in series %}
+        <tr>
+          <td>{{ p.data }}</td>
+          <td>{{ p.visitas }}</td>
+          <td>{{ p.contatos }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
