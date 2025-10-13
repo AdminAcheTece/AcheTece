@@ -26,7 +26,7 @@
       color:#1e1b2b;
     }
 
-    /* ===== NAVBAR branca padronizada (igual login_senha) ===== */
+    /* ===== NAVBAR ===== */
     .navbar{
       overflow:visible; padding:6px 12px;
       background:#fff; border-bottom:1px solid #eee;
@@ -40,7 +40,6 @@
       .logo img{ height:54px; }
     }
 
-    /* Botão casinha */
     .icon-btn{
       display:inline-flex; align-items:center; justify-content:center;
       width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px;
@@ -49,7 +48,6 @@
     .icon-btn:hover{ background:#f7f7f7; }
     .icon{ width:20px; height:20px; color:#222; }
 
-    /* Menu sanduíche/dropdown */
     .menu-wrap{ position:relative; }
     .hamburger{
       display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
@@ -116,13 +114,17 @@
     .btn{
       width:100%; height:48px; border-radius:9999px; border:0;
       background:var(--laranja); color:#fff; font-weight:800; cursor:pointer;
-      margin-top:12px;
+      margin-top:12px; font-size:16px; /* base desktop */
     }
     .btn:hover{ background:var(--laranja-hover); }
-    /* Aumenta só no celular a fonte do botão (≈ +50%) */
-    @media (max-width:900px){ .btn{ font-size:24px; line-height:1.05; } }
+    /* Celular: reduz a fonte para caber confortavelmente no botão */
+    @media (max-width:900px){
+      .btn{ font-size:16px; line-height:1.08; }
+    }
+    @media (max-width:360px){
+      .btn{ font-size:15px; }
+    }
 
-    /* Alertas (mensagem/erro) */
     .alert{
       border-radius:12px; padding:12px 14px; margin:0 0 14px;
       border:1px solid #e9e9e9; background:#f8f9ff; color:#1e1b2b; font-size:14px;
@@ -131,7 +133,6 @@
     .alert.ok{ border-color:#cce8d6; background:#eefaf3; color:#15653b; }
     .alert.error{ border-color:#ffd7d7; background:#fff3f3; color:#7a2222; }
 
-    /* Links auxiliares */
     .links-row{
       display:flex; justify-content:center; gap:18px; margin:12px 0 6px; font-weight:800;
     }
@@ -146,7 +147,6 @@
   <header class="navbar">
     <div class="header-left">
       <div class="logo">
-        <!-- Logo é link para a home -->
         <a href="{{ url_for('index') }}" aria-label="Página inicial" title="Página inicial">
           <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
         </a>
@@ -154,7 +154,6 @@
     </div>
 
     <div class="header-right">
-      <!-- Casinha -->
       <a href="{{ url_for('index') }}" class="icon-btn" aria-label="Página inicial" title="Página inicial">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M3 10.5 12 3l9 7.5"></path>
@@ -163,7 +162,6 @@
         </svg>
       </a>
 
-      <!-- Menu sanduíche -->
       <div class="menu-wrap">
         <button class="hamburger" id="hamburger" type="button" aria-label="Abrir menu" aria-controls="menu-lateral" aria-haspopup="menu" aria-expanded="false">
           <span></span><span></span><span></span>
@@ -212,7 +210,6 @@
     </section>
   </main>
 
-  <!-- ===== Scripts do MENU (igual login_senha) ===== -->
   <script>
     (function () {
       function closeAll() {
@@ -249,7 +246,6 @@
     })();
   </script>
 
-  <!-- Mede altura do topo (apenas navbar; sem topbar preta aqui) -->
   <script>
     (function(){
       function setNavH(){
