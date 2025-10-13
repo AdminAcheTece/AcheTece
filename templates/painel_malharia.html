@@ -29,7 +29,8 @@
       padding:8px 14px; background:#fff; border-bottom:1px solid #eee;
       position:sticky; top:0; z-index:50;
     }
-    .topbar .logo img{ height:40px; }
+    .topbar .logo img{ height:54px; }             /* mobile padronizado */
+    @media (min-width:901px){ .topbar .logo img{ height:44px; } } /* desktop */
     .topbar .spacer{ flex:1; }
 
     .top-icons{ display:flex; align-items:center; gap:12px; }
@@ -84,12 +85,28 @@
     .pm-item svg{ width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:1.8; }
     .pm-sep{ height:1px; background:#f0f0f4; margin:6px 0; }
 
+    /* Painel de notificações */
+    .notify-panel{
+      position:absolute; right:70px; top:56px; width:320px; max-width:92vw;
+      background:#fff; border:1px solid #eaeaea; border-radius:14px;
+      box-shadow:0 8px 24px rgba(0,0,0,.08);
+      opacity:0; pointer-events:none; transform:translateY(8px) scale(.98);
+      transition:opacity .18s ease, transform .18s ease;
+      z-index:60;
+    }
+    .notify-panel.open{ opacity:1; pointer-events:auto; transform:translateY(0) scale(1); }
+    .np-header{ padding:10px 12px; border-bottom:1px solid #f0f0f0; font-weight:800; }
+    .np-empty{ padding:14px 12px; color:#666; }
+    .np-item{ padding:10px 12px; border-bottom:1px solid #f5f5f8; }
+    .np-item:last-child{ border-bottom:0; }
+    .np-item small{ color:#777; }
+
     /* ======= CTA ======= */
     .btn-roxo{
       display:inline-flex; align-items:center; justify-content:center;
       height:40px; padding:0 16px; border:0; border-radius:9999px;
       background:var(--roxo); color:#fff; font-weight:700; font-size:14px;
-      text-decoration:none; cursor:pointer; transition:.2s; white-space:nowrap; /* evita quebra no mobile */
+      text-decoration:none; cursor:pointer; transition:.2s; white-space:nowrap;
     }
     .btn-roxo:hover{ background:var(--roxo-hover); transform:translateY(-1px); }
     .btn-roxo:focus-visible{ outline:3px solid rgba(138,0,255,.25); outline-offset:2px; }
@@ -115,7 +132,7 @@
       display:grid; place-items:center; flex:0 0 64px; border:1px solid #eee; position:relative;
     }
     .hero-avatar svg{ width:30px; height:30px; stroke:var(--roxo); fill:none; stroke-width:1.8; }
-    /* lápis sobreposto para editar perfil (abre menu) */
+    /* lápis sobreposto para editar perfil / foto */
     .edit-pencil{
       position:absolute; right:-6px; bottom:-6px; width:28px; height:28px; border-radius:9999px;
       border:1px solid var(--line); background:#fff; display:grid; place-items:center; cursor:pointer;
@@ -124,7 +141,6 @@
     .edit-pencil svg{ width:16px; height:16px; stroke:#555; fill:none; stroke-width:1.8; }
 
     .hero-nome{ font-size:1.25rem; font-weight:800; color:#161616; line-height:1.2; }
-    /* e-mail removido do card por solicitação */
 
     .hero-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
     .chip{
@@ -161,7 +177,7 @@
 
 <!-- ===== TOPBAR ===== -->
 <header class="topbar">
-  <a class="logo" href="{{ url_for('index') }}" aria-label="Página inicial">
+  <a class="logo" href="{{ url_for('index') }}" aria-label="Página inicial" title="Página inicial">
     <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
   </a>
   <div class="spacer"></div>
@@ -171,18 +187,32 @@
 
   <div class="top-icons">
     <!-- Chat -->
-    <a href="{{ url_for('fale_conosco') }}" class="icon-btn badge-wrap" aria-label="Chat">
+    <a href="{{ url_for('fale_conosco') }}" class="icon-btn badge-wrap" aria-label="Chat" title="Chat">
       <svg viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path></svg>
       {% if chat_count|int > 0 %}<span class="badge">{{ chat_count }}</span>{% endif %}
     </a>
+
     <!-- Notificações -->
-    <a href="{{ url_for('painel_malharia') }}#notificacoes" class="icon-btn badge-wrap" aria-label="Notificações">
+    <button id="notifToggle" class="icon-btn badge-wrap" aria-label="Notificações" title="Notificações" type="button">
       <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
       {% if notif_count|int > 0 %}<span class="badge">{{ notif_count }}</span>{% endif %}
-    </a>
+    </button>
+    <nav id="notifPanel" class="notify-panel" aria-label="Notificações" role="dialog" aria-modal="false">
+      <div class="np-header">Notificações</div>
+      {% if (notificacoes_lista is defined) and notificacoes_lista %}
+        {% for n in notificacoes_lista %}
+          <div class="np-item">
+            <strong>{{ n.titulo }}</strong><br>
+            <small>{{ n.mensagem }}</small>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="np-empty">Nenhuma notificação.</div>
+      {% endif %}
+    </nav>
 
     <!-- Perfil (abre menu) -->
-    <button class="profile-pill" id="profileToggle" type="button" aria-haspopup="menu" aria-expanded="false">
+    <button class="profile-pill" id="profileToggle" type="button" aria-haspopup="menu" aria-expanded="false" title="Abrir menu do perfil">
       <span class="avatar">
         {% if empresa and empresa.foto_url %}
           <img src="{{ empresa.foto_url }}" alt="Foto do perfil">
@@ -216,11 +246,14 @@
       <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
       <span>Editar cadastro</span>
     </a>
-    <!-- TODO: aponte para a sua rota quando criar a página de performance -->
-    <a href="#" class="pm-item" role="menuitem" title="Performance de acesso (em breve)">
+    <a href="{{ url_for('performance_acesso') }}" class="pm-item" role="menuitem" title="Ver performance de acesso">
       <svg viewBox="0 0 24 24"><path d="M3 3v18h18"></path><path d="M7 13l3 3 7-7"></path></svg>
       <span>Performance de acesso</span>
     </a>
+    <button type="button" class="pm-item" id="btnAlterarFoto" title="Alterar foto do perfil">
+      <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+      <span>Alterar foto do perfil</span>
+    </button>
 
     <div class="pm-group-title">Assinatura</div>
     {% if _assin_ativa %}
@@ -237,15 +270,20 @@
 
     <div class="pm-sep"></div>
 
-    <a href="{{ url_for('fale_conosco') }}" class="pm-item" role="menuitem">
+    <a href="{{ url_for('fale_conosco') }}" class="pm-item" role="menuitem" title="Falar com o suporte">
       <svg viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path></svg>
       <span>Suporte AcheTece</span>
     </a>
-    <a href="{{ url_for('logout') }}" class="pm-item" role="menuitem">
+    <a href="{{ url_for('logout') }}" class="pm-item" role="menuitem" title="Sair">
       <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><path d="M16 17l5-5-5-5"></path><path d="M21 12H9"></path></svg>
       <span>Sair</span>
     </a>
   </nav>
+
+  <!-- form oculto para upload de foto -->
+  <form id="fotoForm" action="{{ url_for('perfil_foto_upload') }}" method="POST" enctype="multipart/form-data" class="sr-only">
+    <input type="file" id="fotoInput" name="foto" accept="image/*">
+  </form>
 </header>
 
 {% set nome_empresa =
@@ -265,32 +303,28 @@
   <div class="hero-card">
     <div class="hero-col-left">
       <div class="hero-ident">
-        <div class="hero-avatar" aria-label="Foto do perfil">
+        <div class="hero-avatar" aria-label="Foto do perfil" title="Clique no lápis para editar a foto">
           {% if empresa and empresa.foto_url %}
             <img src="{{ empresa.foto_url }}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
           {% else %}
             <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path></svg>
           {% endif %}
-          <!-- Lápis abre o mesmo menu de perfil -->
-          <button class="edit-pencil" id="pencilToggle" type="button" title="Editar perfil" aria-label="Editar perfil">
+          <!-- Lápis abre o menu ou o seletor de foto -->
+          <button class="edit-pencil" id="pencilToggle" type="button" title="Editar perfil">
             <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
           </button>
         </div>
         <div class="hero-info" style="min-width:0;">
           <div class="hero-nome">{{ nome_empresa }}</div>
 
+          <!-- status de assinatura SEMPRE visível -->
           <div class="hero-chips">
-            {% if empresa %}
-              {% if _assin_ativa %}
-                <span class="chip"><span class="dot dot-success"></span>Assinatura ativa</span>
-              {% else %}
-                <a class="chip chip-cta" href="{{ url_for('checkout', plano='mensal') }}">
-                  <span class="dot dot-warn"></span>Assinatura pendente
-                </a>
-              {% endif %}
+            {% if _assin_ativa %}
+              <span class="chip" title="Assinatura ativa"><span class="dot dot-success"></span>Assinatura ativa</span>
             {% else %}
-              <span class="chip"><span class="dot dot-warn"></span>Cadastre sua malharia</span>
-              <a class="chip chip-link" href="{{ url_for('cadastrar_empresa') }}">Criar cadastro</a>
+              <a class="chip chip-cta" href="{{ url_for('checkout', plano='mensal') }}" title="Pagar assinatura">
+                <span class="dot dot-warn"></span>Assinatura pendente
+              </a>
             {% endif %}
           </div>
 
@@ -301,7 +335,7 @@
         </div>
       </div>
     </div>
-    <!-- coluna direita do hero ficou vazia (sem botões) por design -->
+    <!-- coluna direita do hero fica vazia por design minimalista -->
     <div></div>
   </div>
   <!-- ===== /HERO ===== -->
@@ -365,8 +399,8 @@
 </div>
 
 <script>
-  // abre/fecha menu de perfil
   (function(){
+    // menu perfil
     const toggle = document.getElementById('profileToggle');
     const menu   = document.getElementById('profileMenu');
     const pencil = document.getElementById('pencilToggle');
@@ -382,13 +416,37 @@
     function toggleMenu(){
       if(menu.classList.contains('open')) closeMenu(); else openMenu();
     }
-
     toggle?.addEventListener('click', (e)=>{ e.stopPropagation(); toggleMenu(); });
     pencil?.addEventListener('click', (e)=>{ e.stopPropagation(); openMenu(); });
 
-    document.addEventListener('click', closeMenu);
-    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeMenu(); });
+    // notificações
+    const nbtn = document.getElementById('notifToggle');
+    const npanel = document.getElementById('notifPanel');
+    function closeNotif(){ npanel.classList.remove('open'); }
+    function toggleNotif(e){ e.stopPropagation(); npanel.classList.toggle('open'); }
+    nbtn?.addEventListener('click', toggleNotif);
+
+    // fechar quando clicar fora / ESC
+    document.addEventListener('click', ()=>{ closeMenu(); closeNotif(); });
+    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ closeMenu(); closeNotif(); }});
     menu?.addEventListener('click', (e)=> e.stopPropagation());
+    npanel?.addEventListener('click', (e)=> e.stopPropagation());
+
+    // upload de foto
+    const fotoForm  = document.getElementById('fotoForm');
+    const fotoInput = document.getElementById('fotoInput');
+    const btnAlterarFoto = document.getElementById('btnAlterarFoto');
+
+    function abrirSeletor(){ fotoInput?.click(); }
+    btnAlterarFoto?.addEventListener('click', abrirSeletor);
+    // se quiser permitir clicar no avatar para trocar foto, descomente:
+    // document.querySelector('.hero-avatar')?.addEventListener('dblclick', abrirSeletor);
+
+    fotoInput?.addEventListener('change', function(){
+      if(this.files && this.files[0]){
+        fotoForm.submit();
+      }
+    });
   })();
 </script>
 </body>
