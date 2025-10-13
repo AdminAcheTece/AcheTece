@@ -15,7 +15,6 @@
   <style>
     :root{
       --roxo:#8A00FF; --roxo-hover:#A63DFF;
-      --laranja:#F28C00; --laranja-hover:#E57F00;
       --site-bg:#F7F7FA; /* cinza 150 padronizado */
     }
 
@@ -130,9 +129,6 @@
     .btn-roxo{ background:var(--roxo); color:#fff; }
     .btn-roxo:hover{ background:var(--roxo-hover); transform:translateY(-1px); }
 
-    .btn-perigo{ background:#e53935; color:#fff; }
-    .btn-perigo:hover{ filter:brightness(.95); transform:translateY(-1px); }
-
     .link-voltar{ display:inline-block; color:#5b2fff; text-decoration:none; font-weight:800; }
     .link-voltar:hover{ text-decoration:underline; }
 
@@ -242,16 +238,6 @@
       <div class="acoes">
         <!-- Salvar -->
         <button type="submit" class="btn btn-roxo">Salvar</button>
-
-        <!-- Excluir (usa formaction para evitar formulário aninhado) -->
-        <button
-          type="submit"
-          class="btn btn-perigo"
-          formmethod="POST"
-          formaction="{{ url_for('excluir_tear', id=tear.id) }}"
-          onclick="return confirm('Confirma excluir este tear? Essa ação é irreversível.');">
-          Excluir
-        </button>
 
         <!-- Voltar -->
         <a class="link-voltar" href="{{ url_for('painel_malharia') }}">← Voltar ao Painel Malharia</a>
