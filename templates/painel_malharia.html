@@ -132,7 +132,7 @@
       display:grid; place-items:center; flex:0 0 64px; border:1px solid #eee; position:relative;
     }
     .hero-avatar svg{ width:30px; height:30px; stroke:var(--roxo); fill:none; stroke-width:1.8; }
-    /* lápis sobreposto para editar perfil / foto */
+    /* lápis sobreposto para editar a foto */
     .edit-pencil{
       position:absolute; right:-6px; bottom:-6px; width:28px; height:28px; border-radius:9999px;
       border:1px solid var(--line); background:#fff; display:grid; place-items:center; cursor:pointer;
@@ -151,7 +151,7 @@
     .chip .dot{ width:8px; height:8px; border-radius:50%; }
     .dot-success{ background:var(--success); }
     .dot-warn{ background:var(--warn); }
-    .chip-link{ background:#fff; color:var(--roxo); border-color:#ece6ff; text-decoration:none; }
+    .chip-link{ background:#fff; color:#roxo; border-color:#ece6ff; text-decoration:none; }
     .chip-cta{ border-color:#e8ddff; background:#faf8ff; color:#4a1bb3; cursor:pointer; text-decoration:none; }
     .chip-cta:hover{ background:#f3eeff; }
 
@@ -250,13 +250,9 @@
       <svg viewBox="0 0 24 24"><path d="M3 3v18h18"></path><path d="M7 13l3 3 7-7"></path></svg>
       <span>Performance de acesso</span>
     </a>
-    <button type="button" class="pm-item" id="btnAlterarFoto" title="Alterar foto do perfil">
-      <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-      <span>Alterar foto do perfil</span>
-    </button>
 
     <div class="pm-group-title">Assinatura</div>
-    {% if _assin_ativa %}
+    {% if assinatura_ativa %}
       <a href="{{ url_for('checkout', plano=empresa.plano or 'mensal') }}" class="pm-item" role="menuitem" title="Gerenciar pagamento">
         <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"></rect><path d="M3 10h18"></path></svg>
         <span>Minha assinatura (ativa)</span>
@@ -303,14 +299,14 @@
   <div class="hero-card">
     <div class="hero-col-left">
       <div class="hero-ident">
-        <div class="hero-avatar" aria-label="Foto do perfil" title="Clique no lápis para editar a foto">
+        <div class="hero-avatar" aria-label="Foto do perfil" title="Clique no lápis para alterar a foto">
           {% if empresa and empresa.foto_url %}
             <img src="{{ empresa.foto_url }}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
           {% else %}
             <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path></svg>
           {% endif %}
-          <!-- Lápis abre o menu ou o seletor de foto -->
-          <button class="edit-pencil" id="pencilToggle" type="button" title="Editar perfil">
+          <!-- Lápis abre seletor de imagem -->
+          <button class="edit-pencil" id="pencilToggle" type="button" title="Alterar foto do perfil">
             <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
           </button>
         </div>
@@ -335,7 +331,6 @@
         </div>
       </div>
     </div>
-    <!-- coluna direita do hero fica vazia por design minimalista -->
     <div></div>
   </div>
   <!-- ===== /HERO ===== -->
@@ -368,12 +363,10 @@
             <td>{{ 'Sim' if (tear.elastano or tear.kit_elastano) else 'Não' }}</td>
             <td>
               <div class="acoes-wrap">
-                <!-- Editar -->
                 <a href="{{ url_for('editar_tear', id=tear.id) }}" class="icon-btn edit" title="Editar tear" aria-label="Editar">
                   <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                   <span class="sr-only">Editar</span>
                 </a>
-                <!-- Excluir -->
                 <form method="POST"
                       action="{{ url_for('excluir_tear', id=tear.id) }}"
                       onsubmit="return confirm('Confirma excluir este tear? Essa ação é irreversível.');"
@@ -403,7 +396,6 @@
     // menu perfil
     const toggle = document.getElementById('profileToggle');
     const menu   = document.getElementById('profileMenu');
-    const pencil = document.getElementById('pencilToggle');
 
     function closeMenu(){
       menu.classList.remove('open');
@@ -417,7 +409,6 @@
       if(menu.classList.contains('open')) closeMenu(); else openMenu();
     }
     toggle?.addEventListener('click', (e)=>{ e.stopPropagation(); toggleMenu(); });
-    pencil?.addEventListener('click', (e)=>{ e.stopPropagation(); openMenu(); });
 
     // notificações
     const nbtn = document.getElementById('notifToggle');
@@ -432,15 +423,13 @@
     menu?.addEventListener('click', (e)=> e.stopPropagation());
     npanel?.addEventListener('click', (e)=> e.stopPropagation());
 
-    // upload de foto
+    // upload de foto via LÁPIS
     const fotoForm  = document.getElementById('fotoForm');
     const fotoInput = document.getElementById('fotoInput');
-    const btnAlterarFoto = document.getElementById('btnAlterarFoto');
+    const pencil    = document.getElementById('pencilToggle');
 
     function abrirSeletor(){ fotoInput?.click(); }
-    btnAlterarFoto?.addEventListener('click', abrirSeletor);
-    // se quiser permitir clicar no avatar para trocar foto, descomente:
-    // document.querySelector('.hero-avatar')?.addEventListener('dblclick', abrirSeletor);
+    pencil?.addEventListener('click', function(e){ e.stopPropagation(); abrirSeletor(); });
 
     fotoInput?.addEventListener('change', function(){
       if(this.files && this.files[0]){
