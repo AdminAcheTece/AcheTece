@@ -2,60 +2,59 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>Esqueci a Senha</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <title>Esqueci a Senha - AcheTece</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Ícone da aba (favicon) -->
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
-  
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
+
   <style>
     :root{
-      --azul:#8A00FF;
-      --azul-2:#336be3;
-      --cinza-bg:#f9f9f9;
-      --cinza-texto:#444;
+      --roxo:#8A00FF;
+      --roxo-hover:#A63DFF;
+      --laranja:#F28C00;
+      --laranja-hover:#E57F00;
+      --site-bg:#F7F7FA; /* cinza 150 padronizado */
     }
 
-    body { font-family: Arial, sans-serif; margin:0; padding:0; background:var(--cinza-bg); color:var(--cinza-texto); }
+    html, body{
+      margin:0;
+      background:var(--site-bg);
+      font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      color:#1e1b2b;
+    }
 
-    /* ===== TOPBAR (faixa preta) — EXATO DO malharia_info ===== */
-    .topbar{
-      background:#0b0b0b;
-      color:#fff;
-      padding:6px 14px;
-      border-bottom:1px solid #111;
+    /* ===== NAVBAR branca padronizada (igual login_senha) ===== */
+    .navbar{
+      overflow:visible; padding:6px 12px;
+      background:#fff; border-bottom:1px solid #eee;
+      display:flex; align-items:center;
     }
-    .topbar-inner{
-      max-width:1000px; margin:0 auto;
-      display:flex; align-items:center; justify-content:flex-end; gap:12px;
-    }
-    .topbar-action{
-      display:inline-flex; align-items:center; gap:10px;
-      color:#fff; text-decoration:none;
-      padding:6px 10px; border-radius:10px;
-      background:#111; border:1px solid rgba(255,255,255,.12);
-      transition:background .2s, transform .02s;
-    }
-    .topbar-action:hover{ background:#161616; }
-    .ic-top{ width:18px; height:18px; display:block; }
-    .ic-wa{ color:#22c55e; }
-    .ic-mail{ color:#fff; }
-
-    /* ===== NAVBAR (faixa branca) — EXATO DO malharia_info ===== */
-    .navbar{ overflow:visible; padding-top:6px; padding-bottom:6px; background:#fff; border-bottom:1px solid #eee; display:flex; align-items:center; }
     .header-left,.header-right{ display:flex; align-items:center; }
     .header-right{ margin-left:auto; gap:20px; }
-    .logo img{ max-height:60px; height:auto; width:auto; display:block; }
-    .top-nav{ display:none; }
+    .logo a{ display:inline-flex; align-items:center; text-decoration:none; }
+    .logo img{ height:44px; width:auto; display:block; }
+    @media (max-width:900px){
+      .logo img{ height:54px; }
+    }
 
-    .menu-wrap{ position: relative; }
+    /* Botão casinha */
+    .icon-btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px;
+      background:#fff; cursor:pointer; transition:box-shadow .2s, transform .02s, background .2s;
+    }
+    .icon-btn:hover{ background:#f7f7f7; }
+    .icon{ width:20px; height:20px; color:#222; }
+
+    /* Menu sanduíche/dropdown */
+    .menu-wrap{ position:relative; }
     .hamburger{
       display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
       width:36px; height:36px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
-      box-shadow:none !important;
-      cursor:pointer;
+      box-shadow:none !important; cursor:pointer; position:relative; z-index:10002;
     }
     .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
     .hamburger span + span{ margin-top:4px; }
@@ -69,14 +68,15 @@
     .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
 
     .menu-dropdown .menu-header{ display:flex; justify-content:flex-end; align-items:center; padding:8px 10px; }
-    .menu-dropdown .menu-header span{ display:none; }
     .menu-dropdown .menu-close{
       display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px;
       background:#f0f2f5; border:0; border-radius:10px; cursor:pointer;
     }
-
-    .menu-dropdown .menu-item{ font-weight:400; display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222; }
-    .menu-dropdown .menu-item:hover{ background:#f5f7ff; color:var(--azul); border-radius:8px; }
+    .menu-dropdown .menu-item{
+      font-weight:400; display:flex; align-items:center; gap:10px; padding:10px 12px;
+      text-decoration:none; color:#222;
+    }
+    .menu-dropdown .menu-item:hover{ background:#f5f7ff; color:var(--roxo); border-radius:8px; }
 
     @media (min-width:769px){
       .menu-dropdown{ position:absolute; top:calc(100% + 8px); right:0; min-width:220px; max-width:320px; padding-right:2px; transform-origin: top right; }
@@ -93,67 +93,68 @@
       .menu-dropdown.open{ transform: translate(-50%,0) scale(1); }
     }
 
-    .icon-btn{
-      display:inline-flex; align-items:center; justify-content:center;
-      width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px;
-      background:#fff; cursor:pointer; transition:box-shadow .2s, transform .02s, background .2s;
-      box-shadow:none !important;
+    /* ===== LAYOUT do card ===== */
+    .wrap{
+      min-height:calc(100vh - 110px);
+      display:flex; justify-content:center;
+      padding:24px 16px;
     }
-    .icon-btn:hover{ box-shadow:none !important; background:#f7f7f7; }
-    .icon{ width:20px; height:20px; color:#222; }
+    .card{
+      width:100%; max-width:520px;
+      background:#fff; border:1px solid #eee; border-radius:16px;
+      padding:28px 24px; box-shadow:0 4px 14px rgba(0,0,0,.04);
+    }
+    h1.title{ font-size:28px; font-weight:800; text-align:center; margin:0 0 12px; color:#1e1b2b; }
 
-    /* ===== Conteúdo da página ===== */
-    .container{
-      max-width: 400px;
-      margin: 40px auto;
-      background: #fff;
-      padding: 32px;
-      border-radius: 12px;
-      box-shadow: none !important;
+    label{ display:block; font-weight:700; color:#2a233a; font-size:14px; margin:10px 0 6px; }
+    .input{
+      width:100%; height:44px; border-radius:12px; padding:10px 12px;
+      border:1.5px solid #cfd3dc; background:#fbfaff; font-size:15px;
     }
-    h2{ text-align:center; margin-bottom:20px; font-size:22px; color:#222; }
-    form input{
-      width:100%; padding:12px; margin-bottom:16px; border-radius:8px; border:1px solid #ccc; font-size:14px;
+    .input:focus{ outline:none; border-color:#a895ff; box-shadow:0 0 0 4px #f1ecff; }
+
+    .btn{
+      width:100%; height:48px; border-radius:9999px; border:0;
+      background:var(--laranja); color:#fff; font-weight:800; cursor:pointer;
+      margin-top:12px;
     }
-    button{
-      width:100%; padding:12px; border:none; border-radius:8px; background:var(--azul); color:#fff; font-weight:bold; cursor:pointer; font-size:16px;   /* Aumentado */
+    .btn:hover{ background:var(--laranja-hover); }
+    /* Aumenta só no celular a fonte do botão (≈ +50%) */
+    @media (max-width:900px){ .btn{ font-size:24px; line-height:1.05; } }
+
+    /* Alertas (mensagem/erro) */
+    .alert{
+      border-radius:12px; padding:12px 14px; margin:0 0 14px;
+      border:1px solid #e9e9e9; background:#f8f9ff; color:#1e1b2b; font-size:14px;
+      text-align:center;
     }
-    button:hover{ background:#8A00FF; }
-    .mensagem,.erro{ text-align:center; margin-bottom:10px; font-size:14px; }
-    .mensagem{ color:green; }
-    .erro{ color:red; }
-    .voltar{ display:block; text-align:center; margin-top:20px; font-size:16px; text-decoration:none; color:#555; }
+    .alert.ok{ border-color:#cce8d6; background:#eefaf3; color:#15653b; }
+    .alert.error{ border-color:#ffd7d7; background:#fff3f3; color:#7a2222; }
+
+    /* Links auxiliares */
+    .links-row{
+      display:flex; justify-content:center; gap:18px; margin:12px 0 6px; font-weight:800;
+    }
+    .links-row a{ color:#5b2fff; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
+    .links-row a:hover{ text-decoration:underline; }
+    .links-row .back:before{ content:"‹"; font-size:18px; line-height:1; }
   </style>
 </head>
 <body>
 
-  <!-- ===== TOPBAR (igual ao malharia_info) ===== -->
-  <div class="topbar">
-    <div class="topbar-inner">
-      <a class="topbar-action" href="{{ url_for('contato') }}" aria-label="Fale conosco">
-        <!-- WhatsApp -->
-        <svg class="ic-top ic-wa" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M20.52 3.48A11.94 11.94 0 0 0 12.06 0C5.7 0 .5 5.19.5 11.6c0 2.05.54 4.05 1.58 5.82L0 24l6.76-2.01a11.6 11.6 0 0 0 5.3 1.29h.01c6.36 0 11.56-5.19 11.56-11.6 0-3.09-1.22-6-3.11-8.2Zm-8.46 18.1h-.01a9.7 9.7 0 0 1-4.95-1.34l-.35-.2-4.01 1.2 1.16-3.9-.23-.4a9.66 9.66 0 0 1-1.41-5.08c0-5.36 4.38-9.71 9.77-9.71 2.61 0 5.07 1.02 6.91 2.87a9.73 9.73 0 0 1 2.86 6.95c0 5.36-4.38 9.71-9.75 9.71Zm5.6-7.27c-.31-.16-1.81-.9-2.09-1-.28-.1-.49-.16-.7.16-.2.31-.8 1-.98 1.21-.18.2-.36.22-.67.06-.31-.16-1.3-.48-2.48-1.53-.92-.8-1.54-1.77-1.72-2.07-.18-.31-.02-.48.13-.64.13-.13.31-.36.46-.54.15-.18.2-.31.31-.52.1-.22.05-.41-.02-.57-.16-.16-.7-1.69-.95-2.3-.25-.6-.51-.52-.7-.52-.18 0-.39-.02-.6-.02-.2 0-.52.07-.79.36-.28.31-1.07 1.05-1.07 2.56 0 1.51 1.1 2.97 1.25 3.18.15.2 2.17 3.3 5.25 4.61.73.32 1.3.5 1.75.64.74.24 1.4.2 1.93.12.59-.09 1.81-.74 2.07-1.45.26-.72.26-1.33.18-1.45-.08-.12-.28-.2-.59-.36Z"/>
-        </svg>
-        <!-- Email -->
-        <svg class="ic-top ic-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/>
-        </svg>
-        <span style="font-weight:700;">Fale conosco</span>
-      </a>
-    </div>
-  </div>
-
-  <!-- ===== NAVBAR (igual ao malharia_info) ===== -->
+  <!-- ===== NAVBAR ===== -->
   <header class="navbar">
     <div class="header-left">
       <div class="logo">
-        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
+        <!-- Logo é link para a home -->
+        <a href="{{ url_for('index') }}" aria-label="Página inicial" title="Página inicial">
+          <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
+        </a>
       </div>
     </div>
 
     <div class="header-right">
-      <!-- home -->
+      <!-- Casinha -->
       <a href="{{ url_for('index') }}" class="icon-btn" aria-label="Página inicial" title="Página inicial">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M3 10.5 12 3l9 7.5"></path>
@@ -162,6 +163,7 @@
         </svg>
       </a>
 
+      <!-- Menu sanduíche -->
       <div class="menu-wrap">
         <button class="hamburger" id="hamburger" type="button" aria-label="Abrir menu" aria-controls="menu-lateral" aria-haspopup="menu" aria-expanded="false">
           <span></span><span></span><span></span>
@@ -169,7 +171,6 @@
 
         <nav class="menu-dropdown" id="menu-lateral" role="menu" aria-label="Menu rápido">
           <div class="menu-header">
-            <span>Menu</span>
             <button type="button" class="menu-close" aria-label="Fechar menu">
               <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
                 <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
@@ -188,25 +189,30 @@
     </div>
   </header>
 
-  <!-- ===== Conteúdo ===== -->
-  <div class="container" role="main">
-    <h2>Recuperar Senha</h2>
+  <!-- ===== CONTEÚDO ===== -->
+  <main class="wrap" role="main">
+    <section class="card" aria-labelledby="t">
+      <h1 id="t" class="title">Recuperar Senha</h1>
 
-    {% if mensagem %}
-      <div class="mensagem">{{ mensagem }}</div>
-    {% elif erro %}
-      <div class="erro">{{ erro }}</div>
-    {% endif %}
+      {% if mensagem %}
+        <div class="alert ok">{{ mensagem }}</div>
+      {% elif erro %}
+        <div class="alert error">{{ erro }}</div>
+      {% endif %}
 
-    <form method="POST" novalidate>
-      <input type="email" name="email" placeholder="Digite seu e-mail" required>
-      <button type="submit">Enviar e-mail de redefinição</button>
-    </form>
+      <form method="POST" novalidate>
+        <label for="email">E-mail</label>
+        <input id="email" class="input" type="email" name="email" placeholder="seu@email.com" required>
+        <button class="btn" type="submit">Enviar e-mail de redefinição</button>
+      </form>
 
-    <a class="voltar" href="{{ url_for('login') }}">Voltar à pagina de login</a>
-  </div>
+      <div class="links-row">
+        <a class="back" href="{{ url_for('login') }}">Voltar à página de login</a>
+      </div>
+    </section>
+  </main>
 
-  <!-- ===== Scripts (iguais ao malharia_info) ===== -->
+  <!-- ===== Scripts do MENU (igual login_senha) ===== -->
   <script>
     (function () {
       function closeAll() {
@@ -243,14 +249,12 @@
     })();
   </script>
 
-  <!-- Ajuste de altura: considera TOPBAR + HEADER (igual ao malharia_info) -->
+  <!-- Mede altura do topo (apenas navbar; sem topbar preta aqui) -->
   <script>
     (function(){
       function setNavH(){
-        const topbar = document.querySelector('.topbar')?.offsetHeight || 0;
-        const nav    = document.querySelector('.navbar')?.offsetHeight || 0;
-        const total  = topbar + nav;
-        document.documentElement.style.setProperty('--nav-h', total + 'px');
+        const nav = document.querySelector('.navbar')?.offsetHeight || 0;
+        document.documentElement.style.setProperty('--nav-h', nav + 'px');
       }
       setNavH();
       window.addEventListener('resize', setNavH);
