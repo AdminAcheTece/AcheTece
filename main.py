@@ -26,6 +26,7 @@ from jinja2 import TemplateNotFound
 import resend  # biblioteca do Resend
 from flask import session
 from urllib.parse import urlparse
+from werkzeug.utils import secure_filename
 
 # SMTP direto (fallback)
 import smtplib, ssl
@@ -39,6 +40,8 @@ app.logger.setLevel(logging.INFO)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-unsafe')
 app.config['PREFERRED_URL_SCHEME'] = 'https'
 
+UPLOAD_DIR = os.path.join(app.root_path, "static", "uploads", "perfil")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
 CACHE_DIR = os.path.join(BASE_DIR, 'cache_ibge')
@@ -722,6 +725,11 @@ def _render_try(candidatos: list[str], **ctx):
     # Fallback mínimo para não quebrar
     return render_template_string("<h2>Página temporária</h2><p>Conteúdo indisponível.</p>")
 
+def _get_notificacoes(empresa_id):
+    # Troque por consulta real quando tiver o banco
+    items = []  # ex.: [{"titulo":"Novo contato","mensagem":"João enviou msg"}]
+    return len(items), items
+
 # --------------------------------------------------------------------
 # INDEX
 # --------------------------------------------------------------------
@@ -1001,6 +1009,28 @@ def post_login_password():
     session["empresa_apelido"] = user.apelido or user.nome or user.email.split("@")[0]
     return redirect(url_for("painel_malharia"))
 
+@app.post("/perfil/foto")
+def perfil_foto_upload():
+    empresa = _pegar_empresa_do_usuario(required=True)
+    if not isinstance(empresa, Empresa):
+        return empresa
+
+    file = request.files.get("foto")
+    if not file or file.filename == "":
+        flash("Nenhuma imagem selecionada.", "warning")
+        return redirect(url_for("painel_malharia"))
+
+    filename = secure_filename(file.filename)
+    name, ext = os.path.splitext(filename)
+    final_name = f"emp_{empresa.id}{ext.lower() or '.jpg'}"
+    path = os.path.join(UPLOAD_DIR, final_name)
+    file.save(path)
+
+    empresa.foto_url = url_for("static", filename=f"uploads/perfil/{final_name}", _external=False)
+    db.session.commit()
+    flash("Foto atualizada com sucesso!", "success")
+    return redirect(url_for("painel_malharia"))
+
 @app.get("/oauth/google", endpoint="oauth_google")
 def oauth_google_disabled():
     return ("Login com Google está desabilitado no momento.", 501)
@@ -1034,6 +1064,7 @@ def _proximo_step(emp: Empresa) -> str:
         return "teares"
     return "resumo"
 
+# --- sua rota do painel (substitua a versão atual por esta) ---
 @app.route('/painel_malharia', endpoint="painel_malharia")
 def painel_malharia():
     emp, u = _get_empresa_usuario_da_sessao()
@@ -1051,13 +1082,21 @@ def painel_malharia():
         "step": step,
     }
 
+    # >>> NOVO: notificações e chat
+    notif_count, notif_lista = _get_notificacoes(emp.id)
+    chat_nao_lidos = 0  # ajuste aqui se tiver chat real
+
     return render_template(
         'painel_malharia.html',
         empresa=emp,
         teares=teares,
         assinatura_ativa=is_ativa,
         checklist=checklist,
-        step=step
+        step=step,
+        # --- adicionados ---
+        notificacoes=notif_count,
+        notificacoes_lista=notif_lista,
+        chat_nao_lidos=chat_nao_lidos
     )
 
 # --- CADASTRAR / LISTAR / SALVAR TEARES (SEM GATE DE ASSINATURA) ---
