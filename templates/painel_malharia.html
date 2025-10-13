@@ -18,90 +18,113 @@
       --success:#2e7d32; --warn:#b85e00; --danger:#b00020;
     }
 
-    .sr-only{ position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0; }
-    body{ color:var(--text); }
+    /* utils */
+    .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+    body{ color:var(--text); margin:0; }
     th, td{ text-align:center; }
 
+    /* ======= TOPBAR ======= */
+    .topbar{
+      display:flex; align-items:center; gap:12px;
+      padding:8px 14px; background:#fff; border-bottom:1px solid #eee;
+      position:sticky; top:0; z-index:50;
+    }
+    .topbar .logo img{ height:40px; }
+    .topbar .spacer{ flex:1; }
+
+    .top-icons{ display:flex; align-items:center; gap:12px; }
+    .badge-wrap{ position:relative; }
+    .badge{
+      position:absolute; top:-6px; right:-6px; min-width:16px; height:16px;
+      padding:0 4px; border-radius:999px; background:#ff6b00; color:#fff;
+      font-size:11px; display:flex; align-items:center; justify-content:center;
+      line-height:1;
+    }
+    .icon-btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      width:36px; height:36px; border-radius:9999px; border:1px solid var(--line);
+      background:#fff; cursor:pointer; transition:.18s;
+    }
+    .icon-btn:hover{ background:var(--bg-soft); }
+    .icon-btn svg{ width:18px; height:18px; stroke:#444; fill:none; stroke-width:1.8; }
+
+    /* Perfil pill (avatar + nome + caret) */
+    .profile-pill{
+      display:inline-flex; align-items:center; gap:8px; padding:4px 10px;
+      border:1px solid var(--line); border-radius:9999px; background:#fff; cursor:pointer;
+    }
+    .profile-pill .avatar{
+      width:24px; height:24px; border-radius:9999px; overflow:hidden; background:#f2f2ff;
+      display:grid; place-items:center; border:1px solid #eee;
+    }
+    .profile-pill .avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
+    .profile-pill .name{ max-width:120px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:700; font-size:14px; }
+    .caret{ width:14px; height:14px; stroke:#555; }
+
+    @media (max-width:520px){
+      .profile-pill .name{ display:none; } /* no mobile, só avatar + caret */
+    }
+
+    /* Dropdown de perfil */
+    .profile-menu{
+      position:absolute; right:14px; top:56px; width:280px;
+      background:#fff; border:1px solid #eaeaea; border-radius:14px;
+      box-shadow:0 8px 24px rgba(0,0,0,.08);
+      opacity:0; pointer-events:none; transform:translateY(8px) scale(.98);
+      transition:opacity .18s ease, transform .18s ease;
+      z-index:60;
+    }
+    .profile-menu.open{ opacity:1; pointer-events:auto; transform:translateY(0) scale(1); }
+    .pm-header{ display:flex; align-items:center; gap:10px; padding:12px; border-bottom:1px solid #f0f0f0; }
+    .pm-header .avatar{ width:36px; height:36px; border-radius:9999px; overflow:hidden; border:1px solid #eee; background:#f2f2ff; display:grid; place-items:center; }
+    .pm-header strong{ font-size:14px; }
+    .pm-group-title{ font-size:11px; color:#7a7a7a; letter-spacing:.02em; text-transform:uppercase; padding:10px 12px 4px; }
+    .pm-item{ display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222; }
+    .pm-item:hover{ background:#f7f8ff; color:#2a118a; }
+    .pm-item svg{ width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:1.8; }
+    .pm-sep{ height:1px; background:#f0f0f4; margin:6px 0; }
+
+    /* ======= CTA ======= */
     .btn-roxo{
-      display:inline-flex;align-items:center;justify-content:center;
-      height:40px;padding:0 16px;border:0;border-radius:9999px;
-      background:var(--roxo);color:#fff;font-weight:700;font-size:14px;
-      text-decoration:none;cursor:pointer;transition:.2s;
+      display:inline-flex; align-items:center; justify-content:center;
+      height:40px; padding:0 16px; border:0; border-radius:9999px;
+      background:var(--roxo); color:#fff; font-weight:700; font-size:14px;
+      text-decoration:none; cursor:pointer; transition:.2s; white-space:nowrap; /* evita quebra no mobile */
     }
     .btn-roxo:hover{ background:var(--roxo-hover); transform:translateY(-1px); }
     .btn-roxo:focus-visible{ outline:3px solid rgba(138,0,255,.25); outline-offset:2px; }
 
-    .btn-outline{
-      display:inline-flex;align-items:center;justify-content:center;
-      height:40px;padding:0 14px;border-radius:9999px;
-      border:1.5px solid var(--line); background:#fff;color:#1f1f1f;
-      font-weight:700;text-decoration:none; transition:.18s;
-    }
-    .btn-outline:hover{ background:#fafafa; }
-    .btn-outline:focus-visible{ outline:3px solid rgba(0,0,0,.08); outline-offset:2px; }
-
-    .btn-ghost{
-      display:inline-flex;align-items:center;justify-content:center;
-      height:40px;padding:0 14px;border-radius:9999px;border:0;
-      background:var(--bg-soft);color:#2a2a2a;font-weight:700;text-decoration:none;transition:.18s;
-    }
-    .btn-ghost:hover{ background:#efeff7; }
-
-    .acoes-wrap{ display:flex;justify-content:center;gap:8px;flex-wrap:wrap; }
-    .icon-btn{
-      width:36px;height:36px;border-radius:9999px;border:1px solid var(--line);
-      background:#fff;display:inline-flex;align-items:center;justify-content:center;
-      cursor:pointer;transition:.18s;
-    }
-    .icon-btn:hover{ background:var(--bg-soft); }
-    .icon-btn:focus-visible{ outline:3px solid rgba(138,0,255,.25); outline-offset:2px; }
-    .icon-btn svg{ width:18px;height:18px; stroke:#555; fill:none; stroke-width:1.8; }
-    .icon-btn.edit:hover svg{ stroke:var(--roxo); }
-    .icon-btn.danger:hover svg{ stroke:var(--danger); }
-
-    @media (max-width:560px){
-      .icon-btn{ width:40px;height:40px; }
-      .hero-actions{ gap:8px; }
-    }
-
-    .table-wrapper{ overflow-x:auto; margin-top:8px; }
-    table{ width:100%; border-collapse:collapse; background:#fff; }
-    thead th{ background:#fafafa; }
-    th, td{ padding:10px; border:1px solid var(--line); }
-    tbody tr:hover{ background:#fcfcff; }
-
-    .logo{ text-align:center; margin-top:12px; }
-    .logo img{ max-height:72px; }
-    .logo a{ display:inline-flex; align-items:center; text-decoration:none; }
-
-    h1.titulo{ text-align:center; margin:6px 0 4px; }
-    h2{ margin:0; }
-
+    /* ======= HERO ======= */
     .container{ max-width:1100px; margin:0 auto; padding:0 16px 28px; }
-
-    .sec-title{
-      display:flex; align-items:center; justify-content:space-between; gap:12px;
-      margin-top:28px; margin-bottom:4px;
-    }
+    h1.titulo{ text-align:center; margin:10px 0 4px; }
+    h2{ margin:0; }
 
     .hero-card{
       max-width:1100px; margin:14px auto 8px;
       background:#fff; border:1px solid rgba(0,0,0,.06);
-      border-radius:22px; padding:18px 18px;
+      border-radius:22px; padding:18px;
       box-shadow:0 8px 28px rgba(0,0,0,.05);
       display:grid; grid-template-columns:1.3fr 1fr; gap:20px; align-items:center;
     }
     @media (max-width:920px){ .hero-card{ grid-template-columns:1fr; } }
 
-    .hero-ident{ display:flex; gap:14px; align-items:flex-start; min-width:0; }
+    .hero-ident{ display:flex; gap:14px; align-items:flex-start; min-width:0; position:relative; }
     .hero-avatar{
       width:64px; height:64px; border-radius:50%;
       background: radial-gradient(120% 120% at 10% 10%, #f4f3ff, #f0ecff 60%, #ebe6ff 100%);
-      display:grid; place-items:center; flex:0 0 64px; border:1px solid #eee;
+      display:grid; place-items:center; flex:0 0 64px; border:1px solid #eee; position:relative;
     }
     .hero-avatar svg{ width:30px; height:30px; stroke:var(--roxo); fill:none; stroke-width:1.8; }
+    /* lápis sobreposto para editar perfil (abre menu) */
+    .edit-pencil{
+      position:absolute; right:-6px; bottom:-6px; width:28px; height:28px; border-radius:9999px;
+      border:1px solid var(--line); background:#fff; display:grid; place-items:center; cursor:pointer;
+    }
+    .edit-pencil:hover{ background:var(--bg-soft); }
+    .edit-pencil svg{ width:16px; height:16px; stroke:#555; fill:none; stroke-width:1.8; }
+
     .hero-nome{ font-size:1.25rem; font-weight:800; color:#161616; line-height:1.2; }
-    .hero-email{ color:var(--muted); font-size:.95rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block; }
+    /* e-mail removido do card por solicitação */
 
     .hero-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
     .chip{
@@ -109,27 +132,120 @@
       border-radius:999px; font-weight:700; font-size:.85rem; border:1px solid var(--line);
       background:#fff; color:#333;
     }
-    .chip .dot{ width:8px;height:8px;border-radius:50%; }
+    .chip .dot{ width:8px; height:8px; border-radius:50%; }
     .dot-success{ background:var(--success); }
     .dot-warn{ background:var(--warn); }
     .chip-link{ background:#fff; color:var(--roxo); border-color:#ece6ff; text-decoration:none; }
-
-    .hero-actions{ display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; }
+    .chip-cta{ border-color:#e8ddff; background:#faf8ff; color:#4a1bb3; cursor:pointer; text-decoration:none; }
+    .chip-cta:hover{ background:#f3eeff; }
 
     .hero-metrics{ display:flex; gap:16px; margin-top:10px; }
     .hero-metric{ display:flex; flex-direction:column; align-items:flex-start; }
     .hero-metric strong{ font-size:1.05rem; }
     .hero-metric span{ font-size:.8rem; color:#777; }
+
+    /* ======= TABELA ======= */
+    .table-wrapper{ overflow-x:auto; margin-top:8px; }
+    table{ width:100%; border-collapse:collapse; background:#fff; }
+    thead th{ background:#fafafa; }
+    th, td{ padding:10px; border:1px solid var(--line); }
+    tbody tr:hover{ background:#fcfcff; }
+
+    .sec-title{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      margin-top:28px; margin-bottom:4px;
+    }
   </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">
-    <a href="{{ url_for('index') }}" aria-label="Página inicial" title="Página inicial">
-      <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
+<!-- ===== TOPBAR ===== -->
+<header class="topbar">
+  <a class="logo" href="{{ url_for('index') }}" aria-label="Página inicial">
+    <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
+  </a>
+  <div class="spacer"></div>
+
+  {% set chat_count = (chat_nao_lidos if chat_nao_lidos is defined else 0) %}
+  {% set notif_count = (notificacoes if notificacoes is defined else 0) %}
+
+  <div class="top-icons">
+    <!-- Chat -->
+    <a href="{{ url_for('fale_conosco') }}" class="icon-btn badge-wrap" aria-label="Chat">
+      <svg viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path></svg>
+      {% if chat_count|int > 0 %}<span class="badge">{{ chat_count }}</span>{% endif %}
     </a>
+    <!-- Notificações -->
+    <a href="{{ url_for('painel_malharia') }}#notificacoes" class="icon-btn badge-wrap" aria-label="Notificações">
+      <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+      {% if notif_count|int > 0 %}<span class="badge">{{ notif_count }}</span>{% endif %}
+    </a>
+
+    <!-- Perfil (abre menu) -->
+    <button class="profile-pill" id="profileToggle" type="button" aria-haspopup="menu" aria-expanded="false">
+      <span class="avatar">
+        {% if empresa and empresa.foto_url %}
+          <img src="{{ empresa.foto_url }}" alt="Foto do perfil">
+        {% else %}
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#6a5acd" fill="none" stroke-width="1.8"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7" stroke="#6a5acd" fill="none" stroke-width="1.8"></path></svg>
+        {% endif %}
+      </span>
+      <span class="name">{{ nome_empresa }}</span>
+      <svg class="caret" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"></path></svg>
+    </button>
   </div>
+
+  <!-- Dropdown de perfil -->
+  <nav class="profile-menu" id="profileMenu" role="menu" aria-label="Menu de perfil">
+    <div class="pm-header">
+      <span class="avatar">
+        {% if empresa and empresa.foto_url %}
+          <img src="{{ empresa.foto_url }}" alt="Foto do perfil">
+        {% else %}
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#6a5acd" fill="none" stroke-width="1.8"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7" stroke="#6a5acd" fill="none" stroke-width="1.8"></path></svg>
+        {% endif %}
+      </span>
+      <div>
+        <strong>{{ nome_empresa }}</strong><br>
+        <small style="color:#777">Meu perfil</small>
+      </div>
+    </div>
+
+    <div class="pm-group-title">Minha conta</div>
+    <a href="{{ url_for('editar_empresa') }}" class="pm-item" role="menuitem" title="Editar cadastro">
+      <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+      <span>Editar cadastro</span>
+    </a>
+    <!-- TODO: aponte para a sua rota quando criar a página de performance -->
+    <a href="#" class="pm-item" role="menuitem" title="Performance de acesso (em breve)">
+      <svg viewBox="0 0 24 24"><path d="M3 3v18h18"></path><path d="M7 13l3 3 7-7"></path></svg>
+      <span>Performance de acesso</span>
+    </a>
+
+    <div class="pm-group-title">Assinatura</div>
+    {% if _assin_ativa %}
+      <a href="{{ url_for('checkout', plano=empresa.plano or 'mensal') }}" class="pm-item" role="menuitem" title="Gerenciar pagamento">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"></rect><path d="M3 10h18"></path></svg>
+        <span>Minha assinatura (ativa)</span>
+      </a>
+    {% else %}
+      <a href="{{ url_for('checkout', plano='mensal') }}" class="pm-item" role="menuitem" title="Pagar assinatura">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"></rect><path d="M3 10h18"></path></svg>
+        <span>Assinatura pendente (pagar)</span>
+      </a>
+    {% endif %}
+
+    <div class="pm-sep"></div>
+
+    <a href="{{ url_for('fale_conosco') }}" class="pm-item" role="menuitem">
+      <svg viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path></svg>
+      <span>Suporte AcheTece</span>
+    </a>
+    <a href="{{ url_for('logout') }}" class="pm-item" role="menuitem">
+      <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><path d="M16 17l5-5-5-5"></path><path d="M21 12H9"></path></svg>
+      <span>Sair</span>
+    </a>
+  </nav>
 </header>
 
 {% set nome_empresa =
@@ -145,25 +261,32 @@
   <h1 class="titulo">Painel da Malharia</h1>
   <p style="text-align:center;">Bem-vindo(a), <strong>{{ nome_empresa }}</strong>!</p>
 
-  <!-- ===== Topo ===== -->
+  <!-- ===== HERO ===== -->
   <div class="hero-card">
     <div class="hero-col-left">
       <div class="hero-ident">
-        <div class="hero-avatar">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path></svg>
+        <div class="hero-avatar" aria-label="Foto do perfil">
+          {% if empresa and empresa.foto_url %}
+            <img src="{{ empresa.foto_url }}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+          {% else %}
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path></svg>
+          {% endif %}
+          <!-- Lápis abre o mesmo menu de perfil -->
+          <button class="edit-pencil" id="pencilToggle" type="button" title="Editar perfil" aria-label="Editar perfil">
+            <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+          </button>
         </div>
         <div class="hero-info" style="min-width:0;">
           <div class="hero-nome">{{ nome_empresa }}</div>
-          <span class="hero-email">{{ empresa.email if empresa else '' }}</span>
 
           <div class="hero-chips">
             {% if empresa %}
               {% if _assin_ativa %}
                 <span class="chip"><span class="dot dot-success"></span>Assinatura ativa</span>
-                <a class="chip chip-link" href="{{ url_for('checkout', plano=empresa.plano or 'mensal') }}">Gerenciar pagamento</a>
               {% else %}
-                <span class="chip"><span class="dot dot-warn"></span>Assinatura pendente</span>
-                <a class="chip chip-link" href="{{ url_for('checkout', plano='mensal') }}">Ativar plano (Mensal)</a>
+                <a class="chip chip-cta" href="{{ url_for('checkout', plano='mensal') }}">
+                  <span class="dot dot-warn"></span>Assinatura pendente
+                </a>
               {% endif %}
             {% else %}
               <span class="chip"><span class="dot dot-warn"></span>Cadastre sua malharia</span>
@@ -178,24 +301,10 @@
         </div>
       </div>
     </div>
-
-    <!-- Ações -->
-    <div class="hero-col-right">
-      <div class="hero-actions">
-        {% if empresa %}
-          <a href="{{ url_for('editar_empresa') }}" class="btn-outline">Editar Perfil</a>
-        {% else %}
-          <a href="{{ url_for('cadastrar_empresa') }}" class="btn-roxo">Cadastrar minha malharia</a>
-        {% endif %}
-        <a href="{{ url_for('fale_conosco') }}" class="btn-outline" title="Falar com o suporte">Suporte AcheTece</a>
-        <a href="{{ url_for('logout') }}" class="btn-outline" title="Encerrar sessão">Sair</a>
-        {% if session.get('admin') %}
-          <a href="{{ url_for('admin_empresas') }}" class="btn-ghost">Admin</a>
-        {% endif %}
-      </div>
-    </div>
+    <!-- coluna direita do hero ficou vazia (sem botões) por design -->
+    <div></div>
   </div>
-  <!-- ===== /Topo ===== -->
+  <!-- ===== /HERO ===== -->
 
   <!-- Cabeçalho da tabela -->
   <div class="sec-title">
@@ -235,7 +344,6 @@
                       action="{{ url_for('excluir_tear', id=tear.id) }}"
                       onsubmit="return confirm('Confirma excluir este tear? Essa ação é irreversível.');"
                       style="display:inline">
-                  <!-- garante retorno ao painel -->
                   <input type="hidden" name="next" value="{{ url_for('painel_malharia') }}">
                   <button type="submit" class="icon-btn danger" title="Excluir tear" aria-label="Excluir">
                     <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path></svg>
@@ -255,5 +363,33 @@
     </table>
   </div>
 </div>
+
+<script>
+  // abre/fecha menu de perfil
+  (function(){
+    const toggle = document.getElementById('profileToggle');
+    const menu   = document.getElementById('profileMenu');
+    const pencil = document.getElementById('pencilToggle');
+
+    function closeMenu(){
+      menu.classList.remove('open');
+      toggle?.setAttribute('aria-expanded','false');
+    }
+    function openMenu(){
+      menu.classList.add('open');
+      toggle?.setAttribute('aria-expanded','true');
+    }
+    function toggleMenu(){
+      if(menu.classList.contains('open')) closeMenu(); else openMenu();
+    }
+
+    toggle?.addEventListener('click', (e)=>{ e.stopPropagation(); toggleMenu(); });
+    pencil?.addEventListener('click', (e)=>{ e.stopPropagation(); openMenu(); });
+
+    document.addEventListener('click', closeMenu);
+    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeMenu(); });
+    menu?.addEventListener('click', (e)=> e.stopPropagation());
+  })();
+</script>
 </body>
 </html>
