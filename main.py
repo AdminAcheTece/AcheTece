@@ -1504,6 +1504,42 @@ def performance_acesso():
         total_contatos=total_contatos
     )
 
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+def _allowed_file(filename: str) -> bool:
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route("/perfil/foto", methods=["POST"], endpoint="perfil_foto_upload")
+def perfil_foto_upload():
+    emp, u = _get_empresa_usuario_da_sessao()
+    if not emp or not u:
+        return redirect(url_for("login"))
+
+    f = request.files.get("foto")
+    if not f or f.filename == "":
+        flash("Nenhuma imagem selecionada.", "warning")
+        return redirect(url_for("painel_malharia"))
+
+    if not _allowed_file(f.filename):
+        flash("Formato inválido. Use JPG, PNG, WEBP ou GIF.", "danger")
+        return redirect(url_for("painel_malharia"))
+
+    # pasta de destino
+    save_dir = os.path.join(app.root_path, "static", "uploads", "perfil")
+    os.makedirs(save_dir, exist_ok=True)
+
+    # nomeia por ID da empresa
+    ext = os.path.splitext(secure_filename(f.filename))[1].lower() or ".jpg"
+    final_name = f"emp_{emp.id}{ext}"
+    full_path = os.path.join(save_dir, final_name)
+    f.save(full_path)
+
+    # cache-buster para a imagem nova aparecer na hora
+    v = int(time.time())
+    emp.foto_url = url_for("static", filename=f"uploads/perfil/{final_name}") + f"?v={v}"
+    db.session.commit()
+
+    flash("Foto atualizada com sucesso!", "success")
+    return redirect(url_for("painel_malharia"))
 
 # --------------------------------------------------------------------
 # Admin: empresas
