@@ -18,7 +18,6 @@
       --success:#2e7d32; --warn:#b85e00; --danger:#b00020;
     }
 
-    /* utils */
     .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
     body{ color:var(--text); margin:0; }
     th, td{ text-align:center; }
@@ -29,8 +28,8 @@
       padding:8px 14px; background:#fff; border-bottom:1px solid #eee;
       position:sticky; top:0; z-index:50;
     }
-    .topbar .logo img{ height:54px; }             /* mobile padronizado */
-    @media (min-width:901px){ .topbar .logo img{ height:44px; } } /* desktop */
+    .topbar .logo img{ height:54px; }
+    @media (min-width:901px){ .topbar .logo img{ height:44px; } }
     .topbar .spacer{ flex:1; }
 
     .top-icons{ display:flex; align-items:center; gap:12px; }
@@ -38,8 +37,7 @@
     .badge{
       position:absolute; top:-6px; right:-6px; min-width:16px; height:16px;
       padding:0 4px; border-radius:999px; background:#ff6b00; color:#fff;
-      font-size:11px; display:flex; align-items:center; justify-content:center;
-      line-height:1;
+      font-size:11px; display:flex; align-items:center; justify-content:center; line-height:1;
     }
     .icon-btn{
       display:inline-flex; align-items:center; justify-content:center;
@@ -49,7 +47,6 @@
     .icon-btn:hover{ background:var(--bg-soft); }
     .icon-btn svg{ width:18px; height:18px; stroke:#444; fill:none; stroke-width:1.8; }
 
-    /* Perfil pill (avatar + nome + caret) */
     .profile-pill{
       display:inline-flex; align-items:center; gap:8px; padding:4px 10px;
       border:1px solid var(--line); border-radius:9999px; background:#fff; cursor:pointer;
@@ -61,19 +58,14 @@
     .profile-pill .avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
     .profile-pill .name{ max-width:120px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:700; font-size:14px; }
     .caret{ width:14px; height:14px; stroke:#555; }
+    @media (max-width:520px){ .profile-pill .name{ display:none; } }
 
-    @media (max-width:520px){
-      .profile-pill .name{ display:none; } /* no mobile, só avatar + caret */
-    }
-
-    /* Dropdown de perfil */
     .profile-menu{
       position:absolute; right:14px; top:56px; width:280px;
       background:#fff; border:1px solid #eaeaea; border-radius:14px;
       box-shadow:0 8px 24px rgba(0,0,0,.08);
       opacity:0; pointer-events:none; transform:translateY(8px) scale(.98);
-      transition:opacity .18s ease, transform .18s ease;
-      z-index:60;
+      transition:opacity .18s ease, transform .18s ease; z-index:60;
     }
     .profile-menu.open{ opacity:1; pointer-events:auto; transform:translateY(0) scale(1); }
     .pm-header{ display:flex; align-items:center; gap:10px; padding:12px; border-bottom:1px solid #f0f0f0; }
@@ -85,14 +77,12 @@
     .pm-item svg{ width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:1.8; }
     .pm-sep{ height:1px; background:#f0f0f4; margin:6px 0; }
 
-    /* Painel de notificações */
     .notify-panel{
       position:absolute; right:70px; top:56px; width:320px; max-width:92vw;
       background:#fff; border:1px solid #eaeaea; border-radius:14px;
       box-shadow:0 8px 24px rgba(0,0,0,.08);
       opacity:0; pointer-events:none; transform:translateY(8px) scale(.98);
-      transition:opacity .18s ease, transform .18s ease;
-      z-index:60;
+      transition:opacity .18s ease, transform .18s ease; z-index:60;
     }
     .notify-panel.open{ opacity:1; pointer-events:auto; transform:translateY(0) scale(1); }
     .np-header{ padding:10px 12px; border-bottom:1px solid #f0f0f0; font-weight:800; }
@@ -101,7 +91,6 @@
     .np-item:last-child{ border-bottom:0; }
     .np-item small{ color:#777; }
 
-    /* ======= CTA ======= */
     .btn-roxo{
       display:inline-flex; align-items:center; justify-content:center;
       height:40px; padding:0 16px; border:0; border-radius:9999px;
@@ -111,17 +100,17 @@
     .btn-roxo:hover{ background:var(--roxo-hover); transform:translateY(-1px); }
     .btn-roxo:focus-visible{ outline:3px solid rgba(138,0,255,.25); outline-offset:2px; }
 
-    /* ======= HERO ======= */
     .container{ max-width:1100px; margin:0 auto; padding:0 16px 28px; }
     h1.titulo{ text-align:center; margin:10px 0 4px; }
     h2{ margin:0; }
 
+    /* ===== HERO com duas colunas ===== */
     .hero-card{
       max-width:1100px; margin:14px auto 8px;
       background:#fff; border:1px solid rgba(0,0,0,.06);
       border-radius:22px; padding:18px;
       box-shadow:0 8px 28px rgba(0,0,0,.05);
-      display:grid; grid-template-columns:1.3fr 1fr; gap:20px; align-items:center;
+      display:grid; grid-template-columns:1.2fr .8fr; gap:20px; align-items:stretch;
     }
     @media (max-width:920px){ .hero-card{ grid-template-columns:1fr; } }
 
@@ -129,10 +118,10 @@
     .hero-avatar{
       width:64px; height:64px; border-radius:50%;
       background: radial-gradient(120% 120% at 10% 10%, #f4f3ff, #f0ecff 60%, #ebe6ff 100%);
-      display:grid; place-items:center; flex:0 0 64px; border:1px solid #eee; position:relative;
+      display:grid; place-items:center; flex:0 0 64px; border:1px solid #eee; position:relative; overflow:hidden;
     }
+    .hero-avatar img{ width:100%; height:100%; object-fit:cover; }
     .hero-avatar svg{ width:30px; height:30px; stroke:var(--roxo); fill:none; stroke-width:1.8; }
-    /* lápis sobreposto para editar a foto */
     .edit-pencil{
       position:absolute; right:-6px; bottom:-6px; width:28px; height:28px; border-radius:9999px;
       border:1px solid var(--line); background:#fff; display:grid; place-items:center; cursor:pointer;
@@ -141,7 +130,6 @@
     .edit-pencil svg{ width:16px; height:16px; stroke:#555; fill:none; stroke-width:1.8; }
 
     .hero-nome{ font-size:1.25rem; font-weight:800; color:#161616; line-height:1.2; }
-
     .hero-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
     .chip{
       display:inline-flex; align-items:center; gap:8px; height:32px; padding:0 12px;
@@ -151,16 +139,26 @@
     .chip .dot{ width:8px; height:8px; border-radius:50%; }
     .dot-success{ background:var(--success); }
     .dot-warn{ background:var(--warn); }
-    .chip-link{ background:#fff; color:#roxo; border-color:#ece6ff; text-decoration:none; }
-    .chip-cta{ border-color:#e8ddff; background:#faf8ff; color:#4a1bb3; cursor:pointer; text-decoration:none; }
-    .chip-cta:hover{ background:#f3eeff; }
 
     .hero-metrics{ display:flex; gap:16px; margin-top:10px; }
     .hero-metric{ display:flex; flex-direction:column; align-items:flex-start; }
     .hero-metric strong{ font-size:1.05rem; }
     .hero-metric span{ font-size:.8rem; color:#777; }
 
-    /* ======= TABELA ======= */
+    /* Painel da direita - Performance */
+    .perf-card{
+      border:1px solid #f0f0f3; border-radius:16px; padding:14px; background:#fafafe;
+      display:flex; flex-direction:column; justify-content:space-between;
+    }
+    .perf-title{ font-weight:800; margin-bottom:8px; }
+    .perf-metrics{ display:flex; gap:18px; }
+    .perf-metric strong{ font-size:1.2rem; }
+    .perf-metric span{ font-size:.85rem; color:#666; display:block; }
+    .perf-footer{ margin-top:10px; }
+    .perf-link{ font-weight:800; color:#4a1bb3; text-decoration:none; }
+    .perf-link:hover{ text-decoration:underline; }
+
+    /* ===== TABELA ===== */
     .table-wrapper{ overflow-x:auto; margin-top:8px; }
     table{ width:100%; border-collapse:collapse; background:#fff; }
     thead th{ background:#fafafa; }
@@ -170,6 +168,29 @@
     .sec-title{
       display:flex; align-items:center; justify-content:space-between; gap:12px;
       margin-top:28px; margin-bottom:4px;
+    }
+
+    /* ===== Ações por ícone (tabela) ===== */
+    .acoes-wrap{ display:flex; justify-content:center; gap:8px; flex-wrap:wrap; }
+    .icon-btn{ width:36px; height:36px; border-radius:9999px; border:1px solid var(--line); background:#fff; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; transition:.18s; }
+    .icon-btn:hover{ background:var(--bg-soft); }
+    .icon-btn:focus-visible{ outline:3px solid rgba(138,0,255,.25); outline-offset:2px; }
+    .icon-btn svg{ width:18px; height:18px; stroke:#555; fill:none; stroke-width:1.8; }
+    .icon-btn.edit:hover svg{ stroke:var(--roxo); }
+    .icon-btn.danger:hover svg{ stroke:var(--danger); }
+
+    /* ===== Mobile: cards de teares ===== */
+    .teares-cards{ display:none; grid-template-columns:1fr; gap:10px; }
+    .tear-card{ border:1px solid #eaeaf0; border-radius:14px; background:#fff; padding:12px; }
+    .tear-hd{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+    .tear-title{ font-weight:800; }
+    .tear-body{ display:grid; grid-template-columns:1fr 1fr; gap:8px 12px; }
+    .tear-item span{ display:block; font-size:11px; color:#777; }
+    .tear-item strong{ font-size:14px; }
+    .tear-actions{ display:flex; gap:8px; margin-top:10px; justify-content:flex-end; }
+    @media (max-width:640px){
+      .table-wrapper{ display:none; }
+      .teares-cards{ display:grid; }
     }
   </style>
 </head>
@@ -186,13 +207,11 @@
   {% set notif_count = (notificacoes if notificacoes is defined else 0) %}
 
   <div class="top-icons">
-    <!-- Chat -->
     <a href="{{ url_for('fale_conosco') }}" class="icon-btn badge-wrap" aria-label="Chat" title="Chat">
       <svg viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path></svg>
       {% if chat_count|int > 0 %}<span class="badge">{{ chat_count }}</span>{% endif %}
     </a>
 
-    <!-- Notificações -->
     <button id="notifToggle" class="icon-btn badge-wrap" aria-label="Notificações" title="Notificações" type="button">
       <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
       {% if notif_count|int > 0 %}<span class="badge">{{ notif_count }}</span>{% endif %}
@@ -211,7 +230,6 @@
       {% endif %}
     </nav>
 
-    <!-- Perfil (abre menu) -->
     <button class="profile-pill" id="profileToggle" type="button" aria-haspopup="menu" aria-expanded="false" title="Abrir menu do perfil">
       <span class="avatar">
         {% if foto_url %}
@@ -225,7 +243,6 @@
     </button>
   </div>
 
-  <!-- Dropdown de perfil -->
   <nav class="profile-menu" id="profileMenu" role="menu" aria-label="Menu de perfil">
     <div class="pm-header">
       <span class="avatar">
@@ -298,15 +315,15 @@
 
   <!-- ===== HERO ===== -->
   <div class="hero-card">
-    <div class="hero-col-left">
+    <!-- Coluna esquerda -->
+    <div>
       <div class="hero-ident">
         <div class="hero-avatar" aria-label="Foto do perfil" title="Clique no lápis para alterar a foto">
           {% if foto_url %}
-            <img src="{{ foto_url }}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+            <img src="{{ foto_url }}" alt="">
           {% else %}
             <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path></svg>
           {% endif %}
-          <!-- Lápis abre seletor de imagem -->
           <button class="edit-pencil" id="pencilToggle" type="button" title="Alterar foto do perfil">
             <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
           </button>
@@ -314,25 +331,32 @@
         <div class="hero-info" style="min-width:0;">
           <div class="hero-nome">{{ nome_empresa }}</div>
 
-          <!-- status de assinatura SEMPRE visível -->
           <div class="hero-chips">
             {% if _assin_ativa %}
               <span class="chip" title="Assinatura ativa"><span class="dot dot-success"></span>Assinatura ativa</span>
             {% else %}
-              <a class="chip chip-cta" href="{{ url_for('checkout', plano='mensal') }}" title="Pagar assinatura">
+              <a class="chip" href="{{ url_for('checkout', plano='mensal') }}" title="Pagar assinatura">
                 <span class="dot dot-warn"></span>Assinatura pendente
               </a>
             {% endif %}
           </div>
-
-          <div class="hero-metrics">
-            <div class="hero-metric"><strong>0</strong><span>Buscas</span></div>
-            <div class="hero-metric"><strong>0</strong><span>Contatos</span></div>
-          </div>
         </div>
       </div>
     </div>
-    <div></div>
+
+    <!-- Coluna direita: Performance -->
+    <aside class="perf-card">
+      <div>
+        <div class="perf-title">Performance de acesso</div>
+        <div class="perf-metrics">
+          <div class="perf-metric"><strong>0</strong><span>Buscas</span></div>
+          <div class="perf-metric"><strong>0</strong><span>Contatos</span></div>
+        </div>
+      </div>
+      <div class="perf-footer">
+        <a href="{{ url_for('performance_acesso') }}" class="perf-link">Ver detalhes</a>
+      </div>
+    </aside>
   </div>
   <!-- ===== /HERO ===== -->
 
@@ -342,6 +366,7 @@
     <a href="{{ url_for('teares_form') }}" class="btn-roxo">+ Cadastrar Tear</a>
   </div>
 
+  <!-- Desktop: tabela -->
   <div class="table-wrapper">
     <table>
       <thead>
@@ -383,71 +408,82 @@
           </tr>
           {% endfor %}
         {% else %}
-          <tr>
-            <td colspan="8">Nenhum tear cadastrado ainda.</td>
-          </tr>
+          <tr><td colspan="8">Nenhum tear cadastrado ainda.</td></tr>
         {% endif %}
       </tbody>
     </table>
+  </div>
+
+  <!-- Mobile: cards com as mesmas infos/ações -->
+  <div class="teares-cards">
+    {% if lista_teares|length %}
+      {% for tear in lista_teares %}
+        <div class="tear-card">
+          <div class="tear-hd">
+            <div class="tear-title">{{ tear.marca or '-' }} — {{ tear.modelo or '-' }}</div>
+            <div class="tear-actions">
+              <a href="{{ url_for('editar_tear', id=tear.id) }}" class="icon-btn edit" title="Editar">
+                <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+              </a>
+              <form method="POST"
+                    action="{{ url_for('excluir_tear', id=tear.id) }}"
+                    onsubmit="return confirm('Confirma excluir este tear? Essa ação é irreversível.');">
+                <input type="hidden" name="next" value="{{ url_for('painel_malharia') }}">
+                <button type="submit" class="icon-btn danger" title="Excluir">
+                  <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+              </form>
+            </div>
+          </div>
+          <div class="tear-body">
+            <div class="tear-item"><span>Tipo</span><strong>{{ tear.tipo or '-' }}</strong></div>
+            <div class="tear-item"><span>Finura</span><strong>{{ tear.finura if tear.finura is not none else '-' }}</strong></div>
+            <div class="tear-item"><span>Diâmetro</span><strong>{{ tear.diametro if tear.diametro is not none else '-' }}</strong></div>
+            <div class="tear-item"><span>Alimentadores</span><strong>{{ tear.alimentadores if tear.alimentadores is not none else '-' }}</strong></div>
+            <div class="tear-item"><span>Elastano</span><strong>{{ 'Sim' if (tear.elastano or tear.kit_elastano) else 'Não' }}</strong></div>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="tear-card">Nenhum tear cadastrado ainda.</div>
+    {% endif %}
   </div>
 </div>
 
 <script>
   (function(){
-    // menu perfil
     const toggle = document.getElementById('profileToggle');
     const menu   = document.getElementById('profileMenu');
-
-    function closeMenu(){
-      menu.classList.remove('open');
-      toggle?.setAttribute('aria-expanded','false');
-    }
-    function openMenu(){
-      menu.classList.add('open');
-      toggle?.setAttribute('aria-expanded','true');
-    }
-    function toggleMenu(){
-      if(menu.classList.contains('open')) closeMenu(); else openMenu();
-    }
+    function closeMenu(){ menu.classList.remove('open'); toggle?.setAttribute('aria-expanded','false'); }
+    function openMenu(){  menu.classList.add('open');    toggle?.setAttribute('aria-expanded','true'); }
+    function toggleMenu(){ menu.classList.contains('open') ? closeMenu() : openMenu(); }
     toggle?.addEventListener('click', (e)=>{ e.stopPropagation(); toggleMenu(); });
 
-    // notificações
     const nbtn = document.getElementById('notifToggle');
     const npanel = document.getElementById('notifPanel');
     function closeNotif(){ npanel.classList.remove('open'); }
     function toggleNotif(e){ e.stopPropagation(); npanel.classList.toggle('open'); }
     nbtn?.addEventListener('click', toggleNotif);
 
-    // fechar quando clicar fora / ESC
     document.addEventListener('click', ()=>{ closeMenu(); closeNotif(); });
     document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ closeMenu(); closeNotif(); }});
     menu?.addEventListener('click', (e)=> e.stopPropagation());
     npanel?.addEventListener('click', (e)=> e.stopPropagation());
 
-    // ===== upload de foto via LÁPIS (robusto) =====
+    // Upload de foto (robusto)
     const fotoForm  = document.getElementById('fotoForm');
     const fotoInput = document.getElementById('fotoInput');
     const pencil    = document.getElementById('pencilToggle');
 
     function abrirSeletor(){
       if (!fotoInput) return;
-      // reset para garantir que escolher o MESMO arquivo dispare "change"
-      fotoInput.value = "";
+      fotoInput.value = ""; // garante disparo ao escolher o mesmo arquivo
       fotoInput.click();
     }
-    pencil?.addEventListener('click', function(e){
-      e.stopPropagation();
-      abrirSeletor();
-    });
-
+    pencil?.addEventListener('click', function(e){ e.stopPropagation(); abrirSeletor(); });
     fotoInput?.addEventListener('change', function(){
       if (this.files && this.files.length > 0){
-        // requestSubmit respeita validações/CSRF melhor que submit()
-        if (fotoForm?.requestSubmit) {
-          fotoForm.requestSubmit();
-        } else {
-          fotoForm?.submit();
-        }
+        if (fotoForm?.requestSubmit) fotoForm.requestSubmit(); else fotoForm?.submit();
       }
     });
   })();
