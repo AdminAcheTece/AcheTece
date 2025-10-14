@@ -657,13 +657,12 @@ def _otp_validate(email: str, code: str) -> tuple[bool, str]:
 import os, time  # (se ainda não tiver)
 
 def _foto_url_runtime(emp_id: int) -> str | None:
-    """Procura emp_<id>.(png|jpg|jpeg|webp|gif) e devolve a URL com cache-buster."""
     base = os.path.join(app.root_path, "static", "uploads", "perfil")
-    for ext in ("png", "jpg", "jpeg", "webp", "gif"):
+    for ext in ("png","jpg","jpeg","webp","gif"):
         fn = f"emp_{emp_id}.{ext}"
-        path = os.path.join(base, fn)
-        if os.path.exists(path):
-            v = int(os.path.getmtime(path))
+        p = os.path.join(base, fn)
+        if os.path.exists(p):
+            v = int(os.path.getmtime(p))          # cache-buster
             return url_for("static", filename=f"uploads/perfil/{fn}") + f"?v={v}"
     return None
 
@@ -1082,7 +1081,7 @@ def painel_malharia():
     foto_url = getattr(emp, "foto_url", None) or _foto_url_runtime(emp.id)
     
     return render_template(
-        'painel_malharia.html',
+        "painel_malharia.html",
         empresa=emp,
         teares=teares,
         assinatura_ativa=is_ativa,
@@ -1091,7 +1090,7 @@ def painel_malharia():
         notificacoes=notif_count,
         notificacoes_lista=notif_lista,
         chat_nao_lidos=chat_nao_lidos,
-        foto_url=foto_url,          # <<< AQUI
+        foto_url=foto_url,          # <<<<<<<<<<
     )
 
 # --- CADASTRAR / LISTAR / SALVAR TEARES (SEM GATE DE ASSINATURA) ---
