@@ -4,36 +4,179 @@
   <meta charset="UTF-8">
   <title>Performance de Acesso</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
+
+  <!-- (Opcional, caso use) CSS global -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
   <style>
-    :root{ --line:#e6e6eb; --text:#1f1f1f; --bg:#fff; --muted:#6b6b6b; --roxo:#8A00FF; }
-    body{ margin:0; color:var(--text); font-family:Inter,system-ui,Segoe UI,Roboto,Arial; background:#f7f7fb; }
-    .wrap{ max-width:1100px; margin:0 auto; padding:16px; }
-    .top{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
-    .back{ text-decoration:none; color:#333; border:1px solid var(--line); padding:8px 12px; border-radius:9999px; }
-    h1{ margin:8px 0 12px; }
+    :root{
+      --site-bg:#F7F7FA;
+      --line:#eee;
+      --text:#1f1f1f;
+      --muted:#6b6b6b;
+      --roxo:#8A00FF;
+      --roxo-hover:#A63DFF;
+    }
+
+    /* ===== Base ===== */
+    html, body{ margin:0; background:var(--site-bg); color:var(--text); font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif; }
+
+    /* ===== NAVBAR (mesmo padrão do painel) ===== */
+    .navbar{
+      overflow:visible; padding:6px 12px;
+      background:#fff; border-bottom:1px solid #eee;
+      display:flex; align-items:center;
+    }
+    .header-left,.header-right{ display:flex; align-items:center; }
+    .header-right{ margin-left:auto; gap:20px; }
+    .logo a{ display:inline-flex; align-items:center; text-decoration:none; }
+    .logo img{ height:48px; width:auto; display:block; }
+
+    /* Ícones: Home + Menu */
+    .icon-btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px;
+      background:#fff; cursor:pointer; transition:box-shadow .2s, transform .02s, background .2s;
+      box-shadow:none !important;
+    }
+    .icon-btn:hover{ background:#f7f7f7; }
+    .icon{ width:20px; height:20px; color:#222; }
+
+    .menu-wrap{ position: relative; }
+    .hamburger{
+      display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
+      width:36px; height:36px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
+      cursor:pointer; box-shadow:none !important;
+    }
+    .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
+    .hamburger span + span{ margin-top:4px; }
+
+    .menu-dropdown{
+      background:#fff; border:1px solid #eaeaea; border-radius:12px; box-shadow:none !important;
+      z-index:10001; max-height:80vh; overflow:auto;
+      opacity:0; pointer-events:none; transform: translateY(8px) scale(.98);
+      transition: opacity .18s ease, transform .18s ease;
+    }
+    .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
+    .menu-dropdown .menu-header{ display:flex; justify-content:flex-end; align-items:center; padding:8px 10px; }
+    .menu-dropdown .menu-close{
+      display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px;
+      background:#f0f2f5; border:0; border-radius:10px; cursor:pointer;
+    }
+    .menu-dropdown .menu-item{
+      font-weight:400; display:flex; align-items:center; gap:10px; padding:10px 12px;
+      text-decoration:none; color:#222;
+    }
+    .menu-dropdown .menu-item:hover{ background:#f5f7ff; color:var(--roxo); border-radius:8px; }
+
+    @media (min-width:769px){
+      .menu-dropdown{
+        position:absolute; top:calc(100% + 8px); right:0; min-width:220px; max-width:320px; padding-right:2px; transform-origin: top right;
+      }
+    }
+    @media (max-width:768px){
+      .menu-wrap{ position: static; }
+      .menu-dropdown{
+        position: fixed; top: calc(var(--nav-h, 64px) + 8px); left: 50%;
+        width:max-content; max-width:90vw; min-width:160px; padding:4px 0;
+        max-height: calc(100vh - var(--nav-h, 64px) - 24px);
+        transform: translate(-50%, 8px) scale(.98); transform-origin: top center;
+        border-radius:14px; -webkit-overflow-scrolling:touch;
+      }
+      .menu-dropdown.open{ transform: translate(-50%,0) scale(1); }
+    }
+
+    /* ===== Layout da página ===== */
+    .wrap{ max-width:1100px; margin:18px auto 28px; padding:0 16px; }
+    .top{ display:flex; align-items:center; justify-content:flex-start; gap:12px; margin-bottom:8px; }
+    .btn-outline{
+      display:inline-flex; align-items:center; justify-content:center;
+      height:40px; padding:0 14px; border-radius:9999px;
+      border:1.5px solid #e3e3e7; background:#fff; color:#1f1f1f; font-weight:700; text-decoration:none;
+    }
+    .btn-outline:hover{ background:#fafafa; }
+    h1{ margin:8px 0 12px; font-size:22px; }
+
+    /* ===== Cards métricas (bordas iguais ao padrão) ===== */
     .cards{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
-    .card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:14px; }
+    .card{
+      background:#fff; border:1px solid var(--line); border-radius:14px; padding:14px;
+    }
     .card h3{ margin:0 0 6px; font-size:14px; color:var(--muted); }
     .card .big{ font-size:24px; font-weight:800; }
     @media (max-width:800px){ .cards{ grid-template-columns:1fr; } }
-    table{ width:100%; border-collapse:collapse; background:#fff; margin-top:14px; }
+
+    /* ===== Tabela ===== */
+    .table-wrap{ overflow-x:auto; margin-top:14px; }
+    table{ width:100%; border-collapse:collapse; background:#fff; }
     th,td{ border:1px solid var(--line); padding:10px; text-align:center; }
     thead th{ background:#fafafa; }
-    .hint{ color:#777; font-size:13px; margin-top:6px; }
-    .pill{ display:inline-block; padding:2px 8px; border-radius:9999px; border:1px solid var(--line); background:#fff; }
-    .btn{ background:var(--roxo); color:#fff; text-decoration:none; padding:8px 14px; border-radius:9999px; }
+
+    .hint{ color:#777; font-size:13px; margin:10px 0 6px; }
   </style>
 </head>
 <body>
+
+  <!-- ===== NAVBAR ===== -->
+  <header class="navbar">
+    <div class="header-left">
+      <div class="logo">
+        <a href="{{ url_for('index') }}" aria-label="Página inicial">
+          <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
+        </a>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <!-- Home -->
+      <a href="{{ url_for('index') }}" class="icon-btn" aria-label="Página inicial" title="Página inicial">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 10.5 12 3l9 7.5"></path>
+          <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
+          <path d="M9 21V12h6v9"></path>
+        </svg>
+      </a>
+
+      <!-- Menu -->
+      <div class="menu-wrap">
+        <button class="hamburger" id="hamburger" type="button" aria-label="Abrir menu" aria-controls="menu-lateral" aria-haspopup="menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+
+        <nav class="menu-dropdown" id="menu-lateral" role="menu" aria-label="Menu rápido">
+          <div class="menu-header">
+            <button type="button" class="menu-close" aria-label="Fechar menu">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+              </svg>
+            </button>
+          </div>
+
+          <a href="{{ url_for('buscar_teares') }}" class="menu-item" role="menuitem">Buscar Tear</a>
+          <a href="{{ url_for('malharia_info') }}" class="menu-item" role="menuitem">Como Funciona</a>
+          <a href="{{ url_for('login') }}" class="menu-item" role="menuitem">Já sou cadastrado</a>
+          <a href="{{ url_for('quem_somos') }}" class="menu-item" role="menuitem">Quem Somos</a>
+          <a href="{{ url_for('contato') }}" class="menu-item" role="menuitem">Fale conosco</a>
+          <a href="{{ url_for('termos') }}" class="menu-item" role="menuitem">Termos e Políticas</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== Conteúdo ===== -->
   <div class="wrap">
     <div class="top">
-      <a class="back" href="{{ url_for('painel_malharia') }}">← Voltar ao painel</a>
-      <a class="btn" href="{{ url_for('painel_malharia') }}">Cadastrar novo Tear</a>
+      <a class="btn-outline" href="{{ url_for('painel_malharia') }}">← Voltar ao painel</a>
     </div>
+
     <h1>Performance de Acesso</h1>
 
-    <div class="cards">
+    <div class="cards" aria-label="Métricas principais">
       <div class="card">
         <h3>Total de visitas</h3>
         <div class="big">{{ total_visitas }}</div>
@@ -50,26 +193,77 @@
       </div>
     </div>
 
-    <p class="hint">Futuramente, este painel exibirá gráficos por período, origem do acesso e contatos, e permitirá exportar CSV.</p>
+    <p class="hint">Em breve: gráficos por período, origem dos acessos, contatos e exportação CSV.</p>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Data</th>
-          <th>Visitas</th>
-          <th>Contatos</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for p in series %}
-        <tr>
-          <td>{{ p.data }}</td>
-          <td>{{ p.visitas }}</td>
-          <td>{{ p.contatos }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Visitas</th>
+            <th>Contatos</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in series %}
+          <tr>
+            <td>{{ p.data }}</td>
+            <td>{{ p.visitas }}</td>
+            <td>{{ p.contatos }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
+
+  <!-- ===== Scripts do MENU (mesmo padrão já aprovado) ===== -->
+  <script>
+    (function () {
+      function closeAll() {
+        document.querySelectorAll('.menu-wrap .menu-dropdown.open').forEach(m => {
+          m.classList.remove('open');
+          const b = m.closest('.menu-wrap')?.querySelector('.hamburger');
+          if (b) b.setAttribute('aria-expanded', 'false');
+        });
+      }
+      document.querySelectorAll('.menu-wrap').forEach(wrap => {
+        const btn  = wrap.querySelector('#hamburger');
+        const menu = wrap.querySelector('#menu-lateral');
+        const xBtn = wrap.querySelector('.menu-close');
+        if (!btn || !menu) return;
+
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const willOpen = !menu.classList.contains('open');
+          closeAll();
+          menu.classList.toggle('open', willOpen);
+          btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        });
+
+        xBtn?.addEventListener('click', e => {
+          e.stopPropagation();
+          menu.classList.remove('open');
+          btn.setAttribute('aria-expanded', 'false');
+        });
+
+        menu.addEventListener('click', e => e.stopPropagation());
+      });
+      document.addEventListener('click', closeAll);
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
+    })();
+  </script>
+
+  <!-- Mede altura da navbar para posicionar menu em mobile -->
+  <script>
+    (function(){
+      function setNavH(){
+        const nav = document.querySelector('.navbar')?.offsetHeight || 0;
+        document.documentElement.style.setProperty('--nav-h', nav + 'px');
+      }
+      setNavH();
+      window.addEventListener('resize', setNavH);
+    })();
+  </script>
 </body>
 </html>
