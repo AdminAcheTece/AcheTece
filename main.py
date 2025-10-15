@@ -48,6 +48,62 @@ STATIC_DIR = os.path.join(BASE_DIR, 'static')
 CACHE_DIR = os.path.join(BASE_DIR, 'cache_ibge')
 os.makedirs(CACHE_DIR, exist_ok=True)
 
+# =====================[ ANALYTICS - INÍCIO ]=====================
+# Eventos que vamos aceitar
+ALLOWED_EVENTS = {
+    'CARD_IMPRESSION',        # card ficou visível na index (opcional)
+    'COMPANY_PROFILE_VIEW',   # clicou em "Ver empresa"
+    'CONTACT_CLICK_WHATSAPP', # clicou em WhatsApp
+    'TEAR_DETAIL_VIEW',       # (se existir página de detalhe do tear)
+}
+
+def _init_analytics_table():
+    db = get_db()  # usa a sua função de conexão existente
+    db.execute("""
+      CREATE TABLE IF NOT EXISTS analytics_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ts TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        company_id INTEGER NOT NULL,
+        tear_id INTEGER,
+        event TEXT NOT NULL,
+        session_id TEXT,
+        meta TEXT
+      )
+    """)
+    db.execute("CREATE INDEX IF NOT EXISTS idx_ae_company_ts ON analytics_events(company_id, ts)")
+    db.execute("CREATE INDEX IF NOT EXISTS idx_ae_event_ts   ON analytics_events(event, ts)")
+    db.commit()
+
+# chama automaticamente antes do primeiro request
+@app.before_first_request
+def _ensure_analytics_table():
+    _init_analytics_table()
+
+def get_performance(company_id, dt_ini=None, dt_fim=None):
+    db = get_db()
+    params = [company_id]
+    where = "company_id = ?"
+    if dt_ini:
+        where += " AND ts >= ?"; params.append(dt_ini)
+    if dt_fim:
+        where += " AND ts < ?" ; params.append(dt_fim)
+
+    sql = f"""
+      SELECT DATE(ts) AS d,
+             SUM(CASE WHEN event IN ('CARD_IMPRESSION','COMPANY_PROFILE_VIEW','TEAR_DETAIL_VIEW') THEN 1 ELSE 0 END) AS visitas,
+             SUM(CASE WHEN event IN ('CONTACT_CLICK_WHATSAPP') THEN 1 ELSE 0 END) AS contatos
+        FROM analytics_events
+       WHERE {where}
+       GROUP BY DATE(ts)
+       ORDER BY DATE(ts)
+    """
+    rows = db.execute(sql, params).fetchall()
+    series = [{"data": r["d"], "visitas": r["visitas"], "contatos": r["contatos"]} for r in rows]
+    total_visitas  = sum(r["visitas"]  for r in rows)
+    total_contatos = sum(r["contatos"] for r in rows)
+    return total_visitas, total_contatos, series
+# =====================[ ANALYTICS - FIM ]========================
+
 def _env_bool(name: str, default: bool = False) -> bool:
     v = str(os.getenv(name, str(default))).strip().lower()
     return v in {"1", "true", "yes", "on"}
@@ -757,6 +813,28 @@ def _to_int(s):
         return int(float(str(s).replace(",", ".")))
     except Exception:
         return None
+
+@app.post("/api/track")
+def api_track():
+    data = request.get_json(silent=True) or {}
+    event      = data.get("event")
+    company_id = data.get("company_id")
+    tear_id    = data.get("tear_id")
+    session_id = data.get("session_id")
+    meta       = data.get("meta") or {}
+
+    if event not in ALLOWED_EVENTS or not company_id:
+        return jsonify({"ok": False, "error": "bad event/company"}), 400
+
+    db = get_db()
+    db.execute(
+        "INSERT INTO analytics_events (company_id, tear_id, event, session_id, meta) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (company_id, tear_id, event, session_id, json.dumps(meta))
+    )
+    db.commit()
+    return jsonify({"ok": True})
+# ================================================================
 
 @app.route("/", methods=["GET"])
 def index():
@@ -1474,21 +1552,15 @@ def editar_empresa():
     session['empresa_apelido'] = empresa.apelido or empresa.nome or empresa.email.split('@')[0]
     return redirect(url_for('editar_empresa', ok=1))
 
-# --- ROTA DA PERFORMANCE (adicione no main.py) ---
+# --- ROTA DA PERFORMANCE (substituir este bloco) ---
 @app.route('/performance', methods=['GET'], endpoint='performance_acesso')
 def performance_acesso():
     emp, u = _get_empresa_usuario_da_sessao()
     if not emp or not u:
         return redirect(url_for('login'))
 
-    # Exemplo estático; troque por dados reais depois
-    series = [
-        {"data": "2025-10-01", "visitas": 4, "contatos": 1},
-        {"data": "2025-10-02", "visitas": 7, "contatos": 3},
-        {"data": "2025-10-03", "visitas": 2, "contatos": 0},
-    ]
-    total_visitas  = sum(x["visitas"] for x in series)
-    total_contatos = sum(x["contatos"] for x in series)
+    # Usa o agregador de analytics (A.1) já adicionado acima
+    total_visitas, total_contatos, series = get_performance(emp.id)
 
     return render_template(
         'performance_acesso.html',
@@ -1497,10 +1569,6 @@ def performance_acesso():
         total_visitas=total_visitas,
         total_contatos=total_contatos
     )
-
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
-def _allowed_file(filename: str) -> bool:
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route("/perfil/foto", methods=["POST"], endpoint="perfil_foto_upload")
 def perfil_foto_upload():
