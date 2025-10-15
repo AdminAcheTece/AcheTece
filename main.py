@@ -48,6 +48,23 @@ STATIC_DIR = os.path.join(BASE_DIR, 'static')
 CACHE_DIR = os.path.join(BASE_DIR, 'cache_ibge')
 os.makedirs(CACHE_DIR, exist_ok=True)
 
+def _ensure_analytics_table_once():
+    # Chama a sua função existente que cria a tabela/índices se não existirem
+    try:
+        _init_analytics_table()
+    except Exception as e:
+        # evita quebrar o boot se algo falhar e deixa rastro no log
+        app.logger.exception("Falha ao garantir tabela de analytics: %s", e)
+
+# Executa uma vez por processo no boot (compatível Flask 3.x)
+with app.app_context():
+    _ensure_analytics_table_once()
+
+# Opcional: roda 1x por worker quando o servidor começa a atender
+@app.before_serving
+def _ensure_analytics_table_on_worker_start():
+    _ensure_analytics_table_once()
+
 # =====================[ ANALYTICS - INÍCIO ]=====================
 # Eventos que vamos aceitar
 ALLOWED_EVENTS = {
@@ -73,11 +90,6 @@ def _init_analytics_table():
     db.execute("CREATE INDEX IF NOT EXISTS idx_ae_company_ts ON analytics_events(company_id, ts)")
     db.execute("CREATE INDEX IF NOT EXISTS idx_ae_event_ts   ON analytics_events(event, ts)")
     db.commit()
-
-# chama automaticamente antes do primeiro request
-@app.before_first_request
-def _ensure_analytics_table():
-    _init_analytics_table()
 
 def get_performance(company_id, dt_ini=None, dt_fim=None):
     db = get_db()
