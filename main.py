@@ -48,23 +48,6 @@ STATIC_DIR = os.path.join(BASE_DIR, 'static')
 CACHE_DIR = os.path.join(BASE_DIR, 'cache_ibge')
 os.makedirs(CACHE_DIR, exist_ok=True)
 
-def _ensure_analytics_table_once():
-    # Chama a sua função existente que cria a tabela/índices se não existirem
-    try:
-        _init_analytics_table()
-    except Exception as e:
-        # evita quebrar o boot se algo falhar e deixa rastro no log
-        app.logger.exception("Falha ao garantir tabela de analytics: %s", e)
-
-# Executa uma vez por processo no boot (compatível Flask 3.x)
-with app.app_context():
-    _ensure_analytics_table_once()
-
-# Opcional: roda 1x por worker quando o servidor começa a atender
-@app.before_serving
-def _ensure_analytics_table_on_worker_start():
-    _ensure_analytics_table_once()
-
 # =====================[ ANALYTICS - INÍCIO ]=====================
 # Eventos que vamos aceitar
 ALLOWED_EVENTS = {
@@ -148,6 +131,84 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 }
 
 db = SQLAlchemy(app)
+
+# =====================[ ANALYTICS - INÍCIO ]=====================
+
+ALLOWED_EVENTS = {
+    'CARD_IMPRESSION',        # card visível na index (opcional)
+    'COMPANY_PROFILE_VIEW',   # clicou em "Ver empresa"
+    'CONTACT_CLICK_WHATSAPP', # clicou em WhatsApp
+    'TEAR_DETAIL_VIEW',       # (se existir página de detalhe do tear)
+}
+
+def _init_analytics_table():
+    """Cria a tabela/índices de analytics de forma compatível com SQLite e Postgres."""
+    # Detecta o dialeto para definir a coluna ID corretamente
+    dialect = db.engine.url.get_backend_name()
+    if dialect == "sqlite":
+        pk = "INTEGER PRIMARY KEY AUTOINCREMENT"
+        ts_default = "CURRENT_TIMESTAMP"
+    else:
+        # Postgres (e afins)
+        pk = "BIGSERIAL PRIMARY KEY"
+        ts_default = "CURRENT_TIMESTAMP"
+
+    ddl = f"""
+        CREATE TABLE IF NOT EXISTS analytics_events (
+            id {pk},
+            ts TIMESTAMP NOT NULL DEFAULT {ts_default},
+            company_id INTEGER NOT NULL,
+            tear_id INTEGER,
+            event TEXT NOT NULL,
+            session_id TEXT,
+            meta TEXT
+        )
+    """
+    idx1 = "CREATE INDEX IF NOT EXISTS idx_ae_company_ts ON analytics_events(company_id, ts)"
+    idx2 = "CREATE INDEX IF NOT EXISTS idx_ae_event_ts   ON analytics_events(event, ts)"
+
+    # Usa engine.begin() para commitar automaticamente (funciona em SQLite/Postgres)
+    with db.engine.begin() as conn:
+        conn.execute(text(ddl))
+        conn.execute(text(idx1))
+        conn.execute(text(idx2))
+
+def get_performance(company_id, dt_ini=None, dt_fim=None):
+    """Agrupa visitas/contatos por dia para a empresa informada."""
+    params = {"cid": company_id}
+    where = ["company_id = :cid"]
+    if dt_ini:
+        where.append("ts >= :dt_ini"); params["dt_ini"] = dt_ini
+    if dt_fim:
+        where.append("ts < :dt_fim");  params["dt_fim"] = dt_fim
+
+    sql = f"""
+      SELECT DATE(ts) AS d,
+             SUM(CASE WHEN event IN ('CARD_IMPRESSION','COMPANY_PROFILE_VIEW','TEAR_DETAIL_VIEW') THEN 1 ELSE 0 END) AS visitas,
+             SUM(CASE WHEN event IN ('CONTACT_CLICK_WHATSAPP') THEN 1 ELSE 0 END) AS contatos
+        FROM analytics_events
+       WHERE {" AND ".join(where)}
+       GROUP BY DATE(ts)
+       ORDER BY DATE(ts)
+    """
+    with db.engine.begin() as conn:
+        rows = conn.execute(text(sql), params).mappings().all()
+
+    series = [{"data": r["d"], "visitas": r["visitas"], "contatos": r["contatos"]} for r in rows]
+    total_visitas  = sum(r["visitas"]  for r in rows)
+    total_contatos = sum(r["contatos"] for r in rows)
+    return total_visitas, total_contatos, series
+
+def _ensure_analytics_table_once():
+    try:
+        _init_analytics_table()
+    except Exception as e:
+        app.logger.exception("Falha ao garantir tabela de analytics: %s", e)
+
+# Executa uma vez por processo no boot (compatível com Flask 3.x / sem before_first_request)
+with app.app_context():
+    _ensure_analytics_table_once()
+# =====================[ ANALYTICS - FIM ]=====================
 
 # --------------------------------------------------------------------
 # E-mail — Config + helpers (Resend + SMTP fallback)
