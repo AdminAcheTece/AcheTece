@@ -164,6 +164,14 @@
     .wa-link:hover{background:#f7f7f7}
     .wa-icon{width:26px;height:26px;display:block}
 
+    /* Botão "Ver empresa" (pill) */
+    .btn-view{
+      display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 12px;border-radius:9999px;
+      border:1px solid #ddd;background:#fff;color:#2a2535;text-decoration:none;font-weight:700;font-size:13px;
+    }
+    .btn-view:hover{background:#f7f7ff;border-color:#e6ddff}
+    .ic-building{width:18px;height:18px;color:#5d39ff;display:block}
+
     /* ===== MOBILE (cards) ===== */
     .cards-grid{display:grid;grid-template-columns:1fr;gap:12px;}
     .card-tear{ border:1px solid #eee;border-radius:16px;padding:14px; }
@@ -181,6 +189,7 @@
     .empresa-info .nome{font-weight:800;font-size:0.98rem;line-height:1.1;}
     .empresa-info .loc{display:flex;align-items:center;gap:6px;font-size:12px;line-height:1;color:#616161;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .empresa-info .loc .pin{width:14px;height:14px;flex:0 0 14px;color:#6a6a6a;}
+    .empresa-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}
 
     /* Mostrar cards só no mobile; tabela só no desktop */
     @media (max-width:820px){ .table-wrap{display:none;} }
@@ -231,7 +240,9 @@
   <header class="navbar">
     <div class="header-left">
       <div class="logo">
-        <img src="/static/logo.jpg" alt="Logo AcheTece" decoding="async" fetchpriority="high">
+        <a href="{{ url_for('index') }}" aria-label="Página inicial">
+          <img src="/static/logo.jpg" alt="Logo AcheTece" decoding="async" fetchpriority="high">
+        </a>
       </div>
     </div>
     <div class="header-right">
@@ -413,15 +424,35 @@
                             <span>{{ r.cidade }}{% if r.uf %}/{{ r.uf }}{% endif %}</span>
                           </div>
                         </div>
-                        {% if r.contato %}
-                          <a class="wa-link" href="{{ r.contato }}" target="_blank" rel="noopener" aria-label="WhatsApp">
-                            <img class="wa-icon"
-                                 src="/static/icone_whatsapp.png"
-                                 data-alt="/static/ícone_whatsapp.png,/estatico/icone_whatsapp.png,/estático/ícone_whatsapp.png"
-                                 alt="WhatsApp"
-                                 onerror="(function(img){var s=img.getAttribute('data-alt');if(!s){img.onerror=null;return;}var a=s.split(',');img.setAttribute('data-alt', a.slice(1).join(','));img.src=a[0];})(this);">
+                        <div class="empresa-actions">
+                          <a class="btn-view js-view-company"
+                             href="/empresa/{{ r.empresa_id }}"
+                             title="Ver perfil da empresa"
+                             aria-label="Ver perfil da empresa"
+                             data-company-id="{{ r.empresa_id }}"
+                             data-tear-id="{{ r.id }}">
+                            <svg class="ic-building" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                              <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                              <path d="M9 9h1M9 13h1M9 17h1M14 9h1M14 13h1M14 17h1"></path>
+                            </svg>
+                            Ver empresa
                           </a>
-                        {% endif %}
+                          {% if r.contato %}
+                            <a class="wa-link js-wa"
+                               href="{{ r.contato }}"
+                               target="_blank" rel="noopener"
+                               aria-label="WhatsApp"
+                               title="Contato via WhatsApp"
+                               data-company-id="{{ r.empresa_id }}"
+                               data-tear-id="{{ r.id }}">
+                              <img class="wa-icon"
+                                   src="/static/icone_whatsapp.png"
+                                   data-alt="/static/ícone_whatsapp.png,/estatico/icone_whatsapp.png,/estático/ícone_whatsapp.png"
+                                   alt="WhatsApp"
+                                   onerror="(function(img){var s=img.getAttribute('data-alt');if(!s){img.onerror=null;return;}var a=s.split(',');img.setAttribute('data-alt', a.slice(1).join(','));img.src=a[0];})(this);">
+                            </a>
+                          {% endif %}
+                        </div>
                       </div>
                     </article>
                   {% endfor %}
@@ -441,7 +472,7 @@
                       <th>Kit elastano</th>
                       <th>UF</th>
                       <th>Cidade</th>
-                      <th>Contato</th>
+                      <th>Contato / Perfil</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -459,15 +490,32 @@
                         <td>{{ r.uf }}</td>
                         <td>{{ r.cidade }}</td>
                         <td>
-                          {% if r.contato %}
-                            <a href="{{ r.contato }}" target="_blank" rel="noopener" class="wa-link" aria-label="WhatsApp">
-                              <img class="wa-icon"
-                                   src="/static/icone_whatsapp.png"
-                                   data-alt="/static/ícone_whatsapp.png,/estatico/icone_whatsapp.png,/estático/ícone_whatsapp.png"
-                                   alt="WhatsApp"
-                                   onerror="(function(img){var s=img.getAttribute('data-alt');if(!s){img.onerror=null;return;}var a=s.split(',');img.setAttribute('data-alt', a.slice(1).join(','));img.src=a[0];})(this);">
+                          <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+                            <a class="btn-view js-view-company"
+                               href="/empresa/{{ r.empresa_id }}"
+                               title="Ver perfil da empresa"
+                               aria-label="Ver perfil da empresa"
+                               data-company-id="{{ r.empresa_id }}"
+                               data-tear-id="{{ r.id }}">
+                              <svg class="ic-building" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                                <path d="M9 9h1M9 13h1M9 17h1M14 9h1M14 13h1M14 17h1"></path>
+                              </svg>
+                              Ver
                             </a>
-                          {% else %} — {% endif %}
+                            {% if r.contato %}
+                              <a href="{{ r.contato }}" target="_blank" rel="noopener" class="wa-link js-wa"
+                                 aria-label="WhatsApp" title="Contato via WhatsApp"
+                                 data-company-id="{{ r.empresa_id }}"
+                                 data-tear-id="{{ r.id }}">
+                                <img class="wa-icon"
+                                     src="/static/icone_whatsapp.png"
+                                     data-alt="/static/ícone_whatsapp.png,/estatico/icone_whatsapp.png,/estático/ícone_whatsapp.png"
+                                     alt="WhatsApp"
+                                     onerror="(function(img){var s=img.getAttribute('data-alt');if(!s){img.onerror=null;return;}var a=s.split(',');img.setAttribute('data-alt', a.slice(1).join(','));img.src=a[0];})(this);">
+                              </a>
+                            {% else %} — {% endif %}
+                          </div>
                         </td>
                       </tr>
                     {% endfor %}
@@ -600,6 +648,43 @@
         url.searchParams.set('pp', ppSel.value);
         url.searchParams.set('pagina', '1');
         window.location = url.toString();
+      });
+    })();
+
+    // ===== Analytics simples: view_company e wa_click =====
+    (function(){
+      function sendEvent(payload){
+        try{
+          const url = "/analytics/event";
+          const str = JSON.stringify(payload);
+          if (navigator.sendBeacon) {
+            const blob = new Blob([str], {type:"application/json"});
+            navigator.sendBeacon(url, blob);
+          } else {
+            fetch(url, {method:"POST", headers:{'Content-Type':'application/json'}, body:str, keepalive:true}).catch(()=>{});
+          }
+        }catch(e){ /* silencia erros para não travar navegação */ }
+      }
+
+      document.addEventListener('click', function(e){
+        const view = e.target.closest('.js-view-company');
+        if (view){
+          sendEvent({
+            type: 'view_company',
+            company_id: view.getAttribute('data-company-id'),
+            tear_id: view.getAttribute('data-tear-id'),
+            source: 'index'
+          });
+        }
+        const wa = e.target.closest('.js-wa');
+        if (wa){
+          sendEvent({
+            type: 'wa_click',
+            company_id: wa.getAttribute('data-company-id'),
+            tear_id: wa.getAttribute('data-tear-id'),
+            source: 'index'
+          });
+        }
       });
     })();
   </script>
