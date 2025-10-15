@@ -9,7 +9,7 @@
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
 
-  <!-- (Opcional) CSS global -->
+  <!-- CSS global (opcional) -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
   <style>
@@ -100,7 +100,7 @@
       border:1.5px solid #e3e3e7; background:#fff; color:#1f1f1f; font-weight:700; text-decoration:none;
       transition: background .15s ease, color .15s ease, border-color .15s ease;
     }
-    /* 1) HOVER vira roxo padrão */
+    /* Hover roxo padrão */
     .btn-outline:hover{
       background:var(--roxo);
       color:#fff;
@@ -122,35 +122,35 @@
     .card .big{ font-size:24px; font-weight:800; }
     @media (max-width:800px){ .cards{ grid-template-columns:1fr; } }
 
-    /* ===== Tabela ===== */
-    .table-wrap{ overflow-x:auto; margin-top:14px; -webkit-overflow-scrolling:touch; }
-    table{ width:100%; border-collapse:collapse; background:#fff; }
-    th,td{ border:1px solid var(--line); padding:10px; text-align:center; }
-    thead th{ background:#fafafa; }
-
-    /* 2) Mobile: transformar tabela em cartões */
-    @media (max-width: 640px){
-      .table-wrap{ overflow:visible; }         /* não precisamos de scroll horizontal */
-      table, thead, tbody, th, td, tr{ display:block; }
-      thead{ display:none; }
-      tbody tr{
-        background:#fff; border:1px solid var(--line); border-radius:12px;
-        margin-bottom:12px; padding:6px 0;
-      }
-      tbody td{
-        display:grid; grid-template-columns: 1fr 1fr;
-        align-items:center; gap:10px;
-        border:0; border-top:1px solid var(--line);
-        padding:10px 12px;
-      }
-      tbody td:first-child{ border-top:0; }
-      tbody td::before{
-        content: attr(data-label);
-        font-weight:700; color:#6b6b6b; text-align:left;
-      }
-    }
-
     .hint{ color:#777; font-size:13px; margin:10px 0 6px; }
+
+    /* ===== Tabela com scroll horizontal no mobile ===== */
+    .table-wrap{
+      overflow-x:auto; overflow-y:hidden;
+      -webkit-overflow-scrolling:touch;
+      background:#fff; border:1px solid var(--line); border-radius:12px;
+    }
+    /* Largura mínima para forçar scroll em telas pequenas */
+    table{ width:100%; min-width:520px; border-collapse:collapse; background:#fff; }
+    thead th{ background:#fafafa; }
+    th,td{ border:1px solid var(--line); padding:10px; text-align:center; }
+
+    /* Scrollbar visível (WebKit) */
+    .table-wrap::-webkit-scrollbar{ height:10px; }
+    .table-wrap::-webkit-scrollbar-track{ background:#ececf3; border-radius:8px; }
+    .table-wrap::-webkit-scrollbar-thumb{ background:var(--roxo); border-radius:8px; }
+    .table-wrap::-webkit-scrollbar-thumb:hover{ background:var(--roxo-hover); }
+
+    /* Scrollbar visível (Firefox) */
+    .table-wrap{ scrollbar-width:thin; scrollbar-color: var(--roxo) #ececf3; }
+
+    /* Dica de scroll só no mobile */
+    .scroll-hint{
+      display:none; color:#6b6b6b; font-size:12.5px; margin:6px 0 8px; padding-left:2px;
+    }
+    @media (max-width:640px){
+      .scroll-hint{ display:block; }
+    }
   </style>
 </head>
 <body>
@@ -229,6 +229,10 @@
 
     <p class="hint">Em breve: gráficos por período, origem dos acessos, contatos e exportação CSV.</p>
 
+    <!-- Dica de scroll (apenas mobile) -->
+    <div class="scroll-hint">↔ Deslize para ver todas as colunas</div>
+
+    <!-- Tabela com scroll horizontal em telas pequenas -->
     <div class="table-wrap">
       <table>
         <thead>
@@ -241,9 +245,9 @@
         <tbody>
           {% for p in series %}
           <tr>
-            <td data-label="Data">{{ p.data }}</td>
-            <td data-label="Visitas">{{ p.visitas }}</td>
-            <td data-label="Contatos">{{ p.contatos }}</td>
+            <td>{{ p.data }}</td>
+            <td>{{ p.visitas }}</td>
+            <td>{{ p.contatos }}</td>
           </tr>
           {% endfor %}
         </tbody>
