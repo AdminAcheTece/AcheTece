@@ -9,7 +9,7 @@
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
 
-  <!-- (Opcional, caso use) CSS global -->
+  <!-- (Opcional) CSS global -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
   <style>
@@ -25,7 +25,7 @@
     /* ===== Base ===== */
     html, body{ margin:0; background:var(--site-bg); color:var(--text); font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif; }
 
-    /* ===== NAVBAR (mesmo padrão do painel) ===== */
+    /* ===== NAVBAR (padrão do painel) ===== */
     .navbar{
       overflow:visible; padding:6px 12px;
       background:#fff; border-bottom:1px solid #eee;
@@ -93,15 +93,27 @@
     /* ===== Layout da página ===== */
     .wrap{ max-width:1100px; margin:18px auto 28px; padding:0 16px; }
     .top{ display:flex; align-items:center; justify-content:flex-start; gap:12px; margin-bottom:8px; }
+
     .btn-outline{
       display:inline-flex; align-items:center; justify-content:center;
       height:40px; padding:0 14px; border-radius:9999px;
       border:1.5px solid #e3e3e7; background:#fff; color:#1f1f1f; font-weight:700; text-decoration:none;
+      transition: background .15s ease, color .15s ease, border-color .15s ease;
     }
-    .btn-outline:hover{ background:#fafafa; }
+    /* 1) HOVER vira roxo padrão */
+    .btn-outline:hover{
+      background:var(--roxo);
+      color:#fff;
+      border-color:var(--roxo);
+    }
+    .btn-outline:focus-visible{
+      outline:3px solid rgba(138,0,255,.25);
+      outline-offset:2px;
+    }
+
     h1{ margin:8px 0 12px; font-size:22px; }
 
-    /* ===== Cards métricas (bordas iguais ao padrão) ===== */
+    /* ===== Cards métricas ===== */
     .cards{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
     .card{
       background:#fff; border:1px solid var(--line); border-radius:14px; padding:14px;
@@ -111,10 +123,32 @@
     @media (max-width:800px){ .cards{ grid-template-columns:1fr; } }
 
     /* ===== Tabela ===== */
-    .table-wrap{ overflow-x:auto; margin-top:14px; }
+    .table-wrap{ overflow-x:auto; margin-top:14px; -webkit-overflow-scrolling:touch; }
     table{ width:100%; border-collapse:collapse; background:#fff; }
     th,td{ border:1px solid var(--line); padding:10px; text-align:center; }
     thead th{ background:#fafafa; }
+
+    /* 2) Mobile: transformar tabela em cartões */
+    @media (max-width: 640px){
+      .table-wrap{ overflow:visible; }         /* não precisamos de scroll horizontal */
+      table, thead, tbody, th, td, tr{ display:block; }
+      thead{ display:none; }
+      tbody tr{
+        background:#fff; border:1px solid var(--line); border-radius:12px;
+        margin-bottom:12px; padding:6px 0;
+      }
+      tbody td{
+        display:grid; grid-template-columns: 1fr 1fr;
+        align-items:center; gap:10px;
+        border:0; border-top:1px solid var(--line);
+        padding:10px 12px;
+      }
+      tbody td:first-child{ border-top:0; }
+      tbody td::before{
+        content: attr(data-label);
+        font-weight:700; color:#6b6b6b; text-align:left;
+      }
+    }
 
     .hint{ color:#777; font-size:13px; margin:10px 0 6px; }
   </style>
@@ -207,9 +241,9 @@
         <tbody>
           {% for p in series %}
           <tr>
-            <td>{{ p.data }}</td>
-            <td>{{ p.visitas }}</td>
-            <td>{{ p.contatos }}</td>
+            <td data-label="Data">{{ p.data }}</td>
+            <td data-label="Visitas">{{ p.visitas }}</td>
+            <td data-label="Contatos">{{ p.contatos }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -217,7 +251,7 @@
     </div>
   </div>
 
-  <!-- ===== Scripts do MENU (mesmo padrão já aprovado) ===== -->
+  <!-- ===== Scripts do MENU (padrão aprovado) ===== -->
   <script>
     (function () {
       function closeAll() {
