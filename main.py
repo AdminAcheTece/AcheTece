@@ -56,23 +56,23 @@ def base_url():
     except Exception:
         return "http://localhost:5000"
 
-# Banco
-db_url = os.getenv('DATABASE_URL', 'sqlite:///banco.db')
+# Banco (driver psycopg v3 + SSL opcional)
+db_url = os.getenv('DATABASE_URL', 'sqlite:///banco.db').strip()
 
-# Normaliza prefixo antigo sem forçar driver/SSL
+# Normaliza para usar psycopg (v3), evitando depender de psycopg2
 if db_url.startswith('postgres://'):
-    db_url = db_url.replace('postgres://', 'postgresql://', 1)
+    db_url = db_url.replace('postgres://', 'postgresql+psycopg://', 1)
+elif db_url.startswith('postgresql://'):
+    db_url = db_url.replace('postgresql://', 'postgresql+psycopg://', 1)
 
-# SSL opcional via variável de ambiente (se você quiser/precisar)
-db_sslmode = os.getenv('DB_SSLMODE')
-if db_sslmode and db_url.startswith('postgresql'):
+# SSL opcional via env (DB_SSLMODE=require|prefer|disable...). Não força nada por padrão.
+sslmode = os.getenv('DB_SSLMODE')
+if sslmode and 'sslmode=' not in db_url:
     sep = '&' if '?' in db_url else '?'
-    db_url = f"{db_url}{sep}sslmode={db_sslmode}"
+    db_url = f'{db_url}{sep}sslmode={sslmode}'
 
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# Evita erros de conexão "SSL decryption failed" quando o worker reinicia
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     "pool_pre_ping": True,
     "pool_recycle": 280,
