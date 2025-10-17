@@ -149,25 +149,61 @@ def base_url():
     except Exception:
         return "http://localhost:5000"
 
-# Banco
-db_url = os.getenv('DATABASE_URL', 'sqlite:///banco.db')
-if db_url.startswith('postgres://'):
-    db_url = db_url.replace('postgres://', 'postgresql+psycopg://', 1)
-elif db_url.startswith('postgresql://'):
-    db_url = db_url.replace('postgresql://', 'postgresql+psycopg://', 1)
-if db_url.startswith('postgresql+psycopg://') and 'sslmode=' not in db_url:
-    db_url += ('&' if '?' in db_url else '?') + 'sslmode=require'
-app.config['SQLALCHEMY_DATABASE_URI'] = db_url
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# --------------------------------------------------------------------
+# Banco de Dados (Postgres com SSL e fallback opcional para SQLite)
+# --------------------------------------------------------------------
+def _normalize_db_url(url: str) -> str:
+    if url.startswith('postgres://'):
+        url = url.replace('postgres://', 'postgresql+psycopg://', 1)
+    if url.startswith('postgresql://'):
+        url = url.replace('postgresql://', 'postgresql+psycopg://', 1)
+    if url.startswith('postgresql+psycopg://') and 'sslmode=' not in url:
+        url += ('&' if '?' in url else '?') + 'sslmode=require'
+    return url
 
-# Evita erros de conexão "SSL decryption failed" quando o worker reinicia
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+db_url_env = os.getenv('DATABASE_URL', 'sqlite:///banco.db')
+db_url = _normalize_db_url(db_url_env)
+
+engine_opts = {
     "pool_pre_ping": True,
     "pool_recycle": 280,
     "pool_timeout": 30,
 }
+# psycopg v3: força SSL
+if db_url.startswith('postgresql+psycopg://'):
+    engine_opts["connect_args"] = {"sslmode": "require"}
+
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = engine_opts
 
 db = SQLAlchemy(app)
+
+def _test_db_connection(max_attempts: int = 3) -> bool:
+    for i in range(1, max_attempts + 1):
+        try:
+            with db.engine.connect() as conn:
+                conn.exec_driver_sql("SELECT 1")
+            app.logger.info("[DB] Conexão OK na tentativa %d", i)
+            return True
+        except Exception as e:
+            app.logger.warning("[DB] Tentativa %d falhou: %s", i, e)
+            time.sleep(1.5 * i)
+    return False
+
+if not _test_db_connection():
+    if os.getenv("ALLOW_SQLITE_FALLBACK", "1") == "1":
+        app.logger.error("[DB] Postgres indisponível — usando fallback SQLite.")
+        app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///banco.db"
+        db = SQLAlchemy(app)
+        try:
+            with db.engine.connect() as conn:
+                conn.exec_driver_sql("SELECT 1")
+            app.logger.info("[DB] SQLite pronto.")
+        except Exception as e:
+            app.logger.exception("[DB] Falha no SQLite: %s", e)
+    else:
+        app.logger.error("[DB] Postgres indisponível e fallback desativado (defina ALLOW_SQLITE_FALLBACK=1).")
 
 # =====================[ ANALYTICS - INÍCIO ]=====================
 
