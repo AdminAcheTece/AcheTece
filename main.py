@@ -48,17 +48,109 @@ STATIC_DIR = os.path.join(BASE_DIR, 'static')
 CACHE_DIR = os.path.join(BASE_DIR, 'cache_ibge')
 os.makedirs(CACHE_DIR, exist_ok=True)
 
+# =====================[ UTILS BÁSICOS ]=====================
+def _env_bool(name: str, default: bool = False) -> bool:
+    v = str(os.getenv(name, str(default))).strip().lower()
+    return v in {"1", "true", "yes", "on"}
+
+def base_url():
+    env_url = os.getenv('APP_BASE_URL')
+    if env_url:
+        return env_url.rstrip('/')
+    try:
+        return request.url_root.rstrip('/')
+    except Exception:
+        return "http://localhost:5000"
+
+# --------------------------------------------------------------------
+# Banco de Dados (Postgres com SSL, retry e fallback seguro p/ SQLite)
+# --------------------------------------------------------------------
+from sqlalchemy.exc import OperationalError
+from sqlalchemy import text
+
+def _normalize_db_url(url: str) -> str:
+    # Render/Heroku -> postgres://  | psycopg v3 -> postgresql+psycopg://
+    if url.startswith('postgres://'):
+        url = url.replace('postgres://', 'postgresql+psycopg://', 1)
+    if url.startswith('postgresql://'):
+        url = url.replace('postgresql://', 'postgresql+psycopg://', 1)
+    if url.startswith('postgresql+psycopg://') and 'sslmode=' not in url:
+        url += ('&' if '?' in url else '?') + 'sslmode=require'
+    return url
+
+db_url_env = os.getenv('DATABASE_URL', 'sqlite:///banco.db')
+db_url = _normalize_db_url(db_url_env)
+
+# Opções de pool estáveis p/ Render
+engine_opts = {
+    "pool_pre_ping": True,
+    "pool_recycle": 280,
+    "pool_timeout": 30,
+}
+# psycopg v3 – força SSL se Postgres
+if db_url.startswith('postgresql+psycopg://'):
+    engine_opts["connect_args"] = {"sslmode": "require"}
+
+# UMA instância de SQLAlchemy
+db = SQLAlchemy()
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = engine_opts
+db.init_app(app)
+
+def _test_db_connection(max_attempts: int = 3) -> bool:
+    """Testa conexão dentro do app context."""
+    with app.app_context():
+        for i in range(1, max_attempts + 1):
+            try:
+                with db.engine.connect() as conn:
+                    conn.exec_driver_sql("SELECT 1")
+                app.logger.info("[DB] Conexão OK (tentativa %d)", i)
+                return True
+            except Exception as e:
+                app.logger.warning("[DB] Tentativa %d falhou: %s", i, e)
+                time.sleep(1.5 * i)
+        return False
+
+def _switch_to_sqlite_fallback():
+    """Troca o engine para SQLite sem recriar a instância SQLAlchemy."""
+    with app.app_context():
+        try: db.session.remove()
+        except Exception: pass
+        try: db.engine.dispose()
+        except Exception: pass
+
+        app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///banco.db"
+
+        # limpa cache interno de engines da extensão
+        state = app.extensions.get('sqlalchemy')
+        if state and hasattr(state, 'engines'):
+            state.engines.clear()
+
+        # aquece uma conexão
+        with db.engine.connect() as conn:
+            conn.exec_driver_sql("SELECT 1")
+
+    app.logger.error("[DB] Postgres indisponível — usando fallback SQLite.")
+
+# Tenta conectar no Postgres; se falhar e fallback permitido, troca para SQLite.
+if not _test_db_connection():
+    if os.getenv("ALLOW_SQLITE_FALLBACK", "1") == "1":
+        _switch_to_sqlite_fallback()
+    else:
+        app.logger.error("[DB] Postgres indisponível e fallback desativado (defina ALLOW_SQLITE_FALLBACK=1).")
+
 # =====================[ ANALYTICS - INÍCIO ]=====================
-# Eventos que vamos aceitar
+# Eventos aceitos
 ALLOWED_EVENTS = {
-    'CARD_IMPRESSION',        # card ficou visível na index (opcional)
+    'CARD_IMPRESSION',        # card visível na index (opcional)
     'COMPANY_PROFILE_VIEW',   # clicou em "Ver empresa"
     'CONTACT_CLICK_WHATSAPP', # clicou em WhatsApp
-    'TEAR_DETAIL_VIEW',       # (se existir página de detalhe do tear)
+    'TEAR_DETAIL_VIEW',       # se existir detalhes do tear
 }
 
 def track_event(event: str, company_id: int, tear_id: int | None = None, meta: dict | None = None):
-    """Grava um evento simples na tabela analytics_events (ignora silenciosamente se falhar)."""
+    """Grava um evento simples em analytics_events (ignora silenciosamente se falhar)."""
     if event not in ALLOWED_EVENTS:
         return
     try:
@@ -77,14 +169,18 @@ def track_event(event: str, company_id: int, tear_id: int | None = None, meta: d
                 },
             )
     except Exception:
-        # Não quebra a navegação por causa de analytics
         app.logger.exception("[analytics] falha ao registrar evento")
 
-# --- PERFIL PÚBLICO DA EMPRESA ---
+# Perfil público da empresa
 @app.get("/empresa/<int:empresa_id>", endpoint="company_profile")
 def company_profile(empresa_id: int):
-    # Ajuste os nomes dos modelos conforme os seus. Aqui assumo SQLAlchemy com modelos Empresa e Tear.
-    from models import Empresa, Tear  # se seus modelos já estão no main, remova este import e use direto
+    # Se seus modelos estão no próprio main.py, importe direto; se estão em 'models', mantenha:
+    try:
+        from models import Empresa, Tear
+    except Exception:
+        # fallback: se os modelos já estão neste arquivo e exportados
+        Empresa = globals().get("Empresa")
+        Tear    = globals().get("Tear")
 
     empresa = Empresa.query.get_or_404(empresa_id)
     teares  = Tear.query.filter_by(empresa_id=empresa_id).order_by(Tear.id.desc()).all()
@@ -95,134 +191,12 @@ def company_profile(empresa_id: int):
     return render_template("empresa_perfil.html", empresa=empresa, teares=teares)
 
 def _init_analytics_table():
-    db = get_db()  # usa a sua função de conexão existente
-    db.execute("""
-      CREATE TABLE IF NOT EXISTS analytics_events (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        ts TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        company_id INTEGER NOT NULL,
-        tear_id INTEGER,
-        event TEXT NOT NULL,
-        session_id TEXT,
-        meta TEXT
-      )
-    """)
-    db.execute("CREATE INDEX IF NOT EXISTS idx_ae_company_ts ON analytics_events(company_id, ts)")
-    db.execute("CREATE INDEX IF NOT EXISTS idx_ae_event_ts   ON analytics_events(event, ts)")
-    db.commit()
-
-def get_performance(company_id, dt_ini=None, dt_fim=None):
-    db = get_db()
-    params = [company_id]
-    where = "company_id = ?"
-    if dt_ini:
-        where += " AND ts >= ?"; params.append(dt_ini)
-    if dt_fim:
-        where += " AND ts < ?" ; params.append(dt_fim)
-
-    sql = f"""
-      SELECT DATE(ts) AS d,
-             SUM(CASE WHEN event IN ('CARD_IMPRESSION','COMPANY_PROFILE_VIEW','TEAR_DETAIL_VIEW') THEN 1 ELSE 0 END) AS visitas,
-             SUM(CASE WHEN event IN ('CONTACT_CLICK_WHATSAPP') THEN 1 ELSE 0 END) AS contatos
-        FROM analytics_events
-       WHERE {where}
-       GROUP BY DATE(ts)
-       ORDER BY DATE(ts)
-    """
-    rows = db.execute(sql, params).fetchall()
-    series = [{"data": r["d"], "visitas": r["visitas"], "contatos": r["contatos"]} for r in rows]
-    total_visitas  = sum(r["visitas"]  for r in rows)
-    total_contatos = sum(r["contatos"] for r in rows)
-    return total_visitas, total_contatos, series
-# =====================[ ANALYTICS - FIM ]========================
-
-def _env_bool(name: str, default: bool = False) -> bool:
-    v = str(os.getenv(name, str(default))).strip().lower()
-    return v in {"1", "true", "yes", "on"}
-
-def base_url():
-    env_url = os.getenv('APP_BASE_URL')
-    if env_url:
-        return env_url.rstrip('/')
-    try:
-        return request.url_root.rstrip('/')
-    except Exception:
-        return "http://localhost:5000"
-
-# --------------------------------------------------------------------
-# Banco de Dados (Postgres com SSL e fallback opcional para SQLite)
-# --------------------------------------------------------------------
-def _normalize_db_url(url: str) -> str:
-    if url.startswith('postgres://'):
-        url = url.replace('postgres://', 'postgresql+psycopg://', 1)
-    if url.startswith('postgresql://'):
-        url = url.replace('postgresql://', 'postgresql+psycopg://', 1)
-    if url.startswith('postgresql+psycopg://') and 'sslmode=' not in url:
-        url += ('&' if '?' in url else '?') + 'sslmode=require'
-    return url
-
-db_url_env = os.getenv('DATABASE_URL', 'sqlite:///banco.db')
-db_url = _normalize_db_url(db_url_env)
-
-engine_opts = {
-    "pool_pre_ping": True,
-    "pool_recycle": 280,
-    "pool_timeout": 30,
-}
-# psycopg v3: força SSL
-if db_url.startswith('postgresql+psycopg://'):
-    engine_opts["connect_args"] = {"sslmode": "require"}
-
-app.config['SQLALCHEMY_DATABASE_URI'] = db_url
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = engine_opts
-
-db = SQLAlchemy(app)
-
-def _test_db_connection(max_attempts: int = 3) -> bool:
-    for i in range(1, max_attempts + 1):
-        try:
-            with db.engine.connect() as conn:
-                conn.exec_driver_sql("SELECT 1")
-            app.logger.info("[DB] Conexão OK na tentativa %d", i)
-            return True
-        except Exception as e:
-            app.logger.warning("[DB] Tentativa %d falhou: %s", i, e)
-            time.sleep(1.5 * i)
-    return False
-
-if not _test_db_connection():
-    if os.getenv("ALLOW_SQLITE_FALLBACK", "1") == "1":
-        app.logger.error("[DB] Postgres indisponível — usando fallback SQLite.")
-        app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///banco.db"
-        db = SQLAlchemy(app)
-        try:
-            with db.engine.connect() as conn:
-                conn.exec_driver_sql("SELECT 1")
-            app.logger.info("[DB] SQLite pronto.")
-        except Exception as e:
-            app.logger.exception("[DB] Falha no SQLite: %s", e)
-    else:
-        app.logger.error("[DB] Postgres indisponível e fallback desativado (defina ALLOW_SQLITE_FALLBACK=1).")
-
-# =====================[ ANALYTICS - INÍCIO ]=====================
-
-ALLOWED_EVENTS = {
-    'CARD_IMPRESSION',        # card visível na index (opcional)
-    'COMPANY_PROFILE_VIEW',   # clicou em "Ver empresa"
-    'CONTACT_CLICK_WHATSAPP', # clicou em WhatsApp
-    'TEAR_DETAIL_VIEW',       # (se existir página de detalhe do tear)
-}
-
-def _init_analytics_table():
-    """Cria a tabela/índices de analytics de forma compatível com SQLite e Postgres."""
-    # Detecta o dialeto para definir a coluna ID corretamente
+    """Cria a tabela/índices de analytics (compatível com SQLite e Postgres)."""
     dialect = db.engine.url.get_backend_name()
     if dialect == "sqlite":
         pk = "INTEGER PRIMARY KEY AUTOINCREMENT"
         ts_default = "CURRENT_TIMESTAMP"
     else:
-        # Postgres (e afins)
         pk = "BIGSERIAL PRIMARY KEY"
         ts_default = "CURRENT_TIMESTAMP"
 
@@ -240,7 +214,6 @@ def _init_analytics_table():
     idx1 = "CREATE INDEX IF NOT EXISTS idx_ae_company_ts ON analytics_events(company_id, ts)"
     idx2 = "CREATE INDEX IF NOT EXISTS idx_ae_event_ts   ON analytics_events(event, ts)"
 
-    # Usa engine.begin() para commitar automaticamente (funciona em SQLite/Postgres)
     with db.engine.begin() as conn:
         conn.execute(text(ddl))
         conn.execute(text(idx1))
@@ -253,7 +226,7 @@ def get_performance(company_id, dt_ini=None, dt_fim=None):
     if dt_ini:
         where.append("ts >= :dt_ini"); params["dt_ini"] = dt_ini
     if dt_fim:
-        where.append("ts < :dt_fim");  params["dt_fim"] = dt_fim
+        where.append("ts < :dt_fim");  params["dt_fim"]  = dt_fim
 
     sql = f"""
       SELECT DATE(ts) AS d,
@@ -278,7 +251,7 @@ def _ensure_analytics_table_once():
     except Exception as e:
         app.logger.exception("Falha ao garantir tabela de analytics: %s", e)
 
-# Executa uma vez por processo no boot (compatível com Flask 3.x / sem before_first_request)
+# Executa uma vez por processo no boot (sem before_first_request no Flask 3)
 with app.app_context():
     _ensure_analytics_table_once()
 # =====================[ ANALYTICS - FIM ]=====================
