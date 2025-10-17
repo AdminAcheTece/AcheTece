@@ -63,12 +63,13 @@ def base_url():
         return "http://localhost:5000"
 
 # --------------------------------------------------------------------
-# Banco de Dados (Postgres com SSL, retry e fallback seguro p/ SQLite)
+# Banco de Dados (Postgres com SSL, teste ativo e fallback simples p/ SQLite)
 # --------------------------------------------------------------------
+from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 
 def _normalize_db_url(url: str) -> str:
-    # Render/Heroku às vezes fornecem postgres://; normalizamos p/ psycopg v3
+    # Normaliza URLs comuns de Render/Heroku para psycopg v3
     if url.startswith('postgres://'):
         url = url.replace('postgres://', 'postgresql+psycopg://', 1)
     if url.startswith('postgresql://'):
@@ -77,8 +78,34 @@ def _normalize_db_url(url: str) -> str:
         url += ('&' if '?' in url else '?') + 'sslmode=require'
     return url
 
-db_url_env = os.getenv('DATABASE_URL', 'sqlite:///banco.db')
-db_url = _normalize_db_url(db_url_env)
+def _pick_database_uri() -> str:
+    """Decide o DB antes de inicializar o SQLAlchemy: tenta Postgres, cai para SQLite se falhar."""
+    env_url = os.getenv('DATABASE_URL', 'sqlite:///banco.db')
+    pg_url = _normalize_db_url(env_url)
+
+    # Se não for Postgres, já devolve (é SQLite local, por ex.)
+    if not pg_url.startswith('postgresql+psycopg://'):
+        app.logger.info("[DB] Usando SQLite (sem Postgres configurado).")
+        return pg_url
+
+    # Testa Postgres criando um engine EFÊMERO (fora do Flask-SQLAlchemy)
+    connect_args = {"sslmode": "require"}
+    try:
+        test_engine = create_engine(pg_url, future=True, pool_pre_ping=True, connect_args=connect_args)
+        with test_engine.connect() as conn:
+            conn.exec_driver_sql("SELECT 1")
+        app.logger.info("[DB] Postgres OK — usando %s", pg_url.split('@', 1)[-1])
+        return pg_url
+    except Exception as e:
+        app.logger.warning("[DB] Postgres indisponível: %s", e)
+        if os.getenv("ALLOW_SQLITE_FALLBACK", "1") == "1":
+            app.logger.error("[DB] Fallback para SQLite ativado (ALLOW_SQLITE_FALLBACK=1).")
+            return "sqlite:///banco.db"
+        # sem fallback, propaga o erro para derrubar o deploy (intencional)
+        raise
+
+# Decide a URI final ANTES de inicializar a extensão
+FINAL_DB_URI = _pick_database_uri()
 
 # Opções de pool estáveis p/ Render
 engine_opts = {
@@ -86,77 +113,16 @@ engine_opts = {
     "pool_recycle": 280,
     "pool_timeout": 30,
 }
-# psycopg v3 – força SSL se Postgres
-if db_url.startswith('postgresql+psycopg://'):
+if FINAL_DB_URI.startswith('postgresql+psycopg://'):
     engine_opts["connect_args"] = {"sslmode": "require"}
 
 # Instancia UMA VEZ a extensão e associa ao app
 db = SQLAlchemy()
-app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+app.config['SQLALCHEMY_DATABASE_URI'] = FINAL_DB_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = engine_opts
 db.init_app(app)
 
-def _test_db_connection(max_attempts: int = 3) -> bool:
-    """Testa conexão SEM usar db.engine diretamente (evita KeyError quando engine ainda não existe)."""
-    with app.app_context():
-        for i in range(1, max_attempts + 1):
-            try:
-                engine = db.get_engine()  # cria/retorna o engine para o bind padrão
-                with engine.connect() as conn:
-                    conn.exec_driver_sql("SELECT 1")
-                app.logger.info("[DB] Conexão OK (tentativa %d)", i)
-                return True
-            except Exception as e:
-                app.logger.warning("[DB] Tentativa %d falhou: %s", i, e)
-                time.sleep(1.5 * i)
-        return False
-
-def _switch_to_sqlite_fallback():
-    """Troca o engine para SQLite SEM recriar a instância SQLAlchemy e SEM mexer na instância do 'db'."""
-    with app.app_context():
-        # 1) encerra sessão atual (se houver)
-        try:
-            db.session.remove()
-        except Exception:
-            pass
-
-        # 2) se existir um engine atual, descarte as conexões
-        try:
-            try:
-                eng_old = db.get_engine()
-            except Exception:
-                eng_old = None
-            if eng_old is not None:
-                eng_old.dispose()
-        except Exception:
-            pass
-
-        # 3) altera a URI p/ SQLite
-        app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///banco.db"
-
-        # 4) limpa o cache de engines do extension (com cuidado)
-        state = app.extensions.get('sqlalchemy')
-        try:
-            if state and hasattr(state, 'engines') and isinstance(state.engines, dict):
-                state.engines.clear()
-        except Exception:
-            # se falhar, não interrompe o fluxo
-            pass
-
-        # 5) agora peça um NOVO engine (isso recria com a URI já atualizada)
-        engine_new = db.get_engine()  # ATENÇÃO: não passe 'app' posicional aqui!
-        with engine_new.connect() as conn:
-            conn.exec_driver_sql("SELECT 1")
-
-    app.logger.error("[DB] Postgres indisponível — usando fallback SQLite.")
-
-# Tenta conectar no Postgres; se falhar e o fallback estiver permitido, troca.
-if not _test_db_connection():
-    if os.getenv("ALLOW_SQLITE_FALLBACK", "1") == "1":
-        _switch_to_sqlite_fallback()
-    else:
-        app.logger.error("[DB] Postgres indisponível e fallback desativado (defina ALLOW_SQLITE_FALLBACK=1).")
 
 # =====================[ ANALYTICS - INÍCIO ]=====================
 # Eventos aceitos
