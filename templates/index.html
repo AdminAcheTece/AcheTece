@@ -413,6 +413,7 @@
                           {{ 'Sim' if kit in [True, 'Sim', 'SIM', 'sim', 1, '1'] else ('Não' if kit in [False, 'Não', 'NAO', 'NÃO', 0, '0'] else '—') }}
                         </div>
                       </div>
+              
                       <div class="card-empresa">
                         <div class="empresa-info">
                           <div class="nome">{{ r.empresa }}</div>
@@ -424,9 +425,10 @@
                             <span>{{ r.cidade }}{% if r.uf %}/{{ r.uf }}{% endif %}</span>
                           </div>
                         </div>
+              
                         <div class="empresa-actions">
                           <a class="btn-view js-view-company"
-                             href="/empresa/{{ r.empresa_id }}"
+                             href="{{ url_for('company_profile', empresa_id=r.empresa_id) }}"
                              title="Ver perfil da empresa"
                              aria-label="Ver perfil da empresa"
                              data-company-id="{{ r.empresa_id }}"
@@ -437,6 +439,7 @@
                             </svg>
                             Ver empresa
                           </a>
+              
                           {% if r.contato %}
                             <a class="wa-link js-wa"
                                href="{{ r.contato }}"
@@ -458,6 +461,7 @@
                   {% endfor %}
                 </div>
               </div>
+
 
               <!-- TABELA (desktop) -->
               <div class="table-wrap desktop-only">
@@ -492,7 +496,7 @@
                         <td>
                           <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
                             <a class="btn-view js-view-company"
-                               href="/empresa/{{ r.empresa_id }}"
+                               href="{{ url_for('company_profile', empresa_id=r.empresa_id) }}"
                                title="Ver perfil da empresa"
                                aria-label="Ver perfil da empresa"
                                data-company-id="{{ r.empresa_id }}"
@@ -503,8 +507,10 @@
                               </svg>
                               Ver
                             </a>
+              
                             {% if r.contato %}
-                              <a href="{{ r.contato }}" target="_blank" rel="noopener" class="wa-link js-wa"
+                              <a href="{{ r.contato }}" target="_blank" rel="noopener"
+                                 class="wa-link js-wa"
                                  aria-label="WhatsApp" title="Contato via WhatsApp"
                                  data-company-id="{{ r.empresa_id }}"
                                  data-tear-id="{{ r.id }}">
@@ -514,7 +520,9 @@
                                      alt="WhatsApp"
                                      onerror="(function(img){var s=img.getAttribute('data-alt');if(!s){img.onerror=null;return;}var a=s.split(',');img.setAttribute('data-alt', a.slice(1).join(','));img.src=a[0];})(this);">
                               </a>
-                            {% else %} — {% endif %}
+                            {% else %}
+                              —
+                            {% endif %}
                           </div>
                         </td>
                       </tr>
@@ -522,6 +530,7 @@
                   </tbody>
                 </table>
               </div>
+
 
               <!-- PAGINAÇÃO -->
               {% set filtro_diam_ = filtros.get('diâmetro') or filtros.get('diametro') or '' %}
