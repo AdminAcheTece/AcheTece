@@ -25,6 +25,9 @@ import random
 from jinja2 import TemplateNotFound
 import resend  # biblioteca do Resend
 from flask import session
+from urllib.parse import urlparse
+from werkzeug.utils import secure_filename
+import time
 
 # SMTP direto (fallback)
 import smtplib, ssl
@@ -38,11 +41,14 @@ app.logger.setLevel(logging.INFO)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-unsafe')
 app.config['PREFERRED_URL_SCHEME'] = 'https'
 
+UPLOAD_DIR = os.path.join(app.root_path, "static", "uploads", "perfil")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
 CACHE_DIR = os.path.join(BASE_DIR, 'cache_ibge')
 os.makedirs(CACHE_DIR, exist_ok=True)
 
+# =====================[ UTILS BÁSICOS ]=====================
 def _env_bool(name: str, default: bool = False) -> bool:
     v = str(os.getenv(name, str(default))).strip().lower()
     return v in {"1", "true", "yes", "on"}
@@ -56,30 +62,183 @@ def base_url():
     except Exception:
         return "http://localhost:5000"
 
-# Banco (driver psycopg v3 + SSL opcional)
-db_url = os.getenv('DATABASE_URL', 'sqlite:///banco.db').strip()
+# --------------------------------------------------------------------
+# Banco de Dados (Postgres com SSL, teste ativo e fallback simples p/ SQLite)
+# --------------------------------------------------------------------
+from sqlalchemy import create_engine
+from sqlalchemy.exc import OperationalError
 
-# Normaliza para usar psycopg (v3), evitando depender de psycopg2
-if db_url.startswith('postgres://'):
-    db_url = db_url.replace('postgres://', 'postgresql+psycopg://', 1)
-elif db_url.startswith('postgresql://'):
-    db_url = db_url.replace('postgresql://', 'postgresql+psycopg://', 1)
+def _normalize_db_url(url: str) -> str:
+    # Normaliza URLs comuns de Render/Heroku para psycopg v3
+    if url.startswith('postgres://'):
+        url = url.replace('postgres://', 'postgresql+psycopg://', 1)
+    if url.startswith('postgresql://'):
+        url = url.replace('postgresql://', 'postgresql+psycopg://', 1)
+    if url.startswith('postgresql+psycopg://') and 'sslmode=' not in url:
+        url += ('&' if '?' in url else '?') + 'sslmode=require'
+    return url
 
-# SSL opcional via env (DB_SSLMODE=require|prefer|disable...). Não força nada por padrão.
-sslmode = os.getenv('DB_SSLMODE')
-if sslmode and 'sslmode=' not in db_url:
-    sep = '&' if '?' in db_url else '?'
-    db_url = f'{db_url}{sep}sslmode={sslmode}'
+def _pick_database_uri() -> str:
+    """Decide o DB antes de inicializar o SQLAlchemy: tenta Postgres, cai para SQLite se falhar."""
+    env_url = os.getenv('DATABASE_URL', 'sqlite:///banco.db')
+    pg_url = _normalize_db_url(env_url)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = db_url
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    # Se não for Postgres, já devolve (é SQLite local, por ex.)
+    if not pg_url.startswith('postgresql+psycopg://'):
+        app.logger.info("[DB] Usando SQLite (sem Postgres configurado).")
+        return pg_url
+
+    # Testa Postgres criando um engine EFÊMERO (fora do Flask-SQLAlchemy)
+    connect_args = {"sslmode": "require"}
+    try:
+        test_engine = create_engine(pg_url, future=True, pool_pre_ping=True, connect_args=connect_args)
+        with test_engine.connect() as conn:
+            conn.exec_driver_sql("SELECT 1")
+        app.logger.info("[DB] Postgres OK — usando %s", pg_url.split('@', 1)[-1])
+        return pg_url
+    except Exception as e:
+        app.logger.warning("[DB] Postgres indisponível: %s", e)
+        if os.getenv("ALLOW_SQLITE_FALLBACK", "1") == "1":
+            app.logger.error("[DB] Fallback para SQLite ativado (ALLOW_SQLITE_FALLBACK=1).")
+            return "sqlite:///banco.db"
+        # sem fallback, propaga o erro para derrubar o deploy (intencional)
+        raise
+
+# Decide a URI final ANTES de inicializar a extensão
+FINAL_DB_URI = _pick_database_uri()
+
+# Opções de pool estáveis p/ Render
+engine_opts = {
     "pool_pre_ping": True,
     "pool_recycle": 280,
     "pool_timeout": 30,
 }
+if FINAL_DB_URI.startswith('postgresql+psycopg://'):
+    engine_opts["connect_args"] = {"sslmode": "require"}
 
-db = SQLAlchemy(app)
+# Instancia UMA VEZ a extensão e associa ao app
+db = SQLAlchemy()
+app.config['SQLALCHEMY_DATABASE_URI'] = FINAL_DB_URI
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = engine_opts
+db.init_app(app)
+
+
+# =====================[ ANALYTICS - INÍCIO ]=====================
+# Eventos aceitos
+ALLOWED_EVENTS = {
+    'CARD_IMPRESSION',        # card visível na index (opcional)
+    'COMPANY_PROFILE_VIEW',   # clicou em "Ver empresa"
+    'CONTACT_CLICK_WHATSAPP', # clicou em WhatsApp
+    'TEAR_DETAIL_VIEW',       # se existir detalhes do tear
+}
+
+def track_event(event: str, company_id: int, tear_id: int | None = None, meta: dict | None = None):
+    """Grava um evento simples em analytics_events (ignora silenciosamente se falhar)."""
+    if event not in ALLOWED_EVENTS:
+        return
+    try:
+        with db.engine.begin() as conn:
+            conn.execute(
+                text("""
+                    INSERT INTO analytics_events (company_id, tear_id, event, session_id, meta)
+                    VALUES (:cid, :tid, :evt, :sid, :meta)
+                """),
+                {
+                    "cid": company_id,
+                    "tid": tear_id,
+                    "evt": event,
+                    "sid": session.get("_sid") or request.cookies.get("session") or "",
+                    "meta": json.dumps(meta or {}),
+                },
+            )
+    except Exception:
+        app.logger.exception("[analytics] falha ao registrar evento")
+
+# Perfil público da empresa
+@app.get("/empresa/<int:empresa_id>", endpoint="company_profile")
+def company_profile(empresa_id: int):
+    # Se seus modelos estão no próprio main.py, importe direto; se estão em 'models', mantenha:
+    try:
+        from models import Empresa, Tear
+    except Exception:
+        # fallback: se os modelos já estão neste arquivo e exportados
+        Empresa = globals().get("Empresa")
+        Tear    = globals().get("Tear")
+
+    empresa = Empresa.query.get_or_404(empresa_id)
+    teares  = Tear.query.filter_by(empresa_id=empresa_id).order_by(Tear.id.desc()).all()
+
+    # Analytics: visita ao perfil
+    track_event("COMPANY_PROFILE_VIEW", company_id=empresa_id)
+
+    return render_template("empresa_perfil.html", empresa=empresa, teares=teares)
+
+def _init_analytics_table():
+    """Cria a tabela/índices de analytics (compatível com SQLite e Postgres)."""
+    dialect = db.engine.url.get_backend_name()
+    if dialect == "sqlite":
+        pk = "INTEGER PRIMARY KEY AUTOINCREMENT"
+        ts_default = "CURRENT_TIMESTAMP"
+    else:
+        pk = "BIGSERIAL PRIMARY KEY"
+        ts_default = "CURRENT_TIMESTAMP"
+
+    ddl = f"""
+        CREATE TABLE IF NOT EXISTS analytics_events (
+            id {pk},
+            ts TIMESTAMP NOT NULL DEFAULT {ts_default},
+            company_id INTEGER NOT NULL,
+            tear_id INTEGER,
+            event TEXT NOT NULL,
+            session_id TEXT,
+            meta TEXT
+        )
+    """
+    idx1 = "CREATE INDEX IF NOT EXISTS idx_ae_company_ts ON analytics_events(company_id, ts)"
+    idx2 = "CREATE INDEX IF NOT EXISTS idx_ae_event_ts   ON analytics_events(event, ts)"
+
+    with db.engine.begin() as conn:
+        conn.execute(text(ddl))
+        conn.execute(text(idx1))
+        conn.execute(text(idx2))
+
+def get_performance(company_id, dt_ini=None, dt_fim=None):
+    """Agrupa visitas/contatos por dia para a empresa informada."""
+    params = {"cid": company_id}
+    where = ["company_id = :cid"]
+    if dt_ini:
+        where.append("ts >= :dt_ini"); params["dt_ini"] = dt_ini
+    if dt_fim:
+        where.append("ts < :dt_fim");  params["dt_fim"]  = dt_fim
+
+    sql = f"""
+      SELECT DATE(ts) AS d,
+             SUM(CASE WHEN event IN ('CARD_IMPRESSION','COMPANY_PROFILE_VIEW','TEAR_DETAIL_VIEW') THEN 1 ELSE 0 END) AS visitas,
+             SUM(CASE WHEN event IN ('CONTACT_CLICK_WHATSAPP') THEN 1 ELSE 0 END) AS contatos
+        FROM analytics_events
+       WHERE {" AND ".join(where)}
+       GROUP BY DATE(ts)
+       ORDER BY DATE(ts)
+    """
+    with db.engine.begin() as conn:
+        rows = conn.execute(text(sql), params).mappings().all()
+
+    series = [{"data": r["d"], "visitas": r["visitas"], "contatos": r["contatos"]} for r in rows]
+    total_visitas  = sum(r["visitas"]  for r in rows)
+    total_contatos = sum(r["contatos"] for r in rows)
+    return total_visitas, total_contatos, series
+
+def _ensure_analytics_table_once():
+    try:
+        _init_analytics_table()
+    except Exception as e:
+        app.logger.exception("Falha ao garantir tabela de analytics: %s", e)
+
+# Executa uma vez por processo no boot (sem before_first_request no Flask 3)
+with app.app_context():
+    _ensure_analytics_table_once()
+# =====================[ ANALYTICS - FIM ]=====================
 
 # --------------------------------------------------------------------
 # E-mail — Config + helpers (Resend + SMTP fallback)
@@ -218,36 +377,74 @@ SEED_TOKEN = os.getenv("SEED_TOKEN", "ACHETECE")
 def _norm(s: str) -> str:
     return normalize('NFKD', s).encode('ASCII', 'ignore').decode('ASCII').strip().lower()
 
-def _to_int(val):
-    try:
-        return int(float(str(val).replace(",", ".").strip()))
-    except Exception:
-        return None
-
-def _to_bool(val):
-    if val is None:
-        return False
-    return str(val).strip().lower() in {"1", "true", "on", "sim", "s", "y", "yes"}
-
 def gerar_token(email):
     return URLSafeTimedSerializer(app.config['SECRET_KEY']).dumps(email, salt='recupera-senha')
 
 def enviar_email_recuperacao(email, nome_empresa=""):
     token = gerar_token(email)
-    link = f"{base_url()}{url_for('redefinir_senha', token=token)}"
+    # URL absoluta para funcionar bem em clientes de e-mail
+    link = url_for('redefinir_senha', token=token, _external=True)
+
     html = render_template_string("""
-    <html><body style="font-family:Arial,sans-serif">
-      <h2>Redefinição de Senha</h2>
-      <p>Olá {{ nome }},</p>
-      <p>Clique abaixo para criar uma nova senha (válido por 1h):</p>
-      <p><a href="{{ link }}" target="_blank">Redefinir Senha</a></p>
-    </body></html>
-    """, nome=nome_empresa or email, link=link)
+<!doctype html>
+<html lang="pt-br">
+  <body style="margin:0;padding:0;background:#F7F7FA;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1e1b2b;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F7F7FA;padding:24px 0;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;width:100%;background:#ffffff;border:1px solid #eee;border-radius:12px;">
+            <tr>
+              <td style="padding:22px 24px;border-bottom:1px solid #f0f0f0;">
+                <h2 style="margin:0;font-size:20px;line-height:1.25;font-weight:800;">Redefinição de Senha</h2>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:22px 24px;">
+                <p style="margin:0 0 10px 0;line-height:1.55;">Olá <strong>{{ nome }}</strong>,</p>
+                <p style="margin:0 0 16px 0;line-height:1.55;">
+                  Clique no botão abaixo para criar uma nova senha. Este link é válido por <strong>1 hora</strong>.
+                </p>
+
+                <!-- Botão roxo (bulletproof) -->
+                <table role="presentation" cellspacing="0" cellpadding="0" style="margin:18px 0 10px 0;">
+                  <tr>
+                    <td align="center" bgcolor="#8A00FF" style="border-radius:9999px;">
+                      <a href="{{ link }}" target="_blank"
+                         style="display:inline-block;padding:12px 24px;border-radius:9999px;background:#8A00FF;color:#ffffff;text-decoration:none;font-weight:800;font-size:16px;line-height:1;">
+                        Redefinir senha
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Fallback com link simples -->
+                <p style="margin:14px 0 0 0;font-size:13px;color:#6b6b6b;line-height:1.5;">
+                  Se o botão não funcionar, copie e cole este link no navegador:<br>
+                  <a href="{{ link }}" target="_blank" style="color:#5b2fff;word-break:break-all;">{{ link }}</a>
+                </p>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:16px 24px;border-top:1px solid #f0f0f0;color:#6b6b6b;font-size:12px;">
+                Você recebeu este e-mail porque solicitou redefinição de senha no AcheTece.
+                Se não foi você, ignore esta mensagem.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+    """, nome=(nome_empresa or email), link=link)
+
     ok, _ = _smtp_send_direct(
         to=email,
         subject="Redefinição de Senha - AcheTece",
         html=html,
-        text=f"Para redefinir sua senha, acesse: {link}",
+        text=f"Para redefinir sua senha (válido por 1h), acesse: {link}",
     )
     if not ok:
         raise RuntimeError("Falha ao enviar e-mail de recuperação.")
@@ -299,13 +496,8 @@ class Tear(db.Model):
     finura = db.Column(db.Integer, nullable=False)              # galga
     diametro = db.Column(db.Integer, nullable=False)
     alimentadores = db.Column(db.Integer, nullable=False)
-    elastano = db.Column(db.String(10), nullable=False)         # "Sim" | "Não"
+    elastano = db.Column(db.String(10), nullable=False)         # Sim | Não
     empresa_id = db.Column(db.Integer, db.ForeignKey('empresa.id'), nullable=False)
-    # ---- PATCH: campos usados nas rotas e na index ----
-    pistas_cilindro = db.Column(db.Integer, nullable=True)
-    pistas_disco    = db.Column(db.Integer, nullable=True)
-    kit_elastano    = db.Column(db.Boolean, default=False)
-    ativo           = db.Column(db.Boolean, default=True)
 
 class ClienteProfile(db.Model):
     __tablename__ = 'cliente_profile'
@@ -337,7 +529,7 @@ def _whoami():
     uid = None; email = None
     # se Flask-Login estiver disponível e autenticado
     try:
-        if getattr(current_user, "is_authenticated", False):  # type: ignore[name-defined]
+        if getattr(current_user, "is_authenticated", False):
             uid = getattr(current_user, "id", None)
             email = getattr(current_user, "email", None)
     except Exception:
@@ -349,21 +541,49 @@ def _whoami():
         email = session.get("auth_email") or session.get("login_email")
     return uid, email
 
-# ---- PATCH: corrige colunas inexistentes ----
 def _pegar_empresa_do_usuario(required=True):
+    """
+    Retorna a Empresa do usuário, priorizando a sessão. Corrige o campo user_id
+    (antes estava 'owner_id') e evita redirecionar para cadastro quando já há login.
+    """
+    # 1) Primeiro: sessão
+    emp_id = session.get("empresa_id")
+    if emp_id:
+        emp = Empresa.query.get(emp_id)
+        if emp:
+            return emp
+
+    # 2) Fallback: identidade do usuário (id/email)
     uid, email = _whoami()
     empresa = None
+
     if uid:
+        # CORREÇÃO principal: o campo é user_id (não owner_id)
         empresa = Empresa.query.filter_by(user_id=uid).first()
-    if not empresa and email:
-        empresa = Empresa.query.filter(Empresa.email == email).first()
-    if required and not empresa:
-        flash("Cadastre sua malharia para continuar.")
-        return redirect(url_for("cadastrar_empresa"))
-    return empresa
+        if empresa:
+            session["empresa_id"] = empresa.id
+            session["empresa_apelido"] = empresa.apelido or empresa.nome or (
+                empresa.email.split("@")[0] if empresa.email else ""
+            )
+            return empresa
+
+    if email:
+        empresa = Empresa.query.filter(func.lower(Empresa.email) == email.lower()).first()
+        if empresa:
+            session["empresa_id"] = empresa.id
+            session["empresa_apelido"] = empresa.apelido or empresa.nome or (
+                empresa.email.split("@")[0] if empresa.email else ""
+            )
+            return empresa
+
+    if required:
+        flash("Faça login para continuar.", "warning")
+        return redirect(url_for("login"))
+
+    return None
 
 # --------------------------------------------------------------------
-# Setup inicial (idempotente) + mini-migração das colunas de Tear
+# Setup inicial (idempotente)
 # --------------------------------------------------------------------
 def _ensure_auth_layer_and_link():
     try:
@@ -399,32 +619,11 @@ def _ensure_cliente_profile_table():
     except Exception as e:
         app.logger.warning(f"create cliente_profile table: {e}")
 
-# ---- PATCH: cria colunas de Tear se faltarem ----
-def _ensure_tear_columns():
-    try:
-        insp = inspect(db.engine)
-        cols = {c['name'] for c in insp.get_columns('tear')}
-        alters = []
-        if 'pistas_cilindro' not in cols:
-            alters.append("ADD COLUMN pistas_cilindro INTEGER")
-        if 'pistas_disco' not in cols:
-            alters.append("ADD COLUMN pistas_disco INTEGER")
-        if 'kit_elastano' not in cols:
-            alters.append("ADD COLUMN kit_elastano BOOLEAN DEFAULT FALSE")
-        if 'ativo' not in cols:
-            alters.append("ADD COLUMN ativo BOOLEAN DEFAULT TRUE")
-        if alters:
-            db.session.execute(text(f"ALTER TABLE tear {', '.join(alters)}"))
-            db.session.commit()
-    except Exception as e:
-        app.logger.warning(f"ensure tear columns: {e}")
-
 with app.app_context():
     try:
         db.create_all()
         _ensure_auth_layer_and_link()
         _ensure_cliente_profile_table()
-        _ensure_tear_columns()  # PATCH: garante colunas usadas nas rotas
         app.logger.info("Migrações de inicialização OK (create_all + ajustes).")
     except Exception as e:
         app.logger.error(f"Startup migrations failed: {e}")
@@ -614,6 +813,18 @@ def _otp_validate(email: str, code: str) -> tuple[bool, str]:
     db.session.commit()
     return True, "Código validado com sucesso."
 
+import os, time  # (se ainda não tiver)
+
+def _foto_url_runtime(emp_id: int) -> str | None:
+    base = os.path.join(app.root_path, "static", "uploads", "perfil")
+    for ext in ("png","jpg","jpeg","webp","gif"):
+        fn = f"emp_{emp_id}.{ext}"
+        p = os.path.join(base, fn)
+        if os.path.exists(p):
+            v = int(os.path.getmtime(p))          # cache-buster
+            return url_for("static", filename=f"uploads/perfil/{fn}") + f"?v={v}"
+    return None
+
 # --------------------------------------------------------------------
 # Fallback de templates (evita 500 se faltar HTML)
 # --------------------------------------------------------------------
@@ -686,6 +897,11 @@ def _render_try(candidatos: list[str], **ctx):
     # Fallback mínimo para não quebrar
     return render_template_string("<h2>Página temporária</h2><p>Conteúdo indisponível.</p>")
 
+def _get_notificacoes(empresa_id):
+    # Troque por consulta real quando tiver o banco
+    items = []  # ex.: [{"titulo":"Novo contato","mensagem":"João enviou msg"}]
+    return len(items), items
+
 # --------------------------------------------------------------------
 # INDEX
 # --------------------------------------------------------------------
@@ -694,6 +910,34 @@ def _num_key(x):
         return float(str(x).replace(",", "."))
     except Exception:
         return 0.0
+
+def _to_int(s):
+    try:
+        return int(float(str(s).replace(",", ".")))
+    except Exception:
+        return None
+
+@app.post("/api/track")
+def api_track():
+    data = request.get_json(silent=True) or {}
+    event      = data.get("event")
+    company_id = data.get("company_id")
+    tear_id    = data.get("tear_id")
+    session_id = data.get("session_id")
+    meta       = data.get("meta") or {}
+
+    if event not in ALLOWED_EVENTS or not company_id:
+        return jsonify({"ok": False, "error": "bad event/company"}), 400
+
+    db = get_db()
+    db.execute(
+        "INSERT INTO analytics_events (company_id, tear_id, event, session_id, meta) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (company_id, tear_id, event, session_id, json.dumps(meta))
+    )
+    db.commit()
+    return jsonify({"ok": True})
+# ================================================================
 
 @app.route("/", methods=["GET"])
 def index():
@@ -772,8 +1016,9 @@ def index():
         )
         numero = re.sub(r"\D", "", (emp.telefone or "")) if emp else ""
         contato_link = f"https://wa.me/{'55' + numero if numero and not numero.startswith('55') else numero}" if numero else None
-
+    
         item = {
+            "empresa_id": (getattr(emp, "id", None) if emp else None),  # 👈 ID da malharia
             "empresa": apelido,
             "tipo": tear.tipo or "—",
             "galga": tear.finura if tear.finura is not None else "—",
@@ -782,7 +1027,8 @@ def index():
             "uf": (emp.estado if emp and getattr(emp, "estado", None) else "—"),
             "cidade": (emp.cidade if emp and getattr(emp, "cidade", None) else "—"),
             "contato": contato_link,
-            # Aliases para CSV antigo
+    
+            # Aliases para CSV antigo (opcional manter)
             "Empresa": apelido,
             "Tipo": tear.tipo or "—",
             "Galga": tear.finura if tear.finura is not None else "—",
@@ -992,6 +1238,7 @@ def _proximo_step(emp: Empresa) -> str:
         return "teares"
     return "resumo"
 
+# --- sua rota do painel (substitua a versão atual por esta) ---
 @app.route('/painel_malharia', endpoint="painel_malharia")
 def painel_malharia():
     emp, u = _get_empresa_usuario_da_sessao()
@@ -1009,76 +1256,98 @@ def painel_malharia():
         "step": step,
     }
 
+    # >>> NOVO: notificações e chat
+    notif_count, notif_lista = _get_notificacoes(emp.id)
+    chat_nao_lidos = 0  # ajuste aqui se tiver chat real
+
+    # tenta usar o que veio do BD; se vazio, detecta no filesystem
+    foto_url = getattr(emp, "foto_url", None) or _foto_url_runtime(emp.id)
+    
     return render_template(
-        'painel_malharia.html',
+        "painel_malharia.html",
         empresa=emp,
         teares=teares,
         assinatura_ativa=is_ativa,
         checklist=checklist,
-        step=step
+        step=step,
+        notificacoes=notif_count,
+        notificacoes_lista=notif_lista,
+        chat_nao_lidos=chat_nao_lidos,
+        foto_url=foto_url,          # <<<<<<<<<<
     )
 
 # --- CADASTRAR / LISTAR / SALVAR TEARES (SEM GATE DE ASSINATURA) ---
 @app.route("/teares/cadastrar", methods=["GET", "POST"], endpoint="cadastrar_teares")
 def cadastrar_teares():
     """
-    Acesso liberado para quem já está no painel (tem empresa).
-    Não verifica assinatura_ativa: usuário pode cadastrar teares antes de pagar.
+    SEM checagem de assinatura. Se o usuário está no painel (tem empresa na sessão),
+    pode cadastrar/editar teares à vontade.
     """
-    # 1) Empresa do usuário (pode retornar redirect se não logado)
-    res = _pegar_empresa_do_usuario(required=True)
+    emp, _user = _get_empresa_usuario_da_sessao()
+    if not emp:
+        flash("Faça login para continuar.", "warning")
+        return redirect(url_for("login"))
 
-    # Se o helper devolveu um Response (ex.: redirect para login), apenas retorne
-    try:
-        from flask import Response as FlaskResponse
-        from werkzeug.wrappers.response import Response as WkResponse
-        if isinstance(res, (FlaskResponse, WkResponse)):
-            return res
-    except Exception:
-        pass
-
-    empresa = res if getattr(res, "id", None) else None
-    if not empresa:
-        from flask import redirect, url_for, flash
-        flash("Cadastre sua malharia antes de cadastrar teares.")
-        return redirect(url_for("cadastrar_empresa"))
-
-    # (Opcional) ainda passamos assinatura_ativa se o template quiser mostrar algo
-    assinatura_ativa = bool(getattr(empresa, "assinatura_ativa", False))
-
-    # 2) POST: cria/atualiza registro
     if request.method == "POST":
-        elast = "Sim" if _to_bool(request.form.get("elastano")) else "Não"
+        def _to_int(val):
+            try:
+                return int(float(str(val).replace(",", ".").strip()))
+            except Exception:
+                return None
+
+        # O form manda 'Sim'/'Não'; garantimos um valor consistente em string
+        elas_raw = (request.form.get("elastano") or "").strip().lower()
+        if elas_raw in {"sim", "s", "1", "true", "on"}:
+            elastano_str = "Sim"
+        elif elas_raw in {"não", "nao", "n", "0", "false", "off"}:
+            elastano_str = "Não"
+        else:
+            # se vier "Sim"/"Não" já normal, mantém
+            elastano_str = request.form.get("elastano") or None
 
         t = Tear(
-            empresa_id=empresa.id,
+            empresa_id=emp.id,
             marca=(request.form.get("marca") or None),
             modelo=(request.form.get("modelo") or None),
             tipo=(request.form.get("tipo") or None),
             finura=_to_int(request.form.get("finura")),
             diametro=_to_int(request.form.get("diametro")),
-            pistas_cilindro=_to_int(request.form.get("pistas_cilindro")),
-            pistas_disco=_to_int(request.form.get("pistas_disco")),
             alimentadores=_to_int(request.form.get("alimentadores")),
-            elastano=elast,  # String consistente ("Sim"/"Não")
-            kit_elastano=_to_bool(request.form.get("kit_elastano")),
-            ativo=True,
+            elastano=elastano_str,
         )
         db.session.add(t)
+
+        # Campos extras que podem existir no seu banco (se não existirem no modelo, ignora sem quebrar)
+        try:
+            v = _to_int(request.form.get("pistas_cilindro"))
+            if v is not None: setattr(t, "pistas_cilindro", v)
+        except Exception:
+            pass
+        try:
+            v = _to_int(request.form.get("pistas_disco"))
+            if v is not None: setattr(t, "pistas_disco", v)
+        except Exception:
+            pass
+
         db.session.commit()
         flash("Tear cadastrado com sucesso!")
-        # Volta ao painel
-        return redirect(url_for("painel_malharia"))
+        # volta para o próprio formulário para permitir múltiplos cadastros em sequência
+        return redirect(url_for("teares_form"))
 
-    # 3) GET: renderiza a página correta
-    teares = Tear.query.filter_by(empresa_id=empresa.id).order_by(Tear.id.desc()).all()
+    # GET: lista para apoiar edição/novos cadastros em série
+    teares = Tear.query.filter_by(empresa_id=emp.id).order_by(Tear.id.desc()).all()
     return render_template(
         "cadastrar_teares.html",
-        empresa=empresa,
+        empresa=emp,
         teares=teares,
         tear=None,
-        assinatura_ativa=assinatura_ativa,
+        assinatura_ativa=(emp.status_pagamento or "pendente") in ("ativo", "aprovado"),
     )
+
+# Alias amigável do painel: /painel/teares
+@app.route("/painel/teares", methods=["GET", "POST"], endpoint="teares_form")
+def teares_form():
+    return cadastrar_teares()
 
 # --------------------------------------------------------------------
 # Cadastro
@@ -1169,45 +1438,67 @@ def cadastro_post():
 
 @app.route("/editar_tear/<int:id>", methods=["GET", "POST"])
 def editar_tear(id):
-    empresa = _pegar_empresa_do_usuario(required=True)
-    if not isinstance(empresa, Empresa):
-        return empresa
+    # usa sessão; não há gate de pagamento
+    emp, _user = _get_empresa_usuario_da_sessao()
+    if not emp:
+        flash("Faça login para continuar.", "warning")
+        return redirect(url_for("login"))
 
     tear = Tear.query.get_or_404(id)
-    if tear.empresa_id != empresa.id:
+    if tear.empresa_id != emp.id:
         abort(403)
 
     if request.method == "POST":
-        tear.marca           = request.form.get("marca") or None
-        tear.modelo          = request.form.get("modelo") or None
-        tear.tipo            = request.form.get("tipo") or None
-        tear.finura          = _to_int(request.form.get("finura"))
-        tear.diametro        = _to_int(request.form.get("diametro"))
-        tear.pistas_cilindro = _to_int(request.form.get("pistas_cilindro"))
-        tear.pistas_disco    = _to_int(request.form.get("pistas_disco"))
-        tear.alimentadores   = _to_int(request.form.get("alimentadores"))
-        # PATCH: normaliza elastano como "Sim"/"Não"
-        if "elastano" in request.form:
-            tear.elastano = "Sim" if _to_bool(request.form.get("elastano")) else "Não"
+        def _to_int(val):
+            try:
+                return int(float(str(val).replace(",", ".").strip()))
+            except Exception:
+                return None
+
+        tear.marca         = request.form.get("marca") or None
+        tear.modelo        = request.form.get("modelo") or None
+        tear.tipo          = request.form.get("tipo") or None
+        tear.finura        = _to_int(request.form.get("finura"))
+        tear.diametro      = _to_int(request.form.get("diametro"))
+        tear.alimentadores = _to_int(request.form.get("alimentadores"))
+
+        elas_raw = (request.form.get("elastano") or "").strip().lower()
+        if elas_raw in {"sim","s","1","true","on"}:
+            tear.elastano = "Sim"
+        elif elas_raw in {"não","nao","n","0","false","off"}:
+            tear.elastano = "Não"
+        else:
+            tear.elastano = request.form.get("elastano") or None
+
         db.session.commit()
         flash("Tear atualizado com sucesso!")
-        return redirect(url_for("painel_malharia"))
+        return redirect(url_for("teares_form"))
 
-    return render_template("cadastrar_teares.html", empresa=empresa, tear=tear)
+    # GET: página dedicada de edição
+    teares = Tear.query.filter_by(empresa_id=emp.id).order_by(Tear.id.desc()).all()
+    return render_template("editar_tear.html", empresa=emp, tear=tear, teares=teares)
 
-@app.post("/excluir_tear/<int:id>")
+@app.post("/tear/<int:id>/excluir")
 def excluir_tear(id):
     empresa = _pegar_empresa_do_usuario(required=True)
     if not isinstance(empresa, Empresa):
         return empresa
-
     tear = Tear.query.get_or_404(id)
     if tear.empresa_id != empresa.id:
         abort(403)
 
     db.session.delete(tear)
     db.session.commit()
-    flash("Tear excluído.")
+    flash("Tear excluído com sucesso!", "success")
+
+    next_url = request.args.get("next") or request.form.get("next")
+    if next_url:
+        try:
+            # evita open redirect
+            if urlparse(next_url).netloc in ("", request.host):
+                return redirect(next_url)
+        except Exception:
+            pass
     return redirect(url_for("painel_malharia"))
 
 # --------------------------------------------------------------------
@@ -1365,6 +1656,57 @@ def editar_empresa():
     db.session.commit()
     session['empresa_apelido'] = empresa.apelido or empresa.nome or empresa.email.split('@')[0]
     return redirect(url_for('editar_empresa', ok=1))
+
+# --- ROTA DA PERFORMANCE (substituir este bloco) ---
+@app.route('/performance', methods=['GET'], endpoint='performance_acesso')
+def performance_acesso():
+    emp, u = _get_empresa_usuario_da_sessao()
+    if not emp or not u:
+        return redirect(url_for('login'))
+
+    # Usa o agregador de analytics (A.1) já adicionado acima
+    total_visitas, total_contatos, series = get_performance(emp.id)
+
+    return render_template(
+        'performance_acesso.html',
+        empresa=emp,
+        series=series,
+        total_visitas=total_visitas,
+        total_contatos=total_contatos
+    )
+
+@app.route("/perfil/foto", methods=["POST"], endpoint="perfil_foto_upload")
+def perfil_foto_upload():
+    emp, u = _get_empresa_usuario_da_sessao()
+    if not emp or not u:
+        return redirect(url_for("login"))
+
+    f = request.files.get("foto")
+    if not f or f.filename == "":
+        flash("Nenhuma imagem selecionada.", "warning")
+        return redirect(url_for("painel_malharia"))
+
+    if not _allowed_file(f.filename):
+        flash("Formato inválido. Use JPG, PNG, WEBP ou GIF.", "danger")
+        return redirect(url_for("painel_malharia"))
+
+    # pasta de destino
+    save_dir = os.path.join(app.root_path, "static", "uploads", "perfil")
+    os.makedirs(save_dir, exist_ok=True)
+
+    # nomeia por ID da empresa
+    ext = os.path.splitext(secure_filename(f.filename))[1].lower() or ".jpg"
+    final_name = f"emp_{emp.id}{ext}"
+    full_path = os.path.join(save_dir, final_name)
+    f.save(full_path)
+
+    # cache-buster para a imagem nova aparecer na hora
+    v = int(time.time())
+    emp.foto_url = url_for("static", filename=f"uploads/perfil/{final_name}") + f"?v={int(time.time())}"
+    db.session.commit()
+
+    flash("Foto atualizada com sucesso!", "success")
+    return redirect(url_for("painel_malharia"))
 
 # --------------------------------------------------------------------
 # Admin: empresas
