@@ -1023,8 +1023,9 @@ def index():
         )
         numero = re.sub(r"\D", "", (emp.telefone or "")) if emp else ""
         contato_link = f"https://wa.me/{'55' + numero if numero and not numero.startswith('55') else numero}" if numero else None
-
+    
         item = {
+            "empresa_id": (getattr(emp, "id", None) if emp else None),  # 👈 ID da malharia
             "empresa": apelido,
             "tipo": tear.tipo or "—",
             "galga": tear.finura if tear.finura is not None else "—",
@@ -1033,7 +1034,8 @@ def index():
             "uf": (emp.estado if emp and getattr(emp, "estado", None) else "—"),
             "cidade": (emp.cidade if emp and getattr(emp, "cidade", None) else "—"),
             "contato": contato_link,
-            # Aliases para CSV antigo
+    
+            # Aliases para CSV antigo (opcional manter)
             "Empresa": apelido,
             "Tipo": tear.tipo or "—",
             "Galga": tear.finura if tear.finura is not None else "—",
