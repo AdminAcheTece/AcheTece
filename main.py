@@ -213,6 +213,17 @@ SEED_TOKEN = os.getenv("SEED_TOKEN", "ACHETECE")
 def _norm(s: str) -> str:
     return normalize('NFKD', s).encode('ASCII', 'ignore').decode('ASCII').strip().lower()
 
+def _to_int(val):
+    try:
+        return int(float(str(val).replace(",", ".").strip()))
+    except Exception:
+        return None
+
+def _to_bool(val):
+    if val is None:
+        return False
+    return str(val).strip().lower() in {"1", "true", "on", "sim", "s", "y", "yes"}
+
 def gerar_token(email):
     return URLSafeTimedSerializer(app.config['SECRET_KEY']).dumps(email, salt='recupera-senha')
 
@@ -283,8 +294,13 @@ class Tear(db.Model):
     finura = db.Column(db.Integer, nullable=False)              # galga
     diametro = db.Column(db.Integer, nullable=False)
     alimentadores = db.Column(db.Integer, nullable=False)
-    elastano = db.Column(db.String(10), nullable=False)         # Sim | Não
+    elastano = db.Column(db.String(10), nullable=False)         # "Sim" | "Não"
     empresa_id = db.Column(db.Integer, db.ForeignKey('empresa.id'), nullable=False)
+    # ---- PATCH: campos usados nas rotas e na index ----
+    pistas_cilindro = db.Column(db.Integer, nullable=True)
+    pistas_disco    = db.Column(db.Integer, nullable=True)
+    kit_elastano    = db.Column(db.Boolean, default=False)
+    ativo           = db.Column(db.Boolean, default=True)
 
 class ClienteProfile(db.Model):
     __tablename__ = 'cliente_profile'
@@ -316,7 +332,7 @@ def _whoami():
     uid = None; email = None
     # se Flask-Login estiver disponível e autenticado
     try:
-        if getattr(current_user, "is_authenticated", False):
+        if getattr(current_user, "is_authenticated", False):  # type: ignore[name-defined]
             uid = getattr(current_user, "id", None)
             email = getattr(current_user, "email", None)
     except Exception:
@@ -328,26 +344,21 @@ def _whoami():
         email = session.get("auth_email") or session.get("login_email")
     return uid, email
 
+# ---- PATCH: corrige colunas inexistentes ----
 def _pegar_empresa_do_usuario(required=True):
     uid, email = _whoami()
     empresa = None
     if uid:
-        empresa = Empresa.query.filter_by(owner_id=uid).first()
+        empresa = Empresa.query.filter_by(user_id=uid).first()
     if not empresa and email:
-        empresa = Empresa.query.filter(
-            or_(Empresa.email == email, Empresa.email_contato == email)
-        ).first()
+        empresa = Empresa.query.filter(Empresa.email == email).first()
     if required and not empresa:
         flash("Cadastre sua malharia para continuar.")
         return redirect(url_for("cadastrar_empresa"))
     return empresa
 
-def _to_int(val):
-    try: return int(val)
-    except: return None
-
 # --------------------------------------------------------------------
-# Setup inicial (idempotente)
+# Setup inicial (idempotente) + mini-migração das colunas de Tear
 # --------------------------------------------------------------------
 def _ensure_auth_layer_and_link():
     try:
@@ -383,11 +394,32 @@ def _ensure_cliente_profile_table():
     except Exception as e:
         app.logger.warning(f"create cliente_profile table: {e}")
 
+# ---- PATCH: cria colunas de Tear se faltarem ----
+def _ensure_tear_columns():
+    try:
+        insp = inspect(db.engine)
+        cols = {c['name'] for c in insp.get_columns('tear')}
+        alters = []
+        if 'pistas_cilindro' not in cols:
+            alters.append("ADD COLUMN pistas_cilindro INTEGER")
+        if 'pistas_disco' not in cols:
+            alters.append("ADD COLUMN pistas_disco INTEGER")
+        if 'kit_elastano' not in cols:
+            alters.append("ADD COLUMN kit_elastano BOOLEAN DEFAULT FALSE")
+        if 'ativo' not in cols:
+            alters.append("ADD COLUMN ativo BOOLEAN DEFAULT TRUE")
+        if alters:
+            db.session.execute(text(f"ALTER TABLE tear {', '.join(alters)}"))
+            db.session.commit()
+    except Exception as e:
+        app.logger.warning(f"ensure tear columns: {e}")
+
 with app.app_context():
     try:
         db.create_all()
         _ensure_auth_layer_and_link()
         _ensure_cliente_profile_table()
+        _ensure_tear_columns()  # PATCH: garante colunas usadas nas rotas
         app.logger.info("Migrações de inicialização OK (create_all + ajustes).")
     except Exception as e:
         app.logger.error(f"Startup migrations failed: {e}")
@@ -657,12 +689,6 @@ def _num_key(x):
         return float(str(x).replace(",", "."))
     except Exception:
         return 0.0
-
-def _to_int(s):
-    try:
-        return int(float(str(s).replace(",", ".")))
-    except Exception:
-        return None
 
 @app.route("/", methods=["GET"])
 def index():
@@ -1017,16 +1043,7 @@ def cadastrar_teares():
 
     # 2) POST: cria/atualiza registro
     if request.method == "POST":
-        def _to_int(val):
-            try:
-                return int(float(str(val).replace(",", ".").strip()))
-            except Exception:
-                return None
-
-        def _to_bool(val):
-            if val is None:
-                return False
-            return str(val).strip().lower() in {"1", "true", "on", "sim", "s", "y", "yes"}
+        elast = "Sim" if _to_bool(request.form.get("elastano")) else "Não"
 
         t = Tear(
             empresa_id=empresa.id,
@@ -1038,13 +1055,14 @@ def cadastrar_teares():
             pistas_cilindro=_to_int(request.form.get("pistas_cilindro")),
             pistas_disco=_to_int(request.form.get("pistas_disco")),
             alimentadores=_to_int(request.form.get("alimentadores")),
-            elastano=_to_bool(request.form.get("elastano")),
+            elastano=elast,  # String consistente ("Sim"/"Não")
             kit_elastano=_to_bool(request.form.get("kit_elastano")),
+            ativo=True,
         )
         db.session.add(t)
         db.session.commit()
         flash("Tear cadastrado com sucesso!")
-        # Escolhi voltar ao painel; se preferir ficar na própria página para cadastrar vários, troque para url_for("cadastrar_teares")
+        # Volta ao painel
         return redirect(url_for("painel_malharia"))
 
     # 3) GET: renderiza a página correta
@@ -1163,7 +1181,9 @@ def editar_tear(id):
         tear.pistas_cilindro = _to_int(request.form.get("pistas_cilindro"))
         tear.pistas_disco    = _to_int(request.form.get("pistas_disco"))
         tear.alimentadores   = _to_int(request.form.get("alimentadores"))
-        tear.elastano        = request.form.get("elastano") or None
+        # PATCH: normaliza elastano como "Sim"/"Não"
+        if "elastano" in request.form:
+            tear.elastano = "Sim" if _to_bool(request.form.get("elastano")) else "Não"
         db.session.commit()
         flash("Tear atualizado com sucesso!")
         return redirect(url_for("painel_malharia"))
