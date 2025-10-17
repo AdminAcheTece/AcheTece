@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Perfil da Malharia</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <style>
+    :root{ --roxo:#8A00FF; --roxo-hover:#A63DFF; --laranja:#F28C00; --cinza:#F7F7FA; }
+
+    body{ margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Arial; background:var(--cinza); color:#1f1f1f; }
+
+    /* Navbar padrão (logo linka para home) */
+    .navbar{ padding:6px 12px; display:flex; align-items:center; background:#fff; border-bottom:1px solid #eee; }
+    .logo a{ display:inline-flex; align-items:center; text-decoration:none; }
+    .logo img{ height:48px; width:auto; display:block; }
+    @media (max-width:900px){ .logo img{ height:54px !important; } }
+
+    .wrap{ max-width:1100px; margin:0 auto; padding:16px; }
+
+    .card{
+      background:#fff; border:1px solid rgba(0,0,0,.06); border-radius:16px;
+      box-shadow:0 6px 20px rgba(0,0,0,.06); padding:18px; margin:14px 0;
+    }
+
+    .head{
+      display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    }
+    .title{ margin:0; font-size:24px; font-weight:800; }
+    .sub{ margin:4px 0 0; color:#6b6b6b; }
+
+    .actions{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center; height:40px; padding:0 14px;
+      border-radius:9999px; text-decoration:none; font-weight:800; border:0; cursor:pointer;
+    }
+    .btn-outline{ background:#fff; border:1.5px solid #e3e3e7; color:#1f1f1f; }
+    .btn-outline:hover{ background:#fafafa; }
+    .btn-wa{ background:#25D366; color:#fff; }
+    .btn-wa:hover{ filter:brightness(.95); }
+    .btn-back{ background:#fff; border:1.5px solid #e3e3e7; color:#1f1f1f; }
+    .btn-back:hover{ background:#fafafa; }
+
+    h2.sec{ font-size:18px; margin:0 0 10px; }
+
+    .table-wrap{ overflow-x:auto; border:1px solid #eee; border-radius:12px; background:#fff; }
+    table{ width:100%; border-collapse:collapse; }
+    thead th{ background:#EEEAF8; text-align:left; }
+    th, td{ padding:10px; border-bottom:1px solid #f1f1f1; font-size:14px; vertical-align:middle; }
+    tbody tr:nth-child(even){ background:#F7F3FF; }
+    tbody tr:hover{ background:#F0EBFF; }
+
+    .pill{
+      display:inline-flex; align-items:center; gap:8px; height:28px; padding:0 12px;
+      background:#f4f0ff; border:1px solid #ece6ff; border-radius:9999px; font-weight:700; font-size:12.5px; color:#5f0adf;
+    }
+
+    .footer-spacer{ height:8px; }
+  </style>
+</head>
+<body>
+  <header class="navbar">
+    <div class="logo">
+      <a href="{{ url_for('index') }}" aria-label="Página inicial">
+        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
+      </a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="card">
+      <div class="head">
+        <div>
+          <h1 class="title">{{ empresa.apelido or empresa.nome_fantasia or empresa.razao_social or 'Malharia' }}</h1>
+          <p class="sub">
+            {% if empresa.cidade %}{{ empresa.cidade }}{% if empresa.estado %}/{{ empresa.estado }}{% endif %}{% endif %}
+            {% if teares %} &nbsp;•&nbsp; <span class="pill">{{ teares|length }} tear(es)</span>{% endif %}
+          </p>
+        </div>
+        <div class="actions">
+          {% if empresa.contato_whatsapp %}
+            <a class="btn btn-wa" href="{{ empresa.contato_whatsapp }}" target="_blank" rel="noopener">WhatsApp</a>
+          {% endif %}
+          <a class="btn btn-back" href="{{ url_for('index') }}">Voltar</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="sec">Teares desta malharia</h2>
+      {% if teares and teares|length %}
+        <div class="table-wrap" role="region" aria-label="Lista de teares" tabindex="0">
+          <table>
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th>Galga</th>
+                <th>Diâmetro</th>
+                <th>Alimentadores</th>
+                <th>Elastano</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for t in teares %}
+                <tr>
+                  <td>{{ t.tipo or '—' }}</td>
+                  <td>{{ t.finura or t.galga or '—' }}</td>
+                  <td>{{ t.diametro or '—' }}</td>
+                  <td>{{ t.alimentadores or '—' }}</td>
+                  <td>{{ 'Sim' if (t.elastano or t.kit_elastano) else 'Não' }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div>Nenhum tear cadastrado para esta empresa.</div>
+      {% endif %}
+    </section>
+
+    <div class="footer-spacer"></div>
+  </main>
+</body>
+</html>
