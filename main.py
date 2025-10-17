@@ -57,6 +57,43 @@ ALLOWED_EVENTS = {
     'TEAR_DETAIL_VIEW',       # (se existir página de detalhe do tear)
 }
 
+def track_event(event: str, company_id: int, tear_id: int | None = None, meta: dict | None = None):
+    """Grava um evento simples na tabela analytics_events (ignora silenciosamente se falhar)."""
+    if event not in ALLOWED_EVENTS:
+        return
+    try:
+        with db.engine.begin() as conn:
+            conn.execute(
+                text("""
+                    INSERT INTO analytics_events (company_id, tear_id, event, session_id, meta)
+                    VALUES (:cid, :tid, :evt, :sid, :meta)
+                """),
+                {
+                    "cid": company_id,
+                    "tid": tear_id,
+                    "evt": event,
+                    "sid": session.get("_sid") or request.cookies.get("session") or "",
+                    "meta": json.dumps(meta or {}),
+                },
+            )
+    except Exception:
+        # Não quebra a navegação por causa de analytics
+        app.logger.exception("[analytics] falha ao registrar evento")
+
+# --- PERFIL PÚBLICO DA EMPRESA ---
+@app.get("/empresa/<int:empresa_id>", endpoint="company_profile")
+def company_profile(empresa_id: int):
+    # Ajuste os nomes dos modelos conforme os seus. Aqui assumo SQLAlchemy com modelos Empresa e Tear.
+    from models import Empresa, Tear  # se seus modelos já estão no main, remova este import e use direto
+
+    empresa = Empresa.query.get_or_404(empresa_id)
+    teares  = Tear.query.filter_by(empresa_id=empresa_id).order_by(Tear.id.desc()).all()
+
+    # Analytics: visita ao perfil
+    track_event("COMPANY_PROFILE_VIEW", company_id=empresa_id)
+
+    return render_template("empresa_perfil.html", empresa=empresa, teares=teares)
+
 def _init_analytics_table():
     db = get_db()  # usa a sua função de conexão existente
     db.execute("""
