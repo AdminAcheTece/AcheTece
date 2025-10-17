@@ -48,7 +48,6 @@ STATIC_DIR = os.path.join(BASE_DIR, 'static')
 CACHE_DIR = os.path.join(BASE_DIR, 'cache_ibge')
 os.makedirs(CACHE_DIR, exist_ok=True)
 
-# =====================[ UTILS BÁSICOS ]=====================
 def _env_bool(name: str, default: bool = False) -> bool:
     v = str(os.getenv(name, str(default))).strip().lower()
     return v in {"1", "true", "yes", "on"}
@@ -62,183 +61,25 @@ def base_url():
     except Exception:
         return "http://localhost:5000"
 
-# --------------------------------------------------------------------
-# Banco de Dados (Postgres com SSL, teste ativo e fallback simples p/ SQLite)
-# --------------------------------------------------------------------
-from sqlalchemy import create_engine
-from sqlalchemy.exc import OperationalError
+# Banco
+db_url = os.getenv('DATABASE_URL', 'sqlite:///banco.db')
+if db_url.startswith('postgres://'):
+    db_url = db_url.replace('postgres://', 'postgresql+psycopg://', 1)
+elif db_url.startswith('postgresql://'):
+    db_url = db_url.replace('postgresql://', 'postgresql+psycopg://', 1)
+if db_url.startswith('postgresql+psycopg://') and 'sslmode=' not in db_url:
+    db_url += ('&' if '?' in db_url else '?') + 'sslmode=require'
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-def _normalize_db_url(url: str) -> str:
-    # Normaliza URLs comuns de Render/Heroku para psycopg v3
-    if url.startswith('postgres://'):
-        url = url.replace('postgres://', 'postgresql+psycopg://', 1)
-    if url.startswith('postgresql://'):
-        url = url.replace('postgresql://', 'postgresql+psycopg://', 1)
-    if url.startswith('postgresql+psycopg://') and 'sslmode=' not in url:
-        url += ('&' if '?' in url else '?') + 'sslmode=require'
-    return url
-
-def _pick_database_uri() -> str:
-    """Decide o DB antes de inicializar o SQLAlchemy: tenta Postgres, cai para SQLite se falhar."""
-    env_url = os.getenv('DATABASE_URL', 'sqlite:///banco.db')
-    pg_url = _normalize_db_url(env_url)
-
-    # Se não for Postgres, já devolve (é SQLite local, por ex.)
-    if not pg_url.startswith('postgresql+psycopg://'):
-        app.logger.info("[DB] Usando SQLite (sem Postgres configurado).")
-        return pg_url
-
-    # Testa Postgres criando um engine EFÊMERO (fora do Flask-SQLAlchemy)
-    connect_args = {"sslmode": "require"}
-    try:
-        test_engine = create_engine(pg_url, future=True, pool_pre_ping=True, connect_args=connect_args)
-        with test_engine.connect() as conn:
-            conn.exec_driver_sql("SELECT 1")
-        app.logger.info("[DB] Postgres OK — usando %s", pg_url.split('@', 1)[-1])
-        return pg_url
-    except Exception as e:
-        app.logger.warning("[DB] Postgres indisponível: %s", e)
-        if os.getenv("ALLOW_SQLITE_FALLBACK", "1") == "1":
-            app.logger.error("[DB] Fallback para SQLite ativado (ALLOW_SQLITE_FALLBACK=1).")
-            return "sqlite:///banco.db"
-        # sem fallback, propaga o erro para derrubar o deploy (intencional)
-        raise
-
-# Decide a URI final ANTES de inicializar a extensão
-FINAL_DB_URI = _pick_database_uri()
-
-# Opções de pool estáveis p/ Render
-engine_opts = {
+# Evita erros de conexão "SSL decryption failed" quando o worker reinicia
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     "pool_pre_ping": True,
     "pool_recycle": 280,
     "pool_timeout": 30,
 }
-if FINAL_DB_URI.startswith('postgresql+psycopg://'):
-    engine_opts["connect_args"] = {"sslmode": "require"}
 
-# Instancia UMA VEZ a extensão e associa ao app
-db = SQLAlchemy()
-app.config['SQLALCHEMY_DATABASE_URI'] = FINAL_DB_URI
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = engine_opts
-db.init_app(app)
-
-
-# =====================[ ANALYTICS - INÍCIO ]=====================
-# Eventos aceitos
-ALLOWED_EVENTS = {
-    'CARD_IMPRESSION',        # card visível na index (opcional)
-    'COMPANY_PROFILE_VIEW',   # clicou em "Ver empresa"
-    'CONTACT_CLICK_WHATSAPP', # clicou em WhatsApp
-    'TEAR_DETAIL_VIEW',       # se existir detalhes do tear
-}
-
-def track_event(event: str, company_id: int, tear_id: int | None = None, meta: dict | None = None):
-    """Grava um evento simples em analytics_events (ignora silenciosamente se falhar)."""
-    if event not in ALLOWED_EVENTS:
-        return
-    try:
-        with db.engine.begin() as conn:
-            conn.execute(
-                text("""
-                    INSERT INTO analytics_events (company_id, tear_id, event, session_id, meta)
-                    VALUES (:cid, :tid, :evt, :sid, :meta)
-                """),
-                {
-                    "cid": company_id,
-                    "tid": tear_id,
-                    "evt": event,
-                    "sid": session.get("_sid") or request.cookies.get("session") or "",
-                    "meta": json.dumps(meta or {}),
-                },
-            )
-    except Exception:
-        app.logger.exception("[analytics] falha ao registrar evento")
-
-# Perfil público da empresa
-@app.get("/empresa/<int:empresa_id>", endpoint="company_profile")
-def company_profile(empresa_id: int):
-    # Se seus modelos estão no próprio main.py, importe direto; se estão em 'models', mantenha:
-    try:
-        from models import Empresa, Tear
-    except Exception:
-        # fallback: se os modelos já estão neste arquivo e exportados
-        Empresa = globals().get("Empresa")
-        Tear    = globals().get("Tear")
-
-    empresa = Empresa.query.get_or_404(empresa_id)
-    teares  = Tear.query.filter_by(empresa_id=empresa_id).order_by(Tear.id.desc()).all()
-
-    # Analytics: visita ao perfil
-    track_event("COMPANY_PROFILE_VIEW", company_id=empresa_id)
-
-    return render_template("empresa_perfil.html", empresa=empresa, teares=teares)
-
-def _init_analytics_table():
-    """Cria a tabela/índices de analytics (compatível com SQLite e Postgres)."""
-    dialect = db.engine.url.get_backend_name()
-    if dialect == "sqlite":
-        pk = "INTEGER PRIMARY KEY AUTOINCREMENT"
-        ts_default = "CURRENT_TIMESTAMP"
-    else:
-        pk = "BIGSERIAL PRIMARY KEY"
-        ts_default = "CURRENT_TIMESTAMP"
-
-    ddl = f"""
-        CREATE TABLE IF NOT EXISTS analytics_events (
-            id {pk},
-            ts TIMESTAMP NOT NULL DEFAULT {ts_default},
-            company_id INTEGER NOT NULL,
-            tear_id INTEGER,
-            event TEXT NOT NULL,
-            session_id TEXT,
-            meta TEXT
-        )
-    """
-    idx1 = "CREATE INDEX IF NOT EXISTS idx_ae_company_ts ON analytics_events(company_id, ts)"
-    idx2 = "CREATE INDEX IF NOT EXISTS idx_ae_event_ts   ON analytics_events(event, ts)"
-
-    with db.engine.begin() as conn:
-        conn.execute(text(ddl))
-        conn.execute(text(idx1))
-        conn.execute(text(idx2))
-
-def get_performance(company_id, dt_ini=None, dt_fim=None):
-    """Agrupa visitas/contatos por dia para a empresa informada."""
-    params = {"cid": company_id}
-    where = ["company_id = :cid"]
-    if dt_ini:
-        where.append("ts >= :dt_ini"); params["dt_ini"] = dt_ini
-    if dt_fim:
-        where.append("ts < :dt_fim");  params["dt_fim"]  = dt_fim
-
-    sql = f"""
-      SELECT DATE(ts) AS d,
-             SUM(CASE WHEN event IN ('CARD_IMPRESSION','COMPANY_PROFILE_VIEW','TEAR_DETAIL_VIEW') THEN 1 ELSE 0 END) AS visitas,
-             SUM(CASE WHEN event IN ('CONTACT_CLICK_WHATSAPP') THEN 1 ELSE 0 END) AS contatos
-        FROM analytics_events
-       WHERE {" AND ".join(where)}
-       GROUP BY DATE(ts)
-       ORDER BY DATE(ts)
-    """
-    with db.engine.begin() as conn:
-        rows = conn.execute(text(sql), params).mappings().all()
-
-    series = [{"data": r["d"], "visitas": r["visitas"], "contatos": r["contatos"]} for r in rows]
-    total_visitas  = sum(r["visitas"]  for r in rows)
-    total_contatos = sum(r["contatos"] for r in rows)
-    return total_visitas, total_contatos, series
-
-def _ensure_analytics_table_once():
-    try:
-        _init_analytics_table()
-    except Exception as e:
-        app.logger.exception("Falha ao garantir tabela de analytics: %s", e)
-
-# Executa uma vez por processo no boot (sem before_first_request no Flask 3)
-with app.app_context():
-    _ensure_analytics_table_once()
-# =====================[ ANALYTICS - FIM ]=====================
+db = SQLAlchemy(app)
 
 # --------------------------------------------------------------------
 # E-mail — Config + helpers (Resend + SMTP fallback)
@@ -917,28 +758,6 @@ def _to_int(s):
     except Exception:
         return None
 
-@app.post("/api/track")
-def api_track():
-    data = request.get_json(silent=True) or {}
-    event      = data.get("event")
-    company_id = data.get("company_id")
-    tear_id    = data.get("tear_id")
-    session_id = data.get("session_id")
-    meta       = data.get("meta") or {}
-
-    if event not in ALLOWED_EVENTS or not company_id:
-        return jsonify({"ok": False, "error": "bad event/company"}), 400
-
-    db = get_db()
-    db.execute(
-        "INSERT INTO analytics_events (company_id, tear_id, event, session_id, meta) "
-        "VALUES (?, ?, ?, ?, ?)",
-        (company_id, tear_id, event, session_id, json.dumps(meta))
-    )
-    db.commit()
-    return jsonify({"ok": True})
-# ================================================================
-
 @app.route("/", methods=["GET"])
 def index():
     v = request.args
@@ -1016,9 +835,8 @@ def index():
         )
         numero = re.sub(r"\D", "", (emp.telefone or "")) if emp else ""
         contato_link = f"https://wa.me/{'55' + numero if numero and not numero.startswith('55') else numero}" if numero else None
-    
+
         item = {
-            "empresa_id": (getattr(emp, "id", None) if emp else None),  # 👈 ID da malharia
             "empresa": apelido,
             "tipo": tear.tipo or "—",
             "galga": tear.finura if tear.finura is not None else "—",
@@ -1027,8 +845,7 @@ def index():
             "uf": (emp.estado if emp and getattr(emp, "estado", None) else "—"),
             "cidade": (emp.cidade if emp and getattr(emp, "cidade", None) else "—"),
             "contato": contato_link,
-    
-            # Aliases para CSV antigo (opcional manter)
+            # Aliases para CSV antigo
             "Empresa": apelido,
             "Tipo": tear.tipo or "—",
             "Galga": tear.finura if tear.finura is not None else "—",
@@ -1657,15 +1474,21 @@ def editar_empresa():
     session['empresa_apelido'] = empresa.apelido or empresa.nome or empresa.email.split('@')[0]
     return redirect(url_for('editar_empresa', ok=1))
 
-# --- ROTA DA PERFORMANCE (substituir este bloco) ---
+# --- ROTA DA PERFORMANCE (adicione no main.py) ---
 @app.route('/performance', methods=['GET'], endpoint='performance_acesso')
 def performance_acesso():
     emp, u = _get_empresa_usuario_da_sessao()
     if not emp or not u:
         return redirect(url_for('login'))
 
-    # Usa o agregador de analytics (A.1) já adicionado acima
-    total_visitas, total_contatos, series = get_performance(emp.id)
+    # Exemplo estático; troque por dados reais depois
+    series = [
+        {"data": "2025-10-01", "visitas": 4, "contatos": 1},
+        {"data": "2025-10-02", "visitas": 7, "contatos": 3},
+        {"data": "2025-10-03", "visitas": 2, "contatos": 0},
+    ]
+    total_visitas  = sum(x["visitas"] for x in series)
+    total_contatos = sum(x["contatos"] for x in series)
 
     return render_template(
         'performance_acesso.html',
@@ -1674,6 +1497,10 @@ def performance_acesso():
         total_visitas=total_visitas,
         total_contatos=total_contatos
     )
+
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+def _allowed_file(filename: str) -> bool:
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route("/perfil/foto", methods=["POST"], endpoint="perfil_foto_upload")
 def perfil_foto_upload():
