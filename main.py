@@ -115,23 +115,31 @@ def _test_db_connection(max_attempts: int = 3) -> bool:
 def _switch_to_sqlite_fallback():
     """Troca o engine para SQLite sem recriar a instância SQLAlchemy."""
     with app.app_context():
-        try: db.session.remove()
-        except Exception: pass
-        try: db.engine.dispose()
-        except Exception: pass
+        # 1) encerra a sessão atual (se houver)
+        try:
+            db.session.remove()
+        except Exception:
+            pass
 
+        # 2) descarta o engine antigo (se existir)
+        try:
+            db.engine.dispose()
+        except Exception:
+            pass
+
+        # 3) troca a URI para SQLite
         app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///banco.db"
 
-        # limpa cache interno de engines da extensão
-        state = app.extensions.get('sqlalchemy')
-        if state and hasattr(state, 'engines'):
-            state.engines.clear()
+        # 4) NÃO limpe manualmente o cache interno de engines.
+        #    Em vez disso, peça ao Flask-SQLAlchemy para criar/retornar um engine novo:
+        engine = db.get_engine(app)  # cria o engine se ainda não existir
 
-        # aquece uma conexão
-        with db.engine.connect() as conn:
+        # 5) aquece uma conexão para validar
+        with engine.connect() as conn:
             conn.exec_driver_sql("SELECT 1")
 
     app.logger.error("[DB] Postgres indisponível — usando fallback SQLite.")
+
 
 # Tenta conectar no Postgres; se falhar e fallback permitido, troca para SQLite.
 if not _test_db_connection():
