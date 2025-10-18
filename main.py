@@ -65,6 +65,40 @@ def base_url():
 # --------------------------------------------------------------------
 # Banco de Dados (Postgres com SSL, teste ativo e fallback simples p/ SQLite)
 # --------------------------------------------------------------------
+
+import os, re
+from sqlalchemy import create_engine
+
+def _normalize_db_url(url: str) -> str:
+    if not url:
+        return url
+    # força driver psycopg (v3)
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+psycopg://", 1)
+    elif url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+psycopg://", 1)
+    # adiciona sslmode=require se não houver
+    if "sslmode=" not in url:
+        url += ("&" if "?" in url else "?") + "sslmode=require"
+    return url
+
+db_url = _normalize_db_url(
+    os.getenv("SQLALCHEMY_DATABASE_URI") or os.getenv("DATABASE_URL") or ""
+)
+
+# (debug seguro) mostra host/banco sem vazar senha
+try:
+    safe = re.sub(r"://([^:]+):[^@]+@", r"://\\1:***@", db_url)
+    print("[DB] Usando URL:", safe)
+except Exception:
+    pass
+
+engine = create_engine(
+    db_url,
+    pool_pre_ping=True,
+    pool_recycle=300,
+)
+
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 
