@@ -48,6 +48,66 @@ STATIC_DIR = os.path.join(BASE_DIR, 'static')
 CACHE_DIR = os.path.join(BASE_DIR, 'cache_ibge')
 os.makedirs(CACHE_DIR, exist_ok=True)
 
+# === DB BOOTSTRAP (ACHETECE) ===============================================
+import os, re
+from sqlalchemy import create_engine, text
+
+ALLOW_SQLITE_FALLBACK = os.getenv("ALLOW_SQLITE_FALLBACK", "0") == "1"
+
+def _normalize_db_url(url: str) -> str:
+    if not url:
+        return url
+    # força driver psycopg (v3)
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+psycopg://", 1)
+    elif url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+psycopg://", 1)
+    # garante ssl
+    if "sslmode=" not in url:
+        url += ("&" if "?" in url else "?") + "sslmode=require"
+    return url
+
+# 1) lê variáveis do ambiente e normaliza ANTES de qualquer uso
+db_url = _normalize_db_url(os.getenv("SQLALCHEMY_DATABASE_URI") or os.getenv("DATABASE_URL") or "")
+
+# 2) log seguro (mascara a senha)
+try:
+    safe = re.sub(r"://([^:]+):[^@]+@", r"://\1:***@", db_url)
+    print("[DB] URL normalizada:", safe)
+except Exception:
+    pass
+
+# 3) tenta conectar no Postgres (sem fallback aqui!)
+try:
+    engine = create_engine(
+        db_url,
+        pool_pre_ping=True,
+        pool_recycle=300,
+    )
+    with engine.connect() as conn:
+        row = conn.execute(text("select current_database(), inet_server_addr(), inet_server_port(), current_setting('ssl')")).one()
+        print(f"[DB] Conectado em: db={row[0]} host={row[1]} porta={row[2]} ssl={row[3]}")
+except Exception as e:
+    print("[DB] ERRO ao conectar no Postgres:", repr(e))
+    if ALLOW_SQLITE_FALLBACK:
+        print("[DB] Fallback para SQLite ATIVADO por ambiente (ALLOW_SQLITE_FALLBACK=1).")
+        db_url = "sqlite:///achetece.db"
+        engine = create_engine(db_url, pool_pre_ping=True)
+    else:
+        # Sem fallback: falha o startup (recomendado em produção)
+        raise
+
+# 4) Integra com Flask/Flask-SQLAlchemy
+# Se você usa Flask-SQLAlchemy:
+#   app = Flask(__name__)  <-- garanta que app já exista antes deste set
+#   from flask_sqlalchemy import SQLAlchemy
+#   app.config["SQLALCHEMY_DATABASE_URI"] = db_url
+#   app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True, "pool_recycle": 300}
+#   db = SQLAlchemy(app)
+# Senão, use 'engine' diretamente com SQLAlchemy core.
+# === FIM DB BOOTSTRAP =======================================================
+
+
 # =====================[ UTILS BÁSICOS ]=====================
 def _env_bool(name: str, default: bool = False) -> bool:
     v = str(os.getenv(name, str(default))).strip().lower()
