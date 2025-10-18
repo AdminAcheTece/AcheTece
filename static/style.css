@@ -1180,3 +1180,8 @@ thead tr{ background:#f2f2f2; }
      padding: 16px 16px 0;
      background: transparent;
    }
+
+   .link-roxo{ color:#8A00FF; font-weight:700; text-decoration:none; }
+   .link-roxo:hover{ text-decoration:underline; }
+
+      
