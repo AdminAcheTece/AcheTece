@@ -2195,6 +2195,24 @@ def static_alias_whatsapp():
 def malharia_info():
     return render_template('malharia_info.html')
 
+# --- Perfil público da empresa ---
+from flask import render_template, abort, redirect, url_for
+# ajuste os imports dos seus modelos conforme seu projeto:
+# from models import Empresa, Tear
+# ou: from app.models import Empresa, Tear
+
+@app.get("/empresa/<int:empresa_id>")
+def empresa_perfil(empresa_id):
+    empresa = Empresa.query.get_or_404(empresa_id)
+    # Se você tiver relationship Empresa.teares, pode usar empresa.teares.
+    teares = Tear.query.filter_by(empresa_id=empresa_id).order_by(Tear.tipo.asc()).all()
+    return render_template("empresa_perfil.html", empresa=empresa, teares=teares)
+
+# (opcional) compatibilidade com URLs antigas /empresas/<id>
+@app.get("/empresas/<int:empresa_id>")
+def empresas_redirect(empresa_id):
+    return redirect(url_for("empresa_perfil", empresa_id=empresa_id), code=301)
+
 # --------------------------------------------------------------------
 # Entry point local
 # --------------------------------------------------------------------
