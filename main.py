@@ -97,14 +97,14 @@ except Exception as e:
         # Sem fallback: falha o startup (recomendado em produção)
         raise
 
-# 4) Integra com Flask/Flask-SQLAlchemy
-# Se você usa Flask-SQLAlchemy:
-#   app = Flask(__name__)  <-- garanta que app já exista antes deste set
-#   from flask_sqlalchemy import SQLAlchemy
-#   app.config["SQLALCHEMY_DATABASE_URI"] = db_url
-#   app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True, "pool_recycle": 300}
-#   db = SQLAlchemy(app)
-# Senão, use 'engine' diretamente com SQLAlchemy core.
+# 4) Integra com Flask/Flask-SQLAlchemy (oficial do app a partir daqui)
+from flask_sqlalchemy import SQLAlchemy
+
+app.config["SQLALCHEMY_DATABASE_URI"] = db_url
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True, "pool_recycle": 300}
+
+db = SQLAlchemy(app)
 # === FIM DB BOOTSTRAP =======================================================
 
 
@@ -121,102 +121,6 @@ def base_url():
         return request.url_root.rstrip('/')
     except Exception:
         return "http://localhost:5000"
-
-# --------------------------------------------------------------------
-# Banco de Dados (Postgres com SSL, teste ativo e fallback simples p/ SQLite)
-# --------------------------------------------------------------------
-
-import os, re
-from sqlalchemy import create_engine
-
-def _normalize_db_url(url: str) -> str:
-    if not url:
-        return url
-    # força driver psycopg (v3)
-    if url.startswith("postgres://"):
-        url = url.replace("postgres://", "postgresql+psycopg://", 1)
-    elif url.startswith("postgresql://"):
-        url = url.replace("postgresql://", "postgresql+psycopg://", 1)
-    # adiciona sslmode=require se não houver
-    if "sslmode=" not in url:
-        url += ("&" if "?" in url else "?") + "sslmode=require"
-    return url
-
-db_url = _normalize_db_url(
-    os.getenv("SQLALCHEMY_DATABASE_URI") or os.getenv("DATABASE_URL") or ""
-)
-
-# (debug seguro) mostra host/banco sem vazar senha
-try:
-    safe = re.sub(r"://([^:]+):[^@]+@", r"://\\1:***@", db_url)
-    print("[DB] Usando URL:", safe)
-except Exception:
-    pass
-
-engine = create_engine(
-    db_url,
-    pool_pre_ping=True,
-    pool_recycle=300,
-)
-
-from sqlalchemy import create_engine
-from sqlalchemy.exc import OperationalError
-
-def _normalize_db_url(url: str) -> str:
-    # Normaliza URLs comuns de Render/Heroku para psycopg v3
-    if url.startswith('postgres://'):
-        url = url.replace('postgres://', 'postgresql+psycopg://', 1)
-    if url.startswith('postgresql://'):
-        url = url.replace('postgresql://', 'postgresql+psycopg://', 1)
-    if url.startswith('postgresql+psycopg://') and 'sslmode=' not in url:
-        url += ('&' if '?' in url else '?') + 'sslmode=require'
-    return url
-
-def _pick_database_uri() -> str:
-    """Decide o DB antes de inicializar o SQLAlchemy: tenta Postgres, cai para SQLite se falhar."""
-    env_url = os.getenv('DATABASE_URL', 'sqlite:///banco.db')
-    pg_url = _normalize_db_url(env_url)
-
-    # Se não for Postgres, já devolve (é SQLite local, por ex.)
-    if not pg_url.startswith('postgresql+psycopg://'):
-        app.logger.info("[DB] Usando SQLite (sem Postgres configurado).")
-        return pg_url
-
-    # Testa Postgres criando um engine EFÊMERO (fora do Flask-SQLAlchemy)
-    connect_args = {"sslmode": "require"}
-    try:
-        test_engine = create_engine(pg_url, future=True, pool_pre_ping=True, connect_args=connect_args)
-        with test_engine.connect() as conn:
-            conn.exec_driver_sql("SELECT 1")
-        app.logger.info("[DB] Postgres OK — usando %s", pg_url.split('@', 1)[-1])
-        return pg_url
-    except Exception as e:
-        app.logger.warning("[DB] Postgres indisponível: %s", e)
-        if os.getenv("ALLOW_SQLITE_FALLBACK", "1") == "1":
-            app.logger.error("[DB] Fallback para SQLite ativado (ALLOW_SQLITE_FALLBACK=1).")
-            return "sqlite:///banco.db"
-        # sem fallback, propaga o erro para derrubar o deploy (intencional)
-        raise
-
-# Decide a URI final ANTES de inicializar a extensão
-FINAL_DB_URI = _pick_database_uri()
-
-# Opções de pool estáveis p/ Render
-engine_opts = {
-    "pool_pre_ping": True,
-    "pool_recycle": 280,
-    "pool_timeout": 30,
-}
-if FINAL_DB_URI.startswith('postgresql+psycopg://'):
-    engine_opts["connect_args"] = {"sslmode": "require"}
-
-# Instancia UMA VEZ a extensão e associa ao app
-db = SQLAlchemy()
-app.config['SQLALCHEMY_DATABASE_URI'] = FINAL_DB_URI
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = engine_opts
-db.init_app(app)
-
 
 # =====================[ ANALYTICS - INÍCIO ]=====================
 # Eventos aceitos
@@ -248,25 +152,6 @@ def track_event(event: str, company_id: int, tear_id: int | None = None, meta: d
             )
     except Exception:
         app.logger.exception("[analytics] falha ao registrar evento")
-
-# Perfil público da empresa
-@app.get("/empresa/<int:empresa_id>", endpoint="company_profile")
-def company_profile(empresa_id: int):
-    # Se seus modelos estão no próprio main.py, importe direto; se estão em 'models', mantenha:
-    try:
-        from models import Empresa, Tear
-    except Exception:
-        # fallback: se os modelos já estão neste arquivo e exportados
-        Empresa = globals().get("Empresa")
-        Tear    = globals().get("Tear")
-
-    empresa = Empresa.query.get_or_404(empresa_id)
-    teares  = Tear.query.filter_by(empresa_id=empresa_id).order_by(Tear.id.desc()).all()
-
-    # Analytics: visita ao perfil
-    track_event("COMPANY_PROFILE_VIEW", company_id=empresa_id)
-
-    return render_template("empresa_perfil.html", empresa=empresa, teares=teares)
 
 def _init_analytics_table():
     """Cria a tabela/índices de analytics (compatível com SQLite e Postgres)."""
@@ -2298,8 +2183,14 @@ from flask import render_template, abort, redirect, url_for
 @app.get("/empresa/<int:empresa_id>")
 def empresa_perfil(empresa_id):
     empresa = Empresa.query.get_or_404(empresa_id)
-    # Se você tiver relationship Empresa.teares, pode usar empresa.teares.
     teares = Tear.query.filter_by(empresa_id=empresa_id).order_by(Tear.tipo.asc()).all()
+
+    # registra analytics de visita ao perfil público
+    try:
+        track_event("COMPANY_PROFILE_VIEW", company_id=empresa_id)
+    except Exception:
+        app.logger.exception("[analytics] falha ao registrar COMPANY_PROFILE_VIEW")
+
     return render_template("empresa_perfil.html", empresa=empresa, teares=teares)
 
 # (opcional) compatibilidade com URLs antigas /empresas/<id>
