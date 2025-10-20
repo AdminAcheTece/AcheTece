@@ -26,6 +26,7 @@ from jinja2 import TemplateNotFound
 from urllib.parse import urlparse
 from werkzeug.utils import secure_filename
 import time
+import resend  # biblioteca do Resend
 
 # SMTP direto (fallback)
 import smtplib, ssl
@@ -45,6 +46,42 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
 CACHE_DIR = os.path.join(BASE_DIR, 'cache_ibge')
 os.makedirs(CACHE_DIR, exist_ok=True)
+
+# ==== Utils de ambiente (DEFINA ANTES DE USAR em app.config.update) ==========
+def _env_bool(name: str, default: bool = False) -> bool:
+    """
+    Lê variáveis de ambiente como booleano.
+    Aceita: 1, true, yes, on (case-insensitive). Qualquer outra coisa vira False.
+    """
+    v = os.getenv(name)
+    if v is None:
+        return default
+    return str(v).strip().lower() in {"1", "true", "t", "yes", "y", "on"}
+
+# --------------------------------------------------------------------
+# E-mail — Config + helpers (Resend + SMTP fallback)
+# --------------------------------------------------------------------
+app.config.update(
+    SMTP_HOST=os.getenv("SMTP_HOST", "smtp.gmail.com"),
+    SMTP_PORT=int(os.getenv("SMTP_PORT", "465")),  # 465 SSL é mais estável na Render
+    SMTP_USER=os.getenv("SMTP_USER", ""),
+    SMTP_PASS=os.getenv("SMTP_PASS", ""),
+    SMTP_FROM=os.getenv("SMTP_FROM", os.getenv("SMTP_USER", "")),
+    MAIL_TIMEOUT=int(os.getenv("MAIL_TIMEOUT", "8")),             # segundos
+    MAIL_SUPPRESS_SEND=_env_bool("MAIL_SUPPRESS_SEND", False),    # True = NÃO envia (modo teste)
+    OTP_DEV_FALLBACK=_env_bool("OTP_DEV_FALLBACK", False),        # True = loga e deixa seguir
+)
+
+# Se for usar Resend:
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+RESEND_DOMAIN  = os.getenv("RESEND_DOMAIN", "achetece.com.br")
+EMAIL_FROM     = os.getenv("EMAIL_FROM", f"AcheTece <no-reply@{RESEND_DOMAIN}>")
+REPLY_TO       = os.getenv("REPLY_TO", "")
+
+if RESEND_API_KEY:
+    resend.api_key = RESEND_API_KEY
+else:
+    logging.warning("[EMAIL] RESEND_API_KEY não configurada — envio via Resend desativado.")
 
 # ==== DB bootstrap (único e robusto) =========================================
 from sqlalchemy import create_engine
