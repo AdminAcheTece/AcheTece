@@ -1167,6 +1167,11 @@ def index():
             numero = re.sub(r"\D", "", (emp.telefone or "")) if emp else ""
             contato_link = f"https://wa.me/{'55' + numero if numero and not numero.startswith('55') else numero}" if numero else None
 
+            # pega o valor como estiver no banco; se houver legado em 'kit_elastano', usa como fallback
+            raw_elastano = getattr(tear, "elastano", None)
+            if raw_elastano is None:
+                raw_elastano = getattr(tear, "kit_elastano", None)
+
             item = {
                 "empresa_id": (getattr(emp, "id", None) if emp else None),  # 👈 ID da malharia
                 "empresa": apelido,
@@ -1174,6 +1179,8 @@ def index():
                 "galga": tear.finura if tear.finura is not None else "—",
                 "diametro": tear.diametro if tear.diametro is not None else "—",
                 "alimentadores": getattr(tear, "alimentadores", None) if getattr(tear, "alimentadores", None) is not None else "—",
+                "elastano": raw_elastano,          # 👈 agora vai para o template
+                "kit_elastano": raw_elastano,      # 👈 alias para compatibilidade
                 "uf": (emp.estado if emp and getattr(emp, "estado", None) else "—"),
                 "cidade": (emp.cidade if emp and getattr(emp, "cidade", None) else "—"),
                 "contato": contato_link,
@@ -1184,6 +1191,7 @@ def index():
                 "Galga": tear.finura if tear.finura is not None else "—",
                 "Diâmetro": tear.diametro if tear.diametro is not None else "—",
                 "Alimentadores": getattr(tear, "alimentadores", None) if getattr(tear, "alimentadores", None) is not None else "—",
+                "Elastano": raw_elastano,          # 👈 alias CSV
                 "UF": (emp.estado if emp and getattr(emp, "estado", None) else "—"),
                 "Cidade": (emp.cidade if emp and getattr(emp, "cidade", None) else "—"),
                 "Contato": contato_link,
