@@ -49,64 +49,81 @@ CACHE_DIR = os.path.join(BASE_DIR, 'cache_ibge')
 os.makedirs(CACHE_DIR, exist_ok=True)
 
 # === DB BOOTSTRAP (ACHETECE) ===============================================
-import os, re
-from sqlalchemy import create_engine, text
+import os, re, time
+from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
+from sqlalchemy import text
+from flask_sqlalchemy import SQLAlchemy
 
-ALLOW_SQLITE_FALLBACK = os.getenv("ALLOW_SQLITE_FALLBACK", "0") == "1"
+def _is_render_internal(host: str) -> bool:
+    return bool(host) and host.endswith(".internal")
 
 def _normalize_db_url(url: str) -> str:
+    """Força driver psycopg, remove/ajusta sslmode conforme host (interno vs externo)"""
     if not url:
         return url
-    # força driver psycopg (v3)
     if url.startswith("postgres://"):
         url = url.replace("postgres://", "postgresql+psycopg://", 1)
     elif url.startswith("postgresql://"):
         url = url.replace("postgresql://", "postgresql+psycopg://", 1)
-    # garante ssl
-    if "sslmode=" not in url:
-        url += ("&" if "?" in url else "?") + "sslmode=require"
+
+    pr = urlparse(url)
+    host = pr.hostname or ""
+    qs = dict(parse_qsl(pr.query, keep_blank_values=True))
+
+    if _is_render_internal(host):
+        # em host interno do Render, normalmente NÃO se usa SSL
+        qs.pop("sslmode", None)
+    else:
+        # em host externo, garante sslmode=require
+        qs.setdefault("sslmode", "require")
+
+    new_query = urlencode(qs)
+    url = urlunparse(pr._replace(query=new_query))
     return url
 
-# 1) lê variáveis do ambiente e normaliza ANTES de qualquer uso
+# 1) carrega/normaliza URL
 db_url = _normalize_db_url(os.getenv("SQLALCHEMY_DATABASE_URI") or os.getenv("DATABASE_URL") or "")
 
-# 2) log seguro (mascara a senha)
+# 2) log seguro da URL (sem vazar senha)
 try:
     safe = re.sub(r"://([^:]+):[^@]+@", r"://\1:***@", db_url)
     print("[DB] URL normalizada:", safe)
 except Exception:
     pass
 
-# 3) tenta conectar no Postgres (sem fallback aqui!)
-try:
-    engine = create_engine(
-        db_url,
-        pool_pre_ping=True,
-        pool_recycle=300,
-    )
-    with engine.connect() as conn:
-        row = conn.execute(text("select current_database(), inet_server_addr(), inet_server_port(), current_setting('ssl')")).one()
-        print(f"[DB] Conectado em: db={row[0]} host={row[1]} porta={row[2]} ssl={row[3]}")
-except Exception as e:
-    print("[DB] ERRO ao conectar no Postgres:", repr(e))
-    if ALLOW_SQLITE_FALLBACK:
-        print("[DB] Fallback para SQLite ATIVADO por ambiente (ALLOW_SQLITE_FALLBACK=1).")
-        db_url = "sqlite:///achetece.db"
-        engine = create_engine(db_url, pool_pre_ping=True)
-    else:
-        # Sem fallback: falha o startup (recomendado em produção)
-        raise
-
-# 4) Integra com Flask/Flask-SQLAlchemy (oficial do app a partir daqui)
-from flask_sqlalchemy import SQLAlchemy
-
+# 3) configura Flask-SQLAlchemy (sem conectar agora)
 app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True, "pool_recycle": 300}
-
+# connect_timeout ajuda a falhas rápidas em caso de indisponibilidade
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_pre_ping": True,
+    "pool_recycle": 300,
+    "connect_args": {"connect_timeout": 8},
+}
 db = SQLAlchemy(app)
-# === FIM DB BOOTSTRAP =======================================================
 
+# 4) (opcional, mas útil) ping do banco com RETRY leve após o app existir
+def _db_ping_with_retry(tries=4, base_delay=1.5):
+    from sqlalchemy.exc import OperationalError
+    for i in range(tries):
+        try:
+            with app.app_context():
+                with db.engine.connect() as conn:
+                    row = conn.execute(text("select current_database()")).one()
+                    print(f"[DB] Conectado a: {row[0]}")
+                    return True
+        except OperationalError as e:
+            wait = base_delay * (i + 1)
+            print(f"[DB] ping falhou ({e.__class__.__name__}). Tentativa {i+1}/{tries}; aguardando {wait:.1f}s…")
+            time.sleep(wait)
+        except Exception as e:
+            print(f"[DB] ping erro inesperado: {e}")
+            time.sleep(base_delay)
+    return False
+
+# Chame um ping curto; se falhar, deixamos o app subir e as rotas lidarão com erro depois.
+_db_ping_with_retry()
+# === FIM DB BOOTSTRAP =======================================================
 
 # =====================[ UTILS BÁSICOS ]=====================
 def _env_bool(name: str, default: bool = False) -> bool:
