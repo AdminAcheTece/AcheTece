@@ -1,6 +1,6 @@
 from flask import (
     Flask, render_template, request, redirect, url_for, flash, session,
-    render_template_string, send_file, jsonify, abort
+    render_template_string, send_file, jsonify, abort, g
 )
 # Removido o uso de Flask-Mail para envio (vamos usar Resend + SMTP com timeout)
 # from flask_mail import Mail, Message
@@ -111,7 +111,39 @@ app.config['SQLALCHEMY_DATABASE_URI'] = FINAL_DB_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = engine_opts
 db.init_app(app)
-# =============================================================================
+
+# --- DB status + offline page (checa DB por request) -------------------------
+_DB_READY = None
+_DB_LAST_CHECK = 0
+
+def _db_is_up(refresh_every=10):
+    global _DB_READY, _DB_LAST_CHECK
+    now = time.time()
+    if _DB_READY is None or (now - _DB_LAST_CHECK) > refresh_every:
+        _DB_LAST_CHECK = now
+        try:
+            with db.engine.connect() as c:
+                c.exec_driver_sql("SELECT 1")
+            _DB_READY = True
+        except Exception:
+            _DB_READY = False
+    return _DB_READY
+
+@app.before_request
+def _mark_db_status():
+    g.db_up = _db_is_up()
+
+def _render_offline():
+    try:
+        return render_template("offline.html"), 503
+    except TemplateNotFound:
+        return render_template_string("""
+        <div style="max-width:640px;margin:48px auto;font-family:system-ui,Arial">
+          <h2>Estamos ajustando a conexão com o banco</h2>
+          <p>Tente novamente em instantes. Se persistir, fale com o suporte.</p>
+        </div>
+        """), 503
+# ----------------------------------------------------------------------------- 
 
 # =====================[ UTILS BÁSICOS ]=====================
 def _env_bool(name: str, default: bool = False) -> bool:
@@ -972,119 +1004,136 @@ def api_track():
 
 @app.route("/", methods=["GET"])
 def index():
-    v = request.args
-    filtros = {
-        "tipo":     (v.get("tipo") or "").strip(),
-        "diâmetro": (v.get("diâmetro") or v.get("diametro") or "").strip(),
-        "galga":    (v.get("galga") or "").strip(),
-        "estado":   (v.get("estado") or "").strip(),
-        "cidade":   (v.get("cidade") or "").strip(),
-    }
+    # Se o DB estiver indisponível (marcado no before_request), serve a página offline
+    if not getattr(g, "db_up", True):
+        return _render_offline()
 
-    q_base = Tear.query.outerjoin(Empresa)
     try:
-        q_base = q_base.filter(Tear.ativo.is_(True))
-    except Exception:
-        pass
-
-    opcoes = {"tipo": [], "diâmetro": [], "galga": [], "estado": [], "cidade": []}
-    from collections import defaultdict
-    cidades_por_uf = defaultdict(set)
-    tipos_set, diam_set, galga_set, estados_set = set(), set(), set(), set()
-
-    for t_tipo, t_diam, t_fin, e_uf, e_cid in q_base.with_entities(
-        Tear.tipo, Tear.diametro, Tear.finura, Empresa.estado, Empresa.cidade
-    ).all():
-        if t_tipo:
-            tipos_set.add(t_tipo)
-        if t_diam is not None:
-            diam_set.add(str(t_diam))
-        if t_fin is not None:
-            galga_set.add(str(t_fin))
-        if e_uf:
-            estados_set.add(e_uf)
-            if e_cid:
-                cidades_por_uf[e_uf].add(e_cid)
-
-    opcoes["tipo"] = sorted(tipos_set)
-    opcoes["diâmetro"] = sorted(diam_set, key=_num_key)
-    opcoes["galga"] = sorted(galga_set, key=_num_key)
-    opcoes["estado"] = sorted(estados_set)
-    opcoes["cidade"] = sorted(cidades_por_uf.get(filtros["estado"], set())) if filtros["estado"] else []
-
-    q = q_base
-    if filtros["tipo"]:
-        q = q.filter(db.func.lower(Tear.tipo) == filtros["tipo"].lower())
-    di = _to_int(filtros["diâmetro"])
-    if di is not None:
-        q = q.filter(Tear.diametro == di)
-    ga = _to_int(filtros["galga"])
-    if ga is not None:
-        q = q.filter(Tear.finura == ga)
-    if filtros["estado"]:
-        q = q.filter(db.func.lower(Empresa.estado) == filtros["estado"].lower())
-    if filtros["cidade"]:
-        q = q.filter(db.func.lower(Empresa.cidade) == filtros["cidade"].lower())
-
-    pagina = max(1, int(request.args.get("pagina", 1) or 1))
-    por_pagina = int(request.args.get("pp", 20) or 20)
-    por_pagina = max(1, min(100, por_pagina))
-
-    total = q.count()
-    q = q.order_by(Tear.id.desc())
-    teares_page = q.offset((pagina - 1) * por_pagina).limit(por_pagina).all()
-    total_paginas = max(1, (total + por_pagina - 1) // por_pagina)
-
-    resultados = []
-    for tear in teares_page:
-        emp = getattr(tear, "empresa", None)
-        apelido = (
-            (emp.apelido if emp else None)
-            or (getattr(emp, "nome_fantasia", None) if emp else None)
-            or (getattr(emp, "nome", None) if emp else None)
-            or ((emp.email.split("@")[0]) if emp and getattr(emp, "email", None) else None)
-            or "—"
-        )
-        numero = re.sub(r"\D", "", (emp.telefone or "")) if emp else ""
-        contato_link = f"https://wa.me/{'55' + numero if numero and not numero.startswith('55') else numero}" if numero else None
-    
-        item = {
-            "empresa_id": (getattr(emp, "id", None) if emp else None),  # 👈 ID da malharia
-            "empresa": apelido,
-            "tipo": tear.tipo or "—",
-            "galga": tear.finura if tear.finura is not None else "—",
-            "diametro": tear.diametro if tear.diametro is not None else "—",
-            "alimentadores": getattr(tear, "alimentadores", None) if getattr(tear, "alimentadores", None) is not None else "—",
-            "uf": (emp.estado if emp and getattr(emp, "estado", None) else "—"),
-            "cidade": (emp.cidade if emp and getattr(emp, "cidade", None) else "—"),
-            "contato": contato_link,
-    
-            # Aliases para CSV antigo (opcional manter)
-            "Empresa": apelido,
-            "Tipo": tear.tipo or "—",
-            "Galga": tear.finura if tear.finura is not None else "—",
-            "Diâmetro": tear.diametro if tear.diametro is not None else "—",
-            "Alimentadores": getattr(tear, "alimentadores", None) if getattr(tear, "alimentadores", None) is not None else "—",
-            "UF": (emp.estado if emp and getattr(emp, "estado", None) else "—"),
-            "Cidade": (emp.cidade if emp and getattr(emp, "cidade", None) else "—"),
-            "Contato": contato_link,
+        v = request.args
+        filtros = {
+            "tipo":     (v.get("tipo") or "").strip(),
+            "diâmetro": (v.get("diâmetro") or v.get("diametro") or "").strip(),
+            "galga":    (v.get("galga") or "").strip(),
+            "estado":   (v.get("estado") or "").strip(),
+            "cidade":   (v.get("cidade") or "").strip(),
         }
-        resultados.append(item)
 
-    app.logger.info({"rota": "index", "total_encontrado": total, "pagina": pagina, "pp": por_pagina, "filtros": filtros})
+        q_base = Tear.query.outerjoin(Empresa)
+        # Se a coluna 'ativo' não existir, ignora silenciosamente
+        try:
+            q_base = q_base.filter(Tear.ativo.is_(True))
+        except Exception:
+            pass
 
-    return render_template(
-        "index.html",
-        opcoes=opcoes,
-        filtros=filtros,
-        resultados=resultados,
-        teares=teares_page,
-        total=total,
-        pagina=pagina,
-        por_pagina=por_pagina,
-        total_paginas=total_paginas,
-        estados=opcoes["estado"],
-    )
+        opcoes = {"tipo": [], "diâmetro": [], "galga": [], "estado": [], "cidade": []}
+        from collections import defaultdict
+        cidades_por_uf = defaultdict(set)
+        tipos_set, diam_set, galga_set, estados_set = set(), set(), set(), set()
+
+        for t_tipo, t_diam, t_fin, e_uf, e_cid in q_base.with_entities(
+            Tear.tipo, Tear.diametro, Tear.finura, Empresa.estado, Empresa.cidade
+        ).all():
+            if t_tipo:
+                tipos_set.add(t_tipo)
+            if t_diam is not None:
+                diam_set.add(str(t_diam))
+            if t_fin is not None:
+                galga_set.add(str(t_fin))
+            if e_uf:
+                estados_set.add(e_uf)
+                if e_cid:
+                    cidades_por_uf[e_uf].add(e_cid)
+
+        opcoes["tipo"] = sorted(tipos_set)
+        opcoes["diâmetro"] = sorted(diam_set, key=_num_key)
+        opcoes["galga"] = sorted(galga_set, key=_num_key)
+        opcoes["estado"] = sorted(estados_set)
+        opcoes["cidade"] = sorted(cidades_por_uf.get(filtros["estado"], set())) if filtros["estado"] else []
+
+        q = q_base
+        if filtros["tipo"]:
+            q = q.filter(db.func.lower(Tear.tipo) == filtros["tipo"].lower())
+        di = _to_int(filtros["diâmetro"])
+        if di is not None:
+            q = q.filter(Tear.diametro == di)
+        ga = _to_int(filtros["galga"])
+        if ga is not None:
+            q = q.filter(Tear.finura == ga)
+        if filtros["estado"]:
+            q = q.filter(db.func.lower(Empresa.estado) == filtros["estado"].lower())
+        if filtros["cidade"]:
+            q = q.filter(db.func.lower(Empresa.cidade) == filtros["cidade"].lower())
+
+        pagina = max(1, int(request.args.get("pagina", 1) or 1))
+        por_pagina = int(request.args.get("pp", 20) or 20)
+        por_pagina = max(1, min(100, por_pagina))
+
+        total = q.count()
+        q = q.order_by(Tear.id.desc())
+        teares_page = q.offset((pagina - 1) * por_pagina).limit(por_pagina).all()
+        total_paginas = max(1, (total + por_pagina - 1) // por_pagina)
+
+        resultados = []
+        for tear in teares_page:
+            emp = getattr(tear, "empresa", None)
+            apelido = (
+                (emp.apelido if emp else None)
+                or (getattr(emp, "nome_fantasia", None) if emp else None)
+                or (getattr(emp, "nome", None) if emp else None)
+                or ((emp.email.split("@")[0]) if emp and getattr(emp, "email", None) else None)
+                or "—"
+            )
+            numero = re.sub(r"\D", "", (emp.telefone or "")) if emp else ""
+            contato_link = f"https://wa.me/{'55' + numero if numero and not numero.startswith('55') else numero}" if numero else None
+
+            item = {
+                "empresa_id": (getattr(emp, "id", None) if emp else None),  # 👈 ID da malharia
+                "empresa": apelido,
+                "tipo": tear.tipo or "—",
+                "galga": tear.finura if tear.finura is not None else "—",
+                "diametro": tear.diametro if tear.diametro is not None else "—",
+                "alimentadores": getattr(tear, "alimentadores", None) if getattr(tear, "alimentadores", None) is not None else "—",
+                "uf": (emp.estado if emp and getattr(emp, "estado", None) else "—"),
+                "cidade": (emp.cidade if emp and getattr(emp, "cidade", None) else "—"),
+                "contato": contato_link,
+
+                # Aliases para CSV antigo (opcional manter)
+                "Empresa": apelido,
+                "Tipo": tear.tipo or "—",
+                "Galga": tear.finura if tear.finura is not None else "—",
+                "Diâmetro": tear.diametro if tear.diametro is not None else "—",
+                "Alimentadores": getattr(tear, "alimentadores", None) if getattr(tear, "alimentadores", None) is not None else "—",
+                "UF": (emp.estado if emp and getattr(emp, "estado", None) else "—"),
+                "Cidade": (emp.cidade if emp and getattr(emp, "cidade", None) else "—"),
+                "Contato": contato_link,
+            }
+            resultados.append(item)
+
+        app.logger.info({
+            "rota": "index",
+            "total_encontrado": total,
+            "pagina": pagina,
+            "pp": por_pagina,
+            "filtros": filtros
+        })
+
+        return render_template(
+            "index.html",
+            opcoes=opcoes,
+            filtros=filtros,
+            resultados=resultados,
+            teares=teares_page,
+            total=total,
+            pagina=pagina,
+            por_pagina=por_pagina,
+            total_paginas=total_paginas,
+            estados=opcoes["estado"],
+        )
+
+    except Exception as e:
+        # Qualquer falha (inclui OperationalError do Postgres) cai na página offline
+        app.logger.exception("[INDEX] falha ao consultar DB: %s", e)
+        return _render_offline()
 
 # /login
 @app.route("/login", methods=["GET", "POST"], endpoint="login")
