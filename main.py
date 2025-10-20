@@ -23,8 +23,6 @@ from sqlalchemy import inspect, text, or_, func
 from pathlib import Path
 import random
 from jinja2 import TemplateNotFound
-import resend  # biblioteca do Resend
-from flask import session
 from urllib.parse import urlparse
 from werkzeug.utils import secure_filename
 import time
@@ -49,7 +47,7 @@ CACHE_DIR = os.path.join(BASE_DIR, 'cache_ibge')
 os.makedirs(CACHE_DIR, exist_ok=True)
 
 # ==== DB bootstrap (único e robusto) =========================================
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 
 ALLOW_SQLITE_FALLBACK = os.getenv("ALLOW_SQLITE_FALLBACK", "0") == "1"
@@ -93,7 +91,7 @@ def _pick_database_uri() -> str:
             app.logger.error("[DB] Postgres indisponível. CAINDO para SQLite (ALLOW_SQLITE_FALLBACK=1).")
             return "sqlite:///achetece.db"
         app.logger.error("[DB] Postgres indisponível e fallback desativado; seguirei com URL do Postgres e retornarei 503 até estabilizar.")
-        return url  # manter para tentar mais tarde
+        return url  # mantém para tentar mais tarde (serviremos offline/503)
     return url or "sqlite:///achetece.db"
 
 FINAL_DB_URI = _pick_database_uri()
@@ -117,6 +115,7 @@ _DB_READY = None
 _DB_LAST_CHECK = 0
 
 def _db_is_up(refresh_every=10):
+    """Cacheia o resultado por ~10s para não martelar o banco a cada request."""
     global _DB_READY, _DB_LAST_CHECK
     now = time.time()
     if _DB_READY is None or (now - _DB_LAST_CHECK) > refresh_every:
@@ -129,35 +128,56 @@ def _db_is_up(refresh_every=10):
             _DB_READY = False
     return _DB_READY
 
+def _render_offline(status: int | None = None):
+    """
+    Página offline: devolve 200 na home/rotas públicas e 503 no restante.
+    Assim o Render não marca erro e o usuário vê uma página amigável.
+    """
+    public_ok200 = {"/", "/quem_somos", "/quem-somos", "/fale_conosco", "/suporte", "/termos"}
+    if status is None:
+        status = 200 if request.path in public_ok200 else 503
+
+    try:
+        resp = render_template("offline.html")
+    except TemplateNotFound:
+        # Fallback mínimo embutido
+        resp = """
+<!doctype html><meta charset="utf-8">
+<title>AcheTece – temporariamente offline</title>
+<style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;max-width:720px;margin:8vh auto;padding:0 16px;color:#1e1b2b}
+.card{border:1px solid #eee;border-radius:12px;padding:20px}
+h1{font-size:24px;margin:0 0 8px}p{line-height:1.55;margin:10px 0}small{color:#888}</style>
+<div class="card">
+  <h1>Estamos temporariamente offline</h1>
+  <p>Nosso banco de dados está indisponível no momento. Enquanto isso, você ainda pode navegar nas páginas públicas.</p>
+  <p><small>Este estado é automático e sai assim que o banco voltar a responder.</small></p>
+</div>
+"""
+    headers = {}
+    if status == 503:
+        headers["Retry-After"] = "10"
+    return resp, status, headers
+
 @app.before_request
 def _mark_db_status():
     g.db_up = _db_is_up()
 
-def _render_offline():
-    try:
-        return render_template("offline.html"), 503
-    except TemplateNotFound:
-        return render_template_string("""
-        <div style="max-width:640px;margin:48px auto;font-family:system-ui,Arial">
-          <h2>Estamos ajustando a conexão com o banco</h2>
-          <p>Tente novamente em instantes. Se persistir, fale com o suporte.</p>
-        </div>
-        """), 503
-# ----------------------------------------------------------------------------- 
+@app.before_request
+def _offline_guard():
+    """
+    Se o DB estiver fora do ar, devolve página offline nas rotas que dependem do DB.
+    Deixa passar assets e as públicas definidas dentro de _render_offline().
+    """
+    if getattr(g, "db_up", True):
+        return  # tudo ok, segue o fluxo normal
 
-# =====================[ UTILS BÁSICOS ]=====================
-def _env_bool(name: str, default: bool = False) -> bool:
-    v = str(os.getenv(name, str(default))).strip().lower()
-    return v in {"1", "true", "yes", "on"}
+    # sempre permite assets estáticos e arquivos comuns
+    p = request.path or "/"
+    if p.startswith("/static/") or p in {"/favicon.ico", "/robots.txt", "/sitemap.xml"}:
+        return
 
-def base_url():
-    env_url = os.getenv('APP_BASE_URL')
-    if env_url:
-        return env_url.rstrip('/')
-    try:
-        return request.url_root.rstrip('/')
-    except Exception:
-        return "http://localhost:5000"
+    # devolve página offline (status 200 para home/públicas, 503 para o resto)
+    return _render_offline()
 
 # =====================[ ANALYTICS - INÍCIO ]=====================
 # Eventos aceitos
@@ -245,19 +265,21 @@ def get_performance(company_id, dt_ini=None, dt_fim=None):
     total_contatos = sum(r["contatos"] for r in rows)
     return total_visitas, total_contatos, series
 
-# Executa migrações/ajustes e a criação do analytics apenas no 1º request
+# Executa migrações/ajustes e a criação do analytics apenas quando o DB responder
 _BOOTSTRAP_DONE = False
 _ANALYTICS_READY = False
 
 def _run_bootstrap_once():
+    """Cria tabelas/migrações leves quando o DB está UP; caso contrário, adia."""
     global _BOOTSTRAP_DONE
     if _BOOTSTRAP_DONE:
         return
+    if not _db_is_up():
+        app.logger.error("[BOOT] adiado: DB indisponível")
+        return
     try:
-        # só roda se o DB responder; se não, adia
-        with db.engine.connect() as c:
-            c.exec_driver_sql("SELECT 1")
         db.create_all()
+        # funções definidas mais abaixo no arquivo:
         _ensure_auth_layer_and_link()
         _ensure_cliente_profile_table()
         _BOOTSTRAP_DONE = True
@@ -268,35 +290,15 @@ def _run_bootstrap_once():
 @app.before_request
 def _bootstrap_and_analytics_lazy():
     global _ANALYTICS_READY
-    _run_bootstrap_once()
-    if not _ANALYTICS_READY:
-        try:
-            _init_analytics_table()  # CREATE IF NOT EXISTS; idempotente
-            _ANALYTICS_READY = True
-        except Exception as e:
-            app.logger.error("Falha ao garantir tabela de analytics (adiado): %s", e)
-
-
-def _ensure_analytics_table_once():
-    try:
-        _init_analytics_table()
-    except Exception as e:
-        app.logger.exception("Falha ao garantir tabela de analytics: %s", e)
-
-# Executa a criação de tabela de analytics só quando chegar o 1º request
-_ANALYTICS_READY = False
-
-@app.before_request
-def _ensure_analytics_once_lazy():
-    global _ANALYTICS_READY
-    if _ANALYTICS_READY:
-        return
-    try:
-        _init_analytics_table()  # usa CREATE IF NOT EXISTS; é idempotente
-        _ANALYTICS_READY = True
-    except Exception as e:
-        app.logger.error("Falha ao garantir tabela de analytics (adiado): %s", e)
-        # não derruba a requisição; tenta de novo no próximo request
+    # Só tenta bootstrap/analytics se DB estiver UP no momento
+    if getattr(g, "db_up", False):
+        _run_bootstrap_once()
+        if not _ANALYTICS_READY:
+            try:
+                _init_analytics_table()  # CREATE IF NOT EXISTS; idempotente
+                _ANALYTICS_READY = True
+            except Exception as e:
+                app.logger.error("Falha ao garantir tabela de analytics (adiado): %s", e)
 
 # =====================[ ANALYTICS - FIM ]=====================
 
