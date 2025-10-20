@@ -18,8 +18,7 @@
       --roxo:#8A00FF; --roxo-hover:#A63DFF; --preto:#000;
       --laranja:#F28C00; --laranja-hover:#E57F00;
       --roxinho:#F3E9FF;
-      /* cinza do miolo (mais claro) */
-      --cinza-150:#F7F7FA;
+      --cinza-150:#F7F7FA; /* cinza do miolo (mais claro) */
     }
 
     html, body { max-width:100%; overflow-x:hidden; }
@@ -101,7 +100,7 @@
     .btn-open-filters{ background:#8A00FF; color:#fff; }
     .btn-open-filters:hover{ background:#A63DFF; }
     .btn-new-search{ background:var(--laranja); color:#fff; }
-    .btn-new-search:hover{ background:var(--laranja-hover); }
+    .btn-new-search:hover{ background:#laranja-hover; }
     .ico-funil{ width:18px;height:18px; margin-right:8px; }
     @media (max-width:1024px){ .filters-toggle-bar{display:flex;} }
 
@@ -137,7 +136,7 @@
     @media (max-width:620px){.localizacao-card .row{grid-template-columns:1fr}}
 
     /* ===== RESULTADOS ===== */
-    .results-card{border:1px solid #eee;border-radius:12px;padding:12px;}
+    .results-card{border:1px solid #eee;border-radius:12px;padding:12px;max-width:1140px;margin:0 auto;} /* centralizado e largura controlada */
     .results-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 4px 6px;}
     .results-head h3{margin:0;font-size:16px;font-weight:700;}
     .results-count{font-size:13px;color:#555;}
@@ -225,6 +224,12 @@
       .teares-table tbody tr:nth-child(odd){  background:#FFFFFF; }
       .teares-table tbody tr:nth-child(even){ background:#F7F3FF; }
       .teares-table tbody tr:hover{ background:#F0EBFF; }
+    }
+
+    /* Tipografia um pouco menor em telas bem estreitas */
+    @media (max-width:390px){
+      .card-info{font-size:.9rem;}
+      .empresa-info .nome{font-size:.95rem;}
     }
   </style>
 </head>
@@ -428,7 +433,7 @@
               
                         <div class="empresa-actions">
                           <a class="btn-view js-view-company"
-                             <a href="{{ url_for('empresa_perfil', empresa_id=r.empresa_id) }}">Ver empresa</a>
+                             href="{{ url_for('empresa_perfil', empresa_id=r.empresa_id) }}"
                              title="Ver perfil da empresa"
                              aria-label="Ver perfil da empresa"
                              data-company-id="{{ r.empresa_id }}"
@@ -496,7 +501,7 @@
                         <td>
                           <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
                             <a class="btn-view js-view-company"
-                               <a href="{{ url_for('empresa_perfil', empresa_id=r.empresa_id) }}">Ver empresa</a>
+                               href="{{ url_for('empresa_perfil', empresa_id=r.empresa_id) }}"
                                title="Ver perfil da empresa"
                                aria-label="Ver perfil da empresa"
                                data-company-id="{{ r.empresa_id }}"
