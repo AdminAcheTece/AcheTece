@@ -48,88 +48,70 @@ STATIC_DIR = os.path.join(BASE_DIR, 'static')
 CACHE_DIR = os.path.join(BASE_DIR, 'cache_ibge')
 os.makedirs(CACHE_DIR, exist_ok=True)
 
-# === DB BOOTSTRAP (Render-friendly) =========================================
-import os, re, time
-from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
-from sqlalchemy import text
+# ==== DB bootstrap (único e robusto) =========================================
+from sqlalchemy import create_engine, text
 from sqlalchemy.exc import OperationalError
-from flask_sqlalchemy import SQLAlchemy
 
-def _is_render_internal(host: str) -> bool:
-    return bool(host) and host.endswith(".internal")
+ALLOW_SQLITE_FALLBACK = os.getenv("ALLOW_SQLITE_FALLBACK", "0") == "1"
 
 def _normalize_db_url(url: str) -> str:
     if not url:
         return url
-    # força driver psycopg v3
     if url.startswith("postgres://"):
         url = url.replace("postgres://", "postgresql+psycopg://", 1)
-    elif url.startswith("postgresql://"):
+    if url.startswith("postgresql://"):
         url = url.replace("postgresql://", "postgresql+psycopg://", 1)
+    if url.startswith("postgresql+psycopg://") and "sslmode=" not in url:
+        url += ("&" if "?" in url else "?") + "sslmode=require"
+    return url
 
-    pr = urlparse(url)
-    host = pr.hostname or ""
-    qs = dict(parse_qsl(pr.query, keep_blank_values=True))
-
-    if _is_render_internal(host):
-        # INTERNAL: sem sslmode
-        qs.pop("sslmode", None)
-    else:
-        # EXTERNAL: garanta SSL
-        qs.setdefault("sslmode", "require")
-
-    new_query = urlencode(qs)
-    return urlunparse(pr._replace(query=new_query))
-
-db_url_raw = os.getenv("SQLALCHEMY_DATABASE_URI") or os.getenv("DATABASE_URL") or ""
-db_url = _normalize_db_url(db_url_raw)
-
-# log mascarado (corrige seu \\1 aparecendo literal)
-try:
-    safe = re.sub(r"://([^:]+):[^@]+@", r"://\1:***@", db_url)
-    print("[DB] URL normalizada:", safe)
-except Exception:
-    print("[DB] URL normalizada: <indisponível>")
-
-# Configura sem forçar conexão agora
-app.config["SQLALCHEMY_DATABASE_URI"] = db_url
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "pool_pre_ping": True,
-    "pool_recycle": 300,
-    "pool_timeout": 30,
-    "connect_args": {"connect_timeout": 8},  # falha rápido se indisponível
-}
-db = SQLAlchemy(app)
-
-def _db_ping_with_retry(tries=4, base_delay=1.5):
-    ok = False
-    for i in range(tries):
-        try:
-            with app.app_context():
-                with db.engine.connect() as conn:
-                    row = conn.execute(text("select current_database()")).one()
-                    print(f"[DB] Conectado a: {row[0]}")
-                    ok = True
-                    break
-        except OperationalError as e:
-            wait = base_delay * (i + 1)
-            print(f"[DB] ping falhou ({e.__class__.__name__}). Tentativa {i+1}/{tries}; aguardando {wait:.1f}s…")
-            time.sleep(wait)
-        except Exception as e:
-            print(f"[DB] ping erro inesperado: {e}")
-            time.sleep(base_delay)
-    # Aviso forte se ainda estiver usando host externo (vai dar ruim)
+def _try_ping(url: str) -> bool:
     try:
-        host = urlparse(db.engine.url.render_as_string(hide_password=True)).hostname or ""
-        if not _is_render_internal(host):
-            print("[DB][AVISO] Você ainda está usando HOST EXTERNO. No Render, use a Internal Database URL (host .internal).")
-    except Exception:
-        pass
-    return ok
+        engine = create_engine(
+            url,
+            pool_pre_ping=True,
+            pool_recycle=280,
+            connect_args=(
+                {"sslmode": "require", "connect_timeout": 4}
+                if url.startswith("postgresql+psycopg://") else {}
+            ),
+        )
+        with engine.connect() as c:
+            c.exec_driver_sql("SELECT 1")
+        return True
+    except Exception as e:
+        app.logger.warning("[DB] ping falhou para %s: %r", url, e)
+        return False
 
-_db_ping_with_retry()
-# === FIM DB BOOTSTRAP =======================================================
+def _pick_database_uri() -> str:
+    env_url = os.getenv("SQLALCHEMY_DATABASE_URI") or os.getenv("DATABASE_URL") or ""
+    url = _normalize_db_url(env_url)
+    if url.startswith("postgresql+psycopg://"):
+        if _try_ping(url):
+            return url
+        if ALLOW_SQLITE_FALLBACK:
+            app.logger.error("[DB] Postgres indisponível. CAINDO para SQLite (ALLOW_SQLITE_FALLBACK=1).")
+            return "sqlite:///achetece.db"
+        app.logger.error("[DB] Postgres indisponível e fallback desativado; seguirei com URL do Postgres e retornarei 503 até estabilizar.")
+        return url  # manter para tentar mais tarde
+    return url or "sqlite:///achetece.db"
+
+FINAL_DB_URI = _pick_database_uri()
+
+engine_opts = {
+    "pool_pre_ping": True,
+    "pool_recycle": 280,
+    "pool_timeout": 30,
+}
+if FINAL_DB_URI.startswith("postgresql+psycopg://"):
+    engine_opts["connect_args"] = {"sslmode": "require", "connect_timeout": 4}
+
+db = SQLAlchemy()
+app.config['SQLALCHEMY_DATABASE_URI'] = FINAL_DB_URI
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = engine_opts
+db.init_app(app)
+# =============================================================================
 
 # =====================[ UTILS BÁSICOS ]=====================
 def _env_bool(name: str, default: bool = False) -> bool:
@@ -230,6 +212,38 @@ def get_performance(company_id, dt_ini=None, dt_fim=None):
     total_visitas  = sum(r["visitas"]  for r in rows)
     total_contatos = sum(r["contatos"] for r in rows)
     return total_visitas, total_contatos, series
+
+# Executa migrações/ajustes e a criação do analytics apenas no 1º request
+_BOOTSTRAP_DONE = False
+_ANALYTICS_READY = False
+
+def _run_bootstrap_once():
+    global _BOOTSTRAP_DONE
+    if _BOOTSTRAP_DONE:
+        return
+    try:
+        # só roda se o DB responder; se não, adia
+        with db.engine.connect() as c:
+            c.exec_driver_sql("SELECT 1")
+        db.create_all()
+        _ensure_auth_layer_and_link()
+        _ensure_cliente_profile_table()
+        _BOOTSTRAP_DONE = True
+        app.logger.info("[BOOT] Migrações/ajustes executados.")
+    except Exception as e:
+        app.logger.error("[BOOT] adiado: %s", e)
+
+@app.before_request
+def _bootstrap_and_analytics_lazy():
+    global _ANALYTICS_READY
+    _run_bootstrap_once()
+    if not _ANALYTICS_READY:
+        try:
+            _init_analytics_table()  # CREATE IF NOT EXISTS; idempotente
+            _ANALYTICS_READY = True
+        except Exception as e:
+            app.logger.error("Falha ao garantir tabela de analytics (adiado): %s", e)
+
 
 def _ensure_analytics_table_once():
     try:
@@ -632,15 +646,6 @@ def _ensure_cliente_profile_table():
         ClienteProfile.__table__.create(bind=db.engine, checkfirst=True)
     except Exception as e:
         app.logger.warning(f"create cliente_profile table: {e}")
-
-with app.app_context():
-    try:
-        db.create_all()
-        _ensure_auth_layer_and_link()
-        _ensure_cliente_profile_table()
-        app.logger.info("Migrações de inicialização OK (create_all + ajustes).")
-    except Exception as e:
-        app.logger.error(f"Startup migrations failed: {e}")
 
 # --------------------------------------------------------------------
 # Sessão / Regras de acesso
