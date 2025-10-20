@@ -414,8 +414,22 @@
                         <div class="lbl">Alimentadores:</div><div>{{ r.alimentadores or '—' }}</div>
                         <div class="lbl">Kit elastano:</div>
                         <div>
-                          {% set kit = r.kit_elastano %}
-                          {{ 'Sim' if kit in [True, 'Sim', 'SIM', 'sim', 1, '1'] else ('Não' if kit in [False, 'Não', 'NAO', 'NÃO', 0, '0'] else '—') }}
+                          <td>
+                            {% set raw = r.kit_elastano %}
+                            {% if raw is boolean %}
+                              {{ 'Sim' if raw else 'Não' }}
+                            {% else %}
+                              {% set v = (raw|string).strip() %}
+                              {% set vlow = v|lower %}
+                              {% if v in [1, '1'] or vlow in ['sim','s','true','t','on','com','tem','yes','y'] %}
+                                Sim
+                              {% elif v in [0, '0'] or vlow in ['não','nao','n','false','f','off','sem','no'] %}
+                                Não
+                              {% else %}
+                                —
+                              {% endif %}
+                            {% endif %}
+                          </td>
                         </div>
                       </div>
               
@@ -493,8 +507,20 @@
                         <td>{{ r.diametro }}</td>
                         <td>{{ r.alimentadores }}</td>
                         <td>
-                          {% set kit = r.kit_elastano %}
-                          {{ 'Sim' if kit in [True, 'Sim', 'SIM', 'sim', 1, '1'] else ('Não' if kit in [False, 'Não', 'NAO', 'NÃO', 0, '0'] else '—') }}
+                          {% set raw = r.kit_elastano %}
+                          {% if raw is boolean %}
+                            {{ 'Sim' if raw else 'Não' }}
+                          {% else %}
+                            {% set v = (raw|string).strip() %}
+                            {% set vlow = v|lower %}
+                            {% if v in [1, '1'] or vlow in ['sim','s','true','t','on','com','tem','yes','y'] %}
+                              Sim
+                            {% elif v in [0, '0'] or vlow in ['não','nao','n','false','f','off','sem','no'] %}
+                              Não
+                            {% else %}
+                              —
+                            {% endif %}
+                          {% endif %}
                         </td>
                         <td>{{ r.uf }}</td>
                         <td>{{ r.cidade }}</td>
