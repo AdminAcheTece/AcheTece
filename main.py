@@ -31,21 +31,6 @@ import time
 import smtplib, ssl
 from email.message import EmailMessage
 
-# Resend (pode não estar instalado no ambiente da Render)
-try:
-    import resend  # biblioteca do Resend
-except Exception:
-    resend = None  # evita NameError; usaremos só SMTP se None
-
-# --------------------------------------------------------------------
-# Utils básicos (precisam estar definidos antes de qualquer uso no módulo)
-# --------------------------------------------------------------------
-def _env_bool(name: str, default: bool = False) -> bool:
-    v = os.getenv(name)
-    if v is None:
-        return default
-    return str(v).strip().lower() in {"1", "true", "yes", "y", "on"}
-
 # --------------------------------------------------------------------
 # Configuração básica
 # --------------------------------------------------------------------
@@ -68,24 +53,30 @@ from sqlalchemy.exc import OperationalError
 ALLOW_SQLITE_FALLBACK = os.getenv("ALLOW_SQLITE_FALLBACK", "0") == "1"
 
 def _normalize_db_url(url: str) -> str:
+    """
+    Converte 'postgres://' -> 'postgresql+psycopg://' e mantém o restante INALTERADO.
+    NÃO força sslmode aqui (deixe o que vier do Render).
+    """
     if not url:
         return url
+    url = url.strip()
     if url.startswith("postgres://"):
-        url = url.replace("postgres://", "postgresql+psycopg://", 1)
+        return url.replace("postgres://", "postgresql+psycopg://", 1)
     if url.startswith("postgresql://"):
-        url = url.replace("postgresql://", "postgresql+psycopg://", 1)
-    if url.startswith("postgresql+psycopg://") and "sslmode=" not in url:
-        url += ("&" if "?" in url else "?") + "sslmode=require"
+        return url.replace("postgresql://", "postgresql+psycopg://", 1)
     return url
 
 def _try_ping(url: str) -> bool:
+    """
+    Tenta um SELECT 1 sem forçar SSL. Se a URL trouxer sslmode, o driver respeita.
+    """
     try:
         engine = create_engine(
             url,
             pool_pre_ping=True,
             pool_recycle=280,
             connect_args=(
-                {"sslmode": "require", "connect_timeout": 4}
+                {"connect_timeout": 5}
                 if url.startswith("postgresql+psycopg://") else {}
             ),
         )
@@ -97,8 +88,20 @@ def _try_ping(url: str) -> bool:
         return False
 
 def _pick_database_uri() -> str:
-    env_url = os.getenv("SQLALCHEMY_DATABASE_URI") or os.getenv("DATABASE_URL") or ""
-    url = _normalize_db_url(env_url)
+    """
+    Preferência:
+      1) INTERNAL_DATABASE_URL / DATABASE_URL_INTERNAL (se existir)
+      2) SQLALCHEMY_DATABASE_URI
+      3) DATABASE_URL
+      4) sqlite:///achetece.db (fallback opcional)
+    """
+    internal = os.getenv("INTERNAL_DATABASE_URL") or os.getenv("DATABASE_URL_INTERNAL") or ""
+    primary  = os.getenv("SQLALCHEMY_DATABASE_URI") or os.getenv("DATABASE_URL") or ""
+
+    # escolha a primeira disponível
+    raw_url = (internal or primary).strip()
+    url = _normalize_db_url(raw_url)
+
     if url.startswith("postgresql+psycopg://"):
         if _try_ping(url):
             return url
@@ -116,8 +119,9 @@ engine_opts = {
     "pool_recycle": 280,
     "pool_timeout": 30,
 }
+# NÃO empurre sslmode por connect_args; deixe a URL mandar.
 if FINAL_DB_URI.startswith("postgresql+psycopg://"):
-    engine_opts["connect_args"] = {"sslmode": "require", "connect_timeout": 4}
+    engine_opts["connect_args"] = {"connect_timeout": 5}
 
 db = SQLAlchemy()
 app.config['SQLALCHEMY_DATABASE_URI'] = FINAL_DB_URI
