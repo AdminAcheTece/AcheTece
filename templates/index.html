@@ -414,22 +414,21 @@
                         <div class="lbl">Alimentadores:</div><div>{{ r.alimentadores or '—' }}</div>
                         <div class="lbl">Kit elastano:</div>
                         <div>
-                          <td>
-                            {% set raw = r.kit_elastano %}
-                            {% if raw is boolean %}
-                              {{ 'Sim' if raw else 'Não' }}
+                          {% set raw = r.elastano %}
+                          {# mesmo bloco acima #}
+                          {% if raw is boolean %}
+                            {{ 'Sim' if raw else 'Não' }}
+                          {% else %}
+                            {% set v = (raw|string).strip() %}
+                            {% set vlow = v|lower %}
+                            {% if v in [1,'1'] or vlow in ['sim','s','true','t','on','com','tem','yes','y'] %}
+                              Sim
+                            {% elif v in [0,'0'] or vlow in ['não','nao','n','false','f','off','sem','no'] %}
+                              Não
                             {% else %}
-                              {% set v = (raw|string).strip() %}
-                              {% set vlow = v|lower %}
-                              {% if v in [1, '1'] or vlow in ['sim','s','true','t','on','com','tem','yes','y'] %}
-                                Sim
-                              {% elif v in [0, '0'] or vlow in ['não','nao','n','false','f','off','sem','no'] %}
-                                Não
-                              {% else %}
-                                —
-                              {% endif %}
+                              —
                             {% endif %}
-                          </td>
+                          {% endif %}
                         </div>
                       </div>
               
@@ -507,15 +506,15 @@
                         <td>{{ r.diametro }}</td>
                         <td>{{ r.alimentadores }}</td>
                         <td>
-                          {% set raw = r.kit_elastano %}
+                          {% set raw = r.elastano %}
                           {% if raw is boolean %}
                             {{ 'Sim' if raw else 'Não' }}
                           {% else %}
                             {% set v = (raw|string).strip() %}
                             {% set vlow = v|lower %}
-                            {% if v in [1, '1'] or vlow in ['sim','s','true','t','on','com','tem','yes','y'] %}
+                            {% if v in [1,'1'] or vlow in ['sim','s','true','t','on','com','tem','yes','y'] %}
                               Sim
-                            {% elif v in [0, '0'] or vlow in ['não','nao','n','false','f','off','sem','no'] %}
+                            {% elif v in [0,'0'] or vlow in ['não','nao','n','false','f','off','sem','no'] %}
                               Não
                             {% else %}
                               —
