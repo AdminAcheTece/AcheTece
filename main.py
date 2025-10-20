@@ -48,19 +48,20 @@ STATIC_DIR = os.path.join(BASE_DIR, 'static')
 CACHE_DIR = os.path.join(BASE_DIR, 'cache_ibge')
 os.makedirs(CACHE_DIR, exist_ok=True)
 
-# === DB BOOTSTRAP (ACHETECE) ===============================================
+# === DB BOOTSTRAP (Render-friendly) =========================================
 import os, re, time
 from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
 from sqlalchemy import text
+from sqlalchemy.exc import OperationalError
 from flask_sqlalchemy import SQLAlchemy
 
 def _is_render_internal(host: str) -> bool:
     return bool(host) and host.endswith(".internal")
 
 def _normalize_db_url(url: str) -> str:
-    """Força driver psycopg, remove/ajusta sslmode conforme host (interno vs externo)"""
     if not url:
         return url
+    # força driver psycopg v3
     if url.startswith("postgres://"):
         url = url.replace("postgres://", "postgresql+psycopg://", 1)
     elif url.startswith("postgresql://"):
@@ -71,47 +72,46 @@ def _normalize_db_url(url: str) -> str:
     qs = dict(parse_qsl(pr.query, keep_blank_values=True))
 
     if _is_render_internal(host):
-        # em host interno do Render, normalmente NÃO se usa SSL
+        # INTERNAL: sem sslmode
         qs.pop("sslmode", None)
     else:
-        # em host externo, garante sslmode=require
+        # EXTERNAL: garanta SSL
         qs.setdefault("sslmode", "require")
 
     new_query = urlencode(qs)
-    url = urlunparse(pr._replace(query=new_query))
-    return url
+    return urlunparse(pr._replace(query=new_query))
 
-# 1) carrega/normaliza URL
-db_url = _normalize_db_url(os.getenv("SQLALCHEMY_DATABASE_URI") or os.getenv("DATABASE_URL") or "")
+db_url_raw = os.getenv("SQLALCHEMY_DATABASE_URI") or os.getenv("DATABASE_URL") or ""
+db_url = _normalize_db_url(db_url_raw)
 
-# 2) log seguro da URL (sem vazar senha)
+# log mascarado (corrige seu \\1 aparecendo literal)
 try:
     safe = re.sub(r"://([^:]+):[^@]+@", r"://\1:***@", db_url)
     print("[DB] URL normalizada:", safe)
 except Exception:
-    pass
+    print("[DB] URL normalizada: <indisponível>")
 
-# 3) configura Flask-SQLAlchemy (sem conectar agora)
+# Configura sem forçar conexão agora
 app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-# connect_timeout ajuda a falhas rápidas em caso de indisponibilidade
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_pre_ping": True,
     "pool_recycle": 300,
-    "connect_args": {"connect_timeout": 8},
+    "pool_timeout": 30,
+    "connect_args": {"connect_timeout": 8},  # falha rápido se indisponível
 }
 db = SQLAlchemy(app)
 
-# 4) (opcional, mas útil) ping do banco com RETRY leve após o app existir
 def _db_ping_with_retry(tries=4, base_delay=1.5):
-    from sqlalchemy.exc import OperationalError
+    ok = False
     for i in range(tries):
         try:
             with app.app_context():
                 with db.engine.connect() as conn:
                     row = conn.execute(text("select current_database()")).one()
                     print(f"[DB] Conectado a: {row[0]}")
-                    return True
+                    ok = True
+                    break
         except OperationalError as e:
             wait = base_delay * (i + 1)
             print(f"[DB] ping falhou ({e.__class__.__name__}). Tentativa {i+1}/{tries}; aguardando {wait:.1f}s…")
@@ -119,9 +119,15 @@ def _db_ping_with_retry(tries=4, base_delay=1.5):
         except Exception as e:
             print(f"[DB] ping erro inesperado: {e}")
             time.sleep(base_delay)
-    return False
+    # Aviso forte se ainda estiver usando host externo (vai dar ruim)
+    try:
+        host = urlparse(db.engine.url.render_as_string(hide_password=True)).hostname or ""
+        if not _is_render_internal(host):
+            print("[DB][AVISO] Você ainda está usando HOST EXTERNO. No Render, use a Internal Database URL (host .internal).")
+    except Exception:
+        pass
+    return ok
 
-# Chame um ping curto; se falhar, deixamos o app subir e as rotas lidarão com erro depois.
 _db_ping_with_retry()
 # === FIM DB BOOTSTRAP =======================================================
 
@@ -231,9 +237,21 @@ def _ensure_analytics_table_once():
     except Exception as e:
         app.logger.exception("Falha ao garantir tabela de analytics: %s", e)
 
-# Executa uma vez por processo no boot (sem before_first_request no Flask 3)
-with app.app_context():
-    _ensure_analytics_table_once()
+# Executa a criação de tabela de analytics só quando chegar o 1º request
+_ANALYTICS_READY = False
+
+@app.before_request
+def _ensure_analytics_once_lazy():
+    global _ANALYTICS_READY
+    if _ANALYTICS_READY:
+        return
+    try:
+        _init_analytics_table()  # usa CREATE IF NOT EXISTS; é idempotente
+        _ANALYTICS_READY = True
+    except Exception as e:
+        app.logger.error("Falha ao garantir tabela de analytics (adiado): %s", e)
+        # não derruba a requisição; tenta de novo no próximo request
+
 # =====================[ ANALYTICS - FIM ]=====================
 
 # --------------------------------------------------------------------
