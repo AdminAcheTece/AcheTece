@@ -428,7 +428,7 @@
               
                         <div class="empresa-actions">
                           <a class="btn-view js-view-company"
-                             href="{{ url_for('company_profile', empresa_id=r.empresa_id) }}"
+                             <a href="{{ url_for('empresa_perfil', empresa_id=r.empresa_id) }}">Ver empresa</a>
                              title="Ver perfil da empresa"
                              aria-label="Ver perfil da empresa"
                              data-company-id="{{ r.empresa_id }}"
@@ -496,7 +496,7 @@
                         <td>
                           <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
                             <a class="btn-view js-view-company"
-                               href="{{ url_for('company_profile', empresa_id=r.empresa_id) }}"
+                               <a href="{{ url_for('empresa_perfil', empresa_id=r.empresa_id) }}">Ver empresa</a>
                                title="Ver perfil da empresa"
                                aria-label="Ver perfil da empresa"
                                data-company-id="{{ r.empresa_id }}"
