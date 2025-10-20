@@ -228,7 +228,8 @@
       <input type="text" id="nome" name="nome" value="{{ nome or '' }}" class="{% if erros and erros.get('nome') %}erro-campo{% endif %}">
       {% if erros and erros.get('nome') %}<div class="mensagem-campo">{{ erros.get('nome') }}</div>{% endif %}
 
-      <label for="apelido">Apelido da Empresa:</label>
+      <!-- Apelido sem ":" -->
+      <label for="apelido">Apelido da Empresa</label>
       <input type="text" id="apelido" name="apelido" value="{{ apelido or '' }}" class="{% if erros and erros.get('apelido') %}erro-campo{% endif %}">
       {% if erros and erros.get('apelido') %}<div class="mensagem-campo">{{ erros.get('apelido') }}</div>{% endif %}
 
@@ -263,6 +264,20 @@
         {% endfor %}
       </select>
       {% if erros and erros.get('cidade') %}<div class="mensagem-campo">{{ erros.get('cidade') }}</div>{% endif %}
+
+      <!-- NOVOS CAMPOS: Endereço completo e CEP (ambos obrigatórios) -->
+      <label for="endereco">Endereço completo <span style="color:#d00000">*</span></label>
+      <input type="text" id="endereco" name="endereco" required
+             autocomplete="street-address" placeholder="Rua, número, complemento, bairro"
+             value="{{ endereco or '' }}" class="{% if erros and erros.get('endereco') %}erro-campo{% endif %}">
+      {% if erros and erros.get('endereco') %}<div class="mensagem-campo">{{ erros.get('endereco') }}</div>{% endif %}
+
+      <label for="cep">CEP <span style="color:#d00000">*</span></label>
+      <input type="text" id="cep" name="cep" required
+             inputmode="numeric" pattern="\d{5}-?\d{3}" title="Digite no formato 00000-000 ou 00000000"
+             autocomplete="postal-code" placeholder="00000-000"
+             value="{{ cep or '' }}" class="{% if erros and erros.get('cep') %}erro-campo{% endif %}">
+      {% if erros and erros.get('cep') %}<div class="mensagem-campo">{{ erros.get('cep') }}</div>{% endif %}
 
       <label for="telefone">Telefone:</label>
       <input type="tel" id="telefone" name="telefone"
