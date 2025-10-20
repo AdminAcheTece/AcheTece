@@ -32,6 +32,15 @@ import smtplib, ssl
 from email.message import EmailMessage
 
 # --------------------------------------------------------------------
+# Utils básicos (precisam estar definidos antes de qualquer uso no módulo)
+# --------------------------------------------------------------------
+def _env_bool(name: str, default: bool = False) -> bool:
+    v = os.getenv(name)
+    if v is None:
+        return default
+    return str(v).strip().lower() in {"1", "true", "yes", "y", "on"}
+
+# --------------------------------------------------------------------
 # Configuração básica
 # --------------------------------------------------------------------
 app = Flask(__name__)
