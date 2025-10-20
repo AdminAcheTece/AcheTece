@@ -358,6 +358,15 @@ def _bootstrap_and_analytics_lazy():
 
 # =====================[ ANALYTICS - FIM ]=====================
 
+def parse_bool(val):
+    """Normaliza valores vindos de checkbox/select para True/False."""
+    if isinstance(val, bool):
+        return val
+    if val is None:
+        return False
+    s = str(val).strip().lower()
+    return s in {'1','true','t','on','sim','s','yes','y'}
+
 # --------------------------------------------------------------------
 # E-mail — Config + helpers (Resend + SMTP fallback)
 # --------------------------------------------------------------------
