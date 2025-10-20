@@ -11,7 +11,6 @@
 
     body{ margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Arial; background:var(--cinza); color:#1f1f1f; }
 
-    /* Navbar */
     .navbar{ padding:6px 12px; display:flex; align-items:center; background:#fff; border-bottom:1px solid #eee; }
     .logo a{ display:inline-flex; align-items:center; text-decoration:none; }
     .logo img{ height:48px; width:auto; display:block; }
@@ -24,9 +23,7 @@
       box-shadow:0 6px 20px rgba(0,0,0,.06); padding:18px; margin:14px 0;
     }
 
-    .head{
-      display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap;
-    }
+    .head{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; }
     .title{ margin:0; font-size:24px; font-weight:800; }
     .sub{ margin:4px 0 0; color:#6b6b6b; }
     .pill{
@@ -39,23 +36,13 @@
       display:inline-flex; align-items:center; justify-content:center; height:40px; padding:0 14px;
       border-radius:9999px; text-decoration:none; font-weight:800; border:0; cursor:pointer; transition:.18s ease;
     }
-    .btn-outline{ background:#fff; border:1.5px solid #e3e3e7; color:#1f1f1f; }
-    .btn-outline:hover{ background:#fafafa; }
-    .btn-wa{ background:#25D366; color:#fff; }
-    .btn-wa:hover{ filter:brightness(.95); }
+    .btn-wa{ background:#25D366; color:#fff; } .btn-wa:hover{ filter:brightness(.95); }
     .btn-back{ background:#fff; border:1.5px solid #e3e3e7; color:#1f1f1f; }
-    .btn-back:hover,.btn-back:focus-visible{
-      background:var(--roxo); border-color:var(--roxo); color:#fff; outline:none; box-shadow:0 0 0 3px rgba(138,0,255,.18);
-    }
+    .btn-back:hover,.btn-back:focus-visible{ background:var(--roxo); border-color:var(--roxo); color:#fff; outline:none; box-shadow:0 0 0 3px rgba(138,0,255,.18); }
 
-    /* Seção “Informações da empresa” */
-    .sec-head{
-      display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 10px;
-    }
+    .sec-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 10px; }
     h2.sec{ font-size:18px; margin:0; }
-    .btn-maps{
-      background:var(--roxo); color:#fff; border:0; border-radius:9999px; height:36px; padding:0 14px; font-weight:800;
-    }
+    .btn-maps{ background:var(--roxo); color:#fff; border:0; border-radius:9999px; height:36px; padding:0 14px; font-weight:800; }
     .btn-maps:hover{ background:var(--roxo-hover); }
 
     .empresa-grid{ display:grid; grid-template-columns:1.25fr .9fr; gap:18px; align-items:start; }
@@ -67,8 +54,7 @@
     }
     .dados dt{ font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:#666; font-weight:800; }
     .dados dd{ margin:0; font-size:14.5px; font-weight:600; color:#222; }
-    .dados a{ color:var(--roxo); text-decoration:none; }
-    .dados a:hover{ text-decoration:underline; }
+    .dados a{ color:var(--roxo); text-decoration:none; } .dados a:hover{ text-decoration:underline; }
 
     .addr .linha{ display:block; }
     .addr .rua{ font-weight:700; }
@@ -78,7 +64,6 @@
     .mapa iframe{ width:100%; height:220px; border:0; display:block; }
     .mapa small{ display:block; padding:8px 10px; color:#666; }
 
-    /* Tabela de teares */
     .table-wrap{ overflow-x:auto; border:1px solid #eee; border-radius:12px; background:#fff; }
     table{ width:100%; border-collapse:collapse; }
     thead th{ background:#EEEAF8; }
@@ -118,28 +103,33 @@
       </div>
     </section>
 
-    {# ==== Address pieces and map URL ==== #}
-    {% set _logradouro = empresa.endereco or empresa.logradouro %}
+    {# ==== peças do endereço e URL do mapa ==== #}
+    {% set _logradouro = empresa.endereco or empresa.logradouro or empresa.endereco_completo %}
     {% set _numero     = empresa.numero %}
     {% set _bairro     = empresa.bairro %}
     {% set _cidade     = empresa.cidade %}
     {% set _estado     = empresa.estado %}
     {% set _cep        = empresa.cep %}
-    {% set endereco_full = ((_logradouro or '') ~ (', ' ~ _numero if _numero else '') ~ (', ' ~ _bairro if _bairro else '') ~ (', ' ~ _cidade if _cidade else '') ~ ( '/' ~ _estado if _estado else '') ~ ( ' • CEP ' ~ _cep if _cep else '')).strip().strip(',') %}
-    {% set mapa_q = (endereco_full or (empresa.nome_fantasia or empresa.razao_social or ''))|replace(' ', '+') %}
+    {% set tem_end = _logradouro or _numero or _bairro or _cidade or _estado or _cep %}
+    {% set endereco_full = (
+        (_logradouro or '') ~
+        (', ' ~ _numero if _numero else '') ~
+        (', ' ~ _bairro if _bairro else '') ~
+        (', ' ~ _cidade if _cidade else '') ~
+        ( '/' ~ _estado if _estado else '') ~
+        ( ' • CEP ' ~ _cep if _cep else '')
+      ).strip().strip(',') %}
+    {% set mapa_q = (endereco_full or ((_cidade or '') ~ ' ' ~ (_estado or ''))) | replace(' ', '+') %}
     {% set map_url = 'https://www.google.com/maps?q=' ~ mapa_q %}
 
     <section class="card">
       <div class="sec-head">
         <h2 class="sec">Informações da empresa</h2>
-        {% if endereco_full %}
-          <a class="btn btn-maps" href="{{ map_url }}" target="_blank" rel="noopener">Abrir no Google Maps</a>
-        {% endif %}
+        {% if tem_end %}<a class="btn btn-maps" href="{{ map_url }}" target="_blank" rel="noopener">Abrir no Google Maps</a>{% endif %}
       </div>
 
       <div class="empresa-grid">
         <dl class="dados">
-          {# Pessoa de contato: tenta contato_nome; senão, compõe responsavel_nome + sobrenome; senão, responsavel #}
           {% set _pn = empresa.contato_nome or empresa.responsavel_nome or empresa.responsavel %}
           {% set _sn = empresa.contato_sobrenome or empresa.responsavel_sobrenome %}
           {% set pessoa_contato = ((_pn or '') ~ (' ' ~ _sn if _sn else '')).strip() %}
@@ -147,33 +137,23 @@
           <dd>{{ pessoa_contato if pessoa_contato else '—' }}</dd>
 
           <dt>Telefone</dt>
-          <dd>
-            {% if _fone %}
-              <a href="tel:{{ _fone|replace(' ', '') }}">{{ _fone }}</a>
-            {% else %}
-              — 
-            {% endif %}
-          </dd>
+          <dd>{% if _fone %}<a href="tel:{{ _fone|replace(' ','') }}">{{ _fone }}</a>{% else %}—{% endif %}</dd>
 
           <dt>E-mail</dt>
           <dd>
             {% set _email = empresa.email or empresa.contato_email %}
-            {% if _email %}
-              <a href="mailto:{{ _email }}">{{ _email }}</a>
-            {% else %}
-              — 
-            {% endif %}
+            {% if _email %}<a href="mailto:{{ _email }}">{{ _email }}</a>{% else %}—{% endif %}
           </dd>
 
           <dt>Endereço</dt>
           <dd>
-            {% if _logradouro %}
+            {% if tem_end %}
               <div class="addr">
                 <span class="linha rua">
-                  {{ _logradouro }}{% if _numero %}, {{ _numero }}{% endif %}{% if _bairro %} – {{ _bairro }}{% endif %}
+                  {{ _logradouro or '' }}{% if _numero %}, {{ _numero }}{% endif %}{% if _bairro %} – {{ _bairro }}{% endif %}
                 </span>
                 <span class="linha local">
-                  {{ _cidade }}{% if _estado %}/{{ _estado }}{% endif %}
+                  {{ _cidade or '' }}{% if _estado %}/{{ _estado }}{% endif %}
                   {% if _cep %}<span class="cep"> • CEP {{ _cep }}</span>{% endif %}
                 </span>
               </div>
@@ -184,12 +164,8 @@
         </dl>
 
         <div class="mapa">
-          {% if endereco_full %}
-            <iframe
-              loading="lazy"
-              referrerpolicy="no-referrer-when-downgrade"
-              src="{{ map_url }}&output=embed">
-            </iframe>
+          {% if tem_end %}
+            <iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="{{ map_url }}&output=embed"></iframe>
             <small>Localização aproximada com base no endereço cadastrado.</small>
           {% else %}
             <div style="padding:14px;">Sem endereço cadastrado para exibir no mapa.</div>
@@ -205,11 +181,7 @@
           <table>
             <thead>
               <tr>
-                <th>Tipo</th>
-                <th>Galga</th>
-                <th>Diâmetro</th>
-                <th>Alimentadores</th>
-                <th>Elastano</th>
+                <th>Tipo</th><th>Galga</th><th>Diâmetro</th><th>Alimentadores</th><th>Elastano</th>
               </tr>
             </thead>
             <tbody>
@@ -220,7 +192,6 @@
                   <td>{{ t.diametro or '—' }}</td>
                   <td>{{ t.alimentadores or '—' }}</td>
                   <td>
-                    {# Normalização segura para Sim / Não / — #}
                     {% set raw = t.elastano if (t.elastano is not none) else t.kit_elastano %}
                     {% if raw is boolean %}
                       {{ 'Sim' if raw else 'Não' }}
