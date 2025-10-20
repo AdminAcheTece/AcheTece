@@ -31,6 +31,12 @@ import time
 import smtplib, ssl
 from email.message import EmailMessage
 
+# Resend (pode não estar instalado no ambiente da Render)
+try:
+    import resend  # biblioteca do Resend
+except Exception:
+    resend = None  # evita NameError; usaremos só SMTP se None
+
 # --------------------------------------------------------------------
 # Utils básicos (precisam estar definidos antes de qualquer uso no módulo)
 # --------------------------------------------------------------------
@@ -325,15 +331,17 @@ app.config.update(
     OTP_DEV_FALLBACK=_env_bool("OTP_DEV_FALLBACK", False),        # True = loga e deixa seguir
 )
 
-RESEND_API_KEY = os.getenv("RESEND_API_KEY")
-RESEND_DOMAIN  = os.getenv("RESEND_DOMAIN", "achetece.com.br")   # defina o domínio verificado
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
+RESEND_DOMAIN  = os.getenv("RESEND_DOMAIN", "achetece.com.br")
 EMAIL_FROM     = os.getenv("EMAIL_FROM", f"AcheTece <no-reply@{RESEND_DOMAIN}>")
 REPLY_TO       = os.getenv("REPLY_TO", "")
 
-if RESEND_API_KEY:
+if not resend:
+    app.logger.warning("[EMAIL] Pacote 'resend' não instalado — vou usar apenas SMTP fallback.")
+elif RESEND_API_KEY:
     resend.api_key = RESEND_API_KEY
 else:
-    logging.warning("[EMAIL] RESEND_API_KEY não configurada — envio via Resend desativado.")
+    app.logger.warning("[EMAIL] RESEND_API_KEY não configurada — envio via Resend desativado.")
 
 def _extract_email(addr: str) -> str:
     m = re.search(r"<([^>]+)>", addr or "")
@@ -345,12 +353,24 @@ def _domain_of(addr: str) -> str:
     return e.split("@")[-1].lower() if "@" in e else ""
 
 def _send_via_resend(to: str, subject: str, html: str, text: str | None = None) -> tuple[bool, str]:
+    # Se a lib não existir ou a API key não estiver setada, já retorna falso
+    if not resend:
+        return False, "resend_lib_missing"
     if not RESEND_API_KEY:
         return False, "RESEND_API_KEY ausente"
+
     try:
         safe_from = EMAIL_FROM
-        from_domain = _domain_of(EMAIL_FROM)
         # força remetente do domínio verificado
+        def _extract_email(addr: str) -> str:
+            m = re.search(r"<([^>]+)>", addr or "")
+            s = m.group(1) if m else (addr or "")
+            return s.strip()
+        def _domain_of(addr: str) -> str:
+            e = _extract_email(addr)
+            return e.split("@")[-1].lower() if "@" in e else ""
+
+        from_domain = _domain_of(EMAIL_FROM)
         if RESEND_DOMAIN and from_domain != RESEND_DOMAIN:
             safe_from = f"AcheTece <no-reply@{RESEND_DOMAIN}>"
 
