@@ -902,20 +902,32 @@ def api_track():
     event      = data.get("event")
     company_id = data.get("company_id")
     tear_id    = data.get("tear_id")
-    session_id = data.get("session_id")
+    session_id = data.get("session_id") or (session.get("_sid") or request.cookies.get("session") or "")
     meta       = data.get("meta") or {}
 
     if event not in ALLOWED_EVENTS or not company_id:
         return jsonify({"ok": False, "error": "bad event/company"}), 400
 
-    db = get_db()
-    db.execute(
-        "INSERT INTO analytics_events (company_id, tear_id, event, session_id, meta) "
-        "VALUES (?, ?, ?, ?, ?)",
-        (company_id, tear_id, event, session_id, json.dumps(meta))
-    )
-    db.commit()
-    return jsonify({"ok": True})
+    try:
+        with db.engine.begin() as conn:
+            conn.execute(
+                text("""
+                    INSERT INTO analytics_events (company_id, tear_id, event, session_id, meta)
+                    VALUES (:cid, :tid, :evt, :sid, :meta)
+                """),
+                {
+                    "cid": int(company_id),
+                    "tid": int(tear_id) if tear_id else None,
+                    "evt": event,
+                    "sid": session_id,
+                    "meta": json.dumps(meta),
+                },
+            )
+        return jsonify({"ok": True})
+    except Exception as e:
+        app.logger.exception("[analytics] falha ao registrar evento: %s", e)
+        return jsonify({"ok": False}), 500
+
 # ================================================================
 
 @app.route("/", methods=["GET"])
