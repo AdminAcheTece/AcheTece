@@ -605,32 +605,48 @@ def _pegar_empresa_do_usuario(required=True):
 # Migrações leves / Setup inicial (idempotente)
 # --------------------------------------------------------------------
 def _ensure_auth_layer_and_link():
+    # 1) tabela de usuário
     try:
         Usuario.__table__.create(bind=db.engine, checkfirst=True)
     except Exception as e:
         app.logger.warning(f"create usuario table: {e}")
+
+    # 2) garantir coluna user_id em empresa (se ainda não existir)
     try:
         insp = inspect(db.engine)
-        cols = [c['name'] for c in insp.get_columns('empresa')]
+        cols = {c['name'] for c in insp.get_columns('empresa')}
         if 'user_id' not in cols:
-            db.session.execute(text('ALTER TABLE empresa ADD COLUMN user_id INTEGER'))
-            db.session.commit()
+            with db.engine.begin() as conn:
+                conn.exec_driver_sql('ALTER TABLE empresa ADD COLUMN user_id INTEGER')
     except Exception as e:
         app.logger.warning(f"add user_id to empresa failed: {e}")
+
+    # 3) backfill SEM carregar o modelo inteiro (evita depender de colunas novas)
     try:
-        empresas = Empresa.query.all()
-        for e in empresas:
-            if e.user_id:
+        rows = db.session.execute(
+            text("SELECT id, email, user_id FROM empresa")
+        ).mappings().all()
+
+        for r in rows:
+            if r.get('user_id'):
                 continue
-            u = Usuario.query.filter_by(email=e.email).first()
+            email = (r.get('email') or '').strip()
+            if not email:
+                continue
+            u = Usuario.query.filter_by(email=email).first()
             if not u:
-                u = Usuario(email=e.email, senha_hash=e.senha, role=None, is_active=True)
+                u = Usuario(email=email, senha_hash=None, role=None, is_active=True)
                 db.session.add(u)
-                db.session.flush()
-            e.user_id = u.id
+                db.session.flush()  # garante u.id
+
+            db.session.execute(
+                text("UPDATE empresa SET user_id = :uid WHERE id = :id AND (user_id IS NULL)"),
+                {"uid": u.id, "id": r['id']}
+            )
         db.session.commit()
     except Exception as e:
         app.logger.warning(f"backfill usuarios from empresas failed: {e}")
+        db.session.rollback()
 
 def _ensure_cliente_profile_table():
     try:
@@ -641,23 +657,24 @@ def _ensure_cliente_profile_table():
 def _ensure_empresa_address_columns():
     """
     Garante colunas endereco (varchar 240) e cep (varchar 9) em empresa.
-    Idempotente e compatível com SQLite/Postgres.
+    Idempotente e compatível com SQLite/Postgres. Roda DDL fora da sessão ORM.
     """
     try:
         insp = inspect(db.engine)
         cols = {c['name'] for c in insp.get_columns('empresa')}
-        changed = False
+        to_add = []
         if 'endereco' not in cols:
-            db.session.execute(text("ALTER TABLE empresa ADD COLUMN endereco VARCHAR(240)"))
-            changed = True
+            to_add.append("ALTER TABLE empresa ADD COLUMN endereco VARCHAR(240)")
         if 'cep' not in cols:
-            db.session.execute(text("ALTER TABLE empresa ADD COLUMN cep VARCHAR(9)"))
-            changed = True
-        if changed:
-            db.session.commit()
+            to_add.append("ALTER TABLE empresa ADD COLUMN cep VARCHAR(9)")
+
+        if to_add:
+            # executa DDL em transação própria (independente da db.session)
+            with db.engine.begin() as conn:
+                for ddl in to_add:
+                    conn.exec_driver_sql(ddl)
     except Exception as e:
-        app.logger.warning(f"ensure endereco/cep failed: {e}")
-        db.session.rollback()
+        app.logger.warning(f"[BOOT] ensure endereco/cep failed: {e}")
 
 def _run_bootstrap_once():
     """Cria tabelas/migrações leves quando o DB está UP; caso contrário, adia."""
@@ -667,14 +684,30 @@ def _run_bootstrap_once():
     if not _db_is_up():
         app.logger.error("[BOOT] adiado: DB indisponível")
         return
+
+    # sempre começe com uma sessão limpa
     try:
+        db.session.rollback()
+    except Exception:
+        pass
+
+    try:
+        # 1) cria tabelas base
         db.create_all()
+
+        # 2) GARANTE colunas novas (antes de qualquer SELECT em empresa)
+        _ensure_empresa_address_columns()
+
+        # 3) auth + vinculação user_id (usa SELECT minimalista)
         _ensure_auth_layer_and_link()
+
+        # 4) tabela de perfil de cliente
         _ensure_cliente_profile_table()
-        _ensure_empresa_address_columns()   # <<< garante endereco/cep
+
         _BOOTSTRAP_DONE = True
         app.logger.info("[BOOT] Migrações/ajustes executados.")
     except Exception as e:
+        db.session.rollback()
         app.logger.error("[BOOT] adiado: %s", e)
 
 @app.before_request
