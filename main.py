@@ -515,6 +515,18 @@ SEED_TOKEN = os.getenv("SEED_TOKEN", "ACHETECE")
 # --------------------------------------------------------------------
 # Helpers
 # --------------------------------------------------------------------
+def _set_if_has(obj, names, value):
+    """Setta o primeiro atributo existente em 'names' para 'value'."""
+    for n in names:
+        if hasattr(obj, n):
+            setattr(obj, n, value)
+            return True
+    return False
+
+def _norm(v):
+    v = (v or "").strip()
+    return v or None
+
 def _norm(s: str) -> str:
     return normalize('NFKD', s).encode('ASCII', 'ignore').decode('ASCII').strip().lower()
 
@@ -1730,39 +1742,76 @@ def exportar():
 def cadastrar_empresa():
     estados = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO']
     if request.method == 'POST':
-        nome = request.form['nome']; apelido = request.form['apelido']
-        email = request.form['email'].lower().strip(); senha = request.form['senha']
-        cidade = request.form['cidade']; estado = request.form['estado']
-        telefone = re.sub(r'\D', '', request.form.get('telefone',''))
+        nome  = (request.form['nome'] or '').strip()
+        apelido = (request.form.get('apelido') or '').strip()
+        email = (request.form['email'] or '').lower().strip()
+        senha = (request.form['senha'] or '').strip()
+        cidade = (request.form['cidade'] or '').strip()
+        estado = (request.form['estado'] or '').strip()
+        telefone = _only_digits(request.form.get('telefone',''))
         responsavel_nome = (request.form.get('responsavel_nome') or '').strip()
         responsavel_sobrenome = (request.form.get('responsavel_sobrenome') or '').strip()
+
+        # NOVOS CAMPOS
+        endereco_full = (request.form.get('endereco') or '').strip()
+        cep_raw = (request.form.get('cep') or '').strip()
+        cep = _fmt_cep(cep_raw)
+
         erros = {}
         if len(telefone) < 10 or len(telefone) > 13:
             erros['telefone'] = 'Telefone inválido.'
-        if Empresa.query.filter_by(nome=nome).first(): erros['nome'] = 'Nome já existe.'
-        if apelido and Empresa.query.filter_by(apelido=apelido).first(): erros['apelido'] = 'Apelido em uso.'
-        if Empresa.query.filter_by(email=email).first(): erros['email'] = 'E-mail já cadastrado.'
-        if estado not in estados: erros['estado'] = 'Estado inválido.'
+        if Empresa.query.filter_by(nome=nome).first():
+            erros['nome'] = 'Nome já existe.'
+        if apelido and Empresa.query.filter_by(apelido=apelido).first():
+            erros['apelido'] = 'Apelido em uso.'
+        if Empresa.query.filter_by(email=email).first():
+            erros['email'] = 'E-mail já cadastrado.'
+        if estado not in estados:
+            erros['estado'] = 'Estado inválido.'
         if not responsavel_nome or len(re.sub(r'[^A-Za-zÀ-ÿ]', '', responsavel_nome)) < 2:
             erros['responsavel_nome'] = 'Informe o nome do responsável.'
+        # validações obrigatórias dos novos campos
+        if not endereco_full:
+            erros['endereco'] = 'Informe o endereço completo.'
+        if not cep:
+            erros['cep'] = 'Informe um CEP válido (00000-000).'
+
         if erros:
-            return render_template('cadastrar_empresa.html', erro='Corrija os campos.', erros=erros,
-                                   estados=estados, nome=nome, apelido=apelido, email=email,
-                                   cidade=cidade, estado=estado, telefone=telefone,
-                                   responsavel_nome=responsavel_nome, responsavel_sobrenome=responsavel_sobrenome)
+            return render_template(
+                'cadastrar_empresa.html',
+                erro='Corrija os campos.', erros=erros, estados=estados,
+                nome=nome, apelido=apelido, email=email,
+                cidade=cidade, estado=estado, telefone=telefone,
+                responsavel_nome=responsavel_nome, responsavel_sobrenome=responsavel_sobrenome,
+                endereco=endereco_full, cep=cep_raw
+            )
+
         nova_empresa = Empresa(
-            nome=nome, apelido=apelido or None, email=email,
+            nome=nome,
+            apelido=apelido or None,
+            email=email,
             senha=generate_password_hash(senha),
-            cidade=cidade, estado=estado, telefone=telefone,
+            cidade=cidade,
+            estado=estado,
+            telefone=telefone,
             status_pagamento='pendente',
-            responsavel_nome=responsavel_nome, responsavel_sobrenome=responsavel_sobrenome or None
+            responsavel_nome=responsavel_nome,
+            responsavel_sobrenome=responsavel_sobrenome or None
         )
-        db.session.add(nova_empresa); db.session.commit()
+        # grava Endereço completo e CEP em colunas compatíveis
+        _set_if_has(nova_empresa, ["endereco","logradouro","endereco_completo"], endereco_full)
+        _set_if_has(nova_empresa, ["cep","CEP"], cep)
+
+        db.session.add(nova_empresa)
+        db.session.commit()
+
         session['empresa_id'] = nova_empresa.id
         session['empresa_apelido'] = nova_empresa.apelido or nova_empresa.nome or nova_empresa.email.split('@')[0]
         flash("Cadastro concluído!", "success")
         return redirect(url_for('painel_malharia'))
+
     return render_template('cadastrar_empresa.html', estados=estados)
+
 
 @app.route('/editar_empresa', methods=['GET', 'POST'])
 def editar_empresa():
@@ -1770,25 +1819,53 @@ def editar_empresa():
         return redirect(url_for('login'))
     empresa = Empresa.query.get(session['empresa_id'])
     if not empresa:
-        session.clear(); return redirect(url_for('login'))
+        session.clear()
+        return redirect(url_for('login'))
+
     estados = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO']
+
     if request.method == 'GET':
-        return render_template('editar_empresa.html',
-                               estados=estados,
-                               nome=empresa.nome or '', apelido=empresa.apelido or '',
-                               email=empresa.email or '', cidade=empresa.cidade or '',
-                               estado=empresa.estado or '', telefone=empresa.telefone or '',
-                               responsavel_nome=(empresa.responsavel_nome or ''),
-                               responsavel_sobrenome=(empresa.responsavel_sobrenome or ''))
-    nome = request.form.get('nome','').strip()
-    apelido = request.form.get('apelido','').strip()
-    email = request.form.get('email','').strip().lower()
-    senha = request.form.get('senha','').strip()
-    cidade = request.form.get('cidade','').strip()
-    estado = request.form.get('estado','').strip()
-    telefone = re.sub(r'\D', '', request.form.get('telefone',''))
+        # tenta montar valores atuais de endereço/CEP, independente do nome da coluna
+        endereco_atual = getattr(empresa, 'endereco', None) or getattr(empresa, 'logradouro', None) or getattr(empresa, 'endereco_completo', '')
+        cep_atual = getattr(empresa, 'cep', None) or getattr(empresa, 'CEP', '')
+
+        # lista de cidades (se você tiver helper; se não, deixamos vazio e o JS carrega)
+        try:
+            cidades = lista_cidades_por_uf(empresa.estado) if getattr(empresa, "estado", None) else []
+        except Exception:
+            cidades = []
+
+        return render_template(
+            'editar_empresa.html',
+            estados=estados,
+            nome=empresa.nome or '',
+            apelido=empresa.apelido or '',
+            email=empresa.email or '',
+            cidade=empresa.cidade or '',
+            estado=empresa.estado or '',
+            telefone=empresa.telefone or '',
+            responsavel_nome=(empresa.responsavel_nome or ''),
+            responsavel_sobrenome=(empresa.responsavel_sobrenome or ''),
+            endereco=endereco_atual or '',
+            cep=cep_atual or '',
+            cidades=cidades
+        )
+
+    # POST
+    nome  = (request.form.get('nome','') or '').strip()
+    apelido = (request.form.get('apelido','') or '').strip()
+    email = (request.form.get('email','') or '').strip().lower()
+    senha = (request.form.get('senha','') or '').strip()
+    cidade = (request.form.get('cidade','') or '').strip()
+    estado = (request.form.get('estado','') or '').strip()
+    telefone = _only_digits(request.form.get('telefone',''))
     responsavel_nome = (request.form.get('responsavel_nome') or '').strip()
     responsavel_sobrenome = (request.form.get('responsavel_sobrenome') or '').strip()
+
+    # NOVOS CAMPOS
+    endereco_full = (request.form.get('endereco') or '').strip()
+    cep_raw = (request.form.get('cep') or '').strip()
+    cep = _fmt_cep(cep_raw)
 
     erros = {}
     if telefone and (len(telefone) < 10 or len(telefone) > 13):
@@ -1803,15 +1880,31 @@ def editar_empresa():
         erros['estado'] = 'Estado inválido.'
     if not responsavel_nome or len(re.sub(r'[^A-Za-zÀ-ÿ]', '', responsavel_nome)) < 2:
         erros['responsavel_nome'] = 'Informe o primeiro nome do responsável.'
-    if erros:
-        return render_template('editar_empresa.html',
-                               erro='Corrija os campos.', erros=erros, estados=estados,
-                               nome=nome or empresa.nome, apelido=apelido or empresa.apelido,
-                               email=email or empresa.email, cidade=cidade or empresa.cidade,
-                               estado=estado or empresa.estado, telefone=telefone or empresa.telefone,
-                               responsavel_nome=responsavel_nome or (empresa.responsavel_nome or ''),
-                               responsavel_sobrenome=responsavel_sobrenome or (empresa.responsavel_sobrenome or ''))
+    # endereço/CEP obrigatórios na edição
+    if not endereco_full:
+        erros['endereco'] = 'Informe o endereço completo.'
+    if not cep:
+        erros['cep'] = 'Informe um CEP válido (00000-000).'
 
+    if erros:
+        try:
+            cidades = lista_cidades_por_uf(estado) if estado else []
+        except Exception:
+            cidades = []
+        return render_template(
+            'editar_empresa.html',
+            erro='Corrija os campos.', erros=erros, estados=estados,
+            nome=nome or empresa.nome, apelido=apelido or empresa.apelido,
+            email=email or empresa.email, cidade=cidade or empresa.cidade,
+            estado=estado or empresa.estado, telefone=telefone or empresa.telefone,
+            responsavel_nome=responsavel_nome or (empresa.responsavel_nome or ''),
+            responsavel_sobrenome=responsavel_sobrenome or (empresa.responsavel_sobrenome or ''),
+            endereco=endereco_full or (getattr(empresa,'endereco', None) or getattr(empresa,'logradouro', None) or getattr(empresa,'endereco_completo','')),
+            cep=cep_raw or (getattr(empresa,'cep', None) or getattr(empresa,'CEP', '')),
+            cidades=cidades
+        )
+
+    # aplica alterações
     empresa.nome = nome or empresa.nome
     empresa.apelido = apelido or empresa.apelido
     empresa.email = email or empresa.email
@@ -1820,8 +1913,14 @@ def editar_empresa():
     empresa.telefone = telefone or empresa.telefone
     empresa.responsavel_nome = responsavel_nome or empresa.responsavel_nome
     empresa.responsavel_sobrenome = responsavel_sobrenome or None
+
+    # grava Endereço completo e CEP (com nomes alternativos de coluna)
+    _set_if_has(empresa, ["endereco","logradouro","endereco_completo"], endereco_full)
+    _set_if_has(empresa, ["cep","CEP"], cep)
+
     if senha:
         empresa.senha = generate_password_hash(senha)
+
     db.session.commit()
     session['empresa_apelido'] = empresa.apelido or empresa.nome or empresa.email.split('@')[0]
     return redirect(url_for('editar_empresa', ok=1))
