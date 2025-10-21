@@ -545,61 +545,134 @@ class OtpToken(db.Model):
     ip = db.Column(db.String(64))
     user_agent = db.Column(db.String(255))
 
-# ===== helpers de autenticação/empresa =====
+# === Helpers de autenticação/empresa =========================================
+# flask_login é opcional no projeto; faça import seguro
+try:
+    from flask_login import current_user  # type: ignore
+except Exception:  # noqa: E722
+    current_user = None  # fallback silencioso
+
 def _whoami():
-    uid = None; email = None
-    # se Flask-Login estiver disponível e autenticado
+    """
+    Retorna (user_id, email) do usuário autenticado.
+    - Usa flask_login se disponível.
+    - Faz fallback para a sessão própria do app.
+    """
+    uid = None
+    email = None
+    # flask_login (se disponível)
     try:
-        if getattr(current_user, "is_authenticated", False):
+        if current_user and getattr(current_user, "is_authenticated", False):
             uid = getattr(current_user, "id", None)
             email = getattr(current_user, "email", None)
     except Exception:
         pass
-    # fallback para sessão
+    # fallback para sessão própria
     if not uid:
         uid = session.get("user_id") or session.get("auth_user_id")
     if not email:
         email = session.get("auth_email") or session.get("login_email")
     return uid, email
 
-def _pegar_empresa_do_usuario(required=True):
+def _get_empresa_usuario_da_sessao():
     """
-    Retorna a Empresa do usuário, priorizando a sessão. Corrige o campo user_id
-    (antes estava 'owner_id') e evita redirecionar para cadastro quando já há login.
+    Caminho feliz:
+      1) Usa session['empresa_id'] se existir.
+      2) Senão, tenta por user_id (flask_login/sessão) e depois por e-mail.
+    Garante:
+      - Empresa.usuario (cria/relaciona Usuario se necessário).
+      - Empresa.user_id preenchido.
+      - session['empresa_id'] e session['empresa_apelido'] atualizados.
+    Retorna:
+      (empresa, usuario) ou (None, None).
+    NÃO redireciona.
     """
-    # 1) sessão
+    # 1) Por empresa_id na sessão
     emp_id = session.get("empresa_id")
     if emp_id:
         emp = Empresa.query.get(emp_id)
         if emp:
-            return emp
+            # Resolve usuário relacionado
+            u = emp.usuario or Usuario.query.filter_by(email=emp.email).first()
+            if not u:
+                # cria Usuario "espelho" da Empresa (compat com legado)
+                u = Usuario(email=emp.email, senha_hash=emp.senha, role=None, is_active=True)
+                db.session.add(u)
+                db.session.flush()
+                emp.user_id = u.id
+                db.session.commit()
+            elif not emp.user_id:
+                emp.user_id = u.id
+                db.session.commit()
+            session["empresa_apelido"] = emp.apelido or emp.nome or (emp.email.split("@")[0] if emp.email else "")
+            return emp, u
+        else:
+            # limpa sessão inválida
+            session.pop("empresa_id", None)
+            session.pop("empresa_apelido", None)
 
-    # 2) identidade do usuário (id/email)
+    # 2) Fallback: por identidade do usuário
     uid, email = _whoami()
-    empresa = None
 
     if uid:
-        empresa = Empresa.query.filter_by(user_id=uid).first()
-        if empresa:
-            session["empresa_id"] = empresa.id
-            session["empresa_apelido"] = empresa.apelido or empresa.nome or (
-                empresa.email.split("@")[0] if empresa.email else ""
-            )
-            return empresa
+        emp = Empresa.query.filter_by(user_id=uid).first()
+        if emp:
+            session["empresa_id"] = emp.id
+            session["empresa_apelido"] = emp.apelido or emp.nome or (emp.email.split("@")[0] if emp.email else "")
+            u = emp.usuario or Usuario.query.filter_by(email=emp.email).first()
+            return emp, u
 
     if email:
-        empresa = Empresa.query.filter(func.lower(Empresa.email) == email.lower()).first()
-        if empresa:
-            session["empresa_id"] = empresa.id
-            session["empresa_apelido"] = empresa.apelido or empresa.nome or (
-                empresa.email.split("@")[0] if empresa.email else ""
-            )
-            return empresa
+        emp = Empresa.query.filter(func.lower(Empresa.email) == email.lower()).first()
+        if emp:
+            session["empresa_id"] = emp.id
+            session["empresa_apelido"] = emp.apelido or emp.nome or (emp.email.split("@")[0] if emp.email else "")
+            u = emp.usuario or Usuario.query.filter_by(email=emp.email).first()
+            # se não houver vínculo user_id e já temos um Usuario, vincule
+            if u and not emp.user_id:
+                emp.user_id = u.id
+                db.session.commit()
+            return emp, u
 
+    return None, None
+
+def _pegar_empresa_do_usuario(required=True):
+    """
+    Retrocompat:
+      - Usa _get_empresa_usuario_da_sessao() e retorna **apenas Empresa**.
+      - Se required=True e não houver empresa, redireciona para login (mantém contrato antigo).
+    """
+    emp, _u = _get_empresa_usuario_da_sessao()
+    if emp:
+        return emp
     if required:
         flash("Faça login para continuar.", "warning")
         return redirect(url_for("login"))
     return None
+
+def assinatura_ativa_requerida(f):
+    """
+    Decorator que exige empresa em sessão e assinatura ativa (ou DEMO).
+    Mantém a mesma lógica que você já vinha usando.
+    """
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        emp, _u = _get_empresa_usuario_da_sessao()
+        if not emp:
+            flash("Faça login para continuar.", "error")
+            return redirect(url_for("login"))
+        is_demo = DEMO_MODE or (emp.apelido or emp.nome or "").startswith("[DEMO]")
+        if is_demo:
+            return f(*args, **kwargs)
+        status = (emp.status_pagamento or "pendente").lower()
+        if status not in ("ativo", "aprovado"):
+            flash("Ative seu plano para acessar esta funcionalidade.", "error")
+            return redirect(url_for("painel_malharia"))
+        return f(*args, **kwargs)
+    return wrapper
+
+# Alias útil para qualquer código legado que espere esse nome
+_get_empresa_usuario = _get_empresa_usuario_da_sessao
 
 # --------------------------------------------------------------------
 # Migrações leves / Setup inicial (idempotente)
