@@ -2,8 +2,7 @@ from flask import (
     Flask, render_template, request, redirect, url_for, flash, session,
     render_template_string, send_file, jsonify, abort, g
 )
-# Removido o uso de Flask-Mail para envio (vamos usar Resend + SMTP com timeout)
-# from flask_mail import Mail, Message
+# Removido o uso de Flask-Mail; usamos Resend + SMTP com timeout
 from flask_sqlalchemy import SQLAlchemy
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -19,7 +18,8 @@ import logging
 import json
 import requests
 from unicodedata import normalize
-from sqlalchemy import inspect, text, or_, func
+from sqlalchemy import inspect, text, or_, func, create_engine
+from sqlalchemy.exc import OperationalError
 from pathlib import Path
 import random
 from jinja2 import TemplateNotFound
@@ -60,6 +60,7 @@ def _env_bool(name: str, default: bool = False) -> bool:
 
 # --------------------------------------------------------------------
 # E-mail — Config + helpers (Resend + SMTP fallback)
+# (apenas UM bloco; removidas duplicações)
 # --------------------------------------------------------------------
 app.config.update(
     SMTP_HOST=os.getenv("SMTP_HOST", "smtp.gmail.com"),
@@ -72,8 +73,7 @@ app.config.update(
     OTP_DEV_FALLBACK=_env_bool("OTP_DEV_FALLBACK", False),        # True = loga e deixa seguir
 )
 
-# Se for usar Resend:
-RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+RESEND_API_KEY = os.getenv("RESEND_API_KEY") or ""
 RESEND_DOMAIN  = os.getenv("RESEND_DOMAIN", "achetece.com.br")
 EMAIL_FROM     = os.getenv("EMAIL_FROM", f"AcheTece <no-reply@{RESEND_DOMAIN}>")
 REPLY_TO       = os.getenv("REPLY_TO", "")
@@ -82,316 +82,6 @@ if RESEND_API_KEY:
     resend.api_key = RESEND_API_KEY
 else:
     logging.warning("[EMAIL] RESEND_API_KEY não configurada — envio via Resend desativado.")
-
-# ==== DB bootstrap (único e robusto) =========================================
-from sqlalchemy import create_engine
-from sqlalchemy.exc import OperationalError
-
-ALLOW_SQLITE_FALLBACK = os.getenv("ALLOW_SQLITE_FALLBACK", "0") == "1"
-
-def _normalize_db_url(url: str) -> str:
-    """
-    Converte 'postgres://' -> 'postgresql+psycopg://' e mantém o restante INALTERADO.
-    NÃO força sslmode aqui (deixe o que vier do Render).
-    """
-    if not url:
-        return url
-    url = url.strip()
-    if url.startswith("postgres://"):
-        return url.replace("postgres://", "postgresql+psycopg://", 1)
-    if url.startswith("postgresql://"):
-        return url.replace("postgresql://", "postgresql+psycopg://", 1)
-    return url
-
-def _try_ping(url: str) -> bool:
-    """
-    Tenta um SELECT 1 sem forçar SSL. Se a URL trouxer sslmode, o driver respeita.
-    """
-    try:
-        engine = create_engine(
-            url,
-            pool_pre_ping=True,
-            pool_recycle=280,
-            connect_args=(
-                {"connect_timeout": 5}
-                if url.startswith("postgresql+psycopg://") else {}
-            ),
-        )
-        with engine.connect() as c:
-            c.exec_driver_sql("SELECT 1")
-        return True
-    except Exception as e:
-        app.logger.warning("[DB] ping falhou para %s: %r", url, e)
-        return False
-
-def _pick_database_uri() -> str:
-    """
-    Preferência:
-      1) INTERNAL_DATABASE_URL / DATABASE_URL_INTERNAL (se existir)
-      2) SQLALCHEMY_DATABASE_URI
-      3) DATABASE_URL
-      4) sqlite:///achetece.db (fallback opcional)
-    """
-    internal = os.getenv("INTERNAL_DATABASE_URL") or os.getenv("DATABASE_URL_INTERNAL") or ""
-    primary  = os.getenv("SQLALCHEMY_DATABASE_URI") or os.getenv("DATABASE_URL") or ""
-
-    # escolha a primeira disponível
-    raw_url = (internal or primary).strip()
-    url = _normalize_db_url(raw_url)
-
-    if url.startswith("postgresql+psycopg://"):
-        if _try_ping(url):
-            return url
-        if ALLOW_SQLITE_FALLBACK:
-            app.logger.error("[DB] Postgres indisponível. CAINDO para SQLite (ALLOW_SQLITE_FALLBACK=1).")
-            return "sqlite:///achetece.db"
-        app.logger.error("[DB] Postgres indisponível e fallback desativado; seguirei com URL do Postgres e retornarei 503 até estabilizar.")
-        return url  # mantém para tentar mais tarde (serviremos offline/503)
-    return url or "sqlite:///achetece.db"
-
-FINAL_DB_URI = _pick_database_uri()
-
-engine_opts = {
-    "pool_pre_ping": True,
-    "pool_recycle": 280,
-    "pool_timeout": 30,
-}
-# NÃO empurre sslmode por connect_args; deixe a URL mandar.
-if FINAL_DB_URI.startswith("postgresql+psycopg://"):
-    engine_opts["connect_args"] = {"connect_timeout": 5}
-
-db = SQLAlchemy()
-app.config['SQLALCHEMY_DATABASE_URI'] = FINAL_DB_URI
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = engine_opts
-db.init_app(app)
-
-# --- DB status + offline page (checa DB por request) -------------------------
-_DB_READY = None
-_DB_LAST_CHECK = 0
-
-def _db_is_up(refresh_every=10):
-    """Cacheia o resultado por ~10s para não martelar o banco a cada request."""
-    global _DB_READY, _DB_LAST_CHECK
-    now = time.time()
-    if _DB_READY is None or (now - _DB_LAST_CHECK) > refresh_every:
-        _DB_LAST_CHECK = now
-        try:
-            with db.engine.connect() as c:
-                c.exec_driver_sql("SELECT 1")
-            _DB_READY = True
-        except Exception:
-            _DB_READY = False
-    return _DB_READY
-
-def _render_offline(status: int | None = None):
-    """
-    Página offline: devolve 200 na home/rotas públicas e 503 no restante.
-    Assim o Render não marca erro e o usuário vê uma página amigável.
-    """
-    public_ok200 = {"/", "/quem_somos", "/quem-somos", "/fale_conosco", "/suporte", "/termos"}
-    if status is None:
-        status = 200 if request.path in public_ok200 else 503
-
-    try:
-        resp = render_template("offline.html")
-    except TemplateNotFound:
-        # Fallback mínimo embutido
-        resp = """
-<!doctype html><meta charset="utf-8">
-<title>AcheTece – temporariamente offline</title>
-<style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;max-width:720px;margin:8vh auto;padding:0 16px;color:#1e1b2b}
-.card{border:1px solid #eee;border-radius:12px;padding:20px}
-h1{font-size:24px;margin:0 0 8px}p{line-height:1.55;margin:10px 0}small{color:#888}</style>
-<div class="card">
-  <h1>Estamos temporariamente offline</h1>
-  <p>Nosso banco de dados está indisponível no momento. Enquanto isso, você ainda pode navegar nas páginas públicas.</p>
-  <p><small>Este estado é automático e sai assim que o banco voltar a responder.</small></p>
-</div>
-"""
-    headers = {}
-    if status == 503:
-        headers["Retry-After"] = "10"
-    return resp, status, headers
-
-@app.before_request
-def _mark_db_status():
-    g.db_up = _db_is_up()
-
-@app.before_request
-def _offline_guard():
-    """
-    Se o DB estiver fora do ar, devolve página offline nas rotas que dependem do DB.
-    Deixa passar assets e as públicas definidas dentro de _render_offline().
-    """
-    if getattr(g, "db_up", True):
-        return  # tudo ok, segue o fluxo normal
-
-    # sempre permite assets estáticos e arquivos comuns
-    p = request.path or "/"
-    if p.startswith("/static/") or p in {"/favicon.ico", "/robots.txt", "/sitemap.xml"}:
-        return
-
-    # devolve página offline (status 200 para home/públicas, 503 para o resto)
-    return _render_offline()
-
-# =====================[ ANALYTICS - INÍCIO ]=====================
-# Eventos aceitos
-ALLOWED_EVENTS = {
-    'CARD_IMPRESSION',        # card visível na index (opcional)
-    'COMPANY_PROFILE_VIEW',   # clicou em "Ver empresa"
-    'CONTACT_CLICK_WHATSAPP', # clicou em WhatsApp
-    'TEAR_DETAIL_VIEW',       # se existir detalhes do tear
-}
-
-def track_event(event: str, company_id: int, tear_id: int | None = None, meta: dict | None = None):
-    """Grava um evento simples em analytics_events (ignora silenciosamente se falhar)."""
-    if event not in ALLOWED_EVENTS:
-        return
-    try:
-        with db.engine.begin() as conn:
-            conn.execute(
-                text("""
-                    INSERT INTO analytics_events (company_id, tear_id, event, session_id, meta)
-                    VALUES (:cid, :tid, :evt, :sid, :meta)
-                """),
-                {
-                    "cid": company_id,
-                    "tid": tear_id,
-                    "evt": event,
-                    "sid": session.get("_sid") or request.cookies.get("session") or "",
-                    "meta": json.dumps(meta or {}),
-                },
-            )
-    except Exception:
-        app.logger.exception("[analytics] falha ao registrar evento")
-
-def _init_analytics_table():
-    """Cria a tabela/índices de analytics (compatível com SQLite e Postgres)."""
-    dialect = db.engine.url.get_backend_name()
-    if dialect == "sqlite":
-        pk = "INTEGER PRIMARY KEY AUTOINCREMENT"
-        ts_default = "CURRENT_TIMESTAMP"
-    else:
-        pk = "BIGSERIAL PRIMARY KEY"
-        ts_default = "CURRENT_TIMESTAMP"
-
-    ddl = f"""
-        CREATE TABLE IF NOT EXISTS analytics_events (
-            id {pk},
-            ts TIMESTAMP NOT NULL DEFAULT {ts_default},
-            company_id INTEGER NOT NULL,
-            tear_id INTEGER,
-            event TEXT NOT NULL,
-            session_id TEXT,
-            meta TEXT
-        )
-    """
-    idx1 = "CREATE INDEX IF NOT EXISTS idx_ae_company_ts ON analytics_events(company_id, ts)"
-    idx2 = "CREATE INDEX IF NOT EXISTS idx_ae_event_ts   ON analytics_events(event, ts)"
-
-    with db.engine.begin() as conn:
-        conn.execute(text(ddl))
-        conn.execute(text(idx1))
-        conn.execute(text(idx2))
-
-def get_performance(company_id, dt_ini=None, dt_fim=None):
-    """Agrupa visitas/contatos por dia para a empresa informada."""
-    params = {"cid": company_id}
-    where = ["company_id = :cid"]
-    if dt_ini:
-        where.append("ts >= :dt_ini"); params["dt_ini"] = dt_ini
-    if dt_fim:
-        where.append("ts < :dt_fim");  params["dt_fim"]  = dt_fim
-
-    sql = f"""
-      SELECT DATE(ts) AS d,
-             SUM(CASE WHEN event IN ('CARD_IMPRESSION','COMPANY_PROFILE_VIEW','TEAR_DETAIL_VIEW') THEN 1 ELSE 0 END) AS visitas,
-             SUM(CASE WHEN event IN ('CONTACT_CLICK_WHATSAPP') THEN 1 ELSE 0 END) AS contatos
-        FROM analytics_events
-       WHERE {" AND ".join(where)}
-       GROUP BY DATE(ts)
-       ORDER BY DATE(ts)
-    """
-    with db.engine.begin() as conn:
-        rows = conn.execute(text(sql), params).mappings().all()
-
-    series = [{"data": r["d"], "visitas": r["visitas"], "contatos": r["contatos"]} for r in rows]
-    total_visitas  = sum(r["visitas"]  for r in rows)
-    total_contatos = sum(r["contatos"] for r in rows)
-    return total_visitas, total_contatos, series
-
-# Executa migrações/ajustes e a criação do analytics apenas quando o DB responder
-_BOOTSTRAP_DONE = False
-_ANALYTICS_READY = False
-
-def _run_bootstrap_once():
-    """Cria tabelas/migrações leves quando o DB está UP; caso contrário, adia."""
-    global _BOOTSTRAP_DONE
-    if _BOOTSTRAP_DONE:
-        return
-    if not _db_is_up():
-        app.logger.error("[BOOT] adiado: DB indisponível")
-        return
-    try:
-        db.create_all()
-        # funções definidas mais abaixo no arquivo:
-        _ensure_auth_layer_and_link()
-        _ensure_cliente_profile_table()
-        _BOOTSTRAP_DONE = True
-        app.logger.info("[BOOT] Migrações/ajustes executados.")
-    except Exception as e:
-        app.logger.error("[BOOT] adiado: %s", e)
-
-@app.before_request
-def _bootstrap_and_analytics_lazy():
-    global _ANALYTICS_READY
-    # Só tenta bootstrap/analytics se DB estiver UP no momento
-    if getattr(g, "db_up", False):
-        _run_bootstrap_once()
-        if not _ANALYTICS_READY:
-            try:
-                _init_analytics_table()  # CREATE IF NOT EXISTS; idempotente
-                _ANALYTICS_READY = True
-            except Exception as e:
-                app.logger.error("Falha ao garantir tabela de analytics (adiado): %s", e)
-
-# =====================[ ANALYTICS - FIM ]=====================
-
-def parse_bool(val):
-    """Normaliza valores vindos de checkbox/select para True/False."""
-    if isinstance(val, bool):
-        return val
-    if val is None:
-        return False
-    s = str(val).strip().lower()
-    return s in {'1','true','t','on','sim','s','yes','y'}
-
-# --------------------------------------------------------------------
-# E-mail — Config + helpers (Resend + SMTP fallback)
-# --------------------------------------------------------------------
-app.config.update(
-    SMTP_HOST=os.getenv("SMTP_HOST", "smtp.gmail.com"),
-    SMTP_PORT=int(os.getenv("SMTP_PORT", "465")),  # 465 SSL é mais estável na Render
-    SMTP_USER=os.getenv("SMTP_USER", ""),
-    SMTP_PASS=os.getenv("SMTP_PASS", ""),
-    SMTP_FROM=os.getenv("SMTP_FROM", os.getenv("SMTP_USER", "")),
-    MAIL_TIMEOUT=int(os.getenv("MAIL_TIMEOUT", "8")),             # segundos
-    MAIL_SUPPRESS_SEND=_env_bool("MAIL_SUPPRESS_SEND", False),    # True = NÃO envia (modo teste)
-    OTP_DEV_FALLBACK=_env_bool("OTP_DEV_FALLBACK", False),        # True = loga e deixa seguir
-)
-
-RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
-RESEND_DOMAIN  = os.getenv("RESEND_DOMAIN", "achetece.com.br")
-EMAIL_FROM     = os.getenv("EMAIL_FROM", f"AcheTece <no-reply@{RESEND_DOMAIN}>")
-REPLY_TO       = os.getenv("REPLY_TO", "")
-
-if not resend:
-    app.logger.warning("[EMAIL] Pacote 'resend' não instalado — vou usar apenas SMTP fallback.")
-elif RESEND_API_KEY:
-    resend.api_key = RESEND_API_KEY
-else:
-    app.logger.warning("[EMAIL] RESEND_API_KEY não configurada — envio via Resend desativado.")
 
 def _extract_email(addr: str) -> str:
     m = re.search(r"<([^>]+)>", addr or "")
@@ -403,26 +93,13 @@ def _domain_of(addr: str) -> str:
     return e.split("@")[-1].lower() if "@" in e else ""
 
 def _send_via_resend(to: str, subject: str, html: str, text: str | None = None) -> tuple[bool, str]:
-    # Se a lib não existir ou a API key não estiver setada, já retorna falso
-    if not resend:
-        return False, "resend_lib_missing"
     if not RESEND_API_KEY:
         return False, "RESEND_API_KEY ausente"
-
     try:
-        safe_from = EMAIL_FROM
-        # força remetente do domínio verificado
-        def _extract_email(addr: str) -> str:
-            m = re.search(r"<([^>]+)>", addr or "")
-            s = m.group(1) if m else (addr or "")
-            return s.strip()
-        def _domain_of(addr: str) -> str:
-            e = _extract_email(addr)
-            return e.split("@")[-1].lower() if "@" in e else ""
-
+        # força FROM no domínio verificado
         from_domain = _domain_of(EMAIL_FROM)
-        if RESEND_DOMAIN and from_domain != RESEND_DOMAIN:
-            safe_from = f"AcheTece <no-reply@{RESEND_DOMAIN}>"
+        safe_from = EMAIL_FROM if (RESEND_DOMAIN and from_domain == RESEND_DOMAIN) \
+            else f"AcheTece <no-reply@{RESEND_DOMAIN}>"
 
         payload = {"from": safe_from, "to": [to], "subject": subject, "html": html}
         if text:
@@ -477,19 +154,17 @@ def _send_via_smtp(to: str, subject: str, html: str, text: str | None = None) ->
 
 def _smtp_send_direct(to: str, subject: str, html: str, text: str | None = None) -> tuple[bool, str]:
     """
-    Envia e-mail preferencialmente via Resend (com FROM seguro) e faz fallback para SMTP.
+    Envia e-mail preferencialmente via Resend e faz fallback para SMTP.
     Retorna (ok, mensagem).
     """
     if app.config.get("MAIL_SUPPRESS_SEND"):
         app.logger.info(f"[EMAIL SUPPRESSED] to={to} subj={subject}")
         return True, "suppress"
 
-    # 1) Tenta Resend
     ok, msg = _send_via_resend(to, subject, html, text)
     if ok:
         return True, "resend_ok"
 
-    # 2) Fallback para SMTP
     ok2, msg2 = _send_via_smtp(to, subject, html, text)
     if ok2:
         return True, "smtp_ok"
@@ -497,7 +172,6 @@ def _smtp_send_direct(to: str, subject: str, html: str, text: str | None = None)
     return False, f"{msg} | {msg2}"
 
 def send_email(to: str, subject: str, html: str, text: str | None = None) -> bool:
-    """Wrapper simples usado em /contato etc. Retorna True/False."""
     ok, _ = _smtp_send_direct(to=to, subject=subject, html=html, text=text)
     return ok
 
@@ -505,10 +179,10 @@ def send_email(to: str, subject: str, html: str, text: str | None = None) -> boo
 MP_ACCESS_TOKEN = os.getenv("MP_ACCESS_TOKEN") or os.getenv("MERCADO_PAGO_TOKEN", "")
 sdk = mercadopago.SDK(MP_ACCESS_TOKEN)
 PLAN_MONTHLY = float(os.getenv("PLAN_MONTHLY", "2.00"))
-PLAN_YEARLY = float(os.getenv("PLAN_YEARLY", "2.00"))
+PLAN_YEARLY  = float(os.getenv("PLAN_YEARLY", "2.00"))
 
 # DEMO
-DEMO_MODE = os.getenv("DEMO_MODE", "true").lower() == "true"
+DEMO_MODE  = os.getenv("DEMO_MODE", "true").lower() == "true"
 DEMO_TOKEN = os.getenv("DEMO_TOKEN", "localdemo")
 SEED_TOKEN = os.getenv("SEED_TOKEN", "ACHETECE")
 
@@ -524,7 +198,6 @@ def _set_if_has(obj, names, value):
     return False
 
 def _only_digits(s):
-    import re
     return re.sub(r"\D", "", s or "")
 
 def _fmt_cep(s):
@@ -541,59 +214,41 @@ def gerar_token(email):
 
 def enviar_email_recuperacao(email, nome_empresa=""):
     token = gerar_token(email)
-    # URL absoluta para funcionar bem em clientes de e-mail
     link = url_for('redefinir_senha', token=token, _external=True)
-
     html = render_template_string("""
 <!doctype html>
 <html lang="pt-br">
   <body style="margin:0;padding:0;background:#F7F7FA;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1e1b2b;">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F7F7FA;padding:24px 0;">
-      <tr>
-        <td align="center">
-          <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;width:100%;background:#ffffff;border:1px solid #eee;border-radius:12px;">
-            <tr>
-              <td style="padding:22px 24px;border-bottom:1px solid #f0f0f0;">
-                <h2 style="margin:0;font-size:20px;line-height:1.25;font-weight:800;">Redefinição de Senha</h2>
-              </td>
-            </tr>
-
-            <tr>
-              <td style="padding:22px 24px;">
-                <p style="margin:0 0 10px 0;line-height:1.55;">Olá <strong>{{ nome }}</strong>,</p>
-                <p style="margin:0 0 16px 0;line-height:1.55;">
-                  Clique no botão abaixo para criar uma nova senha. Este link é válido por <strong>1 hora</strong>.
-                </p>
-
-                <!-- Botão roxo (bulletproof) -->
-                <table role="presentation" cellspacing="0" cellpadding="0" style="margin:18px 0 10px 0;">
-                  <tr>
-                    <td align="center" bgcolor="#8A00FF" style="border-radius:9999px;">
-                      <a href="{{ link }}" target="_blank"
-                         style="display:inline-block;padding:12px 24px;border-radius:9999px;background:#8A00FF;color:#ffffff;text-decoration:none;font-weight:800;font-size:16px;line-height:1;">
-                        Redefinir senha
-                      </a>
-                    </td>
-                  </tr>
-                </table>
-
-                <!-- Fallback com link simples -->
-                <p style="margin:14px 0 0 0;font-size:13px;color:#6b6b6b;line-height:1.5;">
-                  Se o botão não funcionar, copie e cole este link no navegador:<br>
-                  <a href="{{ link }}" target="_blank" style="color:#5b2fff;word-break:break-all;">{{ link }}</a>
-                </p>
-              </td>
-            </tr>
-
-            <tr>
-              <td style="padding:16px 24px;border-top:1px solid #f0f0f0;color:#6b6b6b;font-size:12px;">
-                Você recebeu este e-mail porque solicitou redefinição de senha no AcheTece.
-                Se não foi você, ignore esta mensagem.
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
+      <tr><td align="center">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;width:100%;background:#fff;border:1px solid #eee;border-radius:12px;">
+          <tr><td style="padding:22px 24px;border-bottom:1px solid #f0f0f0;">
+            <h2 style="margin:0;font-size:20px;line-height:1.25;font-weight:800;">Redefinição de Senha</h2>
+          </td></tr>
+          <tr><td style="padding:22px 24px;">
+            <p style="margin:0 0 10px 0;line-height:1.55;">Olá <strong>{{ nome }}</strong>,</p>
+            <p style="margin:0 0 16px 0;line-height:1.55;">
+              Clique no botão abaixo para criar uma nova senha. Este link é válido por <strong>1 hora</strong>.
+            </p>
+            <table role="presentation" cellspacing="0" cellpadding="0" style="margin:18px 0 10px 0;">
+              <tr><td align="center" bgcolor="#8A00FF" style="border-radius:9999px;">
+                <a href="{{ link }}" target="_blank"
+                   style="display:inline-block;padding:12px 24px;border-radius:9999px;background:#8A00FF;color:#fff;text-decoration:none;font-weight:800;font-size:16px;line-height:1;">
+                  Redefinir senha
+                </a>
+              </td></tr>
+            </table>
+            <p style="margin:14px 0 0 0;font-size:13px;color:#6b6b6b;line-height:1.5;">
+              Se o botão não funcionar, copie e cole este link no navegador:<br>
+              <a href="{{ link }}" target="_blank" style="color:#5b2fff;word-break:break-all;">{{ link }}</a>
+            </p>
+          </td></tr>
+          <tr><td style="padding:16px 24px;border-top:1px solid #f0f0f0;color:#6b6b6b;font-size:12px;">
+            Você recebeu este e-mail porque solicitou redefinição de senha no AcheTece.
+            Se não foi você, ignore esta mensagem.
+          </td></tr>
+        </table>
+      </td></tr>
     </table>
   </body>
 </html>
@@ -616,6 +271,210 @@ def login_admin_requerido(f):
             return redirect(url_for('admin_login'))
         return f(*args, **kwargs)
     return decorated_function
+
+# --------------------------------------------------------------------
+# DB bootstrap (escolha da URL e engine)
+# --------------------------------------------------------------------
+ALLOW_SQLITE_FALLBACK = os.getenv("ALLOW_SQLITE_FALLBACK", "0") == "1"
+
+def _normalize_db_url(url: str) -> str:
+    if not url:
+        return url
+    url = url.strip()
+    if url.startswith("postgres://"):
+        return url.replace("postgres://", "postgresql+psycopg://", 1)
+    if url.startswith("postgresql://"):
+        return url.replace("postgresql://", "postgresql+psycopg://", 1)
+    return url
+
+def _try_ping(url: str) -> bool:
+    try:
+        engine = create_engine(
+            url,
+            pool_pre_ping=True,
+            pool_recycle=280,
+            connect_args=({"connect_timeout": 5} if url.startswith("postgresql+psycopg://") else {}),
+        )
+        with engine.connect() as c:
+            c.exec_driver_sql("SELECT 1")
+        return True
+    except Exception as e:
+        app.logger.warning("[DB] ping falhou para %s: %r", url, e)
+        return False
+
+def _pick_database_uri() -> str:
+    internal = os.getenv("INTERNAL_DATABASE_URL") or os.getenv("DATABASE_URL_INTERNAL") or ""
+    primary  = os.getenv("SQLALCHEMY_DATABASE_URI") or os.getenv("DATABASE_URL") or ""
+    raw_url  = (internal or primary).strip()
+    url = _normalize_db_url(raw_url)
+
+    if url.startswith("postgresql+psycopg://"):
+        if _try_ping(url):
+            return url
+        if ALLOW_SQLITE_FALLBACK:
+            app.logger.error("[DB] Postgres indisponível. CAINDO para SQLite (ALLOW_SQLITE_FALLBACK=1).")
+            return "sqlite:///achetece.db"
+        app.logger.error("[DB] Postgres indisponível e fallback desativado; retornarei 503 até estabilizar.")
+        return url
+    return url or "sqlite:///achetece.db"
+
+FINAL_DB_URI = _pick_database_uri()
+engine_opts = {"pool_pre_ping": True, "pool_recycle": 280, "pool_timeout": 30}
+if FINAL_DB_URI.startswith("postgresql+psycopg://"):
+    engine_opts["connect_args"] = {"connect_timeout": 5}
+
+db = SQLAlchemy()
+app.config['SQLALCHEMY_DATABASE_URI'] = FINAL_DB_URI
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = engine_opts
+db.init_app(app)
+
+# --- DB status + offline page (checa DB por request) -------------------------
+_DB_READY = None
+_DB_LAST_CHECK = 0
+
+def _db_is_up(refresh_every=10):
+    """Cacheia o resultado por ~10s para não martelar o banco a cada request."""
+    global _DB_READY, _DB_LAST_CHECK
+    now = time.time()
+    if _DB_READY is None or (now - _DB_LAST_CHECK) > refresh_every:
+        _DB_LAST_CHECK = now
+        try:
+            with db.engine.connect() as c:
+                c.exec_driver_sql("SELECT 1")
+            _DB_READY = True
+        except Exception:
+            _DB_READY = False
+    return _DB_READY
+
+def _render_offline(status: int | None = None):
+    """
+    Página offline: devolve 200 na home/rotas públicas e 503 no restante.
+    Assim o Render não marca erro e o usuário vê uma página amigável.
+    """
+    public_ok200 = {"/", "/quem_somos", "/quem-somos", "/fale_conosco", "/suporte", "/termos"}
+    if status is None:
+        status = 200 if request.path in public_ok200 else 503
+
+    try:
+        resp = render_template("offline.html")
+    except TemplateNotFound:
+        resp = """
+<!doctype html><meta charset="utf-8">
+<title>AcheTece – temporariamente offline</title>
+<style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;max-width:720px;margin:8vh auto;padding:0 16px;color:#1e1b2b}
+.card{border:1px solid #eee;border-radius:12px;padding:20px}
+h1{font-size:24px;margin:0 0 8px}p{line-height:1.55;margin:10px 0}small{color:#888}</style>
+<div class="card">
+  <h1>Estamos temporariamente offline</h1>
+  <p>Nosso banco de dados está indisponível no momento. Enquanto isso, você ainda pode navegar nas páginas públicas.</p>
+  <p><small>Este estado é automático e sai assim que o banco voltar a responder.</small></p>
+</div>
+"""
+    headers = {}
+    if status == 503:
+        headers["Retry-After"] = "10"
+    return resp, status, headers
+
+@app.before_request
+def _mark_db_status():
+    g.db_up = _db_is_up()
+
+@app.before_request
+def _offline_guard():
+    """Serve página offline amigável quando o DB está fora do ar."""
+    if getattr(g, "db_up", True):
+        return
+    p = request.path or "/"
+    if p.startswith("/static/") or p in {"/favicon.ico", "/robots.txt", "/sitemap.xml"}:
+        return
+    return _render_offline()
+
+# =====================[ ANALYTICS - INÍCIO ]=====================
+ALLOWED_EVENTS = {
+    'CARD_IMPRESSION',
+    'COMPANY_PROFILE_VIEW',
+    'CONTACT_CLICK_WHATSAPP',
+    'TEAR_DETAIL_VIEW',
+}
+
+def track_event(event: str, company_id: int, tear_id: int | None = None, meta: dict | None = None):
+    if event not in ALLOWED_EVENTS:
+        return
+    try:
+        with db.engine.begin() as conn:
+            conn.execute(
+                text("""
+                    INSERT INTO analytics_events (company_id, tear_id, event, session_id, meta)
+                    VALUES (:cid, :tid, :evt, :sid, :meta)
+                """),
+                {
+                    "cid": company_id,
+                    "tid": tear_id,
+                    "evt": event,
+                    "sid": session.get("_sid") or request.cookies.get("session") or "",
+                    "meta": json.dumps(meta or {}),
+                },
+            )
+    except Exception:
+        app.logger.exception("[analytics] falha ao registrar evento")
+
+def _init_analytics_table():
+    dialect = db.engine.url.get_backend_name()
+    if dialect == "sqlite":
+        pk = "INTEGER PRIMARY KEY AUTOINCREMENT"
+        ts_default = "CURRENT_TIMESTAMP"
+    else:
+        pk = "BIGSERIAL PRIMARY KEY"
+        ts_default = "CURRENT_TIMESTAMP"
+
+    ddl = f"""
+        CREATE TABLE IF NOT EXISTS analytics_events (
+            id {pk},
+            ts TIMESTAMP NOT NULL DEFAULT {ts_default},
+            company_id INTEGER NOT NULL,
+            tear_id INTEGER,
+            event TEXT NOT NULL,
+            session_id TEXT,
+            meta TEXT
+        )
+    """
+    idx1 = "CREATE INDEX IF NOT EXISTS idx_ae_company_ts ON analytics_events(company_id, ts)"
+    idx2 = "CREATE INDEX IF NOT EXISTS idx_ae_event_ts   ON analytics_events(event, ts)"
+
+    with db.engine.begin() as conn:
+        conn.execute(text(ddl))
+        conn.execute(text(idx1))
+        conn.execute(text(idx2))
+
+def get_performance(company_id, dt_ini=None, dt_fim=None):
+    params = {"cid": company_id}
+    where = ["company_id = :cid"]
+    if dt_ini:
+        where.append("ts >= :dt_ini"); params["dt_ini"] = dt_ini
+    if dt_fim:
+        where.append("ts < :dt_fim");  params["dt_fim"]  = dt_fim
+
+    sql = f"""
+      SELECT DATE(ts) AS d,
+             SUM(CASE WHEN event IN ('CARD_IMPRESSION','COMPANY_PROFILE_VIEW','TEAR_DETAIL_VIEW') THEN 1 ELSE 0 END) AS visitas,
+             SUM(CASE WHEN event IN ('CONTACT_CLICK_WHATSAPP') THEN 1 ELSE 0 END) AS contatos
+        FROM analytics_events
+       WHERE {" AND ".join(where)}
+       GROUP BY DATE(ts)
+       ORDER BY DATE(ts)
+    """
+    with db.engine.begin() as conn:
+        rows = conn.execute(text(sql), params).mappings().all()
+
+    series = [{"data": r["d"], "visitas": r["visitas"], "contatos": r["contatos"]} for r in rows]
+    total_visitas  = sum(r["visitas"]  for r in rows)
+    total_contatos = sum(r["contatos"] for r in rows)
+    return total_visitas, total_contatos, series
+
+# Executa migrações/ajustes e a criação do analytics apenas quando o DB responder
+_BOOTSTRAP_DONE   = False
+_ANALYTICS_READY  = False
 
 # --------------------------------------------------------------------
 # Modelos
@@ -646,16 +505,19 @@ class Empresa(db.Model):
     teares = db.relationship('Tear', backref='empresa', lazy=True, cascade="all, delete-orphan")
     responsavel_nome = db.Column(db.String(120))
     responsavel_sobrenome = db.Column(db.String(120))
+    # >>> Novos campos para o endereço completo da empresa <<<
+    endereco = db.Column(db.String(240))   # Rua, número, complemento, bairro
+    cep      = db.Column(db.String(9))     # 00000-000
 
 class Tear(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     marca = db.Column(db.String(100), nullable=False)
     modelo = db.Column(db.String(100), nullable=False)
     tipo = db.Column(db.String(20), nullable=False)            # MONO | DUPLA | ...
-    finura = db.Column(db.Integer, nullable=False)              # galga
+    finura = db.Column(db.Integer, nullable=False)             # galga
     diametro = db.Column(db.Integer, nullable=False)
     alimentadores = db.Column(db.Integer, nullable=False)
-    elastano = db.Column(db.String(10), nullable=False)         # Sim | Não
+    elastano = db.Column(db.String(10), nullable=False)        # Sim | Não
     empresa_id = db.Column(db.Integer, db.ForeignKey('empresa.id'), nullable=False)
 
 class ClienteProfile(db.Model):
@@ -693,7 +555,7 @@ def _whoami():
             email = getattr(current_user, "email", None)
     except Exception:
         pass
-    # fallback para sua sessão
+    # fallback para sessão
     if not uid:
         uid = session.get("user_id") or session.get("auth_user_id")
     if not email:
@@ -705,19 +567,18 @@ def _pegar_empresa_do_usuario(required=True):
     Retorna a Empresa do usuário, priorizando a sessão. Corrige o campo user_id
     (antes estava 'owner_id') e evita redirecionar para cadastro quando já há login.
     """
-    # 1) Primeiro: sessão
+    # 1) sessão
     emp_id = session.get("empresa_id")
     if emp_id:
         emp = Empresa.query.get(emp_id)
         if emp:
             return emp
 
-    # 2) Fallback: identidade do usuário (id/email)
+    # 2) identidade do usuário (id/email)
     uid, email = _whoami()
     empresa = None
 
     if uid:
-        # CORREÇÃO principal: o campo é user_id (não owner_id)
         empresa = Empresa.query.filter_by(user_id=uid).first()
         if empresa:
             session["empresa_id"] = empresa.id
@@ -738,11 +599,10 @@ def _pegar_empresa_do_usuario(required=True):
     if required:
         flash("Faça login para continuar.", "warning")
         return redirect(url_for("login"))
-
     return None
 
 # --------------------------------------------------------------------
-# Setup inicial (idempotente)
+# Migrações leves / Setup inicial (idempotente)
 # --------------------------------------------------------------------
 def _ensure_auth_layer_and_link():
     try:
@@ -778,192 +638,67 @@ def _ensure_cliente_profile_table():
     except Exception as e:
         app.logger.warning(f"create cliente_profile table: {e}")
 
-# --------------------------------------------------------------------
-# Sessão / Regras de acesso
-# --------------------------------------------------------------------
-def _get_empresa_usuario_da_sessao():
-    if 'empresa_id' not in session:
-        return None, None
-    emp = Empresa.query.get(session['empresa_id'])
-    if not emp:
-        session.pop('empresa_id', None)
-        session.pop('empresa_apelido', None)
-        return None, None
-    u = emp.usuario or Usuario.query.filter_by(email=emp.email).first()
-    if not u:
-        u = Usuario(email=emp.email, senha_hash=emp.senha, role=None, is_active=True)
-        db.session.add(u); db.session.flush()
-        emp.user_id = u.id
-        db.session.commit()
-    elif not emp.user_id:
-        emp.user_id = u.id
-        db.session.commit()
-    session['empresa_apelido'] = emp.apelido or emp.nome or emp.email.split('@')[0]
-    return emp, u
-
-def assinatura_ativa_requerida(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        emp, _ = _get_empresa_usuario_da_sessao()
-        if not emp:
-            flash("Faça login para continuar.", "error")
-            return redirect(url_for("login"))
-        is_demo = DEMO_MODE or (emp.apelido or emp.nome or "").startswith("[DEMO]")
-        if is_demo:
-            return f(*args, **kwargs)
-        status = (emp.status_pagamento or "pendente").lower()
-        if status not in ("ativo", "aprovado"):
-            flash("Ative seu plano para acessar esta funcionalidade.", "error")
-            return redirect(url_for("painel_malharia"))
-        return f(*args, **kwargs)
-    return wrapper
-
-# OTP helpers
-def _otp_generate():
-    return f"{random.randint(0, 999999):06d}"
-
-def _otp_cleanup(email: str):
-    limite = datetime.utcnow() - timedelta(days=2)
+def _ensure_empresa_address_columns():
+    """
+    Garante colunas endereco (varchar 240) e cep (varchar 9) em empresa.
+    Idempotente e compatível com SQLite/Postgres.
+    """
     try:
-        OtpToken.query.filter(
-            (OtpToken.email == email) & (
-                (OtpToken.expires_at < datetime.utcnow()) | (OtpToken.used_at.isnot(None))
-            )
-        ).delete(synchronize_session=False)
-        OtpToken.query.filter(OtpToken.created_at < limite).delete(synchronize_session=False)
-        db.session.commit()
+        insp = inspect(db.engine)
+        cols = {c['name'] for c in insp.get_columns('empresa')}
+        changed = False
+        if 'endereco' not in cols:
+            db.session.execute(text("ALTER TABLE empresa ADD COLUMN endereco VARCHAR(240)"))
+            changed = True
+        if 'cep' not in cols:
+            db.session.execute(text("ALTER TABLE empresa ADD COLUMN cep VARCHAR(9)"))
+            changed = True
+        if changed:
+            db.session.commit()
     except Exception as e:
-        app.logger.warning(f"[OTP] cleanup falhou: {e}")
+        app.logger.warning(f"ensure endereco/cep failed: {e}")
         db.session.rollback()
 
-def _otp_can_send(email: str, cooldown_s: int = 45, max_per_hour: int = 5):
-    now = datetime.utcnow()
-    last = (OtpToken.query
-            .filter_by(email=email)
-            .order_by(OtpToken.created_at.desc())
-            .first())
-    if last and last.last_sent_at and (now - last.last_sent_at).total_seconds() < cooldown_s:
-        wait = cooldown_s - int((now - last.last_sent_at).total_seconds())
-        return False, max(1, wait)
-    hour_ago = now - timedelta(hours=1)
-    sent_last_hour = (OtpToken.query
-                      .filter(OtpToken.email == email,
-                              OtpToken.created_at >= hour_ago)
-                      .count())
-    if sent_last_hour >= max_per_hour:
-        return False, -1
-    return True, 0
-
-def _otp_email_html(email: str, code: str):
-    return render_template_string("""
-    <div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:auto;padding:24px;border:1px solid #eee;border-radius:12px">
-      <h2 style="margin:0 0 12px;color:#1e1b2b">Seu código para acessar a sua conta</h2>
-      <p style="margin:0 0 16px;color:#333">Recebemos uma solicitação de acesso ao AcheTece para:</p>
-      <p style="margin:0 0 18px;font-weight:700;color:#4b2ac7">{{ email }}</p>
-      <div style="text-align:center;margin:18px 0 12px">
-        <div style="display:inline-block;padding:16px 20px;border:1px dashed #d9cffd;border-radius:12px;background:#f8f6ff;font-size:28px;font-weight:800;letter-spacing:6px;color:#3b2fa6">{{ code }}</div>
-      </div>
-      <p style="margin:12px 0 0;color:#666">Código válido por <strong>30 minutos</strong> e de uso único.</p>
-      <p style="margin:8px 0 0;color:#666">Se você não fez esta solicitação, ignore este e-mail.</p>
-      <hr style="border:none;border-top:1px solid #eee;margin:18px 0">
-      <p style="margin:0;color:#888;font-size:12px">AcheTece • Portal de Malharias</p>
-    </div>
-    """, email=email, code=code)
-
-def _otp_send(email: str, ip: str = "", ua: str = "") -> tuple[bool, str]:
-    email = (email or "").strip().lower()
-    if not email:
-        return False, "Informe um e-mail válido."
-
-    _otp_cleanup(email)
-
-    ok, wait = _otp_can_send(email)
-    if not ok and wait == -1:
-        return False, "Você solicitou muitos códigos na última hora. Tente novamente mais tarde."
-    if not ok:
-        return False, f"Aguarde {wait}s para solicitar um novo código."
-
-    code = _otp_generate()
-    token = OtpToken(
-        email=email,
-        code_hash=generate_password_hash(code),
-        created_at=datetime.utcnow(),
-        expires_at=datetime.utcnow() + timedelta(minutes=30),
-        last_sent_at=datetime.utcnow(),
-        ip=(ip or "")[:64],
-        user_agent=(ua or "")[:255],
-    )
+def _run_bootstrap_once():
+    """Cria tabelas/migrações leves quando o DB está UP; caso contrário, adia."""
+    global _BOOTSTRAP_DONE
+    if _BOOTSTRAP_DONE:
+        return
+    if not _db_is_up():
+        app.logger.error("[BOOT] adiado: DB indisponível")
+        return
     try:
-        OtpToken.query.filter(
-            (OtpToken.email == email) & (OtpToken.used_at.is_(None))
-        ).delete(synchronize_session=False)
-        db.session.add(token)
-        db.session.commit()
+        db.create_all()
+        _ensure_auth_layer_and_link()
+        _ensure_cliente_profile_table()
+        _ensure_empresa_address_columns()   # <<< garante endereco/cep
+        _BOOTSTRAP_DONE = True
+        app.logger.info("[BOOT] Migrações/ajustes executados.")
     except Exception as e:
-        app.logger.exception(f"[OTP] erro ao persistir token: {e}")
-        db.session.rollback()
-        return False, "Falha ao gerar o código. Tente novamente."
+        app.logger.error("[BOOT] adiado: %s", e)
 
-    # Envio
-    if app.config.get("MAIL_SUPPRESS_SEND"):
-        app.logger.info(f"[OTP SUPPRESSED] {email} code={code}")
-        return True, "Código gerado. Siga para digitar o código."
+@app.before_request
+def _bootstrap_and_analytics_lazy():
+    global _ANALYTICS_READY
+    if getattr(g, "db_up", False):
+        _run_bootstrap_once()
+        if not _ANALYTICS_READY:
+            try:
+                _init_analytics_table()
+                _ANALYTICS_READY = True
+            except Exception as e:
+                app.logger.error("Falha ao garantir tabela de analytics (adiado): %s", e)
 
-    subj = "Seu código de acesso • AcheTece"
-    html = _otp_email_html(email, code)
-    texto = f"Seu código AcheTece: {code}\nVálido por 30 minutos."
+# =====================[ ANALYTICS - FIM ]=====================
 
-    ok_envio, msg_envio = _smtp_send_direct(email, subj, html, texto)
-    if ok_envio:
-        return True, "Código enviado para o seu e-mail."
-
-    # Fallback amigável (somente em teste)
-    if app.config.get("OTP_DEV_FALLBACK"):
-        app.logger.warning(f"[OTP FALLBACK] envio falhou; código logado. {email} code={code} err={msg_envio}")
-        return True, "Não foi possível enviar o e-mail agora. Como estamos testando, o código foi gerado e registrado nos logs."
-
-    return False, "Não foi possível enviar o e-mail agora. Tente novamente em instantes."
-
-def _otp_validate(email: str, code: str) -> tuple[bool, str]:
-    email = (email or "").strip().lower()
-    code = (code or "").strip()
-    if not (email and code and len(code) == 6 and code.isdigit()):
-        return False, "Código inválido."
-
-    token = (OtpToken.query
-             .filter(OtpToken.email == email, OtpToken.used_at.is_(None))
-             .order_by(OtpToken.created_at.desc())
-             .first())
-    if not token:
-        return False, "Solicite um novo código."
-
-    now = datetime.utcnow()
-    if token.expires_at and now > token.expires_at:
-        token.used_at = now
-        db.session.commit()
-        return False, "O código expirou. Solicite um novo."
-
-    token.attempts = (token.attempts or 0) + 1
-    if token.attempts > 10:
-        token.used_at = now
-        db.session.commit()
-        return False, "Muitas tentativas. Geramos um novo código para você."
-
-    try:
-        ok = check_password_hash(token.code_hash, code)
-    except Exception as e:
-        app.logger.warning(f"[OTP] check hash falhou: {e}")
-        ok = False
-
-    if not ok:
-        db.session.commit()
-        return False, "Código incorreto. Verifique os dígitos."
-
-    token.used_at = now
-    db.session.commit()
-    return True, "Código validado com sucesso."
-
-import os, time  # (se ainda não tiver)
+def parse_bool(val):
+    """Normaliza valores vindos de checkbox/select para True/False."""
+    if isinstance(val, bool):
+        return val
+    if val is None:
+        return False
+    s = str(val).strip().lower()
+    return s in {'1','true','t','on','sim','s','yes','y'}
 
 def _foto_url_runtime(emp_id: int) -> str | None:
     base = os.path.join(app.root_path, "static", "uploads", "perfil")
@@ -1044,7 +779,6 @@ def _render_try(candidatos: list[str], **ctx):
             return render_template(nome, **ctx)
         except TemplateNotFound:
             continue
-    # Fallback mínimo para não quebrar
     return render_template_string("<h2>Página temporária</h2><p>Conteúdo indisponível.</p>")
 
 def _get_notificacoes(empresa_id):
