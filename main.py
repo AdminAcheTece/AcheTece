@@ -516,16 +516,22 @@ SEED_TOKEN = os.getenv("SEED_TOKEN", "ACHETECE")
 # Helpers
 # --------------------------------------------------------------------
 def _set_if_has(obj, names, value):
-    """Setta o primeiro atributo existente em 'names' para 'value'."""
+    """Seta no primeiro atributo existente da lista `names`."""
     for n in names:
         if hasattr(obj, n):
             setattr(obj, n, value)
             return True
     return False
 
-def _norm(v):
-    v = (v or "").strip()
-    return v or None
+def _only_digits(s):
+    import re
+    return re.sub(r"\D", "", s or "")
+
+def _fmt_cep(s):
+    d = _only_digits(s)
+    if len(d) == 8:
+        return f"{d[:5]}-{d[5:]}"
+    return (s or "").strip() or None
 
 def _norm(s: str) -> str:
     return normalize('NFKD', s).encode('ASCII', 'ignore').decode('ASCII').strip().lower()
