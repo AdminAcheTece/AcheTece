@@ -6,73 +6,196 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+
   <style>
-    :root{ --roxo:#8A00FF; --roxo-hover:#A63DFF; --laranja:#F28C00; --cinza:#F7F7FA; }
-
-    body{ margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Arial; background:var(--cinza); color:#1f1f1f; }
-
-    .navbar{ padding:6px 12px; display:flex; align-items:center; background:#fff; border-bottom:1px solid #eee; }
-    .logo a{ display:inline-flex; align-items:center; text-decoration:none; }
-    .logo img{ height:48px; width:auto; display:block; }
-    @media (max-width:900px){ .logo img{ height:54px !important; } }
-
-    .wrap{ max-width:1100px; margin:0 auto; padding:16px; }
-
-    .card{
-      background:#fff; border:1px solid rgba(0,0,0,.06); border-radius:16px;
-      box-shadow:0 6px 20px rgba(0,0,0,.06); padding:18px; margin:14px 0;
+    /* ===================== Design minimalista ===================== */
+    :root{
+      --bg: #F8FAFC;            /* cinza bem claro */
+      --surface: #FFFFFF;       /* cards */
+      --line: #E5E7EB;          /* linhas / bordas */
+      --text: #111827;          /* texto principal */
+      --muted: #6B7280;         /* texto secundário */
+      --accent: #6E59F2;        /* roxo suave para links/realces */
+      --accent-strong: #5946E6; /* hover */
+      --pill-bg: #EEF2F7;       /* fundo de chips/pills */
+      --shadow: 0 6px 20px rgba(0,0,0,.06);
+      --radius-lg: 14px;
+      --radius-md: 12px;
     }
 
-    .head{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; }
-    .title{ margin:0; font-size:24px; font-weight:800; }
-    .sub{ margin:4px 0 0; color:#6b6b6b; }
+    /* Reset básico e tipografia consistente */
+    html,body{ height:100% }
+    body{
+      margin:0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    a{ color: var(--accent); text-decoration: none; }
+    a:hover{ color: var(--accent-strong); text-decoration: underline; }
+
+    /* Navbar enxuta */
+    .navbar{
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+    }
+    .logo a{ display:inline-flex; align-items:center; text-decoration:none; }
+    .logo img{ height: 44px; width:auto; display:block; }
+    @media (max-width:900px){ .logo img{ height: 50px; } }
+
+    .wrap{ max-width: 1100px; margin: 0 auto; padding: 16px; }
+
+    .card{
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      margin: 14px 0;
+    }
+
+    /* ===== Cabeçalho do perfil (topo) ===== */
+    .head{
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: start;
+    }
+    @media (max-width: 720px){
+      .head{ grid-template-columns: 1fr; }
+    }
+    .title{
+      margin: 0;
+      font-size: 26px;
+      font-weight: 700;           /* negrito padronizado */
+      letter-spacing: .2px;
+    }
+    .sub{
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
     .pill{
-      display:inline-flex; align-items:center; gap:8px; height:28px; padding:0 12px;
-      background:#f4f0ff; border:1px solid #ece6ff; border-radius:9999px; font-weight:700; font-size:12.5px; color:#5f0adf;
+      display: inline-flex; align-items: center; gap: 8px;
+      height: 28px; padding: 0 12px;
+      background: var(--pill-bg);
+      border: 1px solid var(--line);
+      border-radius: 9999px;
+      font-weight: 600; font-size: 12.5px; color: #334155;
     }
 
     .actions{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+
+    /* Botão fantasma/outline neutro */
     .btn{
-      display:inline-flex; align-items:center; justify-content:center; height:40px; padding:0 14px;
-      border-radius:9999px; text-decoration:none; font-weight:800; border:0; cursor:pointer; transition:.18s ease;
+      display:inline-flex; align-items:center; justify-content:center;
+      height: 38px; padding: 0 14px; gap: 8px;
+      border-radius: 9999px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+      font-weight: 600;
+      text-decoration: none;
+      transition: .16s ease;
+      cursor: pointer;
     }
-    .btn-wa{ background:#25D366; color:#fff; } .btn-wa:hover{ filter:brightness(.95); }
-    .btn-back{ background:#fff; border:1.5px solid #e3e3e7; color:#1f1f1f; }
-    .btn-back:hover,.btn-back:focus-visible{ background:var(--roxo); border-color:var(--roxo); color:#fff; outline:none; box-shadow:0 0 0 3px rgba(138,0,255,.18); }
+    .btn:hover{ border-color:#D1D5DB; background:#F9FAFB; text-decoration:none; }
 
-    .sec-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 10px; }
-    h2.sec{ font-size:18px; margin:0; }
-    .btn-maps{ background:var(--roxo); color:#fff; border:0; border-radius:9999px; height:36px; padding:0 14px; font-weight:800; }
-    .btn-maps:hover{ background:var(--roxo-hover); }
+    /* Botão link mais discreto (para o Maps) */
+    .btn-link{
+      display:inline-flex; align-items:center; gap:8px;
+      padding: 0 8px; height: 36px;
+      border-radius: 8px;
+      color: var(--text);
+      background: transparent;
+      border: 1px solid transparent;
+      font-weight: 600;
+    }
+    .btn-link:hover{
+      background:#F3F4F6; border-color:#E5E7EB; text-decoration:none;
+    }
 
-    .empresa-grid{ display:grid; grid-template-columns:1.25fr .9fr; gap:18px; align-items:start; }
+    /* Botão só ícone (WhatsApp) – ícone neutro, realce no hover */
+    .icon-btn{
+      width: 38px; height: 38px;
+      display:inline-flex; align-items:center; justify-content:center;
+      border: 1px solid var(--line);
+      border-radius: 9999px;
+      background: #fff;
+      transition: .16s ease;
+    }
+    .icon-btn:hover{ border-color:#D1D5DB; background:#F9FAFB; }
+    .icon{ width:18px; height:18px; display:block; }
+
+    /* ===== Seções ===== */
+    .sec-head{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      margin: 0 0 10px;
+    }
+    h2.sec{
+      font-size: 18px; margin:0; font-weight: 700;
+    }
+
+    .empresa-grid{ display:grid; grid-template-columns:1.1fr .9fr; gap:18px; align-items:start; }
     @media (max-width:900px){ .empresa-grid{ grid-template-columns:1fr; } }
 
-    .dados{
-      display:grid; grid-template-columns:170px 1fr; gap:10px 14px;
-      border:1px solid #eee; border-radius:12px; padding:14px; background:#fff;
+    dl.dados{
+      display:grid; grid-template-columns:160px 1fr; gap:10px 14px;
+      border: 1px solid var(--line); border-radius: var(--radius-md);
+      padding: 14px; background: var(--surface);
     }
-    .dados dt{ font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:#666; font-weight:800; }
-    .dados dd{ margin:0; font-size:14.5px; font-weight:600; color:#222; }
-    .dados a{ color:var(--roxo); text-decoration:none; } .dados a:hover{ text-decoration:underline; }
+    .dados dt{
+      font-size: 12px; text-transform: uppercase; letter-spacing: .04em;
+      color: var(--muted); font-weight: 700;
+    }
+    .dados dd{ margin:0; font-size: 15px; font-weight: 600; color: var(--text); }
+    .dados a{ text-decoration: none; }
+    .dados a:hover{ text-decoration: underline; }
 
     .addr .linha{ display:block; }
-    .addr .rua{ font-weight:700; }
-    .addr .local, .addr .cep{ color:#444; font-weight:600; }
+    .addr .rua{ font-weight: 700; }
+    .addr .local, .addr .cep{ color: #374151; font-weight: 600; }
 
-    .mapa{ border:1px solid #eee; border-radius:12px; overflow:hidden; background:#fff; }
+    .mapa{
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      overflow: hidden; background: var(--surface);
+    }
     .mapa iframe{ width:100%; height:220px; border:0; display:block; }
-    .mapa small{ display:block; padding:8px 10px; color:#666; }
+    .mapa small{ display:block; padding:8px 10px; color: var(--muted); }
 
-    .table-wrap{ overflow-x:auto; border:1px solid #eee; border-radius:12px; background:#fff; }
-    table{ width:100%; border-collapse:collapse; }
-    thead th{ background:#EEEAF8; }
-    th, td{ padding:10px; border-bottom:1px solid #f1f1f1; font-size:14px; vertical-align:middle; }
-    thead th, tbody td { text-align:center; }
-    tbody tr:nth-child(even){ background:#F7F3FF; }
-    tbody tr:hover{ background:#F0EBFF; }
+    /* Tabela sóbria */
+    .table-wrap{
+      overflow-x:auto;
+      border:1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+    }
+    table{ width:100%; border-collapse: collapse; }
+    thead th{
+      background: #F3F4F6;
+      font-weight: 700;
+      font-size: 13px;
+      color: #374151;
+      text-transform: none;
+    }
+    th, td{ padding: 10px 12px; border-bottom:1px solid #EEF2F7; font-size: 14px; vertical-align: middle; }
+    thead th, tbody td{ text-align: center; }
+    tbody tr:nth-child(even){ background: #FAFAFA; }
+    tbody tr:hover{ background: #F6F7F9; }
 
-    .footer-spacer{ height:8px; }
+    .footer-spacer{ height: 8px; }
+
+    /* util */
+    .sr-only{
+      position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+    }
   </style>
 </head>
 <body>
@@ -85,25 +208,37 @@
   </header>
 
   <main class="wrap">
+    <!-- ====================== TOPO – minimalista ====================== -->
     <section class="card">
       <div class="head">
         <div>
           <h1 class="title">{{ empresa.apelido or empresa.nome_fantasia or empresa.razao_social or 'Malharia' }}</h1>
           <p class="sub">
             {% if empresa.cidade %}{{ empresa.cidade }}{% if empresa.estado %}/{{ empresa.estado }}{% endif %}{% endif %}
-            {% if teares %} &nbsp;•&nbsp; <span class="pill">{{ teares|length }} tear(es)</span>{% endif %}
+            {% if teares %}&nbsp;•&nbsp;<span class="pill">{{ teares|length }} tear(es)</span>{% endif %}
           </p>
         </div>
+
         <div class="actions">
+          {# WhatsApp só ícone (neutro) #}
           {% set _fone = empresa.telefone or empresa.contato_telefone or empresa.celular %}
           {% set _wa = empresa.contato_whatsapp or (('https://wa.me/' ~ ('55' ~ _fone if _fone and not _fone.startswith('55') else _fone)) if _fone else None) %}
-          {% if _wa %}<a class="btn btn-wa" href="{{ _wa }}" target="_blank" rel="noopener">WhatsApp</a>{% endif %}
-          <a class="btn btn-back" href="{{ url_for('index') }}">Voltar</a>
+          {% if _wa %}
+            <a class="icon-btn" href="{{ _wa }}" target="_blank" rel="noopener" title="WhatsApp">
+              <!-- Ícone WhatsApp (monocromático) -->
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path fill="currentColor" d="M20.52 3.48A11.9 11.9 0 0 0 12.06 0C5.48 0 .16 5.33.16 11.92c0 2.1.55 4.16 1.6 5.98L0 24l6.3-1.64a11.9 11.9 0 0 0 5.76 1.47h.01c6.58 0 11.9-5.33 11.9-11.92 0-3.18-1.24-6.17-3.45-8.43ZM12.06 21.3h-.01c-1.84 0-3.64-.49-5.2-1.41l-.37-.22-3.74.97.99-3.64-.24-.37A9.73 9.73 0 0 1 2.34 11.9c0-5.37 4.36-9.73 9.72-9.73 2.6 0 5.04 1.01 6.88 2.86a9.65 9.65 0 0 1 2.85 6.87c0 5.37-4.36 9.73-9.72 9.73Zm5.37-7.28c-.29-.15-1.7-.84-1.97-.93-.27-.1-.47-.15-.66.14-.2.29-.76.94-.93 1.13-.17.2-.34.22-.63.08-.29-.15-1.23-.45-2.34-1.43-.86-.76-1.44-1.7-1.61-1.99-.17-.29-.02-.45.13-.6.14-.14.29-.34.43-.51.15-.17.2-.29.29-.49.1-.2.05-.37-.02-.52-.07-.15-.66-1.61-.9-2.2-.24-.58-.49-.5-.66-.51h-.57c-.2 0-.52.07-.8.37-.27.29-1.05 1.02-1.05 2.49 0 1.46 1.08 2.88 1.23 3.08.15.2 2.12 3.24 5.13 4.55.72.31 1.29.49 1.73.63.73.23 1.39.2 1.91.12.58-.09 1.7-.69 1.94-1.36.24-.66.24-1.24.17-1.36-.07-.12-.26-.19-.55-.34Z"/>
+              </svg>
+              <span class="sr-only">WhatsApp</span>
+            </a>
+          {% endif %}
+
+          <a class="btn" href="{{ url_for('index') }}">Voltar</a>
         </div>
       </div>
     </section>
 
-    {# ==== peças do endereço e URL do mapa ==== #}
+    {# ==== endereço e URL do mapa ==== #}
     {% set _logradouro = empresa.endereco or empresa.logradouro or empresa.endereco_completo %}
     {% set _numero     = empresa.numero %}
     {% set _bairro     = empresa.bairro %}
@@ -122,10 +257,19 @@
     {% set mapa_q = (endereco_full or ((_cidade or '') ~ ' ' ~ (_estado or ''))) | replace(' ', '+') %}
     {% set map_url = 'https://www.google.com/maps?q=' ~ mapa_q %}
 
+    <!-- ====================== Seção: Informações da empresa ====================== -->
     <section class="card">
       <div class="sec-head">
         <h2 class="sec">Informações da empresa</h2>
-        {% if tem_end %}<a class="btn btn-maps" href="{{ map_url }}" target="_blank" rel="noopener">Abrir no Google Maps</a>{% endif %}
+        {% if tem_end %}
+          <a class="btn-link" href="{{ map_url }}" target="_blank" rel="noopener" title="Abrir no Google Maps">
+            <!-- Pin minimalista -->
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Z"/>
+            </svg>
+            <span>Ver no Maps</span>
+          </a>
+        {% endif %}
       </div>
 
       <div class="empresa-grid">
@@ -174,6 +318,7 @@
       </div>
     </section>
 
+    <!-- ====================== Seção: Teares ====================== -->
     <section class="card">
       <h2 class="sec">Teares desta malharia</h2>
       {% if teares and teares|length %}
