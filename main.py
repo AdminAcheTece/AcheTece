@@ -189,32 +189,62 @@ SEED_TOKEN = os.getenv("SEED_TOKEN", "ACHETECE")
 # --------------------------------------------------------------------
 # Helpers
 # --------------------------------------------------------------------
-# ==== PERFORMANCE: totais de visitas/contatos ====
+# ==== PERFORMANCE: totais usados no card do painel (sem importar 'models') ====
 from datetime import datetime, timedelta
 from sqlalchemy import func
+
+def _resolve_model(*opcoes):
+    """Tenta achar a classe do modelo nos globals deste módulo."""
+    g = globals()
+    for nome in opcoes:
+        m = g.get(nome)
+        if m is not None:
+            return m
+    # Se não achou, levanta um erro claro com as opções tentadas
+    raise RuntimeError(f"Modelo não encontrado. Tente um desses nomes: {opcoes}")
+
+def _resolve_field(model, *possiveis):
+    """Retorna o atributo do modelo cujo nome existir (primeiro que existir)."""
+    for nome in possiveis:
+        if hasattr(model, nome):
+            return getattr(model, nome)
+    return None
 
 def perf_resumo_totais(empresa_id: int, dias: int | None = None):
     """
     Retorna {'buscas_total': X, 'contatos_total': Y}
-    - visitas == "buscas" do card
-    - contatos == "contatos" do card
-    Ajuste os nomes dos MODELOS/CAMPOS abaixo conforme o seu projeto.
+    - 'buscas' do card = total de VISITAS
+    - 'contatos' do card = total de CONTATOS
+    Ajuste os nomes das classes abaixo colocando os seus reais primeiro na lista.
     """
-    # >>> ajuste aqui os modelos reais <<<
-    from models import Visita, Contato  # ex.: Visita/Contato/Lead etc.
+    # Coloque os nomes REAIS dos seus modelos nas primeiras posições:
+    Visita  = _resolve_model('Visita', 'Acesso', 'AcessoVisita', 'VisitaLog', 'AnalyticsVisita')
+    Contato = _resolve_model('Contato', 'Lead', 'ContatoLead', 'ContatoLog', 'ContatoRegistro')
 
-    q_vis = db.session.query(func.count(Visita.id)).filter(Visita.empresa_id == empresa_id)
-    q_con = db.session.query(func.count(Contato.id)).filter(Contato.empresa_id == empresa_id)
+    # Detecta a coluna de empresa
+    emp_vis = _resolve_field(Visita,  'empresa_id', 'id_empresa', 'empresaId')
+    emp_con = _resolve_field(Contato, 'empresa_id', 'id_empresa', 'empresaId')
+    if emp_vis is None or emp_con is None:
+        raise RuntimeError("Campo empresa_id/id_empresa/empresaId não encontrado nos modelos de visitas/contatos.")
 
-    # ajuste o nome do campo de data (created_at, criado_em, data, dt, ...)
+    # Detecta a coluna de data (opcional se você for usar janela de dias)
+    dt_vis = _resolve_field(Visita,  'created_at', 'criado_em', 'data', 'dt', 'timestamp', 'createdAt')
+    dt_con = _resolve_field(Contato, 'created_at', 'criado_em', 'data', 'dt', 'timestamp', 'createdAt')
+
+    # Usa COUNT(*) para não depender de existir 'id' no modelo
+    qv = db.session.query(func.count('*')).select_from(Visita).filter(emp_vis == empresa_id)
+    qc = db.session.query(func.count('*')).select_from(Contato).filter(emp_con == empresa_id)
+
     if dias is not None:
+        if dt_vis is None or dt_con is None:
+            raise RuntimeError("Não há campo de data nos modelos para filtrar por dias.")
         dt_ini = datetime.utcnow() - timedelta(days=dias)
-        q_vis = q_vis.filter(Visita.created_at >= dt_ini)
-        q_con = q_con.filter(Contato.created_at >= dt_ini)
+        qv = qv.filter(dt_vis >= dt_ini)
+        qc = qc.filter(dt_con >= dt_ini)
 
     return {
-        "buscas_total": int(q_vis.scalar() or 0),     # = total_visitas
-        "contatos_total": int(q_con.scalar() or 0),   # = total_contatos
+        "buscas_total": int(qv.scalar() or 0),     # = total_visitas
+        "contatos_total": int(qc.scalar() or 0),   # = total_contatos
     }
 
 def _set_if_has(obj, names, value):
