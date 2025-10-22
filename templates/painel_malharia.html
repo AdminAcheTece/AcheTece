@@ -139,7 +139,7 @@
       box-shadow:0 8px 24px rgba(0,0,0,.06);
       opacity:0; pointer-events:none; transform:translateY(6px);
       transition:.15s;
-      z-index:2000; /* fica acima do cabeçalho (z-index:50) e painéis (60) */
+      z-index:2000; /* acima do cabeçalho (50) e painéis (60) */
     }
 
     /* Overlay que captura toques e evita “click-through” no celular */
@@ -231,6 +231,18 @@
   </style>
 </head>
 <body>
+
+{# ===== Variáveis precisam estar antes do <header> para o header usá-las ===== #}
+{% set nome_empresa =
+    (empresa.apelido if empresa and empresa.apelido else
+     (empresa.nome_fantasia if empresa and empresa.nome_fantasia else
+      (empresa.razao_social if empresa and empresa.razao_social else 'Minha Malharia'))) %}
+{% set _assin_ativa = (assinatura_ativa if assinatura_ativa is defined else False) %}
+{% set lista_teares =
+    (teares if teares is defined and teares is not none
+     else (empresa.teares if empresa and empresa.teares else [])) %}
+{# URL do avatar: prioriza a sessão (tem cache-buster), depois o que a view injetar, depois legado foto_url #}
+{% set avatar_url = (session.get('avatar_url') or avatar_url or foto_url) %}
 
 <!-- ===== TOPBAR ===== -->
 <header class="topbar">
@@ -342,18 +354,6 @@
   </form>
 </header>
 
-{% set nome_empresa =
-    (empresa.apelido if empresa and empresa.apelido else
-     (empresa.nome_fantasia if empresa and empresa.nome_fantasia else
-      (empresa.razao_social if empresa and empresa.razao_social else 'Minha Malharia'))) %}
-{% set _assin_ativa = (assinatura_ativa if assinatura_ativa is defined else False) %}
-{% set lista_teares =
-    (teares if teares is defined and teares is not none
-     else (empresa.teares if empresa and empresa.teares else [])) %}
-
-{# URL do avatar: prioriza a sessão (tem cache-buster), depois o que a view injetar, depois legado foto_url #}
-{% set avatar_url = (session.get('avatar_url') or avatar_url or foto_url) %}
-  
 <div class="container">
   <h1 class="titulo">Painel da Malharia</h1>
   <p style="text-align:center;">Bem-vindo(a), <strong>{{ nome_empresa }}</strong>!</p>
@@ -387,7 +387,9 @@
               <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path></svg>
               <span>Escolher arquivo</span>
             </button>
-          </div>                    
+          </div>
+        </div><!-- /.hero-avatar -->
+
         <div class="hero-info" style="min-width:0;">
           <div class="hero-nome">{{ nome_empresa }}</div>
 
@@ -535,12 +537,6 @@
     function toggleNotif(e){ e.stopPropagation(); npanel.classList.toggle('open'); }
     nbtn?.addEventListener('click', toggleNotif);
 
-    // fechar quando clicar fora / ESC
-    document.addEventListener('click', ()=>{ closeMenu(); closeNotif(); closePhotoMenu(); });
-    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ closeMenu(); closeNotif(); closePhotoMenu(); closeCam(); }});
-    menu?.addEventListener('click', (e)=> e.stopPropagation());
-    npanel?.addEventListener('click', (e)=> e.stopPropagation());
-
     // ===== Upload de foto - opções (MOBILE FIX) =====
     const fotoForm  = document.getElementById('fotoForm');
     const inLib     = document.getElementById('fotoInputLib');
@@ -570,14 +566,8 @@
     photoMenu?.addEventListener('click', (e)=>{ e.stopPropagation(); });
 
     function triggerInput(inputEl){
-      // NÃO fecha o menu ainda (evita click-through no lápis em mobile)
       // Abrimos o picker e só fechamos quando o usuário escolhe/cancela (no 'change').
-      try {
-        inputEl.click();
-      } catch(e) {
-        // fallback raro
-        setTimeout(()=>inputEl.click(), 0);
-      }
+      try { inputEl.click(); } catch(e) { setTimeout(()=>inputEl.click(), 0); }
     }
 
     photoMenu?.querySelectorAll('.photo-item').forEach(btn=>{
@@ -593,21 +583,14 @@
           if (isMobile){
             inCam.value = ""; triggerInput(inCam);
           } else {
-            // Desktop: modal de câmera
-            openCam();
-            // mantemos overlay aberto enquanto modal está ativo
+            openCam(); // desktop: modal
           }
         }
       }, {passive:false});
     });
 
-    function afterPick(){
-      // Fechar UI (card + overlay) quando o usuário escolhe/fecha o picker
-      closePhotoMenu();
-    }
-
     function submitIfFile(inputEl){
-      afterPick();
+      closePhotoMenu();
       if (inputEl?.files && inputEl.files.length > 0){
         if (fotoForm?.requestSubmit) fotoForm.requestSubmit(); else fotoForm?.submit();
       }
@@ -616,7 +599,7 @@
     inFile?.addEventListener('change', function(){ submitIfFile(this); });
     inCam?.addEventListener('change', function(){ submitIfFile(this); });
 
-    // ===== Webcam (desktop) — mantém seu código, só fechamos overlay ao fechar modal =====
+    // ===== Webcam (desktop) =====
     const camOverlay = document.getElementById('camOverlay');
     const camVideo   = document.getElementById('camVideo');
     const camCanvas  = document.getElementById('camCanvas');
@@ -674,8 +657,8 @@
       }, 'image/jpeg', 0.92);
     });
 
-    // Fechamentos globais (tecla ESC / clique fora)
-    document.addEventListener('click', ()=>{ closeMenu(); closeNotif(); /* não fechamos photo aqui; overlay cuida */ });
+    // Fechamentos globais (clique fora/ESC) — não fechamos o photo-menu aqui; o overlay cuida disso.
+    document.addEventListener('click', ()=>{ closeMenu(); closeNotif(); });
     document.addEventListener('keydown', (e)=>{
       if(e.key==='Escape'){ closeMenu(); closeNotif(); closePhotoMenu(); closeCam(); }
     });
