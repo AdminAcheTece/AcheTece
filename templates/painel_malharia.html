@@ -141,6 +141,12 @@
       transition:.15s;
       z-index:2000; /* fica acima do cabeçalho (z-index:50) e painéis (60) */
     }
+
+    /* Overlay que captura toques e evita “click-through” no celular */
+    .photo-overlay{
+      position:fixed; inset:0; background:transparent; z-index:1999;
+    }
+    
     .photo-menu.open{ opacity:1; pointer-events:auto; transform:translateY(0); }
     .photo-item{ display:flex; align-items:center; gap:10px; width:100%; background:transparent; border:0; padding:10px 12px; cursor:pointer; }
     .photo-item:hover{ background:#f6f7fb; }
@@ -263,7 +269,7 @@
     <button class="profile-pill" id="profileToggle" type="button" aria-haspopup="menu" aria-expanded="false" title="Abrir menu do perfil">
       <span class="avatar">
         {% if foto_url %}
-          <img src="{{ foto_url }}" alt="Foto do perfil">
+          <img src="{{ avatar_url }}" alt="Foto do perfil">
         {% else %}
           <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#6a5acd" fill="none" stroke-width="1.8"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7" stroke="#6a5acd" fill="none" stroke-width="1.8"></path></svg>
         {% endif %}
@@ -278,7 +284,7 @@
     <div class="pm-header">
       <span class="avatar">
         {% if foto_url %}
-          <img src="{{ foto_url }}" alt="Foto do perfil">
+          <img src="{{ avatar_url }}" alt="Foto do perfil">
         {% else %}
           <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#6a5acd" fill="none" stroke-width="1.8"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7" stroke="#6a5acd" fill="none" stroke-width="1.8"></path></svg>
         {% endif %}
@@ -344,7 +350,9 @@
 {% set lista_teares =
     (teares if teares is defined and teares is not none
      else (empresa.teares if empresa and empresa.teares else [])) %}
-
+{# Preferimos avatar_url (injetado pelo contexto), senão foto_url legado, senão sessão #}
+{% set avatar_url = (avatar_url or foto_url or session.get('avatar_url')) %}
+  
 <div class="container">
   <h1 class="titulo">Painel da Malharia</h1>
   <p style="text-align:center;">Bem-vindo(a), <strong>{{ nome_empresa }}</strong>!</p>
@@ -356,7 +364,7 @@
       <div class="hero-ident">
         <div class="hero-avatar" aria-label="Foto do perfil" title="Clique no lápis para alterar a foto">
           {% if foto_url %}
-            <img src="{{ foto_url }}" alt="">
+            <img src="{{ avatar_url }}" alt="">
           {% else %}
             <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path></svg>
           {% endif %}
@@ -379,7 +387,9 @@
               <span>Escolher arquivo</span>
             </button>
           </div>
-        </div>
+          
+          <!-- Overlay transparente para bloquear cliques no fundo enquanto o picker/modal abre -->
+          <div id="photoOverlay" class="photo-overlay" hidden></div>
 
         <div class="hero-info" style="min-width:0;">
           <div class="hero-nome">{{ nome_empresa }}</div>
@@ -531,40 +541,73 @@
     menu?.addEventListener('click', (e)=> e.stopPropagation());
     npanel?.addEventListener('click', (e)=> e.stopPropagation());
 
-    // ===== Upload de foto - opções =====
-    const fotoForm     = document.getElementById('fotoForm');
-    const inLib        = document.getElementById('fotoInputLib');
-    const inCam        = document.getElementById('fotoInputCam');
-    const inFile       = document.getElementById('fotoInputFile');
-    const pencil       = document.getElementById('pencilToggle');
-    const photoMenu    = document.getElementById('photoMenu');
+    // ===== Upload de foto - opções (MOBILE FIX) =====
+    const fotoForm  = document.getElementById('fotoForm');
+    const inLib     = document.getElementById('fotoInputLib');
+    const inCam     = document.getElementById('fotoInputCam');
+    const inFile    = document.getElementById('fotoInputFile');
+    const pencil    = document.getElementById('pencilToggle');
+    const photoMenu = document.getElementById('photoMenu');
+    const overlay   = document.getElementById('photoOverlay');
 
-    function openPhotoMenu(){ photoMenu.classList.add('open'); }
-    function closePhotoMenu(){ photoMenu.classList.remove('open'); }
+    function openPhotoMenu(){
+      photoMenu.classList.add('open');
+      if (overlay) overlay.hidden = false;
+    }
+    function closePhotoMenu(){
+      photoMenu.classList.remove('open');
+      if (overlay) overlay.hidden = true;
+    }
 
-    pencil?.addEventListener('click', function(e){ e.stopPropagation(); openPhotoMenu(); });
-    photoMenu?.addEventListener('click', e=>e.stopPropagation());
+    // Evita que toques caiam no fundo
+    overlay?.addEventListener('click', (e)=>{ e.stopPropagation(); closePhotoMenu(); });
+
+    pencil?.addEventListener('click', function(e){
+      e.preventDefault(); e.stopPropagation();
+      // Toggle simples
+      if (photoMenu.classList.contains('open')) closePhotoMenu(); else openPhotoMenu();
+    });
+    photoMenu?.addEventListener('click', (e)=>{ e.stopPropagation(); });
+
+    function triggerInput(inputEl){
+      // NÃO fecha o menu ainda (evita click-through no lápis em mobile)
+      // Abrimos o picker e só fechamos quando o usuário escolhe/cancela (no 'change').
+      try {
+        inputEl.click();
+      } catch(e) {
+        // fallback raro
+        setTimeout(()=>inputEl.click(), 0);
+      }
+    }
 
     photoMenu?.querySelectorAll('.photo-item').forEach(btn=>{
-      btn.addEventListener('click', async () => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault(); e.stopPropagation();
         const act = btn.getAttribute('data-act');
-        closePhotoMenu();
         if (act === 'gallery'){
-          inLib.value = ""; inLib.click();
+          inLib.value = ""; triggerInput(inLib);
         } else if (act === 'file'){
-          inFile.value = ""; inFile.click();
+          inFile.value = ""; triggerInput(inFile);
         } else if (act === 'camera'){
           const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
           if (isMobile){
-            inCam.value = ""; inCam.click();
+            inCam.value = ""; triggerInput(inCam);
           } else {
+            // Desktop: modal de câmera
             openCam();
+            // mantemos overlay aberto enquanto modal está ativo
           }
         }
-      });
+      }, {passive:false});
     });
 
+    function afterPick(){
+      // Fechar UI (card + overlay) quando o usuário escolhe/fecha o picker
+      closePhotoMenu();
+    }
+
     function submitIfFile(inputEl){
+      afterPick();
       if (inputEl?.files && inputEl.files.length > 0){
         if (fotoForm?.requestSubmit) fotoForm.requestSubmit(); else fotoForm?.submit();
       }
@@ -573,7 +616,7 @@
     inFile?.addEventListener('change', function(){ submitIfFile(this); });
     inCam?.addEventListener('change', function(){ submitIfFile(this); });
 
-    // ===== Webcam (desktop) =====
+    // ===== Webcam (desktop) — mantém seu código, só fechamos overlay ao fechar modal =====
     const camOverlay = document.getElementById('camOverlay');
     const camVideo   = document.getElementById('camVideo');
     const camCanvas  = document.getElementById('camCanvas');
@@ -586,12 +629,15 @@
         camStream = await navigator.mediaDevices.getUserMedia({ video:true, audio:false });
         camVideo.srcObject = camStream;
         camOverlay.classList.add('open');
+        if (overlay) overlay.hidden = false;
       }catch(err){
         alert('Não foi possível acessar a câmera. Se preferir, use "Escolher arquivo".');
+        if (overlay) overlay.hidden = true;
       }
     }
     function closeCam(){
       camOverlay.classList.remove('open');
+      if (overlay) overlay.hidden = true;
       if (camStream){
         camStream.getTracks().forEach(t=>t.stop());
         camStream = null;
@@ -613,17 +659,25 @@
         fd.append('foto', blob, 'camera.jpg');
 
         try{
-          const resp = await fetch(fotoForm.action, { method:'POST', body: fd });
+          const resp = await fetch(fotoForm.action, { method:'POST', body: fd, credentials:'same-origin' });
           if (resp.ok){
             closeCam();
             location.reload();
           }else{
+            closeCam();
             alert('Falha ao enviar a foto.');
           }
         }catch(e){
+          closeCam();
           alert('Erro ao enviar a foto.');
         }
       }, 'image/jpeg', 0.92);
+    });
+
+    // Fechamentos globais (tecla ESC / clique fora)
+    document.addEventListener('click', ()=>{ closeMenu(); closeNotif(); /* não fechamos photo aqui; overlay cuida */ });
+    document.addEventListener('keydown', (e)=>{
+      if(e.key==='Escape'){ closeMenu(); closeNotif(); closePhotoMenu(); closeCam(); }
     });
   })();
 </script>
