@@ -28,6 +28,7 @@ from werkzeug.utils import secure_filename
 import time
 import resend  # biblioteca do Resend
 from PIL import Image
+import shutil
 
 # SMTP direto (fallback)
 import smtplib, ssl
@@ -862,6 +863,59 @@ def _foto_url_runtime(emp_id: int) -> str | None:
             return url_for("static", filename=f"uploads/perfil/{fn}") + f"?v={v}"
     return None
 
+@app.context_processor
+def inject_avatar_url():
+    """
+    Disponibiliza `avatar_url` em TODOS os templates.
+    Prioridade:
+      1) session['avatar_url'] (atualizado no POST /perfil/foto com cache-buster)
+      2) campos da empresa (foto_url / logo_url), se existirem
+      3) arquivo estável legado emp_{empresa_id}.ext via _foto_url_runtime
+    Adiciona cache-buster quando for arquivo local em /static e não houver ?v=...
+    """
+    url = None
+
+    # 1) Sessão (após upload nós já salvamos aqui com ?v=timestamp)
+    sess_url = session.get('avatar_url')
+    if sess_url:
+        url = sess_url
+    else:
+        # 2) Empresa do usuário, se disponível
+        try:
+            emp, _u = _get_empresa_usuario_da_sessao()
+        except Exception:
+            emp = None
+
+        if emp:
+            # tenta campos (se existirem no modelo)
+            for attr in ('foto_url', 'logo_url'):
+                try:
+                    val = getattr(emp, attr)
+                except Exception:
+                    val = None
+                if val:
+                    url = val
+                    break
+
+            # 3) Fallback: arquivo legado emp_{id}.*
+            if not url:
+                try:
+                    url = _foto_url_runtime(emp.id)
+                except Exception:
+                    url = None
+
+    # Cache-buster para arquivos locais quando a URL não tiver querystring
+    # (evita cache antigo se estiver lendo do DB/legado)
+    if url and url.startswith('/static/') and ('?' not in url):
+        try:
+            fs_path = os.path.join(app.root_path, url.lstrip('/'))
+            v = int(os.path.getmtime(fs_path))
+            url = f"{url}?v={v}"
+        except Exception:
+            pass
+
+    return dict(avatar_url=url)
+
 # --------------------------------------------------------------------
 # Fallback de templates (evita 500 se faltar HTML)
 # --------------------------------------------------------------------
@@ -1366,6 +1420,7 @@ def perfil_foto_upload():
         flash('Formato não permitido. Use JPG, JPEG, PNG ou WEBP.', 'danger')
         return redirect(request.referrer or url_for('painel_malharia'))
 
+    # arquivo "único" no diretório de avatares
     filename  = secure_filename(f"{uid}_{int(time.time())}.webp")
     dest_path = os.path.join(AVATAR_DIR, filename)
     rel_url   = f"/static/uploads/avatars/{filename}"
@@ -1377,23 +1432,53 @@ def perfil_foto_upload():
         flash('Não foi possível processar a imagem. Tente outro arquivo.', 'danger')
         return redirect(request.referrer or url_for('painel_malharia'))
 
+    # === cria também um arquivo ESTÁVEL legado emp_{empresa_id}.webp ===
+    stable_url = None
+    try:
+        emp = _pegar_empresa_do_usuario(required=False)
+        if emp and getattr(emp, "id", None):
+            legacy_dir  = os.path.join(app.root_path, "static", "uploads", "perfil")
+            os.makedirs(legacy_dir, exist_ok=True)
+            legacy_fn   = f"emp_{emp.id}.webp"
+            legacy_path = os.path.join(legacy_dir, legacy_fn)
+            shutil.copyfile(dest_path, legacy_path)
+            # cache-buster para refletir a mudança imediatamente
+            stable_url = f"/static/uploads/perfil/{legacy_fn}?v={int(time.time())}"
+    except Exception as e:
+        app.logger.warning(f"[perfil/foto] falha ao criar arquivo estável legado: {e}")
+
     # salva no DB se houver campo; senão guarda em sessão
     try:
         updated = False
-        emp = _pegar_empresa_do_usuario(required=False)
-        for obj, attr in ((emp, 'foto_url'), (emp, 'logo_url'),
-                          (globals().get('current_user'), 'avatar_url'),
-                          (globals().get('current_user'), 'photo_url')):
-            if obj is not None and hasattr(obj, attr):
-                setattr(obj, attr, rel_url)
-                db.session.commit()
-                updated = True
-                break
+        # tenta salvar na empresa (se houver e se tiver campo); prioriza URL estável
+        if emp:
+            for attr in ('foto_url', 'logo_url'):
+                if hasattr(emp, attr):
+                    setattr(emp, attr, stable_url or rel_url)
+                    db.session.commit()
+                    updated = True
+                    break
+
+        # tenta salvar em atributos do usuário (se existirem em algum modelo)
+        if not updated and globals().get('current_user') is not None:
+            for attr in ('avatar_url', 'photo_url'):
+                try:
+                    if hasattr(current_user, attr):
+                        setattr(current_user, attr, stable_url or rel_url)
+                        db.session.commit()
+                        updated = True
+                        break
+                except Exception:
+                    pass
+
+        # fallback: sessão (garante troca imediata após reload)
         if not updated:
-            session['avatar_url'] = rel_url
+            session['avatar_url'] = stable_url or rel_url
+            session.modified = True
     except Exception as e:
         app.logger.warning(f"[perfil/foto] DB não atualizado: {e}")
-        session['avatar_url'] = rel_url
+        session['avatar_url'] = stable_url or rel_url
+        session.modified = True
 
     flash('Foto atualizada com sucesso!', 'success')
     return redirect(request.referrer or url_for('painel_malharia'))
