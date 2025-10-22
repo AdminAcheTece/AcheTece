@@ -18,7 +18,6 @@
       --bg-soft:#F7F7FA;
       --bg:#ffffff;
       --success:#2e7d32; --warn:#b85e00; --danger:#b00020;
-      --perf-bg:#F4F5F7;
     }
 
     .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
@@ -157,18 +156,14 @@
     .dot-success{ background:var(--success); }
     .dot-warn{ background:var(--warn); }
 
-    /* Painel da direita - Performance */
-    .perf-card{
-      border:1px solid var(--line); border-radius:16px; padding:14px; background:var(--perf-bg);
-      display:flex; flex-direction:column; justify-content:space-between;
+    /* ===== Coluna direita: Performance (minimalista) ===== */
+    .perf-mini{
+      border:1px solid var(--line); border-radius:16px; padding:14px; background:#fff;
+      display:flex; flex-direction:column; gap:8px; align-items:flex-start; justify-content:center;
     }
-    .perf-title{ font-weight:800; margin-bottom:8px; }
-    .perf-metrics{ display:flex; gap:18px; }
-    .perf-metric strong{ font-size:1.2rem; }
-    .perf-metric span{ font-size:.85rem; color:#666; display:block; }
-    .perf-footer{ margin-top:10px; }
-    .perf-link{ font-weight:800; color:var(--roxo); text-decoration:none; }
-    .perf-link:hover{ text-decoration:underline; }
+    .perf-mini-title{ font-weight:800; }
+    .perf-mini-link{ font-weight:800; color:var(--roxo); text-decoration:none; }
+    .perf-mini-link:hover{ text-decoration:underline; }
 
     /* ===== TABELA ===== */
     .table-wrapper{ overflow-x:auto; margin-top:8px; }
@@ -332,7 +327,6 @@
   <form id="fotoForm" action="{{ url_for('perfil_foto_upload') }}" method="POST" enctype="multipart/form-data" class="sr-only">
     {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
     <input type="file" id="fotoInput" name="foto" accept="image/*">
-    <!-- câmera nativa (mobile) -->
     <input type="file" id="fotoInputCam" name="foto" accept="image/*" capture="environment">
   </form>
 </header>
@@ -398,18 +392,10 @@
       </div>
     </div>
 
-    <!-- Coluna direita: Performance -->
-    <aside class="perf-card" id="perfCard" data-api="{{ perf_resumo_url|default('') }}">
-      <div>
-        <div class="perf-title">Performance de acesso</div>
-        <div class="perf-metrics">
-          <div class="perf-metric"><strong id="metricBuscas">{{ perf_buscas|default(0) }}</strong><span>Buscas</span></div>
-          <div class="perf-metric"><strong id="metricContatos">{{ perf_contatos|default(0) }}</strong><span>Contatos</span></div>
-        </div>
-      </div>
-      <div class="perf-footer">
-        <a href="{{ url_for('performance_acesso') }}" class="perf-link">Ver detalhes</a>
-      </div>
+    <!-- Coluna direita: Performance (apenas título + link) -->
+    <aside class="perf-mini">
+      <div class="perf-mini-title">Performance de acesso</div>
+      <a href="{{ url_for('performance_acesso') }}" class="perf-mini-link">Ver detalhes</a>
     </aside>
   </div>
   <!-- ===== /HERO ===== -->
@@ -468,7 +454,7 @@
     </table>
   </div>
 
-  <!-- Mobile: cards com a ordem solicitada -->
+  <!-- Mobile: cards -->
   <div class="teares-cards">
     {% if lista_teares|length %}
       {% for tear in lista_teares %}
@@ -632,26 +618,6 @@
         }
       }, 'image/jpeg', 0.92);
     });
-
-    // ===== Atualização dos NÚMEROS de Performance (sem alterar layout) =====
-    const perfCard = document.getElementById('perfCard');
-    const apiResumo = perfCard?.dataset.api || "";
-    const elBuscas = document.getElementById('metricBuscas');
-    const elContatos = document.getElementById('metricContatos');
-
-    // Atualiza com dados do endpoint JSON, se fornecido pelo backend em `perf_resumo_url`
-    if (apiResumo){
-      fetch(apiResumo, { headers:{ 'Accept':'application/json' }})
-        .then(r => r.ok ? r.json() : null)
-        .then(d => {
-          if (!d) return;
-          const b = d.buscas_total ?? d.buscas ?? d.total_buscas ?? d.buscas_30d;
-          const c = d.contatos_total ?? d.contatos ?? d.total_contatos ?? d.contatos_30d;
-          if (typeof b !== 'undefined' && elBuscas)  elBuscas.textContent  = Number(b);
-          if (typeof c !== 'undefined' && elContatos) elContatos.textContent = Number(c);
-        })
-        .catch(()=>{ /* silencioso: não altera layout */ });
-    }
   })();
 </script>
 </body>
