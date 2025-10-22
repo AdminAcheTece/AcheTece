@@ -27,6 +27,7 @@ from urllib.parse import urlparse
 from werkzeug.utils import secure_filename
 import time
 import resend  # biblioteca do Resend
+from PIL import Image
 
 # SMTP direto (fallback)
 import smtplib, ssl
@@ -40,8 +41,6 @@ app.logger.setLevel(logging.INFO)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-unsafe')
 app.config['PREFERRED_URL_SCHEME'] = 'https'
 
-UPLOAD_DIR = os.path.join(app.root_path, "static", "uploads", "perfil")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
 CACHE_DIR = os.path.join(BASE_DIR, 'cache_ibge')
@@ -186,18 +185,13 @@ DEMO_MODE  = os.getenv("DEMO_MODE", "true").lower() == "true"
 DEMO_TOKEN = os.getenv("DEMO_TOKEN", "localdemo")
 SEED_TOKEN = os.getenv("SEED_TOKEN", "ACHETECE")
 
-# === AVATAR / FOTO DE PERFIL ===
-import os, time
-from PIL import Image
-from werkzeug.utils import secure_filename
-from flask import request, redirect, url_for, flash, session, jsonify
+# ===== CONFIG AVATAR (definir uma única vez; sem duplicar BASE_DIR) =====
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5 MB
 
-# Tamanho máximo do upload (5 MB)
-app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
-
-# Pasta de destino
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-AVATAR_DIR = os.path.join(BASE_DIR, 'static', 'uploads', 'avatars')
+# Pastas (usar app.root_path para padronizar)
+UPLOAD_DIR  = os.path.join(app.root_path, "static", "uploads", "perfil")   # legado (emp_{id}.ext)
+AVATAR_DIR  = os.path.join(app.root_path, "static", "uploads", "avatars")  # novo fluxo (uid_timestamp.webp)
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(AVATAR_DIR, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
@@ -212,11 +206,17 @@ def _save_square_webp(file_storage, dest_path: str, side: int = 400, quality: in
     if img.mode not in ('RGB', 'L'):
         img = img.convert('RGB')
 
+    # Compat de filtro (Pillow 10+ usa Image.Resampling)
+    try:
+        _LANCZOS = Image.Resampling.LANCZOS  # type: ignore[attr-defined]
+    except Exception:
+        _LANCZOS = Image.LANCZOS
+
     w, h = img.size
     m = min(w, h)
     left = (w - m) // 2
     top = (h - m) // 2
-    img = img.crop((left, top, left + m, top + m)).resize((side, side), Image.LANCZOS)
+    img = img.crop((left, top, left + m, top + m)).resize((side, side), _LANCZOS)
     img.save(dest_path, 'WEBP', quality=quality, method=6)
 
 # --------------------------------------------------------------------
@@ -840,12 +840,25 @@ def parse_bool(val):
     return s in {'1','true','t','on','sim','s','yes','y'}
 
 def _foto_url_runtime(emp_id: int) -> str | None:
+    """
+    Resolve a URL da foto de perfil para uso imediato no template.
+    Prioriza:
+      1) session['avatar_url'] (novo fluxo /perfil/foto)
+      2) arquivo legado: static/uploads/perfil/emp_{emp_id}.ext
+    """
+    # 1) Novo fluxo: URL salva na sessão pelo POST /perfil/foto
+    sess_url = session.get('avatar_url')
+    if sess_url:
+        # opcional: cache-buster simples, caso queira
+        return sess_url
+
+    # 2) Legado: procurar por emp_{id}.ext na pasta de perfil
     base = os.path.join(app.root_path, "static", "uploads", "perfil")
-    for ext in ("png","jpg","jpeg","webp","gif"):
+    for ext in ("png", "jpg", "jpeg", "webp", "gif"):
         fn = f"emp_{emp_id}.{ext}"
         p = os.path.join(base, fn)
         if os.path.exists(p):
-            v = int(os.path.getmtime(p))          # cache-buster
+            v = int(os.path.getmtime(p))  # cache-buster
             return url_for("static", filename=f"uploads/perfil/{fn}") + f"?v={v}"
     return None
 
@@ -1336,9 +1349,9 @@ def painel_malharia():
         foto_url=foto_url,          # <<<<<<<<<<
     )
 
-@app.post('/perfil/foto')
+# ===== ROTA ÚNICA (mantenha só esta) =====
+@app.route('/perfil/foto', methods=['POST'])
 def perfil_foto_upload():
-    # precisa estar logado
     uid, email = _whoami()
     if not uid:
         flash('Você precisa estar logado para alterar a foto.', 'warning')
@@ -1353,10 +1366,9 @@ def perfil_foto_upload():
         flash('Formato não permitido. Use JPG, JPEG, PNG ou WEBP.', 'danger')
         return redirect(request.referrer or url_for('painel_malharia'))
 
-    # nome com bust de cache
-    filename = secure_filename(f"{uid}_{int(time.time())}.webp")
+    filename  = secure_filename(f"{uid}_{int(time.time())}.webp")
     dest_path = os.path.join(AVATAR_DIR, filename)
-    rel_url = f"/static/uploads/avatars/{filename}"
+    rel_url   = f"/static/uploads/avatars/{filename}"
 
     try:
         _save_square_webp(f, dest_path, side=400, quality=85)
@@ -1365,7 +1377,7 @@ def perfil_foto_upload():
         flash('Não foi possível processar a imagem. Tente outro arquivo.', 'danger')
         return redirect(request.referrer or url_for('painel_malharia'))
 
-    # tenta gravar em Empresa ou em User, se existir o campo; se não, guarda na sessão
+    # salva no DB se houver campo; senão guarda em sessão
     try:
         updated = False
         emp = _pegar_empresa_do_usuario(required=False)
@@ -1380,13 +1392,11 @@ def perfil_foto_upload():
         if not updated:
             session['avatar_url'] = rel_url
     except Exception as e:
-        app.logger.warning(f"[perfil/foto] Não atualizei no DB: {e}")
+        app.logger.warning(f"[perfil/foto] DB não atualizado: {e}")
         session['avatar_url'] = rel_url
 
     flash('Foto atualizada com sucesso!', 'success')
-    # volta para a página anterior (evita ficar em /perfil/foto)
     return redirect(request.referrer or url_for('painel_malharia'))
-
 
 # (Opcional) mensagem amigável se exceder 5 MB
 from werkzeug.exceptions import RequestEntityTooLarge
@@ -1880,39 +1890,6 @@ def performance_acesso():
         total_visitas=total_visitas,
         total_contatos=total_contatos
     )
-
-@app.route("/perfil/foto", methods=["POST"], endpoint="perfil_foto_upload")
-def perfil_foto_upload():
-    emp, u = _get_empresa_usuario_da_sessao()
-    if not emp or not u:
-        return redirect(url_for("login"))
-
-    f = request.files.get("foto")
-    if not f or f.filename == "":
-        flash("Nenhuma imagem selecionada.", "warning")
-        return redirect(url_for("painel_malharia"))
-
-    if not _allowed_file(f.filename):
-        flash("Formato inválido. Use JPG, PNG, WEBP ou GIF.", "danger")
-        return redirect(url_for("painel_malharia"))
-
-    # pasta de destino
-    save_dir = os.path.join(app.root_path, "static", "uploads", "perfil")
-    os.makedirs(save_dir, exist_ok=True)
-
-    # nomeia por ID da empresa
-    ext = os.path.splitext(secure_filename(f.filename))[1].lower() or ".jpg"
-    final_name = f"emp_{emp.id}{ext}"
-    full_path = os.path.join(save_dir, final_name)
-    f.save(full_path)
-
-    # cache-buster para a imagem nova aparecer na hora
-    v = int(time.time())
-    emp.foto_url = url_for("static", filename=f"uploads/perfil/{final_name}") + f"?v={int(time.time())}"
-    db.session.commit()
-
-    flash("Foto atualizada com sucesso!", "success")
-    return redirect(url_for("painel_malharia"))
 
 # --------------------------------------------------------------------
 # Admin: empresas
