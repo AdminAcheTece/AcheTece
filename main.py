@@ -189,97 +189,6 @@ SEED_TOKEN = os.getenv("SEED_TOKEN", "ACHETECE")
 # --------------------------------------------------------------------
 # Helpers
 # --------------------------------------------------------------------
-# ==== PERFORMANCE (totais para o card do painel) ====
-from datetime import datetime, timedelta
-from sqlalchemy import func, inspect as sa_inspect
-
-# Se você souber os nomes exatos, defina-os aqui para evitar autodetecção:
-PERF_VISITA_MODEL_NAME  = None   # ex.: "Acesso"
-PERF_CONTATO_MODEL_NAME = None   # ex.: "LeadContato"
-
-def _iter_mapped_classes():
-    try:
-        reg = db.Model._sa_registry
-        for m in reg.mappers:
-            cls = m.class_
-            tname = getattr(m.persist_selectable, "name", None)
-            yield cls, (tname or "").lower()
-    except Exception:
-        for tname in (db.metadata.tables or {}):
-            yield None, tname.lower()
-
-def _find_model_by_name_or_keywords(explicit_name, keywords):
-    if explicit_name:
-        for cls, _ in _iter_mapped_classes():
-            if cls and cls.__name__ == explicit_name:
-                return cls
-    kws = [k.lower() for k in keywords]
-    for cls, tname in _iter_mapped_classes():
-        cname = (cls.__name__.lower() if cls else "")
-        if any(k in cname or k in tname for k in kws):
-            if cls:
-                return cls
-    return None
-
-def _first_attr(model, *names):
-    for n in names:
-        if hasattr(model, n):
-            return getattr(model, n)
-    try:
-        mapper = sa_inspect(model)
-        for n in names:
-            if n in mapper.columns:
-                return getattr(model, n)
-    except Exception:
-        pass
-    return None
-
-def perf_resumo_totais(empresa_id: int, dias: int | None = None):
-    """
-    Retorna {'buscas_total': X, 'contatos_total': Y}
-    - 'buscas' (card) == VISITAS
-    - 'contatos' (card) == CONTATOS
-    """
-    try:
-        Visita = _find_model_by_name_or_keywords(
-            PERF_VISITA_MODEL_NAME, keywords=["visita", "acesso", "pageview", "busca", "view"]
-        )
-        Contato = _find_model_by_name_or_keywords(
-            PERF_CONTATO_MODEL_NAME, keywords=["contato", "lead", "whats", "email", "mensagem"]
-        )
-        if not Visita or not Contato:
-            raise RuntimeError("Modelos de visitas/contatos não encontrados.")
-
-        col_emp_vis = _first_attr(Visita,  "empresa_id", "id_empresa", "empresaId", "malharia_id")
-        col_emp_con = _first_attr(Contato, "empresa_id", "id_empresa", "empresaId", "malharia_id")
-        if col_emp_vis is None or col_emp_con is None:
-            raise RuntimeError("Campo empresa_id/id_empresa/empresaId/malharia_id ausente.")
-
-        col_dt_vis = _first_attr(Visita,  "created_at", "criado_em", "data", "dt", "timestamp", "created", "createdAt")
-        col_dt_con = _first_attr(Contato, "created_at", "criado_em", "data", "dt", "timestamp", "created", "createdAt")
-
-        qv = db.session.query(func.count("*")).select_from(Visita).filter(col_emp_vis == empresa_id)
-        qc = db.session.query(func.count("*")).select_from(Contato).filter(col_emp_con == empresa_id)
-
-        if dias is not None:
-            if col_dt_vis is None or col_dt_con is None:
-                raise RuntimeError("Sem campo de data para filtrar por período.")
-            dt_ini = datetime.utcnow() - timedelta(days=dias)
-            qv = qv.filter(col_dt_vis >= dt_ini)
-            qc = qc.filter(col_dt_con >= dt_ini)
-
-        return {
-            "buscas_total": int(qv.scalar() or 0),
-            "contatos_total": int(qc.scalar() or 0),
-        }
-    except Exception as e:
-        # Fallback: não quebra o painel — loga e volta zero
-        try:
-            app.logger.error(f"[perf_resumo_totais] fallback zero: {e}")
-        except Exception:
-            print(f"[perf_resumo_totais] fallback zero: {e}")
-        return {"buscas_total": 0, "contatos_total": 0}
-
 def _set_if_has(obj, names, value):
     """Seta no primeiro atributo existente da lista `names`."""
     for n in names:
@@ -1356,6 +1265,7 @@ def _proximo_step(emp: Empresa) -> str:
         return "teares"
     return "resumo"
 
+# --- sua rota do painel (substitua a versão atual por esta) ---
 @app.route('/painel_malharia', endpoint="painel_malharia")
 def painel_malharia():
     emp, u = _get_empresa_usuario_da_sessao()
@@ -1373,19 +1283,13 @@ def painel_malharia():
         "step": step,
     }
 
-    # notificações / chat
+    # >>> NOVO: notificações e chat
     notif_count, notif_lista = _get_notificacoes(emp.id)
-    chat_nao_lidos = 0  # ajuste se tiver chat real
+    chat_nao_lidos = 0  # ajuste aqui se tiver chat real
 
-    # foto
+    # tenta usar o que veio do BD; se vazio, detecta no filesystem
     foto_url = getattr(emp, "foto_url", None) or _foto_url_runtime(emp.id)
-
-    # === NOVO: totais para o card "Performance de acesso" ===
-    # use a mesma janela da página de performance (None = total; ou dias=30, por ex.)
-    tot = perf_resumo_totais(emp.id, dias=None)
-    perf_buscas   = tot["buscas_total"]     # = visitas
-    perf_contatos = tot["contatos_total"]   # = contatos
-
+    
     return render_template(
         "painel_malharia.html",
         empresa=emp,
@@ -1396,13 +1300,7 @@ def painel_malharia():
         notificacoes=notif_count,
         notificacoes_lista=notif_lista,
         chat_nao_lidos=chat_nao_lidos,
-        foto_url=foto_url,
-
-        # >>> NOVO: alimenta o card com os mesmos números da performance
-        perf_buscas=perf_buscas,
-        perf_contatos=perf_contatos,
-        # opcional: permite auto-refresh do card (seu HTML já usa isso)
-        perf_resumo_url=url_for("api_perf_resumo"),
+        foto_url=foto_url,          # <<<<<<<<<<
     )
 
 # --- CADASTRAR / LISTAR / SALVAR TEARES (SEM GATE DE ASSINATURA) ---
@@ -1890,22 +1788,6 @@ def performance_acesso():
         total_visitas=total_visitas,
         total_contatos=total_contatos
     )
-
-# === API: resumo de performance para o card do painel ===
-@app.get("/api/performance/resumo", endpoint="api_perf_resumo")
-def api_perf_resumo():
-    # mesmo check que você usa no painel
-    emp, u = _get_empresa_usuario_da_sessao()
-    if not emp or not u:
-        return jsonify({"error": "unauthorized"}), 401
-
-    # opcional: janela em dias ?dias=30 (se não vier, soma total)
-    janela_dias = request.args.get("dias", type=int)  # pode ser None
-    return jsonify(perf_resumo_totais(emp.id, dias=janela_dias))
-
-    resp = jsonify(tot)  # {'buscas_total':..., 'contatos_total':...}
-    resp.headers["Cache-Control"] = "no-store"
-    return resp
 
 @app.route("/perfil/foto", methods=["POST"], endpoint="perfil_foto_upload")
 def perfil_foto_upload():
