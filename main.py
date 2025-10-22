@@ -186,6 +186,39 @@ DEMO_MODE  = os.getenv("DEMO_MODE", "true").lower() == "true"
 DEMO_TOKEN = os.getenv("DEMO_TOKEN", "localdemo")
 SEED_TOKEN = os.getenv("SEED_TOKEN", "ACHETECE")
 
+# === AVATAR / FOTO DE PERFIL ===
+import os, time
+from PIL import Image
+from werkzeug.utils import secure_filename
+from flask import request, redirect, url_for, flash, session, jsonify
+
+# Tamanho máximo do upload (5 MB)
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
+
+# Pasta de destino
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+AVATAR_DIR = os.path.join(BASE_DIR, 'static', 'uploads', 'avatars')
+os.makedirs(AVATAR_DIR, exist_ok=True)
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
+
+def _allowed_file(filename: str) -> bool:
+    return ('.' in filename) and (filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS)
+
+def _save_square_webp(file_storage, dest_path: str, side: int = 400, quality: int = 85):
+    """Recorta para quadrado central, redimensiona e salva em WEBP."""
+    img = Image.open(file_storage.stream)
+    # converte p/ RGB (remove alpha) antes do WEBP
+    if img.mode not in ('RGB', 'L'):
+        img = img.convert('RGB')
+
+    w, h = img.size
+    m = min(w, h)
+    left = (w - m) // 2
+    top = (h - m) // 2
+    img = img.crop((left, top, left + m, top + m)).resize((side, side), Image.LANCZOS)
+    img.save(dest_path, 'WEBP', quality=quality, method=6)
+
 # --------------------------------------------------------------------
 # Helpers
 # --------------------------------------------------------------------
@@ -1302,6 +1335,65 @@ def painel_malharia():
         chat_nao_lidos=chat_nao_lidos,
         foto_url=foto_url,          # <<<<<<<<<<
     )
+
+@app.post('/perfil/foto')
+def perfil_foto_upload():
+    # precisa estar logado
+    uid, email = _whoami()
+    if not uid:
+        flash('Você precisa estar logado para alterar a foto.', 'warning')
+        return redirect(request.referrer or url_for('index'))
+
+    f = request.files.get('foto')
+    if not f or f.filename == '':
+        flash('Nenhum arquivo selecionado.', 'warning')
+        return redirect(request.referrer or url_for('painel_malharia'))
+
+    if not _allowed_file(f.filename):
+        flash('Formato não permitido. Use JPG, JPEG, PNG ou WEBP.', 'danger')
+        return redirect(request.referrer or url_for('painel_malharia'))
+
+    # nome com bust de cache
+    filename = secure_filename(f"{uid}_{int(time.time())}.webp")
+    dest_path = os.path.join(AVATAR_DIR, filename)
+    rel_url = f"/static/uploads/avatars/{filename}"
+
+    try:
+        _save_square_webp(f, dest_path, side=400, quality=85)
+    except Exception as e:
+        app.logger.exception(f"[perfil/foto] Falha ao salvar: {e}")
+        flash('Não foi possível processar a imagem. Tente outro arquivo.', 'danger')
+        return redirect(request.referrer or url_for('painel_malharia'))
+
+    # tenta gravar em Empresa ou em User, se existir o campo; se não, guarda na sessão
+    try:
+        updated = False
+        emp = _pegar_empresa_do_usuario(required=False)
+        for obj, attr in ((emp, 'foto_url'), (emp, 'logo_url'),
+                          (globals().get('current_user'), 'avatar_url'),
+                          (globals().get('current_user'), 'photo_url')):
+            if obj is not None and hasattr(obj, attr):
+                setattr(obj, attr, rel_url)
+                db.session.commit()
+                updated = True
+                break
+        if not updated:
+            session['avatar_url'] = rel_url
+    except Exception as e:
+        app.logger.warning(f"[perfil/foto] Não atualizei no DB: {e}")
+        session['avatar_url'] = rel_url
+
+    flash('Foto atualizada com sucesso!', 'success')
+    # volta para a página anterior (evita ficar em /perfil/foto)
+    return redirect(request.referrer or url_for('painel_malharia'))
+
+
+# (Opcional) mensagem amigável se exceder 5 MB
+from werkzeug.exceptions import RequestEntityTooLarge
+@app.errorhandler(RequestEntityTooLarge)
+def handle_too_large(e):
+    flash('Arquivo maior que 5 MB. Escolha uma imagem menor.', 'warning')
+    return redirect(request.referrer or url_for('painel_malharia'))
 
 # --- CADASTRAR / LISTAR / SALVAR TEARES (SEM GATE DE ASSINATURA) ---
 @app.route("/teares/cadastrar", methods=["GET", "POST"], endpoint="cadastrar_teares")
