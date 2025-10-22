@@ -13,12 +13,12 @@
     :root{
       --roxo:#8A00FF; --roxo-hover:#A63DFF;
       --text:#1f1f1f; --muted:#6b6b6b;
-      --line:#cfd3dc;          /* borda mais escura que antes */
-      --line-strong:#b9bfca;   /* um pouco mais forte */
-      --bg-soft:#F7F7FA;       /* fundo cinza claro do site */
+      --line:#cfd3dc;
+      --line-strong:#b9bfca;
+      --bg-soft:#F7F7FA;
       --bg:#ffffff;
       --success:#2e7d32; --warn:#b85e00; --danger:#b00020;
-      --perf-bg:#F4F5F7;       /* cinza claro para Performance */
+      --perf-bg:#F4F5F7;
     }
 
     .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
@@ -157,7 +157,7 @@
     .dot-success{ background:var(--success); }
     .dot-warn{ background:var(--warn); }
 
-    /* Painel da direita - Performance (cinza claro, sem sombra) */
+    /* Painel da direita - Performance */
     .perf-card{
       border:1px solid var(--line); border-radius:16px; padding:14px; background:var(--perf-bg);
       display:flex; flex-direction:column; justify-content:space-between;
@@ -191,7 +191,7 @@
     .icon-btn.edit:hover svg{ stroke:var(--roxo); }
     .icon-btn.danger:hover svg{ stroke:var(--danger); }
 
-    /* ===== Mobile: cards de teares (ordem solicitada) ===== */
+    /* ===== Mobile: cards de teares ===== */
     .teares-cards{ display:none; grid-template-columns:1fr; gap:10px; }
     .tear-card{ border:1px solid var(--line); border-radius:14px; background:#fff; padding:12px; }
     .tear-hd{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
@@ -201,8 +201,7 @@
     .tear-item span{ display:block; font-size:11px; color:#777; }
     .tear-item strong{ font-size:14px; }
 
-    /* posições específicas */
-    .it-tipo{ grid-column:1 / -1; }              /* TIPO sozinho */
+    .it-tipo{ grid-column:1 / -1; }
     .it-diametro{ grid-column:auto; }
     .it-finura{ grid-column:auto; }
     .it-alims{ grid-column:auto; }
@@ -400,12 +399,12 @@
     </div>
 
     <!-- Coluna direita: Performance -->
-    <aside class="perf-card">
+    <aside class="perf-card" id="perfCard" data-api="{{ perf_resumo_url|default('') }}">
       <div>
         <div class="perf-title">Performance de acesso</div>
         <div class="perf-metrics">
-          <div class="perf-metric"><strong>0</strong><span>Buscas</span></div>
-          <div class="perf-metric"><strong>0</strong><span>Contatos</span></div>
+          <div class="perf-metric"><strong id="metricBuscas">{{ perf_buscas|default(0) }}</strong><span>Buscas</span></div>
+          <div class="perf-metric"><strong id="metricContatos">{{ perf_contatos|default(0) }}</strong><span>Contatos</span></div>
         </div>
       </div>
       <div class="perf-footer">
@@ -541,27 +540,19 @@
     menu?.addEventListener('click', (e)=> e.stopPropagation());
     npanel?.addEventListener('click', (e)=> e.stopPropagation());
 
-    // ===== Upload de foto - opções (Fototeca / Tirar foto / Escolher) =====
+    // ===== Upload de foto - opções =====
     const fotoForm   = document.getElementById('fotoForm');
     const fotoInput  = document.getElementById('fotoInput');
     const fotoInputC = document.getElementById('fotoInputCam');
     const pencil     = document.getElementById('pencilToggle');
     const photoMenu  = document.getElementById('photoMenu');
 
-    function openPhotoMenu(){
-      photoMenu.classList.add('open');
-    }
-    function closePhotoMenu(){
-      photoMenu.classList.remove('open');
-    }
+    function openPhotoMenu(){ photoMenu.classList.add('open'); }
+    function closePhotoMenu(){ photoMenu.classList.remove('open'); }
 
-    pencil?.addEventListener('click', function(e){
-      e.stopPropagation();
-      openPhotoMenu();
-    });
+    pencil?.addEventListener('click', function(e){ e.stopPropagation(); openPhotoMenu(); });
     photoMenu?.addEventListener('click', e=>e.stopPropagation());
 
-    // handlers dos itens
     photoMenu?.querySelectorAll('.photo-item').forEach(btn=>{
       btn.addEventListener('click', async () => {
         const act = btn.getAttribute('data-act');
@@ -570,13 +561,11 @@
           fotoInput.value = "";
           fotoInput.click();
         } else if (act === 'camera'){
-          // Mobile: usar input capture
           const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
           if (isMobile){
             fotoInputC.value = "";
             fotoInputC.click();
           } else {
-            // Desktop: abrir webcam
             openCam();
           }
         }
@@ -625,7 +614,6 @@
       ctx.drawImage(camVideo, 0, 0, w, h);
       camCanvas.toBlob(async (blob)=>{
         if (!blob) return;
-        // envia via fetch como multipart/form-data
         const fd = new FormData();
         const csrf = fotoForm.querySelector('input[name="csrf_token"]')?.value;
         if (csrf) fd.append('csrf_token', csrf);
@@ -645,6 +633,25 @@
       }, 'image/jpeg', 0.92);
     });
 
+    // ===== Atualização dos NÚMEROS de Performance (sem alterar layout) =====
+    const perfCard = document.getElementById('perfCard');
+    const apiResumo = perfCard?.dataset.api || "";
+    const elBuscas = document.getElementById('metricBuscas');
+    const elContatos = document.getElementById('metricContatos');
+
+    // Atualiza com dados do endpoint JSON, se fornecido pelo backend em `perf_resumo_url`
+    if (apiResumo){
+      fetch(apiResumo, { headers:{ 'Accept':'application/json' }})
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (!d) return;
+          const b = d.buscas_total ?? d.buscas ?? d.total_buscas ?? d.buscas_30d;
+          const c = d.contatos_total ?? d.contatos ?? d.total_contatos ?? d.contatos_30d;
+          if (typeof b !== 'undefined' && elBuscas)  elBuscas.textContent  = Number(b);
+          if (typeof c !== 'undefined' && elContatos) elContatos.textContent = Number(c);
+        })
+        .catch(()=>{ /* silencioso: não altera layout */ });
+    }
   })();
 </script>
 </body>
