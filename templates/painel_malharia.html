@@ -546,6 +546,31 @@
     const photoMenu = document.getElementById('photoMenu');
     const overlay   = document.getElementById('photoOverlay');
 
+    function swapAvatar(el, url){
+      if(!el) return;
+      const img = el.querySelector('img');
+      if (img){ img.src = url; return; }
+      const svg = el.querySelector('svg');
+      const newImg = document.createElement('img');
+      newImg.src = url;
+      newImg.alt = 'Foto do perfil';
+      newImg.style.width = '100%';
+      newImg.style.height = '100%';
+      newImg.style.objectFit = 'cover';
+      newImg.style.display = 'block';
+      if (svg){ svg.replaceWith(newImg); } else { el.appendChild(newImg); }
+    }
+    
+    function previewAvatar(file){
+      if(!file) return;
+      const blobUrl = URL.createObjectURL(file); // URL temporária só pro preview imediato
+      // Atualiza os 3 pontos que exibem o avatar
+      swapAvatar(document.querySelector('.profile-pill .avatar'), blobUrl);
+      swapAvatar(document.querySelector('.profile-menu .pm-header .avatar'), blobUrl);
+      swapAvatar(document.querySelector('.hero-avatar'), blobUrl);
+      // não revogar agora (mantém até recarregar)
+    }
+    
     function openPhotoMenu(){
       photoMenu.classList.add('open');
       if (overlay) overlay.hidden = false;
@@ -590,6 +615,12 @@
     });
 
     function submitIfFile(inputEl){
+      // 1) Preview imediato (sem tocar no backend)
+      if (inputEl?.files && inputEl.files.length > 0){
+        previewAvatar(inputEl.files[0]);
+      }
+    
+      // 2) Fecha o popover e manda o formulário como já fazia
       closePhotoMenu();
       if (inputEl?.files && inputEl.files.length > 0){
         if (fotoForm?.requestSubmit) fotoForm.requestSubmit(); else fotoForm?.submit();
