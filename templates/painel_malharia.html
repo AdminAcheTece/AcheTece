@@ -139,6 +139,7 @@
       box-shadow:0 8px 24px rgba(0,0,0,.06);
       opacity:0; pointer-events:none; transform:translateY(6px);
       transition:.15s;
+      z-index:2000; /* fica acima do cabeçalho (z-index:50) e painéis (60) */
     }
     .photo-menu.open{ opacity:1; pointer-events:auto; transform:translateY(0); }
     .photo-item{ display:flex; align-items:center; gap:10px; width:100%; background:transparent; border:0; padding:10px 12px; cursor:pointer; }
@@ -326,8 +327,12 @@
   <!-- form oculto para upload de foto -->
   <form id="fotoForm" action="{{ url_for('perfil_foto_upload') }}" method="POST" enctype="multipart/form-data" class="sr-only">
     {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
-    <input type="file" id="fotoInput" name="foto" accept="image/*">
-    <input type="file" id="fotoInputCam" name="foto" accept="image/*" capture="environment">
+    <!-- Fototeca (galeria) -->
+    <input type="file" id="fotoInputLib"  name="foto" accept="image/*">
+    <!-- Câmera (mobile) -->
+    <input type="file" id="fotoInputCam"  name="foto" accept="image/*" capture="environment">
+    <!-- Arquivo tradicional -->
+    <input type="file" id="fotoInputFile" name="foto" accept="image/*,.jpg,.jpeg,.png,.webp,.gif">
   </form>
 </header>
 
@@ -527,11 +532,12 @@
     npanel?.addEventListener('click', (e)=> e.stopPropagation());
 
     // ===== Upload de foto - opções =====
-    const fotoForm   = document.getElementById('fotoForm');
-    const fotoInput  = document.getElementById('fotoInput');
-    const fotoInputC = document.getElementById('fotoInputCam');
-    const pencil     = document.getElementById('pencilToggle');
-    const photoMenu  = document.getElementById('photoMenu');
+    const fotoForm     = document.getElementById('fotoForm');
+    const inLib        = document.getElementById('fotoInputLib');
+    const inCam        = document.getElementById('fotoInputCam');
+    const inFile       = document.getElementById('fotoInputFile');
+    const pencil       = document.getElementById('pencilToggle');
+    const photoMenu    = document.getElementById('photoMenu');
 
     function openPhotoMenu(){ photoMenu.classList.add('open'); }
     function closePhotoMenu(){ photoMenu.classList.remove('open'); }
@@ -543,14 +549,14 @@
       btn.addEventListener('click', async () => {
         const act = btn.getAttribute('data-act');
         closePhotoMenu();
-        if (act === 'gallery' || act === 'file'){
-          fotoInput.value = "";
-          fotoInput.click();
+        if (act === 'gallery'){
+          inLib.value = ""; inLib.click();
+        } else if (act === 'file'){
+          inFile.value = ""; inFile.click();
         } else if (act === 'camera'){
           const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
           if (isMobile){
-            fotoInputC.value = "";
-            fotoInputC.click();
+            inCam.value = ""; inCam.click();
           } else {
             openCam();
           }
@@ -563,8 +569,9 @@
         if (fotoForm?.requestSubmit) fotoForm.requestSubmit(); else fotoForm?.submit();
       }
     }
-    fotoInput?.addEventListener('change', function(){ submitIfFile(this); });
-    fotoInputC?.addEventListener('change', function(){ submitIfFile(this); });
+    inLib?.addEventListener('change', function(){ submitIfFile(this); });
+    inFile?.addEventListener('change', function(){ submitIfFile(this); });
+    inCam?.addEventListener('change', function(){ submitIfFile(this); });
 
     // ===== Webcam (desktop) =====
     const camOverlay = document.getElementById('camOverlay');
