@@ -6,111 +6,109 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-
   <style>
     :root{
-      --bg:#F8FAFC; --surface:#FFFFFF; --line:#E5E7EB;
-      --text:#111827; --muted:#6B7280;
-      --accent:#6E59F2; --accent-strong:#5946E6;
-      --pill-bg:#EEF2F7; --shadow:0 6px 20px rgba(0,0,0,.06);
-      --radius-lg:14px; --radius-md:12px;
+      --bg:#F7F7FA;
+      --card:#ffffff;
+      --line:#e9e9ee;
+      --text:#111318;
+      --muted:#70737c;
+      --accent:#5B2FFF; /* roxo único e discreto p/ links */
+      --shadow:0 6px 20px rgba(0,0,0,.06);
+      --radius:16px;
     }
 
-    html,body{height:100%}
+    /* Reset & base */
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0}
     body{
-      margin:0; font-family:Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background:var(--bg); color:var(--text);
+      font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--text);
+      background:var(--bg);
       -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
     }
+    a{color:var(--accent); text-decoration:none}
+    a:hover{text-decoration:underline}
+    .wrap{max-width:1100px;margin:0 auto;padding:16px; overflow-x:hidden}
 
-    a{ color:var(--accent); text-decoration:none; }
-    a:hover{ color:var(--accent-strong); text-decoration:underline; }
+    /* Navbar minimal */
+    .navbar{padding:8px 12px;background:var(--card);border-bottom:1px solid var(--line)}
+    .logo a{display:inline-flex;align-items:center}
+    .logo img{height:44px;width:auto;display:block}
 
-    .navbar{
-      padding:10px 12px; display:flex; align-items:center;
-      background:var(--surface); border-bottom:1px solid var(--line);
-    }
-    .logo a{ display:inline-flex; align-items:center; text-decoration:none; }
-    .logo img{ height:44px; width:auto; display:block; }
-    @media (max-width:900px){ .logo img{ height:50px; } }
-
-    .wrap{ max-width:1100px; margin:0 auto; padding:16px; }
-
+    /* Cards */
     .card{
-      background:var(--surface); border:1px solid var(--line);
-      border-radius:var(--radius-lg); box-shadow:var(--shadow);
-      padding:18px; margin:14px 0;
+      background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+      box-shadow:var(--shadow); padding:18px; margin:14px 0;
     }
 
-    .head{ display:grid; grid-template-columns:1fr auto; gap:16px; align-items:start; }
-    @media (max-width:720px){ .head{ grid-template-columns:1fr; } }
-    .title{ margin:0; font-size:26px; font-weight:700; letter-spacing:.2px; }
-    .sub{ margin:6px 0 0; color:var(--muted); font-size:14px; }
-    .pill{
-      display:inline-flex; align-items:center; gap:8px; height:28px; padding:0 12px;
-      background:var(--pill-bg); border:1px solid var(--line); border-radius:9999px;
-      font-weight:600; font-size:12.5px; color:#334155;
-    }
+    /* Header da empresa */
+    .head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+    .title{margin:0;font-size:24px;font-weight:800}
+    .sub{margin:6px 0 0;color:var(--muted);font-weight:600}
+    .pill{display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:9999px;
+      background:#f5f3ff;border:1px solid #ece8ff;font-size:12.5px;font-weight:700;color:#4e36c6}
 
-    .actions{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-    .btn{
-      display:inline-flex; align-items:center; justify-content:center;
-      height:38px; padding:0 14px; gap:8px; border-radius:9999px;
-      border:1px solid var(--line); background:#fff; color:var(--text);
-      font-weight:600; text-decoration:none; transition:.16s ease; cursor:pointer;
-    }
-    .btn:hover{ border-color:#D1D5DB; background:#F9FAFB; text-decoration:none; }
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    .btn{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 14px;
+      border-radius:9999px;border:1px solid var(--line);background:#fff;color:var(--text);font-weight:700}
+    .btn:hover{background:#fafafa}
+    .btn-icon{height:38px;padding:0 12px}
+    .svg{width:18px;height:18px;display:inline-block;vertical-align:middle;flex:0 0 18px}
+    .btn-ghost{border-color:transparent;background:transparent;color:var(--accent)}
+    .btn-ghost:hover{background:#f6f5ff}
 
-    .btn-link{
-      display:inline-flex; align-items:center; gap:8px; padding:0 8px; height:36px;
-      border-radius:8px; color:var(--text); background:transparent; border:1px solid transparent;
-      font-weight:600;
-    }
-    .btn-link:hover{ background:#F3F4F6; border-color:#E5E7EB; text-decoration:none; }
+    /* Seção informações da empresa */
+    .sec-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 10px}
+    h2.sec{margin:0;font-size:20px;font-weight:800}
+    .maps-link{display:inline-flex;align-items:center;gap:8px;font-weight:800;color:var(--accent)}
+    .maps-link .svg{width:19px;height:19px}
 
-    .icon-btn{
-      width:38px; height:38px; display:inline-flex; align-items:center; justify-content:center;
-      border:1px solid var(--line); border-radius:9999px; background:#fff; transition:.16s ease;
-    }
-    .icon-btn:hover{ border-color:#D1D5DB; background:#F9FAFB; }
-    .icon{ width:18px; height:18px; display:block; }
+    .empresa-grid{display:grid;grid-template-columns:1.2fr .9fr;gap:18px;align-items:start}
+    @media (max-width:900px){ .empresa-grid{grid-template-columns:1fr} }
 
-    .sec-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 10px; }
-    h2.sec{ font-size:18px; margin:0; font-weight:700; }
-
-    .empresa-grid{ display:grid; grid-template-columns:1.1fr .9fr; gap:18px; align-items:start; }
-    @media (max-width:900px){ .empresa-grid{ grid-template-columns:1fr; } }
-
-    dl.dados{
-      display:grid; grid-template-columns:160px 1fr; gap:10px 14px;
-      border:1px solid var(--line); border-radius:var(--radius-md);
-      padding:14px; background:var(--surface);
+    .dados{
+      display:grid; grid-template-columns:180px 1fr; gap:10px 14px;
+      border:1px solid var(--line); border-radius:12px; padding:14px; background:#fff;
     }
     .dados dt{
-      font-size:12px; text-transform:uppercase; letter-spacing:.04em;
-      color:var(--muted); font-weight:700;
+      font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:900;
     }
-    .dados dd{ margin:0; font-size:15px; font-weight:600; color:var(--text); }
-    /* >>> padronização pedida: mesmo estilo da linha "Rua..." para o nome */
-    .value-strong{ font-weight:700; color:var(--text); }
-    .addr .linha{ display:block; }
-    .addr .rua{ font-weight:700; color:var(--text); }  /* garante mesma cor/força */
-    .addr .local, .addr .cep{ color:#374151; font-weight:600; }
+    .dados dd{
+      margin:0; font-size:15px; font-weight:600; color:var(--text);
+      min-width:0; /* evita overflow no grid */
+    }
+    /* valor padronizado (mesma cara p/ nome e endereço) */
+    .v{display:block; line-height:1.45; color:var(--text); font-weight:700; font-size:16px}
+    .v--soft{font-weight:600; font-size:15px}
+    /* e-mails e textos longos não estouram a largura */
+    .dados dd, .dados a{word-break:break-word; overflow-wrap:anywhere}
 
-    .mapa{ border:1px solid var(--line); border-radius:var(--radius-md); overflow:hidden; background:var(--surface); }
-    .mapa iframe{ width:100%; height:220px; border:0; display:block; }
-    .mapa small{ display:block; padding:8px 10px; color:var(--muted); }
+    .addr .linha{display:block}
+    .addr .rua{font-weight:700}
+    .addr .local, .addr .cep{color:var(--text); font-weight:600} /* mesma cor do endereço */
 
-    .table-wrap{ overflow-x:auto; border:1px solid var(--line); border-radius:var(--radius-md); background:var(--surface); }
-    table{ width:100%; border-collapse:collapse; }
-    thead th{ background:#F3F4F6; font-weight:700; font-size:13px; color:#374151; }
-    th, td{ padding:10px 12px; border-bottom:1px solid #EEF2F7; font-size:14px; vertical-align:middle; }
-    thead th, tbody td{ text-align:center; }
-    tbody tr:nth-child(even){ background:#FAFAFA; }
-    tbody tr:hover{ background:#F6F7F9; }
+    /* Mapa */
+    .mapa{border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#fff}
+    .mapa iframe{width:100%; height:220px; border:0; display:block}
+    @media (max-width:640px){ .mapa iframe{height:180px} }
+    .mapa small{display:block; padding:8px 10px; color:#666}
 
-    .footer-spacer{ height:8px; }
-    .sr-only{ position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0; }
+    /* Teares (cards estilo index mobile, sem faixa roxa) */
+    .teares-grid{
+      display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    }
+    .tear{
+      border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff;
+      box-shadow:0 4px 14px rgba(0,0,0,.04);
+    }
+    .tear h3{margin:0 0 8px; font-size:18px; font-weight:800}
+    .kv{display:grid; grid-template-columns:1fr 1fr; gap:8px 12px}
+    .kv .k{color:var(--muted); font-weight:700}
+    .kv .v{font-weight:800; font-size:16px}
+    @media (max-width:520px){ .kv{grid-template-columns:1fr 1fr} }
+
+    .footer-spacer{height:8px}
   </style>
 </head>
 <body>
@@ -123,6 +121,7 @@
   </header>
 
   <main class="wrap">
+    <!-- Cabeçalho simples -->
     <section class="card">
       <div class="head">
         <div>
@@ -133,14 +132,14 @@
           </p>
         </div>
         <div class="actions">
+          {# WhatsApp: manter apenas ícone discreto #}
           {% set _fone = empresa.telefone or empresa.contato_telefone or empresa.celular %}
-          {% set _wa = empresa.contato_whatsapp or (('https://wa.me/' ~ ('55' ~ _fone if _fone and not _fone.startswith('55') else _fone)) if _fone else None) %}
+          {% set _wa = empresa.contato_whatsapp or (('https://wa.me/' ~ ('55' ~ _fone|replace(' ','')|replace('(','')|replace(')','')|replace('-','') if _fone and not (_fone|replace(' ','')|replace('(','')|replace(')','')|replace('-','') ).startswith('55') else _fone|replace(' ','')|replace('(','')|replace(')','')|replace('-',''))) if _fone else None) %}
           {% if _wa %}
-            <a class="icon-btn" href="{{ _wa }}" target="_blank" rel="noopener" title="WhatsApp">
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path fill="currentColor" d="M20.52 3.48A11.9 11.9 0 0 0 12.06 0C5.48 0 .16 5.33.16 11.92c0 2.1.55 4.16 1.6 5.98L0 24l6.3-1.64a11.9 11.9 0 0 0 5.76 1.47h.01c6.58 0 11.9-5.33 11.9-11.92 0-3.18-1.24-6.17-3.45-8.43ZM12.06 21.3h-.01c-1.84 0-3.64-.49-5.2-1.41l-.37-.22-3.74.97.99-3.64-.24-.37A9.73 9.73 0 0 1 2.34 11.9c0-5.37 4.36-9.73 9.72-9.73 2.6 0 5.04 1.01 6.88 2.86a9.65 9.65 0 0 1 2.85 6.87c0 5.37-4.36 9.73-9.72 9.73Zm5.37-7.28c-.29-.15-1.7-.84-1.97-.93-.27-.1-.47-.15-.66.14-.2.29-.76.94-.93 1.13-.17.2-.34.22-.63.08-.29-.15-1.23-.45-2.34-1.43-.86-.76-1.44-1.7-1.61-1.99-.17-.29-.02-.45.13-.6.14-.14.29-.34.43-.51.15-.17.2-.29.29-.49.1-.2.05-.37-.02-.52-.07-.15-.66-1.61-.9-2.2-.24-.58-.49-.5-.66-.51h-.57c-.2 0-.52.07-.8.37-.27.29-1.05 1.02-1.05 2.49 0 1.46 1.08 2.88 1.23 3.08.15.2 2.12 3.24 5.13 4.55.72.31 1.29.49 1.73.63.73.23 1.39.2 1.91.12.58-.09 1.7-.69 1.94-1.36.24-.66.24-1.24.17-1.36-.07-.12-.26-.19-.55-.34Z"/>
+            <a class="btn btn-ghost btn-icon" href="{{ _wa }}" target="_blank" rel="noopener" aria-label="WhatsApp">
+              <svg class="svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M20.52 3.48A11.77 11.77 0 0 0 12.01 0C5.4 0 .03 5.37.03 12c0 2.11.55 4.17 1.6 5.99L0 24l6.19-1.61A11.93 11.93 0 0 0 12 24c6.62 0 12-5.37 12-12 0-3.21-1.25-6.23-3.48-8.52Zm-8.51 18.2a9.9 9.9 0 0 1-5.05-1.39l-.36-.21-3.68.96.98-3.58-.23-.37A9.92 9.92 0 1 1 21.9 12c0 5.46-4.44 9.68-9.89 9.68Zm5.68-7.25c-.31-.16-1.83-.9-2.11-1.01-.28-.11-.48-.16-.68.16-.2.31-.78 1.01-.96 1.22-.18.21-.36.23-.66.08-.31-.16-1.31-.48-2.49-1.52-.92-.82-1.54-1.82-1.72-2.13-.18-.31-.02-.48.13-.64.14-.14.31-.36.47-.54.16-.18.21-.31.31-.52.1-.21.05-.39-.03-.55-.08-.16-.68-1.63-.93-2.24-.24-.58-.49-.5-.68-.51l-.58-.01c-.2 0-.52.08-.79.39-.27.31-1.04 1.02-1.04 2.49 0 1.47 1.07 2.9 1.22 3.1.15.2 2.12 3.24 5.14 4.54.72.31 1.28.5 1.71.64.72.23 1.38.2 1.9.12.58-.09 1.83-.75 2.09-1.47.26-.72.26-1.33.18-1.46-.08-.13-.28-.21-.59-.37Z"/>
               </svg>
-              <span class="sr-only">WhatsApp</span>
             </a>
           {% endif %}
           <a class="btn" href="{{ url_for('index') }}">Voltar</a>
@@ -148,6 +147,7 @@
       </div>
     </section>
 
+    {# ==== Endereço e Maps ==== #}
     {% set _logradouro = empresa.endereco or empresa.logradouro or empresa.endereco_completo %}
     {% set _numero     = empresa.numero %}
     {% set _bairro     = empresa.bairro %}
@@ -170,11 +170,11 @@
       <div class="sec-head">
         <h2 class="sec">Informações da empresa</h2>
         {% if tem_end %}
-          <a class="btn-link" href="{{ map_url }}" target="_blank" rel="noopener" title="Abrir no Google Maps">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Z"/>
+          <a class="maps-link" href="{{ map_url }}" target="_blank" rel="noopener">
+            <svg class="svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 2C7.86 2 4.5 5.36 4.5 9.5c0 5.25 7.5 12 7.5 12s7.5-6.75 7.5-12C19.5 5.36 16.14 2 12 2Zm0 10.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z"/>
             </svg>
-            <span>Ver no Maps</span>
+            Ver no Maps
           </a>
         {% endif %}
       </div>
@@ -185,55 +185,54 @@
           {% set _sn = empresa.contato_sobrenome or empresa.responsavel_sobrenome %}
           {% set pessoa_contato = ((_pn or '') ~ (' ' ~ _sn if _sn else '')).strip() %}
           <dt>Pessoa de contato</dt>
-          <dd><span class="value-strong">{{ pessoa_contato if pessoa_contato else '—' }}</span></dd>
+          <dd><span class="v">{{ pessoa_contato if pessoa_contato else '—' }}</span></dd>
 
           <dt>Telefone</dt>
           <dd>
-            {% set _fone_local = empresa.telefone or empresa.contato_telefone or empresa.celular %}
-            {% if _fone_local %}
-              {# normaliza e formata (DDD) nnnnn-nnnn | (DDD) nnnn-nnnn #}
-              {% set _raw = (_fone_local|string) %}
-              {% set d = _raw|replace(' ','')|replace('(','')|replace(')','')|replace('-','')|replace('.','')|replace('+','') %}
-              {% if d.startswith('55') and d|length > 11 %}{% set d = d[2:] %}{% endif %}
-              {% if d|length == 11 %}
-                {% set ddd = d[:2] %}{% set A = d[2:7] %}{% set B = d[7:] %}
-              {% elif d|length == 10 %}
-                {% set ddd = d[:2] %}{% set A = d[2:6] %}{% set B = d[6:] %}
+            {# --- Formatação (DDD) xxxx-xxxx / (DDD) xxxxx-xxxx --- #}
+            {% if _fone %}
+              {% set fraw = _fone|replace(' ','')|replace('(','')|replace(')','')|replace('-','') %}
+              {% if fraw.startswith('55') %}{% set fraw = fraw[2:] %}{% endif %}
+              {% set ddd = fraw[:2] %}
+              {% set resto = fraw[2:] %}
+              {% if resto|length == 9 %}
+                {% set p1 = resto[:5] %}{% set p2 = resto[5:] %}
               {% else %}
-                {% set ddd = d[:2] %}{% set A = d[2:-4] %}{% set B = d[-4:] %}
+                {% set p1 = resto[:4] %}{% set p2 = resto[4:] %}
               {% endif %}
-              {% set fone_fmt = '(' ~ ddd ~ ') ' ~ A ~ ('-' ~ B if B else '') %}
-              <a href="tel:{{ '55' ~ d if not d.startswith('55') else d }}">{{ fone_fmt }}</a>
+              {% set display = '(' ~ ddd ~ ') ' ~ p1 ~ '-' ~ p2 %}
+              {% set telhref = 'tel:' ~ ('55' ~ fraw if not fraw.startswith('55') else fraw) %}
+              <a href="{{ telhref }}">{{ display }}</a>
             {% else %}—{% endif %}
           </dd>
 
           <dt>E-mail</dt>
           <dd>
             {% set _email = empresa.email or empresa.contato_email %}
-            {% if _email %}<a href="mailto:{{ _email }}">{{ _email }}</a>{% else %}—{% endif %}
+            {% if _email %}
+              <a href="mailto:{{ _email }}"><span class="v--soft">{{ _email }}</span></a>
+            {% else %}—{% endif %}
           </dd>
 
           <dt>Endereço</dt>
           <dd>
             {% if tem_end %}
               <div class="addr">
-                <span class="linha rua">
+                <span class="linha rua v">
                   {{ _logradouro or '' }}{% if _numero %}, {{ _numero }}{% endif %}{% if _bairro %} – {{ _bairro }}{% endif %}
                 </span>
-                <span class="linha local">
+                <span class="linha local v--soft">
                   {{ _cidade or '' }}{% if _estado %}/{{ _estado }}{% endif %}
                   {% if _cep %}<span class="cep"> • CEP {{ _cep }}</span>{% endif %}
                 </span>
               </div>
-            {% else %}
-              —
-            {% endif %}
+            {% else %}—{% endif %}
           </dd>
         </dl>
 
         <div class="mapa">
           {% if tem_end %}
-            <iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="{{ map_url }}&output=embed"></iframe>
+            <iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="{{ map_url }}&output=embed" title="Mapa"></iframe>
             <small>Localização aproximada com base no endereço cadastrado.</small>
           {% else %}
             <div style="padding:14px;">Sem endereço cadastrado para exibir no mapa.</div>
@@ -242,42 +241,45 @@
       </div>
     </section>
 
+    <!-- Teares da malharia (cards responsivos, sem faixa roxa) -->
     <section class="card">
-      <h2 class="sec">Teares desta malharia</h2>
+      <h2 class="sec" style="margin-bottom:10px">Teares desta malharia</h2>
+
       {% if teares and teares|length %}
-        <div class="table-wrap" role="region" aria-label="Lista de teares" tabindex="0">
-          <table>
-            <thead>
-              <tr>
-                <th>Tipo</th><th>Galga</th><th>Diâmetro</th><th>Alimentadores</th><th>Elastano</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for t in teares %}
-                <tr>
-                  <td>{{ t.tipo or '—' }}</td>
-                  <td>{{ t.finura or t.galga or '—' }}</td>
-                  <td>{{ t.diametro or '—' }}</td>
-                  <td>{{ t.alimentadores or '—' }}</td>
-                  <td>
+        <div class="teares-grid" role="region" aria-label="Lista de teares">
+          {% for t in teares %}
+            <article class="tear">
+              <h3>{{ t.tipo or 'Tear' }}</h3>
+              <div class="kv">
+                <div>
+                  <div class="k">Diâmetro</div>
+                  <div class="v">{{ t.diametro or '—' }}</div>
+                </div>
+                <div>
+                  <div class="k">Galga</div>
+                  <div class="v">{{ t.finura or t.galga or '—' }}</div>
+                </div>
+                <div>
+                  <div class="k">Alimentadores</div>
+                  <div class="v">{{ t.alimentadores or '—' }}</div>
+                </div>
+                <div>
+                  <div class="k">Elastano</div>
+                  <div class="v">
                     {% set raw = t.elastano if (t.elastano is not none) else t.kit_elastano %}
                     {% if raw is boolean %}
                       {{ 'Sim' if raw else 'Não' }}
                     {% else %}
                       {% set s = (raw|string).strip().lower() %}
-                      {% if s in ['sim','s','true','t','on','1','com','tem','yes','y'] %}
-                        Sim
-                      {% elif s in ['não','nao','n','false','f','off','0','sem','no'] %}
-                        Não
-                      {% else %}
-                        —
-                      {% endif %}
+                      {% if s in ['sim','s','true','t','on','1','com','tem','yes','y'] %}Sim
+                      {% elif s in ['não','nao','n','false','f','off','0','sem','no'] %}Não
+                      {% else %}—{% endif %}
                     {% endif %}
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+                  </div>
+                </div>
+              </div>
+            </article>
+          {% endfor %}
         </div>
       {% else %}
         <div>Nenhum tear cadastrado para esta empresa.</div>
