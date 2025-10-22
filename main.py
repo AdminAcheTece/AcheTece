@@ -189,6 +189,34 @@ SEED_TOKEN = os.getenv("SEED_TOKEN", "ACHETECE")
 # --------------------------------------------------------------------
 # Helpers
 # --------------------------------------------------------------------
+# ==== PERFORMANCE: totais de visitas/contatos ====
+from datetime import datetime, timedelta
+from sqlalchemy import func
+
+def perf_resumo_totais(empresa_id: int, dias: int | None = None):
+    """
+    Retorna {'buscas_total': X, 'contatos_total': Y}
+    - visitas == "buscas" do card
+    - contatos == "contatos" do card
+    Ajuste os nomes dos MODELOS/CAMPOS abaixo conforme o seu projeto.
+    """
+    # >>> ajuste aqui os modelos reais <<<
+    from models import Visita, Contato  # ex.: Visita/Contato/Lead etc.
+
+    q_vis = db.session.query(func.count(Visita.id)).filter(Visita.empresa_id == empresa_id)
+    q_con = db.session.query(func.count(Contato.id)).filter(Contato.empresa_id == empresa_id)
+
+    # ajuste o nome do campo de data (created_at, criado_em, data, dt, ...)
+    if dias is not None:
+        dt_ini = datetime.utcnow() - timedelta(days=dias)
+        q_vis = q_vis.filter(Visita.created_at >= dt_ini)
+        q_con = q_con.filter(Contato.created_at >= dt_ini)
+
+    return {
+        "buscas_total": int(q_vis.scalar() or 0),     # = total_visitas
+        "contatos_total": int(q_con.scalar() or 0),   # = total_contatos
+    }
+
 def _set_if_has(obj, names, value):
     """Seta no primeiro atributo existente da lista `names`."""
     for n in names:
@@ -1265,7 +1293,6 @@ def _proximo_step(emp: Empresa) -> str:
         return "teares"
     return "resumo"
 
-# --- sua rota do painel (substitua a versão atual por esta) ---
 @app.route('/painel_malharia', endpoint="painel_malharia")
 def painel_malharia():
     emp, u = _get_empresa_usuario_da_sessao()
@@ -1283,13 +1310,19 @@ def painel_malharia():
         "step": step,
     }
 
-    # >>> NOVO: notificações e chat
+    # notificações / chat
     notif_count, notif_lista = _get_notificacoes(emp.id)
-    chat_nao_lidos = 0  # ajuste aqui se tiver chat real
+    chat_nao_lidos = 0  # ajuste se tiver chat real
 
-    # tenta usar o que veio do BD; se vazio, detecta no filesystem
+    # foto
     foto_url = getattr(emp, "foto_url", None) or _foto_url_runtime(emp.id)
-    
+
+    # === NOVO: totais para o card "Performance de acesso" ===
+    # use a mesma janela da página de performance (None = total; ou dias=30, por ex.)
+    tot = perf_resumo_totais(emp.id, dias=None)
+    perf_buscas   = tot["buscas_total"]     # = visitas
+    perf_contatos = tot["contatos_total"]   # = contatos
+
     return render_template(
         "painel_malharia.html",
         empresa=emp,
@@ -1300,7 +1333,13 @@ def painel_malharia():
         notificacoes=notif_count,
         notificacoes_lista=notif_lista,
         chat_nao_lidos=chat_nao_lidos,
-        foto_url=foto_url,          # <<<<<<<<<<
+        foto_url=foto_url,
+
+        # >>> NOVO: alimenta o card com os mesmos números da performance
+        perf_buscas=perf_buscas,
+        perf_contatos=perf_contatos,
+        # opcional: permite auto-refresh do card (seu HTML já usa isso)
+        perf_resumo_url=url_for("api_perf_resumo"),
     )
 
 # --- CADASTRAR / LISTAR / SALVAR TEARES (SEM GATE DE ASSINATURA) ---
@@ -1788,6 +1827,22 @@ def performance_acesso():
         total_visitas=total_visitas,
         total_contatos=total_contatos
     )
+
+# === API: resumo de performance para o card do painel ===
+@app.get("/api/performance/resumo", endpoint="api_perf_resumo")
+def api_perf_resumo():
+    # mesmo check que você usa no painel
+    emp, u = _get_empresa_usuario_da_sessao()
+    if not emp or not u:
+        return jsonify({"error": "unauthorized"}), 401
+
+    # opcional: janela em dias ?dias=30 (se não vier, soma total)
+    janela_dias = request.args.get("dias", type=int)
+    tot = perf_resumo_totais(emp.id, dias=janela_dias)
+
+    resp = jsonify(tot)  # {'buscas_total':..., 'contatos_total':...}
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
 
 @app.route("/perfil/foto", methods=["POST"], endpoint="perfil_foto_upload")
 def perfil_foto_upload():
