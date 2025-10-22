@@ -189,18 +189,15 @@ SEED_TOKEN = os.getenv("SEED_TOKEN", "ACHETECE")
 # --------------------------------------------------------------------
 # Helpers
 # --------------------------------------------------------------------
-# ==== PERFORMANCE: totais usados no card do painel (autodetecta modelos) ====
+# ==== PERFORMANCE (totais para o card do painel) ====
 from datetime import datetime, timedelta
 from sqlalchemy import func, inspect as sa_inspect
 
-# OPCIONAL: fixe aqui os nomes exatos dos seus modelos se já souber:
-PERF_VISITA_MODEL_NAME  = None   # ex: 'Acesso', 'PageView', 'VisitaLog'
-PERF_CONTATO_MODEL_NAME = None   # ex: 'LeadContato', 'ContatoLog'
+# Se você souber os nomes exatos, defina-os aqui para evitar autodetecção:
+PERF_VISITA_MODEL_NAME  = None   # ex.: "Acesso"
+PERF_CONTATO_MODEL_NAME = None   # ex.: "LeadContato"
 
 def _iter_mapped_classes():
-    """
-    Retorna (cls, table_name) para todas as classes mapeadas do SQLAlchemy/Flask-SQLAlchemy.
-    """
     try:
         reg = db.Model._sa_registry
         for m in reg.mappers:
@@ -208,21 +205,14 @@ def _iter_mapped_classes():
             tname = getattr(m.persist_selectable, "name", None)
             yield cls, (tname or "").lower()
     except Exception:
-        # Fallback: tenta ao menos nomes de tabela
         for tname in (db.metadata.tables or {}):
             yield None, tname.lower()
 
 def _find_model_by_name_or_keywords(explicit_name, keywords):
-    """
-    Tenta: 1) nome explícito da classe (string), 2) por palavras-chave em nome da classe ou da tabela.
-    """
     if explicit_name:
-        # procura por classe com este __name__
-        for cls, _t in _iter_mapped_classes():
+        for cls, _ in _iter_mapped_classes():
             if cls and cls.__name__ == explicit_name:
                 return cls
-
-    # senão, tenta por palavras-chave
     kws = [k.lower() for k in keywords]
     for cls, tname in _iter_mapped_classes():
         cname = (cls.__name__.lower() if cls else "")
@@ -232,11 +222,9 @@ def _find_model_by_name_or_keywords(explicit_name, keywords):
     return None
 
 def _first_attr(model, *names):
-    """Primeiro atributo existente no model, ou None."""
     for n in names:
         if hasattr(model, n):
             return getattr(model, n)
-    # tenta via mapper/columns
     try:
         mapper = sa_inspect(model)
         for n in names:
@@ -252,48 +240,45 @@ def perf_resumo_totais(empresa_id: int, dias: int | None = None):
     - 'buscas' (card) == VISITAS
     - 'contatos' (card) == CONTATOS
     """
-    # 1) Descobre classes
-    Visita = _find_model_by_name_or_keywords(
-        PERF_VISITA_MODEL_NAME,  # se setado, prioriza
-        keywords=["visita", "acesso", "pageview", "busca", "view"],
-    )
-    Contato = _find_model_by_name_or_keywords(
-        PERF_CONTATO_MODEL_NAME,
-        keywords=["contato", "lead", "whats", "email", "mensagem"],
-    )
-    if not Visita or not Contato:
-        nomes = [getattr(c, "__name__", "?") for c, _ in _iter_mapped_classes()]
-        raise RuntimeError(
-            "Modelos de visitas/contatos não encontrados. "
-            f"Tente configurar PERF_VISITA_MODEL_NAME/ PERF_CONTATO_MODEL_NAME. "
-            f"Mapeados: {', '.join(nomes) or '(vazio)'}"
+    try:
+        Visita = _find_model_by_name_or_keywords(
+            PERF_VISITA_MODEL_NAME, keywords=["visita", "acesso", "pageview", "busca", "view"]
         )
+        Contato = _find_model_by_name_or_keywords(
+            PERF_CONTATO_MODEL_NAME, keywords=["contato", "lead", "whats", "email", "mensagem"]
+        )
+        if not Visita or not Contato:
+            raise RuntimeError("Modelos de visitas/contatos não encontrados.")
 
-    # 2) Descobre colunas (empresa e data)
-    col_emp_vis = _first_attr(Visita,  "empresa_id", "id_empresa", "empresaId", "malharia_id")
-    col_emp_con = _first_attr(Contato, "empresa_id", "id_empresa", "empresaId", "malharia_id")
-    if col_emp_vis is None or col_emp_con is None:
-        raise RuntimeError("Campo empresa_id/id_empresa/empresaId/malharia_id não encontrado nos modelos.")
+        col_emp_vis = _first_attr(Visita,  "empresa_id", "id_empresa", "empresaId", "malharia_id")
+        col_emp_con = _first_attr(Contato, "empresa_id", "id_empresa", "empresaId", "malharia_id")
+        if col_emp_vis is None or col_emp_con is None:
+            raise RuntimeError("Campo empresa_id/id_empresa/empresaId/malharia_id ausente.")
 
-    col_dt_vis = _first_attr(Visita,  "created_at", "criado_em", "data", "dt", "timestamp", "created", "createdAt")
-    col_dt_con = _first_attr(Contato, "created_at", "criado_em", "data", "dt", "timestamp", "created", "createdAt")
+        col_dt_vis = _first_attr(Visita,  "created_at", "criado_em", "data", "dt", "timestamp", "created", "createdAt")
+        col_dt_con = _first_attr(Contato, "created_at", "criado_em", "data", "dt", "timestamp", "created", "createdAt")
 
-    # 3) COUNT(*)
-    qv = db.session.query(func.count("*")).select_from(Visita).filter(col_emp_vis == empresa_id)
-    qc = db.session.query(func.count("*")).select_from(Contato).filter(col_emp_con == empresa_id)
+        qv = db.session.query(func.count("*")).select_from(Visita).filter(col_emp_vis == empresa_id)
+        qc = db.session.query(func.count("*")).select_from(Contato).filter(col_emp_con == empresa_id)
 
-    if dias is not None:
-        if col_dt_vis is None or col_dt_con is None:
-            raise RuntimeError("Não há campo de data nos modelos para filtrar por período.")
-        dt_ini = datetime.utcnow() - timedelta(days=dias)
-        qv = qv.filter(col_dt_vis >= dt_ini)
-        qc = qc.filter(col_dt_con >= dt_ini)
+        if dias is not None:
+            if col_dt_vis is None or col_dt_con is None:
+                raise RuntimeError("Sem campo de data para filtrar por período.")
+            dt_ini = datetime.utcnow() - timedelta(days=dias)
+            qv = qv.filter(col_dt_vis >= dt_ini)
+            qc = qc.filter(col_dt_con >= dt_ini)
 
-    return {
-        "buscas_total": int(qv.scalar() or 0),     # = total_visitas
-        "contatos_total": int(qc.scalar() or 0),   # = total_contatos
-    }
-
+        return {
+            "buscas_total": int(qv.scalar() or 0),
+            "contatos_total": int(qc.scalar() or 0),
+        }
+    except Exception as e:
+        # Fallback: não quebra o painel — loga e volta zero
+        try:
+            app.logger.error(f"[perf_resumo_totais] fallback zero: {e}")
+        except Exception:
+            print(f"[perf_resumo_totais] fallback zero: {e}")
+        return {"buscas_total": 0, "contatos_total": 0}
 
 def _set_if_has(obj, names, value):
     """Seta no primeiro atributo existente da lista `names`."""
@@ -1916,7 +1901,7 @@ def api_perf_resumo():
 
     # opcional: janela em dias ?dias=30 (se não vier, soma total)
     janela_dias = request.args.get("dias", type=int)  # pode ser None
-    return jsonify(perf_resumo_totais(emp.id, dias=janela_dias)))
+    return jsonify(perf_resumo_totais(emp.id, dias=janela_dias))
 
     resp = jsonify(tot)  # {'buscas_total':..., 'contatos_total':...}
     resp.headers["Cache-Control"] = "no-store"
