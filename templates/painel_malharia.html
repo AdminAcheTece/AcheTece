@@ -268,7 +268,7 @@
 
     <button class="profile-pill" id="profileToggle" type="button" aria-haspopup="menu" aria-expanded="false" title="Abrir menu do perfil">
       <span class="avatar">
-        {% if foto_url %}
+        {% if avatar_url %}
           <img src="{{ avatar_url }}" alt="Foto do perfil">
         {% else %}
           <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#6a5acd" fill="none" stroke-width="1.8"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7" stroke="#6a5acd" fill="none" stroke-width="1.8"></path></svg>
@@ -283,7 +283,7 @@
   <nav class="profile-menu" id="profileMenu" role="menu" aria-label="Menu de perfil">
     <div class="pm-header">
       <span class="avatar">
-        {% if foto_url %}
+        {% if avatar_url %}
           <img src="{{ avatar_url }}" alt="Foto do perfil">
         {% else %}
           <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#6a5acd" fill="none" stroke-width="1.8"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7" stroke="#6a5acd" fill="none" stroke-width="1.8"></path></svg>
@@ -350,8 +350,9 @@
 {% set lista_teares =
     (teares if teares is defined and teares is not none
      else (empresa.teares if empresa and empresa.teares else [])) %}
-{# Preferimos avatar_url (injetado pelo contexto), senão foto_url legado, senão sessão #}
-{% set avatar_url = (avatar_url or foto_url or session.get('avatar_url')) %}
+
+{# URL do avatar: prioriza a sessão (tem cache-buster), depois o que a view injetar, depois legado foto_url #}
+{% set avatar_url = (session.get('avatar_url') or avatar_url or foto_url) %}
   
 <div class="container">
   <h1 class="titulo">Painel da Malharia</h1>
@@ -363,7 +364,7 @@
     <div>
       <div class="hero-ident">
         <div class="hero-avatar" aria-label="Foto do perfil" title="Clique no lápis para alterar a foto">
-          {% if foto_url %}
+          {% if avatar_url %}
             <img src="{{ avatar_url }}" alt="">
           {% else %}
             <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path></svg>
@@ -386,11 +387,7 @@
               <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path></svg>
               <span>Escolher arquivo</span>
             </button>
-          </div>
-          
-          <!-- Overlay transparente para bloquear cliques no fundo enquanto o picker/modal abre -->
-          <div id="photoOverlay" class="photo-overlay" hidden></div>
-
+          </div>                    
         <div class="hero-info" style="min-width:0;">
           <div class="hero-nome">{{ nome_empresa }}</div>
 
@@ -518,6 +515,9 @@
   </div>
 </div>
 
+<!-- Overlay transparente global (NÃO fica dentro do hero) -->
+<div id="photoOverlay" class="photo-overlay" hidden></div>
+  
 <script>
   (function(){
     // menu perfil
