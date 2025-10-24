@@ -139,14 +139,8 @@
       box-shadow:0 8px 24px rgba(0,0,0,.06);
       opacity:0; pointer-events:none; transform:translateY(6px);
       transition:.15s;
-      z-index:2000; /* fica acima do cabeçalho (z-index:50) e painéis (60) */
+      z-index:2000;
     }
-
-    /* Overlay que captura toques e evita “click-through” no celular */
-    .photo-overlay{
-      position:fixed; inset:0; background:transparent; z-index:1999;
-    }
-    
     .photo-menu.open{ opacity:1; pointer-events:auto; transform:translateY(0); }
     .photo-item{ display:flex; align-items:center; gap:10px; width:100%; background:transparent; border:0; padding:10px 12px; cursor:pointer; }
     .photo-item:hover{ background:#f6f7fb; }
@@ -372,7 +366,7 @@
           <button class="edit-pencil" id="pencilToggle" type="button" title="Alterar foto do perfil">
             <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
           </button>
-  
+
           <!-- Popover com as 3 opções -->
           <div id="photoMenu" class="photo-menu" aria-label="Opções da foto" role="menu">
             <button type="button" class="photo-item" data-act="gallery">
@@ -389,10 +383,10 @@
             </button>
           </div>
         </div> <!-- FECHA hero-avatar -->
-  
+
         <div class="hero-info" style="min-width:0;">
           <div class="hero-nome">{{ nome_empresa }}</div>
-  
+
           <div class="hero-chips">
             {% if _assin_ativa %}
               <span class="chip" title="Assinatura ativa"><span class="dot dot-success"></span>Assinatura ativa</span>
@@ -405,15 +399,6 @@
         </div>
       </div>
     </div>
-
-  <!-- Coluna direita: Performance (apenas título + link) -->
-  <aside class="perf-mini">
-    <div class="perf-mini-title">Performance de acesso</div>
-    <a href="{{ url_for('performance_acesso') }}" class="perf-mini-link">Ver detalhes</a>
-  </aside>
-</div>
-<!-- ===== /HERO ===== -->
-
 
     <!-- Coluna direita: Performance (apenas título + link) -->
     <aside class="perf-mini">
@@ -528,7 +513,7 @@
 
 <!-- Overlay transparente global (NÃO fica dentro do hero) -->
 <div id="photoOverlay" class="photo-overlay" hidden></div>
-  
+
 <script>
   (function(){
     // menu perfil
@@ -570,38 +555,28 @@
       if (overlay) overlay.hidden = true;
     }
 
-    // Evita que toques caiam no fundo
     overlay?.addEventListener('click', (e)=>{ e.stopPropagation(); closePhotoMenu(); });
 
     pencil?.addEventListener('click', function(e){
       e.preventDefault(); e.stopPropagation();
-      // Toggle simples
       if (photoMenu.classList.contains('open')) closePhotoMenu(); else openPhotoMenu();
     });
     photoMenu?.addEventListener('click', (e)=>{ e.stopPropagation(); });
 
     function triggerInput(inputEl){
-      // NÃO fecha o menu ainda (evita click-through no lápis em mobile)
-      // Abrimos o picker e só fechamos quando o usuário escolhe/cancela (no 'change').
-      try {
-        inputEl.click();
-      } catch(e) {
-        // fallback raro
-        setTimeout(()=>inputEl.click(), 0);
-      }
+      try { inputEl.click(); } catch(e) { setTimeout(()=>inputEl.click(), 0); }
     }
 
     photoMenu?.querySelectorAll('.photo-item').forEach(btn=>{
       btn.addEventListener('click', (e) => {
         e.preventDefault(); e.stopPropagation();
         const act = btn.getAttribute('data-act');
-        const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
         if (act === 'gallery'){
           inLib.value = ""; triggerInput(inLib);
         } else if (act === 'file'){
           inFile.value = ""; triggerInput(inFile);
         } else if (act === 'camera'){
+          const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
           if (isMobile){
             inCam.value = ""; triggerInput(inCam);
           } else {
@@ -611,10 +586,7 @@
       }, {passive:false});
     });
 
-    function afterPick(){
-      // Fechar UI (card + overlay) quando o usuário escolhe/fecha o picker
-      closePhotoMenu();
-    }
+    function afterPick(){ closePhotoMenu(); }
 
     function submitIfFile(inputEl){
       afterPick();
@@ -626,7 +598,7 @@
     inFile?.addEventListener('change', function(){ submitIfFile(this); });
     inCam?.addEventListener('change', function(){ submitIfFile(this); });
 
-    // ===== Webcam (desktop) — mantém seu código, só fechamos overlay ao fechar modal =====
+    // ===== Webcam (desktop) =====
     const camOverlay = document.getElementById('camOverlay');
     const camVideo   = document.getElementById('camVideo');
     const camCanvas  = document.getElementById('camCanvas');
@@ -684,11 +656,9 @@
       }, 'image/jpeg', 0.92);
     });
 
-    // Fechamentos globais (tecla ESC / clique fora)
-    document.addEventListener('click', ()=>{ closeMenu(); closeNotif(); /* não fechamos photo aqui; overlay cuida */ });
-    document.addEventListener('keydown', (e)=>{
-      if(e.key==='Escape'){ closeMenu(); closeNotif(); closePhotoMenu(); closeCam(); }
-    });
+    // Fechamentos globais
+    document.addEventListener('click', ()=>{ closeMenu(); closeNotif(); });
+    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ closeMenu(); closeNotif(); closePhotoMenu(); closeCam(); }});
   })();
 </script>
 </body>
