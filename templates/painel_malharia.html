@@ -139,7 +139,7 @@
       box-shadow:0 8px 24px rgba(0,0,0,.06);
       opacity:0; pointer-events:none; transform:translateY(6px);
       transition:.15s;
-      z-index:2000; /* acima do cabeçalho (50) e painéis (60) */
+      z-index:2000; /* fica acima do cabeçalho (z-index:50) e painéis (60) */
     }
 
     /* Overlay que captura toques e evita “click-through” no celular */
@@ -345,7 +345,12 @@
   <!-- form oculto para upload de foto -->
   <form id="fotoForm" action="{{ url_for('perfil_foto_upload') }}" method="POST" enctype="multipart/form-data" class="sr-only">
     {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
-    <input type="file" id="fotoInput" name="foto" accept="image/*,.jpg,.jpeg,.png,.webp,.gif">
+    <!-- Fototeca (galeria) -->
+    <input type="file" id="fotoInputLib"  name="foto" accept="image/*">
+    <!-- Câmera (mobile) -->
+    <input type="file" id="fotoInputCam"  name="foto" accept="image/*" capture="environment">
+    <!-- Arquivo tradicional -->
+    <input type="file" id="fotoInputFile" name="foto" accept="image/*,.jpg,.jpeg,.png,.webp,.gif">
   </form>
 </header>
 
@@ -383,7 +388,7 @@
               <span>Escolher arquivo</span>
             </button>
           </div>
-        </div><!-- /.hero-avatar -->
+        </div> <!-- FECHA hero-avatar -->
 
         <div class="hero-info" style="min-width:0;">
           <div class="hero-nome">{{ nome_empresa }}</div>
@@ -532,38 +537,21 @@
     function toggleNotif(e){ e.stopPropagation(); npanel.classList.toggle('open'); }
     nbtn?.addEventListener('click', toggleNotif);
 
+    // fechar quando clicar fora / ESC
+    document.addEventListener('click', ()=>{ closeMenu(); closeNotif(); closePhotoMenu(); });
+    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ closeMenu(); closeNotif(); closePhotoMenu(); closeCam(); }});
+    menu?.addEventListener('click', (e)=> e.stopPropagation());
+    npanel?.addEventListener('click', (e)=> e.stopPropagation());
+
     // ===== Upload de foto - opções (MOBILE FIX) =====
     const fotoForm  = document.getElementById('fotoForm');
-    const inFile = document.getElementById('fotoInput');
+    const inLib     = document.getElementById('fotoInputLib');
+    const inCam     = document.getElementById('fotoInputCam');
+    const inFile    = document.getElementById('fotoInputFile');
     const pencil    = document.getElementById('pencilToggle');
     const photoMenu = document.getElementById('photoMenu');
     const overlay   = document.getElementById('photoOverlay');
 
-    function swapAvatar(el, url){
-      if(!el) return;
-      const img = el.querySelector('img');
-      if (img){ img.src = url; return; }
-      const svg = el.querySelector('svg');
-      const newImg = document.createElement('img');
-      newImg.src = url;
-      newImg.alt = 'Foto do perfil';
-      newImg.style.width = '100%';
-      newImg.style.height = '100%';
-      newImg.style.objectFit = 'cover';
-      newImg.style.display = 'block';
-      if (svg){ svg.replaceWith(newImg); } else { el.appendChild(newImg); }
-    }
-    
-    function previewAvatar(file){
-      if(!file) return;
-      const blobUrl = URL.createObjectURL(file); // URL temporária só pro preview imediato
-      // Atualiza os 3 pontos que exibem o avatar
-      swapAvatar(document.querySelector('.profile-pill .avatar'), blobUrl);
-      swapAvatar(document.querySelector('.profile-menu .pm-header .avatar'), blobUrl);
-      swapAvatar(document.querySelector('.hero-avatar'), blobUrl);
-      // não revogar agora (mantém até recarregar)
-    }
-    
     function openPhotoMenu(){
       photoMenu.classList.add('open');
       if (overlay) overlay.hidden = false;
@@ -584,8 +572,14 @@
     photoMenu?.addEventListener('click', (e)=>{ e.stopPropagation(); });
 
     function triggerInput(inputEl){
+      // NÃO fecha o menu ainda (evita click-through no lápis em mobile)
       // Abrimos o picker e só fechamos quando o usuário escolhe/cancela (no 'change').
-      try { inputEl.click(); } catch(e) { setTimeout(()=>inputEl.click(), 0); }
+      try {
+        inputEl.click();
+      } catch(e) {
+        // fallback raro
+        setTimeout(()=>inputEl.click(), 0);
+      }
     }
 
     photoMenu?.querySelectorAll('.photo-item').forEach(btn=>{
@@ -593,41 +587,37 @@
         e.preventDefault(); e.stopPropagation();
         const act = btn.getAttribute('data-act');
         const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    
-        // Sempre usamos UM único input:
-        // - gallery/file: sem 'capture'
-        // - camera (mobile): com 'capture=environment'
-        if (act === 'gallery' || act === 'file') {
-          inFile.removeAttribute('capture');
-          inFile.value = "";
-          triggerInput(inFile);
-        } else if (act === 'camera') {
-          if (isMobile) {
-            inFile.setAttribute('capture', 'environment');
-            inFile.value = "";
-            triggerInput(inFile);
+
+        if (act === 'gallery'){
+          inLib.value = ""; triggerInput(inLib);
+        } else if (act === 'file'){
+          inFile.value = ""; triggerInput(inFile);
+        } else if (act === 'camera'){
+          if (isMobile){
+            inCam.value = ""; triggerInput(inCam);
           } else {
-            openCam(); // desktop usa a sua modal
+            openCam();
           }
         }
       }, {passive:false});
     });
 
-    function submitIfFile(inputEl){
-      // 1) Preview imediato (sem tocar no backend)
-      if (inputEl?.files && inputEl.files.length > 0){
-        previewAvatar(inputEl.files[0]);
-      }
-    
-      // 2) Fecha o popover e manda o formulário como já fazia
+    function afterPick(){
+      // Fechar UI (card + overlay) quando o usuário escolhe/fecha o picker
       closePhotoMenu();
+    }
+
+    function submitIfFile(inputEl){
+      afterPick();
       if (inputEl?.files && inputEl.files.length > 0){
         if (fotoForm?.requestSubmit) fotoForm.requestSubmit(); else fotoForm?.submit();
       }
     }
+    inLib?.addEventListener('change', function(){ submitIfFile(this); });
     inFile?.addEventListener('change', function(){ submitIfFile(this); });
+    inCam?.addEventListener('change', function(){ submitIfFile(this); });
 
-    // ===== Webcam (desktop) =====
+    // ===== Webcam (desktop) — mantém seu código, só fechamos overlay ao fechar modal =====
     const camOverlay = document.getElementById('camOverlay');
     const camVideo   = document.getElementById('camVideo');
     const camCanvas  = document.getElementById('camCanvas');
@@ -685,8 +675,8 @@
       }, 'image/jpeg', 0.92);
     });
 
-    // Fechamentos globais (clique fora/ESC) — não fechamos o photo-menu aqui; o overlay cuida disso.
-    document.addEventListener('click', ()=>{ closeMenu(); closeNotif(); });
+    // Fechamentos globais (tecla ESC / clique fora)
+    document.addEventListener('click', ()=>{ closeMenu(); closeNotif(); /* não fechamos photo aqui; overlay cuida */ });
     document.addEventListener('keydown', (e)=>{
       if(e.key==='Escape'){ closeMenu(); closeNotif(); closePhotoMenu(); closeCam(); }
     });
