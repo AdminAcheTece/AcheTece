@@ -1403,7 +1403,7 @@ def painel_malharia():
         foto_url=foto_url,          # <<<<<<<<<<
     )
 
-# ===== ROTA ÚNICA (mantenha só esta) =====
+# ===== ROTA ÚNICA (mantém o endpoint) =====
 @app.route('/perfil/foto', methods=['POST'])
 def perfil_foto_upload():
     uid, email = _whoami()
@@ -1411,7 +1411,24 @@ def perfil_foto_upload():
         flash('Você precisa estar logado para alterar a foto.', 'warning')
         return redirect(request.referrer or url_for('index'))
 
-    f = request.files.get('foto')
+    # ✅ pega o primeiro arquivo NÃO-VAZIO entre todos os "foto"
+    f = None
+    try:
+        for fs in request.files.getlist('foto'):
+            if fs and getattr(fs, "filename", ""):
+                f = fs
+                break
+    except Exception:
+        f = request.files.get('foto')
+
+    # fallback EXTRA (se algum input vier com outro name por engano)
+    if (not f) or (not f.filename):
+        for alt in ('fotoInputLib', 'fotoInputCam', 'fotoInputFile'):
+            fs = request.files.get(alt)
+            if fs and fs.filename:
+                f = fs
+                break
+
     if not f or f.filename == '':
         flash('Nenhum arquivo selecionado.', 'warning')
         return redirect(request.referrer or url_for('painel_malharia'))
@@ -1420,8 +1437,8 @@ def perfil_foto_upload():
         flash('Formato não permitido. Use JPG, JPEG, PNG ou WEBP.', 'danger')
         return redirect(request.referrer or url_for('painel_malharia'))
 
-    # arquivo "único" no diretório de avatares
-    filename  = secure_filename(f"{uid}_{int(time.time())}.webp")
+    ts = int(time.time())
+    filename  = secure_filename(f"{uid}_{ts}.webp")
     dest_path = os.path.join(AVATAR_DIR, filename)
     rel_url   = f"/static/uploads/avatars/{filename}"
 
@@ -1432,56 +1449,38 @@ def perfil_foto_upload():
         flash('Não foi possível processar a imagem. Tente outro arquivo.', 'danger')
         return redirect(request.referrer or url_for('painel_malharia'))
 
-    # === cria também um arquivo ESTÁVEL legado emp_{empresa_id}.webp ===
-    stable_url = None
-    try:
-        emp = _pegar_empresa_do_usuario(required=False)
-        if emp and getattr(emp, "id", None):
-            legacy_dir  = os.path.join(app.root_path, "static", "uploads", "perfil")
-            os.makedirs(legacy_dir, exist_ok=True)
-            legacy_fn   = f"emp_{emp.id}.webp"
-            legacy_path = os.path.join(legacy_dir, legacy_fn)
-            shutil.copyfile(dest_path, legacy_path)
-            # cache-buster para refletir a mudança imediatamente
-            stable_url = f"/static/uploads/perfil/{legacy_fn}?v={int(time.time())}"
-    except Exception as e:
-        app.logger.warning(f"[perfil/foto] falha ao criar arquivo estável legado: {e}")
-
     # salva no DB se houver campo; senão guarda em sessão
     try:
         updated = False
-        # tenta salvar na empresa (se houver e se tiver campo); prioriza URL estável
-        if emp:
-            for attr in ('foto_url', 'logo_url'):
-                if hasattr(emp, attr):
-                    setattr(emp, attr, stable_url or rel_url)
-                    db.session.commit()
-                    updated = True
-                    break
+        emp = _pegar_empresa_do_usuario(required=False)
 
-        # tenta salvar em atributos do usuário (se existirem em algum modelo)
-        if not updated and globals().get('current_user') is not None:
-            for attr in ('avatar_url', 'photo_url'):
-                try:
-                    if hasattr(current_user, attr):
-                        setattr(current_user, attr, stable_url or rel_url)
-                        db.session.commit()
-                        updated = True
-                        break
-                except Exception:
-                    pass
+        # tenta nos campos mais comuns da sua base
+        if emp is not None:
+            if hasattr(emp, 'foto_url'):
+                emp.foto_url = rel_url
+                updated = True
+            elif hasattr(emp, 'logo_url'):
+                emp.logo_url = rel_url
+                updated = True
 
-        # fallback: sessão (garante troca imediata após reload)
-        if not updated:
-            session['avatar_url'] = stable_url or rel_url
-            session.modified = True
+        cu = globals().get('current_user')
+        if cu is not None:
+            if hasattr(cu, 'avatar_url'):
+                setattr(cu, 'avatar_url', rel_url); updated = True
+            elif hasattr(cu, 'photo_url'):
+                setattr(cu, 'photo_url', rel_url); updated = True
+
+        if updated:
+            db.session.commit()
     except Exception as e:
         app.logger.warning(f"[perfil/foto] DB não atualizado: {e}")
-        session['avatar_url'] = stable_url or rel_url
-        session.modified = True
+
+    # ✅ sempre atualiza sessão com cache-buster (evita 'aparece e some')
+    session['avatar_url'] = f"{rel_url}?v={ts}"
 
     flash('Foto atualizada com sucesso!', 'success')
     return redirect(request.referrer or url_for('painel_malharia'))
+
 
 # (Opcional) mensagem amigável se exceder 5 MB
 from werkzeug.exceptions import RequestEntityTooLarge
@@ -1489,6 +1488,7 @@ from werkzeug.exceptions import RequestEntityTooLarge
 def handle_too_large(e):
     flash('Arquivo maior que 5 MB. Escolha uma imagem menor.', 'warning')
     return redirect(request.referrer or url_for('painel_malharia'))
+
 
 # --- CADASTRAR / LISTAR / SALVAR TEARES (SEM GATE DE ASSINATURA) ---
 @app.route("/teares/cadastrar", methods=["GET", "POST"], endpoint="cadastrar_teares")
