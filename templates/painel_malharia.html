@@ -372,7 +372,7 @@
           <button class="edit-pencil" id="pencilToggle" type="button" title="Alterar foto do perfil">
             <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
           </button>
-
+  
           <!-- Popover com as 3 opções -->
           <div id="photoMenu" class="photo-menu" aria-label="Opções da foto" role="menu">
             <button type="button" class="photo-item" data-act="gallery">
@@ -389,10 +389,10 @@
             </button>
           </div>
         </div> <!-- FECHA hero-avatar -->
-
+  
         <div class="hero-info" style="min-width:0;">
           <div class="hero-nome">{{ nome_empresa }}</div>
-
+  
           <div class="hero-chips">
             {% if _assin_ativa %}
               <span class="chip" title="Assinatura ativa"><span class="dot dot-success"></span>Assinatura ativa</span>
@@ -405,6 +405,15 @@
         </div>
       </div>
     </div>
+
+  <!-- Coluna direita: Performance (apenas título + link) -->
+  <aside class="perf-mini">
+    <div class="perf-mini-title">Performance de acesso</div>
+    <a href="{{ url_for('performance_acesso') }}" class="perf-mini-link">Ver detalhes</a>
+  </aside>
+</div>
+<!-- ===== /HERO ===== -->
+
 
     <!-- Coluna direita: Performance (apenas título + link) -->
     <aside class="perf-mini">
