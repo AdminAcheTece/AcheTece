@@ -1403,14 +1403,39 @@ def painel_malharia():
         foto_url=foto_url,          # <<<<<<<<<<
     )
 
+from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
+
+def _with_cb(u: str, ts: int) -> str:
+    """Anexa/atualiza _cb=<ts> na URL (usado para bust de cache)."""
+    try:
+        p = urlparse(u)
+        q = dict(parse_qsl(p.query))
+        q["_cb"] = str(ts)
+        return urlunparse(p._replace(query=urlencode(q)))
+    except Exception:
+        return u  # em último caso, segue sem mudar
+
+def _back_to_panel(ts: int):
+    """Escolhe uma URL de retorno ao painel com cache-buster."""
+    ref = request.referrer or ""
+    # Preferimos referrer da mesma origem que contenha 'painel' (outra página do app)
+    if ref:
+        try:
+            rp = urlparse(ref)
+            # mesma origem?
+            if rp.netloc == request.host:
+                if "painel" in rp.path or "malharia" in rp.path:
+                    return redirect(_with_cb(ref, ts))
+        except Exception:
+            pass
+    # fallback: rota nomeada do painel
+    return redirect(url_for('painel_malharia', _cb=ts))
+
 @app.route('/perfil/foto', methods=['POST'])
 def perfil_foto_upload():
     uid, email = _whoami()
-    if not uid:
-        flash('Você precisa estar logado para alterar a foto.', 'warning')
-        return redirect(url_for('index'))
 
-    # pega o primeiro arquivo não-vazio entre todos os "foto"
+    # pega o primeiro arquivo válido entre os inputs name="foto"
     f = None
     try:
         for fs in request.files.getlist('foto'):
@@ -1420,7 +1445,7 @@ def perfil_foto_upload():
     except Exception:
         f = request.files.get('foto')
 
-    # fallback extra (se algum input vier com outro name por engano)
+    # fallback extra (caso algum input tenha outro 'name')
     if (not f) or (not f.filename):
         for alt in ('fotoInputLib', 'fotoInputCam', 'fotoInputFile'):
             fs = request.files.get(alt)
@@ -1428,55 +1453,59 @@ def perfil_foto_upload():
                 f = fs
                 break
 
+    ts = int(time.time())
+
+    # se não estiver logado por algum motivo, apenas volte ao painel (não mande pro index)
+    if not uid:
+        flash('Você precisa estar logado para alterar a foto.', 'warning')
+        return _back_to_panel(ts)
+
     if not f or f.filename == '':
         flash('Nenhum arquivo selecionado.', 'warning')
-        return redirect(url_for('painel_malharia'))
+        return _back_to_panel(ts)
 
     if not _allowed_file(f.filename):
         flash('Formato não permitido. Use JPG, JPEG, PNG ou WEBP.', 'danger')
-        return redirect(url_for('painel_malharia'))
+        return _back_to_panel(ts)
 
-    ts = int(time.time())
     filename  = secure_filename(f"{uid}_{ts}.webp")
     dest_path = os.path.join(AVATAR_DIR, filename)
-    rel_url   = f"/static/uploads/avatars/{filename}"
+    rel_path  = f"/static/uploads/avatars/{filename}"  # caminho estático
+    rel_url   = f"{rel_path}?v={ts}"                   # cache-buster no src da imagem
 
     try:
         _save_square_webp(f, dest_path, side=400, quality=85)
     except Exception as e:
         app.logger.exception(f"[perfil/foto] Falha ao salvar: {e}")
         flash('Não foi possível processar a imagem. Tente outro arquivo.', 'danger')
-        return redirect(url_for('painel_malharia'))
+        return _back_to_panel(ts)
 
-    # tenta gravar em algum campo no DB; se não existir, tudo bem (a sessão resolve)
+    # tenta persistir no DB (quando existir campo); sessão garante a exibição imediata
     try:
         updated = False
         emp = _pegar_empresa_do_usuario(required=False)
         if emp is not None:
             if hasattr(emp, 'foto_url'):
-                emp.foto_url = rel_url; updated = True
+                emp.foto_url = rel_path; updated = True   # no DB guardamos sem ?v
             elif hasattr(emp, 'logo_url'):
-                emp.logo_url = rel_url; updated = True
+                emp.logo_url = rel_path; updated = True
         cu = globals().get('current_user')
         if cu is not None:
             if hasattr(cu, 'avatar_url'):
-                setattr(cu, 'avatar_url', rel_url); updated = True
+                setattr(cu, 'avatar_url', rel_path); updated = True
             elif hasattr(cu, 'photo_url'):
-                setattr(cu, 'photo_url', rel_url); updated = True
+                setattr(cu, 'photo_url', rel_path); updated = True
         if updated:
             db.session.commit()
     except Exception as e:
         app.logger.warning(f"[perfil/foto] DB não atualizado: {e}")
 
-    # >>> ponto-chave: grava na sessão com cache-buster e força "modified"
-    session['avatar_url'] = f"{rel_url}?v={ts}"
+    # sessão (com cache-buster) garante que o template mostre a nova foto na hora
+    session['avatar_url'] = rel_url
     session.modified = True
 
     flash('Foto atualizada com sucesso!', 'success')
-
-    # >>> ponto-chave: sempre voltar ao painel com parâmetro anti-cache
-    resp = redirect(url_for('painel_malharia', _cb=ts))
-    return resp
+    return _back_to_panel(ts)
 
 # --- CADASTRAR / LISTAR / SALVAR TEARES (SEM GATE DE ASSINATURA) ---
 @app.route("/teares/cadastrar", methods=["GET", "POST"], endpoint="cadastrar_teares")
