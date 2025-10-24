@@ -345,12 +345,7 @@
   <!-- form oculto para upload de foto -->
   <form id="fotoForm" action="{{ url_for('perfil_foto_upload') }}" method="POST" enctype="multipart/form-data" class="sr-only">
     {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
-    <!-- Fototeca (galeria) -->
-    <input type="file" id="fotoInputLib"  name="foto" accept="image/*">
-    <!-- Câmera (mobile) -->
-    <input type="file" id="fotoInputCam"  name="foto" accept="image/*" capture="environment">
-    <!-- Arquivo tradicional -->
-    <input type="file" id="fotoInputFile" name="foto" accept="image/*,.jpg,.jpeg,.png,.webp,.gif">
+    <input type="file" id="fotoInput" name="foto" accept="image/*,.jpg,.jpeg,.png,.webp,.gif">
   </form>
 </header>
 
@@ -539,9 +534,7 @@
 
     // ===== Upload de foto - opções (MOBILE FIX) =====
     const fotoForm  = document.getElementById('fotoForm');
-    const inLib     = document.getElementById('fotoInputLib');
-    const inCam     = document.getElementById('fotoInputCam');
-    const inFile    = document.getElementById('fotoInputFile');
+    const inFile = document.getElementById('fotoInput');
     const pencil    = document.getElementById('pencilToggle');
     const photoMenu = document.getElementById('photoMenu');
     const overlay   = document.getElementById('photoOverlay');
@@ -599,16 +592,22 @@
       btn.addEventListener('click', (e) => {
         e.preventDefault(); e.stopPropagation();
         const act = btn.getAttribute('data-act');
-        if (act === 'gallery'){
-          inLib.value = ""; triggerInput(inLib);
-        } else if (act === 'file'){
-          inFile.value = ""; triggerInput(inFile);
-        } else if (act === 'camera'){
-          const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-          if (isMobile){
-            inCam.value = ""; triggerInput(inCam);
+        const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    
+        // Sempre usamos UM único input:
+        // - gallery/file: sem 'capture'
+        // - camera (mobile): com 'capture=environment'
+        if (act === 'gallery' || act === 'file') {
+          inFile.removeAttribute('capture');
+          inFile.value = "";
+          triggerInput(inFile);
+        } else if (act === 'camera') {
+          if (isMobile) {
+            inFile.setAttribute('capture', 'environment');
+            inFile.value = "";
+            triggerInput(inFile);
           } else {
-            openCam(); // desktop: modal
+            openCam(); // desktop usa a sua modal
           }
         }
       }, {passive:false});
@@ -626,9 +625,7 @@
         if (fotoForm?.requestSubmit) fotoForm.requestSubmit(); else fotoForm?.submit();
       }
     }
-    inLib?.addEventListener('change', function(){ submitIfFile(this); });
     inFile?.addEventListener('change', function(){ submitIfFile(this); });
-    inCam?.addEventListener('change', function(){ submitIfFile(this); });
 
     // ===== Webcam (desktop) =====
     const camOverlay = document.getElementById('camOverlay');
