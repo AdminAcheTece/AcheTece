@@ -1403,15 +1403,14 @@ def painel_malharia():
         foto_url=foto_url,          # <<<<<<<<<<
     )
 
-# ===== ROTA ÚNICA (mantém o endpoint) =====
 @app.route('/perfil/foto', methods=['POST'])
 def perfil_foto_upload():
     uid, email = _whoami()
     if not uid:
         flash('Você precisa estar logado para alterar a foto.', 'warning')
-        return redirect(request.referrer or url_for('index'))
+        return redirect(url_for('index'))
 
-    # ✅ pega o primeiro arquivo NÃO-VAZIO entre todos os "foto"
+    # pega o primeiro arquivo não-vazio entre todos os "foto"
     f = None
     try:
         for fs in request.files.getlist('foto'):
@@ -1421,7 +1420,7 @@ def perfil_foto_upload():
     except Exception:
         f = request.files.get('foto')
 
-    # fallback EXTRA (se algum input vier com outro name por engano)
+    # fallback extra (se algum input vier com outro name por engano)
     if (not f) or (not f.filename):
         for alt in ('fotoInputLib', 'fotoInputCam', 'fotoInputFile'):
             fs = request.files.get(alt)
@@ -1431,11 +1430,11 @@ def perfil_foto_upload():
 
     if not f or f.filename == '':
         flash('Nenhum arquivo selecionado.', 'warning')
-        return redirect(request.referrer or url_for('painel_malharia'))
+        return redirect(url_for('painel_malharia'))
 
     if not _allowed_file(f.filename):
         flash('Formato não permitido. Use JPG, JPEG, PNG ou WEBP.', 'danger')
-        return redirect(request.referrer or url_for('painel_malharia'))
+        return redirect(url_for('painel_malharia'))
 
     ts = int(time.time())
     filename  = secure_filename(f"{uid}_{ts}.webp")
@@ -1447,48 +1446,37 @@ def perfil_foto_upload():
     except Exception as e:
         app.logger.exception(f"[perfil/foto] Falha ao salvar: {e}")
         flash('Não foi possível processar a imagem. Tente outro arquivo.', 'danger')
-        return redirect(request.referrer or url_for('painel_malharia'))
+        return redirect(url_for('painel_malharia'))
 
-    # salva no DB se houver campo; senão guarda em sessão
+    # tenta gravar em algum campo no DB; se não existir, tudo bem (a sessão resolve)
     try:
         updated = False
         emp = _pegar_empresa_do_usuario(required=False)
-
-        # tenta nos campos mais comuns da sua base
         if emp is not None:
             if hasattr(emp, 'foto_url'):
-                emp.foto_url = rel_url
-                updated = True
+                emp.foto_url = rel_url; updated = True
             elif hasattr(emp, 'logo_url'):
-                emp.logo_url = rel_url
-                updated = True
-
+                emp.logo_url = rel_url; updated = True
         cu = globals().get('current_user')
         if cu is not None:
             if hasattr(cu, 'avatar_url'):
                 setattr(cu, 'avatar_url', rel_url); updated = True
             elif hasattr(cu, 'photo_url'):
                 setattr(cu, 'photo_url', rel_url); updated = True
-
         if updated:
             db.session.commit()
     except Exception as e:
         app.logger.warning(f"[perfil/foto] DB não atualizado: {e}")
 
-    # ✅ sempre atualiza sessão com cache-buster (evita 'aparece e some')
+    # >>> ponto-chave: grava na sessão com cache-buster e força "modified"
     session['avatar_url'] = f"{rel_url}?v={ts}"
+    session.modified = True
 
     flash('Foto atualizada com sucesso!', 'success')
-    return redirect(request.referrer or url_for('painel_malharia'))
 
-
-# (Opcional) mensagem amigável se exceder 5 MB
-from werkzeug.exceptions import RequestEntityTooLarge
-@app.errorhandler(RequestEntityTooLarge)
-def handle_too_large(e):
-    flash('Arquivo maior que 5 MB. Escolha uma imagem menor.', 'warning')
-    return redirect(request.referrer or url_for('painel_malharia'))
-
+    # >>> ponto-chave: sempre voltar ao painel com parâmetro anti-cache
+    resp = redirect(url_for('painel_malharia', _cb=ts))
+    return resp
 
 # --- CADASTRAR / LISTAR / SALVAR TEARES (SEM GATE DE ASSINATURA) ---
 @app.route("/teares/cadastrar", methods=["GET", "POST"], endpoint="cadastrar_teares")
