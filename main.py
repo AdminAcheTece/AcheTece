@@ -1805,26 +1805,48 @@ def cadastrar_empresa():
         # NOVOS CAMPOS
         endereco_full = (request.form.get('endereco') or '').strip()
         cep_raw = (request.form.get('cep') or '').strip()
-        cep = _fmt_cep(cep_raw)
+
+        # Normaliza CEP para somente dígitos (ex.: '00000-000' -> '00000000')
+        import re
+        cep_digits = re.sub(r'\D', '', cep_raw)
 
         erros = {}
+
+        # Telefone
         if len(telefone) < 10 or len(telefone) > 13:
             erros['telefone'] = 'Telefone inválido.'
+
+        # Nome (duplicidade)
         if Empresa.query.filter_by(nome=nome).first():
             erros['nome'] = 'Nome já existe.'
+
+        # Apelido (opcional, mas único se informado)
         if apelido and Empresa.query.filter_by(apelido=apelido).first():
             erros['apelido'] = 'Apelido em uso.'
+
+        # E-mail (duplicidade)
         if Empresa.query.filter_by(email=email).first():
             erros['email'] = 'E-mail já cadastrado.'
+
+        # UF válida
         if estado not in estados:
             erros['estado'] = 'Estado inválido.'
+
+        # Cidade obrigatória
+        if not cidade:
+            erros['cidade'] = 'Selecione a cidade.'
+
+        # Nome responsável (mínimo 2 letras, desconsiderando acentos e espaços)
         if not responsavel_nome or len(re.sub(r'[^A-Za-zÀ-ÿ]', '', responsavel_nome)) < 2:
             erros['responsavel_nome'] = 'Informe o nome do responsável.'
-        # validações obrigatórias dos novos campos
+
+        # Endereço completo obrigatório
         if not endereco_full:
             erros['endereco'] = 'Informe o endereço completo.'
-        if not cep:
-            erros['cep'] = 'Informe um CEP válido (00000-000).'
+
+        # CEP: precisa ter 8 dígitos após normalização
+        if not re.fullmatch(r'\d{8}', cep_digits or ''):
+            erros['cep'] = 'Informe um CEP válido (00000-000 ou 00000000).'
 
         if erros:
             return render_template(
@@ -1848,9 +1870,10 @@ def cadastrar_empresa():
             responsavel_nome=responsavel_nome,
             responsavel_sobrenome=responsavel_sobrenome or None
         )
-        # grava Endereço completo e CEP em colunas compatíveis
+
+        # Grava Endereço completo e CEP (armazenando CEP apenas com dígitos)
         _set_if_has(nova_empresa, ["endereco","logradouro","endereco_completo"], endereco_full)
-        _set_if_has(nova_empresa, ["cep","CEP"], cep)
+        _set_if_has(nova_empresa, ["cep","CEP"], cep_digits)
 
         db.session.add(nova_empresa)
         db.session.commit()
@@ -1861,7 +1884,6 @@ def cadastrar_empresa():
         return redirect(url_for('painel_malharia'))
 
     return render_template('cadastrar_empresa.html', estados=estados)
-
 
 @app.route('/editar_empresa', methods=['GET', 'POST'])
 def editar_empresa():
@@ -1915,7 +1937,10 @@ def editar_empresa():
     # NOVOS CAMPOS
     endereco_full = (request.form.get('endereco') or '').strip()
     cep_raw = (request.form.get('cep') or '').strip()
-    cep = _fmt_cep(cep_raw)
+
+    # Normaliza CEP para apenas dígitos (ex.: '00000-000' -> '00000000')
+    import re
+    cep_digits = re.sub(r'\D', '', cep_raw)
 
     erros = {}
     if telefone and (len(telefone) < 10 or len(telefone) > 13):
@@ -1933,8 +1958,8 @@ def editar_empresa():
     # endereço/CEP obrigatórios na edição
     if not endereco_full:
         erros['endereco'] = 'Informe o endereço completo.'
-    if not cep:
-        erros['cep'] = 'Informe um CEP válido (00000-000).'
+    if not re.fullmatch(r'\d{8}', cep_digits or ''):
+        erros['cep'] = 'Informe um CEP válido (00000-000 ou 00000000).'
 
     if erros:
         try:
@@ -1966,7 +1991,8 @@ def editar_empresa():
 
     # grava Endereço completo e CEP (com nomes alternativos de coluna)
     _set_if_has(empresa, ["endereco","logradouro","endereco_completo"], endereco_full)
-    _set_if_has(empresa, ["cep","CEP"], cep)
+    # Armazena CEP somente com dígitos (padrão unificado no banco)
+    _set_if_has(empresa, ["cep","CEP"], cep_digits)
 
     if senha:
         empresa.senha = generate_password_hash(senha)
