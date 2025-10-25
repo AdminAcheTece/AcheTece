@@ -282,8 +282,9 @@
 
       <label for="cep">CEP <span style="color:#d00000">*</span></label>
       <input type="text" id="cep" name="cep" required
-             inputmode="numeric" pattern="\\d{5}-?\\d{3}" title="Digite no formato 00000-000 ou 00000000"
-             autocomplete="postal-code" placeholder="00000-000"
+             inputmode="numeric" pattern="^\d{5}-?\d{3}$"
+             title="Digite no formato 00000-000 ou 00000000"
+             autocomplete="postal-code" placeholder="00000-000" maxlength="9"
              value="{{ cep or '' }}" class="{% if erros and erros.get('cep') %}erro-campo{% endif %}">
       {% if erros and erros.get('cep') %}<div class="mensagem-campo">{{ erros.get('cep') }}</div>{% endif %}
 
@@ -401,6 +402,33 @@
       const ufInicial = ufSelect.value;
       const cidadeInicial = cidadeSelect.getAttribute('data-inicial') || '';
       if (ufInicial) { carregarCidades(ufInicial, cidadeInicial); }
+    });
+  </script>
+  <script>
+    // Máscara e ajuda de validação para CEP
+    document.addEventListener('DOMContentLoaded', () => {
+      const cep = document.getElementById('cep');
+      if (!cep) return;
+  
+      function formatCEP(v){
+        const d = v.replace(/\D/g, '').slice(0, 8);    // só dígitos (até 8)
+        if (d.length <= 5) return d;
+        return d.slice(0,5) + '-' + d.slice(5);
+      }
+  
+      cep.addEventListener('input', () => {
+        const cur = cep.value;
+        const fmt = formatCEP(cur);
+        if (cur !== fmt) cep.value = fmt;
+        cep.setCustomValidity(''); // limpa mensagens nativas ao digitar
+      });
+  
+      cep.addEventListener('invalid', () => {
+        // mensagem amigável se falhar a validação do pattern
+        if (cep.validity.patternMismatch) {
+          cep.setCustomValidity('Digite o CEP no formato 00000-000 ou 00000000');
+        }
+      });
     });
   </script>
 </body>
