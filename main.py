@@ -1433,79 +1433,77 @@ def _back_to_panel(ts: int):
 
 @app.route('/perfil/foto', methods=['POST'])
 def perfil_foto_upload():
-    uid, email = _whoami()
+    uid, _ = _whoami()
+    if not uid:
+        flash('Você precisa estar logado para alterar a foto.', 'warning')
+        return redirect(request.referrer or url_for('painel_malharia'))
 
-    # pega o primeiro arquivo válido entre os inputs name="foto"
-    f = None
-    try:
-        for fs in request.files.getlist('foto'):
-            if fs and getattr(fs, "filename", ""):
-                f = fs
-                break
-    except Exception:
-        f = request.files.get('foto')
-
-    # fallback extra (caso algum input tenha outro 'name')
-    if (not f) or (not f.filename):
+    # Pegue o primeiro arquivo válido entre os <input name="foto">
+    file = next((fs for fs in request.files.getlist('foto') if fs and fs.filename), None)
+    if not file:
+        # Fallback: caso algum input tenha outro "name" por engano
         for alt in ('fotoInputLib', 'fotoInputCam', 'fotoInputFile'):
             fs = request.files.get(alt)
             if fs and fs.filename:
-                f = fs
+                file = fs
                 break
 
-    ts = int(time.time())
-
-    # se não estiver logado por algum motivo, apenas volte ao painel (não mande pro index)
-    if not uid:
-        flash('Você precisa estar logado para alterar a foto.', 'warning')
-        return _back_to_panel(ts)
-
-    if not f or f.filename == '':
+    if not file or not file.filename:
         flash('Nenhum arquivo selecionado.', 'warning')
-        return _back_to_panel(ts)
+        return redirect(request.referrer or url_for('painel_malharia'))
 
-    if not _allowed_file(f.filename):
-        flash('Formato não permitido. Use JPG, JPEG, PNG ou WEBP.', 'danger')
-        return _back_to_panel(ts)
+    if not _allowed_file(file.filename):
+        flash('Formato não permitido. Use JPG, JPEG, PNG, WEBP ou GIF.', 'danger')
+        return redirect(request.referrer or url_for('painel_malharia'))
 
-    filename  = secure_filename(f"{uid}_{ts}.webp")
+    # Nome ESTÁVEL por usuário (evita inconsistências de cache/sessão)
+    filename  = f"{uid}.webp"
     dest_path = os.path.join(AVATAR_DIR, filename)
-    rel_path  = f"/static/uploads/avatars/{filename}"  # caminho estático
-    rel_url   = f"{rel_path}?v={ts}"                   # cache-buster no src da imagem
 
     try:
-        _save_square_webp(f, dest_path, side=400, quality=85)
+        _save_square_webp(file, dest_path, side=400, quality=85)
     except Exception as e:
         app.logger.exception(f"[perfil/foto] Falha ao salvar: {e}")
         flash('Não foi possível processar a imagem. Tente outro arquivo.', 'danger')
-        return _back_to_panel(ts)
+        return redirect(request.referrer or url_for('painel_malharia'))
 
-    # tenta persistir no DB (quando existir campo); sessão garante a exibição imediata
+    # URL pública com cache-buster pelo mtime do arquivo
+    try:
+        v = int(os.path.getmtime(dest_path))
+    except Exception:
+        v = int(time.time())
+
+    rel_path = f"/static/uploads/avatars/{filename}"  # para persistir em DB (sem ?v)
+    rel_url  = url_for('static', filename=f'uploads/avatars/{filename}') + f'?v={v}'
+
+    # Sessão (garante aparecer na hora)
+    session['avatar_url'] = rel_url
+    session.modified = True
+
+    # (Opcional) persista no DB se os campos existirem
     try:
         updated = False
         emp = _pegar_empresa_do_usuario(required=False)
         if emp is not None:
             if hasattr(emp, 'foto_url'):
-                emp.foto_url = rel_path; updated = True   # no DB guardamos sem ?v
+                emp.foto_url = rel_path; updated = True
             elif hasattr(emp, 'logo_url'):
                 emp.logo_url = rel_path; updated = True
+
         cu = globals().get('current_user')
         if cu is not None:
             if hasattr(cu, 'avatar_url'):
                 setattr(cu, 'avatar_url', rel_path); updated = True
             elif hasattr(cu, 'photo_url'):
                 setattr(cu, 'photo_url', rel_path); updated = True
+
         if updated:
             db.session.commit()
     except Exception as e:
         app.logger.warning(f"[perfil/foto] DB não atualizado: {e}")
 
-    # sessão (com cache-buster) garante que o template mostre a nova foto na hora
-    session['avatar_url'] = rel_url
-    session.modified = True
-
     flash('Foto atualizada com sucesso!', 'success')
-    return _back_to_panel(ts)
+    return redirect(request.referrer or url_for('painel_malharia'))
 
 # --- CADASTRAR / LISTAR / SALVAR TEARES (SEM GATE DE ASSINATURA) ---
 @app.route("/teares/cadastrar", methods=["GET", "POST"], endpoint="cadastrar_teares")
