@@ -1438,16 +1438,8 @@ def perfil_foto_upload():
         flash('Você precisa estar logado para alterar a foto.', 'warning')
         return redirect(request.referrer or url_for('painel_malharia'))
 
-    # Pegue o primeiro arquivo válido entre os <input name="foto">
+    # Pega o primeiro arquivo válido; todos os inputs devem ter name="foto"
     file = next((fs for fs in request.files.getlist('foto') if fs and fs.filename), None)
-    if not file:
-        # Fallback: caso algum input tenha outro "name" por engano
-        for alt in ('fotoInputLib', 'fotoInputCam', 'fotoInputFile'):
-            fs = request.files.get(alt)
-            if fs and fs.filename:
-                file = fs
-                break
-
     if not file or not file.filename:
         flash('Nenhum arquivo selecionado.', 'warning')
         return redirect(request.referrer or url_for('painel_malharia'))
@@ -1456,7 +1448,7 @@ def perfil_foto_upload():
         flash('Formato não permitido. Use JPG, JPEG, PNG, WEBP ou GIF.', 'danger')
         return redirect(request.referrer or url_for('painel_malharia'))
 
-    # Nome ESTÁVEL por usuário (evita inconsistências de cache/sessão)
+    # Nome estável por usuário
     filename  = f"{uid}.webp"
     dest_path = os.path.join(AVATAR_DIR, filename)
 
@@ -1467,20 +1459,20 @@ def perfil_foto_upload():
         flash('Não foi possível processar a imagem. Tente outro arquivo.', 'danger')
         return redirect(request.referrer or url_for('painel_malharia'))
 
-    # URL pública com cache-buster pelo mtime do arquivo
+    # URL pública com cache-buster pelo mtime
     try:
         v = int(os.path.getmtime(dest_path))
     except Exception:
         v = int(time.time())
 
-    rel_path = f"/static/uploads/avatars/{filename}"  # para persistir em DB (sem ?v)
+    rel_path = f"/static/uploads/avatars/{filename}"  # para DB (sem ?v)
     rel_url  = url_for('static', filename=f'uploads/avatars/{filename}') + f'?v={v}'
 
-    # Sessão (garante aparecer na hora)
+    # Sessão garante exibição imediata
     session['avatar_url'] = rel_url
     session.modified = True
 
-    # (Opcional) persista no DB se os campos existirem
+    # (Opcional) persistir no DB se houver campos
     try:
         updated = False
         emp = _pegar_empresa_do_usuario(required=False)
@@ -1504,6 +1496,40 @@ def perfil_foto_upload():
 
     flash('Foto atualizada com sucesso!', 'success')
     return redirect(request.referrer or url_for('painel_malharia'))
+
+@app.context_processor
+def inject_avatar_url():
+    url = None
+    try:
+        uid, _ = _whoami()
+        # 1) Arquivo físico salvo como <uid>.webp
+        if uid:
+            filename  = f"{uid}.webp"
+            dest_path = os.path.join(AVATAR_DIR, filename)
+            if os.path.exists(dest_path):
+                v = int(os.path.getmtime(dest_path))
+                url = url_for('static', filename=f'uploads/avatars/{filename}') + f'?v={v}'
+
+        # 2) Fallback: caminho salvo no DB (sem ?v)
+        if not url:
+            emp = _pegar_empresa_do_usuario(required=False)
+            rel = None
+            if emp is not None:
+                rel = getattr(emp, 'foto_url', None) or getattr(emp, 'logo_url', None)
+            if rel:
+                if rel.startswith('http://') or rel.startswith('https://'):
+                    url = rel
+                else:
+                    # normaliza quando o DB guarda "/static/..."
+                    rel_clean = rel.replace('/static/', '', 1) if rel.startswith('/static/') else rel.lstrip('/')
+                    url = url_for('static', filename=rel_clean)
+    except Exception:
+        pass
+
+    # mantém sessão em sincronia (útil para o template atual que consulta a sessão)
+    if url:
+        session['avatar_url'] = url
+    return {'avatar_url': url}
 
 # --- CADASTRAR / LISTAR / SALVAR TEARES (SEM GATE DE ASSINATURA) ---
 @app.route("/teares/cadastrar", methods=["GET", "POST"], endpoint="cadastrar_teares")
