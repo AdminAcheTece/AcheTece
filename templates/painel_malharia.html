@@ -58,6 +58,7 @@
       width:24px; height:24px; border-radius:9999px; overflow:hidden; background:#f2f2ff;
       display:grid; place-items:center; border:1px solid var(--line);
     }
+    .profile-pill .avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
     .profile-pill .name{ max-width:120px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:700; font-size:14px; }
     .caret{ width:14px; height:14px; stroke:#555; }
     @media (max-width:520px){ .profile-pill .name{ display:none; } }
@@ -120,6 +121,7 @@
       display:grid; place-items:center; flex:0 0 64px; border:1px solid var(--line); position:relative;
       overflow:visible;
     }
+    .hero-avatar img{ width:100%; height:100%; object-fit:cover; border-radius:50%; }
     .hero-avatar svg{ width:30px; height:30px; stroke:var(--roxo); fill:none; stroke-width:1.8; }
 
     .edit-pencil{
@@ -136,15 +138,18 @@
       background:#fff; border:1px solid var(--line); border-radius:12px;
       box-shadow:0 8px 24px rgba(0,0,0,.06);
       opacity:0; pointer-events:none; transform:translateY(6px);
-      transition:.15s; z-index:2000;
+      transition:.15s;
+      z-index:2000;
     }
     .photo-menu.open{ opacity:1; pointer-events:auto; transform:translateY(0); }
     .photo-item{ display:flex; align-items:center; gap:10px; width:100%; background:transparent; border:0; padding:10px 12px; cursor:pointer; }
     .photo-item:hover{ background:#f6f7fb; }
     .photo-item svg{ width:18px; height:18px; stroke:#444; fill:none; stroke-width:1.8; }
 
-    /* Overlay global para capturar toques no mobile */
-    .photo-overlay{ position:fixed; inset:0; background:transparent; z-index:1999; }
+    /* Overlay global para capturar cliques no mobile */
+    .photo-overlay{
+      position:fixed; inset:0; background:transparent; z-index:1999;
+    }
 
     .hero-nome{ font-size:1.25rem; font-weight:800; color:#161616; line-height:1.2; }
     .hero-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
@@ -222,16 +227,11 @@
     .cam-actions{ display:flex; gap:10px; justify-content:flex-end; }
     .btn{ display:inline-flex; align-items:center; justify-content:center; height:40px; padding:0 14px; border-radius:9999px; border:1px solid var(--line); background:#fff; cursor:pointer; }
     .btn-primary{ background:var(--roxo); color:#fff; border:0; }
-
-    /* ===== VISIBILIDADE do avatar (img x SVG) ===== */
-    [data-avatar-wrap] img[data-avatar]{ width:100%; height:100%; object-fit:cover; border-radius:50%; display:none; }
-    [data-avatar-wrap].has-photo img[data-avatar]{ display:block; }
-    [data-avatar-wrap] .avatar-fallback{ display:block; }
-    [data-avatar-wrap].has-photo .avatar-fallback{ display:none; }
   </style>
 </head>
 <body>
 
+{# ===== Variáveis antes do header ===== #}
 {% set nome_empresa =
     (empresa.apelido if empresa and empresa.apelido else
      (empresa.nome_fantasia if empresa and empresa.nome_fantasia else
@@ -240,8 +240,7 @@
 {% set lista_teares =
     (teares if teares is defined and teares is not none
      else (empresa.teares if empresa and empresa.teares else [])) %}
-{# avatar_url pode vir do context processor e/ou da sessão #}
-{# 1) sessão (tem ?v=cache-buster) → 2) injeção do contexto → 3) legado #}
+{# URL do avatar: prioriza sessão (tem cache-buster), depois view, depois legado #}
 {% set avatar_url = (session.get('avatar_url') or avatar_url or foto_url) %}
 
 <!-- ===== TOPBAR ===== -->
@@ -279,12 +278,14 @@
     </nav>
 
     <button class="profile-pill" id="profileToggle" type="button" aria-haspopup="menu" aria-expanded="false" title="Abrir menu do perfil">
-      <span class="avatar {% if avatar_url %}has-photo{% endif %}" data-avatar-wrap>
-        <img data-avatar src="{{ avatar_url or '' }}" alt="Foto do perfil">
-        <svg class="avatar-fallback" viewBox="0 0 24 24">
-          <circle cx="12" cy="8" r="4" stroke="#6a5acd" fill="none" stroke-width="1.8"></circle>
-          <path d="M4 20c0-4 4-7 8-7s8 3 8 7" stroke="#6a5acd" fill="none" stroke-width="1.8"></path>
-        </svg>
+      <span class="avatar">
+        {% if avatar_url %}
+          <img class="js-avatar" src="{{ avatar_url }}" alt="Foto do perfil">
+        {% else %}
+          <!-- img oculto para podermos inserir via JS quando a sessão tiver a URL -->
+          <img class="js-avatar" src="" alt="Foto do perfil" style="display:none">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#6a5acd" fill="none" stroke-width="1.8"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7" stroke="#6a5acd" fill="none" stroke-width="1.8"></path></svg>
+        {% endif %}
       </span>
       <span class="name">{{ nome_empresa }}</span>
       <svg class="caret" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"></path></svg>
@@ -294,12 +295,13 @@
   <!-- Dropdown Perfil -->
   <nav class="profile-menu" id="profileMenu" role="menu" aria-label="Menu de perfil">
     <div class="pm-header">
-      <span class="avatar {% if avatar_url %}has-photo{% endif %}" data-avatar-wrap>
-        <img data-avatar src="{{ avatar_url or '' }}" alt="Foto do perfil">
-        <svg class="avatar-fallback" viewBox="0 0 24 24">
-          <circle cx="12" cy="8" r="4" stroke="#6a5acd" fill="none" stroke-width="1.8"></circle>
-          <path d="M4 20c0-4 4-7 8-7s8 3 8 7" stroke="#6a5acd" fill="none" stroke-width="1.8"></path>
-        </svg>
+      <span class="avatar">
+        {% if avatar_url %}
+          <img class="js-avatar" src="{{ avatar_url }}" alt="Foto do perfil">
+        {% else %}
+          <img class="js-avatar" src="" alt="Foto do perfil" style="display:none">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#6a5acd" fill="none" stroke-width="1.8"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7" stroke="#6a5acd" fill="none" stroke-width="1.8"></path></svg>
+        {% endif %}
       </span>
       <div>
         <strong>{{ nome_empresa }}</strong><br>
@@ -344,9 +346,12 @@
 
   <!-- form oculto para upload de foto -->
   <form id="fotoForm" action="{{ url_for('perfil_foto_upload') }}" method="POST" enctype="multipart/form-data" class="sr-only">
-    {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+    {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+    <!-- Fototeca (galeria) -->
     <input type="file" id="fotoInputLib"  name="foto" accept="image/*">
+    <!-- Câmera (mobile) -->
     <input type="file" id="fotoInputCam"  name="foto" accept="image/*" capture="environment">
+    <!-- Arquivo tradicional -->
     <input type="file" id="fotoInputFile" name="foto" accept="image/*,.jpg,.jpeg,.png,.webp,.gif">
   </form>
 </header>
@@ -360,17 +365,18 @@
     <!-- Coluna esquerda -->
     <div>
       <div class="hero-ident">
-        <div class="hero-avatar {% if avatar_url %}has-photo{% endif %}" data-avatar-wrap aria-label="Foto do perfil" title="Clique no lápis para alterar a foto">
-          <img data-avatar src="{{ avatar_url or '' }}" alt="">
-          <svg class="avatar-fallback" viewBox="0 0 24 24">
-            <circle cx="12" cy="8" r="4"></circle>
-            <path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path>
-          </svg>
-
+        <div class="hero-avatar" aria-label="Foto do perfil" title="Clique no lápis para alterar a foto">
+          {% if avatar_url %}
+            <img class="js-avatar" src="{{ avatar_url }}" alt="">
+          {% else %}
+            <img class="js-avatar" src="" alt="" style="display:none">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path></svg>
+          {% endif %}
           <button class="edit-pencil" id="pencilToggle" type="button" title="Alterar foto do perfil">
             <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
           </button>
 
+          <!-- Popover com as 3 opções -->
           <div id="photoMenu" class="photo-menu" aria-label="Opções da foto" role="menu">
             <button type="button" class="photo-item" data-act="gallery">
               <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="8.5" cy="11.5" r="2.5"></circle><path d="M21 15l-5-5-4 4-2-2-5 5"></path></svg>
@@ -411,11 +417,13 @@
   </div>
   <!-- ===== /HERO ===== -->
 
+  <!-- Cabeçalho da tabela -->
   <div class="sec-title">
     <h2>Teares Cadastrados:</h2>
     <a href="{{ url_for('teares_form') }}" class="btn-roxo">+ Cadastrar Tear</a>
   </div>
 
+  <!-- Desktop: tabela -->
   <div class="table-wrapper">
     <table>
       <thead>
@@ -463,6 +471,7 @@
     </table>
   </div>
 
+  <!-- Mobile: cards -->
   <div class="teares-cards">
     {% if lista_teares|length %}
       {% for tear in lista_teares %}
@@ -537,7 +546,7 @@
     menu?.addEventListener('click', (e)=> e.stopPropagation());
     npanel?.addEventListener('click', (e)=> e.stopPropagation());
 
-    // ===== Upload de foto =====
+    // ===== Upload de foto - opções =====
     const fotoForm  = document.getElementById('fotoForm');
     const inLib     = document.getElementById('fotoInputLib');
     const inCam     = document.getElementById('fotoInputCam');
@@ -548,6 +557,7 @@
 
     function openPhotoMenu(){ photoMenu.classList.add('open'); if (overlay) overlay.hidden = false; }
     function closePhotoMenu(){ photoMenu.classList.remove('open'); if (overlay) overlay.hidden = true; }
+
     overlay?.addEventListener('click', (e)=>{ e.stopPropagation(); closePhotoMenu(); });
 
     pencil?.addEventListener('click', function(e){
@@ -556,7 +566,7 @@
     });
     photoMenu?.addEventListener('click', (e)=>{ e.stopPropagation(); });
 
-    function triggerInput(inputEl){ try{ inputEl.click(); }catch(e){ setTimeout(()=>inputEl.click(), 0); } }
+    function triggerInput(inputEl){ try { inputEl.click(); } catch(e) { setTimeout(()=>inputEl.click(), 0); } }
 
     photoMenu?.querySelectorAll('.photo-item').forEach(btn=>{
       btn.addEventListener('click', (e) => {
@@ -574,38 +584,10 @@
 
     function afterPick(){ closePhotoMenu(); }
 
-    // Mostra imediatamente nos 3 pontos (hero, topo, menu)
-    function previewAvatar(fileOrUrl){
-      const url = (fileOrUrl instanceof Blob) ? URL.createObjectURL(fileOrUrl) : fileOrUrl;
-      document.querySelectorAll('[data-avatar-wrap]').forEach(wrap=>{
-        const img = wrap.querySelector('img[data-avatar]');
-        if (img){ img.src = url; }
-        wrap.classList.add('has-photo');
-      });
-    }
-
-    async function sendViaFetch(file){
-      const fd = new FormData();
-      const csrf = fotoForm.querySelector('input[name="csrf_token"]')?.value;
-      if (csrf) fd.append('csrf_token', csrf);
-      fd.append('foto', file, file.name || 'avatar.jpg');
-      const resp = await fetch(fotoForm.action, { method:'POST', body: fd, credentials:'same-origin' });
-      return resp.ok;
-    }
-
-    async function submitIfFile(inputEl){
+    function submitIfFile(inputEl){
       afterPick();
       if (inputEl?.files && inputEl.files.length > 0){
-        const file = inputEl.files[0];
-        previewAvatar(file); // mostra já mesmo sem foto anterior
-        try{
-          const ok = await sendViaFetch(file);
-          if (ok){ location.reload(); return; }
-          throw new Error('upload failed');
-        }catch(e){
-          // fallback total para navegação normal
-          if (fotoForm?.requestSubmit) fotoForm.requestSubmit(); else fotoForm?.submit();
-        }
+        if (fotoForm?.requestSubmit) fotoForm.requestSubmit(); else fotoForm?.submit();
       }
     }
     inLib?.addEventListener('change', function(){ submitIfFile(this); });
@@ -634,10 +616,7 @@
     function closeCam(){
       camOverlay.classList.remove('open');
       if (overlay) overlay.hidden = true;
-      if (camStream){
-        camStream.getTracks().forEach(t=>t.stop());
-        camStream = null;
-      }
+      if (camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream = null; }
     }
     camCancel?.addEventListener('click', closeCam);
 
@@ -649,16 +628,32 @@
       ctx.drawImage(camVideo, 0, 0, w, h);
       camCanvas.toBlob(async (blob)=>{
         if (!blob) return;
+        const fd = new FormData();
+        const csrf = fotoForm.querySelector('input[name="csrf_token"]')?.value;
+        if (csrf) fd.append('csrf_token', csrf);
+        fd.append('foto', blob, 'camera.jpg');
         try{
-          previewAvatar(blob);
-          const ok = await sendViaFetch(new File([blob], 'camera.jpg', {type:'image/jpeg'}));
-          if (ok){ closeCam(); location.reload(); }
+          const resp = await fetch(fotoForm.action, { method:'POST', body: fd, credentials:'same-origin' });
+          if (resp.ok){ closeCam(); location.reload(); }
           else { closeCam(); alert('Falha ao enviar a foto.'); }
-        }catch(e){
-          closeCam(); alert('Erro ao enviar a foto.');
-        }
+        }catch(e){ closeCam(); alert('Erro ao enviar a foto.'); }
       }, 'image/jpeg', 0.92);
     });
+
+    // ==== Força a URL da sessão (com ?v=) em todos os avatares ====
+    const sessionAvatarUrl = {{ (session.get('avatar_url') or '') | tojson }};
+    if (sessionAvatarUrl) {
+      document.querySelectorAll('img.js-avatar').forEach(img => {
+        if (!img) return;
+        if (img.src !== sessionAvatarUrl) img.src = sessionAvatarUrl;
+        // mostra o <img> e esconde um eventual SVG ao lado
+        img.style.display = '';
+        const next = img.nextElementSibling;
+        if (next && next.tagName && next.tagName.toLowerCase() === 'svg') {
+          next.style.display = 'none';
+        }
+      });
+    }
 
     // Fechamentos globais
     document.addEventListener('click', ()=>{ closeMenu(); closeNotif(); });
