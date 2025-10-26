@@ -241,7 +241,8 @@
     (teares if teares is defined and teares is not none
      else (empresa.teares if empresa and empresa.teares else [])) %}
 {# avatar_url pode vir do context processor e/ou da sessão #}
-{% set avatar_url = (avatar_url or session.get('avatar_url')) %}
+{# 1) sessão (tem ?v=cache-buster) → 2) injeção do contexto → 3) legado #}
+{% set avatar_url = (session.get('avatar_url') or avatar_url or foto_url) %}
 
 <!-- ===== TOPBAR ===== -->
 <header class="topbar">
