@@ -582,18 +582,6 @@
       }, {passive:false});
     });
 
-    function afterPick(){ closePhotoMenu(); }
-
-    function submitIfFile(inputEl){
-      afterPick();
-      if (inputEl?.files && inputEl.files.length > 0){
-        if (fotoForm?.requestSubmit) fotoForm.requestSubmit(); else fotoForm?.submit();
-      }
-    }
-    inLib?.addEventListener('change', function(){ submitIfFile(this); });
-    inFile?.addEventListener('change', function(){ submitIfFile(this); });
-    inCam?.addEventListener('change', function(){ submitIfFile(this); });
-
     // ===== Webcam (desktop) =====
     const camOverlay = document.getElementById('camOverlay');
     const camVideo   = document.getElementById('camVideo');
@@ -628,6 +616,18 @@
       ctx.drawImage(camVideo, 0, 0, w, h);
       camCanvas.toBlob(async (blob)=>{
         if (!blob) return;
+        // ===== AVATAR PREVIEW + CACHE-BUSTER (webcam) =====
+        try{
+          const dataURL = camCanvas.toDataURL('image/jpeg', 0.92);
+          if (dataURL){
+            localStorage.setItem('avatarTempUrl', dataURL);
+            localStorage.setItem('avatarBustTs', String(Date.now()));
+            document.querySelectorAll('img.js-avatar').forEach(img => {
+              img.src = dataURL; img.style.display = '';
+            });
+          }
+        }catch(e){}
+        // ===== envio ao backend =====
         const fd = new FormData();
         const csrf = fotoForm.querySelector('input[name="csrf_token"]')?.value;
         if (csrf) fd.append('csrf_token', csrf);
@@ -640,19 +640,71 @@
       }, 'image/jpeg', 0.92);
     });
 
-    // ==== Força a URL da sessão (com ?v=) em todos os avatares ====
+    // ===== AVATAR PREVIEW + CACHE-BUSTER (arquivo/galeria) =====
+    function addBust(url, ts){
+      if (!url) return url;
+      const u = new URL(url, window.location.origin);
+      u.searchParams.set('v', ts);
+      return u.toString();
+    }
+    function setAllAvatars(url){
+      document.querySelectorAll('img.js-avatar').forEach(img=>{
+        img.src = url; img.style.display = '';
+      });
+      // esconder SVG placeholder se existir
+      document.querySelectorAll('.hero-avatar svg').forEach(svg=>{ svg.style.display = 'none'; });
+    }
+    function previewAndSubmit(inputEl){
+      closePhotoMenu();
+      if (!(inputEl?.files && inputEl.files.length)) return;
+      const file = inputEl.files[0];
+      try{
+        const reader = new FileReader();
+        reader.onload = function(){
+          const dataUrl = reader.result;
+          if (dataUrl){
+            localStorage.setItem('avatarTempUrl', dataUrl);
+            localStorage.setItem('avatarBustTs', String(Date.now()));
+            setAllAvatars(dataUrl);
+          }
+          // pequeno atraso ajuda Safari/iOS a manter o arquivo no POST
+          setTimeout(() => {
+            if (fotoForm?.requestSubmit) fotoForm.requestSubmit(); else fotoForm?.submit();
+          }, 80);
+        };
+        reader.readAsDataURL(file);
+      }catch(err){
+        if (fotoForm?.requestSubmit) fotoForm.requestSubmit(); else fotoForm?.submit();
+      }
+    }
+    inLib?.addEventListener('change', function(){ previewAndSubmit(this); });
+    inFile?.addEventListener('change', function(){ previewAndSubmit(this); });
+    inCam?.addEventListener('change', function(){ previewAndSubmit(this); });
+
+    // ===== Inicialização do avatar (sessão -> bust -> temp) =====
     const sessionAvatarUrl = {{ (session.get('avatar_url') or '') | tojson }};
+    const bustTs = localStorage.getItem('avatarBustTs');
+    const tempUrl = localStorage.getItem('avatarTempUrl');
+
     if (sessionAvatarUrl) {
-      document.querySelectorAll('img.js-avatar').forEach(img => {
-        if (!img) return;
-        if (img.src !== sessionAvatarUrl) img.src = sessionAvatarUrl;
-        // mostra o <img> e esconde um eventual SVG ao lado
-        img.style.display = '';
-        const next = img.nextElementSibling;
-        if (next && next.tagName && next.tagName.toLowerCase() === 'svg') {
-          next.style.display = 'none';
+      // backend já devolveu URL com cache-buster (recomendado)
+      setAllAvatars(sessionAvatarUrl);
+      localStorage.removeItem('avatarTempUrl');
+      localStorage.removeItem('avatarBustTs');
+    } else if (bustTs) {
+      // força recarregar o arquivo antigo com ?v=ts (se a URL não mudou no servidor)
+      document.querySelectorAll('img.js-avatar').forEach(img=>{
+        if (img && img.src && !img.src.startsWith('data:')){
+          img.src = addBust(img.src, bustTs);
+          img.style.display = '';
         }
       });
+      localStorage.removeItem('avatarBustTs');
+      // mantém o tempUrl só até o servidor atualizar sessão
+      if (tempUrl) setAllAvatars(tempUrl);
+    } else if (tempUrl) {
+      // primeira carga pós preview, antes do servidor atualizar
+      setAllAvatars(tempUrl);
     }
 
     // Fechamentos globais
