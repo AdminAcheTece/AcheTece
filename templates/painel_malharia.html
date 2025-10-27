@@ -25,30 +25,19 @@
     html, body{ background:var(--bg-soft); color:var(--text); margin:0; }
     th, td{ text-align:center; }
 
-    /* ========= NORMALIZAÇÃO GLOBAL DE AVATARES ========= */
-    /* Toda imagem de avatar fica 100% circular, centralizada e coberta */
+    /* === Normalização global de avatares (sempre círculo, centralizado) === */
     img.js-avatar{
-      width:100%;
-      height:100%;
-      display:block;
-      object-fit:cover;
-      object-position:center;
+      width:100%; height:100%;
+      display:block; object-fit:cover; object-position:center;
       border-radius:50%;
-      position:relative;
-      z-index:1; /* lápis fica acima */
-      -webkit-user-drag:none;
-      user-select:none;
+      position:relative; z-index:1;
+      -webkit-user-drag:none; user-select:none;
     }
-    /* Containers de avatar com proporção 1:1 para garantir círculo perfeito */
     .profile-pill .avatar,
     .pm-header .avatar{
-      width:24px; height:24px; /* mantém seu layout */
-      aspect-ratio:1/1;
-      border-radius:9999px;
-      overflow:hidden;
-      background:#f2f2ff;
-      display:grid; place-items:center;
-      border:1px solid var(--line);
+      width:24px; height:24px; aspect-ratio:1/1;
+      border-radius:9999px; overflow:hidden; background:#f2f2ff;
+      display:grid; place-items:center; border:1px solid var(--line);
     }
 
     /* ======= TOPBAR ======= */
@@ -139,38 +128,38 @@
       width:64px; height:64px; aspect-ratio:1/1; border-radius:50%;
       background: radial-gradient(120% 120% at 10% 10%, #f4f3ff, #f0ecff 60%, #ebe6ff 100%);
       display:grid; place-items:center; flex:0 0 64px; border:1px solid var(--line); position:relative;
-      overflow:visible; /* mantém o lápis visível mesmo que ultrapasse um pouco */
-      isolation:isolate; /* cria contexto p/ z-index previsível */
+      overflow:visible; /* menu pode ultrapassar sem ser cortado */
+      /* (removido isolation:isolate) */
     }
     .hero-avatar svg{ width:30px; height:30px; stroke:var(--roxo); fill:none; stroke-width:1.8; }
 
     .edit-pencil{
       position:absolute; right:-6px; bottom:-6px; width:28px; height:28px; border-radius:9999px;
       border:1px solid var(--line); background:#fff; display:grid; place-items:center; cursor:pointer;
-      z-index:5; /* acima da foto */
+      z-index:3001; /* acima do overlay e da foto */
       box-shadow:0 2px 6px rgba(0,0,0,.08);
       transition:transform .12s ease, background .12s ease;
     }
     .edit-pencil:hover{ background:#f3f3f7; transform:translateY(-1px); }
     .edit-pencil svg{ width:16px; height:16px; stroke:#555; fill:none; stroke-width:1.8; }
 
-    /* Popover de opções de foto (desktop e mobile) */
+    /* Popover de opções de foto */
     .photo-menu{
       position:absolute; left:0; bottom:72px; width:240px;
       background:#fff; border:1px solid var(--line); border-radius:12px;
       box-shadow:0 8px 24px rgba(0,0,0,.06);
       opacity:0; pointer-events:none; transform:translateY(6px);
       transition:.15s;
-      z-index:2000;
+      z-index:3000; /* acima do overlay */
     }
     .photo-menu.open{ opacity:1; pointer-events:auto; transform:translateY(0); }
     .photo-item{ display:flex; align-items:center; gap:10px; width:100%; background:transparent; border:0; padding:10px 12px; cursor:pointer; }
     .photo-item:hover{ background:#f6f7fb; }
-    .photo-item svg{ width:18px; height:18px; stroke:#444; fill:none; stroke-width:1.8; }
+    .photo-item svg{ width:18px; height:18px; stroke:#444; fill:none; stroke-width:1.8; flex:0 0 18px; }
 
-    /* Overlay global para capturar cliques no mobile */
+    /* Overlay global (fica abaixo do menu) */
     .photo-overlay{
-      position:fixed; inset:0; background:transparent; z-index:1999;
+      position:fixed; inset:0; background:transparent; z-index:1200;
     }
 
     .hero-nome{ font-size:1.25rem; font-weight:800; color:#161616; line-height:1.2; }
@@ -184,7 +173,7 @@
     .dot-success{ background:var(--success); }
     .dot-warn{ background:var(--warn); }
 
-    /* ===== Coluna direita: Performance (minimalista) ===== */
+    /* ===== Coluna direita: Performance ===== */
     .perf-mini{
       border:1px solid var(--line); border-radius:16px; padding:14px; background:#fff;
       display:flex; flex-direction:column; gap:8px; align-items:flex-start; justify-content:center;
@@ -205,7 +194,7 @@
       margin-top:28px; margin-bottom:4px;
     }
 
-    /* ===== Ações por ícone (tabela) ===== */
+    /* ===== Ações por ícone ===== */
     .acoes-wrap{ display:flex; justify-content:center; gap:8px; flex-wrap:wrap; }
     .icon-btn{ width:36px; height:36px; border-radius:9999px; border:1px solid var(--line); background:#fff; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; transition:.18s; }
     .icon-btn:hover{ background:#f3f3f7; }
@@ -214,7 +203,7 @@
     .icon-btn.edit:hover svg{ stroke:var(--roxo); }
     .icon-btn.danger:hover svg{ stroke:var(--danger); }
 
-    /* ===== Mobile: cards de teares ===== */
+    /* ===== Mobile: cards ===== */
     .teares-cards{ display:none; grid-template-columns:1fr; gap:10px; }
     .tear-card{ border:1px solid var(--line); border-radius:14px; background:#fff; padding:12px; }
     .tear-hd{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
@@ -253,7 +242,6 @@
 </head>
 <body>
 
-{# ===== Variáveis antes do header ===== #}
 {% set nome_empresa =
     (empresa.apelido if empresa and empresa.apelido else
      (empresa.nome_fantasia if empresa and empresa.nome_fantasia else
@@ -262,17 +250,15 @@
 {% set lista_teares =
     (teares if teares is defined and teares is not none
      else (empresa.teares if empresa and empresa.teares else [])) %}
-{# URL do avatar: prioriza sessão (tem cache-buster), depois view, depois legado #}
 {% set avatar_url = (session.get('avatar_url') or avatar_url or foto_url) %}
 
-<!-- ===== TOPBAR ===== -->
 <header class="topbar">
   <a class="logo" href="{{ url_for('index') }}" aria-label="Página inicial" title="Página inicial">
     <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
   </a>
   <div class="spacer"></div>
 
-  {% set chat_count = (chat_nao_lidos if chat_nao_lidos is defined else 0) %} 
+  {% set chat_count = (chat_nao_lidos if chat_nao_lidos is defined else 0) %}
   {% set notif_count = (notificacoes if notificacoes is defined else 0) %}
 
   <div class="top-icons">
@@ -368,11 +354,8 @@
   <!-- form oculto para upload de foto -->
   <form id="fotoForm" action="{{ url_for('perfil_foto_upload') }}" method="POST" enctype="multipart/form-data" class="sr-only">
     {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
-    <!-- Fototeca (galeria) -->
     <input type="file" id="fotoInputLib"  name="foto" accept="image/*">
-    <!-- Câmera (mobile) -->
     <input type="file" id="fotoInputCam"  name="foto" accept="image/*" capture="environment">
-    <!-- Arquivo tradicional -->
     <input type="file" id="fotoInputFile" name="foto" accept="image/*,.jpg,.jpeg,.png,.webp,.gif">
   </form>
 </header>
@@ -383,7 +366,6 @@
 
   <!-- ===== HERO ===== -->
   <div class="hero-card">
-    <!-- Coluna esquerda -->
     <div>
       <div class="hero-ident">
         <div class="hero-avatar" aria-label="Foto do perfil" title="Clique no lápis para alterar a foto">
@@ -391,13 +373,14 @@
             <img class="js-avatar" src="{{ avatar_url }}" alt="">
           {% else %}
             <img class="js-avatar" src="" alt="" style="display:none">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path></svg>
+            <!-- SVG placeholder com classe específica -->
+            <svg class="avatar-ph" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path></svg>
           {% endif %}
+
           <button class="edit-pencil" id="pencilToggle" type="button" title="Alterar foto do perfil" aria-label="Alterar foto do perfil">
             <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
           </button>
 
-          <!-- Popover com as 3 opções -->
           <div id="photoMenu" class="photo-menu" aria-label="Opções da foto" role="menu">
             <button type="button" class="photo-item" data-act="gallery">
               <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="8.5" cy="11.5" r="2.5"></circle><path d="M21 15l-5-5-4 4-2-2-5 5"></path></svg>
@@ -412,7 +395,7 @@
               <span>Escolher arquivo</span>
             </button>
           </div>
-        </div> <!-- FECHA hero-avatar -->
+        </div>
 
         <div class="hero-info" style="min-width:0;">
           <div class="hero-nome">{{ nome_empresa }}</div>
@@ -430,7 +413,6 @@
       </div>
     </div>
 
-    <!-- Coluna direita: Performance (apenas título + link) -->
     <aside class="perf-mini">
       <div class="perf-mini-title">Performance de acesso</div>
       <a href="{{ url_for('performance_acesso') }}" class="perf-mini-link">Ver detalhes</a>
@@ -438,13 +420,11 @@
   </div>
   <!-- ===== /HERO ===== -->
 
-  <!-- Cabeçalho da tabela -->
   <div class="sec-title">
     <h2>Teares Cadastrados:</h2>
     <a href="{{ url_for('teares_form') }}" class="btn-roxo">+ Cadastrar Tear</a>
   </div>
 
-  <!-- Desktop: tabela -->
   <div class="table-wrapper">
     <table>
       <thead>
@@ -492,7 +472,6 @@
     </table>
   </div>
 
-  <!-- Mobile: cards -->
   <div class="teares-cards">
     {% if lista_teares|length %}
       {% for tear in lista_teares %}
@@ -583,7 +562,7 @@
 
     pencil?.addEventListener('click', function(e){
       e.preventDefault(); e.stopPropagation();
-      if (photoMenu.classList.contains('open')) closePhotoMenu(); else openPhotoMenu();
+      photoMenu.classList.contains('open') ? closePhotoMenu() : openPhotoMenu();
     });
     photoMenu?.addEventListener('click', (e)=>{ e.stopPropagation(); });
 
@@ -637,7 +616,6 @@
       ctx.drawImage(camVideo, 0, 0, w, h);
       camCanvas.toBlob(async (blob)=>{
         if (!blob) return;
-        // ===== AVATAR PREVIEW + CACHE-BUSTER (webcam) =====
         try{
           const dataURL = camCanvas.toDataURL('image/jpeg', 0.92);
           if (dataURL){
@@ -648,7 +626,6 @@
             });
           }
         }catch(e){}
-        // ===== envio ao backend =====
         const fd = new FormData();
         const csrf = fotoForm.querySelector('input[name="csrf_token"]')?.value;
         if (csrf) fd.append('csrf_token', csrf);
@@ -661,7 +638,7 @@
       }, 'image/jpeg', 0.92);
     });
 
-    // ===== AVATAR PREVIEW + CACHE-BUSTER (arquivo/galeria) =====
+    // ===== AVATAR PREVIEW + CACHE-BUSTER =====
     function addBust(url, ts){
       if (!url) return url;
       try{
@@ -676,8 +653,8 @@
       document.querySelectorAll('img.js-avatar').forEach(img=>{
         img.src = url; img.style.display = '';
       });
-      // esconder SVG placeholder se existir
-      document.querySelectorAll('.hero-avatar svg').forEach(svg=>{ svg.style.display = 'none'; });
+      // esconder apenas o placeholder do avatar (e não os svgs do lápis/menu)
+      document.querySelectorAll('.hero-avatar > svg.avatar-ph').forEach(svg=>{ svg.style.display = 'none'; });
     }
     function previewAndSubmit(inputEl){
       closePhotoMenu();
@@ -692,7 +669,6 @@
             localStorage.setItem('avatarBustTs', String(Date.now()));
             setAllAvatars(dataUrl);
           }
-          // pequeno atraso ajuda Safari/iOS a manter o arquivo no POST
           setTimeout(() => {
             if (fotoForm?.requestSubmit) fotoForm.requestSubmit(); else fotoForm?.submit();
           }, 80);
@@ -706,7 +682,7 @@
     inFile?.addEventListener('change', function(){ previewAndSubmit(this); });
     inCam?.addEventListener('change', function(){ previewAndSubmit(this); });
 
-    // ===== Inicialização do avatar (sessão -> bust -> temp) =====
+    // ===== Inicialização do avatar =====
     const sessionAvatarUrl = {{ (session.get('avatar_url') or '') | tojson }};
     const bustTs = localStorage.getItem('avatarBustTs');
     const tempUrl = localStorage.getItem('avatarTempUrl');
