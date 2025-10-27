@@ -119,16 +119,7 @@
     
     .hero-ident{ display:flex; gap:14px; align-items:flex-start; min-width:0; position:relative; }
     
-    /* ====== AVATAR (hero) – container 1:1 ====== */
-    .hero-avatar{
-      inline-size:64px; block-size:64px; aspect-ratio:1/1; border-radius:50%;
-      background: radial-gradient(120% 120% at 10% 10%, #f4f3ff, #f0ecff 60%, #ebe6ff 100%);
-      display:grid; place-items:center; flex:0 0 64px; border:1px solid var(--line); position:relative;
-      overflow:visible;  /* menu pode transbordar */
-      line-height:0;
-    }
-    
-    /* ====== AVATAR (topo e dropdown) – containers 1:1 ====== */
+    /* ===== AVATARES DO TOPO E DO DROPDOWN ===== */
     .profile-pill .avatar,
     .pm-header .avatar{
       inline-size:24px; block-size:24px; aspect-ratio:1/1;
@@ -136,21 +127,41 @@
       background:#f2f2ff; display:grid; place-items:center; border:1px solid var(--line);
       line-height:0;
     }
-    
-    /* ====== A IMAGEM do avatar (escopo + força) ====== */
     .profile-pill .avatar > img.js-avatar,
-    .pm-header .avatar > img.js-avatar,
+    .pm-header .avatar > img.js-avatar{
+      display:block !important;
+      inline-size:100% !important;
+      block-size:100% !important;
+      max-inline-size:none !important;
+      max-block-size:none !important;
+      object-fit:cover !important;
+      object-position:50% 50% !important;
+      border-radius:50% !important;
+      clip-path:inset(0 round 50%) !important;
+      -webkit-mask-image:-webkit-radial-gradient(white, black);
+      position:relative; z-index:1; -webkit-user-drag:none; user-select:none;
+    }
+    
+    /* ===== AVATAR DO HERO (CARD) ===== */
+    .hero-avatar{
+      inline-size:64px; block-size:64px; aspect-ratio:1/1; border-radius:50%;
+      background: radial-gradient(120% 120% at 10% 10%, #f4f3ff, #f0ecff 60%, #ebe6ff 100%);
+      display:grid; place-items:center; flex:0 0 64px; border:1px solid var(--line); position:relative;
+      overflow:visible;   /* mantém o popover visível */
+      line-height:0;
+    }
+    /* imagem do avatar do hero – circular SEMPRE */
     .hero-avatar > img.js-avatar{
       display:block !important;
       inline-size:100% !important;
       block-size:100% !important;
       max-inline-size:none !important;
       max-block-size:none !important;
-      object-fit:cover !important;           /* preenche sem distorcer */
-      object-position:50% 50% !important;    /* centraliza */
-      border-radius:50% !important;          /* borda circular */
-      clip-path:inset(0 round 50%) !important;        /* máscara circular */
-      -webkit-mask-image:-webkit-radial-gradient(white, black); /* fallback iOS/Safari */
+      object-fit:cover !important;
+      object-position:50% 50% !important;
+      border-radius:50% !important;
+      clip-path:inset(0 round 50%) !important; /* máscara circular mesmo com overflow:visible */
+      -webkit-mask-image:-webkit-radial-gradient(white, black);
       position:relative; z-index:1; -webkit-user-drag:none; user-select:none;
     }
     
@@ -191,6 +202,7 @@
     .chip .dot{ width:8px; height:8px; border-radius:50%; }
     .dot-success{ background:var(--success); }
     .dot-warn{ background:var(--warn); }
+
 
     /* ===== Coluna direita: Performance ===== */
     .perf-mini{
