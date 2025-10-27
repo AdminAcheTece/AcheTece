@@ -116,26 +116,46 @@
       display:grid; grid-template-columns:1.2fr .8fr; gap:20px; align-items:stretch;
     }
     @media (max-width:920px){ .hero-card{ grid-template-columns:1fr; } }
-
+    
     .hero-ident{ display:flex; gap:14px; align-items:flex-start; min-width:0; position:relative; }
+    
+    /* ====== AVATAR (hero) – container 1:1 ====== */
     .hero-avatar{
-      width:64px; height:64px; aspect-ratio:1/1; border-radius:50%;
+      inline-size:64px; block-size:64px; aspect-ratio:1/1; border-radius:50%;
       background: radial-gradient(120% 120% at 10% 10%, #f4f3ff, #f0ecff 60%, #ebe6ff 100%);
       display:grid; place-items:center; flex:0 0 64px; border:1px solid var(--line); position:relative;
-      overflow:visible; /* menu pode transbordar */
+      overflow:visible;  /* menu pode transbordar */
+      line-height:0;
     }
-    /* IMAGEM do avatar: sempre circular, centralizada e sem distorção (escopo aos containers!) */
+    
+    /* ====== AVATAR (topo e dropdown) – containers 1:1 ====== */
+    .profile-pill .avatar,
+    .pm-header .avatar{
+      inline-size:24px; block-size:24px; aspect-ratio:1/1;
+      border-radius:50%; overflow:hidden;
+      background:#f2f2ff; display:grid; place-items:center; border:1px solid var(--line);
+      line-height:0;
+    }
+    
+    /* ====== A IMAGEM do avatar (escopo + força) ====== */
     .profile-pill .avatar > img.js-avatar,
     .pm-header .avatar > img.js-avatar,
     .hero-avatar > img.js-avatar{
-      width:100%; height:100%; display:block;
-      object-fit:cover; object-position:center;
-      border-radius:50%;
-      -webkit-user-drag:none; user-select:none;
-      position:relative; z-index:1;
+      display:block !important;
+      inline-size:100% !important;
+      block-size:100% !important;
+      max-inline-size:none !important;
+      max-block-size:none !important;
+      object-fit:cover !important;           /* preenche sem distorcer */
+      object-position:50% 50% !important;    /* centraliza */
+      border-radius:50% !important;          /* borda circular */
+      clip-path:inset(0 round 50%) !important;        /* máscara circular */
+      -webkit-mask-image:-webkit-radial-gradient(white, black); /* fallback iOS/Safari */
+      position:relative; z-index:1; -webkit-user-drag:none; user-select:none;
     }
+    
     .hero-avatar svg{ width:30px; height:30px; stroke:var(--roxo); fill:none; stroke-width:1.8; }
-
+    
     .edit-pencil{
       position:absolute; right:-6px; bottom:-6px; width:28px; height:28px; border-radius:9999px;
       border:1px solid var(--line); background:#fff; display:grid; place-items:center; cursor:pointer;
@@ -144,7 +164,7 @@
     }
     .edit-pencil:hover{ background:#f3f3f7; transform:translateY(-1px); }
     .edit-pencil svg{ width:16px; height:16px; stroke:#555; fill:none; stroke-width:1.8; }
-
+    
     /* Popover de opções de foto */
     .photo-menu{
       position:absolute; left:0; bottom:72px; width:240px;
@@ -157,10 +177,10 @@
     .photo-item{ display:flex; align-items:center; gap:10px; width:100%; background:transparent; border:0; padding:10px 12px; cursor:pointer; }
     .photo-item:hover{ background:#f6f7fb; }
     .photo-item svg{ width:18px; height:18px; stroke:#444; fill:none; stroke-width:1.8; flex:0 0 18px; }
-
+    
     /* Overlay abaixo do menu */
     .photo-overlay{ position:fixed; inset:0; background:transparent; z-index:1200; }
-
+    
     .hero-nome{ font-size:1.25rem; font-weight:800; color:#161616; line-height:1.2; }
     .hero-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
     .chip{
