@@ -139,14 +139,20 @@
     
     /* Popover de opções de foto (desktop e mobile) */
     .photo-menu{
-      position:absolute; left:0; bottom:72px; width:240px;
+      position:fixed; /* ← antes era absolute */
+      left:0; top:0; width:240px;
       background:#fff; border:1px solid var(--line); border-radius:12px;
       box-shadow:0 8px 24px rgba(0,0,0,.06);
-      opacity:0; pointer-events:none; transform:translateY(6px);
-      transition:.15s;
+      opacity:0; pointer-events:none;
+      /* ficamos fora da tela até o JS posicionar */
+      transform:translate(-9999px, -9999px) scale(.98);
+      transition:opacity .15s ease, transform .15s ease;
       z-index:2000;
     }
-    .photo-menu.open{ opacity:1; pointer-events:auto; transform:translateY(0); }
+    .photo-menu.open{
+      opacity:1; pointer-events:auto;
+      /* o translate correto é aplicado via JS ao abrir */
+    }
     .photo-item{ display:flex; align-items:center; gap:10px; width:100%; background:transparent; border:0; padding:10px 12px; cursor:pointer; }
     .photo-item:hover{ background:#f6f7fb; }
     .photo-item svg{ width:18px; height:18px; stroke:#444; fill:none; stroke-width:1.8; }
@@ -596,7 +602,76 @@
       openPhotoMenu();
     });
     // >>> FIM DO TRECHO NOVO <<<
+
+    // Move o menu para <body> para evitar qualquer clipping de pais
+    if (photoMenu && photoMenu.parentNode !== document.body) {
+      document.body.appendChild(photoMenu);
+    }
     
+    // Calcula posição do popover perto do botão/âncora
+    function positionPhotoMenu(anchor){
+      if (!photoMenu || !anchor) return;
+      // mede o menu: liga temporariamente para pegar offsetWidth/Height
+      photoMenu.style.visibility = 'hidden';
+      photoMenu.classList.add('open');
+      const menuW = photoMenu.offsetWidth || 240;
+      const menuH = photoMenu.offsetHeight || 160;
+      photoMenu.classList.remove('open');
+      photoMenu.style.visibility = '';
+    
+      const r = anchor.getBoundingClientRect();
+      const vw = window.innerWidth, vh = window.innerHeight;
+    
+      // posição preferida: abaixo do lápis, alinhado à esquerda do avatar
+      let x = r.left;
+      let y = r.bottom + 8;
+    
+      // se estourar à direita, recua
+      if (x + menuW > vw - 8) x = Math.max(8, vw - menuW - 8);
+      // se não couber abaixo, mostra acima
+      if (y + menuH > vh - 8) y = Math.max(8, r.top - menuH - 8);
+    
+      // aplica a posição via transform para evitar layout thrash
+      photoMenu.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
+    }
+    
+    function openPhotoMenu(){
+      positionPhotoMenu(pencil);
+      photoMenu.classList.add('open');
+      if (overlay) overlay.hidden = false;
+    }
+    
+    function closePhotoMenu(){
+      photoMenu.classList.remove('open');
+      // manda para fora da tela até a próxima abertura
+      photoMenu.style.transform = 'translate(-9999px, -9999px)';
+      if (overlay) overlay.hidden = true;
+    }
+    
+    // Reposiciona se a janela mudar
+    window.addEventListener('resize', ()=>{ if (photoMenu.classList.contains('open')) positionPhotoMenu(pencil); });
+    window.addEventListener('scroll', ()=>{ if (photoMenu.classList.contains('open')) positionPhotoMenu(pencil); }, {passive:true});
+    
+    // Clique no lápis — abre/fecha sem deixar o click “vazar”
+    pencil?.addEventListener('click', function(e){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      e.stopPropagation();
+      if (photoMenu.classList.contains('open')) closePhotoMenu(); else openPhotoMenu();
+    });
+    
+    // Clique no avatar inteiro também abre (caso queira manter)
+    const heroAvatar = document.querySelector('.hero-avatar');
+    heroAvatar?.addEventListener('click', (e) => {
+      if (e.target.closest('#pencilToggle') || e.target.closest('#photoMenu')) return;
+      e.preventDefault(); e.stopPropagation();
+      if (!photoMenu.classList.contains('open')) openPhotoMenu();
+    });
+    
+    // Overlay fecha o menu
+    overlay?.addEventListener('click', (e)=>{ e.stopPropagation(); closePhotoMenu(); });
+
+  
     function openPhotoMenu(){ photoMenu.classList.add('open'); if (overlay) overlay.hidden = false; }
     function closePhotoMenu(){ photoMenu.classList.remove('open'); if (overlay) overlay.hidden = true; }
     
