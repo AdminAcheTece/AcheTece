@@ -25,6 +25,32 @@
     html, body{ background:var(--bg-soft); color:var(--text); margin:0; }
     th, td{ text-align:center; }
 
+    /* ========= NORMALIZAÇÃO GLOBAL DE AVATARES ========= */
+    /* Toda imagem de avatar fica 100% circular, centralizada e coberta */
+    img.js-avatar{
+      width:100%;
+      height:100%;
+      display:block;
+      object-fit:cover;
+      object-position:center;
+      border-radius:50%;
+      position:relative;
+      z-index:1; /* lápis fica acima */
+      -webkit-user-drag:none;
+      user-select:none;
+    }
+    /* Containers de avatar com proporção 1:1 para garantir círculo perfeito */
+    .profile-pill .avatar,
+    .pm-header .avatar{
+      width:24px; height:24px; /* mantém seu layout */
+      aspect-ratio:1/1;
+      border-radius:9999px;
+      overflow:hidden;
+      background:#f2f2ff;
+      display:grid; place-items:center;
+      border:1px solid var(--line);
+    }
+
     /* ======= TOPBAR ======= */
     .topbar{
       display:flex; align-items:center; gap:12px;
@@ -54,11 +80,6 @@
       display:inline-flex; align-items:center; gap:8px; padding:4px 10px;
       border:1px solid var(--line); border-radius:9999px; background:#fff; cursor:pointer;
     }
-    .profile-pill .avatar{
-      width:24px; height:24px; border-radius:9999px; overflow:hidden; background:#f2f2ff;
-      display:grid; place-items:center; border:1px solid var(--line);
-    }
-    .profile-pill .avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
     .profile-pill .name{ max-width:120px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:700; font-size:14px; }
     .caret{ width:14px; height:14px; stroke:#555; }
     @media (max-width:520px){ .profile-pill .name{ display:none; } }
@@ -71,7 +92,6 @@
     }
     .profile-menu.open{ opacity:1; pointer-events:auto; transform:translateY(0) scale(1); }
     .pm-header{ display:flex; align-items:center; gap:10px; padding:12px; border-bottom:1px solid var(--line); }
-    .pm-header .avatar{ width:36px; height:36px; border-radius:9999px; overflow:hidden; border:1px solid var(--line); background:#f2f2ff; display:grid; place-items:center; }
     .pm-header strong{ font-size:14px; }
     .pm-group-title{ font-size:11px; color:#7a7a7a; letter-spacing:.02em; text-transform:uppercase; padding:10px 12px 4px; }
     .pm-item{ display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222; }
@@ -116,20 +136,22 @@
 
     .hero-ident{ display:flex; gap:14px; align-items:flex-start; min-width:0; position:relative; }
     .hero-avatar{
-      width:64px; height:64px; border-radius:50%;
+      width:64px; height:64px; aspect-ratio:1/1; border-radius:50%;
       background: radial-gradient(120% 120% at 10% 10%, #f4f3ff, #f0ecff 60%, #ebe6ff 100%);
       display:grid; place-items:center; flex:0 0 64px; border:1px solid var(--line); position:relative;
-      overflow:visible;
+      overflow:visible; /* mantém o lápis visível mesmo que ultrapasse um pouco */
+      isolation:isolate; /* cria contexto p/ z-index previsível */
     }
-    .hero-avatar img{ width:100%; height:100%; object-fit:cover; border-radius:50%; }
     .hero-avatar svg{ width:30px; height:30px; stroke:var(--roxo); fill:none; stroke-width:1.8; }
 
     .edit-pencil{
       position:absolute; right:-6px; bottom:-6px; width:28px; height:28px; border-radius:9999px;
       border:1px solid var(--line); background:#fff; display:grid; place-items:center; cursor:pointer;
-      z-index:2;
+      z-index:5; /* acima da foto */
+      box-shadow:0 2px 6px rgba(0,0,0,.08);
+      transition:transform .12s ease, background .12s ease;
     }
-    .edit-pencil:hover{ background:#f3f3f7; }
+    .edit-pencil:hover{ background:#f3f3f7; transform:translateY(-1px); }
     .edit-pencil svg{ width:16px; height:16px; stroke:#555; fill:none; stroke-width:1.8; }
 
     /* Popover de opções de foto (desktop e mobile) */
@@ -250,7 +272,7 @@
   </a>
   <div class="spacer"></div>
 
-  {% set chat_count = (chat_nao_lidos if chat_nao_lidos is defined else 0) %}
+  {% set chat_count = (chat_nao_lidos if chat_nao_lidos is defined else 0) %} 
   {% set notif_count = (notificacoes if notificacoes is defined else 0) %}
 
   <div class="top-icons">
@@ -280,9 +302,8 @@
     <button class="profile-pill" id="profileToggle" type="button" aria-haspopup="menu" aria-expanded="false" title="Abrir menu do perfil">
       <span class="avatar">
         {% if avatar_url %}
-          <img class="js-avatar" src="{{ avatar_url }}" alt="Foto do perfil">
+          <img class="js-avatar" src="{{ avatar_url }}" alt="Foto do perfil" decoding="async" referrerpolicy="no-referrer" draggable="false">
         {% else %}
-          <!-- img oculto para podermos inserir via JS quando a sessão tiver a URL -->
           <img class="js-avatar" src="" alt="Foto do perfil" style="display:none">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#6a5acd" fill="none" stroke-width="1.8"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7" stroke="#6a5acd" fill="none" stroke-width="1.8"></path></svg>
         {% endif %}
@@ -297,7 +318,7 @@
     <div class="pm-header">
       <span class="avatar">
         {% if avatar_url %}
-          <img class="js-avatar" src="{{ avatar_url }}" alt="Foto do perfil">
+          <img class="js-avatar" src="{{ avatar_url }}" alt="Foto do perfil" decoding="async" referrerpolicy="no-referrer" draggable="false">
         {% else %}
           <img class="js-avatar" src="" alt="Foto do perfil" style="display:none">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#6a5acd" fill="none" stroke-width="1.8"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7" stroke="#6a5acd" fill="none" stroke-width="1.8"></path></svg>
@@ -372,7 +393,7 @@
             <img class="js-avatar" src="" alt="" style="display:none">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path></svg>
           {% endif %}
-          <button class="edit-pencil" id="pencilToggle" type="button" title="Alterar foto do perfil">
+          <button class="edit-pencil" id="pencilToggle" type="button" title="Alterar foto do perfil" aria-label="Alterar foto do perfil">
             <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
           </button>
 
@@ -643,9 +664,13 @@
     // ===== AVATAR PREVIEW + CACHE-BUSTER (arquivo/galeria) =====
     function addBust(url, ts){
       if (!url) return url;
-      const u = new URL(url, window.location.origin);
-      u.searchParams.set('v', ts);
-      return u.toString();
+      try{
+        const u = new URL(url, window.location.origin);
+        u.searchParams.set('v', ts);
+        return u.toString();
+      }catch(e){
+        return url + (url.includes('?') ? '&' : '?') + 'v=' + ts;
+      }
     }
     function setAllAvatars(url){
       document.querySelectorAll('img.js-avatar').forEach(img=>{
@@ -687,12 +712,10 @@
     const tempUrl = localStorage.getItem('avatarTempUrl');
 
     if (sessionAvatarUrl) {
-      // backend já devolveu URL com cache-buster (recomendado)
       setAllAvatars(sessionAvatarUrl);
       localStorage.removeItem('avatarTempUrl');
       localStorage.removeItem('avatarBustTs');
     } else if (bustTs) {
-      // força recarregar o arquivo antigo com ?v=ts (se a URL não mudou no servidor)
       document.querySelectorAll('img.js-avatar').forEach(img=>{
         if (img && img.src && !img.src.startsWith('data:')){
           img.src = addBust(img.src, bustTs);
@@ -700,10 +723,8 @@
         }
       });
       localStorage.removeItem('avatarBustTs');
-      // mantém o tempUrl só até o servidor atualizar sessão
       if (tempUrl) setAllAvatars(tempUrl);
     } else if (tempUrl) {
-      // primeira carga pós preview, antes do servidor atualizar
       setAllAvatars(tempUrl);
     }
 
