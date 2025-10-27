@@ -57,7 +57,6 @@
     .profile-pill .avatar{
       width:24px; height:24px; border-radius:9999px;
       background:#f2f2ff; display:grid; place-items:center; border:1px solid var(--line);
-      /* importante: deixar o container "vazado"; o recorte é do .avatar-clip */
       overflow:visible; aspect-ratio:1/1;
     }
     .avatar-clip{
@@ -127,15 +126,13 @@
       width:64px; height:64px; border-radius:50%;
       background: radial-gradient(120% 120% at 10% 10%, #f4f3ff, #f0ecff 60%, #ebe6ff 100%);
       display:grid; place-items:center; flex:0 0 64px; border:1px solid var(--line); position:relative;
-      /* container vazado; recorte no .avatar-clip */
       overflow:visible; aspect-ratio:1/1;
     }
 
     .edit-pencil{
       position:absolute; right:-6px; bottom:-6px; width:28px; height:28px; border-radius:9999px;
       border:1px solid var(--line); background:#fff; display:grid; place-items:center; cursor:pointer;
-      z-index:4; /* acima da foto */
-      pointer-events:auto;
+      z-index:4; pointer-events:auto;
     }
     .edit-pencil:hover{ background:#f3f3f7; }
     .edit-pencil svg{ width:16px; height:16px; stroke:#555; fill:none; stroke-width:1.8; }
@@ -239,16 +236,19 @@
 </head>
 <body>
 
+{# ===== Variáveis antes do header ===== #}
 {% set nome_empresa =
     (empresa.apelido if empresa and empresa.apelido else
      (empresa.nome_fantasia if empresa and empresa.nome_fantasia else
-      (empresa.razao_social if empresa and empresa.razao_social else 'Minha Malharia')) %}
+      (empresa.razao_social if empresa and empresa.razao_social else 'Minha Malharia'))) %}
 {% set _assin_ativa = (assinatura_ativa if assinatura_ativa is defined else False) %}
 {% set lista_teares =
     (teares if teares is defined and teares is not none
      else (empresa.teares if empresa and empresa.teares else [])) %}
+{# URL do avatar: prioriza sessão (tem cache-buster), depois view, depois legado #}
 {% set avatar_url = (session.get('avatar_url') or avatar_url or foto_url) %}
 
+<!-- ===== TOPBAR ===== -->
 <header class="topbar">
   <a class="logo" href="{{ url_for('index') }}" aria-label="Página inicial" title="Página inicial">
     <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
@@ -256,7 +256,7 @@
   <div class="spacer"></div>
 
   {% set chat_count = (chat_nao_lidos if chat_nao_lidos is defined else 0) %}
-  {% set notif_count = (notificacoes if notificacoes is defined else 0) %}
+  {% set notif_count = (notificacoes if notificacoes is definido else 0) %}
 
   <div class="top-icons">
     <a href="{{ url_for('fale_conosco') }}" class="icon-btn badge-wrap" aria-label="Chat" title="Chat">
@@ -521,6 +521,7 @@
   </div>
 </div>
 
+<!-- Overlay transparente global -->
 <div id="photoOverlay" class="photo-overlay" hidden></div>
 
 <script>
@@ -711,8 +712,6 @@
       if (tempUrl) setAllAvatars(tempUrl);
     } else if (tempUrl) {
       setAllAvatars(tempUrl);
-    } else {
-      // se havia placeholder, mantém visível (nada a fazer)
     }
 
     // Fechamentos globais
