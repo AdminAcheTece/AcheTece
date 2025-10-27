@@ -136,7 +136,7 @@
     @media (max-width:620px){.localizacao-card .row{grid-template-columns:1fr}}
 
     /* ===== RESULTADOS ===== */
-    .results-card{border:1px solid #eee;border-radius:12px;padding:12px;max-width:1140px;margin:0 auto;} /* centralizado e largura controlada */
+    .results-card{border:1px solid #eee;border-radius:12px;padding:12px;max-width:1140px;margin:0 auto;}
     .results-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 4px 6px;}
     .results-head h3{margin:0;font-size:16px;font-weight:700;}
     .results-count{font-size:13px;color:#555;}
@@ -173,7 +173,7 @@
 
     /* ===== MOBILE (cards) ===== */
     .cards-grid{display:grid;grid-template-columns:1fr;gap:12px;}
-    .card-tear{ border:1px solid #eee;border-radius:16px;padding:12px; } /* padding menor */
+    .card-tear{ border:1px solid #eee;border-radius:16px;padding:12px; }
     @media (max-width:820px){ .card-tear{ border-color:#ccc; } }
     .card-title{font-weight:800;font-size:1.02rem;margin:0 0 6px;}
 
@@ -214,7 +214,7 @@
       .empresa-actions .btn-view{height:30px;padding:0 8px;font-size:12px;}
       .empresa-actions .wa-link{width:30px;height:30px;}
       .btn-view .lbl-full{ display:none; }
-      .btn-view .lbl-short{ display:inline; } /* vira "Ver" */
+      .btn-view .lbl-short{ display:inline; }
     }
 
     /* Mostrar cards só no mobile; tabela só no desktop */
@@ -357,34 +357,24 @@
         <!-- COLUNA DIREITA: Localização + RESULTADOS -->
         <div class="right-col">
           <section class="localizacao-card" aria-labelledby="loc-title">
+            {% set sel_uf = (filtros.get('estado') if filtros is defined else request.args.get('estado','')) %}
+            {% set sel_cidade = (filtros.get('cidade') if filtros is defined else request.args.get('cidade','')) %}
             <h2 id="loc-title">Localização</h2>
             <div class="row">
               <div>
                 <label for="estado">Estado</label>
                 <select id="estado" name="estado" class="auto-apply">
                   <option value="">Selecione o estado</option>
-                  {% set sel_uf = (filtros.get('estado') if filtros is defined else request.args.get('estado','')) %}
-                  {% if estados is defined and estados %}
-                    {% for uf in estados %}
-                      <option value="{{ uf }}" {% if sel_uf==uf %}selected{% endif %}>{{ uf }}</option>
-                    {% endfor %}
-                  {% elif opcoes is defined and opcoes.estado is defined %}
-                    {% for uf in opcoes.estado %}
-                      <option value="{{ uf }}" {% if sel_uf==uf %}selected{% endif %}>{{ uf }}</option>
-                    {% endfor %}
-                  {% endif %}
+                  {% set UF_LIST = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'] %}
+                  {% for uf in UF_LIST %}
+                    <option value="{{ uf }}" {% if sel_uf==uf %}selected{% endif %}>{{ uf }}</option>
+                  {% endfor %}
                 </select>
               </div>
               <div>
                 <label for="cidade">Cidade</label>
-                <select id="cidade" name="cidade" class="auto-apply" {% if not sel_uf %}disabled{% endif %}>
+                <select id="cidade" name="cidade" class="auto-apply" data-selected="{{ sel_cidade }}" {% if not sel_uf %}disabled{% endif %}>
                   <option value="">{% if not sel_uf %}Selecione o estado primeiro{% else %}Todas{% endif %}</option>
-                  {% if sel_uf and opcoes is defined and opcoes.cidade is defined and opcoes.cidade %}
-                    {% set sel_cidade = (filtros.get('cidade') if filtros is defined else request.args.get('cidade','')) %}
-                    {% for c in opcoes.cidade %}
-                      <option value="{{ c }}" {% if sel_cidade==c %}selected{% endif %}>{{ c }}</option>
-                    {% endfor %}
-                  {% endif %}
                 </select>
               </div>
             </div>
@@ -450,18 +440,14 @@
                           <div>
                             <span class="lbl">Elastano:</span>
                             <span class="val">
-                              {# Lê 'elastano' e, se não existir, tenta 'kit_elastano' #}
                               {% set raw = r.elastano if (r is defined and (r.elastano is not none)) else r.kit_elastano %}
                               {% if raw is boolean %}
                                 {{ 'Sim' if raw else 'Não' }}
                               {% else %}
                                 {% set s = (raw|string).strip().lower() %}
-                                {% if s in ['sim','s','true','t','on','1','com','tem','yes','y'] %}
-                                  Sim
-                                {% elif s in ['não','nao','n','false','f','off','0','sem','no'] %}
-                                  Não
-                                {% else %}
-                                  —
+                                {% if s in ['sim','s','true','t','on','1','com','tem','yes','y'] %}Sim
+                                {% elif s in ['não','nao','n','false','f','off','0','sem','no'] %}Não
+                                {% else %}—
                                 {% endif %}
                               {% endif %}
                             </span>
@@ -517,7 +503,6 @@
                 </div>
               </div>
 
-
               <!-- TABELA (desktop) -->
               <div class="table-wrap desktop-only">
                 <table class="teares-table">
@@ -543,7 +528,6 @@
                         <td>{{ r.diametro }}</td>
                         <td>{{ r.alimentadores }}</td>
                         <td>
-                          {# Lê 'elastano' e, se não existir, tenta 'kit_elastano' #}
                           {% set raw = r.elastano if (r is defined and (r.elastano is not none)) else r.kit_elastano %}
                           {% if raw is boolean %}
                             {{ 'Sim' if raw else 'Não' }}
@@ -596,7 +580,6 @@
                   </tbody>
                 </table>
               </div>
-
 
               <!-- PAGINAÇÃO -->
               {% set filtro_diam_ = filtros.get('diâmetro') or filtros.get('diametro') or '' %}
@@ -761,6 +744,74 @@
           });
         }
       });
+    })();
+
+    // ===== UF/Cidade com lista completa (IBGE) =====
+    (function(){
+      const estadoSel = document.getElementById('estado');
+      const cidadeSel = document.getElementById('cidade');
+
+      const CITIES_CACHE = Object.create(null);
+
+      async function fetchCities(uf){
+        if (!uf) return [];
+        if (CITIES_CACHE[uf]) return CITIES_CACHE[uf];
+        const url = 'https://servicodados.ibge.gov.br/api/v1/localidades/estados/'+ uf +'/municipios?orderBy=nome';
+        const resp = await fetch(url, {mode:'cors'});
+        const data = await resp.json();
+        const names = (Array.isArray(data) ? data.map(x=>x.nome) : []).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+        CITIES_CACHE[uf] = names;
+        return names;
+      }
+
+      function clearAndBaseOption(select, text){
+        select.innerHTML = '';
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = text || 'Todas';
+        select.appendChild(opt);
+      }
+
+      async function loadCities(uf, preselect){
+        if (!cidadeSel) return;
+        clearAndBaseOption(cidadeSel, uf ? 'Todas' : 'Selecione o estado primeiro');
+        cidadeSel.disabled = !uf;
+        if (!uf) return;
+
+        try{
+          const list = await fetchCities(uf);
+          for (const name of list){
+            const o = new Option(name, name, false, false);
+            cidadeSel.add(o);
+          }
+          if (preselect){
+            cidadeSel.value = preselect;
+          }
+        }catch(err){
+          clearAndBaseOption(cidadeSel, 'Falha ao carregar cidades');
+          cidadeSel.disabled = false;
+        }
+      }
+
+      // Inicializa conforme valores atuais vindos do servidor
+      if (estadoSel && cidadeSel){
+        const preUF = estadoSel.value || '';
+        const preCity = cidadeSel.getAttribute('data-selected') || '';
+        if (preUF){
+          loadCities(preUF, preCity);
+        } else {
+          // sem UF selecionado
+          clearAndBaseOption(cidadeSel, 'Selecione o estado primeiro');
+          cidadeSel.disabled = true;
+        }
+
+        // Quando o usuário escolher uma UF, recarrega a lista de cidades
+        estadoSel.addEventListener('change', function(){
+          // Observação: ao alterar UF o formulário será submetido (auto-apply),
+          // e na volta esta função rodará novamente preenchendo as cidades da UF.
+          // Nada a fazer aqui além de deixar o comportamento padrão.
+        });
+      }
     })();
   </script>
 
