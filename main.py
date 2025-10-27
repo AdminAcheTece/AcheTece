@@ -71,6 +71,9 @@ app.config.update(
     MAIL_TIMEOUT=int(os.getenv("MAIL_TIMEOUT", "8")),             # segundos
     MAIL_SUPPRESS_SEND=_env_bool("MAIL_SUPPRESS_SEND", False),    # True = NÃO envia (modo teste)
     OTP_DEV_FALLBACK=_env_bool("OTP_DEV_FALLBACK", False),        # True = loga e deixa seguir
+    SESSION_COOKIE_SECURE=True,      # HTTPS
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_DOMAIN=".achetece.com.br"  # vale para www e raiz
 )
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY") or ""
@@ -829,6 +832,30 @@ def _bootstrap_and_analytics_lazy():
             except Exception as e:
                 app.logger.error("Falha ao garantir tabela de analytics (adiado): %s", e)
 
+@app.after_request
+def _no_cache_on_panel(resp):
+    """
+    Evita que o navegador exiba versão em cache do painel após trocar a foto.
+    Não mexe em estáticos; atua só nas páginas/redirects do painel.
+    """
+    try:
+        # mais robusto: usa o endpoint quando disponível
+        ep = (request.endpoint or "").lower()
+        p  = request.path or "/"
+
+        # páginas do painel (ajuste a lista se seu endpoint tiver outro nome)
+        panel_endpoints = {"painel_malharia"}
+        # também forçamos no-store no POST de upload (o response é um redirect 302)
+        upload_endpoints = {"perfil_foto_upload"}
+
+        if ep in panel_endpoints or ep in upload_endpoints or p.endswith("/painel_malharia"):
+            resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            resp.headers["Pragma"] = "no-cache"
+            resp.headers["Expires"] = "0"
+    except Exception:
+        pass
+    return resp
+
 # =====================[ ANALYTICS - FIM ]=====================
 
 def parse_bool(val):
@@ -868,53 +895,51 @@ def inject_avatar_url():
     """
     Disponibiliza `avatar_url` em TODOS os templates.
     Prioridade:
-      1) session['avatar_url'] (atualizado no POST /perfil/foto com cache-buster)
-      2) campos da empresa (foto_url / logo_url), se existirem
-      3) arquivo estável legado emp_{empresa_id}.ext via _foto_url_runtime
-    Adiciona cache-buster quando for arquivo local em /static e não houver ?v=...
+      1) session['avatar_url'] (com ?v=timestamp)
+      2) Empresa: foto_url / logo_url
+      3) Arquivo legado emp_{empresa_id}.ext (_foto_url_runtime)
+      4) current_user: avatar_url / photo_url (flask_login)
+    Adiciona cache-buster quando for /static e não houver ?v.
     """
-    url = None
+    url = session.get('avatar_url')  # 1) sessão já tem ?v
 
-    # 1) Sessão (após upload nós já salvamos aqui com ?v=timestamp)
-    sess_url = session.get('avatar_url')
-    if sess_url:
-        url = sess_url
-    else:
-        # 2) Empresa do usuário, se disponível
+    if not url:
+        # 2) Empresa do usuário
+        emp = None
         try:
             emp, _u = _get_empresa_usuario_da_sessao()
         except Exception:
             emp = None
 
         if emp:
-            # tenta campos (se existirem no modelo)
             for attr in ('foto_url', 'logo_url'):
-                try:
-                    val = getattr(emp, attr)
-                except Exception:
-                    val = None
+                val = getattr(emp, attr, None)
                 if val:
                     url = val
                     break
 
-            # 3) Fallback: arquivo legado emp_{id}.*
+            # 3) Fallback legado (arquivo emp_{id}.*)
             if not url:
                 try:
                     url = _foto_url_runtime(emp.id)
                 except Exception:
                     url = None
 
-    # Cache-buster para arquivos locais quando a URL não tiver querystring
-    # (evita cache antigo se estiver lendo do DB/legado)
+        # 4) current_user (se usar flask_login)
+        if not url:
+            cu = globals().get('current_user')
+            if cu is not None:
+                url = getattr(cu, 'avatar_url', None) or getattr(cu, 'photo_url', None)
+
+    # Cache-buster para arquivos locais sem querystring
     if url and url.startswith('/static/') and ('?' not in url):
         try:
             fs_path = os.path.join(app.root_path, url.lstrip('/'))
-            v = int(os.path.getmtime(fs_path))
-            url = f"{url}?v={v}"
+            url = f"{url}?v={int(os.path.getmtime(fs_path))}"
         except Exception:
             pass
 
-    return dict(avatar_url=url)
+    return {'avatar_url': url}
 
 # --------------------------------------------------------------------
 # Fallback de templates (evita 500 se faltar HTML)
