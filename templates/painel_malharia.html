@@ -113,24 +113,30 @@
       display:grid; grid-template-columns:1.2fr .8fr; gap:20px; align-items:stretch;
     }
     @media (max-width:920px){ .hero-card{ grid-template-columns:1fr; } }
-
-    .hero-ident{ display:flex; gap:14px; align-items:flex-start; min-width:0; position:relative; }
+    
+    .hero-ident{
+      display:flex; gap:14px; align-items:flex-start; min-width:0; position:relative;
+      /* permitir que o lápis/menu saiam da área sem serem cortados */
+      overflow:visible;
+    }
     .hero-avatar{
       width:64px; height:64px; border-radius:50%;
       background: radial-gradient(120% 120% at 10% 10%, #f4f3ff, #f0ecff 60%, #ebe6ff 100%);
       display:grid; place-items:center; flex:0 0 64px; border:1px solid var(--line); position:relative;
-      overflow:hidden;
+      /* era overflow:hidden; isso escondia o botão/lápis e o popover */
+      overflow:visible;
     }
     .hero-avatar img{ width:100%; height:100%; object-fit:cover; border-radius:50%; display:block; }
-
+    
     .edit-pencil{
       position:absolute; right:-6px; bottom:-6px; width:28px; height:28px; border-radius:9999px;
       border:1px solid var(--line); background:#fff; display:grid; place-items:center; cursor:pointer;
-      z-index:2;
+      /* garantir clique por cima de outros elementos */
+      z-index:4;
     }
     .edit-pencil:hover{ background:#f3f3f7; }
     .edit-pencil svg{ width:16px; height:16px; stroke:#555; fill:none; stroke-width:1.8; }
-
+    
     /* Popover de opções de foto (desktop e mobile) */
     .photo-menu{
       position:absolute; left:0; bottom:72px; width:240px;
@@ -144,12 +150,12 @@
     .photo-item{ display:flex; align-items:center; gap:10px; width:100%; background:transparent; border:0; padding:10px 12px; cursor:pointer; }
     .photo-item:hover{ background:#f6f7fb; }
     .photo-item svg{ width:18px; height:18px; stroke:#444; fill:none; stroke-width:1.8; }
-
+    
     /* Overlay global para capturar cliques no mobile */
     .photo-overlay{
       position:fixed; inset:0; background:transparent; z-index:1999;
     }
-
+    
     .hero-nome{ font-size:1.25rem; font-weight:800; color:#161616; line-height:1.2; }
     .hero-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
     .chip{
@@ -572,12 +578,30 @@
     const pencil    = document.getElementById('pencilToggle');
     const photoMenu = document.getElementById('photoMenu');
     const overlay   = document.getElementById('photoOverlay');
-
+    // ===== Upload de foto - opções =====
+    const fotoForm  = document.getElementById('fotoForm');
+    const inLib     = document.getElementById('fotoInputLib');
+    const inCam     = document.getElementById('fotoInputCam');
+    const inFile    = document.getElementById('fotoInputFile');
+    const pencil    = document.getElementById('pencilToggle');
+    const photoMenu = document.getElementById('photoMenu');
+    const overlay   = document.getElementById('photoOverlay');
+    
+    // >>> ADICIONE ESTE TRECHO AQUI <<<
+    const heroAvatar = document.querySelector('.hero-avatar');
+    heroAvatar?.addEventListener('click', (e) => {
+      // se o clique já for no lápis ou no menu, não reabrir
+      if (e.target.closest('#pencilToggle') || e.target.closest('#photoMenu')) return;
+      e.preventDefault(); e.stopPropagation();
+      openPhotoMenu();
+    });
+    // >>> FIM DO TRECHO NOVO <<<
+    
     function openPhotoMenu(){ photoMenu.classList.add('open'); if (overlay) overlay.hidden = false; }
     function closePhotoMenu(){ photoMenu.classList.remove('open'); if (overlay) overlay.hidden = true; }
-
+    
     overlay?.addEventListener('click', (e)=>{ e.stopPropagation(); closePhotoMenu(); });
-
+    
     pencil?.addEventListener('click', function(e){
       e.preventDefault(); e.stopPropagation();
       if (photoMenu.classList.contains('open')) closePhotoMenu(); else openPhotoMenu();
