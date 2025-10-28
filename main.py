@@ -2542,128 +2542,39 @@ def api_cidades():
 # --------------------------------------------------------------------
 @app.route('/esqueci_senha', methods=['GET', 'POST'])
 def esqueci_senha():
-    """
-    Recuperação de senha para usuário (ctx=user) e administrador (ctx=admin).
-    Procura o cadastro de forma robusta e envia o e-mail de redefinição quando encontrar.
-    """
-    from flask import current_app
-    from sqlalchemy import func
-    import sys
-
-    def _like_admin_flag(model, q):
-        """
-        Se o modelo tiver campos de papel/perfil, força admin por string.
-        Mantém q se nenhum campo existir.
-        """
-        for attr in ('role', 'papel', 'perfil', 'tipo'):
-            if hasattr(model, attr):
-                col = getattr(model, attr)
-                try:
-                    # compara em minúsculas: 'admin', 'administrator', 'administrador'
-                    return q.filter(func.lower(col).in_(['admin', 'administrator', 'administrador']))
-                except Exception:
-                    pass
-        return q
-
-    def _find_admin(email_l: str):
-        """
-        Procura conta admin por e-mail (case-insensitive) em várias tabelas/campos.
-        Retorna (obj, 'NomeDoModelo') ou (None, None).
-        """
-        # 1) Modelos 'clássicos' de admin
-        for name in ('Admin', 'Administrador', 'AdminUser'):
-            model = globals().get(name)
-            if not model:
-                continue
-            try:
-                obj = model.query.filter(func.lower(model.email) == email_l).first()
-                if obj:
-                    return obj, name
-            except Exception:
-                pass
-
-        # 2) Fallback em Usuario/User com flags
-        for name in ('Usuario', 'User'):
-            model = globals().get(name)
-            if not model:
-                continue
-            try:
-                q = model.query.filter(func.lower(model.email) == email_l)
-                if hasattr(model, 'is_admin'):
-                    q = q.filter(model.is_admin.is_(True))
-                else:
-                    q = _like_admin_flag(model, q)
-                obj = q.first()
-                if obj:
-                    return obj, name
-            except Exception:
-                pass
-        return None, None
-
-    def _find_user(email_l: str):
-        """Procura usuário comum em possíveis modelos."""
-        for name in ('Usuario', 'User', 'Cliente'):
-            model = globals().get(name)
-            if not model:
-                continue
-            try:
-                obj = model.query.filter(func.lower(model.email) == email_l).first()
-                if obj:
-                    return obj, name
-            except Exception:
-                pass
-        return None, None
-
     ctx = request.args.get('ctx') or request.form.get('ctx') or 'user'
-    email_raw = (request.form.get('email') or request.args.get('email') or '').strip()
-    email_l = email_raw.lower()
-
-    mensagem = None
-    erro = None
+    email = (request.form.get('email') or request.args.get('email') or '').strip().lower()
 
     if request.method == 'POST':
         try:
-            conta = None
-            modelo = None
-
             if ctx == 'admin':
-                conta, modelo = _find_admin(email_l)
+                # Exemplo: tabela Admin (ajuste para seu modelo real)
+                adm = Admin.query.filter_by(email=email).first()
+                if not adm:
+                    flash('E-mail não encontrado.', 'error')
+                else:
+                    # gere token e envie para o admin
+                    token = gerar_token_reset(tipo='admin', user_id=adm.id)
+                    enviar_email_reset(email, token, ctx='admin')
+                    flash('Enviamos um link de redefinição para o seu e-mail.', 'success')
             else:
-                conta, modelo = _find_user(email_l)
+                # fluxo padrão do cliente/usuário
+                usr = Usuario.query.filter_by(email=email).first()
+                if not usr:
+                    flash('E-mail não encontrado.', 'error')
+                else:
+                    token = gerar_token_reset(tipo='user', user_id=usr.id)
+                    enviar_email_reset(email, token, ctx='user')
+                    flash('Enviamos um link de redefinição para o seu e-mail.', 'success')
+        except Exception as e:
+            current_app.logger.exception('Falha no esqueci_senha')
+            flash('Não foi possível processar sua solicitação agora.', 'error')
 
-            if conta:
-                try:
-                    tipo = 'admin' if ctx == 'admin' else 'user'
-                    token = gerar_token_reset(tipo=tipo, user_id=conta.id)
-                    enviar_email_reset(email_l, token, ctx=ctx)
-                    mensagem = 'Enviamos um link de redefinição para o seu e-mail.'
-                    try:
-                        current_app.logger.info(
-                            "password-reset.sent ctx=%s model=%s email=%s user_id=%s",
-                            ctx, modelo, email_l, getattr(conta, 'id', None)
-                        )
-                    except Exception:
-                        pass
-                except Exception:
-                    current_app.logger.exception('Falha ao enviar e-mail de redefinição')
-                    erro = 'Não foi possível enviar o e-mail de redefinição. Tente novamente em instantes.'
-            else:
-                # Não encontrado: não vaza informação
-                mensagem = 'Se o e-mail existir, você receberá uma mensagem com instruções para redefinir sua senha.'
-                try:
-                    current_app.logger.info("password-reset.not-found ctx=%s email=%s", ctx, email_l)
-                except Exception:
-                    pass
+        # mantém o ctx na URL após POST/Redirect/GET se você usar PRG
+        return redirect(url_for('esqueci_senha', ctx=ctx))
 
-        except Exception:
-            try:
-                current_app.logger.exception('Falha no esqueci_senha')
-            except Exception:
-                print('Falha no esqueci_senha', file=sys.stderr)
-            erro = 'Não foi possível processar sua solicitação agora. Tente novamente em instantes.'
-
-    # Mantém o e-mail preenchido no formulário
-    return render_template('esqueci_senha.html', mensagem=mensagem, erro=erro)
+    # GET
+    return render_template('esqueci_senha.html')
 
 @app.route('/redefinir_senha/<token>', methods=['GET', 'POST'])
 def redefinir_senha(token):
