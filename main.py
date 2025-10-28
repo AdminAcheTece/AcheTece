@@ -2497,17 +2497,38 @@ def api_cidades():
 # --------------------------------------------------------------------
 @app.route('/esqueci_senha', methods=['GET', 'POST'])
 def esqueci_senha():
+    ctx = request.args.get('ctx') or request.form.get('ctx') or 'user'
+    email = (request.form.get('email') or request.args.get('email') or '').strip().lower()
+
     if request.method == 'POST':
-        email = (request.form.get('email') or '').strip().lower()
-        empresa = Empresa.query.filter_by(email=email).first()
-        if empresa:
-            try:
-                enviar_email_recuperacao(email, empresa.nome)
-                return render_template('esqueci_senha.html', mensagem='📧 Instruções enviadas para seu e-mail.')
-            except Exception as e:
-                app.logger.exception(f"Erro ao enviar e-mail: {e}")
-                return render_template('esqueci_senha.html', erro='Erro ao enviar e-mail.')
-        return render_template('esqueci_senha.html', erro='E-mail não encontrado.')
+        try:
+            if ctx == 'admin':
+                # Exemplo: tabela Admin (ajuste para seu modelo real)
+                adm = Admin.query.filter_by(email=email).first()
+                if not adm:
+                    flash('E-mail não encontrado.', 'error')
+                else:
+                    # gere token e envie para o admin
+                    token = gerar_token_reset(tipo='admin', user_id=adm.id)
+                    enviar_email_reset(email, token, ctx='admin')
+                    flash('Enviamos um link de redefinição para o seu e-mail.', 'success')
+            else:
+                # fluxo padrão do cliente/usuário
+                usr = Usuario.query.filter_by(email=email).first()
+                if not usr:
+                    flash('E-mail não encontrado.', 'error')
+                else:
+                    token = gerar_token_reset(tipo='user', user_id=usr.id)
+                    enviar_email_reset(email, token, ctx='user')
+                    flash('Enviamos um link de redefinição para o seu e-mail.', 'success')
+        except Exception as e:
+            current_app.logger.exception('Falha no esqueci_senha')
+            flash('Não foi possível processar sua solicitação agora.', 'error')
+
+        # mantém o ctx na URL após POST/Redirect/GET se você usar PRG
+        return redirect(url_for('esqueci_senha', ctx=ctx))
+
+    # GET
     return render_template('esqueci_senha.html')
 
 @app.route('/redefinir_senha/<token>', methods=['GET', 'POST'])
