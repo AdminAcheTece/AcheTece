@@ -29,9 +29,6 @@ import time
 import resend  # biblioteca do Resend
 from PIL import Image
 import shutil
-from flask import current_app  # para log seguro dentro da view
-from sqlalchemy import func     # para comparar email em case-insensitive
-import sys                      # fallback de log em stderr
 
 # SMTP direto (fallback)
 import smtplib, ssl
