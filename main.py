@@ -226,48 +226,6 @@ def _save_square_webp(file_storage, dest_path: str, side: int = 400, quality: in
 # --------------------------------------------------------------------
 # Helpers
 # --------------------------------------------------------------------
-def _find_account_by_email(email: str, ctx: str):
-    """
-    Procura a conta pelo email respeitando o contexto:
-    - ctx='admin': tenta Admin; se não existir, cai para Usuario/User com is_admin=True se disponível
-    - ctx='user' : tenta Usuario, depois User, depois Cliente (se existirem)
-    Retorna o objeto encontrado ou None.
-    """
-    email_l = (email or "").strip().lower()
-    if not email_l:
-        return None
-
-    def _first(cs):
-        for name in cs:
-            model = globals().get(name)
-            if not model:
-                continue
-            try:
-                q = model.query.filter(func.lower(model.email) == email_l)
-                if hasattr(model, "is_admin") and ctx == "admin":
-                    q = q.filter(model.is_admin.is_(True))
-                obj = q.first()
-                if obj:
-                    return obj
-            except Exception:
-                pass
-        return None
-
-    if ctx == "admin":
-        # 1) tenta Admin, se a classe existir
-        try:
-            Admin  # noqa
-            obj = Admin.query.filter(func.lower(Admin.email) == email_l).first()
-            if obj:
-                return obj
-        except NameError:
-            pass
-        # 2) fallback para Usuario/User com flag is_admin (se houver)
-        return _first(("Usuario", "User"))
-    else:
-        # fluxo normal (usuário)
-        return _first(("Usuario", "User", "Cliente"))
-
 def _set_if_has(obj, names, value):
     """Seta no primeiro atributo existente da lista `names`."""
     for n in names:
