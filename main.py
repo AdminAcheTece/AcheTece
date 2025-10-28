@@ -29,6 +29,9 @@ import time
 import resend  # biblioteca do Resend
 from PIL import Image
 import shutil
+from flask import current_app  # para log seguro dentro da view
+from sqlalchemy import func     # para comparar email em case-insensitive
+import sys                      # fallback de log em stderr
 
 # SMTP direto (fallback)
 import smtplib, ssl
@@ -226,6 +229,48 @@ def _save_square_webp(file_storage, dest_path: str, side: int = 400, quality: in
 # --------------------------------------------------------------------
 # Helpers
 # --------------------------------------------------------------------
+def _find_account_by_email(email: str, ctx: str):
+    """
+    Procura a conta pelo email respeitando o contexto:
+    - ctx='admin': tenta Admin; se não existir, cai para Usuario/User com is_admin=True se disponível
+    - ctx='user' : tenta Usuario, depois User, depois Cliente (se existirem)
+    Retorna o objeto encontrado ou None.
+    """
+    email_l = (email or "").strip().lower()
+    if not email_l:
+        return None
+
+    def _first(cs):
+        for name in cs:
+            model = globals().get(name)
+            if not model:
+                continue
+            try:
+                q = model.query.filter(func.lower(model.email) == email_l)
+                if hasattr(model, "is_admin") and ctx == "admin":
+                    q = q.filter(model.is_admin.is_(True))
+                obj = q.first()
+                if obj:
+                    return obj
+            except Exception:
+                pass
+        return None
+
+    if ctx == "admin":
+        # 1) tenta Admin, se a classe existir
+        try:
+            Admin  # noqa
+            obj = Admin.query.filter(func.lower(Admin.email) == email_l).first()
+            if obj:
+                return obj
+        except NameError:
+            pass
+        # 2) fallback para Usuario/User com flag is_admin (se houver)
+        return _first(("Usuario", "User"))
+    else:
+        # fluxo normal (usuário)
+        return _first(("Usuario", "User", "Cliente"))
+
 def _set_if_has(obj, names, value):
     """Seta no primeiro atributo existente da lista `names`."""
     for n in names:
@@ -2497,36 +2542,90 @@ def api_cidades():
 # --------------------------------------------------------------------
 @app.route('/esqueci_senha', methods=['GET', 'POST'])
 def esqueci_senha():
+    """
+    Fluxo de 'Esqueci a Senha' para usuário comum (ctx=user) e administrador (ctx=admin).
+    Mantém PRG com flash e preserva ctx+email na URL após o POST.
+    """
+    from sqlalchemy import func
+    import sys
+    try:
+        from flask import current_app as _ca
+    except Exception:
+        _ca = None
+
     ctx = request.args.get('ctx') or request.form.get('ctx') or 'user'
     email = (request.form.get('email') or request.args.get('email') or '').strip().lower()
 
     if request.method == 'POST':
         try:
             if ctx == 'admin':
-                # Exemplo: tabela Admin (ajuste para seu modelo real)
-                adm = Admin.query.filter_by(email=email).first()
+                # --- tenta classe Admin; se não existir, faz fallback para Usuario/User com is_admin=True ---
+                adm = None
+                try:
+                    Admin  # noqa: F821
+                    adm = Admin.query.filter(func.lower(Admin.email) == email).first()
+                except NameError:
+                    # Fallback: Usuario/User com flag is_admin (se existir)
+                    try:
+                        Usuario  # noqa: F821
+                        q = Usuario.query.filter(func.lower(Usuario.email) == email)
+                        if hasattr(Usuario, 'is_admin'):
+                            q = q.filter(Usuario.is_admin.is_(True))
+                        adm = q.first()
+                    except NameError:
+                        try:
+                            User  # noqa: F821
+                            q = User.query.filter(func.lower(User.email) == email)
+                            if hasattr(User, 'is_admin'):
+                                q = q.filter(User.is_admin.is_(True))
+                            adm = q.first()
+                        except NameError:
+                            adm = None
+
                 if not adm:
                     flash('E-mail não encontrado.', 'error')
                 else:
-                    # gere token e envie para o admin
                     token = gerar_token_reset(tipo='admin', user_id=adm.id)
                     enviar_email_reset(email, token, ctx='admin')
                     flash('Enviamos um link de redefinição para o seu e-mail.', 'success')
+
             else:
-                # fluxo padrão do cliente/usuário
-                usr = Usuario.query.filter_by(email=email).first()
+                # --- fluxo padrão do cliente/usuário, tolerando diferentes nomes de modelo ---
+                usr = None
+                try:
+                    Usuario  # noqa: F821
+                    usr = Usuario.query.filter(func.lower(Usuario.email) == email).first()
+                except NameError:
+                    try:
+                        User  # noqa: F821
+                        usr = User.query.filter(func.lower(User.email) == email).first()
+                    except NameError:
+                        try:
+                            Cliente  # noqa: F821
+                            usr = Cliente.query.filter(func.lower(Cliente.email) == email).first()
+                        except NameError:
+                            usr = None
+
                 if not usr:
                     flash('E-mail não encontrado.', 'error')
                 else:
                     token = gerar_token_reset(tipo='user', user_id=usr.id)
                     enviar_email_reset(email, token, ctx='user')
                     flash('Enviamos um link de redefinição para o seu e-mail.', 'success')
-        except Exception as e:
-            current_app.logger.exception('Falha no esqueci_senha')
+
+        except Exception:
+            # Log robusto sem depender do import externo
+            try:
+                if _ca:
+                    _ca.logger.exception('Falha no esqueci_senha')
+                else:
+                    raise RuntimeError('sem current_app')
+            except Exception:
+                print('Falha no esqueci_senha', file=sys.stderr)
             flash('Não foi possível processar sua solicitação agora.', 'error')
 
-        # mantém o ctx na URL após POST/Redirect/GET se você usar PRG
-        return redirect(url_for('esqueci_senha', ctx=ctx))
+        # PRG: preserva ctx e email para pré-preencher o campo na volta
+        return redirect(url_for('esqueci_senha', ctx=ctx, email=email))
 
     # GET
     return render_template('esqueci_senha.html')
