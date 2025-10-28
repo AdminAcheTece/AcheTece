@@ -2543,92 +2543,73 @@ def api_cidades():
 @app.route('/esqueci_senha', methods=['GET', 'POST'])
 def esqueci_senha():
     """
-    Fluxo de 'Esqueci a Senha' para usuário comum (ctx=user) e administrador (ctx=admin).
-    Mantém PRG com flash e preserva ctx+email na URL após o POST.
+    Recuperação de senha para usuário (ctx=user) e administrador (ctx=admin).
+    - Busca e-mail sem diferenciar maiúsculas/minúsculas.
+    - Se encontrar a conta, gera token e envia e-mail.
+    - Se não encontrar, mantém mensagem positiva (sem vazar existência).
+    - Retorna mensagem/erro diretamente no template (sem PRG),
+      pois o HTML usa {{ mensagem }} / {{ erro }}.
     """
+    from flask import current_app  # import local evita NameError
     from sqlalchemy import func
     import sys
-    try:
-        from flask import current_app as _ca
-    except Exception:
-        _ca = None
 
     ctx = request.args.get('ctx') or request.form.get('ctx') or 'user'
     email = (request.form.get('email') or request.args.get('email') or '').strip().lower()
 
+    mensagem = None
+    erro = None
+
     if request.method == 'POST':
         try:
+            conta = None
+
             if ctx == 'admin':
-                # --- tenta classe Admin; se não existir, faz fallback para Usuario/User com is_admin=True ---
-                adm = None
+                # 1) Tenta classe Admin, se existir
                 try:
                     Admin  # noqa: F821
-                    adm = Admin.query.filter(func.lower(Admin.email) == email).first()
+                    conta = Admin.query.filter(func.lower(Admin.email) == email).first()
                 except NameError:
-                    # Fallback: Usuario/User com flag is_admin (se existir)
-                    try:
-                        Usuario  # noqa: F821
-                        q = Usuario.query.filter(func.lower(Usuario.email) == email)
-                        if hasattr(Usuario, 'is_admin'):
-                            q = q.filter(Usuario.is_admin.is_(True))
-                        adm = q.first()
-                    except NameError:
-                        try:
-                            User  # noqa: F821
-                            q = User.query.filter(func.lower(User.email) == email)
-                            if hasattr(User, 'is_admin'):
-                                q = q.filter(User.is_admin.is_(True))
-                            adm = q.first()
-                        except NameError:
-                            adm = None
-
-                if not adm:
-                    flash('E-mail não encontrado.', 'error')
-                else:
-                    token = gerar_token_reset(tipo='admin', user_id=adm.id)
-                    enviar_email_reset(email, token, ctx='admin')
-                    flash('Enviamos um link de redefinição para o seu e-mail.', 'success')
-
+                    conta = None
+                # 2) Fallback: Usuario/User com flag is_admin=True, se houver
+                if not conta:
+                    for model_name in ('Usuario', 'User'):
+                        model = globals().get(model_name)
+                        if not model:
+                            continue
+                        q = model.query.filter(func.lower(model.email) == email)
+                        if hasattr(model, 'is_admin'):
+                            q = q.filter(model.is_admin.is_(True))
+                        conta = q.first()
+                        if conta:
+                            break
             else:
-                # --- fluxo padrão do cliente/usuário, tolerando diferentes nomes de modelo ---
-                usr = None
-                try:
-                    Usuario  # noqa: F821
-                    usr = Usuario.query.filter(func.lower(Usuario.email) == email).first()
-                except NameError:
-                    try:
-                        User  # noqa: F821
-                        usr = User.query.filter(func.lower(User.email) == email).first()
-                    except NameError:
-                        try:
-                            Cliente  # noqa: F821
-                            usr = Cliente.query.filter(func.lower(Cliente.email) == email).first()
-                        except NameError:
-                            usr = None
+                # Fluxo padrão para usuário/cliente (tolerante a nomes de modelo)
+                for model_name in ('Usuario', 'User', 'Cliente'):
+                    model = globals().get(model_name)
+                    if not model:
+                        continue
+                    conta = model.query.filter(func.lower(model.email) == email).first()
+                    if conta:
+                        break
 
-                if not usr:
-                    flash('E-mail não encontrado.', 'error')
-                else:
-                    token = gerar_token_reset(tipo='user', user_id=usr.id)
-                    enviar_email_reset(email, token, ctx='user')
-                    flash('Enviamos um link de redefinição para o seu e-mail.', 'success')
+            if conta:
+                tipo = 'admin' if ctx == 'admin' else 'user'
+                token = gerar_token_reset(tipo=tipo, user_id=conta.id)
+                enviar_email_reset(email, token, ctx=ctx)
+                mensagem = 'Enviamos um link de redefinição para o seu e-mail.'
+            else:
+                # UX + segurança: não revela existência do e-mail
+                mensagem = 'Se o e-mail existir, você receberá uma mensagem com instruções para redefinir sua senha.'
 
         except Exception:
-            # Log robusto sem depender do import externo
             try:
-                if _ca:
-                    _ca.logger.exception('Falha no esqueci_senha')
-                else:
-                    raise RuntimeError('sem current_app')
+                current_app.logger.exception('Falha no esqueci_senha')
             except Exception:
                 print('Falha no esqueci_senha', file=sys.stderr)
-            flash('Não foi possível processar sua solicitação agora.', 'error')
+            erro = 'Não foi possível processar sua solicitação agora. Tente novamente em instantes.'
 
-        # PRG: preserva ctx e email para pré-preencher o campo na volta
-        return redirect(url_for('esqueci_senha', ctx=ctx, email=email))
-
-    # GET
-    return render_template('esqueci_senha.html')
+    return render_template('esqueci_senha.html', mensagem=mensagem, erro=erro)
 
 @app.route('/redefinir_senha/<token>', methods=['GET', 'POST'])
 def redefinir_senha(token):
