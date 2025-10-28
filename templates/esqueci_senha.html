@@ -188,7 +188,6 @@
   </header>
 
   <!-- ===== CONTEÚDO ===== -->
-  {% set ctx = request.args.get('ctx','user') %}
   <main class="wrap" role="main">
     <section class="card" aria-labelledby="t">
       <h1 id="t" class="title">Recuperar Senha</h1>
@@ -199,20 +198,14 @@
         <div class="alert error">{{ erro }}</div>
       {% endif %}
 
-      <!-- Mantém o contexto na action e no POST -->
-      <form method="POST" novalidate action="{{ url_for('esqueci_senha', ctx=ctx) }}">
-        <input type="hidden" name="ctx" value="{{ ctx }}">
+      <form method="POST" novalidate>
         <label for="email">E-mail</label>
-        <input
-          id="email" class="input" type="email" name="email" placeholder="seu@email.com" required
-          value="{{ request.args.get('email','') or request.form.get('email','') }}"
-          autocomplete="email" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false"
-        >
+        <input id="email" class="input" type="email" name="email" placeholder="seu@email.com" required>
         <button class="btn" type="submit">Enviar e-mail de redefinição</button>
       </form>
 
       <div class="links-row">
-        <a class="back" href="{{ url_for('admin_login') if ctx == 'admin' else url_for('login') }}">Voltar à página de login</a>
+        <a class="back" href="{{ url_for('login') }}">Voltar à página de login</a>
       </div>
     </section>
   </main>
