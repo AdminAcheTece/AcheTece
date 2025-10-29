@@ -1212,6 +1212,72 @@ import random
 from datetime import datetime, timedelta
 from flask import current_app, session
 
+# --- Sender que PRIORIZA HTML (Flask-Mail -> SMTP -> helpers do projeto) -----
+def _email_send_html_first(to_email: str, subject: str, text: str, html: str | None) -> bool:
+    # 1) Flask-Mail
+    try:
+        if "mail" in globals() and html:
+            from flask_mail import Message
+            sender = current_app.config.get("MAIL_DEFAULT_SENDER")
+            msg = Message(subject=subject, recipients=[to_email], body=text, html=html, sender=sender)
+            # dica: msg.extra_headers = {"Content-Language": "pt-BR"}
+            mail.send(msg)  # type: ignore[name-defined]
+            current_app.logger.info("[MAIL] HTML via Flask-Mail")
+            return True
+    except Exception:
+        current_app.logger.exception("[MAIL] Flask-Mail falhou")
+
+    # 2) SMTP multipart/alternative (garante HTML)
+    try:
+        import os, smtplib, ssl
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+
+        host = os.environ.get("SMTP_HOST")
+        port = int(os.environ.get("SMTP_PORT", "587"))
+        user = os.environ.get("SMTP_USER")
+        pwd  = os.environ.get("SMTP_PASS")
+        sender = os.environ.get("SMTP_SENDER") or current_app.config.get("MAIL_DEFAULT_SENDER") or "no-reply@achetece.com.br"
+        use_tls = os.environ.get("SMTP_TLS", "1") not in ("0","false","False")
+
+        if host and sender:
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = sender
+            msg["To"] = to_email
+            msg["Content-Language"] = "pt-BR"
+            msg.attach(MIMEText(text or "", "plain", "utf-8"))
+            if html:
+                msg.attach(MIMEText(html, "html", "utf-8"))
+
+            with smtplib.SMTP(host, port, timeout=20) as s:
+                if use_tls: s.starttls(context=ssl.create_default_context())
+                if user: s.login(user, pwd or "")
+                s.sendmail(sender, [to_email], msg.as_string())
+            current_app.logger.info("[MAIL] HTML via SMTP")
+            return True
+    except Exception:
+        current_app.logger.exception("[MAIL] SMTP falhou")
+
+    # 3) Helpers do projeto (podem mandar só texto)
+    try:
+        for fname in ("send_email", "enviar_email", "mail_send", "send_mail"):
+            if fname in globals():
+                f = globals()[fname]
+                try:               f(to_email, subject, text, html)        # assinatura 1
+                except TypeError:
+                    try:            f(to=to_email, subject=subject, body=text, html=html)  # assinatura 2
+                    except TypeError:
+                        f(to=to_email, subject=subject, text=text, html=html)             # assinatura 3
+                current_app.logger.info(f"[MAIL] Enviado por helper '{fname}' (pode ignorar HTML)")
+                return True
+    except Exception:
+        current_app.logger.exception("[MAIL] Helper falhou")
+
+    current_app.logger.warning("[MAIL] Nenhum backend de e-mail disponível")
+    return False
+# ---------------------------------------------------------------------------
+
 # --- Envio de e-mail compatível com vários backends --------------------------
 def _email_send_compat(to_email: str, subject: str, text: str, html: str | None = None) -> bool:
     """
@@ -1288,10 +1354,11 @@ if "_otp_send" not in globals():
     def _otp_send(to_email: str, ip: str = "", ua: str = ""):
         try:
             code = f"{random.randint(0, 999999):06d}"
-            # guarda p/ validar depois
+            minutes = 30  # ⬅️ igual ao que aparece no e-mail
+    
+            # guarda p/ validação (EXP = 30 min)
             data = session.get("otp_login", {})
             from datetime import datetime, timedelta
-            minutes = 10  # ⬅️ se decidir mudar a validade, alinhe aqui e no template
             data[to_email] = {
                 "code": code,
                 "exp": (datetime.utcnow() + timedelta(minutes=minutes)).timestamp(),
@@ -1301,10 +1368,10 @@ if "_otp_send" not in globals():
             session["otp_login"] = data
     
             subject = "Seu código de acesso – AcheTece"
-            text = f"Seu código é {code}. Ele expira em {minutes} minutos."
-            html = _otp_email_html(to_email, code, minutes)
+            text    = f"Seu código é {code}. Ele expira em {minutes} minutos."
+            html    = _otp_email_html(to_email, code, minutes)  # ⬅️ template moderno
     
-            if _email_send_compat(to_email, subject, text, html):
+            if _email_send_html_first(to_email, subject, text, html):
                 return True, "Enviamos um código para o seu e-mail."
             else:
                 return False, "Não foi possível enviar o código agora. Tente novamente."
