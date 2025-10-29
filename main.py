@@ -162,12 +162,7 @@ def send_email(to: str, subject: str, html: str, text: str | None = None) -> boo
 
 # Envio SMTP robusto (multipart/alternative com HTML)
 def _smtp_send_direct(
-    *,
-    to: str,
-    subject: str,
-    html: str | None = None,
-    text: str | None = None,
-    sender: str | None = None,
+    *, to: str, subject: str, html: str | None = None, text: str | None = None, sender: str | None = None
 ) -> tuple[bool, str]:
     import os, smtplib, ssl, re
     from email.mime.multipart import MIMEMultipart
@@ -179,14 +174,12 @@ def _smtp_send_direct(
     pwd    = os.environ.get("SMTP_PASS")
     sender = sender or os.environ.get("SMTP_SENDER", "no-reply@achetece.com.br")
     use_tls = os.environ.get("SMTP_TLS", "1") not in ("0", "false", "False")
-    use_ssl = os.environ.get("SMTP_SSL", "0") in ("1", "true", "True")  # opcional (porta 465)
+    use_ssl = os.environ.get("SMTP_SSL", "0") in ("1", "true", "True")
 
     if not host:
         return False, "SMTP_HOST não configurado"
 
-    # Fallback simples de texto caso não enviado
     if not text:
-        # remove tags para compor um texto legível (prévia)
         text = re.sub(r"<[^>]+>", "", html or "").strip() or "Verifique este e-mail em um cliente compatível com HTML."
 
     try:
@@ -195,24 +188,18 @@ def _smtp_send_direct(
         msg["From"]    = sender
         msg["To"]      = to
         msg["Content-Language"] = "pt-BR"
-
-        # 1º anexa texto simples
         msg.attach(MIMEText(text, "plain", "utf-8"))
-        # 2º anexa HTML (se houver)
         if html:
             msg.attach(MIMEText(html, "html", "utf-8"))
 
         if use_ssl:
-            with smtplib.SMTP_SSL(host, port, context=ssl.create_default_context(), timeout=20) as s:
-                if user:
-                    s.login(user, pwd or "")
+            with smtplib.SMTP_SSL(host, port, context=ssl.create_default_context(), timeout=5) as s:
+                if user: s.login(user, pwd or "")
                 s.sendmail(sender, [to], msg.as_string())
         else:
-            with smtplib.SMTP(host, port, timeout=20) as s:
-                if use_tls:
-                    s.starttls(context=ssl.create_default_context())
-                if user:
-                    s.login(user, pwd or "")
+            with smtplib.SMTP(host, port, timeout=5) as s:
+                if use_tls: s.starttls(context=ssl.create_default_context())
+                if user:    s.login(user, pwd or "")
                 s.sendmail(sender, [to], msg.as_string())
 
         return True, "OK"
@@ -1289,7 +1276,7 @@ def _email_send_html_first(to_email: str, subject: str, text: str, html: str | N
         sender = os.environ.get("SMTP_SENDER") or current_app.config.get("MAIL_DEFAULT_SENDER") or "no-reply@achetece.com.br"
         use_tls = os.environ.get("SMTP_TLS", "1") not in ("0","false","False")
 
-        if host and sender:
+        if host and sender and os.environ.get("ALLOW_SMTP", "0") in ("1","true","True"):
             msg = MIMEMultipart("alternative")
             msg["Subject"] = subject
             msg["From"] = sender
@@ -1308,17 +1295,16 @@ def _email_send_html_first(to_email: str, subject: str, text: str, html: str | N
     except Exception:
         current_app.logger.exception("[MAIL] SMTP falhou")
 
-    # 3) Helpers do projeto (último recurso; agora sempre via kwargs corretos)
-    try:
-        for fname in ("send_email", "enviar_email", "mail_send", "send_mail"):
-            if fname in globals():
-                f = globals()[fname]
-                # IMPORTANTE: use kwargs para não inverter html/text
-                f(to=to_email, subject=subject, html=html, text=text)
-                current_app.logger.info(f"[MAIL_PATH] helper:{fname} (html enviado)")
-                return True
-    except Exception:
-        current_app.logger.exception("[MAIL] helper falhou")
+    # 3) Helpers do projeto (use kwargs corretos!)
+try:
+    for fname in ("send_email", "enviar_email", "mail_send", "send_mail"):
+        if fname in globals():
+            f = globals()[fname]
+            f(to=to_email, subject=subject, html=html, text=text)
+            current_app.logger.info(f"[MAIL_PATH] helper:{fname} (html enviado)")
+            return True
+except Exception:
+    current_app.logger.exception("[MAIL] helper falhou")
 
 def _otp_email_html(dest_email: str, code: str, minutes: int = 30) -> str:
     brand = "AcheTece • Portal de Malharias"
