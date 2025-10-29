@@ -1291,23 +1291,23 @@ if "_otp_send" not in globals():
             # guarda p/ validar depois
             data = session.get("otp_login", {})
             from datetime import datetime, timedelta
+            minutes = 10  # ⬅️ se decidir mudar a validade, alinhe aqui e no template
             data[to_email] = {
                 "code": code,
-                "exp": (datetime.utcnow() + timedelta(minutes=10)).timestamp(),
+                "exp": (datetime.utcnow() + timedelta(minutes=minutes)).timestamp(),
                 "ip": ip[:64],
                 "ua": ua[:255],
             }
             session["otp_login"] = data
     
             subject = "Seu código de acesso – AcheTece"
-            text = f"Seu código é {code}. Ele expira em 10 minutos."
-            html = f"<p>Olá!</p><p>Seu código de acesso é <strong>{code}</strong>.</p><p>Ele expira em 10 minutos.</p>"
+            text = f"Seu código é {code}. Ele expira em {minutes} minutos."
+            html = _otp_email_html(to_email, code, minutes)
     
             if _email_send_compat(to_email, subject, text, html):
                 return True, "Enviamos um código para o seu e-mail."
             else:
                 return False, "Não foi possível enviar o código agora. Tente novamente."
-    
         except Exception:
             current_app.logger.exception("Falha ao enviar OTP de login")
             return False, "Não foi possível enviar o código agora. Tente novamente."
@@ -1327,7 +1327,109 @@ if "_otp_validate" not in globals():
         (session.get("otp_login") or {}).pop(email, None)
         return True, "ok"
 # --- fim dos polyfills --------------------------------------------------------
-        
+
+def _otp_email_html(dest_email: str, code: str, minutes: int = 10) -> str:
+    """
+    HTML compatível com clientes de e-mail (table-based, inline CSS),
+    seguindo o visual da imagem 1.
+    """
+    brand = "AcheTece • Portal de Malharias"
+    primary = "#4B2AC7"      # roxo texto do código
+    chip_bg = "#F5F0FF"      # fundo do chip
+    chip_bd = "#D9CCFF"      # contorno (dotted)
+    text = (
+        f"Seu código para acessar a sua conta\n\n"
+        f"Recebemos uma solicitação de acesso ao AcheTece para: {dest_email}\n\n"
+        f"{code}\n\n"
+        f"Código válido por {minutes} minutos e de uso único.\n"
+        f"Se você não fez esta solicitação, ignore este e-mail.\n\n{brand}"
+    )  # útil como pré-visualização em clients que ignoram HTML
+
+    return f"""\
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light">
+  <title>Código de acesso</title>
+  <style>
+    /* Alguns clients suportam style no <head>; mantemos também inline mais abaixo */
+    @media screen {{
+      .code-chip {{ letter-spacing: 6px; }}
+    }}
+  </style>
+</head>
+<body style="margin:0;padding:0;background:#F7F7FA;">
+  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#F7F7FA;">
+    <tr>
+      <td align="center" style="padding:24px 12px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:640px;background:#FFFFFF;border:1px solid #EEE;border-radius:12px;">
+          <tr>
+            <td style="padding:24px 24px 8px 24px;font-family:Inter,Segoe UI,Arial,Helvetica,sans-serif;">
+              <h1 style="margin:0 0 6px 0;font-size:22px;line-height:1.3;color:#1E1B2B;">
+                Seu código para acessar a sua conta
+              </h1>
+              <p style="margin:0 0 14px 0;color:#444;font-size:14px;">
+                Recebemos uma solicitação de acesso ao AcheTece para:
+                <br>
+                <a href="mailto:{dest_email}" style="color:#1E3A8A;text-decoration:underline;">{dest_email}</a>
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td align="center" style="padding:6px 24px 2px 24px;">
+              <div style="
+                display:inline-block;
+                padding:16px 28px;
+                border-radius:14px;
+                background:{chip_bg};
+                border:2px dotted {chip_bd};
+              ">
+                <div class="code-chip" style="
+                  font-family:Inter,Segoe UI,Arial,Helvetica,sans-serif;
+                  font-size:36px;
+                  font-weight:800;
+                  color:{primary};
+                  letter-spacing:6px;
+                ">{code}</div>
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:14px 24px 20px 24px;font-family:Inter,Segoe UI,Arial,Helvetica,sans-serif;color:#555;">
+              <p style="margin:0 0 8px 0;font-size:14px;">
+                Código válido por <strong>{minutes} minutos</strong> e de uso único.
+              </p>
+              <p style="margin:0 0 2px 0;font-size:13px;color:#666;">
+                Se você não fez esta solicitação, ignore este e-mail.
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:10px 24px 22px 24px;">
+              <hr style="border:none;border-top:1px solid #EEE;margin:4px 0 12px 0;">
+              <p style="margin:0;color:#777;font-family:Inter,Segoe UI,Arial,Helvetica,sans-serif;font-size:12px;">
+                {brand}
+              </p>
+            </td>
+          </tr>
+        </table>
+
+        <!-- preheader/alt text invisível para alguns clients -->
+        <div style="display:none;max-height:0;overflow:hidden;color:transparent;">
+          {text}
+        </div>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+"""
+
 # /login
 @app.route("/login", methods=["GET", "POST"], endpoint="login")
 def view_login():
