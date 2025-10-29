@@ -1212,22 +1212,32 @@ import random
 from datetime import datetime, timedelta
 from flask import current_app, session
 
-# --- Sender que PRIORIZA HTML (Flask-Mail -> SMTP -> helpers do projeto) -----
+# --- Sender que PRIORIZA HTML (Flask-Mail -> SMTP; só por último helpers) ----
 def _email_send_html_first(to_email: str, subject: str, text: str, html: str | None) -> bool:
-    # 1) Flask-Mail
+    """
+    Tenta enviar HTML de forma prioritária. Ordem:
+      (1) Flask-Mail (mesmo sem 'mail' global; busca em current_app.extensions),
+      (2) SMTP multipart/alternative (env vars),
+      (3) Helpers do projeto (podem degradar p/ texto se ignorarem 'html').
+    """
+    # 1) Flask-Mail via registry de extensões (funciona mesmo sem 'mail' global)
     try:
-        if "mail" in globals() and html:
+        mail_ext = (getattr(current_app, "extensions", {}) or {}).get("mail")
+        if mail_ext and html:
             from flask_mail import Message
             sender = current_app.config.get("MAIL_DEFAULT_SENDER")
-            msg = Message(subject=subject, recipients=[to_email], body=text, html=html, sender=sender)
-            # dica: msg.extra_headers = {"Content-Language": "pt-BR"}
-            mail.send(msg)  # type: ignore[name-defined]
-            current_app.logger.info("[MAIL] HTML via Flask-Mail")
+            msg = Message(subject=subject, recipients=[to_email], sender=sender)
+            msg.body = text or ""
+            msg.html = html
+            # ajuda o Gmail a não “traduzir”
+            msg.extra_headers = {"Content-Language": "pt-BR"}
+            mail_ext.send(msg)
+            current_app.logger.info("[MAIL] HTML via Flask-Mail (extensions)")
             return True
     except Exception:
-        current_app.logger.exception("[MAIL] Flask-Mail falhou")
+        current_app.logger.exception("[MAIL] Flask-Mail (extensions) falhou")
 
-    # 2) SMTP multipart/alternative (garante HTML)
+    # 2) SMTP multipart/alternative (garante HTML em qualquer provedor)
     try:
         import os, smtplib, ssl
         from email.mime.multipart import MIMEMultipart
@@ -1252,24 +1262,27 @@ def _email_send_html_first(to_email: str, subject: str, text: str, html: str | N
 
             with smtplib.SMTP(host, port, timeout=20) as s:
                 if use_tls: s.starttls(context=ssl.create_default_context())
-                if user: s.login(user, pwd or "")
+                if user:    s.login(user, pwd or "")
                 s.sendmail(sender, [to_email], msg.as_string())
             current_app.logger.info("[MAIL] HTML via SMTP")
             return True
     except Exception:
         current_app.logger.exception("[MAIL] SMTP falhou")
 
-    # 3) Helpers do projeto (podem mandar só texto)
+    # 3) Helpers do projeto (último recurso; podem mandar só texto)
     try:
         for fname in ("send_email", "enviar_email", "mail_send", "send_mail"):
             if fname in globals():
                 f = globals()[fname]
-                try:               f(to_email, subject, text, html)        # assinatura 1
+                try:               f(to_email, subject, text, html)                             # assinatura 1
                 except TypeError:
-                    try:            f(to=to_email, subject=subject, body=text, html=html)  # assinatura 2
+                    try:            f(to=to_email, subject=subject, body=text, html=html)      # assinatura 2
                     except TypeError:
-                        f(to=to_email, subject=subject, text=text, html=html)             # assinatura 3
-                current_app.logger.info(f"[MAIL] Enviado por helper '{fname}' (pode ignorar HTML)")
+                        try:        f(to=to_email, subject=subject, text=text, html=html)      # assinatura 3
+                        except TypeError:
+                            # tentativa com nome html_body (alguns projetos usam isso)
+                            f(to=to_email, subject=subject, body=text, html_body=html)
+                current_app.logger.info(f"[MAIL] Enviado por helper '{fname}' (pode ignorar HTML).")
                 return True
     except Exception:
         current_app.logger.exception("[MAIL] Helper falhou")
@@ -1349,35 +1362,35 @@ def _email_send_compat(to_email: str, subject: str, text: str, html: str | None 
     return False
 # ---------------------------------------------------------------------------
 
-# Se já houver uma implementação real em outro arquivo, este bloco não interfere.
-if "_otp_send" not in globals():
-    def _otp_send(to_email: str, ip: str = "", ua: str = ""):
-        try:
-            code = f"{random.randint(0, 999999):06d}"
-            minutes = 30  # ⬅️ igual ao que aparece no e-mail
-    
-            # guarda p/ validação (EXP = 30 min)
-            data = session.get("otp_login", {})
-            from datetime import datetime, timedelta
-            data[to_email] = {
-                "code": code,
-                "exp": (datetime.utcnow() + timedelta(minutes=minutes)).timestamp(),
-                "ip": ip[:64],
-                "ua": ua[:255],
-            }
-            session["otp_login"] = data
-    
-            subject = "Seu código de acesso – AcheTece"
-            text    = f"Seu código é {code}. Ele expira em {minutes} minutos."
-            html    = _otp_email_html(to_email, code, minutes)  # ⬅️ template moderno
-    
-            if _email_send_html_first(to_email, subject, text, html):
-                return True, "Enviamos um código para o seu e-mail."
-            else:
-                return False, "Não foi possível enviar o código agora. Tente novamente."
-        except Exception:
-            current_app.logger.exception("Falha ao enviar OTP de login")
+# ⚠️ SUBSTITUA a definição de _otp_send pela versão SEM o guard (sem 'if ... not in globals()')
+def _otp_send(to_email: str, ip: str = "", ua: str = ""):
+    """
+    Gera o OTP, salva expiração e envia e-mail em HTML.
+    """
+    try:
+        code = f"{random.randint(0, 999999):06d}"
+        minutes = 30  # exibe e aplica 30 min como na imagem 1
+
+        data = session.get("otp_login", {})
+        data[to_email] = {
+            "code": code,
+            "exp": (datetime.utcnow() + timedelta(minutes=minutes)).timestamp(),
+            "ip": ip[:64],
+            "ua": ua[:255],
+        }
+        session["otp_login"] = data
+
+        subject = "Seu código de acesso – AcheTece"
+        text    = f"Seu código é {code}. Ele expira em {minutes} minutos."
+        html    = _otp_email_html(to_email, code, minutes)
+
+        if _email_send_html_first(to_email, subject, text, html):
+            return True, "Enviamos um código para o seu e-mail."
+        else:
             return False, "Não foi possível enviar o código agora. Tente novamente."
+    except Exception:
+        current_app.logger.exception("Falha ao enviar OTP de login")
+        return False, "Não foi possível enviar o código agora. Tente novamente."
 
 # Fallback de validação APENAS se não existir (não sobrescreve o seu)
 if "_otp_validate" not in globals():
