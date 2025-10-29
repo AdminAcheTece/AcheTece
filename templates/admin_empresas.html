@@ -17,19 +17,9 @@
     :root{
       --roxo:#8A00FF;
       --roxo-hover:#A63DFF;
-      --laranja:#F28C00;
-      --laranja-hover:#E57F00;
-
-      /* Fundo padrão (cinza 150) */
       --site-bg:#F7F7FA;
-
       --cinza-900:#111827;
       --maxw:1180px;
-
-      /* Sucesso (mantido para consistência) */
-      --verde-ok-bg:#EAF9F0;
-      --verde-ok-bd:#B9E8CC;
-      --verde-ok-tx:#0F5132;
     }
 
     html, body{
@@ -39,7 +29,7 @@
       font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
     }
 
-    /* ========= HEADER (idêntico ao fale_conosco.html) ========= */
+    /* ===== Header (idêntico ao fale_conosco.html) ===== */
     .navbar{
       overflow:visible;
       padding:6px 12px;
@@ -94,63 +84,52 @@
       .menu-dropdown.open{ transform: translate(-50%,0) scale(1); }
     }
 
-    /* ========= CONTEÚDO ========= */
+    /* ===== Conteúdo ===== */
     .page-wrap{
       max-width: var(--maxw);
       margin: 18px auto 26px;
       padding: 0 16px;
     }
     .titulo{
-      margin: 8px 0 18px 0;
+      margin: 8px 0 16px 0;
       font-size: 22px;
-      font-weight: 700;
+      font-weight: 800;
       color: var(--roxo);
       text-align:center;
     }
 
-    /* ===== Filtros (linha dupla, compactos e padronizados) ===== */
+    /* ===== Filtros: compactos, padronizados, 2 linhas ===== */
     .filtros{
       display:grid;
       grid-template-columns: repeat(3, minmax(220px,1fr));
-      gap: 10px 16px;            /* compacto na vertical e horizontal */
+      gap: 8px 14px;             /* mais próximos verticalmente */
       background:#fff;
       border:1px solid #eee;
       border-radius:12px;
-      padding:12px;              /* compacto */
+      padding:12px;
       align-items:end;
-      margin-bottom:14px;        /* aproxima da tabela */
+      margin-bottom:12px;
     }
     .campo label{
-      display:block;
-      font-weight:700;
-      color:var(--roxo);
-      margin:0 0 4px 0;          /* compacto */
-      font-size:13px;
+      display:block; margin:0 0 4px 0; font-size:13px; font-weight:700; color:var(--roxo);
     }
     .campo input[type="date"],
     .campo input[type="text"],
     .campo select{
-      width:100%;
-      padding:10px;
-      border:1px solid #ddd;
-      border-radius:8px;
-      font-family:inherit; font-size:14px;
-      background:#fff;           /* padronizado */
+      width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; font-family:inherit; font-size:14px; background:#fff;
     }
     .botoes{
       grid-column: 3 / 4;
       justify-self:end;
       display:flex; gap:8px; align-items:center;
     }
-    .btn-primary{
-      background:var(--roxo); color:#fff; border:none; border-radius:10px;
-      padding:10px 18px; font-weight:700; cursor:pointer; line-height:1;
+    .btn-primary, .btn-secondary{
+      height:40px; min-width:96px;
+      padding:10px 18px; line-height:1; border:none; border-radius:10px; font-weight:700; cursor:pointer;
     }
+    .btn-primary{ background:var(--roxo); color:#fff; }
     .btn-primary:hover{ background:var(--roxo-hover); }
-    .btn-secondary{
-      background:#3f3f46; color:#fff; border:none; border-radius:10px;
-      padding:10px 18px; font-weight:700; cursor:pointer; line-height:1; text-decoration:none; display:inline-block;
-    }
+    .btn-secondary{ background:#3f3f46; color:#fff; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; }
 
     @media (max-width: 900px){
       .filtros{ grid-template-columns: repeat(2, minmax(180px,1fr)); }
@@ -159,10 +138,10 @@
     @media (max-width: 560px){
       .filtros{ grid-template-columns: 1fr; }
       .botoes{ grid-column: 1 / 2; justify-self: stretch; }
-      .botoes .btn-primary, .botoes .btn-secondary{ flex:1; text-align:center; }
+      .btn-primary, .btn-secondary{ flex:1; }
     }
 
-    /* ===== Tabela super compacta, 1 linha por empresa ===== */
+    /* ===== Tabela compacta: 1 linha por empresa ===== */
     .tabela-wrap{ overflow-x:hidden; }
     table{
       width:100%;
@@ -171,51 +150,47 @@
       border:1px solid #eee;
       border-radius:12px;
       overflow:hidden;
-      table-layout:fixed; /* usa as larguras do colgroup */
+      table-layout:fixed;
     }
-    /* Larguras ajustadas para caber tudo em 1 linha */
-    colgroup col:nth-child(1){ width:17%; } /* Nome   */
-    colgroup col:nth-child(2){ width:14%; } /* Apelido*/
-    colgroup col:nth-child(3){ width:22%; } /* Email  */
-    colgroup col:nth-child(4){ width:10%; } /* Status */
+    /* Larguras ajustadas para caber tudo */
+    colgroup col:nth-child(1){ width:18%; } /* Nome   */
+    colgroup col:nth-child(2){ width:15%; } /* Apelido*/
+    colgroup col:nth-child(3){ width:23%; } /* Email  */
+    colgroup col:nth-child(4){ width:9%;  } /* Status */
     colgroup col:nth-child(5){ width:12%; } /* Data   */
-    colgroup col:nth-child(6){ width:10%; } /* Cidade */
-    colgroup col:nth-child(7){ width:5%;  } /* Estado */
-    colgroup col:nth-child(8){ width:10%; } /* Ações  */
+    colgroup col:nth-child(6){ width:11%; } /* Cidade */
+    colgroup col:nth-child(7){ width:4%;  } /* UF     */
+    colgroup col:nth-child(8){ width:8%;  } /* Ações  */
 
     thead th{
       background:#eee; color:var(--roxo); font-weight:700;
-      padding:8px 8px; font-size:13px; border-bottom:1px solid #ddd;
-      text-align:center; white-space:nowrap;
+      padding:8px 8px; font-size:13px; border-bottom:1px solid #ddd; text-align:center; white-space:nowrap;
     }
     tbody td{
-      padding:8px 8px; font-size:12.5px; line-height:1.25;
+      padding:8px 8px; font-size:12px; line-height:1.25;
       border-bottom:1px solid #eee; text-align:center;
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis; /* 1 linha */
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
 
-    /* Ações lado a lado e sem quebra */
-    table td:last-child{
-      display:flex; justify-content:center; align-items:center; gap:6px;
+    /* Ações com ícones lado a lado, sem quebra */
+    td.acoes{
+      display:flex; justify-content:center; align-items:center; gap:6px; padding:6px 4px;
       white-space:nowrap; overflow:visible; text-overflow:clip;
-      padding:8px 6px;
     }
-    .btn-editar, .btn-excluir{
-      padding:7px 10px; border:none; border-radius:8px; cursor:pointer;
-      font-size:12px; line-height:1; display:inline-block;
+    .icon-action{
+      display:inline-flex; align-items:center; justify-content:center;
+      width:34px; height:34px; border:none; border-radius:10px; cursor:pointer;
     }
-    .btn-editar{ background:#e67e22; color:#fff; }
-    .btn-excluir{ background:#c0392b; color:#fff; }
+    .icon-edit{ background:#e67e22; }
+    .icon-del{ background:#c0392b; }
+    .icon-action svg{ width:18px; height:18px; color:#fff; }
 
     .paginacao{ margin:14px 0 8px; text-align:center; }
     .paginacao a{ margin:0 10px; text-decoration:none; color:var(--roxo); font-weight:700; }
 
     .exportar{ margin:8px 0 28px; display:flex; justify-content:center; }
-    .exportar a{
-      background:#444; color:#fff; padding:8px 16px; border-radius:10px; text-decoration:none; font-weight:700;
-    }
+    .exportar a{ background:#444; color:#fff; padding:8px 16px; border-radius:10px; text-decoration:none; font-weight:700; }
 
-    /* Mantém cores claras mesmo em dark mode do SO */
     @media (prefers-color-scheme: dark){
       html, body{ background: var(--site-bg) !important; color: var(--cinza-900); }
     }
@@ -232,14 +207,12 @@
     </div>
 
     <div class="header-right">
-      <!-- Botão casinha -->
       <a href="{{ url_for('index') }}" class="icon-btn" aria-label="Página inicial" title="Página inicial">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 10.5 12 3l9 7.5"></path><path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path><path d="M9 21V12h6v9"></path>
         </svg>
       </a>
 
-      <!-- Menu sanduíche -->
       <div class="menu-wrap">
         <button class="hamburger" id="hamburger" type="button" aria-label="Abrir menu" aria-controls="menu-lateral" aria-haspopup="menu" aria-expanded="false">
           <span></span><span></span><span></span>
@@ -288,14 +261,25 @@
   <div class="page-wrap">
     <h1 class="titulo">Painel Administrativo - Empresas</h1>
 
-    <!-- Filtros (GET para funcionar junto com a paginação) -->
-    <form class="filtros" method="GET" action="{{ request.path }}">
+    {# ==== monta listas únicas de Cidade/Estado a partir de empresas (ou empresas_all, se fornecido) ==== #}
+    {% set src = empresas_all if empresas_all is defined and empresas_all else empresas %}
+    {% set ns = namespace(cidades=[], estados=[]) %}
+    {% for e in src %}
+      {% if e.cidade and e.cidade not in ns.cidades %}{% set _ = ns.cidades.append(e.cidade) %}{% endif %}
+      {% if e.estado and e.estado not in ns.estados %}{% set _ = ns.estados.append(e.estado) %}{% endif %}
+    {% endfor %}
+    {% set cidades_opts = ns.cidades|sort %}
+    {% set estados_opts = ns.estados|sort %}
+
+    <!-- Filtros -->
+    <form id="form-filtros" class="filtros" method="GET" action="{{ request.path }}">
       <div class="campo">
         <label for="status">Status:</label>
         <select name="status" id="status">
           <option value="" {% if not status %}selected{% endif %}>Todos</option>
           <option value="ativo" {% if status == 'ativo' %}selected{% endif %}>Ativo</option>
           <option value="pendente" {% if status == 'pendente' %}selected{% endif %}>Pendente</option>
+          <option value="aprovado" {% if status == 'aprovado' %}selected{% endif %}>Aprovado</option>
         </select>
       </div>
 
@@ -316,15 +300,19 @@
 
       <div class="campo">
         <label for="cidade">Cidade:</label>
-        <input type="text" name="cidade" id="cidade" placeholder="Ex.: Brusque" value="{{ cidade or '' }}">
+        <select name="cidade" id="cidade">
+          <option value="" {% if not cidade %}selected{% endif %}>Todas</option>
+          {% for c in cidades_opts %}
+            <option value="{{ c }}" {% if cidade == c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
       </div>
 
       <div class="campo">
         <label for="estado">Estado:</label>
         <select name="estado" id="estado">
           <option value="" {% if not estado %}selected{% endif %}>Todos</option>
-          {% set UFs = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'] %}
-          {% for uf in UFs %}
+          {% for uf in estados_opts %}
             <option value="{{ uf }}" {% if estado == uf %}selected{% endif %}>{{ uf }}</option>
           {% endfor %}
         </select>
@@ -337,7 +325,7 @@
     </form>
 
     <div class="tabela-wrap">
-      <table class="table-compact">
+      <table>
         <colgroup>
           <col><col><col><col><col><col><col><col>
         </colgroup>
@@ -353,22 +341,45 @@
             <th>Ações</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="tbody-empresas">
           {% for empresa in empresas %}
-          <tr>
+          <tr
+            data-nome="{{ (empresa.nome or '')|e }}"
+            data-apelido="{{ (empresa.apelido or '')|e }}"
+            data-email="{{ (empresa.email or '')|e }}"
+            data-status="{{ (empresa.status_pagamento or '')|e }}"
+            data-cidade="{{ (empresa.cidade or '')|e }}"
+            data-estado="{{ (empresa.estado or '')|e }}"
+            data-dt="{{ empresa.data_pagamento.strftime('%Y-%m-%d') if empresa.data_pagamento else '' }}"
+          >
             <td title="{{ empresa.nome }}">{{ empresa.nome }}</td>
             <td title="{{ empresa.apelido }}">{{ empresa.apelido }}</td>
             <td title="{{ empresa.email }}">{{ empresa.email }}</td>
             <td title="{{ empresa.status_pagamento }}">{{ empresa.status_pagamento }}</td>
-            <td title="{{ empresa.data_pagamento.strftime('%Y-%m-%d %H:%M') if empresa.data_pagamento else '' }}">{{ empresa.data_pagamento.strftime('%Y-%m-%d %H:%M') if empresa.data_pagamento else '' }}</td>
+            <td title="{{ empresa.data_pagamento.strftime('%Y-%m-%d %H:%M') if empresa.data_pagamento else '' }}">
+              {{ empresa.data_pagamento.strftime('%Y-%m-%d %H:%M') if empresa.data_pagamento else '' }}
+            </td>
             <td title="{{ empresa.cidade }}">{{ empresa.cidade }}</td>
             <td title="{{ empresa.estado }}">{{ empresa.estado }}</td>
-            <td>
+            <td class="acoes">
               <form action="/admin/editar_status/{{ empresa.id }}" method="post">
-                <button class="btn-editar" type="submit">Alterar Status</button>
+                <button class="icon-action icon-edit" type="submit" title="Alterar status" aria-label="Alterar status">
+                  <!-- ícone ajuste/status (lapis) -->
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
+                  </svg>
+                </button>
               </form>
               <form action="/admin/excluir_empresa/{{ empresa.id }}" method="post" onsubmit="return confirmarExclusao('{{ empresa.razao_social or empresa.nome }}')">
-                <button class="btn-excluir" type="submit">Excluir</button>
+                <button class="icon-action icon-del" type="submit" title="Excluir" aria-label="Excluir">
+                  <!-- ícone lixeira -->
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                    <path d="M10 11v6M14 11v6"></path>
+                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                  </svg>
+                </button>
               </form>
             </td>
           </tr>
@@ -392,9 +403,10 @@
     </div>
   </div>
 
-  <!-- ===== Script do menu (igual ao fale_conosco.html) ===== -->
+  <!-- ===== Script do menu (igual ao fale_conosco.html) + filtro client-side ===== -->
   <script>
     (function () {
+      // menu (idêntico)
       function closeAll() {
         document.querySelectorAll('.menu-wrap .menu-dropdown.open').forEach(m => {
           m.classList.remove('open');
@@ -407,7 +419,6 @@
         const menu = wrap.querySelector('#menu-lateral');
         const xBtn = wrap.querySelector('.menu-close');
         if (!btn || !menu) return;
-
         btn.addEventListener('click', e => {
           e.stopPropagation();
           const willOpen = !menu.classList.contains('open');
@@ -415,18 +426,76 @@
           menu.classList.toggle('open', willOpen);
           btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
         });
-
         xBtn?.addEventListener('click', e => {
           e.stopPropagation();
           menu.classList.remove('open');
           btn.setAttribute('aria-expanded', 'false');
         });
-
         menu.addEventListener('click', e => e.stopPropagation());
       });
-
       document.addEventListener('click', closeAll);
       document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
+
+      // --------- FILTRO CLIENT-SIDE (funciona já) ----------
+      const form = document.getElementById('form-filtros');
+      const tbody = document.getElementById('tbody-empresas');
+
+      function str(x){ return (x||'').toString().toLowerCase().trim(); }
+      function dateISO(x){ return (x||'').toString(); } // já vem YYYY-MM-DD do data-dt
+
+      function aplicaFiltroFrom(formEl){
+        const f = new FormData(formEl);
+        const status = str(f.get('status'));
+        const apelido = str(f.get('apelido'));
+        const cidade = str(f.get('cidade'));
+        const estado = str(f.get('estado'));
+        const di = f.get('data_inicio');
+        const df = f.get('data_fim');
+
+        [...tbody.querySelectorAll('tr')].forEach(tr => {
+          const tStatus  = str(tr.dataset.status);
+          const tApelido = str(tr.dataset.apelido);
+          const tCidade  = str(tr.dataset.cidade);
+          const tEstado  = str(tr.dataset.estado);
+          const tDt      = dateISO(tr.dataset.dt); // YYYY-MM-DD
+
+          let ok = true;
+          if (status && tStatus !== status) ok = false;
+          if (apelido && !tApelido.includes(apelido)) ok = false;
+          if (cidade && tCidade !== cidade) ok = false;
+          if (estado && tEstado !== estado) ok = false;
+
+          if (ok && (di || df) ){
+            if (tDt){
+              if (di && tDt < di) ok = false;
+              if (df && tDt > df) ok = false;
+            } else {
+              ok = false; // sem data, fora do range se range foi informado
+            }
+          }
+          tr.style.display = ok ? '' : 'none';
+        });
+      }
+
+      // Preenche campos a partir da URL em recarregamentos
+      const params = new URLSearchParams(location.search);
+      ['status','data_inicio','data_fim','apelido','cidade','estado'].forEach(id=>{
+        const el = form.querySelector('[name="'+id+'"]');
+        if (el && params.has(id) && !el.value) el.value = params.get(id);
+      });
+
+      // Submete com filtro client-side e atualiza a URL
+      form.addEventListener('submit', (e) => {
+        e.preventDefault(); // <-- Remova esta linha quando o backend filtrar por GET
+        aplicaFiltroFrom(form);
+
+        // Atualiza querystring para persistir seleção
+        const q = new URLSearchParams(new FormData(form));
+        history.replaceState(null,'', location.pathname + '?' + q.toString());
+      });
+
+      // Aplica automaticamente se já houver querystring
+      if ([...params.keys()].length){ aplicaFiltroFrom(form); }
     })();
 
     function confirmarExclusao(nomeEmpresa) {
