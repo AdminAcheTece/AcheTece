@@ -14,7 +14,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
-        /* ===== Cabeçalho padrão (igual ao quem_somos.html / busca.html) ===== */
+        /* ===== Cabeçalho padrão (igual ao fale_conosco.html) ===== */
         .navbar{ overflow:visible; padding-top:6px; padding-bottom:6px; background:#fff; border-bottom:1px solid #eee; }
         .header-left,.header-right{ display:flex; align-items:center; }
         .header-right{ margin-left:auto; gap:20px; }
@@ -76,7 +76,7 @@
         }
         .icon{ width:20px; height:20px; color:#222; }
 
-        /* ===== Estilos específicos desta página (mantidos) ===== */
+        /* ===== Estilos específicos desta página ===== */
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f2f2f2;
@@ -97,22 +97,23 @@
             color: #8A00FF;
         }
 
+        /* Form em grade para 2 linhas x 3 colunas */
         form.formulario {
-            display: flex;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(220px, 1fr));
             gap: 16px 32px;
             margin-bottom: 30px;
             background-color: #fff;
             padding: 20px;
             border-radius: 10px;
             box-shadow: none !important;
+            align-items: end;
         }
 
         .campo {
-            flex: 1 1 220px;
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 6px;
         }
 
         label {
@@ -120,23 +121,25 @@
             color: #8A00FF;
         }
 
-        select, input[type="date"] {
+        select, input[type="date"], input[type="text"] {
             padding: 8px;
             border-radius: 6px;
             border: 1px solid #ccc;
             min-width: 180px;
+            background:#fff;
         }
 
         .botoes {
+            grid-column: 3 / 4;
+            justify-self: end;
             display: flex;
-            align-items: flex-end;
+            align-items: center;
             gap: 10px;
-            margin-top: 0;
         }
 
         button {
             background-color: #8A00FF;
-            color: white;
+            color: #fff;
             padding: 10px 16px;
             border: none;
             border-radius: 6px;
@@ -157,7 +160,8 @@
             line-height: 20px;
         }
 
-        .tabela-container { overflow-x: auto; }
+        /* ===== Tabela compacta (sem scroll horizontal) ===== */
+        .tabela-container { overflow-x: hidden; }
 
         table {
             width: 100%;
@@ -165,18 +169,48 @@
             background-color: #fff;
             border-radius: 8px;
             overflow: hidden;
+            table-layout: fixed; /* distribui as larguras conforme colgroup */
         }
 
+        /* larguras proporcionais para caber na tela */
+        colgroup col:nth-child(1){ width:18%; } /* Nome */
+        colgroup col:nth-child(2){ width:14%; } /* Apelido */
+        colgroup col:nth-child(3){ width:22%; } /* Email */
+        colgroup col:nth-child(4){ width:10%; } /* Status */
+        colgroup col:nth-child(5){ width:12%; } /* Data */
+        colgroup col:nth-child(6){ width:12%; } /* Cidade */
+        colgroup col:nth-child(7){ width:6%; }  /* Estado */
+        colgroup col:nth-child(8){ width:6%; }  /* Ações */
+
         th, td {
-            padding: 12px;
+            padding: 10px 8px;
             text-align: center;
             border-bottom: 1px solid #ccc;
+            font-size: 13px;            /* compacto */
+            line-height: 1.25;
+            white-space: normal;         /* permite quebrar linhas */
+            word-break: break-word;      /* quebra palavras longas (ex.: e-mails) */
         }
 
         th {
             background-color: #eee;
             color: #8A00FF;
+            font-weight: 700;
         }
+
+        /* Botões de ação mais compactos */
+        .btn-editar, .btn-excluir {
+            padding: 6px 8px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            line-height: 1;
+            display:inline-block;
+            margin: 2px 0;
+        }
+        .btn-editar { background-color: #e67e22; color: #fff; }
+        .btn-excluir { background-color: #c0392b; color: #fff; }
 
         .exportar {
             margin-top: 10px;
@@ -194,25 +228,6 @@
             font-weight: bold;
         }
 
-        .btn-editar {
-            background-color: #e67e22;
-            padding: 6px 12px;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-
-        .btn-excluir {
-            background-color: #c0392b;
-            padding: 6px 12px;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-left: 6px;
-        }
-
         .paginacao {
             margin-top: 20px;
             text-align: center;
@@ -224,11 +239,27 @@
             color: #8A00FF;
             font-weight: bold;
         }
+
+        /* Responsivo: empilha filtros em telas menores */
+        @media (max-width: 900px){
+          form.formulario{
+            grid-template-columns: repeat(2, minmax(180px, 1fr));
+          }
+          .botoes{ grid-column: 2 / 3; }
+        }
+        @media (max-width: 560px){
+          form.formulario{
+            grid-template-columns: 1fr;
+          }
+          .botoes{ grid-column: 1 / 2; justify-self: stretch; }
+          .botoes a, .botoes button{ flex:1; text-align:center; }
+          th, td{ font-size:12px; padding:8px 6px; }
+        }
     </style>
 </head>
 <body>
 
-  <!-- ===== Cabeçalho (EXATAMENTE igual ao quem_somos.html) ===== -->
+  <!-- ===== Cabeçalho (igual ao fale_conosco.html) ===== -->
   <header class="navbar">
     <div class="header-left">
       <div class="logo">
@@ -317,28 +348,51 @@
     </div>
   </header>
 
-  <!-- ===== Conteúdo da página administrativa (inalterado) ===== -->
+  <!-- ===== Conteúdo da página administrativa ===== -->
   <div class="container">
         <h2>Painel Administrativo - Empresas</h2>
 
+        <!-- Linha 1: Status, Data início, Data fim -->
         <form method="POST" class="formulario">
             <div class="campo">
                 <label for="status">Status:</label>
                 <select name="status" id="status">
-                    <option value="">Todos</option>
-                    <option value="ativo">Ativo</option>
-                    <option value="pendente">Pendente</option>
+                    <option value="" {% if not status %}selected{% endif %}>Todos</option>
+                    <option value="ativo" {% if status == 'ativo' %}selected{% endif %}>Ativo</option>
+                    <option value="pendente" {% if status == 'pendente' %}selected{% endif %}>Pendente</option>
                 </select>
             </div>
 
             <div class="campo">
                 <label for="data_inicio">Data início:</label>
-                <input type="date" name="data_inicio" id="data_inicio">
+                <input type="date" name="data_inicio" id="data_inicio" value="{{ data_inicio or '' }}">
             </div>
 
             <div class="campo">
                 <label for="data_fim">Data fim:</label>
-                <input type="date" name="data_fim" id="data_fim">
+                <input type="date" name="data_fim" id="data_fim" value="{{ data_fim or '' }}">
+            </div>
+
+            <!-- Linha 2: Apelido, Cidade, Estado -->
+            <div class="campo">
+                <label for="apelido">Apelido:</label>
+                <input type="text" name="apelido" id="apelido" placeholder="Ex.: [DEMO] Delta" value="{{ apelido or '' }}">
+            </div>
+
+            <div class="campo">
+                <label for="cidade">Cidade:</label>
+                <input type="text" name="cidade" id="cidade" placeholder="Ex.: Brusque" value="{{ cidade or '' }}">
+            </div>
+
+            <div class="campo">
+                <label for="estado">Estado:</label>
+                <select name="estado" id="estado">
+                    <option value="" {% if not estado %}selected{% endif %}>Todos</option>
+                    {% set UFs = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'] %}
+                    {% for uf in UFs %}
+                      <option value="{{ uf }}" {% if estado == uf %}selected{% endif %}>{{ uf }}</option>
+                    {% endfor %}
+                </select>
             </div>
 
             <div class="botoes">
@@ -348,7 +402,10 @@
         </form>
 
         <div class="tabela-container">
-            <table>
+            <table class="table-compact">
+                <colgroup>
+                  <col><col><col><col><col><col><col><col>
+                </colgroup>
                 <thead>
                     <tr>
                         <th>Nome</th>
@@ -387,11 +444,11 @@
 
         <div class="paginacao">
             {% if pagina > 1 %}
-                <a href="?pagina={{ pagina - 1 }}{% if status %}&status={{ status }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}">← Anterior</a>
+                <a href="?pagina={{ pagina - 1 }}{% if status %}&status={{ status }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}{% if apelido %}&apelido={{ apelido }}{% endif %}{% if cidade %}&cidade={{ cidade }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">← Anterior</a>
             {% endif %}
             Página {{ pagina }} de {{ total_paginas }}
             {% if pagina < total_paginas %}
-                <a href="?pagina={{ pagina + 1 }}{% if status %}&status={{ status }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}">Próxima →</a>
+                <a href="?pagina={{ pagina + 1 }}{% if status %}&status={{ status }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}{% if apelido %}&apelido={{ apelido }}{% endif %}{% if cidade %}&cidade={{ cidade }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">Próxima →</a>
             {% endif %}
         </div>
 
@@ -400,7 +457,7 @@
         </div>
   </div>
 
-  <!-- Script do menu (exatamente igual ao quem_somos.html) -->
+  <!-- Script do menu (igual ao fale_conosco.html) -->
   <script>
     (function () {
       function closeAll() {
