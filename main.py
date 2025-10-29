@@ -1212,39 +1212,103 @@ import random
 from datetime import datetime, timedelta
 from flask import current_app, session
 
+# --- Envio de e-mail compatível com vários backends --------------------------
+def _email_send_compat(to_email: str, subject: str, text: str, html: str | None = None) -> bool:
+    """
+    Tenta enviar e-mail usando:
+      (1) função utilitária existente (send_email / enviar_email / mail_send...),
+      (2) Flask-Mail (se 'mail' estiver disponível),
+      (3) SMTP (variáveis de ambiente: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS,
+          SMTP_SENDER, SMTP_TLS=1|0).
+    Retorna True/False.
+    """
+    try:
+        # 1) Funções utilitárias já existentes no projeto
+        for fname in ("send_email", "enviar_email", "mail_send", "send_mail"):
+            if fname in globals():
+                f = globals()[fname]
+                try:
+                    # tentativas de assinaturas comuns
+                    f(to_email, subject, text, html)
+                except TypeError:
+                    try:
+                        f(to=to_email, subject=subject, body=text, html=html)
+                    except TypeError:
+                        f(to=to_email, subject=subject, text=text, html=html)
+                current_app.logger.info(f"[MAIL] Enviado via helper '{fname}'.")
+                return True
+
+        # 2) Flask-Mail
+        if "mail" in globals():
+            from flask_mail import Message
+            sender = current_app.config.get("MAIL_DEFAULT_SENDER")
+            msg = Message(subject=subject, recipients=[to_email], body=text, html=html, sender=sender)
+            mail.send(msg)  # type: ignore[name-defined]
+            current_app.logger.info("[MAIL] Enviado via Flask-Mail.")
+            return True
+
+        # 3) SMTP puro (fallback)
+        import os, smtplib, ssl
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+
+        host   = os.environ.get("SMTP_HOST")
+        port   = int(os.environ.get("SMTP_PORT", "587"))
+        user   = os.environ.get("SMTP_USER")
+        pwd    = os.environ.get("SMTP_PASS")
+        sender = os.environ.get("SMTP_SENDER") or current_app.config.get("MAIL_DEFAULT_SENDER") or "no-reply@achetece.com.br"
+        use_tls = os.environ.get("SMTP_TLS", "1") not in ("0", "false", "False")
+
+        if host and sender and (user is None or pwd is not None or not use_tls or True):
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = sender
+            msg["To"] = to_email
+            msg.attach(MIMEText(text, "plain"))
+            if html:
+                msg.attach(MIMEText(html, "html"))
+
+            with smtplib.SMTP(host, port, timeout=20) as server:
+                if use_tls:
+                    server.starttls(context=ssl.create_default_context())
+                if user:
+                    server.login(user, pwd or "")
+                server.sendmail(sender, [to_email], msg.as_string())
+            current_app.logger.info("[MAIL] Enviado via SMTP fallback.")
+            return True
+
+        current_app.logger.warning("[MAIL] Nenhum backend de e-mail disponível.")
+    except Exception:
+        current_app.logger.exception("[MAIL] Falha no envio")
+    return False
+# ---------------------------------------------------------------------------
+
 # Se já houver uma implementação real em outro arquivo, este bloco não interfere.
 if "_otp_send" not in globals():
-    def _otp_send(email: str, ip: str = "", ua: str = ""):
-        """
-        Gera e envia um código de 6 dígitos para login por e-mail.
-        Retorna (ok: bool, msg: str).
-        Persistência leve em sessão para o fluxo atual.
-        """
+    def _otp_send(to_email: str, ip: str = "", ua: str = ""):
         try:
             code = f"{random.randint(0, 999999):06d}"
-            # guarda na sessão com expiração de 10 min
+            # guarda p/ validar depois
             data = session.get("otp_login", {})
-            data[email] = {
+            from datetime import datetime, timedelta
+            data[to_email] = {
                 "code": code,
                 "exp": (datetime.utcnow() + timedelta(minutes=10)).timestamp(),
                 "ip": ip[:64],
                 "ua": ua[:255],
             }
             session["otp_login"] = data
-
+    
             subject = "Seu código de acesso – AcheTece"
             text = f"Seu código é {code}. Ele expira em 10 minutos."
             html = f"<p>Olá!</p><p>Seu código de acesso é <strong>{code}</strong>.</p><p>Ele expira em 10 minutos.</p>"
-
-            # >>> Use o mesmo sender que você usa em 'esqueci_senha' <<<
-            # Exemplo (ajuste para o seu projeto):
-            # send_email(to=email, subject=subject, body=text, html=html)
-
-            # Se ainda não plugar o sender, ao menos registra em log:
-            current_app.logger.info(f"[OTP][login] código {code} enviado para {email} (modo fallback)")
-
-            return True, "Enviamos um código para o seu e-mail."
-        except Exception as e:
+    
+            if _email_send_compat(to_email, subject, text, html):
+                return True, "Enviamos um código para o seu e-mail."
+            else:
+                return False, "Não foi possível enviar o código agora. Tente novamente."
+    
+        except Exception:
             current_app.logger.exception("Falha ao enviar OTP de login")
             return False, "Não foi possível enviar o código agora. Tente novamente."
 
