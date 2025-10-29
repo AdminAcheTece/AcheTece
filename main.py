@@ -1207,37 +1207,35 @@ def index():
         app.logger.exception("[INDEX] falha ao consultar DB: %s", e)
         return _render_offline()
 
-# --- OTP polyfills mínimos p/ login por e-mail -------------------------------
+# --- OTP / E-mail helpers (força HTML) --------------------------------------
 import random
 from datetime import datetime, timedelta
 from flask import current_app, session
 
-# --- Sender que PRIORIZA HTML (Flask-Mail -> SMTP; só por último helpers) ----
 def _email_send_html_first(to_email: str, subject: str, text: str, html: str | None) -> bool:
     """
-    Tenta enviar HTML de forma prioritária. Ordem:
-      (1) Flask-Mail (mesmo sem 'mail' global; busca em current_app.extensions),
-      (2) SMTP multipart/alternative (env vars),
-      (3) Helpers do projeto (podem degradar p/ texto se ignorarem 'html').
+    Envia priorizando HTML:
+      1) Flask-Mail (via current_app.extensions['mail'] ou 'mail' global);
+      2) SMTP multipart/alternative (env vars);
+      3) Helpers do projeto (último recurso; podem degradar para texto).
     """
-    # 1) Flask-Mail via registry de extensões (funciona mesmo sem 'mail' global)
+    # 1) Flask-Mail via registry (funciona mesmo sem 'mail' global)
     try:
         mail_ext = (getattr(current_app, "extensions", {}) or {}).get("mail")
-        if mail_ext and html:
+        if (mail_ext or "mail" in globals()) and html:
             from flask_mail import Message
             sender = current_app.config.get("MAIL_DEFAULT_SENDER")
             msg = Message(subject=subject, recipients=[to_email], sender=sender)
             msg.body = text or ""
             msg.html = html
-            # ajuda o Gmail a não “traduzir”
             msg.extra_headers = {"Content-Language": "pt-BR"}
-            mail_ext.send(msg)
-            current_app.logger.info("[MAIL] HTML via Flask-Mail (extensions)")
+            (mail_ext or mail).send(msg)  # type: ignore[name-defined]
+            current_app.logger.info("[MAIL_PATH] flask-mail-html")
             return True
     except Exception:
-        current_app.logger.exception("[MAIL] Flask-Mail (extensions) falhou")
+        current_app.logger.exception("[MAIL] Flask-Mail falhou")
 
-    # 2) SMTP multipart/alternative (garante HTML em qualquer provedor)
+    # 2) SMTP multipart/alternative
     try:
         import os, smtplib, ssl
         from email.mime.multipart import MIMEMultipart
@@ -1264,112 +1262,98 @@ def _email_send_html_first(to_email: str, subject: str, text: str, html: str | N
                 if use_tls: s.starttls(context=ssl.create_default_context())
                 if user:    s.login(user, pwd or "")
                 s.sendmail(sender, [to_email], msg.as_string())
-            current_app.logger.info("[MAIL] HTML via SMTP")
+            current_app.logger.info("[MAIL_PATH] smtp-html")
             return True
     except Exception:
         current_app.logger.exception("[MAIL] SMTP falhou")
 
-    # 3) Helpers do projeto (último recurso; podem mandar só texto)
+    # 3) Helpers do projeto (podem ignorar HTML)
     try:
         for fname in ("send_email", "enviar_email", "mail_send", "send_mail"):
             if fname in globals():
                 f = globals()[fname]
-                try:               f(to_email, subject, text, html)                             # assinatura 1
+                try:               f(to_email, subject, text, html)
                 except TypeError:
-                    try:            f(to=to_email, subject=subject, body=text, html=html)      # assinatura 2
+                    try:            f(to=to_email, subject=subject, body=text, html=html)
                     except TypeError:
-                        try:        f(to=to_email, subject=subject, text=text, html=html)      # assinatura 3
+                        try:        f(to=to_email, subject=subject, text=text, html=html)
                         except TypeError:
-                            # tentativa com nome html_body (alguns projetos usam isso)
                             f(to=to_email, subject=subject, body=text, html_body=html)
-                current_app.logger.info(f"[MAIL] Enviado por helper '{fname}' (pode ignorar HTML).")
+                current_app.logger.info(f"[MAIL_PATH] helper:{fname}")
                 return True
     except Exception:
-        current_app.logger.exception("[MAIL] Helper falhou")
+        current_app.logger.exception("[MAIL] helper falhou")
 
-    current_app.logger.warning("[MAIL] Nenhum backend de e-mail disponível")
+    current_app.logger.warning("[MAIL] nenhum backend disponível")
     return False
-# ---------------------------------------------------------------------------
 
-# --- Envio de e-mail compatível com vários backends --------------------------
-def _email_send_compat(to_email: str, subject: str, text: str, html: str | None = None) -> bool:
-    """
-    Tenta enviar e-mail usando:
-      (1) função utilitária existente (send_email / enviar_email / mail_send...),
-      (2) Flask-Mail (se 'mail' estiver disponível),
-      (3) SMTP (variáveis de ambiente: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS,
-          SMTP_SENDER, SMTP_TLS=1|0).
-    Retorna True/False.
-    """
-    try:
-        # 1) Funções utilitárias já existentes no projeto
-        for fname in ("send_email", "enviar_email", "mail_send", "send_mail"):
-            if fname in globals():
-                f = globals()[fname]
-                try:
-                    # tentativas de assinaturas comuns
-                    f(to_email, subject, text, html)
-                except TypeError:
-                    try:
-                        f(to=to_email, subject=subject, body=text, html=html)
-                    except TypeError:
-                        f(to=to_email, subject=subject, text=text, html=html)
-                current_app.logger.info(f"[MAIL] Enviado via helper '{fname}'.")
-                return True
+def _otp_email_html(dest_email: str, code: str, minutes: int = 30) -> str:
+    brand = "AcheTece • Portal de Malharias"
+    primary = "#4B2AC7"
+    chip_bg = "#F5F0FF"
+    chip_bd = "#D9CCFF"
+    text = (
+        f"Seu código para acessar a sua conta\n\n"
+        f"Recebemos uma solicitação de acesso ao AcheTece para: {dest_email}\n\n"
+        f"{code}\n\n"
+        f"Código válido por {minutes} minutos e de uso único.\n"
+        f"Se você não fez esta solicitação, ignore este e-mail.\n\n{brand}"
+    )
+    return f"""<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light">
+  <title>Código de acesso</title>
+  <style>@media screen {{ .code-chip {{ letter-spacing: 6px; }} }}</style>
+</head>
+<body style="margin:0;padding:0;background:#F7F7FA;">
+  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#F7F7FA;">
+    <tr>
+      <td align="center" style="padding:24px 12px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:640px;background:#FFFFFF;border:1px solid #EEE;border-radius:12px;">
+          <tr>
+            <td style="padding:24px 24px 8px 24px;font-family:Inter,Segoe UI,Arial,Helvetica,sans-serif;">
+              <h1 style="margin:0 0 6px 0;font-size:22px;line-height:1.3;color:#1E1B2B;">Seu código para acessar a sua conta</h1>
+              <p style="margin:0 0 14px 0;color:#444;font-size:14px;">
+                Recebemos uma solicitação de acesso ao AcheTece para:<br>
+                <a href="mailto:{dest_email}" style="color:#1E3A8A;text-decoration:underline;">{dest_email}</a>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:6px 24px 2px 24px;">
+              <div style="display:inline-block;padding:16px 28px;border-radius:14px;background:{chip_bg};border:2px dotted {chip_bd};">
+                <div class="code-chip" style="font-family:Inter,Segoe UI,Arial,Helvetica,sans-serif;font-size:36px;font-weight:800;color:{primary};letter-spacing:6px;">{code}</div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:14px 24px 20px 24px;font-family:Inter,Segoe UI,Arial,Helvetica,sans-serif;color:#555;">
+              <p style="margin:0 0 8px 0;font-size:14px;">Código válido por <strong>{minutes} minutos</strong> e de uso único.</p>
+              <p style="margin:0 0 2px 0;font-size:13px;color:#666;">Se você não fez esta solicitação, ignore este e-mail.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:10px 24px 22px 24px;">
+              <hr style="border:none;border-top:1px solid #EEE;margin:4px 0 12px 0;">
+              <p style="margin:0;color:#777;font-family:Inter,Segoe UI,Arial,Helvetica,sans-serif;font-size:12px;">{brand}</p>
+            </td>
+          </tr>
+        </table>
+        <div style="display:none;max-height:0;overflow:hidden;color:transparent;">{text}</div>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>"""
 
-        # 2) Flask-Mail
-        if "mail" in globals():
-            from flask_mail import Message
-            sender = current_app.config.get("MAIL_DEFAULT_SENDER")
-            msg = Message(subject=subject, recipients=[to_email], body=text, html=html, sender=sender)
-            mail.send(msg)  # type: ignore[name-defined]
-            current_app.logger.info("[MAIL] Enviado via Flask-Mail.")
-            return True
-
-        # 3) SMTP puro (fallback)
-        import os, smtplib, ssl
-        from email.mime.multipart import MIMEMultipart
-        from email.mime.text import MIMEText
-
-        host   = os.environ.get("SMTP_HOST")
-        port   = int(os.environ.get("SMTP_PORT", "587"))
-        user   = os.environ.get("SMTP_USER")
-        pwd    = os.environ.get("SMTP_PASS")
-        sender = os.environ.get("SMTP_SENDER") or current_app.config.get("MAIL_DEFAULT_SENDER") or "no-reply@achetece.com.br"
-        use_tls = os.environ.get("SMTP_TLS", "1") not in ("0", "false", "False")
-
-        if host and sender and (user is None or pwd is not None or not use_tls or True):
-            msg = MIMEMultipart("alternative")
-            msg["Subject"] = subject
-            msg["From"] = sender
-            msg["To"] = to_email
-            msg.attach(MIMEText(text, "plain"))
-            if html:
-                msg.attach(MIMEText(html, "html"))
-
-            with smtplib.SMTP(host, port, timeout=20) as server:
-                if use_tls:
-                    server.starttls(context=ssl.create_default_context())
-                if user:
-                    server.login(user, pwd or "")
-                server.sendmail(sender, [to_email], msg.as_string())
-            current_app.logger.info("[MAIL] Enviado via SMTP fallback.")
-            return True
-
-        current_app.logger.warning("[MAIL] Nenhum backend de e-mail disponível.")
-    except Exception:
-        current_app.logger.exception("[MAIL] Falha no envio")
-    return False
-# ---------------------------------------------------------------------------
-
-# ⚠️ SUBSTITUA a definição de _otp_send pela versão SEM o guard (sem 'if ... not in globals()')
 def _otp_send(to_email: str, ip: str = "", ua: str = ""):
-    """
-    Gera o OTP, salva expiração e envia e-mail em HTML.
-    """
+    """Gera OTP, salva expiração e envia e-mail HTML (30 min)."""
     try:
         code = f"{random.randint(0, 999999):06d}"
-        minutes = 30  # exibe e aplica 30 min como na imagem 1
+        minutes = 30
 
         data = session.get("otp_login", {})
         data[to_email] = {
@@ -1385,130 +1369,17 @@ def _otp_send(to_email: str, ip: str = "", ua: str = ""):
         html    = _otp_email_html(to_email, code, minutes)
 
         if _email_send_html_first(to_email, subject, text, html):
+            current_app.logger.info("[OTP] HTML enviado com sucesso")
             return True, "Enviamos um código para o seu e-mail."
         else:
+            current_app.logger.error("[OTP] Falha ao enviar HTML (nenhum backend aceitou)")
             return False, "Não foi possível enviar o código agora. Tente novamente."
     except Exception:
         current_app.logger.exception("Falha ao enviar OTP de login")
         return False, "Não foi possível enviar o código agora. Tente novamente."
 
-# Fallback de validação APENAS se não existir (não sobrescreve o seu)
-if "_otp_validate" not in globals():
-    def _otp_validate(email: str, code: str):
-        data = (session.get("otp_login") or {}).get(email)
-        if not data:
-            return False, "Código expirado ou inválido. Peça um novo código."
-        if datetime.utcnow().timestamp() > float(data.get("exp", 0)):
-            (session.get("otp_login") or {}).pop(email, None)
-            return False, "Código expirado. Solicite outro."
-        if str(code).strip() != str(data.get("code", "")).strip():
-            return False, "Código incorreto. Tente novamente."
-        # sucesso: limpa o código para não reutilizar
-        (session.get("otp_login") or {}).pop(email, None)
-        return True, "ok"
-# --- fim dos polyfills --------------------------------------------------------
-
-def _otp_email_html(dest_email: str, code: str, minutes: int = 10) -> str:
-    """
-    HTML compatível com clientes de e-mail (table-based, inline CSS),
-    seguindo o visual da imagem 1.
-    """
-    brand = "AcheTece • Portal de Malharias"
-    primary = "#4B2AC7"      # roxo texto do código
-    chip_bg = "#F5F0FF"      # fundo do chip
-    chip_bd = "#D9CCFF"      # contorno (dotted)
-    text = (
-        f"Seu código para acessar a sua conta\n\n"
-        f"Recebemos uma solicitação de acesso ao AcheTece para: {dest_email}\n\n"
-        f"{code}\n\n"
-        f"Código válido por {minutes} minutos e de uso único.\n"
-        f"Se você não fez esta solicitação, ignore este e-mail.\n\n{brand}"
-    )  # útil como pré-visualização em clients que ignoram HTML
-
-    return f"""\
-<!doctype html>
-<html lang="pt-br">
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <meta name="color-scheme" content="light only">
-  <meta name="supported-color-schemes" content="light">
-  <title>Código de acesso</title>
-  <style>
-    /* Alguns clients suportam style no <head>; mantemos também inline mais abaixo */
-    @media screen {{
-      .code-chip {{ letter-spacing: 6px; }}
-    }}
-  </style>
-</head>
-<body style="margin:0;padding:0;background:#F7F7FA;">
-  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#F7F7FA;">
-    <tr>
-      <td align="center" style="padding:24px 12px;">
-        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:640px;background:#FFFFFF;border:1px solid #EEE;border-radius:12px;">
-          <tr>
-            <td style="padding:24px 24px 8px 24px;font-family:Inter,Segoe UI,Arial,Helvetica,sans-serif;">
-              <h1 style="margin:0 0 6px 0;font-size:22px;line-height:1.3;color:#1E1B2B;">
-                Seu código para acessar a sua conta
-              </h1>
-              <p style="margin:0 0 14px 0;color:#444;font-size:14px;">
-                Recebemos uma solicitação de acesso ao AcheTece para:
-                <br>
-                <a href="mailto:{dest_email}" style="color:#1E3A8A;text-decoration:underline;">{dest_email}</a>
-              </p>
-            </td>
-          </tr>
-
-          <tr>
-            <td align="center" style="padding:6px 24px 2px 24px;">
-              <div style="
-                display:inline-block;
-                padding:16px 28px;
-                border-radius:14px;
-                background:{chip_bg};
-                border:2px dotted {chip_bd};
-              ">
-                <div class="code-chip" style="
-                  font-family:Inter,Segoe UI,Arial,Helvetica,sans-serif;
-                  font-size:36px;
-                  font-weight:800;
-                  color:{primary};
-                  letter-spacing:6px;
-                ">{code}</div>
-              </div>
-            </td>
-          </tr>
-
-          <tr>
-            <td style="padding:14px 24px 20px 24px;font-family:Inter,Segoe UI,Arial,Helvetica,sans-serif;color:#555;">
-              <p style="margin:0 0 8px 0;font-size:14px;">
-                Código válido por <strong>{minutes} minutos</strong> e de uso único.
-              </p>
-              <p style="margin:0 0 2px 0;font-size:13px;color:#666;">
-                Se você não fez esta solicitação, ignore este e-mail.
-              </p>
-            </td>
-          </tr>
-
-          <tr>
-            <td style="padding:10px 24px 22px 24px;">
-              <hr style="border:none;border-top:1px solid #EEE;margin:4px 0 12px 0;">
-              <p style="margin:0;color:#777;font-family:Inter,Segoe UI,Arial,Helvetica,sans-serif;font-size:12px;">
-                {brand}
-              </p>
-            </td>
-          </tr>
-        </table>
-
-        <!-- preheader/alt text invisível para alguns clients -->
-        <div style="display:none;max-height:0;overflow:hidden;color:transparent;">
-          {text}
-        </div>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-"""
+# Mantém seu _otp_validate como estava (com guard ou não, tanto faz)
+# ----------------------------------------------------------------------
 
 # /login
 @app.route("/login", methods=["GET", "POST"], endpoint="login")
