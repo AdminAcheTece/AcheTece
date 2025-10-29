@@ -1,279 +1,241 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8" />
-    <title>Painel Administrativo - AcheTece</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8" />
+  <title>Painel Administrativo - AcheTece</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Ícone da aba (favicon) -->
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
-    
-    <!-- CSS principal -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <!-- Ícone da aba (favicon) -->
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
 
-    <style>
-        /* ===== Cabeçalho padrão (igual ao fale_conosco.html) ===== */
-        .navbar{ overflow:visible; padding-top:6px; padding-bottom:6px; background:#fff; border-bottom:1px solid #eee; }
-        .header-left,.header-right{ display:flex; align-items:center; }
-        .header-right{ margin-left:auto; gap:20px; }
-        .logo img{ max-height:60px; height:auto; width:auto; display:block; }
-        .top-nav{ display:none; }
+  <!-- CSS principal -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
 
-        .menu-wrap{ position: relative; }
-        .hamburger{
-          display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
-          width:36px; height:36px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
-          box-shadow:none !important;
-          position:relative; z-index:10002;
-        }
-        .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
-        .hamburger span + span{ margin-top:4px; }
-        @media (max-width:768px){
-          .hamburger{ width:28px; height:28px; border-radius:8px; }
-          .hamburger span{ width:16px; height:2px; }
-          .hamburger span + span{ margin-top:3px; }
-        }
+  <style>
+    :root{
+      --roxo:#8A00FF;
+      --roxo-hover:#A63DFF;
+      --laranja:#F28C00;
+      --laranja-hover:#E57F00;
 
-        .menu-dropdown{
-          background:#fff; border:1px solid #eaeaea; border-radius:12px; box-shadow:none !important;
-          z-index:10001; max-height:80vh; overflow:auto;
-          opacity:0; pointer-events:none; transform: translateY(8px) scale(.98);
-          transition: opacity .18s ease, transform .18s ease;
-        }
-        .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
-        .menu-dropdown .menu-header{
-          display:flex; justify-content:flex-end; align-items:center; padding:8px 10px;
-        }
-        .menu-dropdown .menu-close{
-          display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px;
-          background:#f0f2f5; border:0; border-radius:10px; cursor:pointer;
-        }
-        .menu-dropdown .menu-item{
-          display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222;
-        }
-        .menu-dropdown .menu-item:hover{ background:#f5f7ff; color:#8A00FF; border-radius:8px; }
+      /* Fundo padrão (cinza 150) */
+      --site-bg:#F7F7FA;
 
-        @media (min-width:769px){
-          .menu-dropdown{ position:absolute; top:calc(100% + 8px); right:0; min-width:220px; transform-origin: top right; }
-        }
-        @media (max-width:768px){
-          .menu-wrap{ position: static; }
-          .menu-dropdown{
-            position: fixed;
-            top: calc(var(--nav-h, 64px) + 8px);
-            left: 50%; transform: translate(-50%, 8px) scale(.98);
-            width:max-content; max-width:90vw; min-width:160px; border-radius:14px;
-          }
-          .menu-dropdown.open{ transform: translate(-50%,0) scale(1); }
-        }
+      --cinza-900:#111827;
+      --maxw:1180px;
 
-        .icon-btn{
-          display:inline-flex; align-items:center; justify-content:center;
-          width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px;
-          background:#fff; cursor:pointer;
-        }
-        .icon{ width:20px; height:20px; color:#222; }
+      /* Sucesso (mantido para consistência) */
+      --verde-ok-bg:#EAF9F0;
+      --verde-ok-bd:#B9E8CC;
+      --verde-ok-tx:#0F5132;
+    }
 
-        /* ===== Estilos específicos desta página ===== */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f2f2f2;
-            color: #333;
-            margin: 0;
-            padding: 0;
-        }
+    html, body{
+      background:var(--site-bg);
+      color:var(--cinza-900);
+      margin:0;
+      font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    }
 
-        .container {
-            max-width: 1200px;
-            margin: 30px auto;
-            padding: 10px 20px 0 20px;
-        }
+    /* ========= HEADER (idêntico ao fale_conosco.html) ========= */
+    .navbar{
+      overflow:visible;
+      padding:6px 12px;
+      background:#fff;
+      border-bottom:1px solid #eee;
+      display:flex; align-items:center;
+    }
+    .header-left,.header-right{ display:flex; align-items:center; }
+    .header-right{ margin-left:auto; gap:10px; padding-right:12px; }
+    .logo{ display:inline-flex; align-items:center; }
+    .logo a{ display:inline-flex; align-items:center; text-decoration:none; }
+    .logo img{ display:block; height:auto; width:auto; }
+    @media (min-width:901px){ .navbar .logo img{ height:44px; width:auto; } }
+    @media (max-width:900px){
+      .navbar{ padding-right:22px; min-height:56px; }
+      .navbar .logo img{ height:54px !important; width:auto !important; }
+      .header-right{ gap:8px; }
+    }
+    .icon-btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px; background:#fff; cursor:pointer;
+    }
+    .icon{ width:20px; height:20px; color:#222; }
 
-        h2 {
-            text-align: center;
-            margin: 10px 0 30px 0;
-            color: #8A00FF;
-        }
+    .menu-wrap{ position: relative; }
+    .hamburger{
+      display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
+      width:36px; height:36px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
+      position:relative; z-index:10002;
+    }
+    .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
+    .hamburger span + span{ margin-top:4px; }
+    @media (max-width:900px){
+      .hamburger{ width:32px; height:32px; border-radius:9px; }
+      .hamburger span{ width:18px; }
+    }
+    .menu-dropdown{
+      background:#fff; border:1px solid #eaeaea; border-radius:12px;
+      z-index:10001; max-height:80vh; overflow:auto;
+      opacity:0; pointer-events:none; transform: translateY(8px) scale(.98);
+      transition: opacity .18s ease, transform .18s ease;
+    }
+    .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
+    .menu-dropdown .menu-header{ display:flex; justify-content:flex-end; align-items:center; padding:8px 10px; }
+    .menu-dropdown .menu-close{ display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; background:#f0f2f5; border:0; border-radius:10px; cursor:pointer; }
+    .menu-dropdown .menu-item{ display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222; }
+    .menu-dropdown .menu-item:hover{ background:#f5f7ff; color:var(--roxo); border-radius:8px; }
+    @media (min-width:769px){ .menu-dropdown{ position:absolute; top:calc(100% + 8px); right:0; min-width:220px; transform-origin: top right; } }
+    @media (max-width:768px){
+      .menu-wrap{ position: static; }
+      .menu-dropdown{ position: fixed; top: calc(var(--nav-h, 64px) + 8px); left: 50%; transform: translate(-50%, 8px) scale(.98); width:max-content; max-width:90vw; min-width:160px; border-radius:14px; }
+      .menu-dropdown.open{ transform: translate(-50%,0) scale(1); }
+    }
 
-        /* Form em grade para 2 linhas x 3 colunas */
-        form.formulario {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(220px, 1fr));
-            gap: 16px 32px;
-            margin-bottom: 30px;
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: none !important;
-            align-items: end;
-        }
+    /* ========= CONTEÚDO ========= */
+    .page-wrap{
+      max-width: var(--maxw);
+      margin: 18px auto 26px;
+      padding: 0 16px;
+    }
+    .titulo{
+      margin: 8px 0 18px 0;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--roxo);
+      text-align:center;
+    }
 
-        .campo {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
+    /* ===== Filtros (linha dupla, compactos e padronizados) ===== */
+    .filtros{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(220px,1fr));
+      gap: 10px 16px;            /* compacto na vertical e horizontal */
+      background:#fff;
+      border:1px solid #eee;
+      border-radius:12px;
+      padding:12px;              /* compacto */
+      align-items:end;
+      margin-bottom:14px;        /* aproxima da tabela */
+    }
+    .campo label{
+      display:block;
+      font-weight:700;
+      color:var(--roxo);
+      margin:0 0 4px 0;          /* compacto */
+      font-size:13px;
+    }
+    .campo input[type="date"],
+    .campo input[type="text"],
+    .campo select{
+      width:100%;
+      padding:10px;
+      border:1px solid #ddd;
+      border-radius:8px;
+      font-family:inherit; font-size:14px;
+      background:#fff;           /* padronizado */
+    }
+    .botoes{
+      grid-column: 3 / 4;
+      justify-self:end;
+      display:flex; gap:8px; align-items:center;
+    }
+    .btn-primary{
+      background:var(--roxo); color:#fff; border:none; border-radius:10px;
+      padding:10px 18px; font-weight:700; cursor:pointer; line-height:1;
+    }
+    .btn-primary:hover{ background:var(--roxo-hover); }
+    .btn-secondary{
+      background:#3f3f46; color:#fff; border:none; border-radius:10px;
+      padding:10px 18px; font-weight:700; cursor:pointer; line-height:1; text-decoration:none; display:inline-block;
+    }
 
-        label {
-            font-weight: bold;
-            color: #8A00FF;
-        }
+    @media (max-width: 900px){
+      .filtros{ grid-template-columns: repeat(2, minmax(180px,1fr)); }
+      .botoes{ grid-column: 2 / 3; }
+    }
+    @media (max-width: 560px){
+      .filtros{ grid-template-columns: 1fr; }
+      .botoes{ grid-column: 1 / 2; justify-self: stretch; }
+      .botoes .btn-primary, .botoes .btn-secondary{ flex:1; text-align:center; }
+    }
 
-        select, input[type="date"], input[type="text"] {
-            padding: 8px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            min-width: 180px;
-            background:#fff;
-        }
+    /* ===== Tabela super compacta, 1 linha por empresa ===== */
+    .tabela-wrap{ overflow-x:hidden; }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      background:#fff;
+      border:1px solid #eee;
+      border-radius:12px;
+      overflow:hidden;
+      table-layout:fixed; /* usa as larguras do colgroup */
+    }
+    /* Larguras ajustadas para caber tudo em 1 linha */
+    colgroup col:nth-child(1){ width:17%; } /* Nome   */
+    colgroup col:nth-child(2){ width:14%; } /* Apelido*/
+    colgroup col:nth-child(3){ width:22%; } /* Email  */
+    colgroup col:nth-child(4){ width:10%; } /* Status */
+    colgroup col:nth-child(5){ width:12%; } /* Data   */
+    colgroup col:nth-child(6){ width:10%; } /* Cidade */
+    colgroup col:nth-child(7){ width:5%;  } /* Estado */
+    colgroup col:nth-child(8){ width:10%; } /* Ações  */
 
-        .botoes {
-            grid-column: 3 / 4;
-            justify-self: end;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+    thead th{
+      background:#eee; color:var(--roxo); font-weight:700;
+      padding:8px 8px; font-size:13px; border-bottom:1px solid #ddd;
+      text-align:center; white-space:nowrap;
+    }
+    tbody td{
+      padding:8px 8px; font-size:12.5px; line-height:1.25;
+      border-bottom:1px solid #eee; text-align:center;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis; /* 1 linha */
+    }
 
-        button {
-            background-color: #8A00FF;
-            color: #fff;
-            padding: 10px 16px;
-            border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            height: 40px;
-        }
+    /* Ações lado a lado e sem quebra */
+    table td:last-child{
+      display:flex; justify-content:center; align-items:center; gap:6px;
+      white-space:nowrap; overflow:visible; text-overflow:clip;
+      padding:8px 6px;
+    }
+    .btn-editar, .btn-excluir{
+      padding:7px 10px; border:none; border-radius:8px; cursor:pointer;
+      font-size:12px; line-height:1; display:inline-block;
+    }
+    .btn-editar{ background:#e67e22; color:#fff; }
+    .btn-excluir{ background:#c0392b; color:#fff; }
 
-        .botao-cancelar {
-            background-color: #444;
-            text-decoration: none;
-            padding: 10px 16px;
-            border-radius: 6px;
-            color: white;
-            font-weight: bold;
-            display: inline-block;
-            height: 40px;
-            line-height: 20px;
-        }
+    .paginacao{ margin:14px 0 8px; text-align:center; }
+    .paginacao a{ margin:0 10px; text-decoration:none; color:var(--roxo); font-weight:700; }
 
-        /* ===== Tabela compacta (sem scroll horizontal) ===== */
-        .tabela-container { overflow-x: hidden; }
+    .exportar{ margin:8px 0 28px; display:flex; justify-content:center; }
+    .exportar a{
+      background:#444; color:#fff; padding:8px 16px; border-radius:10px; text-decoration:none; font-weight:700;
+    }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background-color: #fff;
-            border-radius: 8px;
-            overflow: hidden;
-            table-layout: fixed; /* distribui as larguras conforme colgroup */
-        }
-
-        /* larguras proporcionais para caber na tela */
-        colgroup col:nth-child(1){ width:18%; } /* Nome */
-        colgroup col:nth-child(2){ width:14%; } /* Apelido */
-        colgroup col:nth-child(3){ width:22%; } /* Email */
-        colgroup col:nth-child(4){ width:10%; } /* Status */
-        colgroup col:nth-child(5){ width:12%; } /* Data */
-        colgroup col:nth-child(6){ width:12%; } /* Cidade */
-        colgroup col:nth-child(7){ width:6%; }  /* Estado */
-        colgroup col:nth-child(8){ width:6%; }  /* Ações */
-
-        th, td {
-            padding: 10px 8px;
-            text-align: center;
-            border-bottom: 1px solid #ccc;
-            font-size: 13px;            /* compacto */
-            line-height: 1.25;
-            white-space: normal;         /* permite quebrar linhas */
-            word-break: break-word;      /* quebra palavras longas (ex.: e-mails) */
-        }
-
-        th {
-            background-color: #eee;
-            color: #8A00FF;
-            font-weight: 700;
-        }
-
-        /* Botões de ação mais compactos */
-        .btn-editar, .btn-excluir {
-            padding: 6px 8px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            line-height: 1;
-            display:inline-block;
-            margin: 2px 0;
-        }
-        .btn-editar { background-color: #e67e22; color: #fff; }
-        .btn-excluir { background-color: #c0392b; color: #fff; }
-
-        .exportar {
-            margin-top: 10px;
-            padding-bottom: 30px;
-            display: flex;
-            justify-content: center;
-        }
-
-        .exportar a {
-            background-color: #444;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 6px;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        .paginacao {
-            margin-top: 20px;
-            text-align: center;
-        }
-
-        .paginacao a {
-            margin: 0 10px;
-            text-decoration: none;
-            color: #8A00FF;
-            font-weight: bold;
-        }
-
-        /* Responsivo: empilha filtros em telas menores */
-        @media (max-width: 900px){
-          form.formulario{
-            grid-template-columns: repeat(2, minmax(180px, 1fr));
-          }
-          .botoes{ grid-column: 2 / 3; }
-        }
-        @media (max-width: 560px){
-          form.formulario{
-            grid-template-columns: 1fr;
-          }
-          .botoes{ grid-column: 1 / 2; justify-self: stretch; }
-          .botoes a, .botoes button{ flex:1; text-align:center; }
-          th, td{ font-size:12px; padding:8px 6px; }
-        }
-    </style>
+    /* Mantém cores claras mesmo em dark mode do SO */
+    @media (prefers-color-scheme: dark){
+      html, body{ background: var(--site-bg) !important; color: var(--cinza-900); }
+    }
+  </style>
 </head>
 <body>
 
-  <!-- ===== Cabeçalho (igual ao fale_conosco.html) ===== -->
+  <!-- ===== Cabeçalho (idêntico ao fale_conosco.html) ===== -->
   <header class="navbar">
     <div class="header-left">
-      <div class="logo">
-        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
-      </div>
+      <a class="logo" href="{{ url_for('index') }}" aria-label="Página inicial">
+        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
+      </a>
     </div>
 
     <div class="header-right">
-      <!-- Botão home -->
+      <!-- Botão casinha -->
       <a href="{{ url_for('index') }}" class="icon-btn" aria-label="Página inicial" title="Página inicial">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 10.5 12 3l9 7.5"></path>
-          <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
-          <path d="M9 21V12h6v9"></path>
+          <path d="M3 10.5 12 3l9 7.5"></path><path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path><path d="M9 21V12h6v9"></path>
         </svg>
       </a>
 
@@ -294,53 +256,27 @@
           </div>
 
           <a href="{{ url_for('buscar_teares') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="11" cy="11" r="7"></circle>
-              <line x1="16.65" y1="16.65" x2="21" y2="21"></line>
-            </svg>
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="16.65" y1="16.65" x2="21" y2="21"></line></svg>
             <span>Buscar Tear</span>
           </a>
-
           <a href="{{ url_for('malharia_info') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"></circle>
-              <path d="M9.5 9a2.5 2.5 0 1 1 4.1 2A3 3 0 0 0 12 13.6"></path>
-              <circle cx="12" cy="17" r="1.2" fill="currentColor"></circle>
-            </svg>
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.5 9a2.5 2.5 0 1 1 4.1 2A3 3 0 0 0 12 13.6"></path><circle cx="12" cy="17" r="1.2" fill="currentColor"></circle></svg>
             <span>Como Funciona</span>
           </a>
-
           <a href="{{ url_for('login') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="8" r="4"></circle>
-              <path d="M4 20a8 8 0 0 1 16 0"></path>
-            </svg>
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 20a8 8 0 0 1 16 0"></path></svg>
             <span>Já sou cadastrado</span>
           </a>
-
           <a href="{{ url_for('quem_somos') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"></circle>
-              <circle cx="12" cy="8" r="1.5" fill="currentColor"></circle>
-              <path d="M11 11h2v6h-2z" fill="currentColor"></path>
-            </svg>
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="8" r="1.5" fill="currentColor"></circle><path d="M11 11h2v6h-2z" fill="currentColor"></path></svg>
             <span>Quem Somos</span>
           </a>
-
           <a href="{{ url_for('contato') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 4h16v12H4z"></path>
-              <path d="M22 20H2"></path>
-              <path d="M22 8l-10 6L2 8" fill="none"></path>
-            </svg>
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v12H4z"></path><path d="M22 20H2"></path><path d="M22 8l-10 6L2 8" fill="none"></path></svg>
             <span>Fale conosco</span>
           </a>
-
           <a href="{{ url_for('termos') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="4" y="4" width="16" height="16" rx="2"></rect>
-              <path d="M8 8h8M8 12h8M8 16h5"></path>
-            </svg>
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M8 8h8M8 12h8M8 16h5"></path></svg>
             <span>Termos e Políticas</span>
           </a>
         </nav>
@@ -348,116 +284,115 @@
     </div>
   </header>
 
-  <!-- ===== Conteúdo da página administrativa ===== -->
-  <div class="container">
-        <h2>Painel Administrativo - Empresas</h2>
+  <!-- ===== Conteúdo ===== -->
+  <div class="page-wrap">
+    <h1 class="titulo">Painel Administrativo - Empresas</h1>
 
-        <!-- Linha 1: Status, Data início, Data fim -->
-        <form method="POST" class="formulario">
-            <div class="campo">
-                <label for="status">Status:</label>
-                <select name="status" id="status">
-                    <option value="" {% if not status %}selected{% endif %}>Todos</option>
-                    <option value="ativo" {% if status == 'ativo' %}selected{% endif %}>Ativo</option>
-                    <option value="pendente" {% if status == 'pendente' %}selected{% endif %}>Pendente</option>
-                </select>
-            </div>
+    <!-- Filtros (GET para funcionar junto com a paginação) -->
+    <form class="filtros" method="GET" action="{{ request.path }}">
+      <div class="campo">
+        <label for="status">Status:</label>
+        <select name="status" id="status">
+          <option value="" {% if not status %}selected{% endif %}>Todos</option>
+          <option value="ativo" {% if status == 'ativo' %}selected{% endif %}>Ativo</option>
+          <option value="pendente" {% if status == 'pendente' %}selected{% endif %}>Pendente</option>
+        </select>
+      </div>
 
-            <div class="campo">
-                <label for="data_inicio">Data início:</label>
-                <input type="date" name="data_inicio" id="data_inicio" value="{{ data_inicio or '' }}">
-            </div>
+      <div class="campo">
+        <label for="data_inicio">Data início:</label>
+        <input type="date" name="data_inicio" id="data_inicio" value="{{ data_inicio or '' }}">
+      </div>
 
-            <div class="campo">
-                <label for="data_fim">Data fim:</label>
-                <input type="date" name="data_fim" id="data_fim" value="{{ data_fim or '' }}">
-            </div>
+      <div class="campo">
+        <label for="data_fim">Data fim:</label>
+        <input type="date" name="data_fim" id="data_fim" value="{{ data_fim or '' }}">
+      </div>
 
-            <!-- Linha 2: Apelido, Cidade, Estado -->
-            <div class="campo">
-                <label for="apelido">Apelido:</label>
-                <input type="text" name="apelido" id="apelido" placeholder="Ex.: [DEMO] Delta" value="{{ apelido or '' }}">
-            </div>
+      <div class="campo">
+        <label for="apelido">Apelido:</label>
+        <input type="text" name="apelido" id="apelido" placeholder="Ex.: [DEMO] Delta" value="{{ apelido or '' }}">
+      </div>
 
-            <div class="campo">
-                <label for="cidade">Cidade:</label>
-                <input type="text" name="cidade" id="cidade" placeholder="Ex.: Brusque" value="{{ cidade or '' }}">
-            </div>
+      <div class="campo">
+        <label for="cidade">Cidade:</label>
+        <input type="text" name="cidade" id="cidade" placeholder="Ex.: Brusque" value="{{ cidade or '' }}">
+      </div>
 
-            <div class="campo">
-                <label for="estado">Estado:</label>
-                <select name="estado" id="estado">
-                    <option value="" {% if not estado %}selected{% endif %}>Todos</option>
-                    {% set UFs = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'] %}
-                    {% for uf in UFs %}
-                      <option value="{{ uf }}" {% if estado == uf %}selected{% endif %}>{{ uf }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+      <div class="campo">
+        <label for="estado">Estado:</label>
+        <select name="estado" id="estado">
+          <option value="" {% if not estado %}selected{% endif %}>Todos</option>
+          {% set UFs = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'] %}
+          {% for uf in UFs %}
+            <option value="{{ uf }}" {% if estado == uf %}selected{% endif %}>{{ uf }}</option>
+          {% endfor %}
+        </select>
+      </div>
 
-            <div class="botoes">
-                <button type="submit">Filtrar</button>
-                <a href="/admin/empresas" class="botao-cancelar">Limpar</a>
-            </div>
-        </form>
+      <div class="botoes">
+        <button type="submit" class="btn-primary">Filtrar</button>
+        <a href="/admin/empresas" class="btn-secondary">Limpar</a>
+      </div>
+    </form>
 
-        <div class="tabela-container">
-            <table class="table-compact">
-                <colgroup>
-                  <col><col><col><col><col><col><col><col>
-                </colgroup>
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>Apelido</th>
-                        <th>Email</th>
-                        <th>Status</th>
-                        <th>Data Pagamento</th>
-                        <th>Cidade</th>
-                        <th>Estado</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for empresa in empresas %}
-                    <tr>
-                        <td>{{ empresa.nome }}</td>
-                        <td>{{ empresa.apelido }}</td>
-                        <td>{{ empresa.email }}</td>
-                        <td>{{ empresa.status_pagamento }}</td>
-                        <td>{{ empresa.data_pagamento.strftime('%Y-%m-%d %H:%M') if empresa.data_pagamento else '' }}</td>
-                        <td>{{ empresa.cidade }}</td>
-                        <td>{{ empresa.estado }}</td>
-                        <td>
-                            <form action="/admin/editar_status/{{ empresa.id }}" method="post" style="display:inline-block">
-                                <button class="btn-editar" type="submit">Alterar Status</button>
-                            </form>
-                            <form action="/admin/excluir_empresa/{{ empresa.id }}" method="post" style="display:inline-block" onsubmit="return confirmarExclusao('{{ empresa.razao_social or empresa.nome }}')">
-                                <button class="btn-excluir" type="submit">Excluir</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    <div class="tabela-wrap">
+      <table class="table-compact">
+        <colgroup>
+          <col><col><col><col><col><col><col><col>
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Apelido</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Data Pagamento</th>
+            <th>Cidade</th>
+            <th>Estado</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for empresa in empresas %}
+          <tr>
+            <td title="{{ empresa.nome }}">{{ empresa.nome }}</td>
+            <td title="{{ empresa.apelido }}">{{ empresa.apelido }}</td>
+            <td title="{{ empresa.email }}">{{ empresa.email }}</td>
+            <td title="{{ empresa.status_pagamento }}">{{ empresa.status_pagamento }}</td>
+            <td title="{{ empresa.data_pagamento.strftime('%Y-%m-%d %H:%M') if empresa.data_pagamento else '' }}">{{ empresa.data_pagamento.strftime('%Y-%m-%d %H:%M') if empresa.data_pagamento else '' }}</td>
+            <td title="{{ empresa.cidade }}">{{ empresa.cidade }}</td>
+            <td title="{{ empresa.estado }}">{{ empresa.estado }}</td>
+            <td>
+              <form action="/admin/editar_status/{{ empresa.id }}" method="post">
+                <button class="btn-editar" type="submit">Alterar Status</button>
+              </form>
+              <form action="/admin/excluir_empresa/{{ empresa.id }}" method="post" onsubmit="return confirmarExclusao('{{ empresa.razao_social or empresa.nome }}')">
+                <button class="btn-excluir" type="submit">Excluir</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
 
-        <div class="paginacao">
-            {% if pagina > 1 %}
-                <a href="?pagina={{ pagina - 1 }}{% if status %}&status={{ status }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}{% if apelido %}&apelido={{ apelido }}{% endif %}{% if cidade %}&cidade={{ cidade }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">← Anterior</a>
-            {% endif %}
-            Página {{ pagina }} de {{ total_paginas }}
-            {% if pagina < total_paginas %}
-                <a href="?pagina={{ pagina + 1 }}{% if status %}&status={{ status }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}{% if apelido %}&apelido={{ apelido }}{% endif %}{% if cidade %}&cidade={{ cidade }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">Próxima →</a>
-            {% endif %}
-        </div>
+    <div class="paginacao">
+      {% if pagina > 1 %}
+        <a href="?pagina={{ pagina - 1 }}{% if status %}&status={{ status }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}{% if apelido %}&apelido={{ apelido }}{% endif %}{% if cidade %}&cidade={{ cidade }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">← Anterior</a>
+      {% endif %}
+      Página {{ pagina }} de {{ total_paginas }}
+      {% if pagina < total_paginas %}
+        <a href="?pagina={{ pagina + 1 }}{% if status %}&status={{ status }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}{% if apelido %}&apelido={{ apelido }}{% endif %}{% if cidade %}&cidade={{ cidade }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">Próxima →</a>
+      {% endif %}
+    </div>
 
-        <div class="exportar">
-            <a href="/admin/exportar_empresas">Exportar CSV</a>
-        </div>
+    <div class="exportar">
+      <a href="/admin/exportar_empresas">Exportar CSV</a>
+    </div>
   </div>
 
-  <!-- Script do menu (igual ao fale_conosco.html) -->
+  <!-- ===== Script do menu (igual ao fale_conosco.html) ===== -->
   <script>
     (function () {
       function closeAll() {
@@ -472,6 +407,7 @@
         const menu = wrap.querySelector('#menu-lateral');
         const xBtn = wrap.querySelector('.menu-close');
         if (!btn || !menu) return;
+
         btn.addEventListener('click', e => {
           e.stopPropagation();
           const willOpen = !menu.classList.contains('open');
@@ -479,13 +415,16 @@
           menu.classList.toggle('open', willOpen);
           btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
         });
+
         xBtn?.addEventListener('click', e => {
           e.stopPropagation();
           menu.classList.remove('open');
           btn.setAttribute('aria-expanded', 'false');
         });
+
         menu.addEventListener('click', e => e.stopPropagation());
       });
+
       document.addEventListener('click', closeAll);
       document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
     })();
