@@ -155,28 +155,69 @@ def _send_via_smtp(to: str, subject: str, html: str, text: str | None = None) ->
         app.logger.exception(f"[EMAIL/SMTP] Falha ao enviar para {to}: {e}")
         return False, f"smtp_error: {e}"
 
-def _smtp_send_direct(to: str, subject: str, html: str, text: str | None = None) -> tuple[bool, str]:
-    """
-    Envia e-mail preferencialmente via Resend e faz fallback para SMTP.
-    Retorna (ok, mensagem).
-    """
-    if app.config.get("MAIL_SUPPRESS_SEND"):
-        app.logger.info(f"[EMAIL SUPPRESSED] to={to} subj={subject}")
-        return True, "suppress"
-
-    ok, msg = _send_via_resend(to, subject, html, text)
-    if ok:
-        return True, "resend_ok"
-
-    ok2, msg2 = _send_via_smtp(to, subject, html, text)
-    if ok2:
-        return True, "smtp_ok"
-
-    return False, f"{msg} | {msg2}"
-
+# Assinatura mantida: (to, subject, html, text=None)
 def send_email(to: str, subject: str, html: str, text: str | None = None) -> bool:
     ok, _ = _smtp_send_direct(to=to, subject=subject, html=html, text=text)
     return ok
+
+# Envio SMTP robusto (multipart/alternative com HTML)
+def _smtp_send_direct(
+    *,
+    to: str,
+    subject: str,
+    html: str | None = None,
+    text: str | None = None,
+    sender: str | None = None,
+) -> tuple[bool, str]:
+    import os, smtplib, ssl, re
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+
+    host   = os.environ.get("SMTP_HOST")
+    port   = int(os.environ.get("SMTP_PORT", "587"))
+    user   = os.environ.get("SMTP_USER")
+    pwd    = os.environ.get("SMTP_PASS")
+    sender = sender or os.environ.get("SMTP_SENDER", "no-reply@achetece.com.br")
+    use_tls = os.environ.get("SMTP_TLS", "1") not in ("0", "false", "False")
+    use_ssl = os.environ.get("SMTP_SSL", "0") in ("1", "true", "True")  # opcional (porta 465)
+
+    if not host:
+        return False, "SMTP_HOST não configurado"
+
+    # Fallback simples de texto caso não enviado
+    if not text:
+        # remove tags para compor um texto legível (prévia)
+        text = re.sub(r"<[^>]+>", "", html or "").strip() or "Verifique este e-mail em um cliente compatível com HTML."
+
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"]    = sender
+        msg["To"]      = to
+        msg["Content-Language"] = "pt-BR"
+
+        # 1º anexa texto simples
+        msg.attach(MIMEText(text, "plain", "utf-8"))
+        # 2º anexa HTML (se houver)
+        if html:
+            msg.attach(MIMEText(html, "html", "utf-8"))
+
+        if use_ssl:
+            with smtplib.SMTP_SSL(host, port, context=ssl.create_default_context(), timeout=20) as s:
+                if user:
+                    s.login(user, pwd or "")
+                s.sendmail(sender, [to], msg.as_string())
+        else:
+            with smtplib.SMTP(host, port, timeout=20) as s:
+                if use_tls:
+                    s.starttls(context=ssl.create_default_context())
+                if user:
+                    s.login(user, pwd or "")
+                s.sendmail(sender, [to], msg.as_string())
+
+        return True, "OK"
+    except Exception as e:
+        return False, f"SMTP erro: {e!s}"
 
 # Mercado Pago (mantido para compat)
 MP_ACCESS_TOKEN = os.getenv("MP_ACCESS_TOKEN") or os.getenv("MERCADO_PAGO_TOKEN", "")
@@ -1267,25 +1308,17 @@ def _email_send_html_first(to_email: str, subject: str, text: str, html: str | N
     except Exception:
         current_app.logger.exception("[MAIL] SMTP falhou")
 
-    # 3) Helpers do projeto (podem ignorar HTML)
+    # 3) Helpers do projeto (último recurso; agora sempre via kwargs corretos)
     try:
         for fname in ("send_email", "enviar_email", "mail_send", "send_mail"):
             if fname in globals():
                 f = globals()[fname]
-                try:               f(to_email, subject, text, html)
-                except TypeError:
-                    try:            f(to=to_email, subject=subject, body=text, html=html)
-                    except TypeError:
-                        try:        f(to=to_email, subject=subject, text=text, html=html)
-                        except TypeError:
-                            f(to=to_email, subject=subject, body=text, html_body=html)
-                current_app.logger.info(f"[MAIL_PATH] helper:{fname}")
+                # IMPORTANTE: use kwargs para não inverter html/text
+                f(to=to_email, subject=subject, html=html, text=text)
+                current_app.logger.info(f"[MAIL_PATH] helper:{fname} (html enviado)")
                 return True
     except Exception:
         current_app.logger.exception("[MAIL] helper falhou")
-
-    current_app.logger.warning("[MAIL] nenhum backend disponível")
-    return False
 
 def _otp_email_html(dest_email: str, code: str, minutes: int = 30) -> str:
     brand = "AcheTece • Portal de Malharias"
