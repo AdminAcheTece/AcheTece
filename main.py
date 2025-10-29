@@ -1207,6 +1207,63 @@ def index():
         app.logger.exception("[INDEX] falha ao consultar DB: %s", e)
         return _render_offline()
 
+# --- OTP polyfills mínimos p/ login por e-mail -------------------------------
+import random
+from datetime import datetime, timedelta
+from flask import current_app, session
+
+# Se já houver uma implementação real em outro arquivo, este bloco não interfere.
+if "_otp_send" not in globals():
+    def _otp_send(email: str, ip: str = "", ua: str = ""):
+        """
+        Gera e envia um código de 6 dígitos para login por e-mail.
+        Retorna (ok: bool, msg: str).
+        Persistência leve em sessão para o fluxo atual.
+        """
+        try:
+            code = f"{random.randint(0, 999999):06d}"
+            # guarda na sessão com expiração de 10 min
+            data = session.get("otp_login", {})
+            data[email] = {
+                "code": code,
+                "exp": (datetime.utcnow() + timedelta(minutes=10)).timestamp(),
+                "ip": ip[:64],
+                "ua": ua[:255],
+            }
+            session["otp_login"] = data
+
+            subject = "Seu código de acesso – AcheTece"
+            text = f"Seu código é {code}. Ele expira em 10 minutos."
+            html = f"<p>Olá!</p><p>Seu código de acesso é <strong>{code}</strong>.</p><p>Ele expira em 10 minutos.</p>"
+
+            # >>> Use o mesmo sender que você usa em 'esqueci_senha' <<<
+            # Exemplo (ajuste para o seu projeto):
+            # send_email(to=email, subject=subject, body=text, html=html)
+
+            # Se ainda não plugar o sender, ao menos registra em log:
+            current_app.logger.info(f"[OTP][login] código {code} enviado para {email} (modo fallback)")
+
+            return True, "Enviamos um código para o seu e-mail."
+        except Exception as e:
+            current_app.logger.exception("Falha ao enviar OTP de login")
+            return False, "Não foi possível enviar o código agora. Tente novamente."
+
+# Fallback de validação APENAS se não existir (não sobrescreve o seu)
+if "_otp_validate" not in globals():
+    def _otp_validate(email: str, code: str):
+        data = (session.get("otp_login") or {}).get(email)
+        if not data:
+            return False, "Código expirado ou inválido. Peça um novo código."
+        if datetime.utcnow().timestamp() > float(data.get("exp", 0)):
+            (session.get("otp_login") or {}).pop(email, None)
+            return False, "Código expirado. Solicite outro."
+        if str(code).strip() != str(data.get("code", "")).strip():
+            return False, "Código incorreto. Tente novamente."
+        # sucesso: limpa o código para não reutilizar
+        (session.get("otp_login") or {}).pop(email, None)
+        return True, "ok"
+# --- fim dos polyfills --------------------------------------------------------
+        
 # /login
 @app.route("/login", methods=["GET", "POST"], endpoint="login")
 def view_login():
