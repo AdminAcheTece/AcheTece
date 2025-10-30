@@ -157,14 +157,16 @@ def _send_via_smtp(to: str, subject: str, html: str, text: str | None = None) ->
 
 def send_email(to: str, subject: str, html: str, text: str | None = None) -> bool:
     from flask import current_app
-    # 1) Tenta Flask-Mail (sem precisar de 'mail' global)
+    # 1) Tenta Flask-Mail (se estiver configurado via extensions)
     try:
         mail_ext = (getattr(current_app, "extensions", {}) or {}).get("mail")
         if mail_ext:
             from flask_mail import Message
-            msg = Message(subject=subject,
-                          recipients=[to],
-                          sender=current_app.config.get("MAIL_DEFAULT_SENDER"))
+            msg = Message(
+                subject=subject,
+                recipients=[to],
+                sender=current_app.config.get("MAIL_DEFAULT_SENDER"),
+            )
             msg.body = text or ""
             msg.html = html
             msg.extra_headers = {"Content-Language": "pt-BR"}
@@ -174,14 +176,9 @@ def send_email(to: str, subject: str, html: str, text: str | None = None) -> boo
     except Exception:
         current_app.logger.exception("[send_email] Flask-Mail falhou")
 
-    # 2) (Opcional) SMTP somente se ALLOW_SMTP=1
-    import os
-    if os.environ.get("ALLOW_SMTP", "0").lower() in ("1", "true", "yes"):
-        ok, _ = _smtp_send_direct(to=to, subject=subject, html=html, text=text)
-        return ok
-
-    current_app.logger.error("[send_email] SMTP desabilitado (ALLOW_SMTP=0) – nenhum backend disponível")
-    return False
+    # 2) Fallback SMTP (multipart/alternative) com timeout curto
+    ok, _ = _smtp_send_direct(to=to, subject=subject, html=html, text=text)
+    return ok
 
 # Envio SMTP robusto (multipart/alternative com HTML)
 def _smtp_send_direct(
@@ -215,7 +212,7 @@ def _smtp_send_direct(
         if html:
             msg.attach(MIMEText(html, "html", "utf-8"))
 
-        timeout = 5  # ⬅️ curto para não travar o worker
+        timeout = 5  # evita travar o worker
         if use_ssl:
             with smtplib.SMTP_SSL(host, port, context=ssl.create_default_context(), timeout=timeout) as s:
                 if user: s.login(user, pwd or "")
@@ -1319,15 +1316,32 @@ def _email_send_html_first(to_email: str, subject: str, text: str, html: str | N
     except Exception:
         current_app.logger.exception("[MAIL] SMTP falhou")
 
-    # 3) Helpers do projeto (use kwargs corretos!)
+    # 3) Helpers do projeto (agora checando retorno!)
     try:
         for fname in ("send_email", "enviar_email", "mail_send", "send_mail"):
             if fname in globals():
                 f = globals()[fname]
-                # IMPORTANTE: kwargs em inglês, na ordem correta
-                f(to=to_email, subject=subject, html=html, text=text)
-                current_app.logger.info(f"[MAIL_PATH] helper:{fname} (html enviado)")
-                return True
+                # use kwargs corretos:
+                res = f(to=to_email, subject=subject, html=html, text=text)
+    
+                ok = True
+                if isinstance(res, bool):
+                    ok = res
+                elif res is None:
+                    ok = True  # muitos helpers não retornam nada; consideramos OK
+                else:
+                    # se retornar tupla (ok, msg) etc.
+                    try:
+                        ok = bool(res[0])
+                    except Exception:
+                        ok = True
+    
+                if ok:
+                    current_app.logger.info(f"[MAIL_PATH] helper:{fname} (html enviado)")
+                    return True
+                else:
+                    current_app.logger.warning(f"[MAIL_PATH] helper:{fname} retornou False")
+    
     except Exception:
         current_app.logger.exception("[MAIL] helper falhou")
 
