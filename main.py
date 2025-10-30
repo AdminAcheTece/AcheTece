@@ -155,6 +155,9 @@ def _send_via_smtp(to: str, subject: str, html: str, text: str | None = None) ->
         app.logger.exception(f"[EMAIL/SMTP] Falha ao enviar para {to}: {e}")
         return False, f"smtp_error: {e}"
 
+import os, re, json
+from typing import Tuple
+
 def send_email(to: str, subject: str, html: str, text: str | None = None) -> bool:
     from flask import current_app
     # 1) Tenta Flask-Mail (se estiver configurado via extensions)
@@ -176,56 +179,136 @@ def send_email(to: str, subject: str, html: str, text: str | None = None) -> boo
     except Exception:
         current_app.logger.exception("[send_email] Flask-Mail falhou")
 
-    # 2) Fallback SMTP (multipart/alternative) com timeout curto
-    ok, _ = _smtp_send_direct(to=to, subject=subject, html=html, text=text)
-    return ok
+    # 2) Provedores HTTP (sem SMTP)
+    ok, msg = _send_via_resend(to, subject, html, text)
+    if ok:
+        return True
 
-# Envio SMTP robusto (multipart/alternative com HTML)
-def _smtp_send_direct(
-    *, to: str, subject: str, html: str | None = None, text: str | None = None, sender: str | None = None
-) -> tuple[bool, str]:
-    import os, smtplib, ssl, re
-    from email.mime.multipart import MIMEMultipart
-    from email.mime.text import MIMEText
+    ok, msg = _send_via_mailgun(to, subject, html, text)
+    if ok:
+        return True
 
-    host   = os.environ.get("SMTP_HOST")
-    port   = int(os.environ.get("SMTP_PORT", "587"))
-    user   = os.environ.get("SMTP_USER")
-    pwd    = os.environ.get("SMTP_PASS")
-    sender = sender or os.environ.get("SMTP_SENDER", "no-reply@achetece.com.br")
-    use_tls = os.environ.get("SMTP_TLS", "1").lower() not in ("0", "false")
-    use_ssl = os.environ.get("SMTP_SSL", "0").lower() in ("1", "true")
+    ok, msg = _send_via_sendgrid(to, subject, html, text)
+    if ok:
+        return True
 
-    if not host:
-        return False, "SMTP_HOST não configurado"
+    # Sem backend válido
+    try:
+        from flask import current_app
+        current_app.logger.error(f"[send_email] nenhum backend HTTP aceitou: {msg}")
+    except Exception:
+        pass
+    return False
 
-    if not text:
-        text = re.sub(r"<[^>]+>", "", html or "").strip() or "Verifique este e-mail em um cliente compatível com HTML."
+
+# ---------------- Provedores HTTP (usam requests) ---------------- #
+
+def _fallback_text(html: str | None, text: str | None) -> str:
+    if text:
+        return text
+    if not html:
+        return "Verifique este e-mail em um cliente compatível com HTML."
+    return re.sub(r"<[^>]+>", "", html).strip() or "Verifique este e-mail em um cliente compatível com HTML."
+
+
+def _send_via_resend(to: str, subject: str, html: str | None, text: str | None) -> Tuple[bool, str]:
+    """
+    Variáveis:
+      RESEND_API_KEY   (obrigatória p/ usar Resend)
+      RESEND_FROM      (opcional; exemplo: 'AcheTece <no-reply@achetece.com.br>')
+    """
+    api = os.getenv("RESEND_API_KEY")
+    if not api:
+        return False, "RESEND_API_KEY ausente"
+    sender = os.getenv("RESEND_FROM") or os.getenv("SMTP_SENDER") or "AcheTece <no-reply@achetece.com.br>"
 
     try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
-        msg["From"]    = sender
-        msg["To"]      = to
-        msg["Content-Language"] = "pt-BR"
-        msg.attach(MIMEText(text, "plain", "utf-8"))
-        if html:
-            msg.attach(MIMEText(html, "html", "utf-8"))
-
-        timeout = 5  # evita travar o worker
-        if use_ssl:
-            with smtplib.SMTP_SSL(host, port, context=ssl.create_default_context(), timeout=timeout) as s:
-                if user: s.login(user, pwd or "")
-                s.sendmail(sender, [to], msg.as_string())
-        else:
-            with smtplib.SMTP(host, port, timeout=timeout) as s:
-                if use_tls: s.starttls(context=ssl.create_default_context())
-                if user:    s.login(user, pwd or "")
-                s.sendmail(sender, [to], msg.as_string())
-
-        return True, "OK"
+        import requests
+        payload = {
+            "from": sender,
+            "to": [to],
+            "subject": subject,
+            "html": html or "",
+            "text": _fallback_text(html, text),
+        }
+        r = requests.post(
+            "https://api.resend.com/emails",
+            headers={"Authorization": f"Bearer {api}", "Content-Type": "application/json"},
+            json=payload,
+            timeout=6,
+        )
+        if r.status_code in (200, 201, 202):
+            return True, "OK"
+        return False, f"Resend {r.status_code}: {r.text[:200]}"
     except Exception as e:
-        return False, f"SMTP erro: {e!s}"
+        return False, f"Resend erro: {e!s}"
+
+
+def _send_via_mailgun(to: str, subject: str, html: str | None, text: str | None) -> Tuple[bool, str]:
+    """
+    Variáveis:
+      MAILGUN_DOMAIN   (ex.: 'mg.seudominio.com')
+      MAILGUN_API_KEY  (chave privada Mailgun)
+      MAILGUN_FROM     (opcional; senão usa 'no-reply@{MAILGUN_DOMAIN}')
+    """
+    domain = os.getenv("MAILGUN_DOMAIN")
+    key = os.getenv("MAILGUN_API_KEY")
+    if not (domain and key):
+        return False, "MAILGUN_DOMAIN/API_KEY ausentes"
+
+    sender = os.getenv("MAILGUN_FROM") or f"AcheTece <no-reply@{domain}>"
+    try:
+        import requests
+        url = f"https://api.mailgun.net/v3/{domain}/messages"
+        data = {
+            "from": sender,
+            "to": to,
+            "subject": subject,
+            "text": _fallback_text(html, text),
+            "html": html or "",
+        }
+        r = requests.post(url, auth=("api", key), data=data, timeout=6)
+        if r.status_code in (200, 201, 202):
+            return True, "OK"
+        return False, f"Mailgun {r.status_code}: {r.text[:200]}"
+    except Exception as e:
+        return False, f"Mailgun erro: {e!s}"
+
+
+def _send_via_sendgrid(to: str, subject: str, html: str | None, text: str | None) -> Tuple[bool, str]:
+    """
+    Variáveis:
+      SENDGRID_API_KEY
+      SENDGRID_FROM   (opcional; senão usa SMTP_SENDER/no-reply)
+    """
+    key = os.getenv("SENDGRID_API_KEY")
+    if not key:
+        return False, "SENDGRID_API_KEY ausente"
+
+    sender = os.getenv("SENDGRID_FROM") or os.getenv("SMTP_SENDER") or "no-reply@achetece.com.br"
+    try:
+        import requests
+        url = "https://api.sendgrid.com/v3/mail/send"
+        payload = {
+            "personalizations": [{"to": [{"email": to}], "subject": subject}],
+            "from": {"email": sender},
+            "content": [
+                {"type": "text/plain", "value": _fallback_text(html, text)},
+                {"type": "text/html", "value": html or ""},
+            ],
+        }
+        r = requests.post(
+            url,
+            headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+            data=json.dumps(payload),
+            timeout=6,
+        )
+        # SendGrid retorna 202 para sucesso
+        if r.status_code == 202:
+            return True, "OK"
+        return False, f"SendGrid {r.status_code}: {r.text[:200]}"
+    except Exception as e:
+        return False, f"SendGrid erro: {e!s}"
 
 # Mercado Pago (mantido para compat)
 MP_ACCESS_TOKEN = os.getenv("MP_ACCESS_TOKEN") or os.getenv("MERCADO_PAGO_TOKEN", "")
