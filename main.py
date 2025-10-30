@@ -155,10 +155,33 @@ def _send_via_smtp(to: str, subject: str, html: str, text: str | None = None) ->
         app.logger.exception(f"[EMAIL/SMTP] Falha ao enviar para {to}: {e}")
         return False, f"smtp_error: {e}"
 
-# Assinatura mantida: (to, subject, html, text=None)
 def send_email(to: str, subject: str, html: str, text: str | None = None) -> bool:
-    ok, _ = _smtp_send_direct(to=to, subject=subject, html=html, text=text)
-    return ok
+    from flask import current_app
+    # 1) Tenta Flask-Mail (sem precisar de 'mail' global)
+    try:
+        mail_ext = (getattr(current_app, "extensions", {}) or {}).get("mail")
+        if mail_ext:
+            from flask_mail import Message
+            msg = Message(subject=subject,
+                          recipients=[to],
+                          sender=current_app.config.get("MAIL_DEFAULT_SENDER"))
+            msg.body = text or ""
+            msg.html = html
+            msg.extra_headers = {"Content-Language": "pt-BR"}
+            mail_ext.send(msg)
+            current_app.logger.info("[send_email] via Flask-Mail (extensions)")
+            return True
+    except Exception:
+        current_app.logger.exception("[send_email] Flask-Mail falhou")
+
+    # 2) (Opcional) SMTP somente se ALLOW_SMTP=1
+    import os
+    if os.environ.get("ALLOW_SMTP", "0").lower() in ("1", "true", "yes"):
+        ok, _ = _smtp_send_direct(to=to, subject=subject, html=html, text=text)
+        return ok
+
+    current_app.logger.error("[send_email] SMTP desabilitado (ALLOW_SMTP=0) – nenhum backend disponível")
+    return False
 
 # Envio SMTP robusto (multipart/alternative com HTML)
 def _smtp_send_direct(
@@ -173,8 +196,8 @@ def _smtp_send_direct(
     user   = os.environ.get("SMTP_USER")
     pwd    = os.environ.get("SMTP_PASS")
     sender = sender or os.environ.get("SMTP_SENDER", "no-reply@achetece.com.br")
-    use_tls = os.environ.get("SMTP_TLS", "1") not in ("0", "false", "False")
-    use_ssl = os.environ.get("SMTP_SSL", "0") in ("1", "true", "True")
+    use_tls = os.environ.get("SMTP_TLS", "1").lower() not in ("0", "false")
+    use_ssl = os.environ.get("SMTP_SSL", "0").lower() in ("1", "true")
 
     if not host:
         return False, "SMTP_HOST não configurado"
@@ -192,12 +215,13 @@ def _smtp_send_direct(
         if html:
             msg.attach(MIMEText(html, "html", "utf-8"))
 
+        timeout = 5  # ⬅️ curto para não travar o worker
         if use_ssl:
-            with smtplib.SMTP_SSL(host, port, context=ssl.create_default_context(), timeout=5) as s:
+            with smtplib.SMTP_SSL(host, port, context=ssl.create_default_context(), timeout=timeout) as s:
                 if user: s.login(user, pwd or "")
                 s.sendmail(sender, [to], msg.as_string())
         else:
-            with smtplib.SMTP(host, port, timeout=5) as s:
+            with smtplib.SMTP(host, port, timeout=timeout) as s:
                 if use_tls: s.starttls(context=ssl.create_default_context())
                 if user:    s.login(user, pwd or "")
                 s.sendmail(sender, [to], msg.as_string())
@@ -1276,7 +1300,7 @@ def _email_send_html_first(to_email: str, subject: str, text: str, html: str | N
         sender = os.environ.get("SMTP_SENDER") or current_app.config.get("MAIL_DEFAULT_SENDER") or "no-reply@achetece.com.br"
         use_tls = os.environ.get("SMTP_TLS", "1") not in ("0","false","False")
 
-        if host and sender and os.environ.get("ALLOW_SMTP", "0") in ("1","true","True"):
+        if host and sender and os.environ.get("ALLOW_SMTP", "0").lower() in ("1","true","yes"):
             msg = MIMEMultipart("alternative")
             msg["Subject"] = subject
             msg["From"] = sender
@@ -1296,15 +1320,16 @@ def _email_send_html_first(to_email: str, subject: str, text: str, html: str | N
         current_app.logger.exception("[MAIL] SMTP falhou")
 
     # 3) Helpers do projeto (use kwargs corretos!)
-try:
-    for fname in ("send_email", "enviar_email", "mail_send", "send_mail"):
-        if fname in globals():
-            f = globals()[fname]
-            f(to=to_email, subject=subject, html=html, text=text)
-            current_app.logger.info(f"[MAIL_PATH] helper:{fname} (html enviado)")
-            return True
-except Exception:
-    current_app.logger.exception("[MAIL] helper falhou")
+    try:
+        for fname in ("send_email", "enviar_email", "mail_send", "send_mail"):
+            if fname in globals():
+                f = globals()[fname]
+                # IMPORTANTE: kwargs em inglês, na ordem correta
+                f(to=to_email, subject=subject, html=html, text=text)
+                current_app.logger.info(f"[MAIL_PATH] helper:{fname} (html enviado)")
+                return True
+    except Exception:
+        current_app.logger.exception("[MAIL] helper falhou")
 
 def _otp_email_html(dest_email: str, code: str, minutes: int = 30) -> str:
     brand = "AcheTece • Portal de Malharias"
