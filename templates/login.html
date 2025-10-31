@@ -312,5 +312,12 @@
       setNavH(); window.addEventListener('resize', setNavH);
     })();
   </script>
+  <script>
+  (function(){
+    if (!/iphone|ipad|ipod|android/i.test(navigator.userAgent)) return;
+    var a = document.querySelector('.oauth a');
+    if (a) a.href += (a.href.indexOf('?')>-1 ? '&' : '?') + 'force_login=1';
+  })();
+  </script>
 </body>
 </html>
