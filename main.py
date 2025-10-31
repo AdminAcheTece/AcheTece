@@ -74,7 +74,6 @@ app.config.update(
 
     SESSION_COOKIE_SECURE=True,        # mantém HTTPS
     SESSION_COOKIE_SAMESITE="None",    # <<< ajuste p/ iOS (atenção: string "None")
-    SESSION_COOKIE_DOMAIN=".achetece.com.br"  # www e raiz
 )
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY") or ""
@@ -93,6 +92,15 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 # Garante que url_for(_external=True) saia com HTTPS por trás do proxy (Render)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
+@app.before_request
+def _force_www_https():
+    host = request.host.split(':')[0]
+    # Só redireciona quando acessarem sem "www"
+    if host == "achetece.com.br":
+        # preserva caminho e querystring
+        url = request.url.replace("://achetece.com.br", "://www.achetece.com.br")
+        return redirect(url, code=301)
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
