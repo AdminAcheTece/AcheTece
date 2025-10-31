@@ -1729,10 +1729,9 @@ def oauth_google():
     
     return oauth.google.authorize_redirect(
         redirect_uri,
-        prompt=prompt,          # mobile: sempre tela de digitar e-mail
-        max_age=0,              # ignora sessão anterior
-        include_granted_scopes="false",
-        display="touch" if (is_mobile or force_login) else "page",
+        prompt="login",      # força a tela de inserir outro e-mail (mobile resolve)
+        max_age=0,           # ignora sessão anterior
+        display="touch",     # layout mobile
         hl="pt-BR",
     )
 
