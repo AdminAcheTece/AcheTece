@@ -1710,13 +1710,16 @@ def oauth_google():
     redirect_uri = url_for("oauth_google_callback", _external=True, _scheme="https")
     return oauth.google.authorize_redirect(redirect_uri)
 
-
 @app.get("/oauth/google/callback")
 def oauth_google_callback():
-    # troca o code por token + dados do usuário
-    token = oauth.google.authorize_access_token()
-    # Tenta decodificar ID Token; se não vier, cai para /userinfo
-    userinfo = oauth.google.parse_id_token(token) or oauth.google.get("userinfo").json()
+    try:
+        token = oauth.google.authorize_access_token()
+        # Em vez de parsear o id_token (que exige nonce), use o /userinfo:
+        userinfo = oauth.google.get("userinfo").json()
+    except Exception as e:
+        current_app.logger.exception(f"Falha no callback do Google: {e}")
+        flash("Não foi possível concluir o login com o Google.", "danger")
+        return redirect(url_for("login"))
 
     email = (userinfo.get("email") or "").strip().lower()
     nome  = userinfo.get("name") or ""
@@ -1729,26 +1732,21 @@ def oauth_google_callback():
         flash("Não foi possível obter o e-mail do Google.", "danger")
         return redirect(url_for("login"))
 
-    # === Integração mínima com sua base ===
-    # Tente adaptar os campos conforme seu modelo (ex.: email_login, email, contato_email)
-    # Exemplo genérico:
+    # ===== seu login existente (mesmo fluxo do login por e-mail) =====
     try:
-        emp = (Empresa.query.filter_by(email=email).first() or
-               getattr(Empresa, "query", None).filter(getattr(Empresa, "email_login", Empresa.email)==email).first())
+        emp = Empresa.query.filter_by(email=email).first()
     except Exception:
         emp = None
 
     if not emp:
-        # não encontrou empresa -> vai ao cadastro com e-mail pré-preenchido
         flash("Não encontramos uma conta para este e-mail. Faça o cadastro para continuar.", "warning")
         return redirect(url_for("cadastrar_empresa", email=email))
 
-    # encontrou -> efetua login de sessão exatamente como seu fluxo já faz
     session.clear()
     session["empresa_id"] = emp.id
     session["empresa_nome"] = getattr(emp, "nome", getattr(emp, "razao_social", ""))
     if foto:
-        session["avatar_url"] = foto  # opcional, aproveita foto do Google
+        session["avatar_url"] = foto
 
     return redirect(nxt)
 
