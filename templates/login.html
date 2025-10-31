@@ -121,11 +121,18 @@
     .sep{ display:flex; align-items:center; gap:10px; color:#777; margin:4px 0 12px; }
     .sep:before,.sep:after{ content:""; flex:1; height:1px; background:#eee; }
 
+    /* ===== OAUTH (ajuste leve, sem mudar layout) ===== */
     .oauth{
       display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:10px;
     }
-    .oauth a{ display:inline-flex; align-items:center; justify-content:center; width:56px; height:56px; border:1px solid #eee; border-radius:50%; background:#fff; }
-    .oauth img{ width:28px; height:28px; }
+    .oauth a{ text-decoration:none; }
+    .oauth .oauth-btn{
+      display:inline-flex; align-items:center; gap:10px;
+      padding:10px 16px; border:1px solid #e5e7eb; border-radius:9999px;
+      background:#fff; color:#1f2937; font-weight:800; line-height:1;
+    }
+    .oauth .oauth-btn:hover{ background:#f8f8ff; border-color:#dcdcdc; }
+    .oauth .oauth-btn img{ width:20px; height:20px; display:block; }
 
     .signup{ text-align:center; margin:8px 0 6px; }
     .signup a{ color:#5b2fff; text-decoration:none; font-weight:700; }
@@ -226,13 +233,25 @@
         <label for="email">E-mail</label>
         <input id="email" name="email" type="email" class="input" autocomplete="email" required
                value="{{ email or request.args.get('email','') }}">
+        <!-- (opcional) preserva 'next' também no fluxo por e-mail -->
+        {% if request.args.get('next') %}
+          <input type="hidden" name="next" value="{{ request.args.get('next') }}">
+        {% endif %}
         <button type="submit" class="btn">Continuar</button>
       </form>
 
       <div class="sep">Ou conecte com</div>
+
+      <!-- ===== GOOGLE OAUTH (ctx=empresa + preserva next) ===== -->
       <div class="oauth">
-        <a href="{{ url_for('oauth_google') }}" aria-label="Entrar com Google">
-          <img src="/static/icone_google.png" alt="Google">
+        <a
+          class="oauth-btn"
+          href="{{ url_for('oauth_google') }}?ctx=empresa{% if request.args.get('next') %}&next={{ request.args.get('next')|urlencode }}{% endif %}"
+          aria-label="Entrar com Google"
+          title="Entrar com Google"
+        >
+          <img src="/static/icone_google.png" alt="" aria-hidden="true">
+          <span>Entrar com Google</span>
         </a>
       </div>
 
