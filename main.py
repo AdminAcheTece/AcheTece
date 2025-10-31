@@ -1718,10 +1718,23 @@ def oauth_google():
 
     redirect_uri = url_for("oauth_google_callback", _external=True, _scheme="https")
     ua = (request.user_agent.string or "").lower()
-    is_mobile = ("iphone" in ua) or ("ipad" in ua) or ("android" in ua)
+    # detecta navegadores móveis do iOS/Android
+    _mobile_markers = ("iphone","ipad","ipod","android","crios","fxios","edgios","safari")
+    is_mobile = any(m in ua for m in _mobile_markers)
     
-    prompt = "login" if is_mobile else "select_account"  # mobile: pede e-mail; desktop: mostra contas
-    return oauth.google.authorize_redirect(redirect_uri, prompt=prompt, max_age=0)
+    # permite forçar via querystring também (?force_login=1)
+    force_login = request.args.get("force_login") == "1"
+    
+    prompt = "login" if (is_mobile or force_login) else "select_account"
+    
+    return oauth.google.authorize_redirect(
+        redirect_uri,
+        prompt=prompt,          # mobile: sempre tela de digitar e-mail
+        max_age=0,              # ignora sessão anterior
+        include_granted_scopes="false",
+        display="touch" if (is_mobile or force_login) else "page",
+        hl="pt-BR",
+    )
 
 @app.get("/oauth/google/callback")
 def oauth_google_callback():
