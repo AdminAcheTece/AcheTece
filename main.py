@@ -64,16 +64,17 @@ def _env_bool(name: str, default: bool = False) -> bool:
 # --------------------------------------------------------------------
 app.config.update(
     SMTP_HOST=os.getenv("SMTP_HOST", "smtp.gmail.com"),
-    SMTP_PORT=int(os.getenv("SMTP_PORT", "465")),  # 465 SSL é mais estável na Render
+    SMTP_PORT=int(os.getenv("SMTP_PORT", "465")),
     SMTP_USER=os.getenv("SMTP_USER", ""),
     SMTP_PASS=os.getenv("SMTP_PASS", ""),
     SMTP_FROM=os.getenv("SMTP_FROM", os.getenv("SMTP_USER", "")),
-    MAIL_TIMEOUT=int(os.getenv("MAIL_TIMEOUT", "8")),             # segundos
-    MAIL_SUPPRESS_SEND=_env_bool("MAIL_SUPPRESS_SEND", False),    # True = NÃO envia (modo teste)
-    OTP_DEV_FALLBACK=_env_bool("OTP_DEV_FALLBACK", False),        # True = loga e deixa seguir
-    SESSION_COOKIE_SECURE=True,      # HTTPS
-    SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_COOKIE_DOMAIN=".achetece.com.br"  # vale para www e raiz
+    MAIL_TIMEOUT=int(os.getenv("MAIL_TIMEOUT", "8")),
+    MAIL_SUPPRESS_SEND=_env_bool("MAIL_SUPPRESS_SEND", False),
+    OTP_DEV_FALLBACK=_env_bool("OTP_DEV_FALLBACK", False),
+
+    SESSION_COOKIE_SECURE=True,        # mantém HTTPS
+    SESSION_COOKIE_SAMESITE="None",    # <<< ajuste p/ iOS (atenção: string "None")
+    SESSION_COOKIE_DOMAIN=".achetece.com.br"  # www e raiz
 )
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY") or ""
@@ -1708,7 +1709,7 @@ def oauth_google():
         return "Login com Google está desabilitado no momento (credenciais ausentes).", 503
 
     redirect_uri = url_for("oauth_google_callback", _external=True, _scheme="https")
-    return oauth.google.authorize_redirect(redirect_uri)
+    return oauth.google.authorize_redirect(redirect_uri, prompt="select_account")
 
 @app.get("/oauth/google/callback")
 def oauth_google_callback():
