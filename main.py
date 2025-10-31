@@ -86,6 +86,25 @@ if RESEND_API_KEY:
 else:
     logging.warning("[EMAIL] RESEND_API_KEY não configurada — envio via Resend desativado.")
 
+import os
+from authlib.integrations.flask_client import OAuth
+from werkzeug.middleware.proxy_fix import ProxyFix
+
+# Garante que url_for(_external=True) saia com HTTPS por trás do proxy (Render)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
+
+oauth = OAuth(app)
+oauth.register(
+    name="google",
+    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+    client_id=GOOGLE_CLIENT_ID,
+    client_secret=GOOGLE_CLIENT_SECRET,
+    client_kwargs={"scope": "openid email profile"},
+)
+
 def _extract_email(addr: str) -> str:
     m = re.search(r"<([^>]+)>", addr or "")
     s = m.group(1) if m else (addr or "")
@@ -1672,9 +1691,66 @@ def post_login_password():
     session["empresa_apelido"] = user.apelido or user.nome or user.email.split("@")[0]
     return redirect(url_for("painel_malharia"))
 
-@app.get("/oauth/google", endpoint="oauth_google")
-def oauth_google_disabled():
-    return ("Login com Google está desabilitado no momento.", 501)
+from flask import request, session, redirect, url_for, flash
+
+@app.get("/oauth/google")
+def oauth_google():
+    # contexto padrão "empresa" e preserva redirecionamento
+    ctx = request.args.get("ctx", "empresa")
+    nxt = request.args.get("next") or url_for("painel_malharia")
+
+    # guarda em sessão para usar no callback
+    session["oauth_ctx"] = ctx
+    session["oauth_next"] = nxt
+
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        # Só bloqueia se realmente faltar credencial
+        return "Login com Google está desabilitado no momento (credenciais ausentes).", 503
+
+    redirect_uri = url_for("oauth_google_callback", _external=True, _scheme="https")
+    return oauth.google.authorize_redirect(redirect_uri)
+
+
+@app.get("/oauth/google/callback")
+def oauth_google_callback():
+    # troca o code por token + dados do usuário
+    token = oauth.google.authorize_access_token()
+    # Tenta decodificar ID Token; se não vier, cai para /userinfo
+    userinfo = oauth.google.parse_id_token(token) or oauth.google.get("userinfo").json()
+
+    email = (userinfo.get("email") or "").strip().lower()
+    nome  = userinfo.get("name") or ""
+    foto  = userinfo.get("picture")
+
+    ctx = session.pop("oauth_ctx", "empresa")
+    nxt = session.pop("oauth_next", url_for("painel_malharia"))
+
+    if not email:
+        flash("Não foi possível obter o e-mail do Google.", "danger")
+        return redirect(url_for("login"))
+
+    # === Integração mínima com sua base ===
+    # Tente adaptar os campos conforme seu modelo (ex.: email_login, email, contato_email)
+    # Exemplo genérico:
+    try:
+        emp = (Empresa.query.filter_by(email=email).first() or
+               getattr(Empresa, "query", None).filter(getattr(Empresa, "email_login", Empresa.email)==email).first())
+    except Exception:
+        emp = None
+
+    if not emp:
+        # não encontrou empresa -> vai ao cadastro com e-mail pré-preenchido
+        flash("Não encontramos uma conta para este e-mail. Faça o cadastro para continuar.", "warning")
+        return redirect(url_for("cadastrar_empresa", email=email))
+
+    # encontrou -> efetua login de sessão exatamente como seu fluxo já faz
+    session.clear()
+    session["empresa_id"] = emp.id
+    session["empresa_nome"] = getattr(emp, "nome", getattr(emp, "razao_social", ""))
+    if foto:
+        session["avatar_url"] = foto  # opcional, aproveita foto do Google
+
+    return redirect(nxt)
 
 @app.route("/logout")
 def logout():
