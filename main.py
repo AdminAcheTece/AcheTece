@@ -1717,7 +1717,11 @@ def oauth_google():
         return "Login com Google está desabilitado no momento (credenciais ausentes).", 503
 
     redirect_uri = url_for("oauth_google_callback", _external=True, _scheme="https")
-    return oauth.google.authorize_redirect(redirect_uri, prompt="select_account")
+    ua = (request.user_agent.string or "").lower()
+    is_mobile = ("iphone" in ua) or ("ipad" in ua) or ("android" in ua)
+    
+    prompt = "login" if is_mobile else "select_account"  # mobile: pede e-mail; desktop: mostra contas
+    return oauth.google.authorize_redirect(redirect_uri, prompt=prompt, max_age=0)
 
 @app.get("/oauth/google/callback")
 def oauth_google_callback():
