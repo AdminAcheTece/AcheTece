@@ -1754,7 +1754,7 @@ def oauth_google_callback():
 def logout():
     session.pop("empresa_id", None)
     session.pop("empresa_apelido", None)
-    return redirect(url_for("index"))
+    return redirect(url_for('login'))  # <- agora vai para a tela de login
 
 # --------------------------------------------------------------------
 # Onboarding helpers + Painel
