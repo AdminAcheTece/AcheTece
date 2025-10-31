@@ -1715,7 +1715,7 @@ def oauth_google_callback():
     try:
         token = oauth.google.authorize_access_token()
         # Em vez de parsear o id_token (que exige nonce), use o /userinfo:
-        userinfo = oauth.google.get("userinfo").json()
+        userinfo = oauth.google.get("https://openidconnect.googleapis.com/v1/userinfo").json()
     except Exception as e:
         current_app.logger.exception(f"Falha no callback do Google: {e}")
         flash("Não foi possível concluir o login com o Google.", "danger")
