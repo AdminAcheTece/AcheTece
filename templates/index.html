@@ -266,6 +266,49 @@
     .card-info2{font-size:12px;}
     .empresa-top .nome{font-size:.95rem;}
   }
+  /* === LIME para hover (como a 2ª imagem) === */
+  :root{
+    --lime:#B6F34D;        /* verde neon do hover */
+    --lime-700:#A2E532;    /* versão ligeiramente mais escura para active */
+  }
+  
+  /* transições suaves nos botões oliva */
+  .btn-perfil,
+  .promo-cta,
+  .btn-open-filters,
+  .btn-new-search{
+    transition: background-color .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease;
+  }
+  
+  /* HOVER: muda de oliva para lime e texto preto */
+  .btn-perfil:hover,
+  .promo-cta:hover,
+  .btn-open-filters:hover,
+  .btn-new-search:hover{
+    background: var(--lime) !important;
+    color: #111 !important;           /* ícones com currentColor ficam pretos também */
+    border-color: var(--lime) !important;
+    box-shadow: 0 0 0 3px rgba(182,243,77,.25);
+  }
+  
+  /* ACTIVE/focus para melhor feedback */
+  .btn-perfil:active,
+  .promo-cta:active,
+  .btn-open-filters:active,
+  .btn-new-search:active{
+    background: var(--lime-700) !important;
+  }
+  .btn-perfil:focus-visible,
+  .promo-cta:focus-visible,
+  .btn-open-filters:focus-visible,
+  .btn-new-search:focus-visible{
+    outline: 2px solid var(--lime);
+    outline-offset: 2px;
+  }
+  
+  /* (opcional) utilidade p/ qualquer outro botão oliva do site */
+  .btn-olive{ background: var(--olive); color:#fff; }
+  .btn-olive:hover{ background: var(--lime); color:#111; }
 </style>
 </head>
 <body>
