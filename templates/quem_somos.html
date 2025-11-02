@@ -265,6 +265,48 @@
     .btn-olive{ background: var(--olive); color:#fff; }
     .btn-olive:hover{ background: var(--lime); color:#111; }
 
+    /* === Lime/neon (hover) === */
+    :root{
+      --lime:#B6F34D;      /* cor do hover (imagem 2) */
+      --lime-700:#A2E532;  /* active */
+    }
+    
+    /* aplicar transição só nesses três botões */
+    .promo-cta,
+    .btn-perfil,
+    .btn-limpar{
+      transition: background-color .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease;
+    }
+    
+    /* HOVER: muda do oliva/laranja atual para LIME + texto preto */
+    .promo-cta:hover,
+    .btn-perfil:hover,
+    .btn-limpar:hover{
+      background: var(--lime) !important;  /* !important vence o style inline do "Limpar" */
+      color:#111 !important;
+      border-color: var(--lime) !important;
+      box-shadow: 0 0 0 3px rgba(182,243,77,.25);
+    }
+    
+    /* ACTIVE (pressionado) */
+    .promo-cta:active,
+    .btn-perfil:active,
+    .btn-limpar:active{
+      background: var(--lime-700) !important;
+    }
+    
+    /* ÍCONES/SETAS dentro dos botões ficam pretos no hover */
+    .promo-cta:hover svg,
+    .btn-perfil:hover svg,
+    .btn-limpar:hover svg{
+      color:#111; fill:#111; stroke:#111;
+    }
+    /* fallback se a seta for <img> */
+    .promo-cta:hover img,
+    .btn-perfil:hover img,
+    .btn-limpar:hover img{
+      filter: brightness(0);
+    }
   </style>
 </head>
 <body>
