@@ -308,6 +308,36 @@
     outline:2px solid var(--lime);
     outline-offset:2px;
   }
+
+  /* ===== Cabeçalho da tabela igual ao da index ===== */
+  :root{
+    /* pode ajustar aqui se quiser refinar depois */
+    --tbl-head-bg:#ECECF3;      /* fundo do cabeçalho */
+    --tbl-head-text:#1F1F1F;    /* texto do cabeçalho */
+    --tbl-head-border:#E3E3E7;  /* bordas do cabeçalho/tabela */
+  }
+  
+  /* aplica ao cabeçalho */
+  .table-wrapper table thead th{
+    background: var(--tbl-head-bg) !important;
+    color: var(--tbl-head-text);
+    font-weight: 800;
+    border-color: var(--tbl-head-border) !important;
+  }
+  
+  /* linha inferior do thead para separar do corpo */
+  .table-wrapper table thead tr{
+    border-bottom: 1px solid var(--tbl-head-border);
+  }
+  
+  /* harmoniza toda a tabela com as mesmas bordas */
+  .table-wrapper table{
+    border-color: var(--tbl-head-border);
+  }
+  .table-wrapper table th,
+  .table-wrapper table td{
+    border-color: var(--tbl-head-border);
+  }
   
 </style>
 </head>
