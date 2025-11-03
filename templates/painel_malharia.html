@@ -274,6 +274,41 @@
   .cam-actions .btn{ background:#000; color:var(--lime); }
   .cam-actions .btn:hover{ background:var(--lime); color:#000; transform:translateY(-2px); }
   .cam-actions .btn:active{ background:var(--lime-700); color:#000; transform:translateY(0); }
+  /* === Override: botão "+ Cadastrar Tear" no padrão global (preto → lime) === */
+  button.btn-roxo,
+  a.btn-roxo,
+  .btn-roxo{
+    background:#000 !important;
+    color:var(--lime) !important;
+    border:0;
+    height:40px;
+    padding:0 18px;
+    border-radius:9999px;
+    font-weight:800;
+    text-decoration:none;
+    cursor:pointer;
+    transition: background-color .15s ease, color .15s ease, transform .12s ease;
+    box-shadow:none !important;         /* sem anel/sombra no hover */
+  }
+  
+  .btn-roxo:hover{
+    background:var(--lime) !important;
+    color:#000 !important;
+    transform:translateY(-2px);
+  }
+  
+  .btn-roxo:active{
+    background:var(--lime-700) !important;
+    color:#000 !important;
+    transform:translateY(0);
+  }
+  
+  .btn-roxo:focus{ outline:none; }       /* evita borda azul ao clicar */
+  .btn-roxo:focus-visible{
+    outline:2px solid var(--lime);
+    outline-offset:2px;
+  }
+  
 </style>
 </head>
 <body>
