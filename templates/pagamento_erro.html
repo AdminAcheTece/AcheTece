@@ -69,7 +69,35 @@
             font-size: 60px;
             color: #dc3545;
             margin-bottom: 10px;
-        }   
+        }
+
+        /* Tokens para o CTA (iguais ao aprovado) */
+        :root{
+          --lime:#B6F34D;
+          --lime-700:#A2E532;
+        }
+        
+        /* Botão padrão: preto → lime no hover; sem bordas/anel */
+        .botao-acao{
+          display:inline-flex; align-items:center; justify-content:center;
+          padding:14px 24px; height:44px;
+          border:0; border-radius:9999px;
+          background:#000; color:var(--lime);
+          font-size:16px; font-weight:800; text-decoration:none; cursor:pointer;
+          transition:background-color .15s ease, color .15s ease, transform .12s ease;
+          box-shadow:none !important;
+        }
+        .botao-acao:hover{
+          background:var(--lime); color:#000; transform:translateY(-2px);
+        }
+        .botao-acao:active{
+          background:var(--lime-700); color:#000; transform:translateY(0);
+        }
+        .botao-acao:focus{ outline:none; }
+        .botao-acao:focus-visible{
+          outline:2px solid var(--lime); outline-offset:2px;
+        }
+
     </style>
 </head>
 <body>
