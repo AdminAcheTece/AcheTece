@@ -165,19 +165,33 @@
 
   /* ===== Botão confirmar (padrão olive + hover lime) ===== */
   .btn{
-    width:100%; height:46px; border:0; border-radius:9999px;
-    background:var(--olive); color:#fff; font-weight:800; margin:12px 0 10px; cursor:pointer;
-    font-size:1rem; /* igual aos links */
-    transition: background-color .15s ease, color .15s ease, box-shadow .15s ease, transform .12s ease;
+    width:100%;
+    height:46px;
+    border:0;
+    border-radius:9999px;
+    background:#000;                 /* fundo preto */
+    color:var(--lime);               /* texto lime */
+    font-weight:800;
+    margin:12px 0 10px;
+    cursor:pointer;
+    font-size:1rem;
+    transition:background-color .15s ease, color .15s ease, transform .15s ease;
   }
   .btn:hover{
-    background:var(--lime);
-    color:#111;
-    box-shadow:0 0 0 3px rgba(182,243,77,.25);
-    transform:translateY(-1px);
+    background:var(--lime);          /* inverte no hover */
+    color:#000;
+    transform:translateY(-2px);
+    box-shadow:none;                 /* sem anel/borda no hover */
   }
-  .btn:active{ background:var(--lime-700); transform:translateY(0); }
-  .btn:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
+  .btn:active{
+    background:var(--lime-700);      /* estado pressionado */
+    color:#000;
+    transform:translateY(0);
+  }
+  .btn:focus-visible{
+    outline:2px solid var(--lime);   /* acessível no teclado */
+    outline-offset:2px;
+  }
 
   .links-row{
     display:flex; justify-content:center; gap:18px; margin:8px 0 8px; font-weight:800;
