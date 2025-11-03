@@ -137,145 +137,182 @@
     @media (max-width:560px){
       .container{ margin:16px 12px 28px; }
     }
-  </style>
-</head>
-<body>
+  <style>
+  :root{
+    /* Paleta OLIVE (padrão novo) */
+    --olive:#7B7424;
+    --olive-600:#5E581C;
+    --olive-dark:#434326;
+    --olive-50:#F1F2E8;
+    --line-olive:#BFBFA8;
 
-  <!-- ===== CABEÇALHO ===== -->
-  <header class="navbar">
-    <div class="header-left">
-      <div class="logo">
-        <!-- Logo- botão para a home -->
-        <a href="{{ url_for('index') }}" aria-label="Página inicial AcheTece" title="Ir para a página inicial">
-          <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
-        </a>
-      </div>
-    </div>
+    /* Destaque neon para CTAs */
+    --lime:#B6F34D;
+    --lime-700:#A2E532;
 
-    <div class="header-right">
-      <!-- Botão casinha (Home) -->
-      <a href="{{ url_for('index') }}" class="icon-btn" aria-label="Página inicial" title="Página inicial">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M3 10.5 12 3l9 7.5"></path>
-          <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
-          <path d="M9 21V12h6v9"></path>
-        </svg>
-      </a>
+    /* Fundo global (igual à index) */
+    --site-bg:#EAEAE8;
 
-      <!-- Menu sanduíche -->
-      <div class="menu-wrap">
-        <button class="hamburger" id="hamburger" type="button" aria-label="Abrir menu"
-                aria-controls="menu-lateral" aria-haspopup="menu" aria-expanded="false">
-          <span></span><span></span><span></span>
-        </button>
+    /* Aliases p/ CSS legado */
+    --roxo:var(--olive);
+    --roxo-hover:var(--olive-600);
+  }
 
-        <nav class="menu-dropdown" id="menu-lateral" role="menu" aria-label="Menu rápido">
-          <div class="menu-header">
-            <button type="button" class="menu-close" aria-label="Fechar menu">
-              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
-              </svg>
-            </button>
-          </div>
+  html, body{
+    background: var(--site-bg);
+    color:#111;
+    margin:0;
+    font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  }
 
-          <a href="{{ url_for('buscar_teares') }}" class="menu-item" role="menuitem">Buscar Tear</a>
-          <a href="{{ url_for('malharia_info') }}" class="menu-item" role="menuitem">Como Funciona</a>
-          <a href="{{ url_for('login') }}" class="menu-item" role="menuitem">Já sou cadastrado</a>
-          <a href="{{ url_for('quem_somos') }}" class="menu-item" role="menuitem">Quem Somos</a>
-          <a href="{{ url_for('contato') }}" class="menu-item" role="menuitem">Fale conosco</a>
-          <a href="{{ url_for('termos') }}" class="menu-item" role="menuitem">Termos e Políticas</a>
-        </nav>
-      </div>
-    </div>
-  </header>
+  /* ===== CABEÇALHO (padrão) ===== */
+  .navbar{
+    overflow:visible;
+    padding:6px 12px;
+    background:#fff;
+    border-bottom:1px solid #eee;
+    display:flex; align-items:center;
+  }
+  .header-left,.header-right{ display:flex; align-items:center; }
+  .header-right{ margin-left:auto; gap:20px; }
 
-  <!-- ===== CONTEÚDO ===== -->
-  <div class="container">
-    <h1 class="titulo">{{ 'Editar Tear' if tear else 'Cadastrar Tear' }}</h1>
+  .logo{ display:inline-flex; align-items:center; }
+  .logo a{ display:inline-flex; align-items:center; text-decoration:none; }
+  /* Desktop: logo 44px | Mobile: 54px */
+  @media (min-width:901px){
+    .navbar .logo img{ height:44px; width:auto; display:block; }
+  }
+  @media (max-width:900px){
+    .navbar{ padding-right:22px; min-height:56px; }
+    .navbar .logo img{ height:54px !important; width:auto !important; display:block; }
+  }
 
-    <form method="POST" class="formulario"
-          action="{{ url_for('editar_tear', id=tear.id) if tear else url_for('cadastrar_teares') }}">
+  /* Ícone Home + Hamburguer + Dropdown (padrão, sem bordas no hover) */
+  .icon-btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px;
+    background:#fff; cursor:pointer;
+    transition:background .15s ease, transform .12s ease;
+    box-shadow:none !important;
+  }
+  .icon-btn:hover{ background:var(--olive-50); transform:translateY(-1px); }
+  .icon-btn:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
+  .icon{ width:20px; height:20px; color:#222; }
 
-      <label for="marca">Marca:</label>
-      <input type="text" id="marca" name="marca" value="{{ tear.marca if tear else '' }}" required>
+  .menu-wrap{ position: relative; }
+  .hamburger{
+    display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
+    width:36px; height:36px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
+    cursor:pointer; box-shadow:none !important;
+  }
+  .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
+  .hamburger span + span{ margin-top:4px; }
 
-      <label for="modelo">Modelo:</label>
-      <input type="text" id="modelo" name="modelo" value="{{ tear.modelo if tear else '' }}" required>
+  .menu-dropdown{
+    background:#fff; border:1px solid #eaeaea; border-radius:12px;
+    z-index:10001; max-height:80vh; overflow:auto; box-shadow:none !important;
+    opacity:0; pointer-events:none; transform: translateY(8px) scale(.98);
+    transition: opacity .18s ease, transform .18s ease;
+  }
+  .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
+  .menu-dropdown .menu-header{ display:flex; justify-content:flex-end; align-items:center; padding:8px 10px; }
+  .menu-dropdown .menu-close{
+    display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px;
+    background:#f0f2f5; border:0; border-radius:10px; cursor:pointer;
+  }
+  .menu-dropdown .menu-item{
+    display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222;
+  }
+  .menu-dropdown .menu-item:hover{ background:var(--olive-50); color:var(--olive); border-radius:8px; }
 
-      <label for="tipo">Tipo:</label>
-      {% set _tipo = tear.tipo if tear else '' %}
-      <select id="tipo" name="tipo" required>
-        <option value="">-- Selecione --</option>
-        <option value="MONO"  {{ 'selected' if _tipo=='MONO' else '' }}>MONO</option>
-        <option value="DUPLA" {{ 'selected' if _tipo=='DUPLA' else '' }}>DUPLA</option>
-      </select>
+  @media (min-width:769px){
+    .menu-dropdown{ position:absolute; top:calc(100% + 8px); right:0; min-width:220px; transform-origin: top right; }
+  }
+  @media (max-width:768px){
+    .menu-wrap{ position: static; }
+    .menu-dropdown{
+      position: fixed; top: calc(var(--nav-h, 64px) + 8px); left: 50%;
+      transform: translate(-50%, 8px) scale(.98); transform-origin: top center;
+      width:max-content; max-width:90vw; min-width:160px; border-radius:14px;
+    }
+    .menu-dropdown.open{ transform: translate(-50%,0) scale(1); }
+  }
 
-      <label for="finura">Finura:</label>
-      <input type="number" id="finura" name="finura" value="{{ tear.finura if tear and tear.finura is not none else '' }}" required>
+  /* ===== CARD/CONTEÚDO ===== */
+  .container{
+    width:100%;
+    max-width:600px;
+    margin: 28px auto 44px;
+    background:#fff;
+    border:1px solid #e8ecf5;
+    border-radius:14px;
+    padding:20px 18px;
+    box-shadow:none !important;
+  }
+  h1.titulo{ margin:4px 0 16px; font-size:22px; font-weight:800; color:var(--olive-dark); }
 
-      <label for="diametro">Diâmetro:</label>
-      <input type="number" id="diametro" name="diametro" value="{{ tear.diametro if tear and tear.diametro is not none else '' }}" required>
+  /* ===== FORM ===== */
+  .formulario label{
+    display:block; margin:10px 0 6px; font-weight:700; font-size:14px; color:#2a233a;
+  }
+  .formulario input,
+  .formulario select{
+    width:100%; height:42px; border-radius:10px; padding:0 12px;
+    border:1px solid #cfd3dc; background:#fff; font-size:14px;
+    transition:border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+  }
+  .formulario input:focus,
+  .formulario select:focus{
+    outline:0;
+    border-color:var(--olive);
+    box-shadow:0 0 0 3px rgba(123,116,36,.15);
+    background:#fff;
+  }
 
-      <label for="pistas_cilindro">Pistas Cilindro:</label>
-      <input type="number" id="pistas_cilindro" name="pistas_cilindro" value="{{ tear.pistas_cilindro if tear and tear.pistas_cilindro is not none else '' }}" required>
+  /* Remove “azulado” pós-digitação/autofill */
+  input:-webkit-autofill,
+  select:-webkit-autofill{
+    -webkit-text-fill-color:#1e1b2b;
+    box-shadow:0 0 0 1000px #fff inset !important;
+    border:1px solid var(--line-olive);
+    transition:background-color 9999s ease-in-out 0s;
+  }
 
-      <label for="pistas_disco">Pistas Disco:</label>
-      <input type="number" id="pistas_disco" name="pistas_disco" value="{{ tear.pistas_disco if tear and tear.pistas_disco is not none else '' }}" required>
+  /* ===== BOTÕES (padrão global PRETO → LIME, sem bordas no hover) ===== */
+  /* Aplica no botão existente .botao-roxo sem trocar HTML */
+  button.botao-roxo,
+  .botao-roxo{
+    display:inline-flex; align-items:center; justify-content:center;
+    height:44px; padding:0 18px; border:0; border-radius:9999px;
+    background:#000; color:var(--lime); font-weight:800; font-size:14px; cursor:pointer;
+    transition: background-color .15s ease, color .15s ease, transform .12s ease;
+    margin-top:12px; box-shadow:none !important;
+  }
+  .botao-roxo:hover{
+    background:var(--lime); color:#000; transform:translateY(-2px);
+  }
+  .botao-roxo:active{
+    background:var(--lime-700); color:#000; transform:translateY(0);
+  }
+  .botao-roxo:focus{ outline:none; }
+  .botao-roxo:focus-visible{
+    outline:2px solid var(--lime);
+    outline-offset:2px;
+  }
 
-      <label for="alimentadores">Alimentadores:</label>
-      <input type="number" id="alimentadores" name="alimentadores" value="{{ tear.alimentadores if tear and tear.alimentadores is not none else '' }}" required>
+  .voltar-link{
+    display:inline-block; margin-top:14px; text-decoration:none; color:var(--olive); font-weight:700;
+  }
+  .voltar-link:hover{ text-decoration:underline; }
 
-      <label for="elastano">Elastano:</label>
-      {% set _elas = (tear.elastano if tear else '') %}
-      <select id="elastano" name="elastano" required>
-        <option value="">-- Selecione --</option>
-        <option value="Sim" {{ 'selected' if _elas in ['Sim', 'S', True, 'True', 1] else '' }}>Sim</option>
-        <option value="Não" {{ 'selected' if _elas in ['Não', 'N', False, 'False', 0] else '' }}>Não</option>
-      </select>
+  @media (max-width:560px){
+    .container{ margin:16px 12px 28px; }
+  }
 
-      <button type="submit" class="botao-roxo">{{ 'Salvar alterações' if tear else 'Salvar Tear' }}</button>
-    </form>
-
-    <a class="voltar-link" href="{{ url_for('painel_malharia') }}">← Voltar ao Painel</a>
-  </div>
-
-  <!-- ===== Script do menu (igual aos demais) ===== -->
-  <script>
-    (function () {
-      function closeAll() {
-        document.querySelectorAll('.menu-wrap .menu-dropdown.open').forEach(m => {
-          m.classList.remove('open');
-          const b = m.closest('.menu-wrap')?.querySelector('.hamburger');
-          if (b) b.setAttribute('aria-expanded', 'false');
-        });
-      }
-      document.querySelectorAll('.menu-wrap').forEach(wrap => {
-        const btn  = wrap.querySelector('#hamburger');
-        const menu = wrap.querySelector('#menu-lateral');
-        const xBtn = wrap.querySelector('.menu-close');
-        if (!btn || !menu) return;
-
-        btn.addEventListener('click', e => {
-          e.stopPropagation();
-          const willOpen = !menu.classList.contains('open');
-          closeAll();
-          menu.classList.toggle('open', willOpen);
-          btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-        });
-
-        xBtn?.addEventListener('click', e => {
-          e.stopPropagation();
-          menu.classList.remove('open');
-          btn.setAttribute('aria-expanded', 'false');
-        });
-
-        menu.addEventListener('click', e => e.stopPropagation());
-      });
-
-      document.addEventListener('click', closeAll);
-      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
-    })();
-  </script>
+  /* Mantém claro em dark mode */
+  @media (prefers-color-scheme: dark){
+    html, body{ background: var(--site-bg) !important; color:#111; }
+  }
+</style>
 </body>
 </html>
