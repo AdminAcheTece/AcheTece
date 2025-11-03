@@ -191,6 +191,33 @@
     @media (prefers-color-scheme: dark){
       html, body{ background: var(--site-bg) !important; color: var(--cinza-900); }
     }
+
+    /* === Inputs: fundo claro padrão + foco oliva (sem azul) === */
+    form.login input{
+      width:100%;
+      padding:12px;
+      border:1px solid #cfd3dc;
+      border-radius:10px;
+      background:#fff !important;     /* tira o azul */
+      color:#1e1b2b;
+      font-size:15px;
+      outline:0;
+      transition:border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+    }
+    form.login input:focus{
+      border-color:var(--olive, #7B7424);
+      box-shadow:0 0 0 3px rgba(123,116,36,.15);
+      background:#fff !important;
+    }
+    
+    /* Remove o “autofill” amarelo/azulado do navegador */
+    input:-webkit-autofill{
+      -webkit-text-fill-color:#1e1b2b;
+      box-shadow:0 0 0 1000px #fff inset !important;
+      border:1px solid var(--line-olive, #BFBFA8);
+      transition:background-color 9999s ease-in-out 0s;
+    }
+
   </style>
 </head>
 <body>
