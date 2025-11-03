@@ -29,6 +29,7 @@ import time
 import resend  # biblioteca do Resend
 from PIL import Image
 import shutil
+from datetime import datetime, timedelta
 
 # SMTP direto (fallback)
 import smtplib, ssl
@@ -337,6 +338,68 @@ def _send_via_sendgrid(to: str, subject: str, html: str | None, text: str | None
         return False, f"SendGrid {r.status_code}: {r.text[:200]}"
     except Exception as e:
         return False, f"SendGrid erro: {e!s}"
+
+def _otp_validate(email: str, codigo: str):
+    """
+    Valida o código de login (OTP) salvo em sessão.
+    Retorna (ok: bool, msg: str).
+    """
+    email = (email or "").strip().lower()
+    codigo = (codigo or "").strip()
+
+    # Suporte a dois formatos:
+    # a) session['otp'] = {'email':..., 'code':..., 'expires': iso, 'attempts': int}
+    # b) session['otp'] = { '<email>': { ... } }
+    otp_blob = session.get("otp") or {}
+    rec = None
+    if isinstance(otp_blob, dict):
+        if otp_blob.get("email") == email:
+            rec = otp_blob
+        elif email in otp_blob and isinstance(otp_blob[email], dict):
+            rec = otp_blob[email]
+
+    if not rec:
+        return False, "Código não encontrado para este e-mail. Reenvie o código."
+
+    # Expiração
+    expires_iso = rec.get("expires")
+    if expires_iso:
+        try:
+            exp_dt = datetime.fromisoformat(expires_iso)
+            if datetime.utcnow() > exp_dt:
+                # Limpa para evitar confusão
+                session.pop("otp", None)
+                session.modified = True
+                return False, "Código expirado. Solicite um novo."
+        except Exception:
+            # Se o formato corromper, força reenvio
+            session.pop("otp", None)
+            session.modified = True
+            return False, "Código inválido. Solicite um novo."
+
+    # Tentativas
+    rec["attempts"] = int(rec.get("attempts", 0)) + 1
+    if rec["attempts"] > 5:
+        session.pop("otp", None)
+        session.modified = True
+        return False, "Muitas tentativas. Solicite um novo código."
+
+    # Persiste contador de tentativas
+    if otp_blob is rec:
+        session["otp"] = rec
+    else:
+        otp_blob[email] = rec
+        session["otp"] = otp_blob
+    session.modified = True
+
+    # Comparação
+    if str(rec.get("code", "")).strip() != str(codigo).strip():
+        return False, "Código incorreto. Tente novamente."
+
+    # Sucesso: limpa OTP da sessão
+    session.pop("otp", None)
+    session.modified = True
+    return True, "OK"
 
 # Mercado Pago (mantido para compat)
 MP_ACCESS_TOKEN = os.getenv("MP_ACCESS_TOKEN") or os.getenv("MERCADO_PAGO_TOKEN", "")
@@ -1558,7 +1621,7 @@ def view_login():
         return _render_try(["login.html", "AcheTece/Modelos/login.html"], email=email)
 
     # POST (clicou Continuar)
-    email = (request.form.get("email") or "").strip().lower()
+    email = (request.form.get("email") or request.args.get("email") or "").strip().lower()
     if not email or "@" not in email:
         return _render_try(["login.html", "AcheTece/Modelos/login.html"], email=email, error="Informe um e-mail válido.")
 
@@ -1592,7 +1655,7 @@ def view_login_method_alias_trailing():
 # Disparar envio do código (POST)
 @app.post("/login/codigo", endpoint="post_login_code")
 def post_login_code():
-    email = (request.form.get("email") or "").strip().lower()
+    email = (request.form.get("email") or request.args.get("email") or "").strip().lower()
     if not email:
         flash("Informe um e-mail válido.", "warning")
         return redirect(url_for("login"))
@@ -1617,7 +1680,7 @@ def post_login_code_accent():
 # Tela para digitar o código (GET)
 @app.get("/login/codigo", endpoint="login_code")
 def get_login_code():
-    email = (request.args.get("email") or "").strip().lower()
+    email = (request.form.get("email") or request.args.get("email") or "").strip().lower()
     if not email:
         return redirect(url_for("login"))
     return _render_try(
@@ -1640,13 +1703,14 @@ def resend_login_code():
     return redirect(url_for("login_code", email=email))
 
 # Validar código (POST)
-@app.post("/login/codigo/validar", endpoint="validate_login_code")
+@app.post("/login/codigo/validar")
 def validate_login_code():
-    email = (request.form.get("email") or "").strip().lower()
-    code = "".join((request.form.get(k, "") for k in ("d1","d2","d3","d4","d5","d6")))
-    ok, msg = _otp_validate(email, code)
+    email = (request.form.get("email") or request.args.get("email") or "").strip().lower()
+    codigo = (request.form.get("codigo") or request.form.get("code") or "").strip()
+
+    ok, msg = _otp_validate(email, codigo)
     if not ok:
-        flash(msg, "error")
+        flash(msg, "danger")
         return redirect(url_for("login_code", email=email))
 
     emp = Empresa.query.filter(func.lower(Empresa.email) == email).first()
@@ -1673,7 +1737,7 @@ def view_login_password():
 # Senha: AUTENTICAR (POST)
 @app.post("/login/senha/entrar", endpoint="post_login_password")
 def post_login_password():
-    email = (request.form.get("email") or "").strip().lower()
+    email = (request.form.get("email") or request.args.get("email") or "").strip().lower()
     senha = (request.form.get("senha") or "")
     user = Empresa.query.filter(func.lower(Empresa.email) == email).first()
     GENERIC_FAIL = "E-mail ou senha incorretos. Tente novamente."
