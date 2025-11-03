@@ -210,6 +210,20 @@
   @media (prefers-color-scheme: dark){
     html, body{ background: var(--site-bg) !important; color: var(--cinza-900); }
   }
+  /* OVERRIDE: remover a borda/anel no hover dos botões */
+  .btn:hover{
+    background: var(--lime);
+    color: #111;
+    box-shadow: none !important; /* remove o anel */
+    transform: translateY(-1px);
+  }
+  
+  /* opcional: evita anel em navegadores que aplicam focus no clique do mouse */
+  .btn:focus:not(:focus-visible),
+  .btn:active{
+    box-shadow: none !important;
+  }
+    
 </style>
 </head>
 <body>
