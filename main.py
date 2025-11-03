@@ -341,65 +341,102 @@ def _send_via_sendgrid(to: str, subject: str, html: str | None, text: str | None
 
 def _otp_validate(email: str, codigo: str):
     """
-    Valida o código de login (OTP) salvo em sessão.
+    Valida o OTP de login considerando os dois formatos possíveis:
+      A) session['otp_login'] = { '<email>': { code, exp(timestamp), attempts, ... } }
+      B) session['otp']       = { 'email':..., 'code':..., 'expires': iso, 'attempts': ... }
     Retorna (ok: bool, msg: str).
     """
     email = (email or "").strip().lower()
     codigo = (codigo or "").strip()
 
-    # Suporte a dois formatos:
-    # a) session['otp'] = {'email':..., 'code':..., 'expires': iso, 'attempts': int}
-    # b) session['otp'] = { '<email>': { ... } }
+    # --- Formato A: otp_login por e-mail ------------------------------------
+    otp_login = session.get("otp_login")
+    if isinstance(otp_login, dict) and email in otp_login and isinstance(otp_login[email], dict):
+        rec = otp_login[email]
+
+        # Tentativas
+        rec["attempts"] = int(rec.get("attempts", 0)) + 1
+        # Persistir contador
+        otp_login[email] = rec
+        session["otp_login"] = otp_login
+        session.modified = True
+
+        # Expiração (timestamp UTC)
+        try:
+            exp_ts = float(rec.get("exp", 0))
+        except Exception:
+            exp_ts = 0.0
+        if exp_ts and datetime.utcnow().timestamp() > exp_ts:
+            # Limpa apenas este e-mail
+            try:
+                del otp_login[email]
+            except Exception:
+                pass
+            session["otp_login"] = otp_login
+            session.modified = True
+            return False, "Código expirado. Solicite um novo."
+
+        # Comparação
+        if str(rec.get("code", "")).strip() != str(codigo):
+            if rec["attempts"] > 5:
+                # Muitas tentativas -> invalida este OTP
+                try:
+                    del otp_login[email]
+                except Exception:
+                    pass
+                session["otp_login"] = otp_login
+                session.modified = True
+                return False, "Muitas tentativas. Solicite um novo código."
+            return False, "Código incorreto. Tente novamente."
+
+        # Sucesso -> limpar OTP deste e-mail
+        try:
+            del otp_login[email]
+        except Exception:
+            pass
+        session["otp_login"] = otp_login
+        session.modified = True
+        return True, "OK"
+
+    # --- Formato B: otp único com 'email'/'expires' ISO ---------------------
     otp_blob = session.get("otp") or {}
-    rec = None
     if isinstance(otp_blob, dict):
+        rec = None
         if otp_blob.get("email") == email:
             rec = otp_blob
         elif email in otp_blob and isinstance(otp_blob[email], dict):
             rec = otp_blob[email]
 
-    if not rec:
-        return False, "Código não encontrado para este e-mail. Reenvie o código."
+        if rec:
+            rec["attempts"] = int(rec.get("attempts", 0)) + 1
+            session["otp"] = otp_blob
+            session.modified = True
 
-    # Expiração
-    expires_iso = rec.get("expires")
-    if expires_iso:
-        try:
-            exp_dt = datetime.fromisoformat(expires_iso)
-            if datetime.utcnow() > exp_dt:
-                # Limpa para evitar confusão
-                session.pop("otp", None)
-                session.modified = True
-                return False, "Código expirado. Solicite um novo."
-        except Exception:
-            # Se o formato corromper, força reenvio
+            expires_iso = rec.get("expires")
+            if expires_iso:
+                try:
+                    exp_dt = datetime.fromisoformat(expires_iso)
+                    if datetime.utcnow() > exp_dt:
+                        session.pop("otp", None)
+                        session.modified = True
+                        return False, "Código expirado. Solicite um novo."
+                except Exception:
+                    session.pop("otp", None)
+                    session.modified = True
+                    return False, "Código inválido. Solicite um novo."
+
+            if str(rec.get("code", "")).strip() != str(codigo):
+                if rec["attempts"] > 5:
+                    session.pop("otp", None)
+                    session.modified = True
+                    return False, "Muitas tentativas. Solicite um novo código."
+                return False, "Código incorreto. Tente novamente."
+
             session.pop("otp", None)
             session.modified = True
-            return False, "Código inválido. Solicite um novo."
+            return True, "OK"
 
-    # Tentativas
-    rec["attempts"] = int(rec.get("attempts", 0)) + 1
-    if rec["attempts"] > 5:
-        session.pop("otp", None)
-        session.modified = True
-        return False, "Muitas tentativas. Solicite um novo código."
-
-    # Persiste contador de tentativas
-    if otp_blob is rec:
-        session["otp"] = rec
-    else:
-        otp_blob[email] = rec
-        session["otp"] = otp_blob
-    session.modified = True
-
-    # Comparação
-    if str(rec.get("code", "")).strip() != str(codigo).strip():
-        return False, "Código incorreto. Tente novamente."
-
-    # Sucesso: limpa OTP da sessão
-    session.pop("otp", None)
-    session.modified = True
-    return True, "OK"
+    return False, "Código não encontrado para este e-mail. Reenvie o código."
 
 # Mercado Pago (mantido para compat)
 MP_ACCESS_TOKEN = os.getenv("MP_ACCESS_TOKEN") or os.getenv("MERCADO_PAGO_TOKEN", "")
@@ -1593,6 +1630,7 @@ def _otp_send(to_email: str, ip: str = "", ua: str = ""):
             "exp": (datetime.utcnow() + timedelta(minutes=minutes)).timestamp(),
             "ip": ip[:64],
             "ua": ua[:255],
+            "attempts": 0,
         }
         session["otp_login"] = data
 
