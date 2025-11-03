@@ -190,6 +190,63 @@
   @media (prefers-color-scheme: dark){
     html, body{ background: var(--site-bg) !important; color:#111; }
   }
+
+  /* === BOTÃO SALVAR (padrão global PRETO → LIME, sem bordas no hover) === */
+  button.botao-roxo,
+  .botao-roxo,
+  button[type="submit"],
+  input[type="submit"]{
+    display:inline-flex; align-items:center; justify-content:center;
+    height:44px; padding:0 18px; border:0; border-radius:9999px;
+    background:#000; color:var(--lime); font-weight:800; font-size:14px;
+    cursor:pointer; box-shadow:none !important;
+    transition: background-color .15s ease, color .15s ease, transform .12s ease;
+    margin-top:12px;
+  }
+  
+  button.botao-roxo:hover,
+  .botao-roxo:hover,
+  button[type="submit"]:hover,
+  input[type="submit"]:hover{
+    background:var(--lime); color:#000; transform:translateY(-2px);
+    box-shadow:none !important;            /* sem anel/borda no hover */
+  }
+  
+  button.botao-roxo:active,
+  .botao-roxo:active,
+  button[type="submit"]:active,
+  input[type="submit"]:active{
+    background:var(--lime-700); color:#000; transform:translateY(0);
+  }
+  
+  button.botao-roxo:focus,
+  .botao-roxo:focus,
+  button[type="submit"]:focus,
+  input[type="submit"]:focus{
+    outline:none;                           /* remove foco padrão */
+  }
+  
+  button.botao-roxo:focus-visible,
+  .botao-roxo:focus-visible,
+  button[type="submit"]:focus-visible,
+  input[type="submit"]:focus-visible{
+    outline:2px solid var(--lime);          /* foco acessível */
+    outline-offset:2px;
+  }
+  
+  button.botao-roxo:disabled,
+  .botao-roxo:disabled,
+  button[type="submit"]:disabled,
+  input[type="submit"]:disabled{
+    opacity:.5; cursor:not-allowed; transform:none;
+  }
+  
+  /* Aumento sutil de fonte no mobile (opcional) */
+  @media (max-width:900px){
+    button.botao-roxo, .botao-roxo, button[type="submit"], input[type="submit"]{
+      font-size:20px;
+    }
+  }
 </style>
 </head>
 <body>
