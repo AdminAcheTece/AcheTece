@@ -14,140 +14,147 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
 
   <style>
-    :root{
-      --roxo:#8A00FF;
-      --laranja:#F28C00;
-      --laranja-hover:#E57F00;
-      /* cinza 150 padronizado */
-      --site-bg:#F7F7FA;
-    }
+  /* =================== TOKENS / PALETA (padrão novo) =================== */
+  :root{
+    --olive:#7B7424;
+    --olive-600:#5E581C;        /* hover/ativo */
+    --olive-dark:#434326;       /* textos/acento escuro */
+    --olive-50:#F1F2E8;         /* fundo claro */
+    --olive-100:#E6E7DE;        /* áreas destacadas / cabeçalhos */
+    --line-olive:#BFBFA8;       /* bordas suaves */
 
-    html, body{
-      background: var(--site-bg);
-      font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-      margin:0;
-    }
+    --site-bg:#F7F7FA;          /* cinza 150 padronizado */
+    --bg-100:#F5F5F4;
 
-    /* ===== HEADER (igual ao quem_somos) ===== */
-    .navbar{
-      overflow:visible;
-      padding:6px 12px;
-      background:#fff;
-      border-bottom:1px solid #eee;
-      display:flex; align-items:center;
-    }
-    .header-left,.header-right{ display:flex; align-items:center; }
-    .header-right{ margin-left:auto; gap:10px; padding-right:12px; }
-    .logo{ display:inline-flex; align-items:center; }
-    .logo a{ display:inline-flex; align-items:center; text-decoration:none; }
-    .logo img{ display:block; height:auto; width:auto; }
+    /* compat. com CSS existente nesta página */
+    --roxo:var(--olive);
 
-    /* Desktop: logo 44px */
-    @media (min-width:901px){
-      .navbar .logo img{ height:44px; width:auto; }
-    }
-    /* Mobile: logo 54px */
-    @media (max-width:900px){
-      .navbar{ padding-right:22px; min-height:56px; }
-      .navbar .logo img{ height:54px !important; width:auto !important; }
-      .header-right{ gap:8px; }
-    }
+    /* CTAs especiais preto + lime (inversão no hover) */
+    --lime:#B6F34D;
+    --lime-700:#A2E532;
+  }
 
-    .icon-btn{
-      display:inline-flex; align-items:center; justify-content:center;
-      width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px;
-      background:#fff; cursor:pointer;
-    }
-    .icon{ width:20px; height:20px; color:#222; }
+  html, body{
+    background: var(--site-bg);
+    font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    margin:0;
+    color:#2d2d2d;
+  }
 
-    /* Menu sanduíche */
-    .menu-wrap{ position: relative; }
-    .hamburger{
-      display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
-      width:36px; height:36px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
-      position:relative; z-index:10002;
-    }
-    .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
-    .hamburger span + span{ margin-top:4px; }
-    @media (max-width:900px){
-      .hamburger{ width:32px; height:32px; border-radius:9px; }
-      .hamburger span{ width:18px; }
-    }
+  /* ===== HEADER ===== */
+  .navbar{
+    overflow:visible; padding:6px 12px; background:#fff; border-bottom:1px solid #eee; display:flex; align-items:center;
+  }
+  .header-left,.header-right{ display:flex; align-items:center; }
+  .header-right{ margin-left:auto; gap:10px; padding-right:12px; }
+  .logo{ display:inline-flex; align-items:center; }
+  .logo a{ display:inline-flex; align-items:center; text-decoration:none; }
+  .logo img{ display:block; height:auto; width:auto; }
+  @media (min-width:901px){ .navbar .logo img{ height:44px; width:auto; } }
+  @media (max-width:900px){
+    .navbar{ padding-right:22px; min-height:56px; }
+    .navbar .logo img{ height:54px !important; width:auto !important; }
+    .header-right{ gap:8px; }
+  }
+  .icon-btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px; background:#fff; cursor:pointer;
+  }
+  .icon{ width:20px; height:20px; color:#222; }
 
-    .menu-dropdown{
-      background:#fff; border:1px solid #eaeaea; border-radius:12px;
-      z-index:10001; max-height:80vh; overflow:auto;
-      opacity:0; pointer-events:none; transform: translateY(8px) scale(.98);
-      transition: opacity .18s ease, transform .18s ease;
-    }
-    .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
-    .menu-dropdown .menu-header{ display:flex; justify-content:flex-end; align-items:center; padding:8px 10px; }
-    .menu-dropdown .menu-close{ display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; background:#f0f2f5; border:0; border-radius:10px; cursor:pointer; }
-    .menu-dropdown .menu-item{ display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222; }
-    .menu-dropdown .menu-item:hover{ background:#f5f7ff; color:var(--roxo); border-radius:8px; }
-    @media (min-width:769px){ .menu-dropdown{ position:absolute; top:calc(100% + 8px); right:0; min-width:220px; transform-origin: top right; } }
-    @media (max-width:768px){
-      .menu-wrap{ position: static; }
-      .menu-dropdown{ position: fixed; top: calc(var(--nav-h, 64px) + 8px); left: 50%; transform: translate(-50%, 8px) scale(.98); width:max-content; max-width:90vw; min-width:160px; border-radius:14px; }
-      .menu-dropdown.open{ transform: translate(-50%,0) scale(1); }
-    }
+  /* Menu sanduíche + dropdown */
+  .menu-wrap{ position: relative; }
+  .hamburger{
+    display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
+    width:36px; height:36px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
+    position:relative; z-index:10002;
+  }
+  .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
+  .hamburger span + span{ margin-top:4px; }
+  @media (max-width:900px){ .hamburger{ width:32px; height:32px; border-radius:9px; } .hamburger span{ width:18px; } }
 
-    /* ===== CARD / CONTEÚDO ===== */
-    .auth-wrap{ min-height:calc(100vh - 110px); display:flex; justify-content:center; padding:24px 16px; }
-    .card{
-      width:100%; max-width:520px;
-      background:#fff; border:1px solid #eee; border-radius:16px;
-      padding:24px 22px 18px; box-shadow:0 4px 14px rgba(0,0,0,.04);
-    }
-    h1.title{ font-size:28px; font-weight:800; text-align:center; margin:0 0 18px; color:#1e1b2b; }
+  .menu-dropdown{
+    background:#fff; border:1px solid #eaeaea; border-radius:12px;
+    z-index:10001; max-height:80vh; overflow:auto;
+    opacity:0; pointer-events:none; transform: translateY(8px) scale(.98);
+    transition: opacity .18s ease, transform .18s ease;
+  }
+  .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
+  .menu-dropdown .menu-header{ display:flex; justify-content:flex-end; align-items:center; padding:8px 10px; }
+  .menu-dropdown .menu-close{ display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; background:#f0f2f5; border:0; border-radius:10px; cursor:pointer; }
+  .menu-dropdown .menu-item{ display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222; border-radius:8px; }
+  .menu-dropdown .menu-item:hover{ background:var(--olive-50); color:var(--roxo); }
 
-    .alert{
-      border-radius:12px; padding:12px 14px; margin:0 0 16px;
-      border:1px solid #ffd7d7; background:#fff3f3; color:#7a2222; font-size:14px;
-    }
-    .alert b{ display:block; margin-bottom:2px; }
+  /* ===== CARD / CONTEÚDO ===== */
+  .auth-wrap{ min-height:calc(100vh - 110px); display:flex; justify-content:center; padding:24px 16px; }
+  .card{
+    width:100%; max-width:520px;
+    background:#fff; border:1px solid #eee; border-radius:16px;
+    padding:24px 22px 18px; box-shadow:0 4px 14px rgba(0,0,0,.04);
+  }
+  h1.title{
+    font-size:28px; font-weight:800; text-align:center; margin:0 0 18px;
+    color:var(--olive-dark);
+  }
 
-    label{ font-weight:700; color:#2a233a; font-size:14px; display:block; margin:10px 0 6px; }
-    .input{
-      width:100%; height:44px; border-radius:10px; padding:10px 12px;
-      border:1px solid #cfd3dc; background:#f9faff;
-    }
-    .btn{
-      width:100%; height:46px; border:0; border-radius:9999px;
-      background:var(--laranja); color:#fff; font-weight:800; margin:16px 0 18px; cursor:pointer;
-    }
-    /* AJUSTE: mesmo tamanho do "Confirmar" do login_code */
-    .card .btn{ font-size:1rem; }
-    .btn:hover{ background:var(--laranja-hover); }
+  /* Mensagens de alerta (mantém vermelho, links em oliva) */
+  .alert{
+    border-radius:12px; padding:12px 14px; margin:0 0 16px;
+    border:1px solid #ffd7d7; background:#fff3f3; color:#7a2222; font-size:14px;
+  }
+  .alert a{ color:var(--roxo); font-weight:700; text-decoration:none; }
+  .alert a:hover{ text-decoration:underline; }
 
-    .sep{ display:flex; align-items:center; gap:10px; color:#777; margin:4px 0 12px; }
-    .sep:before,.sep:after{ content:""; flex:1; height:1px; background:#eee; }
+  /* Form */
+  label{ font-weight:700; color:#2a233a; font-size:14px; display:block; margin:10px 0 6px; }
+  .input{
+    width:100%; height:44px; border-radius:10px; padding:10px 12px;
+    border:1px solid #cfd3dc; background:#fff;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .input:focus{
+    outline:0;
+    border-color:var(--roxo);
+    box-shadow:0 0 0 3px rgba(123,116,36,.15);
+  }
 
-    /* ===== OAUTH (ajuste leve, sem mudar layout) ===== */
-    .oauth{
-      display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:10px;
-    }
-    .oauth a{ text-decoration:none; }
-    .oauth .oauth-btn{
-      display:inline-flex; align-items:center; gap:10px;
-      padding:10px 16px; border:1px solid #e5e7eb; border-radius:9999px;
-      background:#fff; color:#1f2937; font-weight:800; line-height:1;
-    }
-    .oauth .oauth-btn:hover{ background:#f8f8ff; border-color:#dcdcdc; }
-    .oauth .oauth-btn img{ width:20px; height:20px; display:block; }
+  /* ===== BOTÃO PRINCIPAL (preto + lime; inverte no hover) ===== */
+  .btn{
+    width:100%; height:46px; border:0; border-radius:9999px;
+    background:#000; color:var(--lime); font-weight:800; margin:16px 0 18px; cursor:pointer;
+    transition:background-color .15s ease, color .15s ease, transform .15s ease;
+    font-size:1rem; /* tamanho igual ao “Confirmar” do login_code */
+  }
+  .btn:hover{
+    background:var(--lime); color:#000; transform:translateY(-2px);
+  }
+  .btn:active{ background:var(--lime-700); color:#000; }
+  .btn:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
 
-    .signup{ text-align:center; margin:8px 0 6px; }
-    .signup a{ color:#5b2fff; text-decoration:none; font-weight:700; }
-    .signup a:hover{ text-decoration:underline; }
+  .sep{ display:flex; align-items:center; gap:10px; color:#777; margin:4px 0 12px; }
+  .sep:before,.sep:after{ content:""; flex:1; height:1px; background:#eee; }
 
-    .help{ text-align:center; font-size:14px; margin:12px 0 6px; }
-    .help a{ color:#5b2fff; text-decoration:none; font-weight:700; }
-    .help a:hover{ text-decoration:underline; }
+  /* ===== OAUTH (harmonizado) ===== */
+  .oauth{ display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:10px; }
+  .oauth a{ text-decoration:none; }
+  .oauth .oauth-btn{
+    display:inline-flex; align-items:center; gap:10px;
+    padding:10px 16px; border:1px solid var(--line-olive); border-radius:9999px;
+    background:#fff; color:#1f2937; font-weight:800; line-height:1;
+    transition:background-color .15s ease, border-color .15s ease, transform .15s ease;
+  }
+  .oauth .oauth-btn:hover{ background:var(--olive-50); border-color:var(--olive-600); transform:translateY(-1px); }
+  .oauth .oauth-btn img{ width:20px; height:20px; display:block; }
 
-    .legal{ margin-top:8px; font-size:12.5px; color:#6f6f6f; text-align:center; line-height:1.45; }
-    .legal a{ color:#5b2fff; text-decoration:none; }
-    .legal a:hover{ text-decoration:underline; }
-  </style>
+  /* Links auxiliares */
+  .signup, .help{ text-align:center; }
+  .signup a, .help a{ color:var(--roxo); text-decoration:none; font-weight:700; }
+  .signup a:hover, .help a:hover{ text-decoration:underline; }
+
+  .legal{ margin-top:8px; font-size:12.5px; color:#6f6f6f; text-align:center; line-height:1.45; }
+  .legal a{ color:var(--roxo); text-decoration:none; }
+  .legal a:hover{ text-decoration:underline; }
+</style>
 </head>
 <body>
 
