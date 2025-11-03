@@ -192,6 +192,24 @@
   .footer-links li{ margin-bottom:8px; }
   .footer-links a{ text-decoration:none; color:#222; font-size:14px; }
   .footer-links a:hover{ color:var(--roxo); }
+
+  /* === CTA cadastrar: preto + lime; inverte no hover === */
+  .botao-cadastrar{
+    background:#000 !important;          /* fundo PRETO */
+    color:var(--lime) !important;        /* texto LIME */
+    border:0 !important;
+    box-shadow:none !important;
+    transition:background-color .15s ease, color .15s ease, transform .15s ease;
+  }
+  .botao-cadastrar:hover{
+    background:var(--lime) !important;   /* inverte */
+    color:#000 !important;
+    transform:translateY(-2px);
+  }
+  .botao-cadastrar:active{
+    background:var(--lime-700) !important;
+    color:#000 !important;
+  }
 </style>
 </head>
 <body>
