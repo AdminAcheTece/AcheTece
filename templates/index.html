@@ -323,6 +323,28 @@
       border-bottom: 1px solid var(--olive-600) !important; /* linha discreta */
     }
   }
+  
+  /* === Conta Malharia: preto + lime; inverte no hover === */
+  .header-right .btn-perfil{
+    background:#000 !important;          /* fundo PRETO */
+    color:var(--lime) !important;        /* texto LIME */
+    border:0 !important;
+    box-shadow:none !important;
+    transition:background-color .15s ease, color .15s ease, transform .15s ease;
+  }
+  .header-right .btn-perfil:hover{
+    background:var(--lime) !important;   /* inverte */
+    color:#000 !important;
+    border:0 !important;
+    box-shadow:none !important;
+  }
+  .header-right .btn-perfil:active{
+    background:var(--lime-700) !important;
+    color:#000 !important;
+  }
+  .header-right .btn-perfil svg{         /* se tiver ícone, acompanha a cor */
+    color:currentColor; fill:currentColor; stroke:currentColor;
+  }
 </style>
 </head>
 <body>
