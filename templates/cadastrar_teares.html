@@ -191,5 +191,61 @@
     html, body{ background: var(--site-bg) !important; color:#111; }
   }
 </style>
+</head>
+<body>
+
+    <!-- Cabeçalho -->
+    <header>
+        <div class="logo">
+            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
+        </div>
+     </header>
+
+    <!-- Conteúdo principal -->
+    <div class="container">
+        <h1 class="titulo">Cadastrar Tear</h1>
+
+        <form method="POST" class="formulario">
+            <label for="marca">Marca:</label>
+            <input type="text" id="marca" name="marca" required>
+
+            <label for="modelo">Modelo:</label>
+            <input type="text" id="modelo" name="modelo" required>
+
+            <label for="tipo">Tipo:</label>
+            <select id="tipo" name="tipo" required>
+                <option value="">-- Selecione --</option>
+                <option value="MONO">MONO</option>
+                <option value="DUPLA">DUPLA</option>
+            </select>
+
+            <label for="finura">Finura:</label>
+            <input type="number" id="finura" name="finura" required>
+
+            <label for="diametro">Diâmetro:</label>
+            <input type="number" id="diametro" name="diametro" required>
+
+            <!-- Corrigido: ids/names sem espaço -->
+            <label for="pistas_cilindro">Pistas Cilindro:</label>
+            <input type="number" id="pistas_cilindro" name="pistas_cilindro" required>
+
+            <label for="pistas_disco">Pistas Disco:</label>
+            <input type="number" id="pistas_disco" name="pistas_disco" required>
+            
+            <label for="alimentadores">Alimentadores:</label>
+            <input type="number" id="alimentadores" name="alimentadores" required>
+
+            <label for="elastano">Elastano:</label>
+            <select id="elastano" name="elastano" required>
+                <option value="">-- Selecione --</option>
+                <option value="Sim">Sim</option>
+                <option value="Não">Não</option>
+            </select>
+
+            <button type="submit" class="botao-salvar">Salvar Tear</button>
+        </form>
+
+        <a class="voltar-link" href="{{ url_for('painel_malharia') }}">← Voltar ao Painel</a>
+    </div>
 </body>
 </html>
