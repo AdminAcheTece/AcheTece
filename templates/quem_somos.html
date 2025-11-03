@@ -14,300 +14,225 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet" />
 
   <style>
-    /* =================== TOKENS / BASE =================== */
-    :root{
-      --roxo:#8A00FF;
-      --roxo-hover:#A63DFF;
-      --laranja:#FF7A00;
+  /* =================== TOKENS / BASE (padrão novo) =================== */
+  :root{
+    --olive:#7B7424;
+    --olive-600:#5E581C;
+    --olive-dark:#434326;
+    --olive-50:#F1F2E8;
+    --olive-100:#E6E7DE;
+    --line-olive:#BFBFA8;
 
-      /* fundo global igual ao index */
-      --site-bg:#F7F7FA;
+    /* fundo global unificado com a index */
+    --site-bg:#EAEAE8;
 
-      /* espaçamento vertical das seções */
-      --sec-pad: clamp(24px, 3.8vw, 48px);
+    /* compatibilidade com CSS existente */
+    --roxo:var(--olive);
 
-      --cinza-900:#111827;
-      --cinza-700:#374151;
-      --cinza-500:#6B7280;
-      --maxw: 1100px;
-      --borda-card:#D6DDE8;
-      --borda-steps:#E4E9F3;
-    }
-    *{ box-sizing:border-box; }
+    /* hover neon */
+    --lime:#B6F34D;
+    --lime-700:#A2E532;
 
-    html{ color-scheme: light; }
-    html, body{
-      background: var(--site-bg) !important;
-      color:var(--cinza-900);
-      margin:0;
-    }
+    --sec-pad: clamp(24px, 3.8vw, 48px);
+    --cinza-900:#111827;
+    --cinza-700:#374151;
+    --cinza-500:#6B7280;
+    --maxw: 1100px;
+    --borda-card:#D6DDE8;
+    --borda-steps:#E4E9F3;
+  }
 
-    /* ===== Header (padronizado com o index) ===== */
-    .navbar{
-      overflow:visible;
-      padding:6px 12px;                 /* mesmo padding lateral do index */
-      background:#fff;
-      border-bottom:1px solid #eee;
-      display:flex; align-items:center;
-    }
-    .header-left,.header-right{ display:flex; align-items:center; }
-    .header-right{
-      margin-left:auto;
-      gap:10px;                         /* mais próximo do botão casinha */
-      padding-right:12px;               /* traz o hambúrguer para dentro */
-    }
-    .logo{ display:inline-flex; align-items:center; }
-    .logo img{ display:block; }
+  *{ box-sizing:border-box; }
 
-    /* >>> DESKTOP: altura do logo igual ao index <<< */
-    @media (min-width:901px){
-      .navbar .logo img{
-        height:44px;                    /* padronizado com a home */
-        width:auto;
-      }
-    }
+  html{ color-scheme: light; }
+  html, body{
+    background: var(--site-bg) !important;
+    color:var(--cinza-900);
+    margin:0;
+  }
 
-    /* Botão hambúrguer */
-    .menu-wrap{ position: relative; }
-    .hamburger{
-      display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
-      width:36px; height:36px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
-      position:relative; z-index:10002;
-    }
-    .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
-    .hamburger span + span{ margin-top:4px; }
+  /* ===== Header ===== */
+  .navbar{
+    overflow:visible;
+    padding:6px 12px;
+    background:#fff;
+    border-bottom:1px solid #eee;
+    display:flex; align-items:center;
+  }
+  .header-left,.header-right{ display:flex; align-items:center; }
+  .header-right{ margin-left:auto; gap:10px; padding-right:12px; }
+  .logo{ display:inline-flex; align-items:center; }
+  .logo img{ display:block; }
 
-    /* MOBILE: igual ao index (não alterei) */
-    @media (max-width:900px){
-      .navbar{ padding-right:22px; min-height:56px; }
-      .navbar .logo img{
-        height:54px !important;         /* mesma regra do index */
-        width:auto !important;
-      }
-      .header-right{ gap:8px; padding-right:12px; }
-      .hamburger{ width:32px; height:32px; border-radius:9px; }
-      .hamburger span{ width:18px; }
-    }
+  @media (min-width:901px){
+    .navbar .logo img{ height:44px; width:auto; }
+  }
+  @media (max-width:900px){
+    .navbar{ padding-right:22px; min-height:56px; }
+    .navbar .logo img{ height:54px !important; width:auto !important; }
+    .header-right{ gap:8px; padding-right:12px; }
+    .hamburger{ width:32px; height:32px; border-radius:9px; }
+    .hamburger span{ width:18px; }
+  }
 
-    /* Menu dropdown */
+  .menu-wrap{ position: relative; }
+  .hamburger{
+    display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
+    width:36px; height:36px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
+    position:relative; z-index:10002;
+  }
+  .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
+  .hamburger span + span{ margin-top:4px; }
+
+  .menu-dropdown{
+    background:#fff; border:1px solid #eaeaea; border-radius:12px;
+    z-index:10001; max-height:80vh; overflow:auto;
+    opacity:0; pointer-events:none; transform: translateY(8px) scale(.98);
+    transition: opacity .18s ease, transform .18s ease;
+  }
+  .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
+  .menu-dropdown .menu-header{ display:flex; justify-content:flex-end; align-items:center; padding:8px 10px; }
+  .menu-dropdown .menu-close{
+    display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px;
+    background:#f0f2f5; border:0; border-radius:10px; cursor:pointer;
+  }
+  .menu-dropdown .menu-item{
+    display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222;
+  }
+  .menu-dropdown .menu-item:hover{
+    background:var(--olive-50); color:var(--olive); border-radius:8px;
+  }
+  @media (min-width:769px){
+    .menu-dropdown{ position:absolute; top:calc(100% + 8px); right:0; min-width:220px; transform-origin: top right; }
+  }
+  @media (max-width:768px){
+    .menu-wrap{ position: static; }
     .menu-dropdown{
-      background:#fff; border:1px solid #eaeaea; border-radius:12px;
-      z-index:10001; max-height:80vh; overflow:auto;
-      opacity:0; pointer-events:none; transform: translateY(8px) scale(.98);
-      transition: opacity .18s ease, transform .18s ease;
+      position: fixed; top: calc(var(--nav-h, 64px) + 8px); left: 50%;
+      transform: translate(-50%, 8px) scale(.98);
+      width:max-content; max-width:90vw; min-width:160px; border-radius:14px;
     }
-    .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
-    .menu-dropdown .menu-header{ display:flex; justify-content:flex-end; align-items:center; padding:8px 10px; }
-    .menu-dropdown .menu-close{ display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; background:#f0f2f5; border:0; border-radius:10px; cursor:pointer; }
-    .menu-dropdown .menu-item{ display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222; }
-    .menu-dropdown .menu-item:hover{ background:#f5f7ff; color:var(--roxo); border-radius:8px; }
-    @media (min-width:769px){ .menu-dropdown{ position:absolute; top:calc(100% + 8px); right:0; min-width:220px; transform-origin: top right; } }
-    @media (max-width:768px){
-      .menu-wrap{ position: static; }
-      .menu-dropdown{ position: fixed; top: calc(var(--nav-h, 64px) + 8px); left: 50%; transform: translate(-50%, 8px) scale(.98); width:max-content; max-width:90vw; min-width:160px; border-radius:14px; }
-      .menu-dropdown.open{ transform: translate(-50%,0) scale(1); }
-    }
+    .menu-dropdown.open{ transform: translate(-50%,0) scale(1); }
+  }
 
-    .icon-btn{ display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px; background:#fff; cursor:pointer; }
-    .icon{ width:20px; height:20px; color:#222; }
+  .icon-btn{ display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px; background:#fff; cursor:pointer; }
+  .icon{ width:20px; height:20px; color:#222; }
 
-    /* =================== LAYOUT DE FAIXAS =================== */
-    .faixa{ width:100%; padding: var(--sec-pad) 16px; }
-    .wrap{ max-width:var(--maxw); margin:0 auto; }
+  /* =================== LAYOUT / FAIXAS =================== */
+  .faixa{ width:100%; padding: var(--sec-pad) 16px; }
+  .wrap{ max-width:var(--maxw); margin:0 auto; }
 
-    .bg-white{ background:#fff; }
-    .bg-site{ background:var(--site-bg) !important; }
-    .bg-preto{ background:#0B0B0B; color:#fff; }
+  .bg-white{ background:#fff; }
+  .bg-site{ background:var(--site-bg) !important; }
+  .bg-preto{ background:#0B0B0B; color:#fff; }
 
-    /* =================== TIPOGRAFIA =================== */
-    .titulo{
-      text-align:center;
-      margin:0;
-      font-size: clamp(28px, 4vw, 44px);
-      letter-spacing:-0.01em;
-    }
-    .lead{
-      text-align:center;
-      max-width:780px;
-      margin:8px auto 0;
-      color:var(--cinza-900);
-      line-height:1.5;
-      font-size: clamp(16px, 2.1vw, 20px);
-    }
-    .subtitulo{
-      font-size: clamp(26px, 3.4vw, 40px);
-      margin:0 0 6px 0;
-      color:var(--cinza-900);
-      text-align:left;
-      letter-spacing:-0.02em;
-      line-height:1.15;
-    }
-    @media (max-width:520px){
-      :root{ --sec-pad: 20px; }
-      .lead{ margin-top:6px; line-height:1.48; }
-    }
+  /* =================== TIPOGRAFIA =================== */
+  .titulo{
+    text-align:center; margin:0;
+    font-size: clamp(28px, 4vw, 44px);
+    letter-spacing:-0.01em;
+  }
+  .lead{
+    text-align:center; max-width:780px; margin:8px auto 0;
+    color:var(--cinza-900); line-height:1.5; font-size: clamp(16px, 2.1vw, 20px);
+  }
+  .subtitulo{
+    font-size: clamp(26px, 3.4vw, 40px); margin:0 0 6px 0;
+    color:var(--cinza-900); text-align:left; letter-spacing:-0.02em; line-height:1.15;
+  }
+  @media (max-width:520px){
+    :root{ --sec-pad: 20px; }
+    .lead{ margin-top:6px; line-height:1.48; }
+  }
 
-    /* =================== PROBLEMA =================== */
-    .pain-grid{ display:grid; grid-template-columns:1fr; gap:12px; margin-top:12px; }
-    .pain-card{
-      background:#fff; border-radius:14px; padding:14px 16px;
-      border:1px solid var(--borda-card);
-    }
-    .pain-card p{ color:var(--cinza-700); }
-    .pill{ display:inline-block; font-size:12px; padding:4px 10px; border-radius:999px; background:var(--laranja); color:#fff; letter-spacing:.2px; }
-    @media(min-width:840px){ .pain-grid{ grid-template-columns:repeat(3,1fr); } }
+  /* =================== PROBLEMA =================== */
+  .pain-grid{ display:grid; grid-template-columns:1fr; gap:12px; margin-top:12px; }
+  .pain-card{
+    background:#fff; border-radius:14px; padding:14px 16px;
+    border:1px solid var(--borda-card);
+  }
+  .pain-card p{ color:var(--cinza-700); }
+  .pill{
+    display:inline-block; font-size:12px; padding:4px 10px; border-radius:999px;
+    background:var(--olive); color:#fff; letter-spacing:.2px;
+  }
+  @media(min-width:840px){ .pain-grid{ grid-template-columns:repeat(3,1fr); } }
 
-    /* =================== SOLUÇÃO + CTAs =================== */
-    .cta-row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
-    .btn{
-      display:inline-block; padding:12px 22px; border-radius:9999px;
-      text-decoration:none; font-weight:700; border:2px solid var(--roxo);
-      transition:all .18s ease-in-out; font-size:16px;
-    }
-    .btn-primary{ background:var(--roxo); color:#fff; }
-    .btn-ghost{ background:#fff; color:var(--roxo); }
-    .cta-row:has(.btn-ghost:hover) .btn-primary,
-    .cta-row:has(.btn-ghost:focus-visible) .btn-primary{ background:#fff; color:var(--roxo); }
-    .cta-row:has(.btn-ghost:hover) .btn-ghost,
-    .cta-row:has(.btn-ghost:focus-visible) .btn-ghost{ background:var(--roxo); color:#fff; }
+  /* =================== SOLUÇÃO + CTAs =================== */
+  .cta-row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+  .btn{
+    display:inline-block; padding:12px 22px; border-radius:9999px;
+    text-decoration:none; font-weight:700; font-size:16px;
+    transition: background-color .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease;
+  }
 
-    /* =================== COMO FUNCIONA =================== */
-    .steps{ margin-top:12px; display:grid; grid-template-columns:1fr; gap:12px; }
-    .step{
-      position:relative; display:flex; align-items:flex-start; gap:12px;
-      background:#fff; border:1px solid var(--borda-steps); border-radius:14px; 
-      padding:14px 16px;
-    }
-    .step .num{
-      flex:0 0 34px; height:34px; width:34px; border-radius:999px;
-      background:var(--roxo); color:#fff; font-weight:700;
-      display:inline-flex; align-items:center; justify-content:center;
-      font-size:16px; margin-left:8px;
-    }
-    .step p{ margin:4px 0 0; color:var(--cinza-700); font-size: clamp(16px, 2vw, 18px); }
-    @media (min-width:900px){
-      .steps{ grid-template-columns:repeat(3,1fr); align-items:stretch; }
-      .step{ padding:20px 18px; }
-      .step .num{ margin-left:0; }
-    }
+  /* Primário: preto + lime (inversão no hover) */
+  .btn-primary{
+    background:#000; color:var(--lime);
+    border:1px solid #000;
+  }
+  .btn-primary:hover{
+    background:var(--lime); color:#000; border-color:var(--lime);
+    box-shadow:0 0 0 3px rgba(182,243,77,.25);
+  }
+  .btn-primary:active{ background:var(--lime-700); color:#000; }
 
-    /* =================== CONTATO (FAIXA PRETA) =================== */
-    .contato-items{ display:grid; gap:8px; margin-top:8px; }
-    .contato-item{ display:flex; align-items:center; gap:10px; padding:6px 0; }
-    .contato-item svg{ color:#fff; flex:0 0 22px; }
-    .contato a{ color:#fff; text-decoration:none; }
+  /* Secundário (ghost): outline preto, inverte p/ lime no hover */
+  .btn-ghost{
+    background:#fff; color:#111; border:1px solid #111;
+  }
+  .btn-ghost:hover{
+    background:var(--lime); color:#000; border-color:var(--lime);
+    box-shadow:0 0 0 3px rgba(182,243,77,.18);
+  }
 
-    /* Frase da solução alinhada à esquerda */
-    #sec-solucao .lead{
-      text-align: left !important;
-      max-width: 920px;
-      margin-left: 0;
-      margin-right: auto;
-      color: var(--cinza-900);
-    }
+  /* =================== COMO FUNCIONA =================== */
+  .steps{ margin-top:12px; display:grid; grid-template-columns:1fr; gap:12px; }
+  .step{
+    position:relative; display:flex; align-items:flex-start; gap:12px;
+    background:#fff; border:1px solid var(--borda-steps); border-radius:14px;
+    padding:14px 16px;
+  }
+  .step .num{
+    flex:0 0 34px; height:34px; width:34px; border-radius:999px;
+    background:var(--olive); color:#fff; font-weight:700;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:16px; margin-left:8px;
+  }
+  .step p{ margin:4px 0 0; color:var(--cinza-700); font-size: clamp(16px, 2vw, 18px); }
+  @media (min-width:900px){
+    .steps{ grid-template-columns:repeat(3,1fr); align-items:stretch; }
+    .step{ padding:20px 18px; }
+    .step .num{ margin-left:0; }
+  }
 
-    /* Dark mode do SO: mantemos as cores claras */
-    @media (prefers-color-scheme: dark) {
-      html, body{ background: var(--site-bg) !important; color: var(--cinza-900); }
-      .bg-site{ background: var(--site-bg) !important; }
-    }
+  /* =================== CONTATO (FAIXA PRETA) =================== */
+  .contato-items{ display:grid; gap:8px; margin-top:8px; }
+  .contato-item{ display:flex; align-items:center; gap:10px; padding:6px 0; }
+  .contato-item svg{ color:#fff; flex:0 0 22px; }
+  .contato a{ color:#fff; text-decoration:none; }
 
-    /* Espaçamento padronizado entre o pill e o título/frasão abaixo */
-    .pill{ display:inline-block; } /* garante que a margem funcione certinho */
-    .pill + .subtitulo,
-    .pill + .titulo,
-    .pill + h1,
-    .pill + h2{
-      margin-top:16px !important;  /* ajuste fino – deixe 14–18px se quiser calibrar */
-    }
+  /* Frase da solução alinhada à esquerda */
+  #sec-solucao .lead{
+    text-align: left !important;
+    max-width: 920px;
+    margin-left: 0;
+    margin-right: auto;
+    color: var(--cinza-900);
+  }
 
-    /* === LIME para hover (como a 2ª imagem) === */
-    :root{
-      --lime:#B6F34D;        /* verde neon do hover */
-      --lime-700:#A2E532;    /* versão ligeiramente mais escura para active */
-    }
-    
-    /* transições suaves nos botões oliva */
-    .btn-perfil,
-    .promo-cta,
-    .btn-open-filters,
-    .btn-new-search{
-      transition: background-color .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease;
-    }
-    
-    /* HOVER: muda de oliva para lime e texto preto */
-    .btn-perfil:hover,
-    .promo-cta:hover,
-    .btn-open-filters:hover,
-    .btn-new-search:hover{
-      background: var(--lime) !important;
-      color: #111 !important;           /* ícones com currentColor ficam pretos também */
-      border-color: var(--lime) !important;
-      box-shadow: 0 0 0 3px rgba(182,243,77,.25);
-    }
-    
-    /* ACTIVE/focus para melhor feedback */
-    .btn-perfil:active,
-    .promo-cta:active,
-    .btn-open-filters:active,
-    .btn-new-search:active{
-      background: var(--lime-700) !important;
-    }
-    .btn-perfil:focus-visible,
-    .promo-cta:focus-visible,
-    .btn-open-filters:focus-visible,
-    .btn-new-search:focus-visible{
-      outline: 2px solid var(--lime);
-      outline-offset: 2px;
-    }
-    
-    /* (opcional) utilidade p/ qualquer outro botão oliva do site */
-    .btn-olive{ background: var(--olive); color:#fff; }
-    .btn-olive:hover{ background: var(--lime); color:#111; }
+  /* Dark mode do SO: mantém claro */
+  @media (prefers-color-scheme: dark) {
+    html, body{ background: var(--site-bg) !important; color: var(--cinza-900); }
+    .bg-site{ background: var(--site-bg) !important; }
+  }
 
-    /* === Lime/neon (hover) === */
-    :root{
-      --lime:#B6F34D;      /* cor do hover (imagem 2) */
-      --lime-700:#A2E532;  /* active */
-    }
-    
-    /* aplicar transição só nesses três botões */
-    .promo-cta,
-    .btn-perfil,
-    .btn-limpar{
-      transition: background-color .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease;
-    }
-    
-    /* HOVER: muda do oliva/laranja atual para LIME + texto preto */
-    .promo-cta:hover,
-    .btn-perfil:hover,
-    .btn-limpar:hover{
-      background: var(--lime) !important;  /* !important vence o style inline do "Limpar" */
-      color:#111 !important;
-      border-color: var(--lime) !important;
-      box-shadow: 0 0 0 3px rgba(182,243,77,.25);
-    }
-    
-    /* ACTIVE (pressionado) */
-    .promo-cta:active,
-    .btn-perfil:active,
-    .btn-limpar:active{
-      background: var(--lime-700) !important;
-    }
-    
-    /* ÍCONES/SETAS dentro dos botões ficam pretos no hover */
-    .promo-cta:hover svg,
-    .btn-perfil:hover svg,
-    .btn-limpar:hover svg{
-      color:#111; fill:#111; stroke:#111;
-    }
-    /* fallback se a seta for <img> */
-    .promo-cta:hover img,
-    .btn-perfil:hover img,
-    .btn-limpar:hover img{
-      filter: brightness(0);
-    }
-  </style>
+  /* Espaçamento padronizado entre pill e título */
+  .pill + .subtitulo,
+  .pill + .titulo,
+  .pill + h1,
+  .pill + h2{ margin-top:16px !important; }
+</style>
 </head>
 <body>
 
