@@ -24,7 +24,7 @@
     --line-olive:#BFBFA8;       /* bordas suaves */
 
     --site-bg:#F7F7FA;          /* cinza 150 padronizado */
-    --bg-100:#F5F5F4;
+    --bg-100:#F5F5F4;           /* fundo dos inputs/cards claros */
 
     /* compat. com CSS existente nesta página */
     --roxo:var(--olive);
@@ -97,7 +97,7 @@
     color:var(--olive-dark);
   }
 
-  /* Mensagens de alerta (mantém vermelho, links em oliva) */
+  /* Mensagens de alerta */
   .alert{
     border-radius:12px; padding:12px 14px; margin:0 0 16px;
     border:1px solid #ffd7d7; background:#fff3f3; color:#7a2222; font-size:14px;
@@ -105,17 +105,37 @@
   .alert a{ color:var(--roxo); font-weight:700; text-decoration:none; }
   .alert a:hover{ text-decoration:underline; }
 
-  /* Form */
+  /* ===== FORM ===== */
   label{ font-weight:700; color:#2a233a; font-size:14px; display:block; margin:10px 0 6px; }
+
   .input{
-    width:100%; height:44px; border-radius:10px; padding:10px 12px;
-    border:1px solid #cfd3dc; background:#fff;
-    transition:border-color .15s ease, box-shadow .15s ease;
+    width:100%; height:44px;
+    border-radius:10px; padding:10px 12px;
+    border:1px solid #cfd3dc;
+    background: var(--bg-100);            /* fundo claro padronizado (sem azul) */
+    color:#2d2d2d;
+    transition:border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+    background-clip: padding-box;         /* evita “tinta” do autofill vazar */
   }
+  .input::placeholder{ color:#8a8a8a; opacity:.95; }
+
   .input:focus{
     outline:0;
+    background:#fff;                      /* ligeiro destaque no foco */
     border-color:var(--roxo);
     box-shadow:0 0 0 3px rgba(123,116,36,.15);
+  }
+
+  /* 🔒 Neutraliza azul/amarelo do AUTOFILL (Chrome/Edge/Safari) */
+  .input:-webkit-autofill,
+  .input:-webkit-autofill:hover,
+  .input:-webkit-autofill:focus,
+  .input:autofill {
+    -webkit-box-shadow: 0 0 0 1000px var(--bg-100) inset !important;
+            box-shadow: 0 0 0 1000px var(--bg-100) inset !important;
+    -webkit-text-fill-color:#2d2d2d !important;
+    caret-color:#2d2d2d;
+    transition: background-color 9999s ease-out 0s; /* evita flash */
   }
 
   /* ===== BOTÃO PRINCIPAL (preto + lime; inverte no hover) ===== */
@@ -123,18 +143,16 @@
     width:100%; height:46px; border:0; border-radius:9999px;
     background:#000; color:var(--lime); font-weight:800; margin:16px 0 18px; cursor:pointer;
     transition:background-color .15s ease, color .15s ease, transform .15s ease;
-    font-size:1rem; /* tamanho igual ao “Confirmar” do login_code */
+    font-size:1rem;
   }
-  .btn:hover{
-    background:var(--lime); color:#000; transform:translateY(-2px);
-  }
+  .btn:hover{ background:var(--lime); color:#000; transform:translateY(-2px); }
   .btn:active{ background:var(--lime-700); color:#000; }
   .btn:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
 
   .sep{ display:flex; align-items:center; gap:10px; color:#777; margin:4px 0 12px; }
   .sep:before,.sep:after{ content:""; flex:1; height:1px; background:#eee; }
 
-  /* ===== OAUTH (harmonizado) ===== */
+  /* ===== OAUTH ===== */
   .oauth{ display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:10px; }
   .oauth a{ text-decoration:none; }
   .oauth .oauth-btn{
@@ -156,12 +174,8 @@
   .legal a:hover{ text-decoration:underline; }
 
   /* === Fundo padronizado igual à index (cinza do miolo) === */
-  :root{
-    --site-bg: #EAEAE8;            /* mesmo tom usado na index */
-  }
-  html, body{
-    background: var(--site-bg) !important;
-  }  
+  :root{ --site-bg: #EAEAE8; }            /* mesmo tom usado na index */
+  html, body{ background: var(--site-bg) !important; }
 </style>
 </head>
 <body>
