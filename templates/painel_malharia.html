@@ -227,6 +227,23 @@
   th, td{ padding:10px; border:1px solid var(--line); }
   tbody tr:hover{ background:#fcfcff; }
 
+  /* ===== Override: tabela igual à index (cabeçalho OLIVE + zebra) ===== */
+  .table-wrapper table thead th{
+    background: var(--olive) !important;   /* mesmo header da index */
+    color:#fff !important;
+    border-color: var(--olive-600) !important;
+    font-weight:800;
+  }
+  
+  /* Listras de linhas (iguais à index) */
+  .table-wrapper table tbody tr:nth-child(odd){  background:#fff; }
+  .table-wrapper table tbody tr:nth-child(even){ background:var(--olive-50); }
+  
+  /* Bordas do corpo mais suaves, combinando com a paleta */
+  .table-wrapper table tbody td{
+    border-color: var(--line-olive);
+  }
+    
   .sec-title{
     display:flex; align-items:center; justify-content:space-between; gap:12px;
     margin-top:28px; margin-bottom:4px;
