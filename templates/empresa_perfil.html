@@ -14,29 +14,29 @@
       --olive-dark:#434326;
       --olive-50:#F1F2E8;
       --line-olive:#BFBFA8;
-  
+
       /* CTA (preto ↔ lime) */
       --lime:#B6F34D;
       --lime-700:#A2E532;
-  
+
       /* Fundo global (igual à index) */
       --site-bg:#EAEAE8;
-  
+
       /* Neutros */
       --card:#ffffff;
       --line:#e9e9ee;
       --text:#111318;
       --muted:#70737c;
-  
+
       /* Compat com CSS anterior */
       --accent:var(--olive);
       --accent-soft:var(--olive-50);
       --pill:#F0F1F4;
-  
+
       --shadow:0 6px 20px rgba(0,0,0,.06);
       --radius:16px;
     }
-  
+
     *{box-sizing:border-box}
     html,body{margin:0;padding:0}
     body{
@@ -45,23 +45,23 @@
       background:var(--site-bg);
       -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
     }
-  
+
     a{color:var(--accent); text-decoration:none; font-weight:800;}
     a:hover{text-decoration:underline}
-  
+
     .wrap{max-width:1100px;margin:0 auto;padding:16px; overflow-x:hidden}
-  
+
     /* Navbar minimal */
     .navbar{padding:8px 12px;background:#fff;border-bottom:1px solid #eee}
     .logo a{display:inline-flex;align-items:center}
     .logo img{height:44px;width:auto;display:block}
-  
+
     /* Cards */
     .card{
       background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
       box-shadow:var(--shadow); padding:18px; margin:14px 0;
     }
-  
+
     /* Header da empresa */
     .head{
       display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;
@@ -73,7 +73,7 @@
       background:var(--pill);border:1px solid #e7e8ec;font-size:12.5px;font-weight:800;color:#222;
     }
     .pill-row{margin-top:8px}
-  
+
     /* Botões – Padrão global PRETO → LIME (sem bordas no hover) */
     .actions{display:flex;gap:10px;flex-wrap:wrap}
     .btn{
@@ -87,30 +87,30 @@
     .btn:focus{outline:none;}
     .btn:focus-visible{outline:2px solid var(--lime); outline-offset:2px;}
     .btn-icon{height:38px;padding:0 12px}
-  
+
     /* Versão leve/ghost para links secundários */
     .btn-ghost{border:0;background:transparent;color:var(--text)}
     .btn-ghost:hover{background:var(--olive-50); color:#000; text-decoration:none}
-  
+
     /* Ícones */
     .svg{width:18px;height:18px;display:inline-block;vertical-align:middle;flex:0 0 18px}
-  
+
     /* Seção informações da empresa */
     .sec-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 10px}
     h2.sec{margin:0;font-size:20px;font-weight:800; color:#1e1b2b;}
     .maps-link{display:inline-flex;align-items:center;gap:8px;font-weight:800;color:var(--olive)}
     .maps-link .svg{width:19px;height:19px}
     .maps-link--inline{display:none;margin:8px 10px 0}
-  
+
     .empresa-grid{display:grid;grid-template-columns:1.2fr .9fr;gap:18px;align-items:start}
     @media (max-width:900px){ .empresa-grid{grid-template-columns:1fr} }
-  
+
     .dados{
       display:grid; grid-template-columns:180px 1fr; gap:10px 14px;
       border:1px solid var(--line); border-radius:12px; padding:14px; background:#fff;
     }
     @media (max-width:640px){ .dados{grid-template-columns:132px 1fr} }
-  
+
     .dados dt{
       font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:800;
     }
@@ -120,49 +120,52 @@
     .v{display:block; line-height:1.45; color:var(--text); font-weight:700; font-size:16px}
     .v--soft{font-weight:600; font-size:15px}
     .dados dd, .dados a{word-break:break-word; overflow-wrap:anywhere}
-  
+
     .addr .linha{display:block}
     .addr .rua{font-weight:700}
     .addr .local, .addr .cep{color:var(--text); font-weight:600}
-  
+
     /* Mapa */
     .mapa{border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#fff}
     .mapa iframe{width:100%; height:220px; border:0; display:block}
     @media (max-width:640px){ .mapa iframe{height:180px} }
     .mapa small{display:block; padding:8px 10px; color:#666}
-  
+
     /* Mostrar/ocultar "Ver no Maps" certo por breakpoint */
     @media (max-width:900px){
       .maps-link{display:none}
       .maps-link--inline{display:inline-flex}
     }
-  
-    /* Teares (cards) */
-    .teares-grid{
-      display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+
+    /* ====== NOVO: Teares no formato de TABELA (igual à index) ====== */
+    .table-wrap{
+      border:1px solid var(--line);
+      border-radius:12px;
+      overflow:auto;            /* scroll horizontal no mobile, se precisar */
+      background:#fff;
     }
-    .tear{
-      border:1px solid var(--line); border-radius:14px; background:#fff; box-shadow:0 4px 14px rgba(0,0,0,.04);
-      overflow:hidden;
+    .teares-table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:620px;          /* evita “quebrar” demais em telas estreitas */
     }
-    /* Cabeçalho do card no padrão OLIVE */
-    .tear-head{
+    .teares-table thead th{
       background:var(--olive);
-      padding:10px 12px;
-      border-bottom:0;
       color:#fff;
+      padding:12px 16px;
+      text-align:left;
+      font-weight:800;
     }
-    .tear-head .k{
-      color:#fff; opacity:.9; font-weight:800; font-size:12px; letter-spacing:.04em; text-transform:uppercase; margin-right:6px;
+    .teares-table tbody td{
+      padding:14px 16px;
+      font-weight:700;
+      color:var(--text);
+      border-top:1px solid #f0f0f0;
     }
-    .tear-head .v{display:inline; font-weight:800; font-size:16px; color:#fff;}
-  
-    .tear-body{padding:12px}
-    .kv{display:grid; grid-template-columns:1fr 1fr; gap:8px 12px}
-    .kv .k{color:var(--muted); font-weight:700}
-    .kv .v{font-weight:800; font-size:16px}
-    @media (max-width:520px){ .kv{grid-template-columns:1fr 1fr} }
-  
+    .teares-table tbody tr:nth-child(even){
+      background:var(--olive-50);
+    }
+
     .footer-spacer{height:8px}
   </style>
 </head>
@@ -189,7 +192,6 @@
           {% endif %}
         </div>
         <div class="actions">
-          {# Whats (preto e branco) #}
           {% set _fone = empresa.telefone or empresa.contato_telefone or empresa.celular %}
           {% set _wa = empresa.contato_whatsapp or (('https://wa.me/' ~ ('55' ~ _fone|replace(' ','')|replace('(','')|replace(')','')|replace('-','') if _fone and not (_fone|replace(' ','')|replace('(','')|replace(')','')|replace('-','') ).startswith('55') else _fone|replace(' ','')|replace('(','')|replace(')','')|replace('-',''))) if _fone else None) %}
           {% if _wa %}
@@ -305,49 +307,44 @@
       </div>
     </section>
 
-    <!-- Teares da malharia -->
+    <!-- Teares da malharia (AGORA EM TABELA, IGUAL À INDEX) -->
     <section class="card">
       <h2 class="sec" style="margin-bottom:10px">Teares desta malharia</h2>
 
       {% if teares and teares|length %}
-        <div class="teares-grid" role="region" aria-label="Lista de teares">
-          {% for t in teares %}
-            <article class="tear">
-              <div class="tear-head">
-                <span class="k">Tipo:</span> <span class="v">{{ t.tipo or '—' }}</span>
-              </div>
-              <div class="tear-body">
-                <div class="kv">
-                  <div>
-                    <div class="k">Diâmetro</div>
-                    <div class="v">{{ t.diametro or '—' }}</div>
-                  </div>
-                  <div>
-                    <div class="k">Galga</div>
-                    <div class="v">{{ t.finura or t.galga or '—' }}</div>
-                  </div>
-                  <div>
-                    <div class="k">Alimentadores</div>
-                    <div class="v">{{ t.alimentadores or '—' }}</div>
-                  </div>
-                  <div>
-                    <div class="k">Elastano</div>
-                    <div class="v">
-                      {% set raw = t.elastano if (t.elastano is not none) else t.kit_elastano %}
-                      {% if raw is boolean %}
-                        {{ 'Sim' if raw else 'Não' }}
-                      {% else %}
-                        {% set s = (raw|string).strip().lower() %}
-                        {% if s in ['sim','s','true','t','on','1','com','tem','yes','y'] %}Sim
-                        {% elif s in ['não','nao','n','false','f','off','0','sem','no'] %}Não
-                        {% else %}—{% endif %}
-                      {% endif %}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </article>
-          {% endfor %}
+        <div class="table-wrap" role="region" aria-label="Tabela de teares">
+          <table class="teares-table">
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th>Galga</th>
+                <th>Diâmetro</th>
+                <th>Alimentadores</th>
+                <th>Kit elastano</th>
+              </tr>
+            </thead>
+            <tbody>
+            {% for t in teares %}
+              <tr>
+                <td>{{ t.tipo or '—' }}</td>
+                <td>{{ t.finura or t.galga or '—' }}</td>
+                <td>{{ t.diametro or '—' }}</td>
+                <td>{{ t.alimentadores or '—' }}</td>
+                <td>
+                  {% set raw = t.elastano if (t.elastano is not none) else t.kit_elastano %}
+                  {% if raw is boolean %}
+                    {{ 'Sim' if raw else 'Não' }}
+                  {% else %}
+                    {% set s = (raw|string).strip().lower() %}
+                    {% if s in ['sim','s','true','t','on','1','com','tem','yes','y'] %}Sim
+                    {% elif s in ['não','nao','n','false','f','off','0','sem','no'] %}Não
+                    {% else %}—{% endif %}
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
         </div>
       {% else %}
         <div>Nenhum tear cadastrado para esta empresa.</div>
