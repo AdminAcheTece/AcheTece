@@ -2247,32 +2247,67 @@ def editar_tear(id):
     if request.method == "POST":
         def _to_int(val):
             try:
-                return int(float(str(val).replace(",", ".").strip()))
+                if val is None:
+                    return None
+                s = str(val).strip().replace(",", ".")
+                return int(float(s))
             except Exception:
                 return None
 
-        tear.marca         = request.form.get("marca") or None
-        tear.modelo        = request.form.get("modelo") or None
-        tear.tipo          = request.form.get("tipo") or None
-        tear.finura        = _to_int(request.form.get("finura"))
-        tear.diametro      = _to_int(request.form.get("diametro"))
-        tear.alimentadores = _to_int(request.form.get("alimentadores"))
+        # Campos texto (strip p/ limpar espaços)
+        tear.marca   = (request.form.get("marca")  or "").strip() or None
+        tear.modelo  = (request.form.get("modelo") or "").strip() or None
 
+        # Normaliza tipo em MONO/DUPLA (mantém outro valor se vier)
+        tipo = (request.form.get("tipo") or "").strip().upper()
+        tear.tipo = tipo if tipo in {"MONO", "DUPLA"} else (tipo or None)
+
+        # Numéricos
+        finura         = _to_int(request.form.get("finura"))
+        diametro       = _to_int(request.form.get("diametro"))
+        alimentadores  = _to_int(request.form.get("alimentadores"))
+        pistas_cil     = _to_int(request.form.get("pistas_cilindro"))
+        pistas_dis     = _to_int(request.form.get("pistas_disco"))
+
+        if hasattr(tear, "finura"):
+            tear.finura = finura
+        if hasattr(tear, "galga"):
+            # espelha finura em galga, se o modelo tiver
+            tear.galga = finura
+        if hasattr(tear, "diametro"):
+            tear.diametro = diametro
+        if hasattr(tear, "alimentadores"):
+            tear.alimentadores = alimentadores
+        if hasattr(tear, "pistas_cilindro"):
+            tear.pistas_cilindro = pistas_cil
+        if hasattr(tear, "pistas_disco"):
+            tear.pistas_disco = pistas_dis
+
+        # Elastano: aceita "Sim/Não" e mapeia para bool se o campo for bool
         elas_raw = (request.form.get("elastano") or "").strip().lower()
-        if elas_raw in {"sim","s","1","true","on"}:
-            tear.elastano = "Sim"
-        elif elas_raw in {"não","nao","n","0","false","off"}:
-            tear.elastano = "Não"
-        else:
-            tear.elastano = request.form.get("elastano") or None
+        el_bool = True  if elas_raw in {"sim","s","1","true","on","yes","y","com","tem"} else \
+                  False if elas_raw in {"não","nao","n","0","false","off","no","sem"} else None
+
+        if hasattr(tear, "elastano") and el_bool is not None:
+            try:
+                cur = getattr(tear, "elastano")
+                # Se for booleano, salva bool; se não, salva "Sim"/"Não"
+                if isinstance(cur, bool):
+                    tear.elastano = el_bool
+                else:
+                    tear.elastano = "Sim" if el_bool else "Não"
+            except Exception:
+                tear.elastano = "Sim" if el_bool else "Não"
+
+        if hasattr(tear, "kit_elastano") and el_bool is not None:
+            tear.kit_elastano = "Sim" if el_bool else "Não"
 
         db.session.commit()
-        flash("Tear atualizado com sucesso!")
-        return redirect(url_for("teares_form"))
+        flash("Tear atualizado com sucesso!", "success")
+        return redirect(url_for("painel_malharia"))
 
     # GET: página dedicada de edição
-    teares = Tear.query.filter_by(empresa_id=emp.id).order_by(Tear.id.desc()).all()
-    return render_template("editar_tear.html", empresa=emp, tear=tear, teares=teares)
+    return render_template("editar_tear.html", empresa=emp, tear=tear)
 
 @app.post("/tear/<int:id>/excluir")
 def excluir_tear(id):
