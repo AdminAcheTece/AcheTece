@@ -208,16 +208,11 @@
     cursor:pointer; box-shadow:none !important;
     transition: background-color .15s ease, color .15s ease, transform .12s ease;
   }
-  
-  /* Hover: inverte as cores e NÃO mostra borda/anel */
   .btn-roxo:hover,
   button[type="submit"]:hover,
   input[type="submit"]:hover{
     background:var(--lime); color:#000; transform:translateY(-2px);
-    box-shadow:none !important;
   }
-  
-  /* Active + foco acessível */
   .btn-roxo:active,
   button[type="submit"]:active,
   input[type="submit"]:active{
@@ -231,29 +226,24 @@
   input[type="submit"]:focus-visible{
     outline:2px solid var(--lime); outline-offset:2px;
   }
-  
-  /* Estado desabilitado */
   .btn-roxo:disabled,
   button[type="submit"]:disabled,
   input[type="submit"]:disabled{
     opacity:.5; cursor:not-allowed; transform:none;
   }
-  
-</style>
+  </style>
 </head>
 <body>
 
   <!-- ===== HEADER ===== -->
   <header class="navbar">
     <div class="header-left">
-      <!-- Logo = botão para a home -->
       <a class="logo" href="{{ url_for('index') }}" aria-label="Página inicial">
         <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
       </a>
     </div>
 
     <div class="header-right">
-      <!-- Casinha -->
       <a href="{{ url_for('index') }}" class="icon-btn" aria-label="Página inicial" title="Página inicial">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M3 10.5 12 3l9 7.5"></path>
@@ -262,7 +252,6 @@
         </svg>
       </a>
 
-      <!-- Menu sanduíche -->
       <div class="menu-wrap">
         <button class="hamburger" id="hamburger" type="button" aria-label="Abrir menu" aria-controls="menu-lateral" aria-haspopup="menu" aria-expanded="false">
           <span></span><span></span><span></span>
@@ -310,48 +299,51 @@
   <div class="container">
     <h1 class="titulo">Editar Tear</h1>
 
+    {# Normaliza valores do select para pré-seleção #}
+    {% set _tipo_atual = (tear.tipo or '')|string|upper %}
+    {% set _raw_el = tear.elastano if (tear.elastano is not none) else tear.kit_elastano %}
+    {% set _el_str = (_raw_el|string).strip().lower() %}
+    {% set _el_sim = (_raw_el is boolean and _raw_el) or _el_str in ['sim','s','true','t','on','1','com','tem','yes','y'] %}
+    {% set _el_nao = (_raw_el is boolean and (not _raw_el)) or _el_str in ['não','nao','n','false','f','off','0','sem','no'] %}
+
     <form method="POST" class="formulario" action="{{ url_for('editar_tear', id=tear.id) }}">
       <label for="marca">Marca:</label>
-            <input type="text" id="marca" name="marca" required>
+      <input type="text" id="marca" name="marca" value="{{ tear.marca or '' }}" required>
 
-            <label for="modelo">Modelo:</label>
-            <input type="text" id="modelo" name="modelo" required>
+      <label for="modelo">Modelo:</label>
+      <input type="text" id="modelo" name="modelo" value="{{ tear.modelo or '' }}" required>
 
-            <label for="tipo">Tipo:</label>
-            <select id="tipo" name="tipo" required>
-                <option value="">-- Selecione --</option>
-                <option value="MONO">MONO</option>
-                <option value="DUPLA">DUPLA</option>
-            </select>
+      <label for="tipo">Tipo:</label>
+      <select id="tipo" name="tipo" required>
+        <option value="">-- Selecione --</option>
+        <option value="MONO"  {% if _tipo_atual == 'MONO' %}selected{% endif %}>MONO</option>
+        <option value="DUPLA" {% if _tipo_atual == 'DUPLA' %}selected{% endif %}>DUPLA</option>
+      </select>
 
-            <label for="finura">Finura:</label>
-            <input type="number" id="finura" name="finura" required>
+      <label for="finura">Finura:</label>
+      <input type="number" id="finura" name="finura" value="{{ tear.finura or tear.galga or '' }}" required>
 
-            <label for="diametro">Diâmetro:</label>
-            <input type="number" id="diametro" name="diametro" required>
+      <label for="diametro">Diâmetro:</label>
+      <input type="number" id="diametro" name="diametro" value="{{ tear.diametro or '' }}" required>
 
-            <!-- Corrigido: ids/names sem espaço -->
-            <label for="pistas_cilindro">Pistas Cilindro:</label>
-            <input type="number" id="pistas_cilindro" name="pistas_cilindro" required>
+      <label for="pistas_cilindro">Pistas Cilindro:</label>
+      <input type="number" id="pistas_cilindro" name="pistas_cilindro" value="{{ tear.pistas_cilindro or '' }}" required>
 
-            <label for="pistas_disco">Pistas Disco:</label>
-            <input type="number" id="pistas_disco" name="pistas_disco" required>
-            
-            <label for="alimentadores">Alimentadores:</label>
-            <input type="number" id="alimentadores" name="alimentadores" required>
+      <label for="pistas_disco">Pistas Disco:</label>
+      <input type="number" id="pistas_disco" name="pistas_disco" value="{{ tear.pistas_disco or '' }}" required>
+      
+      <label for="alimentadores">Alimentadores:</label>
+      <input type="number" id="alimentadores" name="alimentadores" value="{{ tear.alimentadores or '' }}" required>
 
-            <label for="elastano">Elastano:</label>
-            <select id="elastano" name="elastano" required>
-                <option value="">-- Selecione --</option>
-                <option value="Sim">Sim</option>
-                <option value="Não">Não</option>
-            </select>
+      <label for="elastano">Elastano:</label>
+      <select id="elastano" name="elastano" required>
+        <option value="">-- Selecione --</option>
+        <option value="Sim" {% if _el_sim %}selected{% endif %}>Sim</option>
+        <option value="Não" {% if _el_nao %}selected{% endif %}>Não</option>
+      </select>
 
       <div class="acoes">
-        <!-- Salvar -->
         <button type="submit" class="btn btn-roxo">Salvar</button>
-
-        <!-- Voltar -->
         <a class="link-voltar" href="{{ url_for('painel_malharia') }}">← Voltar ao Painel Malharia</a>
       </div>
     </form>
