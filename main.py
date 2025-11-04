@@ -1906,15 +1906,31 @@ def _proximo_step(emp: Empresa) -> str:
         return "teares"
     return "resumo"
 
-# --- sua rota do painel (substitua a versão atual por esta) ---
+from flask import make_response
+
+# --- Rota do Painel (versão atualizada) ---
 @app.route('/painel_malharia', endpoint="painel_malharia")
 def painel_malharia():
     emp, u = _get_empresa_usuario_da_sessao()
     if not emp or not u:
         return redirect(url_for('login'))
 
+    # Garante que nenhum objeto "velho" fique preso na identity map
+    try:
+        db.session.expire_all()
+    except Exception:
+        pass
+
     step = request.args.get("step") or _proximo_step(emp)
-    teares = Tear.query.filter_by(empresa_id=emp.id).all()
+
+    # Reconsulta FRESCA no banco e já ordena (mais recente primeiro)
+    teares = (
+        Tear.query
+            .filter_by(empresa_id=emp.id)
+            .order_by(Tear.id.desc())
+            .all()
+    )
+
     is_ativa = (emp.status_pagamento or "pendente") in ("ativo", "aprovado")
 
     checklist = {
@@ -1924,14 +1940,15 @@ def painel_malharia():
         "step": step,
     }
 
-    # >>> NOVO: notificações e chat
+    # Notificações / chat (mantidos)
     notif_count, notif_lista = _get_notificacoes(emp.id)
     chat_nao_lidos = 0  # ajuste aqui se tiver chat real
 
-    # tenta usar o que veio do BD; se vazio, detecta no filesystem
+    # Foto (mantido)
     foto_url = getattr(emp, "foto_url", None) or _foto_url_runtime(emp.id)
-    
-    return render_template(
+
+    # Evita cache do navegador/proxy para sempre ver os dados atualizados
+    resp = make_response(render_template(
         "painel_malharia.html",
         empresa=emp,
         teares=teares,
@@ -1941,8 +1958,12 @@ def painel_malharia():
         notificacoes=notif_count,
         notificacoes_lista=notif_lista,
         chat_nao_lidos=chat_nao_lidos,
-        foto_url=foto_url,          # <<<<<<<<<<
-    )
+        foto_url=foto_url,
+    ))
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    resp.headers["Pragma"] = "no-cache"
+    resp.headers["Expires"] = "0"
+    return resp
 
 from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
 
@@ -2234,7 +2255,6 @@ def cadastro_post():
 
 @app.route("/editar_tear/<int:id>", methods=["GET", "POST"])
 def editar_tear(id):
-    # usa sessão; não há gate de pagamento
     emp, _user = _get_empresa_usuario_da_sessao()
     if not emp:
         flash("Faça login para continuar.", "warning")
@@ -2254,59 +2274,46 @@ def editar_tear(id):
             except Exception:
                 return None
 
-        # Campos texto (strip p/ limpar espaços)
-        tear.marca   = (request.form.get("marca")  or "").strip() or None
-        tear.modelo  = (request.form.get("modelo") or "").strip() or None
+        # Texto
+        tear.marca  = (request.form.get("marca")  or "").strip() or None
+        tear.modelo = (request.form.get("modelo") or "").strip() or None
 
-        # Normaliza tipo em MONO/DUPLA (mantém outro valor se vier)
+        # Tipo normalizado
         tipo = (request.form.get("tipo") or "").strip().upper()
-        tear.tipo = tipo if tipo in {"MONO", "DUPLA"} else (tipo or None)
+        tear.tipo = tipo if tipo in {"MONO","DUPLA"} else (tipo or None)
 
         # Numéricos
-        finura         = _to_int(request.form.get("finura"))
-        diametro       = _to_int(request.form.get("diametro"))
-        alimentadores  = _to_int(request.form.get("alimentadores"))
-        pistas_cil     = _to_int(request.form.get("pistas_cilindro"))
-        pistas_dis     = _to_int(request.form.get("pistas_disco"))
+        finura        = _to_int(request.form.get("finura"))
+        diametro      = _to_int(request.form.get("diametro"))
+        alimentadores = _to_int(request.form.get("alimentadores"))
+        pistas_cil    = _to_int(request.form.get("pistas_cilindro"))
+        pistas_dis    = _to_int(request.form.get("pistas_disco"))
 
-        if hasattr(tear, "finura"):
-            tear.finura = finura
-        if hasattr(tear, "galga"):
-            # espelha finura em galga, se o modelo tiver
-            tear.galga = finura
-        if hasattr(tear, "diametro"):
-            tear.diametro = diametro
-        if hasattr(tear, "alimentadores"):
-            tear.alimentadores = alimentadores
-        if hasattr(tear, "pistas_cilindro"):
-            tear.pistas_cilindro = pistas_cil
-        if hasattr(tear, "pistas_disco"):
-            tear.pistas_disco = pistas_dis
+        if hasattr(tear, "finura"):           tear.finura = finura
+        if hasattr(tear, "galga"):            tear.galga  = finura         # espelho
+        if hasattr(tear, "diametro"):         tear.diametro = diametro
+        if hasattr(tear, "alimentadores"):    tear.alimentadores = alimentadores
+        if hasattr(tear, "pistas_cilindro"):  tear.pistas_cilindro = pistas_cil
+        if hasattr(tear, "pistas_disco"):     tear.pistas_disco    = pistas_dis
 
-        # Elastano: aceita "Sim/Não" e mapeia para bool se o campo for bool
+        # Elastano (compatível com bool e "Sim/Não")
         elas_raw = (request.form.get("elastano") or "").strip().lower()
         el_bool = True  if elas_raw in {"sim","s","1","true","on","yes","y","com","tem"} else \
                   False if elas_raw in {"não","nao","n","0","false","off","no","sem"} else None
 
-        if hasattr(tear, "elastano") and el_bool is not None:
-            try:
+        if el_bool is not None:
+            if hasattr(tear, "elastano"):
                 cur = getattr(tear, "elastano")
-                # Se for booleano, salva bool; se não, salva "Sim"/"Não"
-                if isinstance(cur, bool):
-                    tear.elastano = el_bool
-                else:
-                    tear.elastano = "Sim" if el_bool else "Não"
-            except Exception:
-                tear.elastano = "Sim" if el_bool else "Não"
+                tear.elastano = (el_bool if isinstance(cur, bool) else ("Sim" if el_bool else "Não"))
+            if hasattr(tear, "kit_elastano"):
+                tear.kit_elastano = "Sim" if el_bool else "Não"
 
-        if hasattr(tear, "kit_elastano") and el_bool is not None:
-            tear.kit_elastano = "Sim" if el_bool else "Não"
-
+        db.session.add(tear)
         db.session.commit()
         flash("Tear atualizado com sucesso!", "success")
         return redirect(url_for("painel_malharia"))
 
-    # GET: página dedicada de edição
+    # GET
     return render_template("editar_tear.html", empresa=emp, tear=tear)
 
 @app.post("/tear/<int:id>/excluir")
