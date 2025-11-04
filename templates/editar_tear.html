@@ -299,47 +299,51 @@
   <div class="container">
     <h1 class="titulo">Editar Tear</h1>
 
-    {# Normaliza valores do select para pré-seleção #}
+    {# Valores atuais normalizados #}
     {% set _tipo_atual = (tear.tipo or '')|string|upper %}
     {% set _raw_el = tear.elastano if (tear.elastano is not none) else tear.kit_elastano %}
     {% set _el_str = (_raw_el|string).strip().lower() %}
     {% set _el_sim = (_raw_el is boolean and _raw_el) or _el_str in ['sim','s','true','t','on','1','com','tem','yes','y'] %}
     {% set _el_nao = (_raw_el is boolean and (not _raw_el)) or _el_str in ['não','nao','n','false','f','off','0','sem','no'] %}
 
+    {# Seleções vindas do form (para “grudar” valores após POST com erro) #}
+    {% set _sel_tipo = (request.form.get('tipo') or _tipo_atual)|upper %}
+    {% set _sel_el   = (request.form.get('elastano') or ('Sim' if _el_sim else 'Não' if _el_nao else ''))|lower %}
+
     <form method="POST" class="formulario" action="{{ url_for('editar_tear', id=tear.id) }}">
       <label for="marca">Marca:</label>
-      <input type="text" id="marca" name="marca" value="{{ tear.marca or '' }}" required>
+      <input type="text" id="marca" name="marca" value="{{ request.form.get('marca', tear.marca or '') }}" required>
 
       <label for="modelo">Modelo:</label>
-      <input type="text" id="modelo" name="modelo" value="{{ tear.modelo or '' }}" required>
+      <input type="text" id="modelo" name="modelo" value="{{ request.form.get('modelo', tear.modelo or '') }}" required>
 
       <label for="tipo">Tipo:</label>
       <select id="tipo" name="tipo" required>
         <option value="">-- Selecione --</option>
-        <option value="MONO"  {% if _tipo_atual == 'MONO' %}selected{% endif %}>MONO</option>
-        <option value="DUPLA" {% if _tipo_atual == 'DUPLA' %}selected{% endif %}>DUPLA</option>
+        <option value="MONO"  {% if _sel_tipo == 'MONO' %}selected{% endif %}>MONO</option>
+        <option value="DUPLA" {% if _sel_tipo == 'DUPLA' %}selected{% endif %}>DUPLA</option>
       </select>
 
       <label for="finura">Finura:</label>
-      <input type="number" id="finura" name="finura" value="{{ tear.finura or tear.galga or '' }}" required>
+      <input type="number" id="finura" name="finura" value="{{ request.form.get('finura', tear.finura or tear.galga or '') }}" required>
 
       <label for="diametro">Diâmetro:</label>
-      <input type="number" id="diametro" name="diametro" value="{{ tear.diametro or '' }}" required>
+      <input type="number" id="diametro" name="diametro" value="{{ request.form.get('diametro', tear.diametro or '') }}" required>
 
       <label for="pistas_cilindro">Pistas Cilindro:</label>
-      <input type="number" id="pistas_cilindro" name="pistas_cilindro" value="{{ tear.pistas_cilindro or '' }}" required>
+      <input type="number" id="pistas_cilindro" name="pistas_cilindro" value="{{ request.form.get('pistas_cilindro', tear.pistas_cilindro or '') }}" required>
 
       <label for="pistas_disco">Pistas Disco:</label>
-      <input type="number" id="pistas_disco" name="pistas_disco" value="{{ tear.pistas_disco or '' }}" required>
+      <input type="number" id="pistas_disco" name="pistas_disco" value="{{ request.form.get('pistas_disco', tear.pistas_disco or '') }}" required>
       
       <label for="alimentadores">Alimentadores:</label>
-      <input type="number" id="alimentadores" name="alimentadores" value="{{ tear.alimentadores or '' }}" required>
+      <input type="number" id="alimentadores" name="alimentadores" value="{{ request.form.get('alimentadores', tear.alimentadores or '') }}" required>
 
       <label for="elastano">Elastano:</label>
       <select id="elastano" name="elastano" required>
         <option value="">-- Selecione --</option>
-        <option value="Sim" {% if _el_sim %}selected{% endif %}>Sim</option>
-        <option value="Não" {% if _el_nao %}selected{% endif %}>Não</option>
+        <option value="Sim" {% if _sel_el == 'sim' %}selected{% endif %}>Sim</option>
+        <option value="Não" {% if _sel_el == 'não' or _sel_el == 'nao' %}selected{% endif %}>Não</option>
       </select>
 
       <div class="acoes">
