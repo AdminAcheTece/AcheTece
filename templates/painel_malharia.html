@@ -551,22 +551,42 @@
     <table>
       <thead>
         <tr>
-          <th>Marca</th><th>Modelo</th><th>Tipo</th>
-          <th>Finura</th><th>Diâmetro</th>
-          <th>Alimentadores</th><th>Elastano</th><th>Ações</th>
+          <th>Marca</th>
+          <th>Modelo</th>
+          <th>Tipo</th>
+          <th>Galga/Finura</th>
+          <th>Diâmetro</th>
+          <th>Alimentadores</th>
+          <th>Pistas (cil)</th>
+          <th>Pistas (disco)</th>
+          <th>Elastano</th>
+          <th>Ações</th>
         </tr>
       </thead>
       <tbody>
-        {% if lista_teares|length %}
+        {% set _vaz = '—' %}
+        {% if lista_teares and lista_teares|length %}
           {% for tear in lista_teares %}
           <tr>
-            <td>{{ tear.marca or '-' }}</td>
-            <td>{{ tear.modelo or '-' }}</td>
-            <td>{{ tear.tipo or '-' }}</td>
-            <td>{{ tear.finura if tear.finura is not none else '-' }}</td>
-            <td>{{ tear.diametro if tear.diametro is not none else '-' }}</td>
-            <td>{{ tear.alimentadores if tear.alimentadores is not none else '-' }}</td>
-            <td>{{ 'Sim' if (tear.elastano or tear.kit_elastano) else 'Não' }}</td>
+            <td>{{ tear.marca or _vaz }}</td>
+            <td>{{ tear.modelo or _vaz }}</td>
+            <td>{{ tear.tipo or _vaz }}</td>
+            <td>{{ tear.finura or tear.galga or _vaz }}</td>
+            <td>{{ tear.diametro or _vaz }}</td>
+            <td>{{ tear.alimentadores or _vaz }}</td>
+            <td>{{ tear.pistas_cilindro or _vaz }}</td>
+            <td>{{ tear.pistas_disco or _vaz }}</td>
+            <td>
+              {% set raw = tear.elastano if (tear.elastano is not none) else tear.kit_elastano %}
+              {% if raw is boolean %}
+                {{ 'Sim' if raw else 'Não' }}
+              {% else %}
+                {% set s = (raw|string).strip().lower() %}
+                {% if s in ['sim','s','true','t','on','1','com','tem','yes','y'] %}Sim
+                {% elif s in ['não','nao','n','false','f','off','0','sem','no'] %}Não
+                {% else %}{{ _vaz }}{% endif %}
+              {% endif %}
+            </td>
             <td>
               <div class="acoes-wrap">
                 <a href="{{ url_for('editar_tear', id=tear.id) }}" class="icon-btn edit" title="Editar tear" aria-label="Editar">
@@ -588,7 +608,7 @@
           </tr>
           {% endfor %}
         {% else %}
-          <tr><td colspan="8">Nenhum tear cadastrado ainda.</td></tr>
+          <tr><td colspan="10">Nenhum tear cadastrado ainda.</td></tr>
         {% endif %}
       </tbody>
     </table>
