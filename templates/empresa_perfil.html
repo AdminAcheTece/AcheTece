@@ -137,30 +137,35 @@
       .maps-link--inline{display:inline-flex}
     }
 
-    /* ====== NOVO: Teares no formato de TABELA (igual à index) ====== */
+    /* ====== Teares no formato de TABELA (igual à index) ====== */
     .table-wrap{
       border:1px solid var(--line);
       border-radius:12px;
-      overflow:auto;            /* scroll horizontal no mobile, se precisar */
+      overflow:auto;
       background:#fff;
     }
     .teares-table{
       width:100%;
       border-collapse:collapse;
-      min-width:620px;          /* evita “quebrar” demais em telas estreitas */
+      min-width:620px;
     }
+    /* Cabeçalho mais discreto */
     .teares-table thead th{
       background:var(--olive);
-      color:#fff;
+      color:rgba(255,255,245,.92);   /* off-white suave */
       padding:12px 16px;
-      text-align:left;
-      font-weight:800;
+      text-align:center;             /* centraliza títulos */
+      font-weight:700;               /* menos pesado que 800 */
+      vertical-align:middle;
     }
+    /* Células */
     .teares-table tbody td{
       padding:14px 16px;
       font-weight:700;
       color:var(--text);
       border-top:1px solid #f0f0f0;
+      text-align:center;             /* centraliza valores */
+      vertical-align:middle;
     }
     .teares-table tbody tr:nth-child(even){
       background:var(--olive-50);
