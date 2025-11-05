@@ -231,6 +231,63 @@
   input[type="submit"]:disabled{
     opacity:.5; cursor:not-allowed; transform:none;
   }
+
+  /* ===== Suavização tipográfica (desktop) ===== */
+  @media (min-width:901px){
+    /* Título menos “pesado” */
+    h1.titulo{
+      font-weight:700 !important;   /* antes 800 */
+    }
+  
+    /* Rótulos do formulário com peso moderado */
+    .formulario label{
+      font-weight:600 !important;   /* antes 700 */
+    }
+  
+    /* Botões com peso 700 (mantém destaque, sem “gritar”) */
+    .btn,
+    .btn-roxo,
+    .btn-primary,
+    .botao-roxo{
+      font-weight:700 !important;   /* antes 800 */
+    }
+  
+    /* Links da página (inclui o “Voltar”) com peso 600 */
+    .link-voltar,
+    a.btn-link{
+      font-weight:600 !important;   /* antes 700/800 */
+    }
+  }
+  
+  /* ===== Links (cores padrão OLIVE) ===== */
+  .link-voltar{
+    color: var(--olive, #7B7424) !important;
+    text-decoration: none;
+  }
+  .link-voltar:hover{
+    color: var(--olive-600, #5E581C) !important;
+    text-decoration: underline;
+  }
+  
+  /* Garantias de estilo dos botões (sem bordas/anel no hover) */
+  .btn,
+  .btn-roxo,
+  .botao-roxo{
+    box-shadow: none !important;
+    border: 0 !important;
+  }
+  .btn:hover,
+  .btn-roxo:hover,
+  .botao-roxo:hover{
+    /* mantém a troca preto → lime já definida no seu CSS base */
+    transform: translateY(-2px);
+  }
+  .btn:active,
+  .btn-roxo:active,
+  .botao-roxo:active{
+    transform: translateY(0);
+  }
+  
   </style>
 </head>
 <body>
