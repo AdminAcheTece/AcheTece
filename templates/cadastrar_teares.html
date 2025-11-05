@@ -247,6 +247,34 @@
       font-size:20px;
     }
   }
+
+  /* === Linha de ações: botão + link lado a lado === */
+  .acoes{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;         /* se apertar no mobile, quebra com elegância */
+    margin-top:12px;
+  }
+  
+  /* Mantém o padrão do link já aplicado (olive), só garante alinhamento */
+  .acoes .voltar-link{
+    display:inline-block;
+    font-weight:600;        /* menos intenso (antes podia estar 700) */
+    text-decoration:none;
+  }
+  .acoes .voltar-link:hover{
+    text-decoration:underline;
+  }
+  
+  /* === Suavização tipográfica (desktop) — igual às demais páginas === */
+  @media (min-width:901px){
+    h1.titulo{ font-weight:700 !important; }          /* antes 800 */
+    .formulario label{ font-weight:600 !important; }  /* antes 700 */
+    button.botao-roxo,
+    .botao-roxo{ font-weight:700 !important; }        /* antes 800 */
+  }
+  
 </style>
 </head>
 <body>
