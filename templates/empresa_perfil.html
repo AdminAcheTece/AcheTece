@@ -172,6 +172,38 @@
     }
 
     .footer-spacer{height:8px}
+
+    /* === Suavização tipográfica (desktop) — menos “negrito” nos destaques === */
+    @media (min-width: 901px){
+    
+      /* Títulos e subtítulo */
+      .title{ font-weight:700 !important; }          /* antes 800 */
+      .sub{   font-weight:500 !important; }          /* antes 600 */
+    
+      /* Seções / cabeçalhos */
+      h2.sec, .sec{ font-weight:700 !important; }    /* antes 800 */
+      .maps-link, .maps-link--inline{ font-weight:600 !important; } /* antes 800 */
+    
+      /* Pills e botões do header */
+      .pill{ font-weight:700 !important; }           /* antes 800 */
+      .btn, .btn-ghost{ font-weight:600 !important; }/* antes 800 */
+    
+      /* Bloco de dados (dt/dd e variações) */
+      .dados dt{ font-weight:700 !important; letter-spacing:.03em; } /* antes 900 */
+      .dados dd{ font-weight:600 !important; }        /* antes 600/700 misto */
+      .v{        font-weight:600 !important; }        /* antes 700 */
+      .v--soft{  font-weight:500 !important; }        /* antes 600 */
+    
+      /* Cards de teares */
+      .tear-head .k{ font-weight:700 !important; }    /* antes 800 */
+      .tear-head .v{ font-weight:700 !important; }    /* antes 900 */
+      .kv .k{        font-weight:600 !important; }    /* antes 700 */
+      .kv .v{        font-weight:700 !important; }    /* antes 800 */
+    
+      /* Caso existam <b> ou <strong> no conteúdo */
+      b, strong{ font-weight:600 !important; }
+    }
+
   </style>
 </head>
 <body>
