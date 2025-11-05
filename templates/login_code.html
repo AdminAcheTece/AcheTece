@@ -237,7 +237,11 @@
   .btn:active{
     box-shadow: none !important;
   }
-    
+
+  .alert-success{ background:#ECFDF5; color:#065F46; border:1px solid #A7F3D0; }
+  .alert-warning{ background:#FFFBEB; color:#92400E; border:1px solid #FDE68A; }
+  .alert-error{   background:#FEF2F2; color:#991B1B; border:1px solid #FCA5A5; }
+  .alert-info{    background:#EFF6FF; color:#1E3A8A; border:1px solid #BFDBFE; }  
 </style>
 </head>
 <body>
@@ -312,6 +316,21 @@
       <p class="subtitle">Digite o código enviado para</p>
       <div class="email-row"><span class="pill">{{ email }}</span></div>
 
+      <!-- FLASH MESSAGES -->
+      {% with flashes = get_flashed_messages(with_categories=true) %}
+        {% if flashes %}
+          <div class="alerts" role="status" aria-live="polite" style="margin:8px 0 4px;">
+            {% for cat, msg in flashes %}
+              <div class="alert alert-{{cat}}" style="
+                border-radius:10px; padding:10px 12px; margin:6px 0;
+                font-size:14px; font-weight:700;">
+                {{ msg }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      
       <form action="{{ url_for('validate_login_code') }}" method="POST" id="otpForm" novalidate>
         <input type="hidden" name="email" value="{{ email }}">
 
