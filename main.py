@@ -814,8 +814,8 @@ class Tear(db.Model):
     finura = db.Column(db.Integer, nullable=False)             # galga
     diametro = db.Column(db.Integer, nullable=False)
     alimentadores = db.Column(db.Integer, nullable=False)
-    pistas_cilindro = db.Column(db.Integer, nullable=False)
-    pistas_disco    = db.Column(db.Integer, nullable=False)
+    pistas_cilindro = db.Column(db.Integer, nullable=True)
+    pistas_disco    = db.Column(db.Integer, nullable=True)
     elastano = db.Column(db.String(10), nullable=False)        # Sim | Não
     empresa_id = db.Column(db.Integer, db.ForeignKey('empresa.id'), nullable=False)
 
