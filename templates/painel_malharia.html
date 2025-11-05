@@ -361,6 +361,31 @@
     color:#fff !important;
     border-color:#5E581C !important; /* linha combina com o header */
   }
+
+  /* === Desktop: suaviza pesos de fonte para evitar excesso de contraste === */
+  @media (min-width: 901px){
+    /* Títulos e headings */
+    h1.titulo{ font-weight:700; }               /* antes 800 */
+    .hero-nome{ font-weight:700; }              /* antes 800 */
+    .sec-title h2,
+    h2{ font-weight:700; }                      /* antes 800 */
+    .perf-mini-title{ font-weight:700; }        /* antes 800 */
+  
+    /* Chips/pílulas e textos fortes */
+    .chip{ font-weight:600; }                   /* antes 700 */
+    .pill{ font-weight:700; }                   /* mantém destaque, mas menos intenso */
+    tbody td strong,
+    .tear-item strong{ font-weight:600; }       /* antes 700/800 */
+  
+    /* Cabeçalho da tabela (mantém a cor OLIVE) com peso mais leve */
+    .table-wrapper thead th{ font-weight:600; } /* antes 700/800 */
+  
+    /* Nome na pílula do perfil (suave) */
+    .profile-pill .name{ font-weight:600; }     /* antes 700 */
+  
+    /* Links de performance (mantém ênfase moderada) */
+    .perf-mini-link{ font-weight:700; }         /* antes 800 */
+  }
 </style>
 </head>
 <body>
