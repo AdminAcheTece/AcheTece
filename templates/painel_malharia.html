@@ -386,6 +386,22 @@
     /* Links de performance (mantém ênfase moderada) */
     .perf-mini-link{ font-weight:700; }         /* antes 800 */
   }
+
+  /* === Suavização extra (apenas desktop) === */
+  @media (min-width: 901px){
+  
+    /* 1) Cabeçalho da tabela: menos “negrito” */
+    .table-wrapper thead th,
+    table thead th{
+      font-weight: 500 !important; /* estava 600/700 */
+    }
+  
+    /* 2) Botão “+ Cadastrar Tear”: suaviza o peso apenas no botão da seção */
+    .sec-title .btn,
+    .sec-title .btn-roxo{
+      font-weight: 600 !important; /* estava 800 */
+    }
+  }
 </style>
 </head>
 <body>
