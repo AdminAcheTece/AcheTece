@@ -486,6 +486,23 @@ def _save_square_webp(file_storage, dest_path: str, side: int = 400, quality: in
 # --------------------------------------------------------------------
 # Helpers
 # --------------------------------------------------------------------
+from sqlalchemy import inspect, text
+
+def _ensure_teares_pistas_cols():
+    """Adiciona pistas_cilindro e pistas_disco se ainda não existirem."""
+    tbl = Tear.__table__.name                      # geralmente "tear"
+    insp = inspect(db.engine)
+    existentes = {c["name"] for c in insp.get_columns(tbl)}
+    stmts = []
+    if "pistas_cilindro" not in existentes:
+        stmts.append(text(f'ALTER TABLE {tbl} ADD COLUMN pistas_cilindro INTEGER'))
+    if "pistas_disco" not in existentes:
+        stmts.append(text(f'ALTER TABLE {tbl} ADD COLUMN pistas_disco INTEGER'))
+    if stmts:
+        with db.engine.begin() as conn:
+            for s in stmts:
+                conn.execute(s)
+
 def _set_if_has(obj, names, value):
     """Seta no primeiro atributo existente da lista `names`."""
     for n in names:
@@ -810,11 +827,15 @@ class Tear(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     marca = db.Column(db.String(100), nullable=False)
     modelo = db.Column(db.String(100), nullable=False)
-    tipo = db.Column(db.String(20), nullable=False)            # MONO | DUPLA | ...
-    finura = db.Column(db.Integer, nullable=False)             # galga
+    tipo = db.Column(db.String(20), nullable=False)
+    finura = db.Column(db.Integer, nullable=False)
     diametro = db.Column(db.Integer, nullable=False)
     alimentadores = db.Column(db.Integer, nullable=False)
-    elastano = db.Column(db.String(10), nullable=False)        # Sim | Não
+    # novo
+    pistas_cilindro = db.Column(db.Integer, nullable=True)
+    pistas_disco    = db.Column(db.Integer, nullable=True)
+    # você usa string para elastano (Sim/Não) — mantenha:
+    elastano = db.Column(db.String(10), nullable=False)
     empresa_id = db.Column(db.Integer, db.ForeignKey('empresa.id'), nullable=False)
 
 class ClienteProfile(db.Model):
@@ -1067,6 +1088,7 @@ def _run_bootstrap_once():
 
         # 2) GARANTE colunas novas (antes de qualquer SELECT em empresa)
         _ensure_empresa_address_columns()
+        _ensure_teares_pistas_cols() 
 
         # 3) auth + vinculação user_id (usa SELECT minimalista)
         _ensure_auth_layer_and_link()
