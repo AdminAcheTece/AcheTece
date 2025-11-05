@@ -30,6 +30,7 @@ import resend  # biblioteca do Resend
 from PIL import Image
 import shutil
 from datetime import datetime, timedelta
+from flask import current_app, request
 
 # SMTP direto (fallback)
 import smtplib, ssl
@@ -486,6 +487,20 @@ def _save_square_webp(file_storage, dest_path: str, side: int = 400, quality: in
 # --------------------------------------------------------------------
 # Helpers
 # --------------------------------------------------------------------
+def _public_base_url() -> str:
+    """
+    Retorna a base pública do site para construir callbacks do Mercado Pago.
+    Prioriza config/variável de ambiente e, por fim, força www.achetece.com.br.
+    """
+    forced = (
+        current_app.config.get("PUBLIC_BASE_URL")
+        or os.getenv("PUBLIC_BASE_URL")
+    )
+    if forced:
+        return forced.rstrip("/")
+    # último recurso: força o host oficial em HTTPS
+    return "https://www.achetece.com.br"
+    
 from sqlalchemy import inspect, text
 
 def _ensure_teares_pistas_cols():
@@ -2909,45 +2924,75 @@ def planos():
 def pagar():
     return redirect(url_for('checkout'))
 
+# --- Checkout Mercado Pago ---------------------------------------------------
+from flask import redirect, request, url_for, session, abort, flash
+import uuid
+import mercadopago
+import os
+
 @app.route('/checkout')
 def checkout():
+    # exige sessão da empresa
     if 'empresa_id' not in session:
         return redirect(url_for('login'))
+
     empresa = Empresa.query.get(session['empresa_id'])
     if not empresa:
-        session.clear(); return redirect(url_for('login'))
+        session.clear()
+        return redirect(url_for('login'))
 
-    base = base_url()
-    success_url = f"{base}/pagamento_aprovado"
-    failure_url = f"{base}/pagamento_erro"
-    pending_url = f"{base}/pagamento_pendente"
-    notify_url  = f"{base}/webhook"
-    ext_ref = f"achetece:{empresa.id}:{uuid.uuid4().hex}"
+    base = _public_base_url()
 
-    plano = (request.args.get('plano') or 'mensal').lower()
+    # plano
+    plano = (request.args.get('plano') or 'mensal').strip().lower()
+    if plano not in ('mensal', 'anual'):
+        plano = 'mensal'
+
     titulo_plano = "Assinatura anual AcheTece" if plano == 'anual' else "Assinatura mensal AcheTece"
     preco = float(PLAN_YEARLY if plano == 'anual' else PLAN_MONTHLY)
 
+    # URLs de retorno + webhook
+    success_url = f"{base}/pagamento_aprovado?plano={plano}"
+    failure_url = f"{base}/pagamento_erro?plano={plano}"
+    pending_url = f"{base}/pagamento_pendente?plano={plano}"
+    notify_url  = f"{base}/webhook"  # se sua rota for /webhook/mercadopago, troque aqui
+
+    ext_ref = f"achetece:{empresa.id}:{uuid.uuid4().hex}"
+
     preference_data = {
-        "items": [{"title": titulo_plano, "quantity": 1, "currency_id": "BRL", "unit_price": preco}],
-        "payer": {"email": empresa.email},
-        "back_urls": {"success": success_url, "failure": failure_url, "pending": pending_url},
+        "items": [{
+            "title": titulo_plano,
+            "quantity": 1,
+            "currency_id": "BRL",
+            "unit_price": preco
+        }],
+        "payer": {"email": getattr(empresa, "email", "")} if getattr(empresa, "email", "") else {},
+        "back_urls": {
+            "success": success_url,
+            "failure": failure_url,
+            "pending": pending_url
+        },
         "auto_return": "approved",
         "notification_url": notify_url,
         "external_reference": ext_ref,
         "statement_descriptor": "AcheTece"
     }
+
     try:
+        sdk = mercadopago.SDK(os.environ.get("MP_ACCESS_TOKEN", ""))
         preference_response = sdk.preference().create(preference_data)
         preference = preference_response.get("response", {}) if isinstance(preference_response, dict) else {}
-        init_point = preference.get("init_point")
+        init_point = preference.get("init_point") or preference.get("sandbox_init_point")
+
         if not init_point:
-            return f"<h2>Erro: 'init_point' ausente na resposta.</h2>", 500
+            app.logger.error(f"[CHECKOUT] init_point ausente. Resposta MP: {preference_response}")
+            return "<h2>Erro ao iniciar pagamento (init_point ausente).</h2>", 500
+
         return redirect(init_point)
+
     except Exception as e:
         app.logger.exception(f"[CHECKOUT] Erro: {e}")
-        return f"<h2>Erro ao iniciar pagamento: {e}</h2>", 500
-
+        return "<h2>Erro ao iniciar pagamento.</h2>", 500
 @app.route('/pagamento_aprovado')
 def pagamento_aprovado():
     return render_template('pagamento_aprovado.html')
