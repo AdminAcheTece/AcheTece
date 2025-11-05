@@ -182,6 +182,28 @@
   @media (prefers-color-scheme: dark){
     html, body{ background: var(--site-bg) !important; color: var(--text); }
   }
+
+  /* === Cabeçalho da tabela: igual ao painel_malharia (oliva + suavizado) === */
+  .table-wrap table {
+    border: 1px solid #d7d1a4;            /* borda externa suave */
+  }
+  
+  .table-wrap thead th{
+    background: var(--olive, #7B7424) !important;
+    color: #fff;
+    font-weight: 600;                      /* menos intenso */
+    letter-spacing: .01em;
+    text-transform: none;                  /* mantém legível */
+    border-bottom: 1px solid #968f3f;
+  }
+  
+  .table-wrap thead th + th{
+    border-left: 1px solid #8f8942;        /* divisória suave entre colunas */
+  }
+  
+  .table-wrap tbody td{
+    border-color: #ded9b3;                 /* linhas internas no mesmo tom da paleta */
+  }
 </style>
 </head>
 <body>
