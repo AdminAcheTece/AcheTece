@@ -230,7 +230,6 @@ def send_email(to: str, subject: str, html: str, text: str | None = None) -> boo
         pass
     return False
 
-
 # ---------------- Provedores HTTP (usam requests) ---------------- #
 
 def _fallback_text(html: str | None, text: str | None) -> str:
@@ -239,7 +238,6 @@ def _fallback_text(html: str | None, text: str | None) -> str:
     if not html:
         return "Verifique este e-mail em um cliente compatível com HTML."
     return re.sub(r"<[^>]+>", "", html).strip() or "Verifique este e-mail em um cliente compatível com HTML."
-
 
 def _send_via_resend(to: str, subject: str, html: str | None, text: str | None) -> Tuple[bool, str]:
     """
@@ -487,6 +485,89 @@ def _save_square_webp(file_storage, dest_path: str, side: int = 400, quality: in
 # --------------------------------------------------------------------
 # Helpers
 # --------------------------------------------------------------------
+# === VENCIMENTO MENSAL BR (próximo dia útil) ================================
+from datetime import date, datetime, timedelta
+from calendar import monthrange
+try:
+    from zoneinfo import ZoneInfo
+except Exception:
+    ZoneInfo = None
+
+def _easter_date(year: int) -> date:  # Domingo de Páscoa
+    a = year % 19
+    b = year // 100
+    c = year % 100
+    d = b // 4
+    e = b % 4
+    f = (b + 8) // 25
+    g = (b - f + 1) // 3
+    h = (19*a + b - d - g + 15) % 30
+    i = c // 4
+    k = c % 4
+    L = (32 + 2*e + 2*i - h - k) % 7
+    m = (a + 11*h + 22*L) // 451
+    month = (h + L - 7*m + 114) // 31
+    day = ((h + L - 7*m + 114) % 31) + 1
+    return date(year, month, day)
+
+def _br_feriados_nacionais(year: int) -> set[date]:
+    # Feriados nacionais oficiais (fixos) + Sexta-feira Santa (móvel)
+    easter = _easter_date(year)
+    sexta_santa = easter - timedelta(days=2)
+    return {
+        date(year, 1, 1),   # Confraternização Universal
+        date(year, 4, 21),  # Tiradentes
+        date(year, 5, 1),   # Dia do Trabalho
+        date(year, 9, 7),   # Independência
+        date(year,10,12),   # N. Sra. Aparecida
+        date(year,11, 2),   # Finados
+        date(year,11,15),   # Proclamação da República
+        date(year,12,25),   # Natal
+        sexta_santa,        # Paixão de Cristo (nacional)
+    }
+
+def _ultimo_dia_mes(y: int, m: int) -> int:
+    return monthrange(y, m)[1]
+
+def _add_meses(d: date, n: int = 1) -> date:
+    m = d.month - 1 + n
+    y = d.year + m // 12
+    m = m % 12 + 1
+    return date(y, m, min(d.day, _ultimo_dia_mes(y, m)))
+
+def _proximo_dia_util_br(d: date) -> date:
+    # Considera fim de semana e feriados nacionais
+    fer = set()
+    for y in (d.year - 1, d.year, d.year + 1):
+        fer |= _br_feriados_nacionais(y)
+    while d.weekday() >= 5 or d in fer:  # 5=sáb, 6=dom
+        d += timedelta(days=1)
+    return d
+
+def calc_vencimento_mensal_br(empresa, last_paid_at: datetime | date | None = None):
+    """Retorna (due_date: date, dias_restantes: int). 
+       Âncora do ciclo = dia do last_paid_at (ou data de início/criação)."""
+    hoje = datetime.now(ZoneInfo("America/Sao_Paulo")).date() if ZoneInfo else date.today()
+
+    def _to_date(v):
+        if not v: return None
+        return v.date() if isinstance(v, datetime) else v
+
+    base = _to_date(last_paid_at) \
+        or _to_date(getattr(empresa, "assin_ultimo_pagamento", None)) \
+        or _to_date(getattr(empresa, "assin_data_inicio", None)) \
+        or _to_date(getattr(empresa, "created_at", None)) \
+        or hoje
+
+    # Próximo “nominal” é +1 mês mantendo o dia; depois ajusta p/ dia útil
+    nominal = _add_meses(base, 1)
+    while nominal <= hoje:
+        nominal = _add_meses(nominal, 1)
+
+    due = _proximo_dia_util_br(nominal)
+    return due, (due - hoje).days
+# ===========================================================================
+
 def _public_base_url() -> str:
     """
     Retorna a base pública do site para construir callbacks do Mercado Pago.
@@ -2066,6 +2147,15 @@ def painel_malharia():
 
     is_ativa = (emp.status_pagamento or "pendente") in ("ativo", "aprovado")
 
+    # === NOVO: cálculo de vencimento (mensal + próximo dia útil, BR) ===
+    vencimento_proximo, dias_restantes = (None, None)
+    if is_ativa:
+        try:
+            # usa helpers adicionadas anteriormente (calc_vencimento_mensal_br)
+            vencimento_proximo, dias_restantes = calc_vencimento_mensal_br(emp)
+        except Exception as e:
+            app.logger.warning(f"[painel] calc_vencimento_mensal_br falhou: {e}")
+
     checklist = {
         "perfil_ok": all(_empresa_basica_completa(emp)),
         "teares_ok": _conta_teares(emp.id) > 0,
@@ -2092,6 +2182,9 @@ def painel_malharia():
         notificacoes_lista=notif_lista,
         chat_nao_lidos=chat_nao_lidos,
         foto_url=foto_url,
+        # === NOVO: disponíveis no template ===
+        vencimento_proximo=vencimento_proximo,
+        dias_restantes=dias_restantes,
     ))
     resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     resp.headers["Pragma"] = "no-cache"
