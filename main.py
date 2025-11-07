@@ -31,7 +31,6 @@ from PIL import Image
 import shutil
 from datetime import datetime, timedelta
 from flask import current_app, request
-from werkzeug.middleware.proxy_fix import ProxyFix
 
 # SMTP direto (fallback)
 import smtplib, ssl
@@ -74,13 +73,7 @@ app.config.update(
     MAIL_TIMEOUT=int(os.getenv("MAIL_TIMEOUT", "8")),
     MAIL_SUPPRESS_SEND=_env_bool("MAIL_SUPPRESS_SEND", False),
     OTP_DEV_FALLBACK=_env_bool("OTP_DEV_FALLBACK", False),
-    SECRET_KEY=os.environ.get("SECRET_KEY") or "mude-isto-em-producao",
-    SESSION_COOKIE_NAME="achetece_session",
-    SESSION_COOKIE_SECURE=True,         # HTTPS
-    SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_COOKIE_DOMAIN=".achetece.com.br",  # vale para www e raiz
-    PREFERRED_URL_SCHEME="https",
-    
+
     SESSION_COOKIE_SECURE=True,        # mantém HTTPS
     SESSION_COOKIE_SAMESITE="None",    # <<< ajuste p/ iOS (atenção: string "None")
 )
@@ -103,17 +96,12 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 @app.before_request
-def _force_www_host():
-    host = (request.host or "").split(":")[0]
-    # deixe passar no dev
-    allowed_dev = {"localhost", "127.0.0.1", "achetece.replit.app"}
-    if host in allowed_dev:
-        return
-    # força canônico em produção
-    if host != "www.achetece.com.br":
-        url = "https://www.achetece.com.br" + request.full_path
-        if url.endswith("?"):  # remove '?' solto
-            url = url[:-1]
+def _force_www_https():
+    host = request.host.split(':')[0]
+    # Só redireciona quando acessarem sem "www"
+    if host == "achetece.com.br":
+        # preserva caminho e querystring
+        url = request.url.replace("://achetece.com.br", "://www.achetece.com.br")
         return redirect(url, code=301)
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
@@ -820,14 +808,6 @@ _ANALYTICS_READY  = False
 # --------------------------------------------------------------------
 # Modelos
 # --------------------------------------------------------------------
-# --- IMPORTS necessários no topo do main.py ---
-from datetime import datetime, timedelta
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy import and_, or_, func, text
-# ----------------------------------------------
-
-ASSINATURA_GRACA_DIAS = 35  # janela de validade após o último pagamento aprovado
-
 class Usuario(db.Model):
     __tablename__ = 'usuario'
     id = db.Column(db.Integer, primary_key=True)
@@ -839,77 +819,26 @@ class Usuario(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Empresa(db.Model):
-    # __tablename__ = 'empresa'  # opcional (SQLAlchemy infere 'empresa')
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), unique=True)
     usuario = db.relationship('Usuario', backref=db.backref('empresa', uselist=False))
-
     nome = db.Column(db.String(100), nullable=False, unique=True)
     apelido = db.Column(db.String(50), unique=True)
     email = db.Column(db.String(100), nullable=False, unique=True)
     senha = db.Column(db.String(200), nullable=False)
-
     cidade = db.Column(db.String(100))
     estado = db.Column(db.String(2))
     telefone = db.Column(db.String(20))
-
-    # 🔎 Campos já existentes para pagamento/assinatura
-    status_pagamento = db.Column(db.String(20), default='pendente', index=True)
-    # Data do ÚLTIMO pagamento aprovado/confirmado (UTC)
+    status_pagamento = db.Column(db.String(20), default='pendente')
     data_pagamento = db.Column(db.DateTime)
-
     teares = db.relationship('Tear', backref='empresa', lazy=True, cascade="all, delete-orphan")
-
     responsavel_nome = db.Column(db.String(120))
     responsavel_sobrenome = db.Column(db.String(120))
-    # Endereço (já existente)
+    # >>> Novos campos para o endereço completo da empresa <<<
     endereco = db.Column(db.String(240))   # Rua, número, complemento, bairro
     cep      = db.Column(db.String(9))     # 00000-000
 
-    # --------- SINALIZADOR DE ASSINATURA ATIVA ---------
-    @hybrid_property
-    def assinatura_ativa(self) -> bool:
-        """
-        Considera 'ativa' se o status for aprovado/ativo/trial e se a data do último
-        pagamento ainda estiver dentro da janela (ASSINATURA_GRACA_DIAS). Se o gateway
-        marcar ativo mas não enviar data, assume True.
-        """
-        status = (self.status_pagamento or '').strip().lower()
-        status_ok = status in {'aprovado', 'ativo', 'active', 'paid', 'trial'}
-        if not status_ok:
-            return False
-
-        # sem data_pagamento: considere ativo (ex.: trial ou gateway não registrou)
-        if self.data_pagamento is None:
-            return True
-
-        return self.data_pagamento + timedelta(days=ASSINATURA_GRACA_DIAS) >= datetime.utcnow()
-
-    @assinatura_ativa.expression
-    def assinatura_ativa(cls):
-        """
-        Versão SQL para uso em filtros (funciona no Postgres).
-        Regra: status OK E (data_pagamento IS NULL OU now() <= data_pagamento + 35 dias)
-        """
-        status_lower = func.lower(func.coalesce(cls.status_pagamento, ''))
-        return and_(
-            status_lower.in_(['aprovado', 'ativo', 'active', 'paid', 'trial']),
-            or_(
-                cls.data_pagamento.is_(None),
-                func.now() <= (cls.data_pagamento + text("INTERVAL '35 days'"))
-            )
-        )
-
-    # (Opcional) útil para exibir no painel quando expira
-    @property
-    def assinatura_expira_em(self):
-        if self.data_pagamento is None:
-            return None
-        return self.data_pagamento + timedelta(days=ASSINATURA_GRACA_DIAS)
-    # ----------------------------------------------------
-
 class Tear(db.Model):
-    # __tablename__ = 'tear'  # opcional (SQLAlchemy infere 'tear')
     id = db.Column(db.Integer, primary_key=True)
     marca = db.Column(db.String(100), nullable=False)
     modelo = db.Column(db.String(100), nullable=False)
@@ -923,8 +852,6 @@ class Tear(db.Model):
     # você usa string para elastano (Sim/Não) — mantenha:
     elastano = db.Column(db.String(10), nullable=False)
     empresa_id = db.Column(db.Integer, db.ForeignKey('empresa.id'), nullable=False)
-    # (Opcional) se existir flag de tear
-    # ativo = db.Column(db.Boolean, default=True, index=True)
 
 class ClienteProfile(db.Model):
     __tablename__ = 'cliente_profile'
@@ -1155,20 +1082,6 @@ def _ensure_empresa_address_columns():
     except Exception as e:
         app.logger.warning(f"[BOOT] ensure endereco/cep failed: {e}")
 
-def _ensure_pagamento_cols():
-    # cria as colunas se não existirem (PostgreSQL)
-    sql = """
-    ALTER TABLE empresa
-      ADD COLUMN IF NOT EXISTS assinatura_status VARCHAR(20) DEFAULT 'pending',
-      ADD COLUMN IF NOT EXISTS assinatura_expira_em TIMESTAMPTZ NULL;
-    """
-    try:
-        with db.engine.begin() as con:
-            con.exec_driver_sql(sql)
-        app.logger.info("[BOOT] Pagamento: colunas OK")
-    except Exception as e:
-        app.logger.error(f"[BOOT] Falha ao garantir colunas de pagamento: {e}")
-
 def _run_bootstrap_once():
     """Cria tabelas/migrações leves quando o DB está UP; caso contrário, adia."""
     global _BOOTSTRAP_DONE
@@ -1187,12 +1100,7 @@ def _run_bootstrap_once():
     try:
         # 1) cria tabelas base
         db.create_all()
-        _ensure_pagamento_cols()            # <<-- ADICIONE AQUI
-        _ensure_empresa_address_columns()
-        _ensure_auth_layer_and_link()
-        _ensure_cliente_profile_table()
 
-        
         # 2) GARANTE colunas novas (antes de qualquer SELECT em empresa)
         _ensure_empresa_address_columns()
         _ensure_teares_pistas_cols() 
@@ -1471,28 +1379,12 @@ def index():
             "cidade":   (v.get("cidade") or "").strip(),
         }
 
-        q_base = Tear.query.join(Empresa, Tear.empresa_id == Empresa.id)
+        q_base = Tear.query.outerjoin(Empresa)
         # Se a coluna 'ativo' não existir, ignora silenciosamente
         try:
             q_base = q_base.filter(Tear.ativo.is_(True))
         except Exception:
             pass
-
-        # 🔒 Regra de negócio: só empresas com pagamento/assinatura ativa
-        # 1) Se você tiver a propriedade híbrida Empresa.assinatura_ativa (recomendado)
-        try:
-            q_base = q_base.filter(Empresa.assinatura_ativa)
-        except Exception:
-            # 2) Fallback por data "pago até"
-            try:
-                q_base = q_base.filter(Empresa.pago_ate >= db.func.now())
-            except Exception:
-                # 3) Fallback por status textual
-                try:
-                    q_base = q_base.filter(Empresa.assinatura_status.in_(["active", "approved", "trial"]))
-                except Exception:
-                    # Se nada disso existir, segue sem o filtro (legado)
-                    pass
 
         opcoes = {"tipo": [], "diâmetro": [], "galga": [], "estado": [], "cidade": []}
         from collections import defaultdict
@@ -1766,7 +1658,7 @@ def _otp_email_html(dest_email: str, code: str, minutes: int = 30) -> str:
 def _otp_send(to_email: str, ip: str = "", ua: str = ""):
     """Gera OTP, salva expiração e envia e-mail HTML (30 min)."""
     try:
-        code = f"{randbelow(1_000_000):06d}"
+        code = f"{random.randint(0, 999999):06d}"
         minutes = 30
 
         data = session.get("otp_login", {})
@@ -1778,9 +1670,7 @@ def _otp_send(to_email: str, ip: str = "", ua: str = ""):
             "attempts": 0,
         }
         session["otp_login"] = data
-        session.modified = True
-        current_app.logger.info({"otp.set": True, "emails_guardados": list((session.get("otp_login") or {}).keys())})
-        
+
         subject = "Seu código de acesso – AcheTece"
         text    = f"Seu código é {code}. Ele expira em {minutes} minutos."
         html    = _otp_email_html(to_email, code, minutes)
@@ -1888,39 +1778,20 @@ def resend_login_code():
     return redirect(url_for("login_code", email=email))
 
 # Validar código (POST)
-@app.post("/login/codigo/validar", endpoint="validate_login_code")
+@app.post("/login/codigo/validar")
 def validate_login_code():
     email = (request.form.get("email") or request.args.get("email") or "").strip().lower()
-
-    # 1) Pega os 6 dígitos individuais (d1..d6)
-    digits_joined = "".join((request.form.get(k, "") for k in ("d1", "d2", "d3", "d4", "d5", "d6")))
-
-    # 2) Fallback para campos agregados (codigo/code), caso existam
-    raw_code = (digits_joined or request.form.get("codigo") or request.form.get("code") or "").strip()
-
-    # 3) Garante somente dígitos
-    codigo = re.sub(r"\D", "", raw_code)
-
-    if not email:
-        flash("Informe um e-mail válido.", "error")
-        return redirect(url_for("login"))
-
-    if not codigo:
-        flash("Digite o código recebido por e-mail.", "error")
-        return redirect(url_for("login_code", email=email))
+    codigo = (request.form.get("codigo") or request.form.get("code") or "").strip()
 
     ok, msg = _otp_validate(email, codigo)
     if not ok:
-        # Mantém usuário na tela do código
-        flash(msg, "error")
+        flash(msg, "danger")
         return redirect(url_for("login_code", email=email))
 
-    # Sucesso: faz login da empresa (se existir)
     emp = Empresa.query.filter(func.lower(Empresa.email) == email).first()
     if emp:
         session["empresa_id"] = emp.id
         session["empresa_apelido"] = emp.apelido or emp.nome or emp.email.split("@")[0]
-        session.modified = True
         flash("Bem-vindo!", "success")
         return redirect(url_for("painel_malharia"))
 
