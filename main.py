@@ -808,6 +808,14 @@ _ANALYTICS_READY  = False
 # --------------------------------------------------------------------
 # Modelos
 # --------------------------------------------------------------------
+# --- IMPORTS necessários no topo do main.py ---
+from datetime import datetime, timedelta
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy import and_, or_, func, text
+# ----------------------------------------------
+
+ASSINATURA_GRACA_DIAS = 35  # janela de validade após o último pagamento aprovado
+
 class Usuario(db.Model):
     __tablename__ = 'usuario'
     id = db.Column(db.Integer, primary_key=True)
@@ -819,26 +827,77 @@ class Usuario(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Empresa(db.Model):
+    # __tablename__ = 'empresa'  # opcional (SQLAlchemy infere 'empresa')
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), unique=True)
     usuario = db.relationship('Usuario', backref=db.backref('empresa', uselist=False))
+
     nome = db.Column(db.String(100), nullable=False, unique=True)
     apelido = db.Column(db.String(50), unique=True)
     email = db.Column(db.String(100), nullable=False, unique=True)
     senha = db.Column(db.String(200), nullable=False)
+
     cidade = db.Column(db.String(100))
     estado = db.Column(db.String(2))
     telefone = db.Column(db.String(20))
-    status_pagamento = db.Column(db.String(20), default='pendente')
+
+    # 🔎 Campos já existentes para pagamento/assinatura
+    status_pagamento = db.Column(db.String(20), default='pendente', index=True)
+    # Data do ÚLTIMO pagamento aprovado/confirmado (UTC)
     data_pagamento = db.Column(db.DateTime)
+
     teares = db.relationship('Tear', backref='empresa', lazy=True, cascade="all, delete-orphan")
+
     responsavel_nome = db.Column(db.String(120))
     responsavel_sobrenome = db.Column(db.String(120))
-    # >>> Novos campos para o endereço completo da empresa <<<
+    # Endereço (já existente)
     endereco = db.Column(db.String(240))   # Rua, número, complemento, bairro
     cep      = db.Column(db.String(9))     # 00000-000
 
+    # --------- SINALIZADOR DE ASSINATURA ATIVA ---------
+    @hybrid_property
+    def assinatura_ativa(self) -> bool:
+        """
+        Considera 'ativa' se o status for aprovado/ativo/trial e se a data do último
+        pagamento ainda estiver dentro da janela (ASSINATURA_GRACA_DIAS). Se o gateway
+        marcar ativo mas não enviar data, assume True.
+        """
+        status = (self.status_pagamento or '').strip().lower()
+        status_ok = status in {'aprovado', 'ativo', 'active', 'paid', 'trial'}
+        if not status_ok:
+            return False
+
+        # sem data_pagamento: considere ativo (ex.: trial ou gateway não registrou)
+        if self.data_pagamento is None:
+            return True
+
+        return self.data_pagamento + timedelta(days=ASSINATURA_GRACA_DIAS) >= datetime.utcnow()
+
+    @assinatura_ativa.expression
+    def assinatura_ativa(cls):
+        """
+        Versão SQL para uso em filtros (funciona no Postgres).
+        Regra: status OK E (data_pagamento IS NULL OU now() <= data_pagamento + 35 dias)
+        """
+        status_lower = func.lower(func.coalesce(cls.status_pagamento, ''))
+        return and_(
+            status_lower.in_(['aprovado', 'ativo', 'active', 'paid', 'trial']),
+            or_(
+                cls.data_pagamento.is_(None),
+                func.now() <= (cls.data_pagamento + text("INTERVAL '35 days'"))
+            )
+        )
+
+    # (Opcional) útil para exibir no painel quando expira
+    @property
+    def assinatura_expira_em(self):
+        if self.data_pagamento is None:
+            return None
+        return self.data_pagamento + timedelta(days=ASSINATURA_GRACA_DIAS)
+    # ----------------------------------------------------
+
 class Tear(db.Model):
+    # __tablename__ = 'tear'  # opcional (SQLAlchemy infere 'tear')
     id = db.Column(db.Integer, primary_key=True)
     marca = db.Column(db.String(100), nullable=False)
     modelo = db.Column(db.String(100), nullable=False)
@@ -852,6 +911,8 @@ class Tear(db.Model):
     # você usa string para elastano (Sim/Não) — mantenha:
     elastano = db.Column(db.String(10), nullable=False)
     empresa_id = db.Column(db.Integer, db.ForeignKey('empresa.id'), nullable=False)
+    # (Opcional) se existir flag de tear
+    # ativo = db.Column(db.Boolean, default=True, index=True)
 
 class ClienteProfile(db.Model):
     __tablename__ = 'cliente_profile'
@@ -1100,7 +1161,11 @@ def _run_bootstrap_once():
     try:
         # 1) cria tabelas base
         db.create_all()
-
+        _ensure_pagamento_cols()            # <<-- ADICIONE AQUI
+        _ensure_empresa_address_columns()
+        _ensure_auth_layer_and_link()
+        _ensure_cliente_profile_table()
+        
         # 2) GARANTE colunas novas (antes de qualquer SELECT em empresa)
         _ensure_empresa_address_columns()
         _ensure_teares_pistas_cols() 
@@ -1116,6 +1181,20 @@ def _run_bootstrap_once():
     except Exception as e:
         db.session.rollback()
         app.logger.error("[BOOT] adiado: %s", e)
+
+def _ensure_pagamento_cols():
+    # cria as colunas se não existirem (PostgreSQL)
+    sql = """
+    ALTER TABLE empresa
+      ADD COLUMN IF NOT EXISTS assinatura_status VARCHAR(20) DEFAULT 'pending',
+      ADD COLUMN IF NOT EXISTS assinatura_expira_em TIMESTAMPTZ NULL;
+    """
+    try:
+        with db.engine.begin() as con:
+            con.exec_driver_sql(sql)
+        app.logger.info("[BOOT] Pagamento: colunas OK")
+    except Exception as e:
+        app.logger.error(f"[BOOT] Falha ao garantir colunas de pagamento: {e}")
 
 @app.before_request
 def _bootstrap_and_analytics_lazy():
@@ -1379,13 +1458,30 @@ def index():
             "cidade":   (v.get("cidade") or "").strip(),
         }
 
-        q_base = Tear.query.outerjoin(Empresa)
+        q_base = Tear.query.join(Empresa, Tear.empresa_id == Empresa.id)
         # Se a coluna 'ativo' não existir, ignora silenciosamente
         try:
             q_base = q_base.filter(Tear.ativo.is_(True))
         except Exception:
             pass
 
+        # 🔒 Regra de negócio: só empresas com pagamento/assinatura ativa
+        # 1) Se você tiver a propriedade híbrida Empresa.assinatura_ativa (recomendado)
+        try:
+            q_base = q_base.filter(Empresa.assinatura_ativa)
+        except Exception:
+            # 2) Fallback por data "pago até"
+            try:
+                q_base = q_base.filter(Empresa.pago_ate >= db.func.now())
+            except Exception:
+                # 3) Fallback por status textual
+                try:
+                    q_base = q_base.filter(Empresa.assinatura_status.in_(["active", "approved", "trial"]))
+                except Exception:
+                    # Se nada disso existir, segue sem o filtro (legado)
+                    pass
+        # ---- FIM: nova query base ----
+        
         opcoes = {"tipo": [], "diâmetro": [], "galga": [], "estado": [], "cidade": []}
         from collections import defaultdict
         cidades_por_uf = defaultdict(set)
