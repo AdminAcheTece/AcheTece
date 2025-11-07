@@ -1379,12 +1379,28 @@ def index():
             "cidade":   (v.get("cidade") or "").strip(),
         }
 
-        q_base = Tear.query.outerjoin(Empresa)
+        q_base = Tear.query.join(Empresa, Tear.empresa_id == Empresa.id)
         # Se a coluna 'ativo' não existir, ignora silenciosamente
         try:
             q_base = q_base.filter(Tear.ativo.is_(True))
         except Exception:
             pass
+
+        # 🔒 Regra de negócio: só empresas com pagamento/assinatura ativa
+        # 1) Se você tiver a propriedade híbrida Empresa.assinatura_ativa (recomendado)
+        try:
+            q_base = q_base.filter(Empresa.assinatura_ativa)
+        except Exception:
+            # 2) Fallback por data "pago até"
+            try:
+                q_base = q_base.filter(Empresa.pago_ate >= db.func.now())
+            except Exception:
+                # 3) Fallback por status textual
+                try:
+                    q_base = q_base.filter(Empresa.assinatura_status.in_(["active", "approved", "trial"]))
+                except Exception:
+                    # Se nada disso existir, segue sem o filtro (legado)
+                    pass
 
         opcoes = {"tipo": [], "diâmetro": [], "galga": [], "estado": [], "cidade": []}
         from collections import defaultdict
