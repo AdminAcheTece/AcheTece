@@ -31,6 +31,7 @@ from PIL import Image
 import shutil
 from datetime import datetime, timedelta
 from flask import current_app, request
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 # SMTP direto (fallback)
 import smtplib, ssl
@@ -73,7 +74,13 @@ app.config.update(
     MAIL_TIMEOUT=int(os.getenv("MAIL_TIMEOUT", "8")),
     MAIL_SUPPRESS_SEND=_env_bool("MAIL_SUPPRESS_SEND", False),
     OTP_DEV_FALLBACK=_env_bool("OTP_DEV_FALLBACK", False),
-
+    SECRET_KEY=os.environ.get("SECRET_KEY") or "mude-isto-em-producao",
+    SESSION_COOKIE_NAME="achetece_session",
+    SESSION_COOKIE_SECURE=True,         # HTTPS
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_DOMAIN=".achetece.com.br",  # vale para www e raiz
+    PREFERRED_URL_SCHEME="https",
+    
     SESSION_COOKIE_SECURE=True,        # mantém HTTPS
     SESSION_COOKIE_SAMESITE="None",    # <<< ajuste p/ iOS (atenção: string "None")
 )
@@ -96,12 +103,17 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 @app.before_request
-def _force_www_https():
-    host = request.host.split(':')[0]
-    # Só redireciona quando acessarem sem "www"
-    if host == "achetece.com.br":
-        # preserva caminho e querystring
-        url = request.url.replace("://achetece.com.br", "://www.achetece.com.br")
+def _force_www_host():
+    host = (request.host or "").split(":")[0]
+    # deixe passar no dev
+    allowed_dev = {"localhost", "127.0.0.1", "achetece.replit.app"}
+    if host in allowed_dev:
+        return
+    # força canônico em produção
+    if host != "www.achetece.com.br":
+        url = "https://www.achetece.com.br" + request.full_path
+        if url.endswith("?"):  # remove '?' solto
+            url = url[:-1]
         return redirect(url, code=301)
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
@@ -1754,7 +1766,7 @@ def _otp_email_html(dest_email: str, code: str, minutes: int = 30) -> str:
 def _otp_send(to_email: str, ip: str = "", ua: str = ""):
     """Gera OTP, salva expiração e envia e-mail HTML (30 min)."""
     try:
-        code = f"{random.randint(0, 999999):06d}"
+        code = f"{randbelow(1_000_000):06d}"
         minutes = 30
 
         data = session.get("otp_login", {})
@@ -1766,7 +1778,9 @@ def _otp_send(to_email: str, ip: str = "", ua: str = ""):
             "attempts": 0,
         }
         session["otp_login"] = data
-
+        session.modified = True
+        current_app.logger.info({"otp.set": True, "emails_guardados": list((session.get("otp_login") or {}).keys())})
+        
         subject = "Seu código de acesso – AcheTece"
         text    = f"Seu código é {code}. Ele expira em {minutes} minutos."
         html    = _otp_email_html(to_email, code, minutes)
@@ -1874,20 +1888,39 @@ def resend_login_code():
     return redirect(url_for("login_code", email=email))
 
 # Validar código (POST)
-@app.post("/login/codigo/validar")
+@app.post("/login/codigo/validar", endpoint="validate_login_code")
 def validate_login_code():
     email = (request.form.get("email") or request.args.get("email") or "").strip().lower()
-    codigo = (request.form.get("codigo") or request.form.get("code") or "").strip()
+
+    # 1) Pega os 6 dígitos individuais (d1..d6)
+    digits_joined = "".join((request.form.get(k, "") for k in ("d1", "d2", "d3", "d4", "d5", "d6")))
+
+    # 2) Fallback para campos agregados (codigo/code), caso existam
+    raw_code = (digits_joined or request.form.get("codigo") or request.form.get("code") or "").strip()
+
+    # 3) Garante somente dígitos
+    codigo = re.sub(r"\D", "", raw_code)
+
+    if not email:
+        flash("Informe um e-mail válido.", "error")
+        return redirect(url_for("login"))
+
+    if not codigo:
+        flash("Digite o código recebido por e-mail.", "error")
+        return redirect(url_for("login_code", email=email))
 
     ok, msg = _otp_validate(email, codigo)
     if not ok:
-        flash(msg, "danger")
+        # Mantém usuário na tela do código
+        flash(msg, "error")
         return redirect(url_for("login_code", email=email))
 
+    # Sucesso: faz login da empresa (se existir)
     emp = Empresa.query.filter(func.lower(Empresa.email) == email).first()
     if emp:
         session["empresa_id"] = emp.id
         session["empresa_apelido"] = emp.apelido or emp.nome or emp.email.split("@")[0]
+        session.modified = True
         flash("Bem-vindo!", "success")
         return redirect(url_for("painel_malharia"))
 
