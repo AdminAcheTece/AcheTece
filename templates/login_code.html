@@ -333,7 +333,8 @@
       
       <form action="{{ url_for('validate_login_code') }}" method="POST" id="otpForm" novalidate>
         <input type="hidden" name="email" value="{{ email }}">
-
+        <input type="hidden" name="codigo" id="codigo">
+        
         <div class="otp" id="otp">
           <input inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="one-time-code" name="d1" class="otp-digit" aria-label="Primeiro dígito" />
           <input inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="one-time-code" name="d2" class="otp-digit" aria-label="Segundo dígito" />
@@ -428,8 +429,11 @@
   <script>
     (function(){
       const inputs = Array.from(document.querySelectorAll('.otp-digit'));
+      const form   = document.getElementById('otpForm');
+      const hid    = document.getElementById('codigo');
+  
       inputs[0]?.focus();
-
+  
       inputs.forEach((inp, idx) => {
         inp.addEventListener('input', e => {
           inp.value = inp.value.replace(/\D/g,'').slice(0,1);
@@ -439,15 +443,24 @@
           if (e.key === 'Backspace' && !inp.value && idx > 0) inputs[idx-1].focus();
         });
       });
-
+  
+      // Colar 6 dígitos: preenche campos, seta o hidden e envia
       document.getElementById('otp').addEventListener('paste', e => {
         const txt = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g,'').slice(0,6);
         if (!txt) return;
         e.preventDefault();
-        for (let i=0;i<Math.min(6, txt.length);i++){ inputs[i].value = txt[i]; }
-        if (txt.length === 6) document.getElementById('otpForm').submit();
+        for (let i = 0; i < Math.min(6, txt.length); i++) inputs[i].value = txt[i];
+        if (txt.length === 6) { hid.value = txt; form.submit(); }
+      });
+  
+      // Submit normal: junta d1..d6, valida e envia no hidden
+      form.addEventListener('submit', (e) => {
+        const code = inputs.map(i => i.value).join('');
+        if (code.length !== 6) { e.preventDefault(); inputs[0].focus(); return; }
+        hid.value = code;
       });
     })();
   </script>
+
 </body>
 </html>
