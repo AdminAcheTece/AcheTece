@@ -36,6 +36,13 @@ from flask import current_app, request
 import smtplib, ssl
 from email.message import EmailMessage
 
+# === Configurações/Constantes do AcheTece ===
+# Dica: você pode ajustar pelo ambiente do Render: ASSIN_TOLERANCIA_DIAS=1..3
+TOLERANCIA_DIAS = int(os.getenv("ASSIN_TOLERANCIA_DIAS", "1"))
+
+# Se existir a linha antiga, deixe comentada para não confundir:
+# ASSINATURA_GRACA_DIAS = 35  # (obsoleto; não usamos mais)
+
 # --------------------------------------------------------------------
 # Configuração básica
 # --------------------------------------------------------------------
@@ -2122,14 +2129,14 @@ def _proximo_step(emp: Empresa) -> str:
 
 from flask import make_response
 
-# --- Rota do Painel (versão atualizada) ---
+# --- Rota do Painel (versão com vencimento mensal + próximo dia útil) ---
 @app.route('/painel_malharia', endpoint="painel_malharia")
 def painel_malharia():
     emp, u = _get_empresa_usuario_da_sessao()
     if not emp or not u:
         return redirect(url_for('login'))
 
-    # Garante que nenhum objeto "velho" fique preso na identity map
+    # Evita objetos “velhos” ficarem presos na identity map
     try:
         db.session.expire_all()
     except Exception:
@@ -2137,7 +2144,7 @@ def painel_malharia():
 
     step = request.args.get("step") or _proximo_step(emp)
 
-    # Reconsulta FRESCA no banco e já ordena (mais recente primeiro)
+    # Reconsulta FRESCA os teares e ordena (mais recente primeiro)
     teares = (
         Tear.query
             .filter_by(empresa_id=emp.id)
@@ -2145,16 +2152,46 @@ def painel_malharia():
             .all()
     )
 
-    is_ativa = (emp.status_pagamento or "pendente") in ("ativo", "aprovado")
+    # 1) Status declarado pelo pagamento (aprovado/ativo)
+    status_ok = (getattr(emp, "status_pagamento", None) or "pendente") in ("ativo", "aprovado")
 
-    # === NOVO: cálculo de vencimento (mensal + próximo dia útil, BR) ===
+    # 2) Cálculo de vencimento do CICLO ATUAL:
+    #    âncora = último pagamento (ou data de início/criação)
+    #    vencimento = (âncora + 1 mês) ajustado para o próximo dia útil BR
     vencimento_proximo, dias_restantes = (None, None)
-    if is_ativa:
+    ativa_pelo_tempo = False
+
+    try:
+        # Hoje (preferindo timezone Brasil)
         try:
-            # usa helpers adicionadas anteriormente (calc_vencimento_mensal_br)
-            vencimento_proximo, dias_restantes = calc_vencimento_mensal_br(emp)
-        except Exception as e:
-            app.logger.warning(f"[painel] calc_vencimento_mensal_br falhou: {e}")
+            from zoneinfo import ZoneInfo
+            hoje = datetime.now(ZoneInfo("America/Sao_Paulo")).date()
+        except Exception:
+            hoje = date.today()
+
+        if status_ok:
+            base_dt = (
+                (emp.assin_ultimo_pagamento.date() if isinstance(getattr(emp, "assin_ultimo_pagamento", None), datetime)
+                 else getattr(emp, "assin_ultimo_pagamento", None))
+                or getattr(emp, "assin_data_inicio", None)
+                or (emp.created_at.date() if isinstance(getattr(emp, "created_at", None), datetime) else getattr(emp, "created_at", None))
+                or hoje
+            )
+
+            # Vencimento do ciclo imediatamente seguinte ao último pagamento
+            nominal = _add_meses(base_dt, 1)
+            venc = _proximo_dia_util_br(nominal)
+
+            vencimento_proximo = venc
+            dias_restantes = (venc - hoje).days
+
+            # Ativa se ainda estamos dentro do prazo (com tolerância opcional)
+            ativa_pelo_tempo = hoje <= (venc + timedelta(days=TOLERANCIA_DIAS))
+    except Exception as e:
+        app.logger.warning(f"[painel] cálculo de vencimento falhou: {e}")
+
+    # Assinatura ativa = status OK (MP) E ainda dentro do prazo calculado
+    is_ativa = status_ok and ativa_pelo_tempo
 
     checklist = {
         "perfil_ok": all(_empresa_basica_completa(emp)),
@@ -2170,7 +2207,7 @@ def painel_malharia():
     # Foto (mantido)
     foto_url = getattr(emp, "foto_url", None) or _foto_url_runtime(emp.id)
 
-    # Evita cache do navegador/proxy para sempre ver os dados atualizados
+    # Render + evita cache para ver dados sempre atualizados
     resp = make_response(render_template(
         "painel_malharia.html",
         empresa=emp,
@@ -2182,7 +2219,7 @@ def painel_malharia():
         notificacoes_lista=notif_lista,
         chat_nao_lidos=chat_nao_lidos,
         foto_url=foto_url,
-        # === NOVO: disponíveis no template ===
+        # Disponíveis no template (o HERO só mostra quando assinatura_ativa=True)
         vencimento_proximo=vencimento_proximo,
         dias_restantes=dias_restantes,
     ))
