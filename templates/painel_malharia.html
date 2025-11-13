@@ -404,7 +404,65 @@
   }
 
   /* Ícone compactado dentro da chip de vencimento */
-  .chip .ico{ width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:1.8; }
+  .chip .ico{
+    width:14px;
+    height:14px;
+    stroke:currentColor;
+    fill:none;
+    stroke-width:1.8;
+  }
+
+  /* ===== Ajustes específicos para CELULAR (até 520px) ===== */
+  @media (max-width:520px){
+
+    /* Deixa os chips mais “soltos” para não quebrar estranho */
+    .hero-chips{
+      gap:6px;
+      align-items:flex-start;
+    }
+
+    .hero-chips .chip{
+      display:flex;
+      align-items:flex-start;
+      flex-wrap:wrap;
+      height:auto;                 /* não força 32px */
+      padding:6px 10px;            /* um pouco mais de respiro */
+      gap:6px;
+      font-size:0.80rem;           /* levemente menor no mobile */
+      max-width:100%;
+      line-height:1.3;
+    }
+
+    .hero-chips .chip .ico{
+      margin-top:1px;              /* ícone alinhado ao texto */
+      flex-shrink:0;
+    }
+
+    .hero-chips .chip span{
+      white-space:normal;          /* permite quebrar em mais de uma linha */
+    }
+
+    /* ===== Título + botão "+ Cadastrar Tear" no mobile ===== */
+
+    .sec-title{
+      flex-direction:column;       /* título em cima, botão embaixo */
+      align-items:flex-start;
+      gap:4px;
+    }
+
+    /* diminui um pouco o "Teares Cadastrados" só no celular */
+    .sec-title h2{
+      font-size:1rem;
+      margin:0;
+    }
+
+    .sec-title .btn-roxo{
+      align-self:flex-start;       /* botão começa alinhado à esquerda */
+      height:36px;
+      font-size:13px;
+      padding:0 14px;
+    }
+  }
 </style>
 </head>
 <body>
