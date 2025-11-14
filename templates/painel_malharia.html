@@ -462,6 +462,51 @@
       font-size:13px;
       padding:0 14px;
     }
+
+    /* === Ajustes extras do chip de vencimento === */
+    .hero-chips .chip-venc{
+      white-space:nowrap;
+    }
+  
+    .hero-chips .chip-venc .chip-text{
+      white-space:nowrap;
+    }
+
+    /* === Ajuste de layout da seção de teares no MOBILE === */
+    @media (max-width:520px){
+  
+      /* já aproveitamos e refinamos um pouco o chip */
+      .hero-chips{
+        gap:6px;
+      }
+  
+      .hero-chips .chip-venc{
+        font-size:0.80rem;
+        padding:4px 8px;
+      }
+  
+      /* título + botão na mesma linha */
+      .sec-title{
+        flex-direction:row;          /* garante lado a lado */
+        align-items:center;
+        justify-content:space-between;
+        gap:6px;
+        flex-wrap:nowrap;
+      }
+  
+      /* diminui um pouco o "Teares Cadastrados" só no celular */
+      .sec-title h2{
+        font-size:0.95rem;
+        margin:0;
+      }
+  
+      /* botão mais compacto para caber na linha */
+      .sec-title .btn-roxo{
+        height:32px;
+        font-size:0.80rem;
+        padding:0 10px;
+        white-space:nowrap;
+      }
   }
 </style>
 </head>
@@ -595,10 +640,26 @@
       <div class="hero-ident">
         <div class="hero-avatar" aria-label="Foto do perfil" title="Clique no lápis para alterar a foto">
           {% if avatar_url %}
-            <img class="js-avatar" src="{{ avatar_url }}" alt="">
+            <img
+              class="js-avatar"
+              src="{{ avatar_url }}"
+              alt="Foto do perfil"
+              decoding="async"
+              referrerpolicy="no-referrer"
+              draggable="false">
           {% else %}
-            <img class="js-avatar" src="" alt="" style="display:none">
-            <svg class="avatar-ph" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path></svg>
+            <img
+              class="js-avatar"
+              src=""
+              alt="Foto do perfil"
+              style="display:none"
+              decoding="async"
+              referrerpolicy="no-referrer"
+              draggable="false">
+            <svg class="avatar-ph" viewBox="0 0 24 24">
+              <circle cx="12" cy="8" r="4"></circle>
+              <path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path>
+            </svg>
           {% endif %}
 
           <button class="edit-pencil" id="pencilToggle" type="button" title="Alterar foto do perfil" aria-label="Alterar foto do perfil">
@@ -629,16 +690,13 @@
               <span class="chip" title="Assinatura ativa"><span class="dot dot-success"></span>Assinatura ativa</span>
           
               {% if vencimento_proximo %}
-                <span class="chip"
+                <span class="chip chip-venc"
                       title="Se cair em fim de semana ou feriado nacional, o vencimento vai para o próximo dia útil.">
                   <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
                     <rect x="3" y="4" width="18" height="16" rx="2"></rect>
                     <path d="M8 2v4M16 2v4M3 10h18"></path>
                   </svg>
-                  Vence em {{ vencimento_proximo.strftime('%d/%m/%Y') }}
-                  {% if dias_restantes is not none %}
-                    <span style="color:#6b6b6b;">(em {{ dias_restantes }} dia{{ 's' if dias_restantes != 1 else '' }})</span>
-                  {% endif %}
+                  <span class="chip-text">Vence em {{ vencimento_proximo.strftime('%d/%m/%Y') }}</span>
                 </span>
               {% endif %}
           
