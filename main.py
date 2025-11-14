@@ -2156,8 +2156,8 @@ def painel_malharia():
     status_ok = (getattr(emp, "status_pagamento", None) or "pendente") in ("ativo", "aprovado")
 
     # 2) Cálculo de vencimento do CICLO ATUAL:
-    #    âncora = último pagamento (ou data de início/criação)
-    #    vencimento = âncora + N dias conforme plano, ajustado para próximo dia útil BR
+    #    âncora = data de pagamento (ou início/criação)
+    #    vencimento = âncora + N dias conforme plano, ajustado para o próximo dia útil BR
     vencimento_proximo, dias_restantes = (None, None)
     ativa_pelo_tempo = False
 
@@ -2170,17 +2170,25 @@ def painel_malharia():
             hoje = date.today()
 
         if status_ok:
-            base_dt = (
-                (emp.assin_ultimo_pagamento.date() if isinstance(getattr(emp, "assin_ultimo_pagamento", None), datetime)
-                 else getattr(emp, "assin_ultimo_pagamento", None))
-                or getattr(emp, "assin_data_inicio", None)
-                or (emp.created_at.date() if isinstance(getattr(emp, "created_at", None), datetime) else getattr(emp, "created_at", None))
-                or hoje
-            )
+            # normaliza possíveis campos de data (sempre para date)
+            ult_pgto = getattr(emp, "assin_ultimo_pagamento", None)
+            if isinstance(ult_pgto, datetime):
+                ult_pgto = ult_pgto.date()
 
-            # garante que estamos trabalhando com date
-            if isinstance(base_dt, datetime):
-                base_dt = base_dt.date()
+            data_pag = getattr(emp, "data_pagamento", None)
+            if isinstance(data_pag, datetime):
+                data_pag = data_pag.date()
+
+            inicio = getattr(emp, "assin_data_inicio", None)
+            if isinstance(inicio, datetime):
+                inicio = inicio.date()
+
+            created = getattr(emp, "created_at", None)
+            if isinstance(created, datetime):
+                created = created.date()
+
+            # ordem de prioridade: último pagamento > data_pagamento > início > criação > hoje
+            base_dt = ult_pgto or data_pag or inicio or created or hoje
 
             # dias do ciclo conforme o plano
             plano = (getattr(emp, "plano", None) or "mensal").lower()
