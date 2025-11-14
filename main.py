@@ -2157,7 +2157,7 @@ def painel_malharia():
 
     # 2) Cálculo de vencimento do CICLO ATUAL:
     #    âncora = último pagamento (ou data de início/criação)
-    #    vencimento = (âncora + 1 mês) ajustado para o próximo dia útil BR
+    #    vencimento = âncora + N dias conforme plano, ajustado para próximo dia útil BR
     vencimento_proximo, dias_restantes = (None, None)
     ativa_pelo_tempo = False
 
@@ -2178,12 +2178,22 @@ def painel_malharia():
                 or hoje
             )
 
-            # Vencimento do ciclo imediatamente seguinte ao último pagamento
-            nominal = _add_meses(base_dt, 1)
+            # garante que estamos trabalhando com date
+            if isinstance(base_dt, datetime):
+                base_dt = base_dt.date()
+
+            # dias do ciclo conforme o plano
+            plano = (getattr(emp, "plano", None) or "mensal").lower()
+            dias_plano = 30
+            if "anual" in plano:
+                dias_plano = 365
+
+            # vencimento = base + dias_plano, ajustado para próximo dia útil BR
+            nominal = base_dt + timedelta(days=dias_plano)
             venc = _proximo_dia_util_br(nominal)
 
             vencimento_proximo = venc
-            dias_restantes = (venc - hoje).days
+            dias_restantes = max((venc - hoje).days, 0)
 
             # Ativa se ainda estamos dentro do prazo (com tolerância opcional)
             ativa_pelo_tempo = hoje <= (venc + timedelta(days=TOLERANCIA_DIAS))
