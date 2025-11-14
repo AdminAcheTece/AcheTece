@@ -936,6 +936,7 @@
         try{
           const dataURL = camCanvas.toDataURL('image/jpeg', 0.92);
           if (dataURL){
+            // preview imediato na tela atual
             document.querySelectorAll('img.js-avatar').forEach(img => {
               img.src = dataURL;
               img.style.display = '';
@@ -981,7 +982,7 @@
         reader.onload = function(){
           const dataUrl = reader.result;
           if (dataUrl){
-            // apenas preview imediato na tela atual
+            // preview imediato na tela atual, sem gravar em localStorage
             setAllAvatars(dataUrl);
           }
           setTimeout(() => {
