@@ -936,10 +936,9 @@
         try{
           const dataURL = camCanvas.toDataURL('image/jpeg', 0.92);
           if (dataURL){
-            localStorage.setItem('avatarTempUrl', dataURL);
-            localStorage.setItem('avatarBustTs', String(Date.now()));
             document.querySelectorAll('img.js-avatar').forEach(img => {
-              img.src = dataURL; img.style.display = '';
+              img.src = dataURL;
+              img.style.display = '';
             });
           }
         }catch(e){}
@@ -982,8 +981,7 @@
         reader.onload = function(){
           const dataUrl = reader.result;
           if (dataUrl){
-            localStorage.setItem('avatarTempUrl', dataUrl);
-            localStorage.setItem('avatarBustTs', String(Date.now()));
+            // apenas preview imediato na tela atual
             setAllAvatars(dataUrl);
           }
           setTimeout(() => {
@@ -999,26 +997,11 @@
     inFile?.addEventListener('change', function(){ previewAndSubmit(this); });
     inCam?.addEventListener('change', function(){ previewAndSubmit(this); });
 
-    // ===== Inicialização do avatar =====
-    const sessionAvatarUrl = {{ (session.get('avatar_url') or '') | tojson }};
-    const bustTs = localStorage.getItem('avatarBustTs');
-    const tempUrl = localStorage.getItem('avatarTempUrl');
+    // ===== Inicialização do avatar (sempre a partir do servidor) =====
+    const serverAvatarUrl = {{ (avatar_url or '') | tojson }};
 
-    if (sessionAvatarUrl) {
-      setAllAvatars(sessionAvatarUrl);
-      localStorage.removeItem('avatarTempUrl');
-      localStorage.removeItem('avatarBustTs');
-    } else if (bustTs) {
-      document.querySelectorAll('img.js-avatar').forEach(img=>{
-        if (img && img.src && !img.src.startsWith('data:')){
-          img.src = addBust(img.src, bustTs);
-          img.style.display = '';
-        }
-      });
-      localStorage.removeItem('avatarBustTs');
-      if (tempUrl) setAllAvatars(tempUrl);
-    } else if (tempUrl) {
-      setAllAvatars(tempUrl);
+    if (serverAvatarUrl){
+      setAllAvatars(serverAvatarUrl);
     }
 
     // Fechamentos globais
