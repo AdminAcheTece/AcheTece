@@ -998,12 +998,32 @@
     inFile?.addEventListener('change', function(){ previewAndSubmit(this); });
     inCam?.addEventListener('change', function(){ previewAndSubmit(this); });
 
-    // ===== Inicialização do avatar (sempre a partir do servidor) =====
+    // ===== Inicialização + reforço do avatar =====
     const serverAvatarUrl = {{ (avatar_url or '') | tojson }};
 
-    if (serverAvatarUrl){
-      setAllAvatars(serverAvatarUrl);
+    function ensureServerAvatar(){
+      if (!serverAvatarUrl) return;
+
+      // usa sempre a foto oficial vinda do servidor
+      document.querySelectorAll('img.js-avatar').forEach(img => {
+        // se estiver sem src ou com algo vazio/estranho, força a URL correta
+        if (!img.src || img.src === window.location.href || img.src === window.location.origin + '/' || img.src === '' || img.src === 'about:blank') {
+          img.src = serverAvatarUrl;
+        }
+        img.style.display = '';
+      });
+
+      // garante que o placeholder some
+      document.querySelectorAll('.hero-avatar > svg.avatar-ph').forEach(svg => {
+        svg.style.display = 'none';
+      });
     }
+
+    // chama imediatamente
+    ensureServerAvatar();
+    // reforça depois de alguns segundos, caso outro script tente limpar
+    setTimeout(ensureServerAvatar, 1500);
+    setTimeout(ensureServerAvatar, 4000);
 
     // Fechamentos globais
     document.addEventListener('click', ()=>{ closeMenu(); closeNotif(); });
