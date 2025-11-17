@@ -520,7 +520,8 @@
 {% set lista_teares =
     (teares if teares is defined and teares is not none
      else (empresa.teares if empresa and empresa.teares else [])) %}
-{% set avatar_url = (foto_url or session.get('avatar_url') or avatar_url) %}
+{# AQUI: fonte única de avatar no painel #}
+{% set avatar_url = foto_url %}}
 
 <header class="topbar">
   <a class="logo" href="{{ url_for('index') }}" aria-label="Página inicial" title="Página inicial">
