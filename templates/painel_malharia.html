@@ -1025,6 +1025,40 @@
     setTimeout(ensureServerAvatar, 1500);
     setTimeout(ensureServerAvatar, 4000);
 
+    // ===== FIX definitivo do avatar: sempre usar foto_url do servidor =====
+    const fotoUrlFix = {{ (foto_url or '') | tojson }};
+
+    function fixAvatarFromServer(){
+      if (!fotoUrlFix) return;
+
+      // Força todas as imagens de avatar a usar SEMPRE a foto_url vinda do backend
+      document.querySelectorAll('img.js-avatar').forEach(img => {
+        // Se estiver sem src ou com algo estranho, aplica a foto correta
+        if (
+          !img.src ||
+          img.src === window.location.href ||
+          img.src === window.location.origin + '/' ||
+          img.src === 'about:blank'
+        ){
+          img.src = fotoUrlFix;
+        }
+        img.style.display = '';
+      });
+
+      // Some com o placeholder se a foto oficial existir
+      if (fotoUrlFix){
+        document.querySelectorAll('.hero-avatar > svg.avatar-ph').forEach(svg => {
+          svg.style.display = 'none';
+        });
+      }
+    }
+
+    // Chama logo que o script carrega…
+    fixAvatarFromServer();
+    // … e reforça depois (caso algum outro script tente sobrescrever)
+    setTimeout(fixAvatarFromServer, 1500);
+    setTimeout(fixAvatarFromServer, 4000);
+  
     // Fechamentos globais
     document.addEventListener('click', ()=>{ closeMenu(); closeNotif(); });
     document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ closeMenu(); closeNotif(); closePhotoMenu(); closeCam(); }});
