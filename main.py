@@ -920,7 +920,9 @@ class Empresa(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), unique=True)
     usuario = db.relationship('Usuario', backref=db.backref('empresa', uselist=False))
-
+    
+    foto_url = db.Column(db.String(255))  # <-- PRECISA ter isso
+    
     nome = db.Column(db.String(100), nullable=False, unique=True)
     apelido = db.Column(db.String(50), unique=True)
     email = db.Column(db.String(100), nullable=False, unique=True)
@@ -1232,6 +1234,21 @@ def _ensure_empresa_address_columns():
     except Exception as e:
         app.logger.warning(f"[BOOT] ensure endereco/cep failed: {e}")
 
+def _ensure_empresa_foto_column():
+    """
+    Garante que a tabela 'empresa' tenha a coluna foto_url (VARCHAR(255)).
+    Executa um ALTER TABLE IF NOT EXISTS, seguro para rodar mais de uma vez.
+    """
+    try:
+        with db.engine.begin() as conn:
+            conn.execute(text("""
+                ALTER TABLE empresa
+                ADD COLUMN IF NOT EXISTS foto_url VARCHAR(255)
+            """))
+        app.logger.info("[BOOT] coluna empresa.foto_url OK")
+    except Exception as e:
+        app.logger.warning(f"[BOOT] não foi possível garantir empresa.foto_url: {e}")
+
 def _run_bootstrap_once():
     """Cria tabelas/migrações leves quando o DB está UP; caso contrário, adia."""
     global _BOOTSTRAP_DONE
@@ -1252,6 +1269,7 @@ def _run_bootstrap_once():
         db.create_all()
         _ensure_pagamento_cols()            # <<-- ADICIONE AQUI
         _ensure_empresa_address_columns()
+        _ensure_empresa_foto_column()
         _ensure_auth_layer_and_link()
         _ensure_cliente_profile_table()
         
