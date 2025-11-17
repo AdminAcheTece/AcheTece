@@ -2223,9 +2223,13 @@ def painel_malharia():
     # Foto: prioriza sempre o que está gravado na empresa
     foto_url = getattr(emp, "foto_url", None)
     if not foto_url:
-        foto_url = _foto_url_runtime(emp.id)
+        # fallback seguro para um avatar padrão
+        try:
+            foto_url = url_for("static", filename="avatar_default.svg")
+        except Exception:
+            foto_url = None
 
-    # Log para conferência no Render
+    # Log para você conferir no Render se a foto está vindo ou não
     app.logger.info({
         "rota": "painel_malharia",
         "empresa_id": emp.id,
@@ -2311,7 +2315,7 @@ def perfil_foto_upload():
         flash("Erro ao preparar pasta de imagens.", "erro")
         return _back_to_panel(int(datetime.utcnow().timestamp()))
 
-    # Nome do arquivo: avatar_empresa_<id>.ext
+    # Nome fixo por empresa (não muda a cada upload)
     filename = f"avatar_empresa_{emp.id}{ext}"
     filepath = os.path.join(avatars_dir, filename)
 
@@ -2322,7 +2326,7 @@ def perfil_foto_upload():
         flash("Erro ao salvar a imagem enviada.", "erro")
         return _back_to_panel(int(datetime.utcnow().timestamp()))
 
-    # Caminho que o template vai usar (relativo a /static)
+    # Caminho que o template vai usar (URL absoluta via /static)
     rel_path = f"avatars/{filename}"
     novo_url = url_for("static", filename=rel_path)
 
@@ -2337,7 +2341,7 @@ def perfil_foto_upload():
         flash("Erro ao salvar a imagem no cadastro.", "erro")
         return _back_to_panel(int(datetime.utcnow().timestamp()))
 
-    # Atualiza também a sessão, se você usar em outros lugares
+    # Atualiza também a sessão (se usar em outros lugares)
     session["avatar_url"] = novo_url
 
     app.logger.info({
