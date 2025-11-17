@@ -1331,28 +1331,26 @@ def parse_bool(val):
     s = str(val).strip().lower()
     return s in {'1','true','t','on','sim','s','yes','y'}
 
-def _foto_url_runtime(emp_id: int) -> str | None:
+def _foto_url_runtime(empresa_id: int | None):
     """
-    Resolve a URL da foto de perfil para uso imediato no template.
-    Prioriza:
-      1) session['avatar_url'] (novo fluxo /perfil/foto)
-      2) arquivo legado: static/uploads/perfil/emp_{emp_id}.ext
+    Devolve a URL da foto da empresa.
+    1) Se a empresa tiver foto_url no banco, usa essa.
+    2) Caso contrário, devolve um avatar padrão.
     """
-    # 1) Novo fluxo: URL salva na sessão pelo POST /perfil/foto
-    sess_url = session.get('avatar_url')
-    if sess_url:
-        # opcional: cache-buster simples, caso queira
-        return sess_url
+    try:
+        if not empresa_id:
+            raise ValueError("sem empresa_id")
 
-    # 2) Legado: procurar por emp_{id}.ext na pasta de perfil
-    base = os.path.join(app.root_path, "static", "uploads", "perfil")
-    for ext in ("png", "jpg", "jpeg", "webp", "gif"):
-        fn = f"emp_{emp_id}.{ext}"
-        p = os.path.join(base, fn)
-        if os.path.exists(p):
-            v = int(os.path.getmtime(p))  # cache-buster
-            return url_for("static", filename=f"uploads/perfil/{fn}") + f"?v={v}"
-    return None
+        emp = Empresa.query.get(empresa_id)
+        if emp and getattr(emp, "foto_url", None):
+            return emp.foto_url
+    except Exception as e:
+        app.logger.warning(f"[foto_url_runtime] fallback para default: {e}")
+
+    # avatar padrão (ajuste o caminho se o seu for outro)
+    return url_for("static", filename="avatar_default.svg")
+    # ou, se seu default for em outra pasta:
+    # return url_for("static", filename="img/avatar_default.svg")
 
 @app.context_processor
 def inject_avatar_url():
@@ -2222,8 +2220,18 @@ def painel_malharia():
     notif_count, notif_lista = _get_notificacoes(emp.id)
     chat_nao_lidos = 0  # ajuste aqui se tiver chat real
 
-    # Foto (mantido)
-    foto_url = getattr(emp, "foto_url", None) or _foto_url_runtime(emp.id)
+    # Foto: prioriza sempre o que está gravado na empresa
+    foto_url = getattr(emp, "foto_url", None)
+    if not foto_url:
+        foto_url = _foto_url_runtime(emp.id)
+
+    # Log para conferência no Render
+    app.logger.info({
+        "rota": "painel_malharia",
+        "empresa_id": emp.id,
+        "emp_foto_url": getattr(emp, "foto_url", None),
+        "foto_url_usada": foto_url,
+    })
 
     # Render + evita cache para ver dados sempre atualizados
     resp = make_response(render_template(
@@ -2285,7 +2293,6 @@ def perfil_foto_upload():
     file = request.files.get("foto")
     if not file or file.filename.strip() == "":
         flash("Nenhuma foto selecionada.", "erro")
-        # volta pro painel mesmo assim
         return _back_to_panel(int(datetime.utcnow().timestamp()))
 
     # Extensões permitidas
@@ -2315,13 +2322,12 @@ def perfil_foto_upload():
         flash("Erro ao salvar a imagem enviada.", "erro")
         return _back_to_panel(int(datetime.utcnow().timestamp()))
 
-    # Caminho que o template vai usar (relativo ao /static)
+    # Caminho que o template vai usar (relativo a /static)
     rel_path = f"avatars/{filename}"
+    novo_url = url_for("static", filename=rel_path)
 
     # Atualiza a empresa com a nova foto
-    emp.foto_url = url_for("static", filename=rel_path)
-    # opcional: se você tiver um campo de bust (timestamp) pode setar aqui também
-    # emp.avatar_bust_ts = int(datetime.utcnow().timestamp())
+    emp.foto_url = novo_url
 
     try:
         db.session.commit()
@@ -2331,10 +2337,15 @@ def perfil_foto_upload():
         flash("Erro ao salvar a imagem no cadastro.", "erro")
         return _back_to_panel(int(datetime.utcnow().timestamp()))
 
-    # Atualiza também a sessão, se você usa em outros lugares
-    session["avatar_url"] = emp.foto_url
+    # Atualiza também a sessão, se você usar em outros lugares
+    session["avatar_url"] = novo_url
 
-    # Usa o helper que você já tem pra voltar pro painel com cache-buster
+    app.logger.info({
+        "rota": "perfil_foto_upload",
+        "empresa_id": emp.id,
+        "foto_url_salva": novo_url,
+    })
+
     ts = int(datetime.utcnow().timestamp())
     return _back_to_panel(ts)
 
