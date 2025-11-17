@@ -2345,10 +2345,27 @@ def perfil_foto_upload():
     if not emp or not u:
         return redirect(url_for("login"))
 
-    file = request.files.get("foto")
+    # Existem até 3 inputs <input type="file" name="foto"> (lib, cam, file).
+    # Precisamos pegar o primeiro que REALMENTE tenha arquivo.
+    file = None
+    try:
+        candidatos = request.files.getlist("foto")
+    except Exception:
+        candidatos = [request.files.get("foto")]
+
+    for f in candidatos:
+        if f and getattr(f, "filename", "").strip():
+            file = f
+            break
+
     if not file or not file.filename.strip():
         flash("Nenhuma foto selecionada.", "erro")
-        app.logger.info({"rota": "perfil_foto_upload", "empresa_id": emp.id, "motivo": "sem_arquivo"})
+        app.logger.info({
+            "rota": "perfil_foto_upload",
+            "empresa_id": emp.id,
+            "motivo": "sem_arquivo",
+            "candidatos": [getattr(f, "filename", None) for f in candidatos],
+        })
         return _back_to_panel(int(datetime.utcnow().timestamp()))
 
     # extensão do arquivo original
