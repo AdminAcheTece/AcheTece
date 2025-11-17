@@ -2274,71 +2274,69 @@ def _back_to_panel(ts: int):
     # fallback: rota nomeada do painel
     return redirect(url_for('painel_malharia', _cb=ts))
 
-@app.route('/perfil/foto', methods=['POST'])
+from werkzeug.utils import secure_filename
+
+@app.route("/perfil/foto_upload", methods=["POST"], endpoint="perfil_foto_upload")
 def perfil_foto_upload():
-    uid, _ = _whoami()
-    if not uid:
-        flash('Você precisa estar logado para alterar a foto.', 'warning')
-        return redirect(request.referrer or url_for('painel_malharia'))
+    emp, u = _get_empresa_usuario_da_sessao()
+    if not emp or not u:
+        return redirect(url_for("login"))
 
-    # Pega o primeiro arquivo válido; todos os inputs devem ter name="foto"
-    file = next((fs for fs in request.files.getlist('foto') if fs and fs.filename), None)
-    if not file or not file.filename:
-        flash('Nenhum arquivo selecionado.', 'warning')
-        return redirect(request.referrer or url_for('painel_malharia'))
+    file = request.files.get("foto")
+    if not file or file.filename.strip() == "":
+        flash("Nenhuma foto selecionada.", "erro")
+        # volta pro painel mesmo assim
+        return _back_to_panel(int(datetime.utcnow().timestamp()))
 
-    if not _allowed_file(file.filename):
-        flash('Formato não permitido. Use JPG, JPEG, PNG, WEBP ou GIF.', 'danger')
-        return redirect(request.referrer or url_for('painel_malharia'))
+    # Extensões permitidas
+    filename_original = secure_filename(file.filename)
+    _, ext = os.path.splitext(filename_original.lower())
+    if ext not in {".jpg", ".jpeg", ".png", ".webp"}:
+        flash("Formato de imagem inválido. Use JPG, PNG ou WEBP.", "erro")
+        return _back_to_panel(int(datetime.utcnow().timestamp()))
 
-    # Nome estável por usuário
-    filename  = f"{uid}.webp"
-    dest_path = os.path.join(AVATAR_DIR, filename)
-
+    # Pasta onde as fotos serão salvas: static/avatars/
+    avatars_dir = os.path.join(app.static_folder, "avatars")
     try:
-        _save_square_webp(file, dest_path, side=400, quality=85)
+        os.makedirs(avatars_dir, exist_ok=True)
     except Exception as e:
-        app.logger.exception(f"[perfil/foto] Falha ao salvar: {e}")
-        flash('Não foi possível processar a imagem. Tente outro arquivo.', 'danger')
-        return redirect(request.referrer or url_for('painel_malharia'))
+        app.logger.error(f"[avatar] erro ao criar pasta avatars: {e}")
+        flash("Erro ao preparar pasta de imagens.", "erro")
+        return _back_to_panel(int(datetime.utcnow().timestamp()))
 
-    # URL pública com cache-buster pelo mtime
+    # Nome do arquivo: avatar_empresa_<id>.ext
+    filename = f"avatar_empresa_{emp.id}{ext}"
+    filepath = os.path.join(avatars_dir, filename)
+
     try:
-        v = int(os.path.getmtime(dest_path))
-    except Exception:
-        v = int(time.time())
-
-    rel_path = f"/static/uploads/avatars/{filename}"  # para DB (sem ?v)
-    rel_url  = url_for('static', filename=f'uploads/avatars/{filename}') + f'?v={v}'
-
-    # Sessão garante exibição imediata
-    session['avatar_url'] = rel_url
-    session.modified = True
-
-    # (Opcional) persistir no DB se houver campos
-    try:
-        updated = False
-        emp = _pegar_empresa_do_usuario(required=False)
-        if emp is not None:
-            if hasattr(emp, 'foto_url'):
-                emp.foto_url = rel_path; updated = True
-            elif hasattr(emp, 'logo_url'):
-                emp.logo_url = rel_path; updated = True
-
-        cu = globals().get('current_user')
-        if cu is not None:
-            if hasattr(cu, 'avatar_url'):
-                setattr(cu, 'avatar_url', rel_path); updated = True
-            elif hasattr(cu, 'photo_url'):
-                setattr(cu, 'photo_url', rel_path); updated = True
-
-        if updated:
-            db.session.commit()
+        file.save(filepath)
     except Exception as e:
-        app.logger.warning(f"[perfil/foto] DB não atualizado: {e}")
+        app.logger.error(f"[avatar] erro ao salvar arquivo: {e}")
+        flash("Erro ao salvar a imagem enviada.", "erro")
+        return _back_to_panel(int(datetime.utcnow().timestamp()))
 
-    flash('Foto atualizada com sucesso!', 'success')
-    return redirect(request.referrer or url_for('painel_malharia'))
+    # Caminho que o template vai usar (relativo ao /static)
+    rel_path = f"avatars/{filename}"
+
+    # Atualiza a empresa com a nova foto
+    emp.foto_url = url_for("static", filename=rel_path)
+    # opcional: se você tiver um campo de bust (timestamp) pode setar aqui também
+    # emp.avatar_bust_ts = int(datetime.utcnow().timestamp())
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"[avatar] erro ao gravar foto_url no banco: {e}")
+        flash("Erro ao salvar a imagem no cadastro.", "erro")
+        return _back_to_panel(int(datetime.utcnow().timestamp()))
+
+    # Atualiza também a sessão, se você usa em outros lugares
+    session["avatar_url"] = emp.foto_url
+
+    # Usa o helper que você já tem pra voltar pro painel com cache-buster
+    ts = int(datetime.utcnow().timestamp())
+    return _back_to_panel(ts)
 
 @app.context_processor
 def inject_avatar_url():
