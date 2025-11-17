@@ -2217,7 +2217,7 @@ def painel_malharia():
     checklist = {
         "perfil_ok": all(_empresa_basica_completa(emp)),
         "teares_ok": _conta_teares(emp.id) > 0,
-        "plano_ok": is_ativa or DEMO_MODE,
+        "plano_ok": is_ativa ou DEMO_MODE,
         "step": step,
     }
 
@@ -2225,11 +2225,8 @@ def painel_malharia():
     notif_count, notif_lista = _get_notificacoes(emp.id)
     chat_nao_lidos = 0  # ajuste aqui se tiver chat real
 
-    # Foto: tenta ver se existe arquivo em static/avatars/empresa_<id>.*
-    foto_url = _foto_url_runtime(emp.id)
-    # se ainda assim não achar nada, podemos usar avatar da sessão ou deixar None
-    if not foto_url:
-        foto_url = session.get("avatar_url")
+    # Foto: resolve sempre via helper (banco + arquivos em static/avatars)
+    foto_url = _empresa_avatar_url(emp)
 
     app.logger.info({
         "rota": "painel_malharia",
@@ -2285,6 +2282,45 @@ def _back_to_panel(ts: int):
     # fallback: rota nomeada do painel
     return redirect(url_for('painel_malharia', _cb=ts))
 
+def _empresa_avatar_url(emp) -> str | None:
+    """
+    Resolve a URL de foto para a empresa.
+
+    Ordem:
+    1) Se emp.foto_url estiver preenchido, usa.
+    2) Se houver arquivo em static/avatars/empresa_<id>.(jpg|jpeg|png|webp), monta a URL,
+       grava em emp.foto_url e dá commit.
+    3) Caso nada exista, retorna None (template mostra avatar padrão).
+    """
+    if not emp:
+        return None
+
+    # 1) Já tem foto gravada no banco
+    url = getattr(emp, "foto_url", None)
+    if url:
+        return url
+
+    # 2) Procura arquivos físicos
+    try:
+        base_name = f"empresa_{emp.id}"
+        exts = (".jpg", ".jpeg", ".png", ".webp")
+        for ext in exts:
+            rel_path = f"avatars/{base_name}{ext}"
+            abs_path = os.path.join(app.static_folder, rel_path)
+            if os.path.exists(abs_path):
+                url = url_for("static", filename=rel_path)
+                # grava no banco para próximas vezes ficarem mais baratas
+                try:
+                    emp.foto_url = url
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
+                return url
+    except Exception as e:
+        app.logger.warning(f"[avatar] _empresa_avatar_url erro: {e}")
+
+    return None
+
 @app.route("/perfil/foto_upload", methods=["POST"], endpoint="perfil_foto_upload")
 def perfil_foto_upload():
     emp, u = _get_empresa_usuario_da_sessao()
@@ -2294,26 +2330,29 @@ def perfil_foto_upload():
     file = request.files.get("foto")
     if not file or not file.filename.strip():
         flash("Nenhuma foto selecionada.", "erro")
+        app.logger.info({"rota": "perfil_foto_upload", "empresa_id": emp.id, "motivo": "sem_arquivo"})
         return _back_to_panel(int(datetime.utcnow().timestamp()))
 
-    # Extensão
+    # extensão do arquivo original
     filename_orig = secure_filename(file.filename)
     _, ext = os.path.splitext(filename_orig)
-    ext = ext.lower()
-    if ext not in (".jpg", ".jpeg", ".png", ".webp"):
-        flash("Formato de imagem inválido. Use JPG, JPEG, PNG ou WEBP.", "erro")
-        return _back_to_panel(int(datetime.utcnow().timestamp()))
+    ext = (ext or "").lower()
 
-    # Pasta para salvar: static/avatars
+    # se quiser ser bem permissivo, aceita tudo como .jpg
+    if ext not in (".jpg", ".jpeg", ".png", ".webp"):
+        # fallback: trata como .jpg mesmo assim
+        ext = ".jpg"
+
+    # Pasta alvo: static/avatars
     avatars_dir = os.path.join(app.static_folder, "avatars")
     try:
         os.makedirs(avatars_dir, exist_ok=True)
     except Exception as e:
         app.logger.error(f"[avatar] erro ao criar pasta avatars: {e}")
-        flash("Erro ao preparar a pasta de imagens.", "erro")
+        flash("Erro ao preparar pasta de imagens.", "erro")
         return _back_to_panel(int(datetime.utcnow().timestamp()))
 
-    # Nome fixo por empresa (sempre sobrescreve o anterior)
+    # Nome fixo por empresa (sobrescreve qualquer anterior)
     base_name = f"empresa_{emp.id}"
     filename = base_name + ext
     filepath = os.path.join(avatars_dir, filename)
@@ -2334,18 +2373,28 @@ def perfil_foto_upload():
         flash("Erro ao salvar a imagem enviada.", "erro")
         return _back_to_panel(int(datetime.utcnow().timestamp()))
 
-    # URL pública da foto (pra sessão e outras páginas, se quiser)
+    # Monta URL pública
     rel_path = f"avatars/{filename}"
-    avatar_url = url_for("static", filename=rel_path)
-    session["avatar_url"] = avatar_url
+    novo_url = url_for("static", filename=rel_path)
+
+    # Atualiza empresa + sessão
+    emp.foto_url = novo_url
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"[avatar] erro ao gravar foto_url no banco: {e}")
+        flash("Erro ao salvar a imagem no cadastro.", "erro")
+        return _back_to_panel(int(datetime.utcnow().timestamp()))
+
+    session["avatar_url"] = novo_url
 
     app.logger.info({
         "rota": "perfil_foto_upload",
         "empresa_id": emp.id,
-        "avatar_url": avatar_url,
+        "foto_url_salva": novo_url,
     })
 
-    # volta pro painel com cache-buster
     ts = int(datetime.utcnow().timestamp())
     return _back_to_panel(ts)
 
