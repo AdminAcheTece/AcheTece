@@ -82,7 +82,8 @@ app.config.update(
     OTP_DEV_FALLBACK=_env_bool("OTP_DEV_FALLBACK", False),
 
     SESSION_COOKIE_SECURE=True,        # mantém HTTPS
-    SESSION_COOKIE_SAMESITE="None",    # <<< ajuste p/ iOS (atenção: string "None")
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_DOMAIN=".achetece.com.br"  # vale para www e raiz
 )
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY") or ""
