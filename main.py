@@ -2217,7 +2217,7 @@ def painel_malharia():
     checklist = {
         "perfil_ok": all(_empresa_basica_completa(emp)),
         "teares_ok": _conta_teares(emp.id) > 0,
-        "plano_ok": is_ativa ou DEMO_MODE,
+        "plano_ok": is_ativa or DEMO_MODE,  # <--- aqui é "or", não "ou"
         "step": step,
     }
 
