@@ -1333,24 +1333,28 @@ def parse_bool(val):
 
 def _foto_url_runtime(empresa_id: int | None):
     """
-    Devolve a URL da foto da empresa.
-    1) Se a empresa tiver foto_url no banco, usa essa.
-    2) Caso contrário, devolve um avatar padrão.
+    Devolve a URL da foto da empresa com base em arquivos na pasta static/avatars.
+    Não depende de coluna no banco. Se não houver arquivo, retorna None.
     """
+    if not empresa_id:
+        return None
+
     try:
-        if not empresa_id:
-            raise ValueError("sem empresa_id")
+        base_name = f"empresa_{empresa_id}"
+        avatars_dir = os.path.join(app.static_folder, "avatars")
 
-        emp = Empresa.query.get(empresa_id)
-        if emp and getattr(emp, "foto_url", None):
-            return emp.foto_url
+        # verifica se existe algum arquivo empresa_<id>.ext
+        for ext in (".jpg", ".jpeg", ".png", ".webp"):
+            rel_path = f"avatars/{base_name}{ext}"
+            abs_path = os.path.join(app.static_folder, rel_path)
+            if os.path.exists(abs_path):
+                # encontrou o arquivo: monta a URL pública
+                return url_for("static", filename=rel_path)
     except Exception as e:
-        app.logger.warning(f"[foto_url_runtime] fallback para default: {e}")
+        app.logger.warning(f"[avatar] _foto_url_runtime erro: {e}")
 
-    # avatar padrão (ajuste o caminho se o seu for outro)
-    return url_for("static", filename="avatar_default.svg")
-    # ou, se seu default for em outra pasta:
-    # return url_for("static", filename="img/avatar_default.svg")
+    # nenhum arquivo encontrado -> deixa o template usar o avatar padrão
+    return None
 
 @app.context_processor
 def inject_avatar_url():
@@ -2220,21 +2224,16 @@ def painel_malharia():
     notif_count, notif_lista = _get_notificacoes(emp.id)
     chat_nao_lidos = 0  # ajuste aqui se tiver chat real
 
-    # Foto: prioriza sempre o que está gravado na empresa
-    foto_url = getattr(emp, "foto_url", None)
+    # Foto: tenta ver se existe arquivo em static/avatars/empresa_<id>.*
+    foto_url = _foto_url_runtime(emp.id)
+    # se ainda assim não achar nada, podemos usar avatar da sessão ou deixar None
     if not foto_url:
-        # fallback seguro para um avatar padrão
-        try:
-            foto_url = url_for("static", filename="avatar_default.svg")
-        except Exception:
-            foto_url = None
+        foto_url = session.get("avatar_url")
 
-    # Log para você conferir no Render se a foto está vindo ou não
     app.logger.info({
         "rota": "painel_malharia",
         "empresa_id": emp.id,
-        "emp_foto_url": getattr(emp, "foto_url", None),
-        "foto_url_usada": foto_url,
+        "foto_url_resolvida": foto_url,
     })
 
     # Render + evita cache para ver dados sempre atualizados
@@ -2249,7 +2248,6 @@ def painel_malharia():
         notificacoes_lista=notif_lista,
         chat_nao_lidos=chat_nao_lidos,
         foto_url=foto_url,
-        # Disponíveis no template (o HERO só mostra quando assinatura_ativa=True)
         vencimento_proximo=vencimento_proximo,
         dias_restantes=dias_restantes,
     ))
@@ -2286,8 +2284,6 @@ def _back_to_panel(ts: int):
     # fallback: rota nomeada do painel
     return redirect(url_for('painel_malharia', _cb=ts))
 
-from werkzeug.utils import secure_filename
-
 @app.route("/perfil/foto_upload", methods=["POST"], endpoint="perfil_foto_upload")
 def perfil_foto_upload():
     emp, u = _get_empresa_usuario_da_sessao()
@@ -2295,29 +2291,40 @@ def perfil_foto_upload():
         return redirect(url_for("login"))
 
     file = request.files.get("foto")
-    if not file or file.filename.strip() == "":
+    if not file or not file.filename.strip():
         flash("Nenhuma foto selecionada.", "erro")
         return _back_to_panel(int(datetime.utcnow().timestamp()))
 
-    # Extensões permitidas
-    filename_original = secure_filename(file.filename)
-    _, ext = os.path.splitext(filename_original.lower())
-    if ext not in {".jpg", ".jpeg", ".png", ".webp"}:
-        flash("Formato de imagem inválido. Use JPG, PNG ou WEBP.", "erro")
+    # Extensão
+    filename_orig = secure_filename(file.filename)
+    _, ext = os.path.splitext(filename_orig)
+    ext = ext.lower()
+    if ext not in (".jpg", ".jpeg", ".png", ".webp"):
+        flash("Formato de imagem inválido. Use JPG, JPEG, PNG ou WEBP.", "erro")
         return _back_to_panel(int(datetime.utcnow().timestamp()))
 
-    # Pasta onde as fotos serão salvas: static/avatars/
+    # Pasta para salvar: static/avatars
     avatars_dir = os.path.join(app.static_folder, "avatars")
     try:
         os.makedirs(avatars_dir, exist_ok=True)
     except Exception as e:
         app.logger.error(f"[avatar] erro ao criar pasta avatars: {e}")
-        flash("Erro ao preparar pasta de imagens.", "erro")
+        flash("Erro ao preparar a pasta de imagens.", "erro")
         return _back_to_panel(int(datetime.utcnow().timestamp()))
 
-    # Nome fixo por empresa (não muda a cada upload)
-    filename = f"avatar_empresa_{emp.id}{ext}"
+    # Nome fixo por empresa (sempre sobrescreve o anterior)
+    base_name = f"empresa_{emp.id}"
+    filename = base_name + ext
     filepath = os.path.join(avatars_dir, filename)
+
+    # Remove versões antigas com outras extensões
+    for old_ext in (".jpg", ".jpeg", ".png", ".webp"):
+        old_path = os.path.join(avatars_dir, base_name + old_ext)
+        if old_path != filepath and os.path.exists(old_path):
+            try:
+                os.remove(old_path)
+            except OSError:
+                pass
 
     try:
         file.save(filepath)
@@ -2326,30 +2333,18 @@ def perfil_foto_upload():
         flash("Erro ao salvar a imagem enviada.", "erro")
         return _back_to_panel(int(datetime.utcnow().timestamp()))
 
-    # Caminho que o template vai usar (URL absoluta via /static)
+    # URL pública da foto (pra sessão e outras páginas, se quiser)
     rel_path = f"avatars/{filename}"
-    novo_url = url_for("static", filename=rel_path)
-
-    # Atualiza a empresa com a nova foto
-    emp.foto_url = novo_url
-
-    try:
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        app.logger.error(f"[avatar] erro ao gravar foto_url no banco: {e}")
-        flash("Erro ao salvar a imagem no cadastro.", "erro")
-        return _back_to_panel(int(datetime.utcnow().timestamp()))
-
-    # Atualiza também a sessão (se usar em outros lugares)
-    session["avatar_url"] = novo_url
+    avatar_url = url_for("static", filename=rel_path)
+    session["avatar_url"] = avatar_url
 
     app.logger.info({
         "rota": "perfil_foto_upload",
         "empresa_id": emp.id,
-        "foto_url_salva": novo_url,
+        "avatar_url": avatar_url,
     })
 
+    # volta pro painel com cache-buster
     ts = int(datetime.utcnow().timestamp())
     return _back_to_panel(ts)
 
