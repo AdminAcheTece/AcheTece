@@ -2345,8 +2345,7 @@ def perfil_foto_upload():
     if not emp or not u:
         return redirect(url_for("login"))
 
-    # Existem até 3 inputs <input type="file" name="foto"> (lib, cam, file).
-    # Precisamos pegar o primeiro que REALMENTE tenha arquivo.
+    # Existem até 3 inputs <input type="file" name="foto">
     file = None
     try:
         candidatos = request.files.getlist("foto")
@@ -2358,14 +2357,14 @@ def perfil_foto_upload():
             file = f
             break
 
+    # >>> AJUSTE AQUI: NÃO FAZ MAIS flash() <<<
     if not file or not file.filename.strip():
-        flash("Nenhuma foto selecionada.", "erro")
         app.logger.info({
             "rota": "perfil_foto_upload",
             "empresa_id": emp.id,
             "motivo": "sem_arquivo",
-            "candidatos": [getattr(f, "filename", None) for f in candidatos],
         })
+        # volta silenciosamente para o painel
         return _back_to_panel(int(datetime.utcnow().timestamp()))
 
     # extensão do arquivo original
