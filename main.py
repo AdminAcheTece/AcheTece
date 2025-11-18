@@ -67,12 +67,6 @@ def _env_bool(name: str, default: bool = False) -> bool:
         return default
     return str(v).strip().lower() in {"1", "true", "t", "yes", "y", "on"}
 
-def _env_or_fail(name: str) -> str:
-    v = os.getenv(name)
-    if not v:
-        raise RuntimeError(f"Env var {name} is required: {name}")
-    return v
-    
 # --------------------------------------------------------------------
 # E-mail — Config + helpers (Resend + SMTP fallback)
 # (apenas UM bloco; removidas duplicações)
@@ -87,13 +81,9 @@ app.config.update(
     MAIL_SUPPRESS_SEND=_env_bool("MAIL_SUPPRESS_SEND", False),
     OTP_DEV_FALLBACK=_env_bool("OTP_DEV_FALLBACK", False),
 
-    SECRET_KEY=_env_or_fail("SECRET_KEY"),           # defina no Render e NÃO troque
-    SESSION_COOKIE_NAME="achetece_session",
-    SESSION_COOKIE_DOMAIN=".achetece.com.br",        # cobre www e raiz
-    SESSION_COOKIE_SECURE=True,                      # só HTTPS
+    SESSION_COOKIE_SECURE=True,        # mantém HTTPS
     SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_COOKIE_HTTPONLY=True,
-    PERMANENT_SESSION_LIFETIME=timedelta(minutes=60) # tempo suficiente p/ OTP
+    SESSION_COOKIE_DOMAIN=".achetece.com.br"  # vale para www e raiz
 )
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY") or ""
@@ -363,88 +353,72 @@ def _otp_validate(email: str, codigo: str):
       B) session['otp']       = { 'email':..., 'code':..., 'expires': iso, 'attempts': ... }
     Retorna (ok: bool, msg: str).
     """
-    from flask import current_app, session
-    from datetime import datetime
-
     email = (email or "").strip().lower()
     codigo = (codigo or "").strip()
 
-    # Regras rápidas de formato (evita seguir adiante com valor inválido)
-    if not codigo:
-        return False, "Digite o código."
-    if not codigo.isdigit() or len(codigo) != 6:
-        return False, "Código inválido: use os 6 dígitos recebidos por e-mail."
-
-    now_ts = datetime.utcnow().timestamp()
-
-    # ------------------------------------------------------------
-    # Formato A: session['otp_login'][email] -> { code, exp, attempts, ... }
-    # ------------------------------------------------------------
+    # --- Formato A: otp_login por e-mail ------------------------------------
     otp_login = session.get("otp_login")
     if isinstance(otp_login, dict) and email in otp_login and isinstance(otp_login[email], dict):
         rec = otp_login[email]
+
+        # Tentativas
+        rec["attempts"] = int(rec.get("attempts", 0)) + 1
+        # Persistir contador
+        otp_login[email] = rec
+        session["otp_login"] = otp_login
+        session.modified = True
+
+        # Expiração (timestamp UTC)
         try:
-            exp_ts = float(rec.get("exp", 0) or 0.0)
+            exp_ts = float(rec.get("exp", 0))
         except Exception:
             exp_ts = 0.0
-
-        # Expirado?
-        if exp_ts and now_ts > exp_ts:
+        if exp_ts and datetime.utcnow().timestamp() > exp_ts:
+            # Limpa apenas este e-mail
             try:
                 del otp_login[email]
             except Exception:
                 pass
             session["otp_login"] = otp_login
             session.modified = True
-            current_app.logger.info({"otp.validate": "expired", "email": email})
             return False, "Código expirado. Solicite um novo."
 
-        # Comparação segura
-        rec_code = str(rec.get("code", "")).strip()
-        if codigo != rec_code:
-            rec["attempts"] = int(rec.get("attempts", 0)) + 1
-            # Persiste tentativas
-            otp_login[email] = rec
-            session["otp_login"] = otp_login
-            session.modified = True
-
+        # Comparação
+        if str(rec.get("code", "")).strip() != str(codigo):
             if rec["attempts"] > 5:
-                # Muitas tentativas: invalida o OTP deste e-mail
+                # Muitas tentativas -> invalida este OTP
                 try:
                     del otp_login[email]
                 except Exception:
                     pass
                 session["otp_login"] = otp_login
                 session.modified = True
-                current_app.logger.warning({"otp.validate": "too_many_attempts", "email": email})
                 return False, "Muitas tentativas. Solicite um novo código."
-
-            current_app.logger.info({"otp.validate": "wrong_code", "email": email, "attempts": rec["attempts"]})
             return False, "Código incorreto. Tente novamente."
 
-        # Sucesso: limpar apenas o OTP deste e-mail
+        # Sucesso -> limpar OTP deste e-mail
         try:
             del otp_login[email]
         except Exception:
             pass
         session["otp_login"] = otp_login
         session.modified = True
-        current_app.logger.info({"otp.validate": "ok", "email": email})
         return True, "OK"
 
-    # ------------------------------------------------------------
-    # Formato B: session['otp'] com estrutura única/legada
-    # ------------------------------------------------------------
+    # --- Formato B: otp único com 'email'/'expires' ISO ---------------------
     otp_blob = session.get("otp") or {}
     if isinstance(otp_blob, dict):
         rec = None
-        if (otp_blob.get("email") or "").strip().lower() == email:
+        if otp_blob.get("email") == email:
             rec = otp_blob
         elif email in otp_blob and isinstance(otp_blob[email], dict):
             rec = otp_blob[email]
 
         if rec:
-            # Expiração ISO
+            rec["attempts"] = int(rec.get("attempts", 0)) + 1
+            session["otp"] = otp_blob
+            session.modified = True
+
             expires_iso = rec.get("expires")
             if expires_iso:
                 try:
@@ -452,35 +426,23 @@ def _otp_validate(email: str, codigo: str):
                     if datetime.utcnow() > exp_dt:
                         session.pop("otp", None)
                         session.modified = True
-                        current_app.logger.info({"otp.validate_legacy": "expired", "email": email})
                         return False, "Código expirado. Solicite um novo."
                 except Exception:
                     session.pop("otp", None)
                     session.modified = True
-                    current_app.logger.info({"otp.validate_legacy": "invalid_exp", "email": email})
                     return False, "Código inválido. Solicite um novo."
 
-            rec_code = str(rec.get("code", "")).strip()
-            if codigo != rec_code:
-                rec["attempts"] = int(rec.get("attempts", 0)) + 1
-                session["otp"] = otp_blob
-                session.modified = True
+            if str(rec.get("code", "")).strip() != str(codigo):
                 if rec["attempts"] > 5:
                     session.pop("otp", None)
                     session.modified = True
-                    current_app.logger.warning({"otp.validate_legacy": "too_many_attempts", "email": email})
                     return False, "Muitas tentativas. Solicite um novo código."
-                current_app.logger.info({"otp.validate_legacy": "wrong_code", "email": email, "attempts": rec["attempts"]})
                 return False, "Código incorreto. Tente novamente."
 
-            # Sucesso
             session.pop("otp", None)
             session.modified = True
-            current_app.logger.info({"otp.validate_legacy": "ok", "email": email})
             return True, "OK"
 
-    # Nada encontrado para este e-mail
-    current_app.logger.info({"otp.validate": "not_found", "email": email})
     return False, "Código não encontrado para este e-mail. Reenvie o código."
 
 # Mercado Pago (mantido para compat)
@@ -1913,9 +1875,7 @@ def _otp_send(to_email: str, ip: str = "", ua: str = ""):
             "attempts": 0,
         }
         session["otp_login"] = data
-        session.modified = True
-        session.permanent = True
-        
+
         subject = "Seu código de acesso – AcheTece"
         text    = f"Seu código é {code}. Ele expira em {minutes} minutos."
         html    = _otp_email_html(to_email, code, minutes)
@@ -1984,16 +1944,12 @@ def post_login_code():
     if not existe:
         return _render_try(["login.html", "AcheTece/Modelos/login.html"], email=email, no_account=True)
 
-    # ✅ limpa mensagens antigas (evita “Nenhuma foto selecionada.” e estouro do cookie)
-    session.pop("_flashes", None)
-
     ok, msg = _otp_send(
         email,
         ip=(request.headers.get("X-Forwarded-For") or request.remote_addr or "")[:64],
         ua=(request.headers.get("User-Agent") or "")[:255],
     )
-    # ✅ padroniza categorias mostradas no login_code (info / error)
-    flash(msg, "info" if ok else "error")
+    flash(msg, "success" if ok else "error")
     return redirect(url_for("login_code", email=email))
 
 # Alias com acento (POST)
@@ -2018,32 +1974,23 @@ def resend_login_code():
     email = (request.args.get("email") or "").strip().lower()
     if not email:
         return redirect(url_for("login"))
-
-    # ✅ também limpa flashes antes de reenviar
-    session.pop("_flashes", None)
-
     ok, msg = _otp_send(
         email,
         ip=(request.headers.get("X-Forwarded-For") or request.remote_addr or "")[:64],
         ua=(request.headers.get("User-Agent") or "")[:255],
     )
-    flash(msg, "info" if ok else "error")
+    flash(msg, "success" if ok else "error")
     return redirect(url_for("login_code", email=email))
 
 # Validar código (POST)
 @app.post("/login/codigo/validar")
 def validate_login_code():
-    email  = (request.form.get("email") or request.args.get("email") or "").strip().lower()
-
+    email = (request.form.get("email") or request.args.get("email") or "").strip().lower()
     codigo = (request.form.get("codigo") or request.form.get("code") or "").strip()
-    if not codigo:
-        digs = [request.form.get(f"d{i}", "").strip() for i in range(1, 7)]
-        if all(digs):
-            codigo = "".join(digs)
 
     ok, msg = _otp_validate(email, codigo)
     if not ok:
-        flash(msg, "error")  # ✅ combina com o filtro/estilo do template
+        flash(msg, "danger")
         return redirect(url_for("login_code", email=email))
 
     emp = Empresa.query.filter(func.lower(Empresa.email) == email).first()
@@ -2398,7 +2345,8 @@ def perfil_foto_upload():
     if not emp or not u:
         return redirect(url_for("login"))
 
-    # Existem até 3 inputs <input type="file" name="foto">
+    # Existem até 3 inputs <input type="file" name="foto"> (lib, cam, file).
+    # Precisamos pegar o primeiro que REALMENTE tenha arquivo.
     file = None
     try:
         candidatos = request.files.getlist("foto")
@@ -2410,14 +2358,14 @@ def perfil_foto_upload():
             file = f
             break
 
-    # >>> AJUSTE AQUI: NÃO FAZ MAIS flash() <<<
     if not file or not file.filename.strip():
+        flash("Nenhuma foto selecionada.", "erro")
         app.logger.info({
             "rota": "perfil_foto_upload",
             "empresa_id": emp.id,
             "motivo": "sem_arquivo",
+            "candidatos": [getattr(f, "filename", None) for f in candidatos],
         })
-        # volta silenciosamente para o painel
         return _back_to_panel(int(datetime.utcnow().timestamp()))
 
     # extensão do arquivo original
@@ -3598,3 +3546,4 @@ def empresas_redirect(empresa_id):
 # --------------------------------------------------------------------
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
+
