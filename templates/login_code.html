@@ -320,10 +320,8 @@
       {% with flashes = get_flashed_messages(with_categories=true) %}
         {% if flashes %}
           <div class="alerts" role="status" aria-live="polite" style="margin:8px 0 4px;">
-            {% for cat, msg in flashes %}
-              <div class="alert alert-{{cat}}" style="
-                border-radius:10px; padding:10px 12px; margin:6px 0;
-                font-size:14px; font-weight:700;">
+            {% for cat, msg in flashes if cat in ['info','danger','otp'] %}
+              <div class="alert alert-{{cat}}" style="border-radius:10px; padding:10px 12px; margin:6px 0; font-size:14px; font-weight:700;">
                 {{ msg }}
               </div>
             {% endfor %}
@@ -435,7 +433,7 @@
       inputs[0]?.focus();
   
       inputs.forEach((inp, idx) => {
-        inp.addEventListener('input', e => {
+        inp.addEventListener('input', () => {
           inp.value = inp.value.replace(/\D/g,'').slice(0,1);
           if (inp.value && idx < inputs.length - 1) inputs[idx+1].focus();
         });
@@ -444,7 +442,7 @@
         });
       });
   
-      // Colar 6 dígitos: preenche campos, seta o hidden e envia
+      // Colar direto os 6 dígitos
       document.getElementById('otp').addEventListener('paste', e => {
         const txt = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g,'').slice(0,6);
         if (!txt) return;
@@ -453,7 +451,7 @@
         if (txt.length === 6) { hid.value = txt; form.submit(); }
       });
   
-      // Submit normal: junta d1..d6, valida e envia no hidden
+      // Submit normal: junta d1..d6
       form.addEventListener('submit', (e) => {
         const code = inputs.map(i => i.value).join('');
         if (code.length !== 6) { e.preventDefault(); inputs[0].focus(); return; }
