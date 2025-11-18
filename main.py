@@ -353,72 +353,88 @@ def _otp_validate(email: str, codigo: str):
       B) session['otp']       = { 'email':..., 'code':..., 'expires': iso, 'attempts': ... }
     Retorna (ok: bool, msg: str).
     """
+    from flask import current_app, session
+    from datetime import datetime
+
     email = (email or "").strip().lower()
     codigo = (codigo or "").strip()
 
-    # --- Formato A: otp_login por e-mail ------------------------------------
+    # Regras rápidas de formato (evita seguir adiante com valor inválido)
+    if not codigo:
+        return False, "Digite o código."
+    if not codigo.isdigit() or len(codigo) != 6:
+        return False, "Código inválido: use os 6 dígitos recebidos por e-mail."
+
+    now_ts = datetime.utcnow().timestamp()
+
+    # ------------------------------------------------------------
+    # Formato A: session['otp_login'][email] -> { code, exp, attempts, ... }
+    # ------------------------------------------------------------
     otp_login = session.get("otp_login")
     if isinstance(otp_login, dict) and email in otp_login and isinstance(otp_login[email], dict):
         rec = otp_login[email]
-
-        # Tentativas
-        rec["attempts"] = int(rec.get("attempts", 0)) + 1
-        # Persistir contador
-        otp_login[email] = rec
-        session["otp_login"] = otp_login
-        session.modified = True
-
-        # Expiração (timestamp UTC)
         try:
-            exp_ts = float(rec.get("exp", 0))
+            exp_ts = float(rec.get("exp", 0) or 0.0)
         except Exception:
             exp_ts = 0.0
-        if exp_ts and datetime.utcnow().timestamp() > exp_ts:
-            # Limpa apenas este e-mail
+
+        # Expirado?
+        if exp_ts and now_ts > exp_ts:
             try:
                 del otp_login[email]
             except Exception:
                 pass
             session["otp_login"] = otp_login
             session.modified = True
+            current_app.logger.info({"otp.validate": "expired", "email": email})
             return False, "Código expirado. Solicite um novo."
 
-        # Comparação
-        if str(rec.get("code", "")).strip() != str(codigo):
+        # Comparação segura
+        rec_code = str(rec.get("code", "")).strip()
+        if codigo != rec_code:
+            rec["attempts"] = int(rec.get("attempts", 0)) + 1
+            # Persiste tentativas
+            otp_login[email] = rec
+            session["otp_login"] = otp_login
+            session.modified = True
+
             if rec["attempts"] > 5:
-                # Muitas tentativas -> invalida este OTP
+                # Muitas tentativas: invalida o OTP deste e-mail
                 try:
                     del otp_login[email]
                 except Exception:
                     pass
                 session["otp_login"] = otp_login
                 session.modified = True
+                current_app.logger.warning({"otp.validate": "too_many_attempts", "email": email})
                 return False, "Muitas tentativas. Solicite um novo código."
+
+            current_app.logger.info({"otp.validate": "wrong_code", "email": email, "attempts": rec["attempts"]})
             return False, "Código incorreto. Tente novamente."
 
-        # Sucesso -> limpar OTP deste e-mail
+        # Sucesso: limpar apenas o OTP deste e-mail
         try:
             del otp_login[email]
         except Exception:
             pass
         session["otp_login"] = otp_login
         session.modified = True
+        current_app.logger.info({"otp.validate": "ok", "email": email})
         return True, "OK"
 
-    # --- Formato B: otp único com 'email'/'expires' ISO ---------------------
+    # ------------------------------------------------------------
+    # Formato B: session['otp'] com estrutura única/legada
+    # ------------------------------------------------------------
     otp_blob = session.get("otp") or {}
     if isinstance(otp_blob, dict):
         rec = None
-        if otp_blob.get("email") == email:
+        if (otp_blob.get("email") or "").strip().lower() == email:
             rec = otp_blob
         elif email in otp_blob and isinstance(otp_blob[email], dict):
             rec = otp_blob[email]
 
         if rec:
-            rec["attempts"] = int(rec.get("attempts", 0)) + 1
-            session["otp"] = otp_blob
-            session.modified = True
-
+            # Expiração ISO
             expires_iso = rec.get("expires")
             if expires_iso:
                 try:
@@ -426,23 +442,35 @@ def _otp_validate(email: str, codigo: str):
                     if datetime.utcnow() > exp_dt:
                         session.pop("otp", None)
                         session.modified = True
+                        current_app.logger.info({"otp.validate_legacy": "expired", "email": email})
                         return False, "Código expirado. Solicite um novo."
                 except Exception:
                     session.pop("otp", None)
                     session.modified = True
+                    current_app.logger.info({"otp.validate_legacy": "invalid_exp", "email": email})
                     return False, "Código inválido. Solicite um novo."
 
-            if str(rec.get("code", "")).strip() != str(codigo):
+            rec_code = str(rec.get("code", "")).strip()
+            if codigo != rec_code:
+                rec["attempts"] = int(rec.get("attempts", 0)) + 1
+                session["otp"] = otp_blob
+                session.modified = True
                 if rec["attempts"] > 5:
                     session.pop("otp", None)
                     session.modified = True
+                    current_app.logger.warning({"otp.validate_legacy": "too_many_attempts", "email": email})
                     return False, "Muitas tentativas. Solicite um novo código."
+                current_app.logger.info({"otp.validate_legacy": "wrong_code", "email": email, "attempts": rec["attempts"]})
                 return False, "Código incorreto. Tente novamente."
 
+            # Sucesso
             session.pop("otp", None)
             session.modified = True
+            current_app.logger.info({"otp.validate_legacy": "ok", "email": email})
             return True, "OK"
 
+    # Nada encontrado para este e-mail
+    current_app.logger.info({"otp.validate": "not_found", "email": email})
     return False, "Código não encontrado para este e-mail. Reenvie o código."
 
 # Mercado Pago (mantido para compat)
