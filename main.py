@@ -67,6 +67,12 @@ def _env_bool(name: str, default: bool = False) -> bool:
         return default
     return str(v).strip().lower() in {"1", "true", "t", "yes", "y", "on"}
 
+def _env_or_fail(name: str) -> str:
+    v = os.getenv(name)
+    if not v:
+        raise RuntimeError(f"Env var {name} is required: {name}")
+    return v
+    
 # --------------------------------------------------------------------
 # E-mail — Config + helpers (Resend + SMTP fallback)
 # (apenas UM bloco; removidas duplicações)
@@ -81,9 +87,13 @@ app.config.update(
     MAIL_SUPPRESS_SEND=_env_bool("MAIL_SUPPRESS_SEND", False),
     OTP_DEV_FALLBACK=_env_bool("OTP_DEV_FALLBACK", False),
 
-    SESSION_COOKIE_SECURE=True,        # mantém HTTPS
+    SECRET_KEY=_env_or_fail("SECRET_KEY"),           # defina no Render e NÃO troque
+    SESSION_COOKIE_NAME="achetece_session",
+    SESSION_COOKIE_DOMAIN=".achetece.com.br",        # cobre www e raiz
+    SESSION_COOKIE_SECURE=True,                      # só HTTPS
     SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_COOKIE_DOMAIN=".achetece.com.br"  # vale para www e raiz
+    SESSION_COOKIE_HTTPONLY=True,
+    PERMANENT_SESSION_LIFETIME=timedelta(minutes=60) # tempo suficiente p/ OTP
 )
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY") or ""
@@ -1903,7 +1913,9 @@ def _otp_send(to_email: str, ip: str = "", ua: str = ""):
             "attempts": 0,
         }
         session["otp_login"] = data
-
+        session.modified = True
+        session.permanent = True
+        
         subject = "Seu código de acesso – AcheTece"
         text    = f"Seu código é {code}. Ele expira em {minutes} minutos."
         html    = _otp_email_html(to_email, code, minutes)
@@ -2021,15 +2033,13 @@ def resend_login_code():
 # Validar código (POST)
 @app.post("/login/codigo/validar")
 def validate_login_code():
-    email = (request.form.get("email") or request.args.get("email") or "").strip().lower()
+    email  = (request.form.get("email") or request.args.get("email") or "").strip().lower()
 
-    # ✅ lê "codigo" normalmente; se vier vazio, reconstrói de d1..d6
     codigo = (request.form.get("codigo") or request.form.get("code") or "").strip()
     if not codigo:
-        try:
-            codigo = "".join((request.form.get(f"d{i}", "") for i in range(1, 7)))
-        except Exception:
-            codigo = ""
+        digs = [request.form.get(f"d{i}", "").strip() for i in range(1, 7)]
+        if all(digs):
+            codigo = "".join(digs)
 
     ok, msg = _otp_validate(email, codigo)
     if not ok:
