@@ -1944,12 +1944,16 @@ def post_login_code():
     if not existe:
         return _render_try(["login.html", "AcheTece/Modelos/login.html"], email=email, no_account=True)
 
+    # ✅ limpa mensagens antigas (evita “Nenhuma foto selecionada.” e estouro do cookie)
+    session.pop("_flashes", None)
+
     ok, msg = _otp_send(
         email,
         ip=(request.headers.get("X-Forwarded-For") or request.remote_addr or "")[:64],
         ua=(request.headers.get("User-Agent") or "")[:255],
     )
-    flash(msg, "success" if ok else "error")
+    # ✅ padroniza categorias mostradas no login_code (info / error)
+    flash(msg, "info" if ok else "error")
     return redirect(url_for("login_code", email=email))
 
 # Alias com acento (POST)
@@ -1974,23 +1978,34 @@ def resend_login_code():
     email = (request.args.get("email") or "").strip().lower()
     if not email:
         return redirect(url_for("login"))
+
+    # ✅ também limpa flashes antes de reenviar
+    session.pop("_flashes", None)
+
     ok, msg = _otp_send(
         email,
         ip=(request.headers.get("X-Forwarded-For") or request.remote_addr or "")[:64],
         ua=(request.headers.get("User-Agent") or "")[:255],
     )
-    flash(msg, "success" if ok else "error")
+    flash(msg, "info" if ok else "error")
     return redirect(url_for("login_code", email=email))
 
 # Validar código (POST)
 @app.post("/login/codigo/validar")
 def validate_login_code():
     email = (request.form.get("email") or request.args.get("email") or "").strip().lower()
+
+    # ✅ lê "codigo" normalmente; se vier vazio, reconstrói de d1..d6
     codigo = (request.form.get("codigo") or request.form.get("code") or "").strip()
+    if not codigo:
+        try:
+            codigo = "".join((request.form.get(f"d{i}", "") for i in range(1, 7)))
+        except Exception:
+            codigo = ""
 
     ok, msg = _otp_validate(email, codigo)
     if not ok:
-        flash(msg, "danger")
+        flash(msg, "error")  # ✅ combina com o filtro/estilo do template
         return redirect(url_for("login_code", email=email))
 
     emp = Empresa.query.filter(func.lower(Empresa.email) == email).first()
