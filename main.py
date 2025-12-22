@@ -31,6 +31,7 @@ from PIL import Image
 import shutil
 from datetime import datetime, timedelta
 from flask import current_app, request
+from email.mime.text import MIMEText
 
 # SMTP direto (fallback)
 import smtplib, ssl
