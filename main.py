@@ -3268,6 +3268,177 @@ import uuid
 import mercadopago
 import os
 
+def _mp_sdk():
+    import mercadopago
+    token = os.environ.get("MP_ACCESS_TOKEN", "")
+    if not token:
+        raise RuntimeError("MP_ACCESS_TOKEN não definido.")
+    return mercadopago.SDK(token)
+
+def _extract_payment_id(req):
+    """
+    Tenta extrair o payment_id do webhook em todos os formatos comuns:
+    - JSON: {"data":{"id":...}} (geralmente com action payment.created/payment.updated)
+    - Querystring: ?data.id=...&type=payment
+    - Querystring: ?id=...&topic=payment
+    """
+    # 1) JSON
+    payload = req.get_json(silent=True) or {}
+    if isinstance(payload, dict):
+        data = payload.get("data") or {}
+        if isinstance(data, dict) and data.get("id"):
+            return str(data["id"]), payload
+
+    # 2) Querystring type=payment&data.id=...
+    if req.args.get("type") == "payment" and req.args.get("data.id"):
+        return str(req.args.get("data.id")), payload
+
+    # 3) Querystring topic=payment&id=...
+    if req.args.get("topic") == "payment" and req.args.get("id"):
+        return str(req.args.get("id")), payload
+
+    return None, payload
+
+def _mp_get_payment(payment_id: str) -> dict:
+    sdk = _mp_sdk()
+    resp = sdk.payment().get(payment_id)
+    if not isinstance(resp, dict):
+        raise RuntimeError("Resposta inválida ao consultar pagamento no Mercado Pago.")
+    payment = resp.get("response") or {}
+    if not payment:
+        raise RuntimeError(f"Não consegui obter payment.response para id={payment_id}. Resp={resp}")
+    return payment
+
+def _parse_empresa_id_from_external_reference(ext_ref: str):
+    """
+    Você criou ext_ref assim:
+      ext_ref = f"achetece:{empresa.id}:{uuid}"
+    Então aqui pegamos o segundo item como empresa_id.
+    """
+    if not ext_ref:
+        return None
+    parts = str(ext_ref).split(":")
+    if len(parts) >= 2 and parts[0] == "achetece":
+        try:
+            return int(parts[1])
+        except:
+            return None
+    return None
+
+def _send_email(to_email: str, subject: str, html: str):
+    host = os.environ.get("MAIL_HOST")
+    port = int(os.environ.get("MAIL_PORT", "587"))
+    user = os.environ.get("MAIL_USER")
+    pwd  = os.environ.get("MAIL_PASS")
+    mail_from = os.environ.get("MAIL_FROM", user)
+
+    if not (host and user and pwd and mail_from and to_email):
+        app.logger.warning("[EMAIL] Config incompleta (MAIL_HOST/USER/PASS/FROM) ou destinatário vazio.")
+        return
+
+    msg = MIMEText(html, "html", "utf-8")
+    msg["Subject"] = subject
+    msg["From"] = mail_from
+    msg["To"] = to_email
+
+    with smtplib.SMTP(host, port) as smtp:
+        smtp.starttls()
+        smtp.login(user, pwd)
+        smtp.sendmail(mail_from, [to_email], msg.as_string())
+
+def _serializer():
+    secret = os.environ.get("SECRET_KEY", "dev-secret")
+    salt = os.environ.get("MAGIC_LINK_SALT", "achetece-magic")
+    return URLSafeTimedSerializer(secret, salt=salt)
+
+def _make_magic_link(empresa_id: int) -> str:
+    token = _serializer().dumps({"empresa_id": empresa_id})
+    base = _public_base_url()
+    return f"{base}/magic/{token}"
+
+def _ativar_empresa_e_enviar_email(empresa, payment: dict, payment_id: str):
+    """
+    Atualiza status no banco e envia e-mail com link para entrar novamente.
+    Ajusta campos com segurança (só seta se existir no model).
+    """
+    status = payment.get("status")
+    status_detail = payment.get("status_detail")
+    payer_email = (payment.get("payer") or {}).get("email") or getattr(empresa, "email", None)
+
+    # Salva informações do MP se seus campos existirem
+    if hasattr(empresa, "mp_payment_id"):
+        empresa.mp_payment_id = str(payment_id)
+    if hasattr(empresa, "mp_last_status"):
+        empresa.mp_last_status = status
+    if hasattr(empresa, "mp_last_status_detail"):
+        empresa.mp_last_status_detail = status_detail
+
+    if status == "approved":
+        # status do seu admin mostra "ativo/pendente"
+        if hasattr(empresa, "status"):
+            empresa.status = "ativo"
+        if hasattr(empresa, "status_pagamento"):
+            empresa.status_pagamento = "ativo"
+        if hasattr(empresa, "data_pagamento"):
+            empresa.data_pagamento = datetime.utcnow()
+
+        db.session.commit()
+
+        # envia e-mail com link
+        if payer_email:
+            magic_link = _make_magic_link(empresa.id)
+            html = f"""
+            <div style="font-family:Arial,sans-serif;max-width:640px;line-height:1.5">
+              <h2>Pagamento aprovado ✅</h2>
+              <p>Sua conta no AcheTece está ativa.</p>
+              <p>Clique para entrar novamente:</p>
+              <p style="margin:20px 0">
+                <a href="{magic_link}" style="background:#111;color:#fff;padding:12px 16px;border-radius:10px;text-decoration:none;">
+                  Acessar minha conta
+                </a>
+              </p>
+              <p style="color:#666;font-size:12px">Link expira em 15 minutos.</p>
+            </div>
+            """
+            _send_email(payer_email, "AcheTece — Pagamento aprovado ✅", html)
+
+        return True  # ativou
+    else:
+        # mantém pendente, mas registra o status do MP se houver campos
+        if hasattr(empresa, "status") and empresa.status != "ativo":
+            empresa.status = "pendente"
+        db.session.commit()
+        return False
+
+def _processar_pagamento_por_payment_id(payment_id: str):
+    """
+    Função central:
+    - consulta MP
+    - acha empresa via external_reference (preferencial)
+    - ativa + email se approved
+    """
+    payment = _mp_get_payment(payment_id)
+
+    ext_ref = payment.get("external_reference") or ""
+    empresa_id = _parse_empresa_id_from_external_reference(ext_ref)
+
+    # fallback: se não veio external_reference, tenta pelo email do pagador
+    if not empresa_id:
+        payer_email = (payment.get("payer") or {}).get("email")
+        if payer_email:
+            empresa = Empresa.query.filter(Empresa.email.ilike(payer_email)).first()
+            if not empresa:
+                raise RuntimeError("Não achei empresa pelo e-mail do pagador.")
+        else:
+            raise RuntimeError("Pagamento sem external_reference e sem e-mail do pagador.")
+    else:
+        empresa = Empresa.query.get(empresa_id)
+        if not empresa:
+            raise RuntimeError(f"Empresa {empresa_id} não encontrada no banco.")
+
+    ativou = _ativar_empresa_e_enviar_email(empresa, payment, payment_id)
+    return {"ativou": ativou, "status": payment.get("status"), "detail": payment.get("status_detail"), "empresa_id": empresa.id}
+
 @app.route('/checkout')
 def checkout():
     # exige sessão da empresa
@@ -3331,8 +3502,23 @@ def checkout():
     except Exception as e:
         app.logger.exception(f"[CHECKOUT] Erro: {e}")
         return "<h2>Erro ao iniciar pagamento.</h2>", 500
+
 @app.route('/pagamento_aprovado')
 def pagamento_aprovado():
+    # Mercado Pago normalmente devolve payment_id na URL de sucesso
+    payment_id = (
+        request.args.get("payment_id")
+        or request.args.get("collection_id")
+        or request.args.get("paymentId")
+    )
+
+    if payment_id:
+        try:
+            result = _processar_pagamento_por_payment_id(str(payment_id))
+            app.logger.info(f"[BACK_URL] aprovado processado: {result}")
+        except Exception as e:
+            app.logger.exception(f"[BACK_URL] erro processando payment_id={payment_id}: {e}")
+
     return render_template('pagamento_aprovado.html')
 
 @app.route('/pagamento_sucesso')
@@ -3349,12 +3535,50 @@ def pagamento_pendente():
 
 @app.route("/webhook", methods=["GET", "POST"])
 def webhook():
+    # GET só para teste rápido no navegador
+    if request.method == "GET":
+        return jsonify({"ok": True, "hint": "use POST do Mercado Pago"}), 200
+
+    payment_id, payload = _extract_payment_id(request)
+    app.logger.info(f"[WEBHOOK] args={dict(request.args)} payload={payload}")
+
+    if not payment_id:
+        app.logger.warning("[WEBHOOK] payment_id ausente (vou responder 200 mesmo assim).")
+        return jsonify({"ok": True, "ignored": True}), 200
+
     try:
-        payload = request.get_json(silent=True) or {}
-        app.logger.info(f"[WEBHOOK] {payload}")
+        result = _processar_pagamento_por_payment_id(payment_id)
+        app.logger.info(f"[WEBHOOK] processado: {result}")
+        return jsonify({"ok": True, **result}), 200
+
     except Exception as e:
-        app.logger.warning(f"[WEBHOOK] parse error: {e}")
-    return jsonify({"ok": True}), 200
+        # Retorna 200 para evitar loop de retry agressivo,
+        # mas o erro fica registrado no log para você corrigir.
+        app.logger.exception(f"[WEBHOOK] erro processando payment_id={payment_id}: {e}")
+        return jsonify({"ok": True, "error": str(e)}), 200
+
+@app.route("/magic/<token>")
+def magic_login(token):
+    try:
+        data = _serializer().loads(token, max_age=15 * 60)  # 15 min
+        empresa_id = int(data["empresa_id"])
+    except SignatureExpired:
+        return "<h3>Link expirado. Faça login novamente.</h3>", 401
+    except (BadSignature, Exception):
+        return "<h3>Link inválido.</h3>", 401
+
+    empresa = Empresa.query.get(empresa_id)
+    if not empresa:
+        return "<h3>Empresa não encontrada.</h3>", 404
+
+    # Só deixa entrar se já estiver ativa
+    status_atual = getattr(empresa, "status", None) or getattr(empresa, "status_pagamento", None)
+    if status_atual != "ativo":
+        return "<h3>Conta ainda está pendente. Aguarde a confirmação.</h3>", 403
+
+    session["empresa_id"] = empresa.id
+    # Ajuste abaixo se seu painel tiver outro endpoint:
+    return redirect(url_for("painel_malharia")) if "painel_malharia" in app.view_functions else redirect("/painel")
 
 @app.route("/contato", methods=["GET", "POST"])
 def contato():
