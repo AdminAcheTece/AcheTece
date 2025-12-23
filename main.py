@@ -3539,11 +3539,7 @@ def magic_login(token):
         return "<h3>Conta ainda está pendente. Aguarde a confirmação.</h3>", 403
 
     session["empresa_id"] = empresa.id
-
-    # Ajuste para a rota real do teu painel:
-    if "painel_malharia" in app.view_functions:
-        return redirect(url_for("painel_malharia"))
-    return redirect("/painel")
+    return redirect(url_for("painel_malharia"))
 
 @app.route("/contato", methods=["GET", "POST"])
 def contato():
