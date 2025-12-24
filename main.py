@@ -3411,19 +3411,19 @@ def _processar_pagamento(payment_id: str):
     status_atual = (empresa.status_pagamento or "").strip().lower()
 
     if status == "approved":
-    status_atual = (empresa.status_pagamento or "").strip().lower()
-
-    empresa.status_pagamento = "ativo"
-    empresa.data_pagamento = datetime.utcnow()
-    db.session.commit()
-
-    # envia e-mail só na transição (evita spam por webhooks repetidos)
-    if status_atual != "ativo":
-        link = _make_magic_link(empresa.id)
-        html = _email_ativacao_html(empresa, link)
-        _send_email(empresa.email, "Pagamento aprovado em AcheTece ✅", html)
-
-    return {"ok": True, "empresa_id": empresa.id, "ativou": True}
+        status_atual = (empresa.status_pagamento or "").strip().lower()
+    
+        empresa.status_pagamento = "ativo"
+        empresa.data_pagamento = datetime.utcnow()
+        db.session.commit()
+    
+        # envia e-mail só na transição (evita spam por webhooks repetidos)
+        if status_atual != "ativo":
+            link = _make_magic_link(empresa.id)
+            html = _email_ativacao_html(empresa, link)
+            _send_email(empresa.email, "Pagamento aprovado em AcheTece ✅", html)
+    
+        return {"ok": True, "empresa_id": empresa.id, "ativou": True}
 
     # outros status: mantém como pendente (mas atualiza se quiser)
     if status_atual not in {"ativo", "aprovado", "active", "paid", "trial"}:
