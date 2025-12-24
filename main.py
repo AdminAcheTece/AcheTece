@@ -32,6 +32,8 @@ import shutil
 from datetime import datetime, timedelta
 from flask import current_app, request
 from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.utils import make_msgid
 
 # SMTP direto (fallback)
 import smtplib, ssl
@@ -3312,28 +3314,38 @@ def _parse_empresa_id_from_external_reference(ext_ref: str):
             return None
     return None
 
-def _send_email(to_email: str, subject: str, html: str):
-    # Aceita tanto MAIL_* quanto SMTP_* (prioriza MAIL_* se existir)
+def _send_email(to_email: str, subject: str, text_body: str, html_body: str):
+    # Aceita tanto MAIL_* quanto SMTP_*
     host = os.environ.get("MAIL_HOST") or os.environ.get("SMTP_HOST")
     port = int(os.environ.get("MAIL_PORT") or os.environ.get("SMTP_PORT") or "587")
     user = os.environ.get("MAIL_USER") or os.environ.get("SMTP_USER")
     pwd  = os.environ.get("MAIL_PASS") or os.environ.get("SMTP_PASS")
 
-    # From (e nome amigável)
     mail_from = os.environ.get("MAIL_FROM") or user
     from_name = os.environ.get("MAIL_FROM_NAME", "AcheTece")
+
+    reply_to = os.environ.get("MAIL_REPLY_TO") or "gestao.achetece@gmail.com"  # ajuste se quiser
 
     if not (host and user and pwd and mail_from and to_email):
         app.logger.warning("[EMAIL] Config incompleta (host/user/pass/from) ou destinatário vazio.")
         return
 
-    msg = MIMEText(html, "html", "utf-8")
+    # multipart: texto + html
+    msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"] = f"{from_name} <{mail_from}>"
     msg["To"] = to_email
 
+    # Headers de entregabilidade
+    msg["Reply-To"] = reply_to
+    msg["Message-ID"] = make_msgid(domain="achetece.com.br")  # pode manter mesmo usando gmail
+    msg["X-Entity-Ref-ID"] = str(uuid.uuid4())
+
+    # Partes
+    msg.attach(MIMEText(text_body or "", "plain", "utf-8"))
+    msg.attach(MIMEText(html_body or "", "html", "utf-8"))
+
     try:
-        # Porta 465 = SSL direto | Porta 587 = STARTTLS
         if port == 465:
             with smtplib.SMTP_SSL(host, port) as smtp:
                 smtp.login(user, pwd)
@@ -3421,7 +3433,7 @@ def _processar_pagamento(payment_id: str):
         if status_atual != "ativo":
             link = _make_magic_link(empresa.id)
             html = _email_ativacao_html(empresa, link)
-            _send_email(empresa.email, "Pagamento aprovado em AcheTece ✅", html)
+            _send_email(empresa.email, "Pagamento aprovado - AcheTece", html)
     
         return {"ok": True, "empresa_id": empresa.id, "ativou": True}
 
