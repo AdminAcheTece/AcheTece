@@ -3325,13 +3325,34 @@ def _send_email(to_email: str, subject: str, html: str):
 
     msg = MIMEText(html, "html", "utf-8")
     msg["Subject"] = subject
-    msg["From"] = mail_from
+    msg["From"] = f"AcheTece <{mail_from}>"
     msg["To"] = to_email
 
     with smtplib.SMTP(host, port) as smtp:
         smtp.starttls()
         smtp.login(user, pwd)
         smtp.sendmail(mail_from, [to_email], msg.as_string())
+
+def _email_ativacao_html(empresa, magic_link: str) -> str:
+    nome_malharia = (empresa.apelido or empresa.nome or "sua malharia").strip()
+
+    return f"""
+    <div style="font-family:Arial,sans-serif;max-width:640px;line-height:1.5">
+      <h2>Pagamento aprovado ✅</h2>
+      <p>Olá, <strong>{nome_malharia}</strong>!</p>
+      <p>Sua conta no <strong>AcheTece</strong> está ativa.</p>
+
+      <p style="margin:20px 0">
+        <a href="{magic_link}" style="background:#111;color:#fff;padding:12px 16px;border-radius:10px;text-decoration:none;">
+          Entrar no AcheTece
+        </a>
+      </p>
+
+      <p style="color:#666;font-size:12px">
+        Se você não solicitou isso, ignore esta mensagem.
+      </p>
+    </div>
+    """
 
 def _serializer():
     salt = os.environ.get("MAGIC_LINK_SALT", "achetece-magic")
@@ -3372,31 +3393,19 @@ def _processar_pagamento(payment_id: str):
     status_atual = (empresa.status_pagamento or "").strip().lower()
 
     if status == "approved":
-        empresa.status_pagamento = "ativo"
-        empresa.data_pagamento = datetime.utcnow()
-        db.session.commit()
+    status_atual = (empresa.status_pagamento or "").strip().lower()
 
-        # evita spam: manda e-mail só se antes não estava ativo
-        if status_atual not in {"ativo", "aprovado", "active", "paid", "trial"}:
-            link = _make_magic_link(empresa.id)
-            destino = empresa.email or payer_email
-            if destino:
-                html = f"""
-                <div style="font-family:Arial,sans-serif;max-width:640px;line-height:1.5">
-                  <h2>Pagamento aprovado ✅</h2>
-                  <p>Sua conta no AcheTece está ativa.</p>
-                  <p>Clique para entrar novamente:</p>
-                  <p style="margin:20px 0">
-                    <a href="{link}" style="background:#111;color:#fff;padding:12px 16px;border-radius:10px;text-decoration:none;">
-                      Acessar minha conta
-                    </a>
-                  </p>
-                  <p style="color:#666;font-size:12px">Link expira em 15 minutos.</p>
-                </div>
-                """
-                _send_email(destino, "AcheTece — Pagamento aprovado ✅", html)
+    empresa.status_pagamento = "ativo"
+    empresa.data_pagamento = datetime.utcnow()
+    db.session.commit()
 
-        return {"ok": True, "empresa_id": empresa.id, "ativou": True}
+    # envia e-mail só na transição (evita spam por webhooks repetidos)
+    if status_atual != "ativo":
+        link = _make_magic_link(empresa.id)
+        html = _email_ativacao_html(empresa, link)
+        _send_email(empresa.email, "Pagamento aprovado em AcheTece ✅", html)
+
+    return {"ok": True, "empresa_id": empresa.id, "ativou": True}
 
     # outros status: mantém como pendente (mas atualiza se quiser)
     if status_atual not in {"ativo", "aprovado", "active", "paid", "trial"}:
