@@ -3313,25 +3313,43 @@ def _parse_empresa_id_from_external_reference(ext_ref: str):
     return None
 
 def _send_email(to_email: str, subject: str, html: str):
-    host = os.environ.get("MAIL_HOST")
-    port = int(os.environ.get("MAIL_PORT", "587"))
-    user = os.environ.get("MAIL_USER")
-    pwd  = os.environ.get("MAIL_PASS")
-    mail_from = os.environ.get("MAIL_FROM", user)
+    # Aceita tanto MAIL_* quanto SMTP_* (prioriza MAIL_* se existir)
+    host = os.environ.get("MAIL_HOST") or os.environ.get("SMTP_HOST")
+    port = int(os.environ.get("MAIL_PORT") or os.environ.get("SMTP_PORT") or "587")
+    user = os.environ.get("MAIL_USER") or os.environ.get("SMTP_USER")
+    pwd  = os.environ.get("MAIL_PASS") or os.environ.get("SMTP_PASS")
+
+    # From (e nome amigável)
+    mail_from = os.environ.get("MAIL_FROM") or user
+    from_name = os.environ.get("MAIL_FROM_NAME", "AcheTece")
 
     if not (host and user and pwd and mail_from and to_email):
-        app.logger.warning("[EMAIL] Config incompleta ou destinatário vazio. E-mail não enviado.")
+        app.logger.warning("[EMAIL] Config incompleta (host/user/pass/from) ou destinatário vazio.")
         return
 
     msg = MIMEText(html, "html", "utf-8")
     msg["Subject"] = subject
-    msg["From"] = f"AcheTece <{mail_from}>"
+    msg["From"] = f"{from_name} <{mail_from}>"
     msg["To"] = to_email
 
-    with smtplib.SMTP(host, port) as smtp:
-        smtp.starttls()
-        smtp.login(user, pwd)
-        smtp.sendmail(mail_from, [to_email], msg.as_string())
+    try:
+        # Porta 465 = SSL direto | Porta 587 = STARTTLS
+        if port == 465:
+            with smtplib.SMTP_SSL(host, port) as smtp:
+                smtp.login(user, pwd)
+                smtp.sendmail(mail_from, [to_email], msg.as_string())
+        else:
+            with smtplib.SMTP(host, port) as smtp:
+                smtp.ehlo()
+                smtp.starttls()
+                smtp.ehlo()
+                smtp.login(user, pwd)
+                smtp.sendmail(mail_from, [to_email], msg.as_string())
+
+        app.logger.info(f"[EMAIL] Enviado para {to_email}")
+
+    except Exception as e:
+        app.logger.exception(f"[EMAIL] Falha ao enviar: {e}")
 
 def _email_ativacao_html(empresa, magic_link: str) -> str:
     nome_malharia = (empresa.apelido or empresa.nome or "sua malharia").strip()
