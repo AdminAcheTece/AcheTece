@@ -156,13 +156,13 @@
   .pricing-value{ margin:0; line-height:1; font-size: clamp(34px, 5.6vw, 52px); font-weight:800; letter-spacing: -.5px; }
   .pricing-value small{ font-size:.35em; font-weight:700; color:#fff; }
 
-  /* ====== AJUSTE: DOIS PLANOS (mensal + anual) ====== */
+  /* ====== DOIS PLANOS (mensal + anual) ====== */
   .pricing-grid{
     display:grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 14px;
     max-width: 760px;
-    margin: 28px auto 14px;
+    margin: 28px auto 10px;
   }
   @media (max-width:760px){
     .pricing-grid{ grid-template-columns:1fr; }
@@ -182,11 +182,8 @@
     color: rgba(255,255,255,.95);
     font-weight: 700;
   }
-  .pricing-meta .line strong{
-    color:#fff;
-  }
+  .pricing-meta .line strong{ color:#fff; }
 
-  /* Destaque visual sutil do anual */
   .pricing-card.pricing-annual{
     border: 1px solid rgba(182,243,77,.45);
     box-shadow: none !important;
@@ -196,43 +193,9 @@
     color:#111;
   }
 
-  /* Botões de escolha de plano (já cadastrado) */
-  .plan-actions{
-    max-width: 760px;
-    margin: 10px auto 18px;
-    display:flex;
-    gap:10px;
-    justify-content:center;
-    flex-wrap:wrap;
-  }
-  .botao-plano{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    padding:12px 16px;
-    border-radius:12px;
-    text-decoration:none;
-    font-weight:800;
-    font-size:15px;
-    border:1px solid var(--line-olive);
-    background:#fff;
-    color:#111;
-    min-width: 220px;
-    transition: transform .15s ease, background .15s ease, color .15s ease, border-color .15s ease;
-  }
-  .botao-plano:hover{
-    background: var(--lime);
-    color:#111;
-    border-color: var(--lime);
-    transform: translateY(-2px);
-  }
-  .botao-plano--highlight{
-    border-color: rgba(182,243,77,.65);
-    background: rgba(182,243,77,.12);
-  }
   .note-small{
     max-width:760px;
-    margin: 6px auto 14px;
+    margin: 10px auto 16px;
     color:#5a5a5a;
     font-size: 13.5px;
     line-height: 1.5;
@@ -240,7 +203,7 @@
   .note-small a{ color: var(--olive-dark); font-weight: 800; text-decoration:none; }
   .note-small a:hover{ text-decoration: underline; }
 
-  /* CTA principal (igual padrão da index: base oliva, hover lime) */
+  /* CTA principal */
   .botao-cadastrar{
     display:inline-block; width:100%; max-width:440px; text-align:center;
     background:var(--roxo); color:#fff; font-weight:700; padding:14px 20px; border-radius:12px; text-decoration:none; font-size:18px;
@@ -249,7 +212,7 @@
   .botao-cadastrar:hover{ background:var(--lime); color:#111; transform:translateY(-2px); }
   .botao-cadastrar:active{ background:var(--lime-700); color:#111; }
 
-  /* ===== Guia (passos) com tons oliva ===== */
+  /* ===== Guia (passos) ===== */
   .guia{
     max-width: 880px; margin: 24px auto 8px; background:var(--olive-50);
     padding: 18px 16px; border-radius:12px; box-shadow: none !important;
@@ -280,14 +243,14 @@
 
   /* === CTA cadastrar: preto + lime; inverte no hover === */
   .botao-cadastrar{
-    background:#000 !important;          /* fundo PRETO */
-    color:var(--lime) !important;        /* texto LIME */
+    background:#000 !important;
+    color:var(--lime) !important;
     border:0 !important;
     box-shadow:none !important;
     transition:background-color .15s ease, color .15s ease, transform .15s ease;
   }
   .botao-cadastrar:hover{
-    background:var(--lime) !important;   /* inverte */
+    background:var(--lime) !important;
     color:#000 !important;
     transform:translateY(-2px);
   }
@@ -297,12 +260,8 @@
   }
 
   /* === Fundo padronizado igual à index (cinza do miolo) === */
-  :root{
-    --site-bg: #EAEAE8;            /* mesmo tom usado na index */
-  }
-  html, body{
-    background: var(--site-bg) !important;
-  }
+  :root{ --site-bg: #EAEAE8; }
+  html, body{ background: var(--site-bg) !important; }
 </style>
 </head>
 <body>
@@ -311,31 +270,28 @@
   <div class="topbar">
     <div class="topbar-inner">
       <a class="topbar-action" href="{{ url_for('contato') }}" aria-label="Fale conosco">
-        <svg class="ic-top ic-wa" viewBox="0 0 24 24" fill="currentColor"><path d="M20.52 3.48A11.94 11.94 0 0 0 12.06 0C5.7 0 .5 5.19.5 11.6c0 2.05.54 4.05 1.58 5.82L0 24l6.76-2.01a11.6 11.6 0 0 0 5.3 1.29h.01c6.36 0 11.56-5.19 11.56-11.6 0-3.09-1.22-6-3.11-8.2Zm-8.46 18.1h-.01a9.7 9.7 0 0 1-4.95-1.34l-.35-.2-4.01 1.2 1.16-3.9-.23-.4a9.66 9.66 0 0 1-1.41-5.08c0-5.36 4.38-9.71 9.77-9.71 2.61 0 5.07 1.02 6.91 2.87a9.73 9.73 0 0 1 2.86 6.95c0 5.36-4.38 9.71-9.75 9.71Zm5.6-7.27c-.31-.16-1.81-.9-2.09-1-.28-.1-.49-.16-.7.16-.2.31-.8 1-.98 1.21-.18.2-.36.22-.67.06-.31-.16-1.3-.48-2.48-1.53-.92-.8-1.54-1.77-1.72-2.07-.18-.31-.02-.48.13-.64.13-.13.31-.36.46-.54.15-.18.2-.31.31-.52.1-.22.05-.41-.02-.57-.16-.16-.7-1.69-.95-2.3-.25-.6-.51-.52-.7-.52-.18 0-.39-.02-.6-.02-.2 0-.52.07-.79.36-.28.31-1.07 1.05-1.07 2.56 0 1.51 1.1 2.97 1.25 3.18.15.2 2.17 3.3 5.25 4.61.73.32 1.3.5 1.75.64.74.24 1.4.2 1.93.12.59-.09 1.81-.74 2.07-1.45.26-.72.26-1.33.18-1.45-.08-.12-.28-.2-.59-.36Z"/></svg>
+        <svg class="ic-top ic-wa" viewBox="0 0 24 24" fill="currentColor"><path d="M20.52 3.48A11.94 11.94 0 0 0 12.06 0C5.7 0 .5 5.19.5 11.6c0 2.05.54 4.05 1.58 5.82L0 24l6.76-2.01a11.6 11.6 0 0 0 5.3 1.29h.01c6.36 0 11.56-5.19 11.56-11.6 0-3.09-1.22-6-3.11-8.2Zm-8.46 18.1h-.01a9.7 9.7 0 0 1-4.95-1.34l-.35-.2-4.01 1.2 1.16-3.9-.23-.4a9.66 9.66 0 0 1-1.41-5.08c0-5.36 4.38-9.71 9.77-9.71 2.61 0 5.07 1.02 6.91 2.87a9.73 9.73 0 0 1 2.86 6.95c0 5.36-4.38-9.71-9.75 9.71Zm5.6-7.27c-.31-.16-1.81-.9-2.09-1-.28-.1-.49-.16-.7.16-.2.31-.8 1-.98 1.21-.18.2-.36.22-.67.06-.31-.16-1.3-.48-2.48-1.53-.92-.8-1.54-1.77-1.72-2.07-.18-.31-.02-.48.13-.64.13-.13.31-.36.46-.54.15-.18.2-.31.31-.52.1-.22.05-.41-.02-.57-.16-.16-.7-1.69-.95-2.3-.25-.6-.51-.52-.7-.52-.18 0-.39-.02-.6-.02-.2 0-.52.07-.79.36-.28.31-1.07 1.05-1.07 2.56 0 1.51 1.1 2.97 1.25 3.18.15.2 2.17 3.3 5.25 4.61.73.32 1.3.5 1.75.64.74.24 1.4.2 1.93.12.59-.09 1.81-.74 2.07-1.45.26-.72.26-1.33.18-1.45-.08-.12-.28-.2-.59-.36Z"/></svg>
         <svg class="ic-top ic-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/></svg>
         <span style="font-weight:700;">Fale conosco</span>
       </a>
     </div>
   </div>
 
-  <!-- ===== Cabeçalho (igual quem_somos) ===== -->
+  <!-- ===== Cabeçalho ===== -->
   <header class="navbar">
     <div class="header-left">
-      <!-- LOGO como botão para a home -->
       <a class="logo" href="{{ url_for('index') }}" aria-label="Página inicial">
         <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
       </a>
     </div>
 
     <div class="header-right">
-      <!-- Botão casinha -->
       <a href="{{ url_for('index') }}" class="icon-btn" aria-label="Página inicial" title="Página inicial">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 10.5 12 3l9 7.5"></path><path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path><path d="M9 21V12h6v9"></path>
         </svg>
       </a>
 
-      <!-- Menu sanduíche -->
       <div class="menu-wrap">
         <button class="hamburger" id="hamburger" type="button" aria-label="Abrir menu" aria-controls="menu-lateral" aria-haspopup="menu" aria-expanded="false">
           <span></span><span></span><span></span>
@@ -402,7 +358,7 @@
       <li>Atualizar suas informações a qualquer momento via painel da malharia.</li>
     </ul>
 
-    <!-- ===== Planos (Mensal + Anual) ===== -->
+    <!-- ===== Planos (somente apresentação) ===== -->
     <h2 class="section-title" style="margin-top:18px;">Planos de assinatura</h2>
 
     <div class="pricing-grid" aria-label="Planos AcheTece">
@@ -427,15 +383,10 @@
       </div>
     </div>
 
-    <!-- Ação para quem JÁ está cadastrado e quer pagar agora -->
     <div class="note-small">
-      <strong>Já é cadastrado(a)?</strong> Escolha abaixo e finalize o pagamento do seu plano.
-      (Se preferir, você também pode <a href="{{ url_for('login') }}">fazer login</a> primeiro.)
-    </div>
-
-    <div class="plan-actions" aria-label="Escolher forma de pagamento">
-      <a href="/assinar?plano=mensal" class="botao-plano" aria-label="Assinar plano mensal">Pagar mensal (R$ 47,00)</a>
-      <a href="/assinar?plano=anual" class="botao-plano botao-plano--highlight" aria-label="Assinar plano anual com 15% de desconto">Pagar anual (15% OFF)</a>
+      <strong>Importante:</strong> a <strong>escolha do plano</strong> e o <strong>pagamento</strong> acontecem <strong>após o cadastro</strong>, dentro do seu <strong>painel da malharia</strong>.
+      <br>
+      Já tem conta? <a href="{{ url_for('login') }}">Faça login</a>.
     </div>
 
     <!-- CTA principal (mantido) -->
@@ -445,10 +396,10 @@
     <div class="guia" aria-label="Guia rápido de ativação">
       <h2>Como funciona:</h2>
       <div class="steps">
-        <div class="step"><div class="dot">1</div><p><strong>Cadastro</strong><br>Preencha os dados da malharia e faça o login.</p></div>
-        <div class="step"><div class="dot">2</div><p><strong>Pagamento</strong><br>Conclua o pagamento do <strong>plano escolhido</strong>.</p></div>
-        <div class="step"><div class="dot">3</div><p><strong>Confirmação</strong><br>Receba o e-mail de ativação.</p></div>
-        <div class="step"><div class="dot">4</div><p><strong>Perfil</strong><br>Edite o perfil da sua empresa.</p></div>
+        <div class="step"><div class="dot">1</div><p><strong>Cadastro</strong><br>Preencha os dados da malharia e crie sua conta.</p></div>
+        <div class="step"><div class="dot">2</div><p><strong>Plano</strong><br>Escolha o plano (mensal ou anual) dentro do painel.</p></div>
+        <div class="step"><div class="dot">3</div><p><strong>Pagamento</strong><br>Conclua o pagamento do plano escolhido.</p></div>
+        <div class="step"><div class="dot">4</div><p><strong>Confirmação</strong><br>Receba o e-mail de ativação.</p></div>
         <div class="step"><div class="dot">5</div><p><strong>Teares</strong><br>Cadastre e apareça para seus clientes.</p></div>
       </div>
     </div>
@@ -472,7 +423,7 @@
     </div>
   </footer>
 
-  <!-- ===== Script do menu (igual ao quem_somos) ===== -->
+  <!-- ===== Script do menu ===== -->
   <script>
     (function () {
       function closeAll() {
