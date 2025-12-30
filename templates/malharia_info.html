@@ -143,17 +143,102 @@
 
   /* ===== Card de Preço (gradiente oliva) ===== */
   .pricing-card{
-    position:relative; margin: 28px auto 16px; max-width: 560px; border-radius: 18px;
-    padding: 28px 22px 24px; text-align:center; color:#fff;
+    position:relative; margin: 0; border-radius: 18px;
+    padding: 26px 22px 22px; text-align:center; color:#fff;
     background: linear-gradient(135deg, var(--olive) 0%, var(--olive-600) 100%);
     box-shadow: none !important; overflow: visible;
+    border: 1px solid rgba(255,255,255,.10);
   }
   .badge-top{
     position:absolute; left:50%; top:-12px; transform: translateX(-50%);
     background:#fff; color:#000; border-radius: 999px; padding:6px 12px; font-size:12px; font-weight:800;
   }
-  .pricing-value{ margin:0; line-height:1; font-size: clamp(38px, 6.2vw, 56px); font-weight:800; letter-spacing: -.5px; }
+  .pricing-value{ margin:0; line-height:1; font-size: clamp(34px, 5.6vw, 52px); font-weight:800; letter-spacing: -.5px; }
   .pricing-value small{ font-size:.35em; font-weight:700; color:#fff; }
+
+  /* ====== AJUSTE: DOIS PLANOS (mensal + anual) ====== */
+  .pricing-grid{
+    display:grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    max-width: 760px;
+    margin: 28px auto 14px;
+  }
+  @media (max-width:760px){
+    .pricing-grid{ grid-template-columns:1fr; }
+  }
+
+  .pricing-meta{
+    margin-top: 12px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    align-items:center;
+    justify-content:center;
+    opacity: .98;
+  }
+  .pricing-meta .line{
+    font-size: 14px;
+    color: rgba(255,255,255,.95);
+    font-weight: 700;
+  }
+  .pricing-meta .line strong{
+    color:#fff;
+  }
+
+  /* Destaque visual sutil do anual */
+  .pricing-card.pricing-annual{
+    border: 1px solid rgba(182,243,77,.45);
+    box-shadow: none !important;
+  }
+  .badge-top.badge-annual{
+    background: var(--lime);
+    color:#111;
+  }
+
+  /* Botões de escolha de plano (já cadastrado) */
+  .plan-actions{
+    max-width: 760px;
+    margin: 10px auto 18px;
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    flex-wrap:wrap;
+  }
+  .botao-plano{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:12px 16px;
+    border-radius:12px;
+    text-decoration:none;
+    font-weight:800;
+    font-size:15px;
+    border:1px solid var(--line-olive);
+    background:#fff;
+    color:#111;
+    min-width: 220px;
+    transition: transform .15s ease, background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .botao-plano:hover{
+    background: var(--lime);
+    color:#111;
+    border-color: var(--lime);
+    transform: translateY(-2px);
+  }
+  .botao-plano--highlight{
+    border-color: rgba(182,243,77,.65);
+    background: rgba(182,243,77,.12);
+  }
+  .note-small{
+    max-width:760px;
+    margin: 6px auto 14px;
+    color:#5a5a5a;
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+  .note-small a{ color: var(--olive-dark); font-weight: 800; text-decoration:none; }
+  .note-small a:hover{ text-decoration: underline; }
 
   /* CTA principal (igual padrão da index: base oliva, hover lime) */
   .botao-cadastrar{
@@ -217,7 +302,7 @@
   }
   html, body{
     background: var(--site-bg) !important;
-  }  
+  }
 </style>
 </head>
 <body>
@@ -317,12 +402,43 @@
       <li>Atualizar suas informações a qualquer momento via painel da malharia.</li>
     </ul>
 
-    <!-- Plano -->
-    <div class="pricing-card" aria-label="Plano mensal AcheTece">
-      <span class="badge-top">Oferta Exclusiva</span>
-      <h2 class="pricing-value">R$47,00 <small>/ mês</small></h2>
+    <!-- ===== Planos (Mensal + Anual) ===== -->
+    <h2 class="section-title" style="margin-top:18px;">Planos de assinatura</h2>
+
+    <div class="pricing-grid" aria-label="Planos AcheTece">
+      <!-- Mensal -->
+      <div class="pricing-card pricing-monthly" aria-label="Plano mensal AcheTece">
+        <span class="badge-top">Mensal</span>
+        <h2 class="pricing-value">R$47,00 <small>/ mês</small></h2>
+        <div class="pricing-meta" aria-hidden="true">
+          <div class="line">Pagamento recorrente mensal</div>
+          <div class="line">Cancele quando quiser</div>
+        </div>
+      </div>
+
+      <!-- Anual -->
+      <div class="pricing-card pricing-annual" aria-label="Plano anual AcheTece">
+        <span class="badge-top badge-annual">Anual — 15% OFF</span>
+        <h2 class="pricing-value">R$479,40 <small>/ ano</small></h2>
+        <div class="pricing-meta">
+          <div class="line">Equivale a <strong>R$39,95/mês</strong></div>
+          <div class="line">Economize <strong>R$84,60</strong> no ano</div>
+        </div>
+      </div>
     </div>
 
+    <!-- Ação para quem JÁ está cadastrado e quer pagar agora -->
+    <div class="note-small">
+      <strong>Já é cadastrado(a)?</strong> Escolha abaixo e finalize o pagamento do seu plano.
+      (Se preferir, você também pode <a href="{{ url_for('login') }}">fazer login</a> primeiro.)
+    </div>
+
+    <div class="plan-actions" aria-label="Escolher forma de pagamento">
+      <a href="/assinar?plano=mensal" class="botao-plano" aria-label="Assinar plano mensal">Pagar mensal (R$ 47,00)</a>
+      <a href="/assinar?plano=anual" class="botao-plano botao-plano--highlight" aria-label="Assinar plano anual com 15% de desconto">Pagar anual (15% OFF)</a>
+    </div>
+
+    <!-- CTA principal (mantido) -->
     <a href="{{ url_for('cadastrar_empresa') }}" class="botao-cadastrar">Quero cadastrar minha malharia</a>
 
     <!-- Passos -->
@@ -330,7 +446,7 @@
       <h2>Como funciona:</h2>
       <div class="steps">
         <div class="step"><div class="dot">1</div><p><strong>Cadastro</strong><br>Preencha os dados da malharia e faça o login.</p></div>
-        <div class="step"><div class="dot">2</div><p><strong>Pagamento</strong><br>Conclua o pagamento da mensalidade.</p></div>
+        <div class="step"><div class="dot">2</div><p><strong>Pagamento</strong><br>Conclua o pagamento do <strong>plano escolhido</strong>.</p></div>
         <div class="step"><div class="dot">3</div><p><strong>Confirmação</strong><br>Receba o e-mail de ativação.</p></div>
         <div class="step"><div class="dot">4</div><p><strong>Perfil</strong><br>Edite o perfil da sua empresa.</p></div>
         <div class="step"><div class="dot">5</div><p><strong>Teares</strong><br>Cadastre e apareça para seus clientes.</p></div>
