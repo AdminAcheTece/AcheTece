@@ -33,7 +33,7 @@ from datetime import datetime, timedelta
 from flask import current_app, request
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from email.utils import make_msgid
+from email.utils import make_msgid, formataddr
 
 # SMTP direto (fallback)
 import smtplib, ssl
@@ -72,8 +72,15 @@ def _env_bool(name: str, default: bool = False) -> bool:
 
 # --------------------------------------------------------------------
 # E-mail — Config + helpers (Resend + SMTP fallback)
-# (apenas UM bloco; removidas duplicações)
+# (apenas UM bloco; sem duplicações)
 # --------------------------------------------------------------------
+import os, re, json, ssl, logging
+from typing import Tuple, Optional
+from email.message import EmailMessage
+from email.utils import make_msgid
+import smtplib
+
+# Config (mantém suas chaves atuais)
 app.config.update(
     SMTP_HOST=os.getenv("SMTP_HOST", "smtp.gmail.com"),
     SMTP_PORT=int(os.getenv("SMTP_PORT", "465")),
@@ -84,48 +91,16 @@ app.config.update(
     MAIL_SUPPRESS_SEND=_env_bool("MAIL_SUPPRESS_SEND", False),
     OTP_DEV_FALLBACK=_env_bool("OTP_DEV_FALLBACK", False),
 
-    SESSION_COOKIE_SECURE=True,        # mantém HTTPS
+    SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_COOKIE_DOMAIN=".achetece.com.br"  # vale para www e raiz
+    SESSION_COOKIE_DOMAIN=".achetece.com.br"
 )
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY") or ""
 RESEND_DOMAIN  = os.getenv("RESEND_DOMAIN", "achetece.com.br")
 EMAIL_FROM     = os.getenv("EMAIL_FROM", f"AcheTece <no-reply@{RESEND_DOMAIN}>")
 REPLY_TO       = os.getenv("REPLY_TO", "")
-
-if RESEND_API_KEY:
-    resend.api_key = RESEND_API_KEY
-else:
-    logging.warning("[EMAIL] RESEND_API_KEY não configurada — envio via Resend desativado.")
-
-import os
-from authlib.integrations.flask_client import OAuth
-from werkzeug.middleware.proxy_fix import ProxyFix
-
-# Garante que url_for(_external=True) saia com HTTPS por trás do proxy (Render)
-app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
-
-@app.before_request
-def _force_www_https():
-    host = request.host.split(':')[0]
-    # Só redireciona quando acessarem sem "www"
-    if host == "achetece.com.br":
-        # preserva caminho e querystring
-        url = request.url.replace("://achetece.com.br", "://www.achetece.com.br")
-        return redirect(url, code=301)
-
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
-
-oauth = OAuth(app)
-oauth.register(
-    name="google",
-    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
-    client_id=GOOGLE_CLIENT_ID,
-    client_secret=GOOGLE_CLIENT_SECRET,
-    client_kwargs={"scope": "openid email profile"},
-)
+SITE_URL       = os.getenv("SITE_URL", "https://www.achetece.com.br")
 
 def _extract_email(addr: str) -> str:
     m = re.search(r"<([^>]+)>", addr or "")
@@ -136,160 +111,58 @@ def _domain_of(addr: str) -> str:
     e = _extract_email(addr)
     return e.split("@")[-1].lower() if "@" in e else ""
 
-def _send_via_resend(to: str, subject: str, html: str, text: str | None = None) -> tuple[bool, str]:
-    if not RESEND_API_KEY:
-        return False, "RESEND_API_KEY ausente"
-    try:
-        # força FROM no domínio verificado
-        from_domain = _domain_of(EMAIL_FROM)
-        safe_from = EMAIL_FROM if (RESEND_DOMAIN and from_domain == RESEND_DOMAIN) \
-            else f"AcheTece <no-reply@{RESEND_DOMAIN}>"
-
-        payload = {"from": safe_from, "to": [to], "subject": subject, "html": html}
-        if text:
-            payload["text"] = text
-        if REPLY_TO:
-            payload["reply_to"] = REPLY_TO
-
-        resp = resend.Emails.send(payload)
-        logging.info(f"[EMAIL/RESEND] Enviado para {to}. resp={resp}")
-        return True, "ok"
-    except Exception as e:
-        logging.exception(f"[EMAIL/RESEND] Falha ao enviar para {to}: {e}")
-        return False, f"resend_error: {e}"
-
-def _send_via_smtp(to: str, subject: str, html: str, text: str | None = None) -> tuple[bool, str]:
-    """Envio direto via SMTP (SSL/TLS) — fallback."""
-    host = app.config.get("SMTP_HOST") or "smtp.gmail.com"
-    port = int(app.config.get("SMTP_PORT") or 465)
-    user = app.config.get("SMTP_USER") or ""
-    pwd  = app.config.get("SMTP_PASS") or ""
-    sender = app.config.get("SMTP_FROM") or user
-    timeout = int(app.config.get("MAIL_TIMEOUT") or 8)
-
-    if not (user and pwd and sender and to):
-        return False, "SMTP não configurado."
-
-    msg = EmailMessage()
-    msg["Subject"] = subject
-    msg["From"] = sender
-    msg["To"] = to
-    if REPLY_TO:
-        msg["Reply-To"] = REPLY_TO
-    msg.set_content(text or "Veja este e-mail em HTML.")
-    msg.add_alternative(html, subtype="html")
-
-    try:
-        if port == 465:
-            with smtplib.SMTP_SSL(host, port, timeout=timeout) as s:
-                s.login(user, pwd)
-                s.send_message(msg)
-        else:
-            ctx = ssl.create_default_context()
-            with smtplib.SMTP(host, port, timeout=timeout) as s:
-                s.ehlo()
-                s.starttls(context=ctx)
-                s.login(user, pwd)
-                s.send_message(msg)
-        return True, "ok"
-    except Exception as e:
-        app.logger.exception(f"[EMAIL/SMTP] Falha ao enviar para {to}: {e}")
-        return False, f"smtp_error: {e}"
-
-import os, re, json
-from typing import Tuple
-
-def send_email(to: str, subject: str, html: str, text: str | None = None) -> bool:
-    from flask import current_app
-    # 1) Tenta Flask-Mail (se estiver configurado via extensions)
-    try:
-        mail_ext = (getattr(current_app, "extensions", {}) or {}).get("mail")
-        if mail_ext:
-            from flask_mail import Message
-            msg = Message(
-                subject=subject,
-                recipients=[to],
-                sender=current_app.config.get("MAIL_DEFAULT_SENDER"),
-            )
-            msg.body = text or ""
-            msg.html = html
-            msg.extra_headers = {"Content-Language": "pt-BR"}
-            mail_ext.send(msg)
-            current_app.logger.info("[send_email] via Flask-Mail (extensions)")
-            return True
-    except Exception:
-        current_app.logger.exception("[send_email] Flask-Mail falhou")
-
-    # 2) Provedores HTTP (sem SMTP)
-    ok, msg = _send_via_resend(to, subject, html, text)
-    if ok:
-        return True
-
-    ok, msg = _send_via_mailgun(to, subject, html, text)
-    if ok:
-        return True
-
-    ok, msg = _send_via_sendgrid(to, subject, html, text)
-    if ok:
-        return True
-
-    # Sem backend válido
-    try:
-        from flask import current_app
-        current_app.logger.error(f"[send_email] nenhum backend HTTP aceitou: {msg}")
-    except Exception:
-        pass
-    return False
-
-# ---------------- Provedores HTTP (usam requests) ---------------- #
-
-def _fallback_text(html: str | None, text: str | None) -> str:
+def _fallback_text(html: Optional[str], text: Optional[str]) -> str:
     if text:
         return text
     if not html:
         return "Verifique este e-mail em um cliente compatível com HTML."
     return re.sub(r"<[^>]+>", "", html).strip() or "Verifique este e-mail em um cliente compatível com HTML."
 
-def _send_via_resend(to: str, subject: str, html: str | None, text: str | None) -> Tuple[bool, str]:
+def _safe_from_address() -> str:
+    # garante From dentro do domínio verificado do Resend
+    from_domain = _domain_of(EMAIL_FROM)
+    if RESEND_DOMAIN and from_domain == RESEND_DOMAIN:
+        return EMAIL_FROM
+    return f"AcheTece <no-reply@{RESEND_DOMAIN}>"
+
+def _send_via_resend(to: str, subject: str, html: str, text: Optional[str] = None) -> Tuple[bool, str]:
     """
+    Envio via Resend HTTP (estável e sem duplicação).
     Variáveis:
-      RESEND_API_KEY   (obrigatória p/ usar Resend)
-      RESEND_FROM      (opcional; exemplo: 'AcheTece <no-reply@achetece.com.br>')
+      RESEND_API_KEY (obrigatória)
+      EMAIL_FROM / RESEND_DOMAIN / REPLY_TO
     """
-    api = os.getenv("RESEND_API_KEY")
+    api = RESEND_API_KEY
     if not api:
         return False, "RESEND_API_KEY ausente"
-    sender = os.getenv("RESEND_FROM") or os.getenv("SMTP_SENDER") or "AcheTece <no-reply@achetece.com.br>"
 
     try:
         import requests
         payload = {
-            "from": sender,
+            "from": _safe_from_address(),
             "to": [to],
             "subject": subject,
             "html": html or "",
             "text": _fallback_text(html, text),
         }
+        if REPLY_TO:
+            payload["reply_to"] = REPLY_TO
+
         r = requests.post(
             "https://api.resend.com/emails",
             headers={"Authorization": f"Bearer {api}", "Content-Type": "application/json"},
             json=payload,
-            timeout=6,
+            timeout=int(app.config.get("MAIL_TIMEOUT") or 8),
         )
         if r.status_code in (200, 201, 202):
+            logging.info(f"[EMAIL/RESEND] Enviado para {to}. status={r.status_code}")
             return True, "OK"
         return False, f"Resend {r.status_code}: {r.text[:200]}"
     except Exception as e:
+        logging.exception(f"[EMAIL/RESEND] Falha ao enviar para {to}: {e}")
         return False, f"Resend erro: {e!s}"
 
-
-def _send_via_mailgun(to: str, subject: str, html: str | None, text: str | None) -> Tuple[bool, str]:
-    """
-    Variáveis:
-      MAILGUN_DOMAIN   (ex.: 'mg.seudominio.com')
-      MAILGUN_API_KEY  (chave privada Mailgun)
-      MAILGUN_FROM     (opcional; senão usa 'no-reply@{MAILGUN_DOMAIN}')
-    """
+def _send_via_mailgun(to: str, subject: str, html: str, text: Optional[str] = None) -> Tuple[bool, str]:
     domain = os.getenv("MAILGUN_DOMAIN")
     key = os.getenv("MAILGUN_API_KEY")
     if not (domain and key):
@@ -306,25 +179,23 @@ def _send_via_mailgun(to: str, subject: str, html: str | None, text: str | None)
             "text": _fallback_text(html, text),
             "html": html or "",
         }
-        r = requests.post(url, auth=("api", key), data=data, timeout=6)
+        # Reply-To via header Mailgun
+        if REPLY_TO:
+            data["h:Reply-To"] = REPLY_TO
+
+        r = requests.post(url, auth=("api", key), data=data, timeout=int(app.config.get("MAIL_TIMEOUT") or 8))
         if r.status_code in (200, 201, 202):
             return True, "OK"
         return False, f"Mailgun {r.status_code}: {r.text[:200]}"
     except Exception as e:
         return False, f"Mailgun erro: {e!s}"
 
-
-def _send_via_sendgrid(to: str, subject: str, html: str | None, text: str | None) -> Tuple[bool, str]:
-    """
-    Variáveis:
-      SENDGRID_API_KEY
-      SENDGRID_FROM   (opcional; senão usa SMTP_SENDER/no-reply)
-    """
+def _send_via_sendgrid(to: str, subject: str, html: str, text: Optional[str] = None) -> Tuple[bool, str]:
     key = os.getenv("SENDGRID_API_KEY")
     if not key:
         return False, "SENDGRID_API_KEY ausente"
 
-    sender = os.getenv("SENDGRID_FROM") or os.getenv("SMTP_SENDER") or "no-reply@achetece.com.br"
+    sender = os.getenv("SENDGRID_FROM") or _extract_email(_safe_from_address()) or "no-reply@achetece.com.br"
     try:
         import requests
         url = "https://api.sendgrid.com/v3/mail/send"
@@ -336,18 +207,198 @@ def _send_via_sendgrid(to: str, subject: str, html: str | None, text: str | None
                 {"type": "text/html", "value": html or ""},
             ],
         }
+        if REPLY_TO:
+            payload["reply_to"] = {"email": REPLY_TO}
+
         r = requests.post(
             url,
             headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
             data=json.dumps(payload),
-            timeout=6,
+            timeout=int(app.config.get("MAIL_TIMEOUT") or 8),
         )
-        # SendGrid retorna 202 para sucesso
         if r.status_code == 202:
             return True, "OK"
         return False, f"SendGrid {r.status_code}: {r.text[:200]}"
     except Exception as e:
         return False, f"SendGrid erro: {e!s}"
+
+def _send_via_smtp(to: str, subject: str, html: str, text: Optional[str] = None) -> Tuple[bool, str]:
+    """Fallback via SMTP (SSL/TLS) — agora será usado de verdade."""
+    host = app.config.get("SMTP_HOST") or "smtp.gmail.com"
+    port = int(app.config.get("SMTP_PORT") or 465)
+    user = app.config.get("SMTP_USER") or ""
+    pwd  = app.config.get("SMTP_PASS") or ""
+    sender = app.config.get("SMTP_FROM") or user
+    timeout = int(app.config.get("MAIL_TIMEOUT") or 8)
+
+    if not (user and pwd and sender and to):
+        return False, "SMTP não configurado."
+
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = sender
+    msg["To"] = to
+    msg["Message-ID"] = make_msgid(domain="achetece.com.br")
+    if REPLY_TO:
+        msg["Reply-To"] = REPLY_TO
+
+    msg.set_content(_fallback_text(html, text))
+    msg.add_alternative(html or "", subtype="html")
+
+    try:
+        if port == 465:
+            with smtplib.SMTP_SSL(host, port, timeout=timeout) as s:
+                s.login(user, pwd)
+                s.send_message(msg)
+        else:
+            ctx = ssl.create_default_context()
+            with smtplib.SMTP(host, port, timeout=timeout) as s:
+                s.ehlo()
+                s.starttls(context=ctx)
+                s.ehlo()
+                s.login(user, pwd)
+                s.send_message(msg)
+        return True, "OK"
+    except Exception as e:
+        app.logger.exception(f"[EMAIL/SMTP] Falha ao enviar para {to}: {e}")
+        return False, f"smtp_error: {e!s}"
+
+def send_email(to: str, subject: str, html: str, text: Optional[str] = None) -> bool:
+    from flask import current_app
+
+    if current_app.config.get("MAIL_SUPPRESS_SEND"):
+        current_app.logger.info(f"[send_email] MAIL_SUPPRESS_SEND=True — suprimido. to={to} subject={subject}")
+        return True
+
+    # 1) Tenta Flask-Mail (se existir)
+    try:
+        mail_ext = (getattr(current_app, "extensions", {}) or {}).get("mail")
+        if mail_ext:
+            from flask_mail import Message
+            msg = Message(
+                subject=subject,
+                recipients=[to],
+                sender=current_app.config.get("MAIL_DEFAULT_SENDER") or EMAIL_FROM,
+            )
+            msg.body = _fallback_text(html, text)
+            msg.html = html
+            msg.extra_headers = {
+                "Content-Language": "pt-BR",
+                "Message-ID": make_msgid(domain="achetece.com.br"),
+            }
+            if REPLY_TO:
+                msg.reply_to = REPLY_TO
+            mail_ext.send(msg)
+            current_app.logger.info("[send_email] via Flask-Mail")
+            return True
+    except Exception:
+        current_app.logger.exception("[send_email] Flask-Mail falhou")
+
+    # 2) Provedores HTTP
+    ok, why = _send_via_resend(to, subject, html, text)
+    if ok:
+        return True
+
+    ok, why = _send_via_mailgun(to, subject, html, text)
+    if ok:
+        return True
+
+    ok, why = _send_via_sendgrid(to, subject, html, text)
+    if ok:
+        return True
+
+    # 3) Fallback SMTP (AGORA SIM)
+    ok, why2 = _send_via_smtp(to, subject, html, text)
+    if ok:
+        current_app.logger.info("[send_email] via SMTP fallback")
+        return True
+
+    current_app.logger.error(f"[send_email] nenhum backend aceitou. http_last={why} smtp_last={why2}")
+    return False
+
+# --------------------------------------------------------------------
+# E-mail transacional: Pagamento confirmado (AcheTece)
+# --------------------------------------------------------------------
+def send_payment_confirmation_email(to_email: str, nome_empresa: str, plano: str) -> bool:
+    import html as _html
+
+    # 1) Normaliza BASE URL (evita //login)
+    base = (SITE_URL or "https://www.achetece.com.br").rstrip("/")
+
+    # 2) Normaliza plano
+    plano_norm = (plano or "mensal").strip().lower()
+    if plano_norm not in ("mensal", "anual"):
+        plano_norm = "mensal"
+
+    plano_label = "Plano Mensal" if plano_norm == "mensal" else "Plano Anual (15% OFF)"
+
+    # 3) Links
+    login_url = f"{base}/login"
+    painel_url = f"{base}/painel_malharia"
+
+    # 4) Assunto (neutro e bom p/ entrega)
+    subject = "Pagamento confirmado — AcheTece"
+
+    # 5) Texto puro (fallback)
+    nome_txt = (nome_empresa or "Sua malharia").strip()
+    text_body = f"""Olá, {nome_txt}!
+
+Seu pagamento foi confirmado e seu acesso ao AcheTece foi liberado.
+
+Plano: {plano_label}
+
+Login:
+{login_url}
+
+Painel:
+{painel_url}
+
+Se precisar de suporte, responda este e-mail.
+"""
+
+    # 6) HTML (sanitiza nome)
+    nome_html = _html.escape(nome_txt)
+
+    html_body = f"""
+    <div style="font-family:Inter,Arial,sans-serif;background:#f5f5f4;padding:24px;">
+      <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden;">
+        <div style="padding:18px 18px 10px 18px;">
+          <h2 style="margin:0;color:#111;font-size:20px;">Pagamento confirmado ✅</h2>
+
+          <p style="margin:10px 0 0 0;color:#333;line-height:1.5;">
+            Olá, <strong>{nome_html}</strong>!<br>
+            Seu pagamento foi confirmado e seu acesso ao <strong>AcheTece</strong> foi liberado.
+          </p>
+
+          <div style="margin:14px 0;padding:12px;border-radius:12px;background:#f1f2e8;border:1px solid #bfbfa8;">
+            <div style="font-weight:800;color:#111;">{plano_label}</div>
+            <div style="color:#333;font-size:13px;margin-top:4px;">Você já pode acessar normalmente.</div>
+          </div>
+
+          <a href="{login_url}"
+             style="display:inline-block;background:#000;color:#b6f34d;text-decoration:none;font-weight:800;
+                    padding:12px 16px;border-radius:999px;margin-top:6px;">
+             Fazer login
+          </a>
+
+          <p style="margin:14px 0 0 0;color:#666;font-size:13px;line-height:1.5;">
+            Se o botão não abrir, copie e cole:<br>
+            <span style="color:#111;">{login_url}</span>
+          </p>
+
+          <p style="margin:10px 0 0 0;color:#666;font-size:13px;">
+            Ir para o painel: <a href="{painel_url}" style="color:#7B7424;font-weight:800;text-decoration:none;">{painel_url}</a>
+          </p>
+        </div>
+
+        <div style="border-top:1px solid #eee;padding:12px 18px;color:#666;font-size:12px;">
+          Se precisar de suporte, responda este e-mail.
+        </div>
+      </div>
+    </div>
+    """
+
+    return send_email(to_email, subject, html_body, text_body)
 
 def _otp_validate(email: str, codigo: str):
     """
@@ -906,7 +957,12 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy import and_, or_, func, text
 # ----------------------------------------------
 
-ASSINATURA_GRACA_DIAS = 35  # janela de validade após o último pagamento aprovado
+# Prazo de validade por plano (dias)
+ASSINATURA_DIAS_MENSAL = 35          # sua janela atual
+ASSINATURA_DIAS_ANUAL  = 370         # 365 + 5 dias de folga (ajuste se quiser)
+
+STATUS_ATIVO_EQUIV = {"ativo", "aprovado", "approved", "paid", "active", "trial"}
+STATUS_PENDENTE_EQUIV = {"pendente", "pending", "in_process", "inprocess"}
 
 class Usuario(db.Model):
     __tablename__ = 'usuario'
@@ -918,14 +974,20 @@ class Usuario(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+# Prazo de validade por plano (dias)
+ASSINATURA_DIAS_MENSAL = 35          # sua janela atual
+ASSINATURA_DIAS_ANUAL  = 370         # 365 + 5 dias de folga (ajuste se quiser)
+
+STATUS_ATIVO_EQUIV = {"ativo", "aprovado", "approved", "paid", "active", "trial"}
+STATUS_PENDENTE_EQUIV = {"pendente", "pending", "in_process", "inprocess"}
+
 class Empresa(db.Model):
-    # __tablename__ = 'empresa'  # opcional (SQLAlchemy infere 'empresa')
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), unique=True)
     usuario = db.relationship('Usuario', backref=db.backref('empresa', uselist=False))
-    
-    foto_url = db.Column(db.String(255))  # <-- PRECISA ter isso
-    
+
+    foto_url = db.Column(db.String(255))
+
     nome = db.Column(db.String(100), nullable=False, unique=True)
     apelido = db.Column(db.String(50), unique=True)
     email = db.Column(db.String(100), nullable=False, unique=True)
@@ -935,60 +997,88 @@ class Empresa(db.Model):
     estado = db.Column(db.String(2))
     telefone = db.Column(db.String(20))
 
-    # 🔎 Campos já existentes para pagamento/assinatura
+    # ✅ plano escolhido pela malharia: "mensal" ou "anual"
+    # Se você já tem essa coluna em outro lugar, mantenha apenas 1.
+    plano = db.Column(db.String(10), default="mensal", nullable=False, index=True)
+
     status_pagamento = db.Column(db.String(20), default='pendente', index=True)
-    # Data do ÚLTIMO pagamento aprovado/confirmado (UTC)
-    data_pagamento = db.Column(db.DateTime)
+    data_pagamento = db.Column(db.DateTime)  # último pagamento aprovado (UTC)
 
     teares = db.relationship('Tear', backref='empresa', lazy=True, cascade="all, delete-orphan")
 
     responsavel_nome = db.Column(db.String(120))
     responsavel_sobrenome = db.Column(db.String(120))
-    # Endereço (já existente)
-    endereco = db.Column(db.String(240))   # Rua, número, complemento, bairro
-    cep      = db.Column(db.String(9))     # 00000-000
+    endereco = db.Column(db.String(240))
+    cep      = db.Column(db.String(9))
 
-    # --------- SINALIZADOR DE ASSINATURA ATIVA ---------
+    # ---------- helpers ----------
+    @staticmethod
+    def _plano_norm(plano: str) -> str:
+        p = (plano or "").strip().lower()
+        return "anual" if p == "anual" else "mensal"
+
+    @staticmethod
+    def _dias_por_plano(plano: str) -> int:
+        p = Empresa._plano_norm(plano)
+        return ASSINATURA_DIAS_ANUAL if p == "anual" else ASSINATURA_DIAS_MENSAL
+
+    @property
+    def status_pagamento_norm(self) -> str:
+        s = (self.status_pagamento or "").strip().lower()
+        if s in STATUS_ATIVO_EQUIV:
+            return "ativo"
+        if s in STATUS_PENDENTE_EQUIV:
+            return "pendente"
+        # fallback seguro
+        return "pendente"
+
     @hybrid_property
     def assinatura_ativa(self) -> bool:
         """
-        Considera 'ativa' se o status for aprovado/ativo/trial e se a data do último
-        pagamento ainda estiver dentro da janela (ASSINATURA_GRACA_DIAS). Se o gateway
-        marcar ativo mas não enviar data, assume True.
+        Regra FINAL:
+        - Considera ativa se status_norm == "ativo"
+        - E se data_pagamento existir: ainda está dentro do prazo do plano (mensal/anual)
+        - Se data_pagamento for None e status estiver ativo: considera ativo (casos raros/trial)
         """
-        status = (self.status_pagamento or '').strip().lower()
-        status_ok = status in {'aprovado', 'ativo', 'active', 'paid', 'trial'}
-        if not status_ok:
+        if self.status_pagamento_norm != "ativo":
             return False
 
-        # sem data_pagamento: considere ativo (ex.: trial ou gateway não registrou)
         if self.data_pagamento is None:
             return True
 
-        return self.data_pagamento + timedelta(days=ASSINATURA_GRACA_DIAS) >= datetime.utcnow()
+        dias = self._dias_por_plano(getattr(self, "plano", "mensal"))
+        return (self.data_pagamento + timedelta(days=dias)) >= datetime.utcnow()
 
     @assinatura_ativa.expression
     def assinatura_ativa(cls):
         """
-        Versão SQL para uso em filtros (funciona no Postgres).
-        Regra: status OK E (data_pagamento IS NULL OU now() <= data_pagamento + 35 dias)
+        Versão SQL (Postgres):
+        status ok AND (data_pagamento IS NULL OR now() <= data_pagamento + intervalo(plano))
         """
         status_lower = func.lower(func.coalesce(cls.status_pagamento, ''))
+        plano_lower  = func.lower(func.coalesce(cls.plano, 'mensal'))
+
+        # dias por plano via CASE
+        dias = func.case(
+            (plano_lower == "anual", ASSINATURA_DIAS_ANUAL),
+            else_=ASSINATURA_DIAS_MENSAL
+        )
+
+        # make_interval(days => CASE...) no Postgres
         return and_(
-            status_lower.in_(['aprovado', 'ativo', 'active', 'paid', 'trial']),
+            status_lower.in_(list(STATUS_ATIVO_EQUIV)),
             or_(
                 cls.data_pagamento.is_(None),
-                func.now() <= (cls.data_pagamento + text("INTERVAL '35 days'"))
+                func.now() <= (cls.data_pagamento + func.make_interval(days=dias))
             )
         )
 
-    # (Opcional) útil para exibir no painel quando expira
     @property
     def assinatura_expira_em(self):
         if self.data_pagamento is None:
             return None
-        return self.data_pagamento + timedelta(days=ASSINATURA_GRACA_DIAS)
-    # ----------------------------------------------------
+        dias = self._dias_por_plano(getattr(self, "plano", "mensal"))
+        return self.data_pagamento + timedelta(days=dias)
 
 class Tear(db.Model):
     # __tablename__ = 'tear'  # opcional (SQLAlchemy infere 'tear')
@@ -2153,7 +2243,7 @@ def _proximo_step(emp: Empresa) -> str:
 
 from flask import make_response
 
-# --- Rota do Painel (versão com vencimento mensal + próximo dia útil) ---
+# --- Rota do Painel (vencimento por plano + ajuste p/ próximo dia útil BR) ---
 @app.route('/painel_malharia', endpoint="painel_malharia")
 def painel_malharia():
     emp, u = _get_empresa_usuario_da_sessao()
@@ -2163,6 +2253,15 @@ def painel_malharia():
     # Evita objetos “velhos” ficarem presos na identity map
     try:
         db.session.expire_all()
+    except Exception:
+        pass
+
+    # ✅ Recarrega "fresco" após expire_all (garante status/plan/data atualizados)
+    try:
+        emp_id = emp.id
+        emp = Empresa.query.get(emp_id)
+        if not emp:
+            return redirect(url_for("login"))
     except Exception:
         pass
 
@@ -2176,12 +2275,16 @@ def painel_malharia():
             .all()
     )
 
-    # 1) Status declarado pelo pagamento (aprovado/ativo)
-    status_ok = (getattr(emp, "status_pagamento", None) or "pendente") in ("ativo", "aprovado")
+    # ---------------------------
+    # Assinatura: status + vencimento por plano
+    # ---------------------------
+    # Status que consideramos "pago/ativo" (cobre variações comuns do MP)
+    status_raw = (getattr(emp, "status_pagamento", None) or "pendente").strip().lower()
+    STATUS_ATIVO = {"ativo", "aprovado", "approved", "paid", "active", "trial"}
+    status_ok = status_raw in STATUS_ATIVO
 
-    # 2) Cálculo de vencimento do CICLO ATUAL:
-    #    âncora = data de pagamento (ou início/criação)
-    #    vencimento = âncora + N dias conforme plano, ajustado para o próximo dia útil BR
+    # Cálculo de vencimento do ciclo atual:
+    # base = data_pagamento (ou outras datas se existirem) -> + dias do plano -> próximo dia útil BR
     vencimento_proximo, dias_restantes = (None, None)
     ativa_pelo_tempo = False
 
@@ -2191,54 +2294,76 @@ def painel_malharia():
             from zoneinfo import ZoneInfo
             hoje = datetime.now(ZoneInfo("America/Sao_Paulo")).date()
         except Exception:
-            hoje = date.today()
+            from datetime import date as _date
+            hoje = _date.today()
 
-        if status_ok:
-            # normaliza possíveis campos de data (sempre para date)
-            ult_pgto = getattr(emp, "assin_ultimo_pagamento", None)
-            if isinstance(ult_pgto, datetime):
-                ult_pgto = ult_pgto.date()
+        # normaliza possíveis campos de data (sempre para date)
+        def _to_date(v):
+            if not v:
+                return None
+            if isinstance(v, datetime):
+                return v.date()
+            try:
+                # se já vier date
+                return v
+            except Exception:
+                return None
 
-            data_pag = getattr(emp, "data_pagamento", None)
-            if isinstance(data_pag, datetime):
-                data_pag = data_pag.date()
+        ult_pgto = _to_date(getattr(emp, "assin_ultimo_pagamento", None))
+        data_pag = _to_date(getattr(emp, "data_pagamento", None))
+        inicio   = _to_date(getattr(emp, "assin_data_inicio", None))
+        created  = _to_date(getattr(emp, "created_at", None))
 
-            inicio = getattr(emp, "assin_data_inicio", None)
-            if isinstance(inicio, datetime):
-                inicio = inicio.date()
+        # ordem de prioridade: último pagamento > data_pagamento > início > criação > hoje
+        base_dt = ult_pgto or data_pag or inicio or created or hoje
 
-            created = getattr(emp, "created_at", None)
-            if isinstance(created, datetime):
-                created = created.date()
+        # dias do ciclo conforme o plano
+        plano = (getattr(emp, "plano", None) or "mensal").strip().lower()
+        if "anual" in plano:
+            dias_plano = 365
+        else:
+            # ✅ mensal com folga (se você quer 35 como já vinha usando)
+            dias_plano = 35
 
-            # ordem de prioridade: último pagamento > data_pagamento > início > criação > hoje
-            base_dt = ult_pgto or data_pag or inicio or created or hoje
+        # vencimento nominal e ajuste para próximo dia útil BR
+        nominal = base_dt + timedelta(days=dias_plano)
+        venc = _proximo_dia_util_br(nominal)
 
-            # dias do ciclo conforme o plano
-            plano = (getattr(emp, "plano", None) or "mensal").lower()
-            dias_plano = 30
-            if "anual" in plano:
-                dias_plano = 365
+        vencimento_proximo = venc
 
-            # vencimento = base + dias_plano, ajustado para próximo dia útil BR
-            nominal = base_dt + timedelta(days=dias_plano)
-            venc = _proximo_dia_util_br(nominal)
+        # dias_restantes pode ficar negativo se já venceu (para você exibir "vencido")
+        dias_restantes = (venc - hoje).days
 
-            vencimento_proximo = venc
-            dias_restantes = max((venc - hoje).days, 0)
+        # Ativa pelo tempo (tolerância opcional)
+        tol = int(globals().get("TOLERANCIA_DIAS", 0) or 0)
+        ativa_pelo_tempo = hoje <= (venc + timedelta(days=tol))
 
-            # Ativa se ainda estamos dentro do prazo (com tolerância opcional)
-            ativa_pelo_tempo = hoje <= (venc + timedelta(days=TOLERANCIA_DIAS))
+        # (Opcional recomendado) Se venceu, e ainda está como "ativo", rebaixa para "pendente"
+        # assim o admin e o painel ficam coerentes.
+        if status_ok and (not ativa_pelo_tempo) and getattr(emp, "data_pagamento", None):
+            try:
+                emp.status_pagamento = "pendente"
+                db.session.commit()
+                status_ok = False
+            except Exception:
+                db.session.rollback()
+
     except Exception as e:
         app.logger.warning(f"[painel] cálculo de vencimento falhou: {e}")
 
-    # Assinatura ativa = status OK (MP) E ainda dentro do prazo calculado
-    is_ativa = status_ok and ativa_pelo_tempo
+    # Assinatura ativa = status OK (pagamento) E ainda dentro do prazo calculado
+    is_ativa = bool(status_ok and ativa_pelo_tempo)
+
+    # ✅ CTA de pagamento no painel (pendente/vencida ou vencendo em breve)
+    # Você pode usar isso no template para mostrar o banner/botões.
+    mostrar_pagamento = (not is_ativa)
+    if (is_ativa is True) and (dias_restantes is not None) and (dias_restantes <= 7):
+        mostrar_pagamento = True
 
     checklist = {
         "perfil_ok": all(_empresa_basica_completa(emp)),
         "teares_ok": _conta_teares(emp.id) > 0,
-        "plano_ok": is_ativa or DEMO_MODE,  # <--- aqui é "or", não "ou"
+        "plano_ok": is_ativa or DEMO_MODE,  # <--- aqui é "or"
         "step": step,
     }
 
@@ -2246,12 +2371,17 @@ def painel_malharia():
     notif_count, notif_lista = _get_notificacoes(emp.id)
     chat_nao_lidos = 0  # ajuste aqui se tiver chat real
 
-    # Foto: resolve sempre via helper (banco + arquivos em static/avatars)
+    # Foto: resolve sempre via helper (banco + arquivos)
     foto_url = _empresa_avatar_url(emp)
 
     app.logger.info({
         "rota": "painel_malharia",
         "empresa_id": emp.id,
+        "status_pagamento": getattr(emp, "status_pagamento", None),
+        "plano": getattr(emp, "plano", None),
+        "vencimento_proximo": str(vencimento_proximo) if vencimento_proximo else None,
+        "dias_restantes": dias_restantes,
+        "assinatura_ativa": is_ativa,
         "foto_url_resolvida": foto_url,
     })
 
@@ -2267,13 +2397,19 @@ def painel_malharia():
         notificacoes_lista=notif_lista,
         chat_nao_lidos=chat_nao_lidos,
         foto_url=foto_url,
+
+        # ✅ dados de vencimento (para chip)
         vencimento_proximo=vencimento_proximo,
         dias_restantes=dias_restantes,
+
+        # ✅ opcional (para banner/botões de pagar/renovar)
+        mostrar_pagamento=mostrar_pagamento,
     ))
     resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     resp.headers["Pragma"] = "no-cache"
     resp.headers["Expires"] = "0"
     return resp
+
 
 from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
 
@@ -2290,17 +2426,14 @@ def _with_cb(u: str, ts: int) -> str:
 def _back_to_panel(ts: int):
     """Escolhe uma URL de retorno ao painel com cache-buster."""
     ref = request.referrer or ""
-    # Preferimos referrer da mesma origem que contenha 'painel' (outra página do app)
     if ref:
         try:
             rp = urlparse(ref)
-            # mesma origem?
             if rp.netloc == request.host:
                 if "painel" in rp.path or "malharia" in rp.path:
                     return redirect(_with_cb(ref, ts))
         except Exception:
             pass
-    # fallback: rota nomeada do painel
     return redirect(url_for('painel_malharia', _cb=ts))
 
 def _empresa_avatar_url(emp) -> str | None:
@@ -2309,9 +2442,11 @@ def _empresa_avatar_url(emp) -> str | None:
 
     Ordem:
     1) Se emp.foto_url estiver preenchido, usa.
-    2) Se houver arquivo em static/avatars/empresa_<id>.(jpg|jpeg|png|webp), monta a URL,
-       grava em emp.foto_url e dá commit.
-    3) Caso nada exista, retorna None (template mostra avatar padrão).
+    2) Procura arquivo físico nas pastas usuais:
+       - static/uploads/avatars/empresa_<id>.(jpg|jpeg|png|webp)
+       - static/uploads/perfil/emp_<id>.(jpg|jpeg|png|webp)
+    3) Se achar, monta a URL, grava em emp.foto_url e commit.
+    4) Caso nada exista, retorna None (template mostra avatar padrão).
     """
     if not emp:
         return None
@@ -2321,22 +2456,29 @@ def _empresa_avatar_url(emp) -> str | None:
     if url:
         return url
 
-    # 2) Procura arquivos físicos
+    # 2) Procura arquivos físicos (compat com seus diretórios)
     try:
-        base_name = f"empresa_{emp.id}"
-        exts = (".jpg", ".jpeg", ".png", ".webp")
-        for ext in exts:
-            rel_path = f"avatars/{base_name}{ext}"
-            abs_path = os.path.join(app.static_folder, rel_path)
-            if os.path.exists(abs_path):
-                url = url_for("static", filename=rel_path)
-                # grava no banco para próximas vezes ficarem mais baratas
-                try:
-                    emp.foto_url = url
-                    db.session.commit()
-                except Exception:
-                    db.session.rollback()
-                return url
+        candidates = [
+            (f"uploads/avatars/empresa_{emp.id}", (".webp", ".jpg", ".jpeg", ".png")),
+            (f"uploads/perfil/emp_{emp.id}",      (".webp", ".jpg", ".jpeg", ".png")),
+        ]
+
+        for base_rel, exts in candidates:
+            for ext in exts:
+                rel_path = f"{base_rel}{ext}"
+                abs_path = os.path.join(app.static_folder, rel_path)
+                if os.path.exists(abs_path):
+                    url = url_for("static", filename=rel_path)
+
+                    # grava no banco para próximas vezes
+                    try:
+                        emp.foto_url = url
+                        db.session.commit()
+                    except Exception:
+                        db.session.rollback()
+
+                    return url
+
     except Exception as e:
         app.logger.warning(f"[avatar] _empresa_avatar_url erro: {e}")
 
@@ -3025,44 +3167,94 @@ def admin_logout():
     flash('Você saiu do painel administrativo.')
     return redirect(url_for('index'))
 
+from datetime import datetime, timedelta
+
 @app.route('/admin/empresas', methods=['GET', 'POST'])
 @login_admin_requerido
 def admin_empresas():
     pagina = int(request.args.get('pagina', 1))
     por_pagina = 10
-    status = ''; data_inicio = ''; data_fim = ''
+
+    # ✅ Status oficiais
+    STATUS_VALIDOS = {"ativo", "pendente"}
+
+    status = ''
+    data_inicio = ''
+    data_fim = ''
+
     query = Empresa.query
+
     if request.method == 'POST':
-        status = request.form.get('status', '')
-        data_inicio = request.form.get('data_inicio', '')
-        data_fim = request.form.get('data_fim', '')
+        status = (request.form.get('status', '') or '').strip().lower()
+        data_inicio = (request.form.get('data_inicio', '') or '').strip()
+        data_fim = (request.form.get('data_fim', '') or '').strip()
         return redirect(url_for('admin_empresas', pagina=1, status=status, data_inicio=data_inicio, data_fim=data_fim))
-    else:
-        status = request.args.get('status', '')
-        data_inicio = request.args.get('data_inicio', '')
-        data_fim = request.args.get('data_fim', '')
-        if status:
-            query = query.filter(Empresa.status_pagamento == status)
-        if data_inicio:
-            query = query.filter(Empresa.data_pagamento >= datetime.strptime(data_inicio, "%Y-%m-%d"))
-        if data_fim:
-            query = query.filter(Empresa.data_pagamento <= datetime.strptime(data_fim, "%Y-%m-%d"))
+
+    status = (request.args.get('status', '') or '').strip().lower()
+    data_inicio = (request.args.get('data_inicio', '') or '').strip()
+    data_fim = (request.args.get('data_fim', '') or '').strip()
+
+    # ✅ filtro de status seguro
+    if status in STATUS_VALIDOS:
+        query = query.filter(Empresa.status_pagamento == status)
+
+    # ✅ datas robustas e inclusivas (fim do dia)
+    if data_inicio:
+        try:
+            dt_ini = datetime.strptime(data_inicio, "%Y-%m-%d")
+            query = query.filter(Empresa.data_pagamento >= dt_ini)
+        except ValueError:
+            pass
+
+    if data_fim:
+        try:
+            dt_fim = datetime.strptime(data_fim, "%Y-%m-%d") + timedelta(days=1)
+            query = query.filter(Empresa.data_pagamento < dt_fim)  # pega o dia inteiro
+        except ValueError:
+            pass
+
     total = query.count()
-    empresas = query.order_by(Empresa.nome).offset((pagina - 1) * por_pagina).limit(por_pagina).all()
+    empresas = (query
+               .order_by(Empresa.nome)
+               .offset((pagina - 1) * por_pagina)
+               .limit(por_pagina)
+               .all())
+
     total_paginas = (total + por_pagina - 1) // por_pagina
-    return render_template('admin_empresas.html',
-                           empresas=empresas, pagina=pagina, total_paginas=total_paginas,
-                           status=status, data_inicio=data_inicio, data_fim=data_fim)
+
+    return render_template(
+        'admin_empresas.html',
+        empresas=empresas,
+        pagina=pagina,
+        total_paginas=total_paginas,
+        status=status,
+        data_inicio=data_inicio,
+        data_fim=data_fim
+    )
 
 @app.route('/admin/editar_status/<int:empresa_id>', methods=['GET', 'POST'])
 @login_admin_requerido
 def admin_editar_status(empresa_id):
     empresa = Empresa.query.get_or_404(empresa_id)
-    novo_status = request.values.get('status') or ('ativo' if empresa.status_pagamento != 'ativo' else 'pendente')
+
+    STATUS_VALIDOS = {"ativo", "pendente"}
+
+    status_req = (request.values.get('status') or '').strip().lower()
+
+    if status_req in STATUS_VALIDOS:
+        novo_status = status_req
+    else:
+        # toggle seguro
+        novo_status = 'ativo' if (empresa.status_pagamento or '').strip().lower() != 'ativo' else 'pendente'
+
+    status_anterior = (empresa.status_pagamento or '').strip().lower()
+
     empresa.status_pagamento = novo_status
     empresa.data_pagamento = datetime.utcnow() if novo_status == 'ativo' else None
     db.session.commit()
+
     flash(f'Status de "{empresa.apelido or empresa.nome}" atualizado para {novo_status}.', 'success')
+
     return redirect(url_for('admin_empresas',
                             pagina=request.args.get('pagina', 1),
                             status=request.args.get('status', ''),
@@ -3174,7 +3366,7 @@ def admin_seed_teares_all():
         if escopo == "demo":
             q = q.filter(DEMO_FILTER)
         elif escopo == "pagantes":
-            q = q.filter(Empresa.status_pagamento == "aprovado")
+            q = q.filter(Empresa.status_pagamento == "ativo")
         if uf:
             q = q.filter(func.upper(Empresa.estado) == uf.upper())
 
@@ -3199,7 +3391,7 @@ def utils_empresas_json():
     if escopo == "demo":
         q = q.filter(DEMO_FILTER)
     elif escopo == "pagantes":
-        q = q.filter(Empresa.status_pagamento == "aprovado")
+        q = q.filter(Empresa.status_pagamento == "ativo")
     if uf:
         q = q.filter(func.upper(Empresa.estado) == uf.upper())
     empresas = q.order_by(Empresa.id.desc()).all()
@@ -3438,7 +3630,7 @@ def _processar_pagamento(payment_id: str):
         return {"ok": True, "empresa_id": empresa.id, "ativou": True}
 
     # outros status: mantém como pendente (mas atualiza se quiser)
-    if status_atual not in {"ativo", "aprovado", "active", "paid", "trial"}:
+    if status_atual != "ativo":
         empresa.status_pagamento = "pendente"
         db.session.commit()
 
