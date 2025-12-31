@@ -474,6 +474,209 @@
       white-space:nowrap;
     }
   }
+    
+    /* ===== Assinatura e Pagamento (banner no painel) ===== */
+    .pay-wrap{
+      margin-top:14px;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:22px;
+      overflow:hidden;
+    }
+    .pay-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      padding:16px 16px 12px;
+      border-bottom:1px solid var(--line);
+    }
+    .pay-title{
+      font-weight:800;
+      color:#1d1d1d;
+      margin:0;
+    }
+    .pay-sub{
+      margin:4px 0 0;
+      color:#666;
+      font-size:14px;
+    }
+  
+    .pay-status{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:7px 12px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:#fff;
+      font-weight:800;
+      font-size:13px;
+      color:#222;
+      white-space:nowrap;
+    }
+    .pill .dot{ width:8px; height:8px; border-radius:50%; display:inline-block; }
+    .pill-ok .dot{ background:var(--success); }
+    .pill-warn .dot{ background:var(--warn); }
+    .pill-bad .dot{ background:var(--danger); }
+  
+    .pay-body{
+      display:grid;
+      grid-template-columns:1.1fr .9fr;
+      gap:16px;
+      padding:16px;
+      align-items:stretch;
+    }
+    @media (max-width:920px){
+      .pay-body{ grid-template-columns:1fr; }
+    }
+  
+    .pay-how{
+      background:var(--olive-50);
+      border:1px solid var(--line-olive);
+      border-radius:16px;
+      padding:14px;
+    }
+    .pay-how h4{
+      margin:0 0 8px;
+      font-weight:900;
+      color:#1d1d1d;
+    }
+    .pay-how ol{
+      margin:0;
+      padding-left:18px;
+      color:#222;
+    }
+    .pay-how li{ margin:6px 0; }
+    .pay-how .hint{
+      margin-top:10px;
+      color:#555;
+      font-size:13px;
+    }
+  
+    .plans{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .plan-row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+    @media (max-width:520px){
+      .plan-row{ grid-template-columns:1fr; }
+    }
+  
+    .plan-card{
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:12px 12px;
+      background:#fff;
+      cursor:pointer;
+      transition:.15s transform, .15s border-color, .15s box-shadow;
+      position:relative;
+      min-height:92px;
+    }
+    .plan-card:hover{ transform:translateY(-1px); }
+    .plan-card input{ position:absolute; opacity:0; pointer-events:none; }
+  
+    .plan-card.selected{
+      border-color:var(--lime);
+      box-shadow:0 0 0 3px rgba(182,243,77,.25);
+    }
+  
+    .plan-top{
+      display:flex; align-items:center; gap:10px;
+      font-weight:900;
+    }
+    .radio-dot{
+      width:14px; height:14px; border-radius:50%;
+      border:2px solid #bbb; display:inline-block;
+      box-sizing:border-box;
+    }
+    .plan-card.selected .radio-dot{
+      border-color:var(--lime);
+      box-shadow:inset 0 0 0 4px #1d1d1d00;
+      background:var(--lime);
+    }
+    .plan-name{ font-weight:900; }
+    .plan-badge{
+      margin-left:auto;
+      background:var(--lime);
+      color:#000;
+      font-weight:900;
+      font-size:12px;
+      padding:4px 8px;
+      border-radius:999px;
+    }
+    .plan-price{
+      margin-top:6px;
+      font-size:22px;
+      font-weight:900;
+      color:#111;
+    }
+    .plan-meta{
+      color:#666;
+      font-size:13px;
+      margin-top:4px;
+      line-height:1.35;
+    }
+  
+    .pay-footer{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-top:6px;
+    }
+    .pay-note{
+      color:#666;
+      font-size:13px;
+    }
+    .pay-cta{
+      margin-left:auto;
+    }
+    
+    /* ===== Assinatura / Pagamento (banner inteligente) ===== */
+    .pay-wrap{ max-width:1100px; margin:10px auto 0; padding:0 16px; }
+    .pay-card{
+      background:#fff; border:1px solid var(--line); border-radius:22px; padding:16px;
+      display:grid; grid-template-columns:1.1fr .9fr; gap:16px;
+    }
+    @media (max-width:920px){ .pay-card{ grid-template-columns:1fr; } }
+  
+    .pay-hd{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:10px; }
+    .pay-title{ font-weight:800; color:var(--olive-dark); font-size:1.05rem; }
+    .pay-sub{ color:#666; font-size:.92rem; margin-top:2px; line-height:1.35; }
+  
+    .status-pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:6px 10px; border-radius:999px; border:1px solid var(--line);
+      background:var(--olive-50); font-weight:800; font-size:.85rem;
+      white-space:nowrap;
+    }
+    .status-pill.is-warn{ background:#fff3e6; border-color:#ffd4a8; color:#7a3d00; }
+    .status-pill.is-danger{ background:#ffe9ee; border-color:#ffc1cf; color:#7a0013; }
+  
+    .pay-box{ border:1px solid var(--line); border-radius:16px; padding:12px; background:#fff; }
+    .pay-box.soft{ background:var(--olive-50); }
+  
+    .pay-cta{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px; }
+    .btn-ghost{
+      display:inline-flex; align-items:center; justify-content:center;
+      height:40px; padding:0 16px; border-radius:9999px;
+      border:1px solid var(--line); background:transparent;
+      color:#111; font-weight:800; font-size:14px; text-decoration:none;
+      transition:.15s background-color, .15s transform;
+    }
+    .btn-ghost:hover{ background:var(--olive-50); transform:translateY(-1px); }
+    .btn-ghost:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
   </style>
 </head>
 <body>
@@ -649,7 +852,7 @@
 
             {% else %}
               <!-- NOVO: leva para o bloco #assinatura (plano + pagamento) -->
-              <a class="chip" href="#assinatura" title="Ativar assinatura">
+              <a class="chip" href="{{ url_for('checkout', plano=(empresa.plano or 'mensal')) }}" title="Pagar assinatura">
                 <span class="dot dot-warn"></span>Assinatura pendente
               </a>
             {% endif %}
@@ -665,87 +868,222 @@
   </div>
   <!-- ===== /HERO ===== -->
 
-  <!-- ===== NOVO: Assinatura & Pagamento (dentro do painel) ===== -->
-  <div class="billing-wrap" id="assinatura">
-    <details class="billing-details" {% if not _assin_ativa %}open{% endif %}>
-      <summary>
-        <div class="billing-sum-left">
-          <div class="billing-title">Assinatura e Pagamento</div>
-          <div class="billing-sub">
-            {% if _assin_ativa %}
-              Sua assinatura está ativa. Quando estiver pendente/vencida, você poderá pagar por aqui.
-            {% else %}
-              Escolha o plano e conclua o pagamento para liberar o acesso.
-            {% endif %}
+  {# ===== Banner inteligente ===== #}
+  {% set plano_sel = ((empresa.plano or 'mensal') | string | lower) %}
+  {% set dias = (dias_restantes if dias_restantes is not none else -1) %}
+  {% set venc_fmt = (vencimento_proximo.strftime('%d/%m/%Y') if vencimento_proximo else '') %}
+  
+  {# Regra: 
+     - Ativa e >7 dias: NÃO mostra o bloco grande (fica “compacto” só nos chips da hero)
+     - ≤7 dias OU pendente/vencida: mostra bloco completo + CTA “Renovar agora”
+  #}
+  {% set banner_full = (not assinatura_ativa) or (dias != -1 and dias <= 7) %}
+  
+  {% if banner_full %}
+  <section class="pay-wrap" aria-label="Assinatura e pagamento">
+    <div class="pay-card">
+  
+      <div>
+        <div class="pay-hd">
+          <div>
+            <div class="pay-title">Assinatura e Pagamento</div>
+  
+            <div class="pay-sub">
+              {% if assinatura_ativa %}
+                {% if dias > 0 %}
+                  Faltam <strong>{{ dias }}</strong> dias para vencer{% if venc_fmt %} ({{ venc_fmt }}){% endif %}.
+                {% else %}
+                  Sua assinatura está vencida{% if venc_fmt %} desde {{ venc_fmt }}{% endif %}.
+                {% endif %}
+              {% else %}
+                Conclua o pagamento para liberar o acesso completo do painel.
+              {% endif %}
+            </div>
           </div>
-        </div>
-        <div class="billing-sum-right">
-          <span class="billing-pill">
-            {% if _assin_ativa %}Ativa{% else %}Pendente{% endif %}
-          </span>
-          <svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
-        </div>
-      </summary>
-
-      <div class="billing-body">
-        <div class="billing-note">
-          <strong>Como funciona:</strong><br>
-          1) Você escolhe o plano (mensal ou anual)<br>
-          2) É direcionado ao <strong>Mercado Pago</strong> para concluir o pagamento<br>
-          3) Após aprovação, o AcheTece libera o acesso e envia um <strong>e-mail de confirmação</strong> com um <strong>botão de login</strong>.
-          <br><br>
-          <span style="color:#666;font-size:13px;">
-            Dica: se o pagamento estiver pendente, faça por aqui para evitar bloqueio do painel.
-          </span>
-        </div>
-
-        <div>
-          {% if _assin_ativa %}
-            <div class="billing-note" style="background:#fff;border:1px dashed var(--line);">
-              <strong>Status:</strong> assinatura ativa no momento.<br>
-              Caso seu acesso fique <strong>pendente</strong>, este bloco abrirá automaticamente para você pagar/renovar.
-            </div>
+  
+          {% if assinatura_ativa and dias > 0 %}
+            <span class="status-pill is-warn">Vencendo</span>
           {% else %}
-            <div class="plans" aria-label="Escolha do plano">
-              <label class="plan-card" data-plan-card="mensal">
-                <input type="radio" name="plano_assinatura" value="mensal" {% if plano_atual != 'anual' %}checked{% endif %}>
-                <div>
-                  <div class="ptitle">Mensal</div>
-                  <div class="pprice">R$ 47,00 <span style="font-size:.65em;color:#666;font-weight:800;">/mês</span></div>
-                  <div class="pmeta">Recorrente mensal. Cancele quando quiser.</div>
-                </div>
-              </label>
-
-              <label class="plan-card" data-plan-card="anual">
-                <input type="radio" name="plano_assinatura" value="anual" {% if plano_atual == 'anual' %}checked{% endif %}>
-                <div>
-                  <div class="ptitle">Anual <span class="tag-off">15% OFF</span></div>
-                  <div class="pprice">R$ 479,40 <span style="font-size:.65em;color:#666;font-weight:800;">/ano</span></div>
-                  <div class="pmeta">Equivale a R$ 39,95/mês. Economize R$ 84,60 no ano.</div>
-                </div>
-              </label>
-            </div>
-
-            <div class="billing-actions">
-              <span class="hint">Você será redirecionado ao Mercado Pago.</span>
-
-              <a
-                id="goCheckout"
-                class="btn"
-                data-url-mensal="{{ url_for('checkout', plano='mensal') }}"
-                data-url-anual="{{ url_for('checkout', plano='anual') }}"
-                href="{{ url_for('checkout', plano=(plano_atual if plano_atual in ['mensal','anual'] else 'mensal')) }}"
-                aria-label="Continuar para pagamento"
-              >
-                Continuar para pagamento
-              </a>
-            </div>
+            <span class="status-pill is-danger">Pendente</span>
           {% endif %}
         </div>
+  
+        <div class="pay-box soft">
+          <strong>Como funciona:</strong>
+          <ol style="margin:8px 0 0 18px; padding:0; color:#333; line-height:1.45;">
+            <li>O plano é definido no seu cadastro (Mensal ou Anual).</li>
+            <li>Clique em <strong>Renovar agora</strong> e finalize no Mercado Pago.</li>
+            <li>Após aprovação, o AcheTece libera o acesso e envia e-mail com botão de login.</li>
+          </ol>
+          <div style="margin-top:8px;color:#666;font-size:.88rem;">
+            Dica: se estiver pendente, pague por aqui para evitar bloqueio do painel.
+          </div>
+        </div>
       </div>
-    </details>
-  </div>
-  <!-- ===== /Assinatura & Pagamento ===== -->
+  
+      <div class="pay-box">
+        <div style="font-weight:800; color:#111; margin-bottom:6px;">Seu plano atual</div>
+  
+        <div style="color:#333;">
+          {% if 'anual' in plano_sel %}
+            <strong>Anual</strong> (15% OFF)
+          {% else %}
+            <strong>Mensal</strong>
+          {% endif %}
+        </div>
+  
+        {% if venc_fmt %}
+          <div style="margin-top:8px; color:#666; font-size:.92rem;">
+            Vencimento: <strong>{{ venc_fmt }}</strong>
+          </div>
+        {% endif %}
+  
+        <div class="pay-cta">
+          <a class="btn" href="{{ url_for('checkout', plano=plano_sel) }}">Renovar agora</a>
+          <a class="btn-ghost" href="{{ url_for('editar_empresa') }}">Alterar plano</a>
+        </div>
+  
+        <div style="margin-top:10px; color:#777; font-size:.85rem;">
+          Você será redirecionado(a) ao Mercado Pago.
+        </div>
+      </div>
+  
+    </div>
+  </section>
+  {% endif %}
+  {# ===== /Banner inteligente ===== #}
+  
+  {# ===== Assinatura e Pagamento (banner) ===== #}
+  {% set _plano = (empresa.plano or 'mensal')|lower %}
+  {% set _is_anual = ('anual' in _plano) %}
+  {% set _show_pay = (mostrar_pagamento if mostrar_pagamento is defined else (not assinatura_ativa)) %}
+  
+  {% set _dias = (dias_restantes if dias_restantes is defined else none) %}
+  {% set _venc = (vencimento_proximo if vencimento_proximo is defined else none) %}
+  
+  {% if _show_pay %}
+  <section class="pay-wrap" aria-label="Assinatura e Pagamento">
+    <div class="pay-head">
+      <div>
+        <h3 class="pay-title">Assinatura e Pagamento</h3>
+        <p class="pay-sub">Escolha o plano e conclua o pagamento para liberar o acesso.</p>
+      </div>
+  
+      <div class="pay-status">
+        {# Status visual (sem dropdown para o cliente) #}
+        {% if assinatura_ativa %}
+          <span class="pill pill-ok"><span class="dot"></span>Ativa</span>
+        {% else %}
+          {% if _dias is not none and _dias < 0 %}
+            <span class="pill pill-bad"><span class="dot"></span>Vencida</span>
+          {% else %}
+            <span class="pill pill-warn"><span class="dot"></span>Pendente</span>
+          {% endif %}
+        {% endif %}
+  
+        {# Chip de vencimento (se tiver data calculada) #}
+        {% if _venc %}
+          <span class="pill">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8">
+              <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+              <path d="M8 2v4M16 2v4M3 10h18"></path>
+            </svg>
+            Vence em {{ _venc.strftime('%d/%m/%Y') }}
+          </span>
+        {% endif %}
+      </div>
+    </div>
+  
+    <div class="pay-body">
+      <div class="pay-how">
+        <h4>Como funciona:</h4>
+        <ol>
+          <li>Você escolhe o plano (mensal ou anual).</li>
+          <li>É direcionado ao <strong>Mercado Pago</strong> para concluir o pagamento.</li>
+          <li>Após aprovação, o AcheTece libera o acesso e envia um <strong>e-mail de confirmação</strong> com um <strong>botão de login</strong>.</li>
+        </ol>
+        <div class="hint">
+          Dica: se o pagamento estiver pendente, faça por aqui para evitar bloqueio do painel.
+        </div>
+      </div>
+  
+      <div class="plans">
+        <div class="plan-row" role="radiogroup" aria-label="Seleção de plano">
+          <label class="plan-card {% if not _is_anual %}selected{% endif %}">
+            <input type="radio" name="plano" value="mensal" {% if not _is_anual %}checked{% endif %}>
+            <div class="plan-top">
+              <span class="radio-dot" aria-hidden="true"></span>
+              <span class="plan-name">Mensal</span>
+            </div>
+            <div class="plan-price">
+              {# Se você passar preco_mensal no render_template, ele aparece aqui #}
+              {% if preco_mensal is defined %}R$ {{ '%.2f'|format(preco_mensal)|replace('.', ',') }}{% else %}R$ 47,00{% endif %}
+              <span style="font-size:14px;font-weight:800;color:#666">/mês</span>
+            </div>
+            <div class="plan-meta">Recorrente mensal. Cancele quando quiser.</div>
+          </label>
+  
+          <label class="plan-card {% if _is_anual %}selected{% endif %}">
+            <input type="radio" name="plano" value="anual" {% if _is_anual %}checked{% endif %}>
+            <div class="plan-top">
+              <span class="radio-dot" aria-hidden="true"></span>
+              <span class="plan-name">Anual</span>
+              <span class="plan-badge">15% OFF</span>
+            </div>
+            <div class="plan-price">
+              {% if preco_anual is defined %}R$ {{ '%.2f'|format(preco_anual)|replace('.', ',') }}{% else %}R$ 479,40{% endif %}
+              <span style="font-size:14px;font-weight:800;color:#666">/ano</span>
+            </div>
+            <div class="plan-meta">Economize no ano e mantenha acesso contínuo.</div>
+          </label>
+        </div>
+  
+        <div class="pay-footer">
+          <div class="pay-note">Você será redirecionado ao Mercado Pago.</div>
+  
+          {# CTA dinâmico (JS ajusta o link conforme o plano selecionado) #}
+          <a id="payCta"
+             class="btn pay-cta"
+             href="{{ url_for('checkout', plano=('anual' if _is_anual else 'mensal')) }}">
+            Continuar para pagamento
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <script>
+    (function(){
+      const cards = Array.from(document.querySelectorAll('.plan-card'));
+      const cta   = document.getElementById('payCta');
+      if(!cards.length || !cta) return;
+  
+      const hrefMensal = "{{ url_for('checkout', plano='mensal') }}";
+      const hrefAnual  = "{{ url_for('checkout', plano='anual') }}";
+  
+      function setSelected(val){
+        cards.forEach(c => c.classList.remove('selected'));
+        const card = cards.find(c => (c.querySelector('input')?.value === val));
+        if(card) card.classList.add('selected');
+  
+        cta.href = (val === 'anual') ? hrefAnual : hrefMensal;
+      }
+  
+      cards.forEach(card => {
+        const input = card.querySelector('input');
+        card.addEventListener('click', () => {
+          if(!input) return;
+          input.checked = true;
+          setSelected(input.value);
+        });
+      });
+  
+      const checked = document.querySelector('input[name="plano"]:checked');
+      setSelected(checked ? checked.value : 'mensal');
+    })();
+  </script>
+  {% endif %}
+  {# ===== /Assinatura e Pagamento ===== #}
 
   <div class="sec-title">
     <h2>Teares Cadastrados:</h2>
