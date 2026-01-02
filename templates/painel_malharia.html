@@ -852,7 +852,7 @@
 
             {% else %}
               <!-- NOVO: leva para o bloco #assinatura (plano + pagamento) -->
-              <a class="chip" href="{{ url_for('checkout', plano=(empresa.plano or 'mensal')) }}" title="Pagar assinatura">
+              <a class="chip" href="#assinatura" title="Ver assinatura e pagamento">
                 <span class="dot dot-warn"></span>Assinatura pendente
               </a>
             {% endif %}
