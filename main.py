@@ -987,6 +987,7 @@ class Empresa(db.Model):
     usuario = db.relationship('Usuario', backref=db.backref('empresa', uselist=False))
 
     foto_url = db.Column(db.String(255))
+    plano = db.Column(db.String(20), default="mensal", index=True)  # mensal | anual
 
     nome = db.Column(db.String(100), nullable=False, unique=True)
     apelido = db.Column(db.String(50), unique=True)
@@ -1305,6 +1306,20 @@ def _ensure_cliente_profile_table():
     except Exception as e:
         app.logger.warning(f"create cliente_profile table: {e}")
 
+def _ensure_pagamento_cols():
+    # cria as colunas se não existirem (PostgreSQL)
+    sql = """
+    ALTER TABLE empresa
+      ADD COLUMN IF NOT EXISTS assinatura_status VARCHAR(20) DEFAULT 'pending',
+      ADD COLUMN IF NOT EXISTS assinatura_expira_em TIMESTAMPTZ NULL;
+    """
+    try:
+        with db.engine.begin() as con:
+            con.exec_driver_sql(sql)
+        app.logger.info("[BOOT] Pagamento: colunas OK")
+    except Exception as e:
+        app.logger.error(f"[BOOT] Falha ao garantir colunas de pagamento: {e}")
+
 def _ensure_empresa_address_columns():
     """
     Garante colunas endereco (varchar 240) e cep (varchar 9) em empresa.
@@ -1338,63 +1353,84 @@ def _ensure_empresa_foto_column():
                 ALTER TABLE empresa
                 ADD COLUMN IF NOT EXISTS foto_url VARCHAR(255)
             """))
-        app.logger.info("[BOOT] coluna empresa.foto_url OK")
+        app.logger.info("[] coluna empresa.foto_url OK")
     except Exception as e:
         app.logger.warning(f"[BOOT] não foi possível garantir empresa.foto_url: {e}")
+
+from sqlalchemy import inspect, text
+
+def _boot_ensure_empresa_plano_column():
+    """
+    Garante que a coluna empresa.plano exista no Postgres.
+    - cria a coluna se não existir
+    - preenche registros antigos nulos com 'mensal'
+    - tenta definir default e índice (não quebra se falhar)
+    """
+    try:
+        with db.engine.begin() as conn:
+            # 1) cria coluna (Postgres moderno aceita IF NOT EXISTS)
+            conn.execute(text("ALTER TABLE empresa ADD COLUMN IF NOT EXISTS plano VARCHAR(20)"))
+
+            # 2) backfill
+            conn.execute(text("UPDATE empresa SET plano = 'mensal' WHERE plano IS NULL"))
+
+            # 3) default (se falhar, ignora)
+            try:
+                conn.execute(text("ALTER TABLE empresa ALTER COLUMN plano SET DEFAULT 'mensal'"))
+            except Exception:
+                pass
+
+            # 4) índice (se falhar, ignora)
+            try:
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_empresa_plano ON empresa (plano)"))
+            except Exception:
+                pass
+
+        app.logger.info("[BOOT] coluna empresa.plano OK")
+
+    except Exception as e:
+        app.logger.exception(f"[BOOT] erro garantindo empresa.plano: {e}")
 
 def _run_bootstrap_once():
     """Cria tabelas/migrações leves quando o DB está UP; caso contrário, adia."""
     global _BOOTSTRAP_DONE
+
     if _BOOTSTRAP_DONE:
         return
+
     if not _db_is_up():
         app.logger.error("[BOOT] adiado: DB indisponível")
         return
 
-    # sempre começe com uma sessão limpa
+    # Sempre comece com a sessão limpa
     try:
         db.session.rollback()
     except Exception:
         pass
 
     try:
-        # 1) cria tabelas base
+        # 1) Cria tabelas base (não cria colunas novas em tabelas existentes)
         db.create_all()
-        _ensure_pagamento_cols()            # <<-- ADICIONE AQUI
+
+        # 2) GARANTE colunas novas ANTES de qualquer SELECT/ORM carregar Empresa
+        _ensure_pagamento_cols()
         _ensure_empresa_address_columns()
         _ensure_empresa_foto_column()
-        _ensure_auth_layer_and_link()
-        _ensure_cliente_profile_table()
-        
-        # 2) GARANTE colunas novas (antes de qualquer SELECT em empresa)
-        _ensure_empresa_address_columns()
-        _ensure_teares_pistas_cols() 
+        _boot_ensure_empresa_plano_column()
 
-        # 3) auth + vinculação user_id (usa SELECT minimalista)
+        # 3) Outros ajustes/migrações leves
+        _ensure_teares_pistas_cols()
         _ensure_auth_layer_and_link()
-
-        # 4) tabela de perfil de cliente
         _ensure_cliente_profile_table()
 
         _BOOTSTRAP_DONE = True
         app.logger.info("[BOOT] Migrações/ajustes executados.")
     except Exception as e:
-        db.session.rollback()
-        app.logger.error("[BOOT] adiado: %s", e)
-
-def _ensure_pagamento_cols():
-    # cria as colunas se não existirem (PostgreSQL)
-    sql = """
-    ALTER TABLE empresa
-      ADD COLUMN IF NOT EXISTS assinatura_status VARCHAR(20) DEFAULT 'pending',
-      ADD COLUMN IF NOT EXISTS assinatura_expira_em TIMESTAMPTZ NULL;
-    """
-    try:
-        with db.engine.begin() as con:
-            con.exec_driver_sql(sql)
-        app.logger.info("[BOOT] Pagamento: colunas OK")
-    except Exception as e:
-        app.logger.error(f"[BOOT] Falha ao garantir colunas de pagamento: {e}")
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        app.logger.exception(f"[BOOT] falhou: {e}")
 
 @app.before_request
 def _bootstrap_and_analytics_lazy():
