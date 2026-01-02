@@ -822,6 +822,92 @@
       font-weight:900;
       color:var(--olive);
     }
+    /* ===== Ajustes TOP (override final) ===== */
+    .painel-sub{
+      text-align:center;
+      margin:6px 0 14px;
+      font-weight:800;          /* negrito, sem exagero */
+      font-size:14.5px;         /* levemente destacado */
+      color:#2b2b2b;
+    }
+    
+    /* HERO mais limpo: só avatar + performance */
+    .hero-card.hero-top{
+      max-width:1100px;
+      margin:12px auto 10px;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:22px;
+      padding:14px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+    }
+    
+    /* esquerda: só avatar */
+    .hero-card.hero-top .hero-left{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-width:0;
+    }
+    
+    /* performance: card moderno */
+    .hero-card.hero-top .perf-mini{
+      border:1px solid var(--line-olive);
+      background:var(--olive-50);
+      border-radius:18px;
+      padding:12px 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      width:min(420px, 100%);
+    }
+    
+    .hero-card.hero-top .perf-mini-title{
+      font-weight:900;
+      color:var(--olive-dark);
+    }
+    
+    /* botão moderno (sem link “solto”) */
+    .perf-btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      height:36px;
+      padding:0 14px;
+      border-radius:9999px;
+      border:1px solid var(--line);
+      background:#fff;
+      color:#111;
+      font-weight:900;
+      text-decoration:none;
+      transition:.15s background-color, .15s color, .12s transform, .15s border-color;
+    }
+    .perf-btn:hover{
+      background:#000;
+      color:var(--lime);
+      border-color:#000;
+      transform:translateY(-1px);
+    }
+    .perf-btn:active{
+      transform:translateY(0);
+    }
+    
+    /* mobile: empilha bonito */
+    @media (max-width:920px){
+      .hero-card.hero-top{
+        flex-direction:column;
+        align-items:stretch;
+      }
+      .hero-card.hero-top .perf-mini{
+        width:100%;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -950,54 +1036,49 @@
 <div class="container">
   <h1 class="titulo">Painel da Malharia</h1>
   <p style="text-align:center;">Bem-vindo(a), <strong>{{ nome_empresa }}</strong>!</p>
-
-  <!-- ===== HERO (clean) ===== -->
-<div class="hero-card hero-clean">
-  <div class="hero-ident">
-    <div class="hero-avatar" aria-label="Foto do perfil" title="Clique no lápis para alterar a foto">
-      {% if avatar_url %}
-        <img class="js-avatar" src="{{ avatar_url }}" alt="Foto do perfil" decoding="async" referrerpolicy="no-referrer" draggable="false">
-      {% else %}
-        <img class="js-avatar" src="" alt="Foto do perfil" style="display:none" decoding="async" referrerpolicy="no-referrer" draggable="false">
-        <svg class="avatar-ph" viewBox="0 0 24 24">
-          <circle cx="12" cy="8" r="4"></circle>
-          <path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path>
-        </svg>
-      {% endif %}
-
-      <button class="edit-pencil" id="pencilToggle" type="button" title="Alterar foto do perfil" aria-label="Alterar foto do perfil">
-        <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-      </button>
-
-      <div id="photoMenu" class="photo-menu" aria-label="Opções da foto" role="menu">
-        <button type="button" class="photo-item" data-act="gallery">
-          <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="8.5" cy="11.5" r="2.5"></circle><path d="M21 15l-5-5-4 4-2-2-5 5"></path></svg>
-          <span>Fototeca</span>
+  <p class="painel-sub">Gerencie seus teares e assinatura em um só lugar.</p>
+  
+  <!-- ===== HERO (topo limpo) ===== -->
+  <div class="hero-card hero-top">
+    <div class="hero-left">
+      <div class="hero-avatar" aria-label="Foto do perfil" title="Clique no lápis para alterar a foto">
+        {% if avatar_url %}
+          <img class="js-avatar" src="{{ avatar_url }}" alt="Foto do perfil" decoding="async" referrerpolicy="no-referrer" draggable="false">
+        {% else %}
+          <img class="js-avatar" src="" alt="Foto do perfil" style="display:none" decoding="async" referrerpolicy="no-referrer" draggable="false">
+          <svg class="avatar-ph" viewBox="0 0 24 24">
+            <circle cx="12" cy="8" r="4"></circle>
+            <path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path>
+          </svg>
+        {% endif %}
+  
+        <button class="edit-pencil" id="pencilToggle" type="button" title="Alterar foto do perfil" aria-label="Alterar foto do perfil">
+          <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
         </button>
-        <button type="button" class="photo-item" data-act="camera">
-          <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="14" rx="2"></rect><path d="M8 7l2-3h4l2 3"></path><circle cx="12" cy="14" r="3.5"></circle></svg>
-          <span>Tirar foto</span>
-        </button>
-        <button type="button" class="photo-item" data-act="file">
-          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path></svg>
-          <span>Escolher arquivo</span>
-        </button>
+  
+        <div id="photoMenu" class="photo-menu" aria-label="Opções da foto" role="menu">
+          <button type="button" class="photo-item" data-act="gallery">
+            <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="8.5" cy="11.5" r="2.5"></circle><path d="M21 15l-5-5-4 4-2-2-5 5"></path></svg>
+            <span>Fototeca</span>
+          </button>
+          <button type="button" class="photo-item" data-act="camera">
+            <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="14" rx="2"></rect><path d="M8 7l2-3h4l2 3"></path><circle cx="12" cy="14" r="3.5"></circle></svg>
+            <span>Tirar foto</span>
+          </button>
+          <button type="button" class="photo-item" data-act="file">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path></svg>
+            <span>Escolher arquivo</span>
+          </button>
+        </div>
       </div>
     </div>
-
-    <div class="hero-info" style="min-width:0;">
-      <div class="hero-kicker">Painel da Malharia</div>
-      <div class="hero-nome">{{ nome_empresa }}</div>
-      <div class="hero-sub">Gerencie seus teares e assinatura em um só lugar.</div>
-    </div>
+  
+    <aside class="perf-mini" aria-label="Performance de acesso">
+      <div class="perf-mini-title">Performance de acesso</div>
+      <a href="{{ url_for('performance_acesso') }}" class="perf-btn">Ver detalhes <span aria-hidden="true">→</span></a>
+    </aside>
   </div>
-
-  <a class="perf-card" href="{{ url_for('performance_acesso') }}" aria-label="Abrir performance de acesso">
-    <div class="perf-card-title">Performance de acesso</div>
-    <div class="perf-card-link">Ver detalhes →</div>
-  </a>
-</div>
-<!-- ===== /HERO ===== -->
+  <!-- ===== /HERO ===== -->
 
 {# ===== Assinatura (única, limpa e colapsável) ===== #}
 {% set is_anual = ('anual' in plano_sel) %}
