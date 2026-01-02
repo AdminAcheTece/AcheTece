@@ -772,6 +772,56 @@
       display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end;
     }
     .sub-hint{ font-size:12.5px; color:#666; margin-right:auto; }
+
+    /* ===== HERO CLEAN (UX moderna) ===== */
+    .hero-card.hero-clean{
+      grid-template-columns: 1fr 320px;
+      align-items:center;
+    }
+    @media (max-width:920px){
+      .hero-card.hero-clean{ grid-template-columns:1fr; }
+    }
+    
+    .hero-kicker{
+      font-size:12px;
+      font-weight:900;
+      color:var(--olive);
+      letter-spacing:.02em;
+      text-transform:uppercase;
+      margin-bottom:4px;
+    }
+    .hero-sub{
+      margin-top:6px;
+      color:#666;
+      font-size:14px;
+      line-height:1.35;
+    }
+    
+    .perf-card{
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:14px;
+      background:#fff;
+      text-decoration:none;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      justify-content:center;
+      min-height:86px;
+      transition: transform .12s ease, background .12s ease;
+    }
+    .perf-card:hover{
+      background:var(--olive-50);
+      transform:translateY(-2px);
+    }
+    .perf-card-title{
+      font-weight:900;
+      color:var(--olive-dark);
+    }
+    .perf-card-link{
+      font-weight:900;
+      color:var(--olive);
+    }
   </style>
 </head>
 <body>
@@ -901,75 +951,53 @@
   <h1 class="titulo">Painel da Malharia</h1>
   <p style="text-align:center;">Bem-vindo(a), <strong>{{ nome_empresa }}</strong>!</p>
 
-  <!-- ===== HERO ===== -->
-  <div class="hero-card">
-    <div>
-      <div class="hero-ident">
-        <div class="hero-avatar" aria-label="Foto do perfil" title="Clique no lápis para alterar a foto">
-          {% if avatar_url %}
-            <img class="js-avatar" src="{{ avatar_url }}" alt="Foto do perfil" decoding="async" referrerpolicy="no-referrer" draggable="false">
-          {% else %}
-            <img class="js-avatar" src="" alt="Foto do perfil" style="display:none" decoding="async" referrerpolicy="no-referrer" draggable="false">
-            <svg class="avatar-ph" viewBox="0 0 24 24">
-              <circle cx="12" cy="8" r="4"></circle>
-              <path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path>
-            </svg>
-          {% endif %}
+  <!-- ===== HERO (clean) ===== -->
+<div class="hero-card hero-clean">
+  <div class="hero-ident">
+    <div class="hero-avatar" aria-label="Foto do perfil" title="Clique no lápis para alterar a foto">
+      {% if avatar_url %}
+        <img class="js-avatar" src="{{ avatar_url }}" alt="Foto do perfil" decoding="async" referrerpolicy="no-referrer" draggable="false">
+      {% else %}
+        <img class="js-avatar" src="" alt="Foto do perfil" style="display:none" decoding="async" referrerpolicy="no-referrer" draggable="false">
+        <svg class="avatar-ph" viewBox="0 0 24 24">
+          <circle cx="12" cy="8" r="4"></circle>
+          <path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path>
+        </svg>
+      {% endif %}
 
-          <button class="edit-pencil" id="pencilToggle" type="button" title="Alterar foto do perfil" aria-label="Alterar foto do perfil">
-            <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-          </button>
+      <button class="edit-pencil" id="pencilToggle" type="button" title="Alterar foto do perfil" aria-label="Alterar foto do perfil">
+        <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+      </button>
 
-          <div id="photoMenu" class="photo-menu" aria-label="Opções da foto" role="menu">
-            <button type="button" class="photo-item" data-act="gallery">
-              <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="8.5" cy="11.5" r="2.5"></circle><path d="M21 15l-5-5-4 4-2-2-5 5"></path></svg>
-              <span>Fototeca</span>
-            </button>
-            <button type="button" class="photo-item" data-act="camera">
-              <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="14" rx="2"></rect><path d="M8 7l2-3h4l2 3"></path><circle cx="12" cy="14" r="3.5"></circle></svg>
-              <span>Tirar foto</span>
-            </button>
-            <button type="button" class="photo-item" data-act="file">
-              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path></svg>
-              <span>Escolher arquivo</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="hero-info" style="min-width:0;">
-          <div class="hero-nome">{{ nome_empresa }}</div>
-
-          <div class="hero-chips">
-            {% if banner_full %}
-              <a class="chip" href="#assinatura" title="Ver assinatura e pagamento">
-                <span class="dot dot-warn"></span>Resolver agora
-              </a>
-            {% else %}
-              <span class="chip" title="Assinatura ativa">
-                <span class="dot dot-success"></span>Assinatura ativa
-              </span>
-          
-              {% if vencimento_proximo %}
-                <span class="chip chip-venc" title="Se cair em fim de semana ou feriado nacional, o vencimento vai para o próximo dia útil.">
-                  <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
-                    <rect x="3" y="4" width="18" height="16" rx="2"></rect>
-                    <path d="M8 2v4M16 2v4M3 10h18"></path>
-                  </svg>
-                  <span class="chip-text">Vence em {{ vencimento_proximo.strftime('%d/%m/%Y') }}</span>
-                </span>
-              {% endif %}
-            {% endif %}
-          </div>
-        </div>
+      <div id="photoMenu" class="photo-menu" aria-label="Opções da foto" role="menu">
+        <button type="button" class="photo-item" data-act="gallery">
+          <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="8.5" cy="11.5" r="2.5"></circle><path d="M21 15l-5-5-4 4-2-2-5 5"></path></svg>
+          <span>Fototeca</span>
+        </button>
+        <button type="button" class="photo-item" data-act="camera">
+          <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="14" rx="2"></rect><path d="M8 7l2-3h4l2 3"></path><circle cx="12" cy="14" r="3.5"></circle></svg>
+          <span>Tirar foto</span>
+        </button>
+        <button type="button" class="photo-item" data-act="file">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path></svg>
+          <span>Escolher arquivo</span>
+        </button>
       </div>
     </div>
 
-    <aside class="perf-mini">
-      <div class="perf-mini-title">Performance de acesso</div>
-      <a href="{{ url_for('performance_acesso') }}" class="perf-mini-link">Ver detalhes</a>
-    </aside>
+    <div class="hero-info" style="min-width:0;">
+      <div class="hero-kicker">Painel da Malharia</div>
+      <div class="hero-nome">{{ nome_empresa }}</div>
+      <div class="hero-sub">Gerencie seus teares e assinatura em um só lugar.</div>
+    </div>
   </div>
-  <!-- ===== /HERO ===== -->
+
+  <a class="perf-card" href="{{ url_for('performance_acesso') }}" aria-label="Abrir performance de acesso">
+    <div class="perf-card-title">Performance de acesso</div>
+    <div class="perf-card-link">Ver detalhes →</div>
+  </a>
+</div>
+<!-- ===== /HERO ===== -->
 
 {# ===== Assinatura (única, limpa e colapsável) ===== #}
 {% set is_anual = ('anual' in plano_sel) %}
@@ -1046,8 +1074,7 @@
              href="{{ url_for('checkout', plano=('anual' if is_anual else 'mensal')) }}">
             {% if _assin_ativa %}Renovar agora{% else %}Continuar para pagamento{% endif %}
           </a>
-
-          <a class="btn-ghost" href="{{ url_for('editar_empresa') }}">Alterar plano</a>
+          
         </div>
       </div>
     </div>
