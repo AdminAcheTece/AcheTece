@@ -787,6 +787,14 @@
 {% set avatar_url = foto_url %}
 {% set plano_atual = (empresa.plano if empresa and empresa.plano else 'mensal') %}
 
+{# ===== Controle de exibição do bloco de assinatura (banner_full) ===== #}
+{% set plano_sel = ((empresa.plano or 'mensal') | string | lower) %}
+{% set dias = (dias_restantes if dias_restantes is defined and dias_restantes is not none else none) %}
+{% set venc_fmt = (vencimento_proximo.strftime('%d/%m/%Y') if vencimento_proximo else '') %}
+
+{# Mostra bloco completo quando: pendente OU faltam <=7 dias #}
+{% set banner_full = (not _assin_ativa) or (dias is not none and dias <= 7) %}
+
 <header class="topbar">
   <a class="logo" href="{{ url_for('index') }}" aria-label="Página inicial" title="Página inicial">
     <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
@@ -932,9 +940,15 @@
           <div class="hero-nome">{{ nome_empresa }}</div>
 
           <div class="hero-chips">
-            {% if _assin_ativa %}
-              <span class="chip" title="Assinatura ativa"><span class="dot dot-success"></span>Assinatura ativa</span>
-
+            {% if banner_full %}
+              <a class="chip" href="#assinatura" title="Ver assinatura e pagamento">
+                <span class="dot dot-warn"></span>Resolver agora
+              </a>
+            {% else %}
+              <span class="chip" title="Assinatura ativa">
+                <span class="dot dot-success"></span>Assinatura ativa
+              </span>
+          
               {% if vencimento_proximo %}
                 <span class="chip chip-venc" title="Se cair em fim de semana ou feriado nacional, o vencimento vai para o próximo dia útil.">
                   <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
@@ -944,12 +958,6 @@
                   <span class="chip-text">Vence em {{ vencimento_proximo.strftime('%d/%m/%Y') }}</span>
                 </span>
               {% endif %}
-
-            {% else %}
-              <!-- NOVO: leva para o bloco #assinatura (plano + pagamento) -->
-              <a class="chip" href="#assinatura" title="Ver assinatura e pagamento">
-                <span class="dot dot-warn"></span>Assinatura pendente
-              </a>
             {% endif %}
           </div>
         </div>
@@ -964,14 +972,10 @@
   <!-- ===== /HERO ===== -->
 
 {# ===== Assinatura (única, limpa e colapsável) ===== #}
-{% set plano_sel = ((empresa.plano or 'mensal') | string | lower) %}
 {% set is_anual = ('anual' in plano_sel) %}
-{% set dias = (dias_restantes if dias_restantes is not none else none) %}
-{% set venc_fmt = (vencimento_proximo.strftime('%d/%m/%Y') if vencimento_proximo else '') %}
-{% set sub_open = (not _assin_ativa) or (dias is not none and dias <= 7) %}
 
 <section id="assinatura" class="sub-wrap" aria-label="Assinatura e pagamento">
-  <details class="sub-card" {% if sub_open %}open{% endif %}>
+  <details class="sub-card" {% if banner_full %}open{% endif %}>
     <summary class="sub-sum">
       <div class="sub-left">
         <div class="sub-title">Assinatura</div>
