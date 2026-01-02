@@ -1361,40 +1361,33 @@ from sqlalchemy import inspect, text
 
 def _boot_ensure_empresa_plano_column():
     """
-    Garante que a coluna empresa.plano exista no Postgres.
-    - cria a coluna se não existir
-    - preenche registros antigos nulos com 'mensal'
-    - tenta definir default e índice (não quebra se falhar)
+    Garante que a coluna empresa.plano exista.
+    - Compatível com Postgres (Render) e não quebra dev local.
+    - Executa DDL via engine (não depende do ORM carregar Empresa).
     """
     try:
+        insp = inspect(db.engine)
+        cols = {c["name"] for c in insp.get_columns("empresa")}
+
         with db.engine.begin() as conn:
-            # 1) cria coluna (Postgres moderno aceita IF NOT EXISTS)
-            conn.execute(text("ALTER TABLE empresa ADD COLUMN IF NOT EXISTS plano VARCHAR(20)"))
+            if "plano" not in cols:
+                conn.exec_driver_sql("ALTER TABLE empresa ADD COLUMN plano VARCHAR(20)")
+                # tenta colocar default no Postgres (se falhar, segue)
+                try:
+                    conn.exec_driver_sql("ALTER TABLE empresa ALTER COLUMN plano SET DEFAULT 'mensal'")
+                except Exception:
+                    pass
 
-            # 2) backfill
-            conn.execute(text("UPDATE empresa SET plano = 'mensal' WHERE plano IS NULL"))
-
-            # 3) default (se falhar, ignora)
-            try:
-                conn.execute(text("ALTER TABLE empresa ALTER COLUMN plano SET DEFAULT 'mensal'"))
-            except Exception:
-                pass
-
-            # 4) índice (se falhar, ignora)
-            try:
-                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_empresa_plano ON empresa (plano)"))
-            except Exception:
-                pass
+            # normaliza registros antigos
+            conn.execute(text("UPDATE empresa SET plano='mensal' WHERE plano IS NULL OR plano=''"))
 
         app.logger.info("[BOOT] coluna empresa.plano OK")
-
     except Exception as e:
-        app.logger.exception(f"[BOOT] erro garantindo empresa.plano: {e}")
+        app.logger.warning(f"[BOOT] erro garantindo empresa.plano: {e}")
 
 def _run_bootstrap_once():
     """Cria tabelas/migrações leves quando o DB está UP; caso contrário, adia."""
     global _BOOTSTRAP_DONE
-
     if _BOOTSTRAP_DONE:
         return
 
@@ -1402,35 +1395,34 @@ def _run_bootstrap_once():
         app.logger.error("[BOOT] adiado: DB indisponível")
         return
 
-    # Sempre comece com a sessão limpa
+    # sempre comece com uma sessão limpa
     try:
         db.session.rollback()
     except Exception:
         pass
 
     try:
-        # 1) Cria tabelas base (não cria colunas novas em tabelas existentes)
+        # 1) cria tabelas base
         db.create_all()
 
-        # 2) GARANTE colunas novas ANTES de qualquer SELECT/ORM carregar Empresa
+        # 2) GARANTE colunas críticas ANTES de qualquer query em Empresa
         _ensure_pagamento_cols()
+        _boot_ensure_empresa_plano_column()
         _ensure_empresa_address_columns()
         _ensure_empresa_foto_column()
-        _boot_ensure_empresa_plano_column()
-
-        # 3) Outros ajustes/migrações leves
         _ensure_teares_pistas_cols()
+
+        # 3) auth + vinculação user_id (pode fazer SELECT minimalista)
         _ensure_auth_layer_and_link()
+
+        # 4) tabela de perfil de cliente
         _ensure_cliente_profile_table()
 
         _BOOTSTRAP_DONE = True
         app.logger.info("[BOOT] Migrações/ajustes executados.")
     except Exception as e:
-        try:
-            db.session.rollback()
-        except Exception:
-            pass
-        app.logger.exception(f"[BOOT] falhou: {e}")
+        db.session.rollback()
+        app.logger.error("[BOOT] adiado: %s", e)
 
 @app.before_request
 def _bootstrap_and_analytics_lazy():
