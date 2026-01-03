@@ -880,7 +880,6 @@
 {% set lista_teares =
     (teares if teares is defined and teares is not none
      else (empresa.teares if empresa and empresa.teares else [])) %}
-{% set avatar_url = foto_url %}
 {% set plano_atual = (empresa.plano if empresa and empresa.plano else 'mensal') %}
 
 {# ===== Controle de exibição do bloco de assinatura (banner_full) ===== #}
@@ -925,14 +924,10 @@
     </nav>
 
     <button class="profile-pill" id="profileToggle" type="button" aria-haspopup="menu" aria-expanded="false" title="Abrir menu do perfil">
-      <span class="avatar">
-        {% if avatar_url %}
-          <img class="js-avatar" src="{{ avatar_url }}" alt="Foto do perfil" decoding="async" referrerpolicy="no-referrer" draggable="false">
-        {% else %}
-          <img class="js-avatar" src="" alt="Foto do perfil" style="display:none">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#6a5acd" fill="none" stroke-width="1.8"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7" stroke="#6a5acd" fill="none" stroke-width="1.8"></path></svg>
-        {% endif %}
-      </span>
+      <svg class="user-ico" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="8" r="4"></circle>
+        <path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path>
+      </svg>
       <span class="name">{{ nome_empresa }}</span>
       <svg class="caret" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"></path></svg>
     </button>
@@ -941,14 +936,10 @@
   <!-- Dropdown Perfil -->
   <nav class="profile-menu" id="profileMenu" role="menu" aria-label="Menu de perfil">
     <div class="pm-header">
-      <span class="avatar">
-        {% if avatar_url %}
-          <img class="js-avatar" src="{{ avatar_url }}" alt="Foto do perfil" decoding="async" referrerpolicy="no-referrer" draggable="false">
-        {% else %}
-          <img class="js-avatar" src="" alt="Foto do perfil" style="display:none">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#6a5acd" fill="none" stroke-width="1.8"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7" stroke="#6a5acd" fill="none" stroke-width="1.8"></path></svg>
-        {% endif %}
-      </span>
+      <svg class="user-ico" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="8" r="4"></circle>
+        <path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path>
+      </svg>
       <div>
         <strong>{{ nome_empresa }}</strong><br>
         <small style="color:#777">Meu perfil</small>
@@ -983,63 +974,14 @@
       <span>Sair</span>
     </a>
   </nav>
-
-  <!-- form oculto para upload de foto -->
-  <form id="fotoForm" action="{{ url_for('perfil_foto_upload') }}" method="POST" enctype="multipart/form-data" class="sr-only">
-    {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
-    <input type="file" id="fotoInputLib"  name="foto" accept="image/*">
-    <input type="file" id="fotoInputCam"  name="foto" accept="image/*" capture="environment">
-    <input type="file" id="fotoInputFile" name="foto" accept="image/*,.jpg,.jpeg,.png,.webp,.gif">
-  </form>
+  
 </header>
 
 <div class="container">
   <h1 class="titulo">Painel da Malharia</h1>
   <p style="text-align:center;">Bem-vindo(a), <strong>{{ nome_empresa }}</strong>!</p>
   <p class="painel-sub">Gerencie seus teares e assinatura em um só lugar.</p>
-  
-  <!-- ===== HERO (topo limpo) ===== -->
-  <div class="hero-card hero-top">
-    <div class="hero-left">
-      <div class="hero-avatar" aria-label="Foto do perfil" title="Clique no lápis para alterar a foto">
-        {% if avatar_url %}
-          <img class="js-avatar" src="{{ avatar_url }}" alt="Foto do perfil" decoding="async" referrerpolicy="no-referrer" draggable="false">
-        {% else %}
-          <img class="js-avatar" src="" alt="Foto do perfil" style="display:none" decoding="async" referrerpolicy="no-referrer" draggable="false">
-          <svg class="avatar-ph" viewBox="0 0 24 24">
-            <circle cx="12" cy="8" r="4"></circle>
-            <path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path>
-          </svg>
-        {% endif %}
-  
-        <button class="edit-pencil" id="pencilToggle" type="button" title="Alterar foto do perfil" aria-label="Alterar foto do perfil">
-          <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-        </button>
-  
-        <div id="photoMenu" class="photo-menu" aria-label="Opções da foto" role="menu">
-          <button type="button" class="photo-item" data-act="gallery">
-            <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="8.5" cy="11.5" r="2.5"></circle><path d="M21 15l-5-5-4 4-2-2-5 5"></path></svg>
-            <span>Fototeca</span>
-          </button>
-          <button type="button" class="photo-item" data-act="camera">
-            <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="14" rx="2"></rect><path d="M8 7l2-3h4l2 3"></path><circle cx="12" cy="14" r="3.5"></circle></svg>
-            <span>Tirar foto</span>
-          </button>
-          <button type="button" class="photo-item" data-act="file">
-            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path></svg>
-            <span>Escolher arquivo</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  
-    <aside class="perf-mini" aria-label="Performance de acesso">
-      <div class="perf-mini-title">Performance de acesso</div>
-      <a href="{{ url_for('performance_acesso') }}" class="perf-btn">Ver detalhes <span aria-hidden="true">→</span></a>
-    </aside>
-  </div>
-  <!-- ===== /HERO ===== -->
-
+ 
 {# ===== Assinatura (única, limpa e colapsável) ===== #}
 {% set is_anual = ('anual' in plano_sel) %}
 
@@ -1235,178 +1177,93 @@
   </div>
 </div>
 
-<!-- Modal Webcam (desktop) -->
-<div id="camOverlay" class="cam-overlay" aria-hidden="true">
-  <div class="cam-modal" role="dialog" aria-modal="true" aria-label="Capturar foto">
-    <video id="camVideo" class="cam-video" autoplay playsinline></video>
-    <canvas id="camCanvas" class="sr-only"></canvas>
-    <div class="cam-actions">
-      <button type="button" class="btn" id="camCancel">Cancelar</button>
-      <button type="button" class="btn btn-primary" id="camShot">Capturar</button>
-    </div>
-  </div>
-</div>
-
-<!-- Overlay transparente global -->
-<div id="photoOverlay" class="photo-overlay" hidden></div>
-
 <script>
   (function(){
-    // menu perfil
+    // ===== MENU PERFIL =====
     const toggle = document.getElementById('profileToggle');
     const menu   = document.getElementById('profileMenu');
-    function closeMenu(){ menu.classList.remove('open'); toggle?.setAttribute('aria-expanded','false'); }
-    function openMenu(){  menu.classList.add('open');    toggle?.setAttribute('aria-expanded','true'); }
-    function toggleMenu(){ menu.classList.contains('open') ? closeMenu() : openMenu(); }
-    toggle?.addEventListener('click', (e)=>{ e.stopPropagation(); toggleMenu(); });
 
-    // notificações
-    const nbtn = document.getElementById('notifToggle');
+    function closeMenu(){
+      menu?.classList.remove('open');
+      toggle?.setAttribute('aria-expanded','false');
+    }
+    function openMenu(){
+      menu?.classList.add('open');
+      toggle?.setAttribute('aria-expanded','true');
+    }
+    function toggleMenu(){
+      if (!menu) return;
+      menu.classList.contains('open') ? closeMenu() : openMenu();
+    }
+
+    toggle?.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      toggleMenu();
+    });
+
+    // ===== NOTIFICAÇÕES =====
+    const nbtn   = document.getElementById('notifToggle');
     const npanel = document.getElementById('notifPanel');
-    function closeNotif(){ npanel.classList.remove('open'); }
-    function toggleNotif(e){ e.stopPropagation(); npanel.classList.toggle('open'); }
+
+    function closeNotif(){ npanel?.classList.remove('open'); }
+    function toggleNotif(e){
+      e.stopPropagation();
+      npanel?.classList.toggle('open');
+    }
+
     nbtn?.addEventListener('click', toggleNotif);
 
-    // ===== Upload de foto - opções =====
-    const fotoForm  = document.getElementById('fotoForm');
-    const inLib     = document.getElementById('fotoInputLib');
-    const inCam     = document.getElementById('fotoInputCam');
-    const inFile    = document.getElementById('fotoInputFile');
-    const pencil    = document.getElementById('pencilToggle');
-    const photoMenu = document.getElementById('photoMenu');
-    const overlay   = document.getElementById('photoOverlay');
-
-    function openPhotoMenu(){ photoMenu.classList.add('open'); if (overlay) overlay.hidden = false; }
-    function closePhotoMenu(){ photoMenu.classList.remove('open'); if (overlay) overlay.hidden = true; }
-
-    overlay?.addEventListener('click', (e)=>{ e.stopPropagation(); closePhotoMenu(); });
-
-    pencil?.addEventListener('click', function(e){
-      e.preventDefault(); e.stopPropagation();
-      photoMenu.classList.contains('open') ? closePhotoMenu() : openPhotoMenu();
-    });
-    photoMenu?.addEventListener('click', (e)=>{ e.stopPropagation(); });
-
-    function triggerInput(inputEl){ try { inputEl.click(); } catch(e) { setTimeout(()=>inputEl.click(), 0); } }
-
-    photoMenu?.querySelectorAll('.photo-item').forEach(btn=>{
-      btn.addEventListener('click', (e) => {
-        e.preventDefault(); e.stopPropagation();
-        const act = btn.getAttribute('data-act');
-        if (act === 'gallery'){ inLib.value = ""; triggerInput(inLib); }
-        else if (act === 'file'){ inFile.value = ""; triggerInput(inFile); }
-        else if (act === 'camera'){
-          const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-          if (isMobile){ inCam.value = ""; triggerInput(inCam); }
-          else { openCam(); }
-        }
-      }, {passive:false});
-    });
-
-    // ===== Webcam (desktop) =====
-    const camOverlay = document.getElementById('camOverlay');
-    const camVideo   = document.getElementById('camVideo');
-    const camCanvas  = document.getElementById('camCanvas');
-    const camCancel  = document.getElementById('camCancel');
-    const camShot    = document.getElementById('camShot');
-    let camStream = null;
-
-    async function openCam(){
-      try{
-        camStream = await navigator.mediaDevices.getUserMedia({ video:true, audio:false });
-        camVideo.srcObject = camStream;
-        camOverlay.classList.add('open');
-        if (overlay) overlay.hidden = false;
-      }catch(err){
-        alert('Não foi possível acessar a câmera. Se preferir, use "Escolher arquivo".');
-        if (overlay) overlay.hidden = true;
-      }
-    }
-    function closeCam(){
-      camOverlay.classList.remove('open');
-      if (overlay) overlay.hidden = true;
-      if (camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream = null; }
-    }
-    camCancel?.addEventListener('click', closeCam);
-
-    camShot?.addEventListener('click', async ()=>{
-      if (!camVideo.videoWidth){ return; }
-      const w = camVideo.videoWidth, h = camVideo.videoHeight;
-      camCanvas.width = w; camCanvas.height = h;
-      const ctx = camCanvas.getContext('2d');
-      ctx.drawImage(camVideo, 0, 0, w, h);
-      camCanvas.toBlob(async (blob)=>{
-        if (!blob) return;
-        try{
-          const dataURL = camCanvas.toDataURL('image/jpeg', 0.92);
-          if (dataURL){
-            document.querySelectorAll('img.js-avatar').forEach(img => {
-              img.src = dataURL;
-              img.style.display = '';
-            });
-          }
-        }catch(e){}
-        const fd = new FormData();
-        const csrf = fotoForm.querySelector('input[name="csrf_token"]')?.value;
-        if (csrf) fd.append('csrf_token', csrf);
-        fd.append('foto', blob, 'camera.jpg');
-        try{
-          const resp = await fetch(fotoForm.action, { method:'POST', body: fd, credentials:'same-origin' });
-          if (resp.ok){ closeCam(); location.reload(); }
-          else { closeCam(); alert('Falha ao enviar a foto.'); }
-        }catch(e){ closeCam(); alert('Erro ao enviar a foto.'); }
-      }, 'image/jpeg', 0.92);
-    });
-
-    // ===== FIX definitivo do avatar: sempre usar foto_url do servidor =====
-    const fotoUrlFix = {{ (foto_url or '') | tojson }};
-
-    function fixAvatarFromServer(){
-      if (!fotoUrlFix) return;
-      document.querySelectorAll('img.js-avatar').forEach(img => {
-        if (!img.src || img.src === 'about:blank'){
-          img.src = fotoUrlFix;
-        }
-        img.style.display = '';
-      });
-      document.querySelectorAll('.hero-avatar > svg.avatar-ph').forEach(svg => {
-        svg.style.display = 'none';
-      });
-    }
-
-    // NOVO: evita erro no console (você chamava ensureServerAvatar sem existir)
-    function ensureServerAvatar(){
-      fixAvatarFromServer();
-    }
-
-    // Inicialização
-    ensureServerAvatar();
-    setTimeout(ensureServerAvatar, 1500);
-    setTimeout(ensureServerAvatar, 4000);
-
-    // fechar quando clicar fora / ESC
-    document.addEventListener('click', ()=>{ closeMenu(); closeNotif(); closePhotoMenu(); });
-    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ closeMenu(); closeNotif(); closePhotoMenu(); closeCam(); }});
-    menu?.addEventListener('click', (e)=> e.stopPropagation());
-    npanel?.addEventListener('click', (e)=> e.stopPropagation());
-
-    // ===== Assinatura: seleciona plano e atualiza CTA =====
-    const subCta = document.getElementById('subCta');
+    // ===== ASSINATURA: seleciona plano e atualiza CTA =====
+    const subCta   = document.getElementById('subCta');
     const subPlans = Array.from(document.querySelectorAll('[data-sub-plan]'));
+
     const hrefMensal = "{{ url_for('checkout', plano='mensal') }}";
     const hrefAnual  = "{{ url_for('checkout', plano='anual') }}";
 
     function setSubPlan(val){
-      subPlans.forEach(btn => btn.classList.toggle('selected', btn.dataset.subPlan === val));
-      if (subCta) subCta.href = (val === 'anual') ? hrefAnual : hrefMensal;
+      if (!val) return;
+      const normalized = (String(val).toLowerCase().includes('anual')) ? 'anual' : 'mensal';
+
+      subPlans.forEach(btn => {
+        const isSelected = (btn.dataset.subPlan === normalized);
+        btn.classList.toggle('selected', isSelected);
+        btn.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+      });
+
+      if (subCta){
+        subCta.href = (normalized === 'anual') ? hrefAnual : hrefMensal;
+      }
     }
 
-    subPlans.forEach(btn => {
-      btn.addEventListener('click', () => setSubPlan(btn.dataset.subPlan));
+    if (subPlans.length){
+      subPlans.forEach(btn => {
+        btn.addEventListener('click', (e)=>{
+          e.preventDefault();
+          e.stopPropagation();
+          setSubPlan(btn.dataset.subPlan);
+        });
+      });
+
+      // inicializa com o plano atual do servidor
+      setSubPlan("{{ 'anual' if is_anual else 'mensal' }}");
+    }
+
+    // ===== FECHAR AO CLICAR FORA / ESC =====
+    document.addEventListener('click', ()=>{
+      closeMenu();
+      closeNotif();
     });
 
-    setSubPlan("{{ 'anual' if is_anual else 'mensal' }}");
-  })();  
+    document.addEventListener('keydown', (e)=>{
+      if (e.key === 'Escape'){
+        closeMenu();
+        closeNotif();
+      }
+    });
+
+    menu?.addEventListener('click', (e)=> e.stopPropagation());
+    npanel?.addEventListener('click', (e)=> e.stopPropagation());
+  })();
 </script>
 </body>
 </html>
