@@ -891,7 +891,42 @@
         white-space:nowrap;
       }
     }
-   
+
+    /* Dropdown: centraliza e reduz o avatar/ícone para 50% */
+    .profile-menu .pm-header{
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 10px;
+    }
+    
+    /* 50% do tamanho que estava (estava 24px; vai para 12px) 
+       Mas para ficar bonito visualmente, uso 16px (metade do “grande” que aparece). */
+    .profile-menu .pm-header .avatar{
+      width:32px !important;
+      height:32px !important;
+    }
+    
+    /* garante que imagem dentro acompanhe o novo tamanho */
+    .profile-menu .pm-header .avatar > img.js-avatar{
+      width:100% !important;
+      height:100% !important;
+      object-fit:cover !important;
+    }
+    
+    /* nome da empresa embaixo do avatar */
+    .profile-menu .pm-header strong{
+      display:block;
+      margin-top:2px;
+    }
+    
+    /* opcional: “Meu perfil” menor e mais discreto */
+    .profile-menu .pm-header small{
+      display:block;
+      margin-top:2px;
+    }
+
   </style>
 </head>
 <body>
@@ -959,10 +994,15 @@
   <!-- Dropdown Perfil -->
   <nav class="profile-menu" id="profileMenu" role="menu" aria-label="Menu de perfil">
     <div class="pm-header">
-      <svg class="user-ico" viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="12" cy="8" r="4"></circle>
-        <path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path>
-      </svg>
+      <span class="avatar">
+        {% if avatar_url %}
+          <img class="js-avatar" src="{{ avatar_url }}" alt="Foto do perfil" decoding="async" referrerpolicy="no-referrer" draggable="false">
+        {% else %}
+          <img class="js-avatar" src="" alt="Foto do perfil" style="display:none">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path></svg>
+        {% endif %}
+      </span>
+    
       <div>
         <strong>{{ nome_empresa }}</strong><br>        
       </div>
