@@ -775,6 +775,22 @@
       .sub-venc::before{ content:""; margin:0; }
     }
 
+    /* Desktop/tablet: mantém “Plano … • Vence …” na mesma linha (se couber) */
+    .sub-sub .sub-line2{ margin-left:6px; }
+    
+    /* Celular: força “Vence em …” para baixo (sem borda) */
+    @media (max-width:520px){
+      .sub-sub{
+        display:flex;
+        flex-direction:column;
+        gap:2px;
+      }
+      .sub-sub .sub-line1,
+      .sub-sub .sub-line2{
+        margin-left:0;
+      }
+    }
+  
     /* ===== HERO CLEAN (UX moderna) ===== */
     .hero-card.hero-clean{
       grid-template-columns: 1fr 320px;
@@ -1003,6 +1019,45 @@
       }
     }
 
+    /* Só DESKTOP: aumenta o ícone e o nome dentro do dropdown */
+    @media (min-width:901px){
+      .pm-header .avatar{
+        width:36px;      /* ajuste aqui */
+        height:36px;     /* ajuste aqui */
+      }
+    
+      .pm-header strong{
+        font-size:16px;  /* ajuste aqui */
+      }
+    
+      .pm-header small{
+        font-size:13px;  /* opcional */
+      }
+    }
+
+    .profile-pill{
+      width:36px; height:36px; /* mesmo “círculo” dos outros botões */
+      padding:0;
+      border-radius:9999px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+    }
+    
+    .profile-pill .avatar-ico{
+      width:20px; height:20px;
+      display:grid;
+      place-items:center;
+    }
+    
+    .profile-pill .user-ico{
+      width:20px; height:20px;
+      display:block;
+      fill:none;
+      stroke:#111;
+      stroke-width:2;
+    }
+
   </style>
 </head>
 <body>
@@ -1059,11 +1114,12 @@
     </nav>
 
     <button class="profile-pill" id="profileToggle" type="button" aria-haspopup="menu" aria-expanded="false" title="Abrir menu do perfil">
-      <svg class="user-ico" viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="12" cy="8" r="4"></circle>
-        <path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path>
-      </svg>
-      <svg class="caret" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"></path></svg>
+      <span class="avatar avatar-ico" aria-hidden="true">
+        <svg class="user-ico" viewBox="0 0 24 24">
+          <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z"></path>
+          <path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path>
+        </svg>
+      </span>
     </button>
   </div>
 
@@ -1129,17 +1185,16 @@
       <div class="sub-left">
         <div class="sub-title">Assinatura</div>
         <div class="sub-sub">
-          <span class="sub-plan">
+          <span class="sub-line1">
             Plano: <strong>{% if is_anual %}Anual (15% OFF){% else %}Mensal{% endif %}</strong>
           </span>
         
           {% if venc_fmt %}
-            <span class="sub-venc">
+            <span class="sub-line2">
               Vence em <strong>{{ venc_fmt }}</strong>
             </span>
           {% endif %}
         </div>
-      </div>
 
       <div class="sub-right">
         {% if _assin_ativa %}
