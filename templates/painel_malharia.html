@@ -790,7 +790,28 @@
         margin-left:0;
       }
     }
-  
+
+    /* Mantém esquerda e direita na mesma linha, com a direita FIXA */
+    .sub-sum{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:nowrap;              /* IMPORTANTE: impede o "Pendente" de cair pra baixo */
+    }
+    
+    .sub-left{ min-width:0; }        /* permite o texto quebrar na esquerda sem empurrar a direita */
+    
+    /* Força a área do status ("Pendente") a ficar colada à direita */
+    .sub-right{
+      margin-left:auto;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      white-space:nowrap;            /* evita quebrar o "Pendente" */
+      flex:0 0 auto;
+    }
+
     /* ===== HERO CLEAN (UX moderna) ===== */
     .hero-card.hero-clean{
       grid-template-columns: 1fr 320px;
@@ -1185,14 +1206,9 @@
       <div class="sub-left">
         <div class="sub-title">Assinatura</div>
         <div class="sub-sub">
-          <span class="sub-line1">
-            Plano: <strong>{% if is_anual %}Anual (15% OFF){% else %}Mensal{% endif %}</strong>
-          </span>
-        
+          <span class="meta-plano">Plano: <strong>{% if is_anual %}Anual{% else %}Mensal{% endif %}</strong></span>
           {% if venc_fmt %}
-            <span class="sub-line2">
-              Vence em <strong>{{ venc_fmt }}</strong>
-            </span>
+            <span class="meta-venc">• Vence em <strong>{{ venc_fmt }}</strong></span>
           {% endif %}
         </div>
 
