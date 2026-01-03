@@ -927,6 +927,36 @@
       margin-top:2px;
     }
 
+    /* Dropdown header: avatar em cima e nome embaixo */
+    .profile-menu .pm-header{
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 10px;
+    }
+    
+    /* tamanho do “avatar” do dropdown (ícone) */
+    .profile-menu .pm-header .avatar.avatar-ico{
+      width:32px !important;
+      height:32px !important;
+      border-radius:50%;
+      border:1px solid var(--line);
+      background:#fff;
+      display:grid;
+      place-items:center;
+      color:#111; /* cor do ícone */
+    }
+    
+    /* ícone dentro do avatar */
+    .profile-menu .pm-header .avatar.avatar-ico svg{
+      width:20px;
+      height:20px;
+      stroke:currentColor;
+      fill:none;
+      stroke-width:1.8;
+    }
+
   </style>
 </head>
 <body>
@@ -994,13 +1024,13 @@
   <!-- Dropdown Perfil -->
   <nav class="profile-menu" id="profileMenu" role="menu" aria-label="Menu de perfil">
     <div class="pm-header">
-      <span class="avatar">
-        {% if avatar_url %}
-          <img class="js-avatar" src="{{ avatar_url }}" alt="Foto do perfil" decoding="async" referrerpolicy="no-referrer" draggable="false">
-        {% else %}
-          <img class="js-avatar" src="" alt="Foto do perfil" style="display:none">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path></svg>
-        {% endif %}
+      <span class="avatar avatar-ico" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <circle cx="12" cy="10" r="3" fill="currentColor" stroke="none"></circle>
+          <path d="M6.8 19.2c1.6-3 4-4.4 5.2-4.4s3.6 1.4 5.2 4.4"
+                fill="currentColor" stroke="none"></path>
+        </svg>
       </span>
     
       <div>
