@@ -1078,6 +1078,9 @@
       stroke:#111;
       stroke-width:2;
     }
+    .sub-sum{ display:flex; justify-content:space-between; align-items:center; flex-wrap:nowrap; }
+    .sub-left{ flex:1 1 auto; min-width:0; }
+    .sub-right{ flex:0 0 auto; margin-left:auto; white-space:nowrap; }
 
   </style>
 </head>
@@ -1205,13 +1208,15 @@
     <summary class="sub-sum">
       <div class="sub-left">
         <div class="sub-title">Assinatura</div>
+    
         <div class="sub-sub">
           <span class="meta-plano">Plano: <strong>{% if is_anual %}Anual{% else %}Mensal{% endif %}</strong></span>
           {% if venc_fmt %}
             <span class="meta-venc">• Vence em <strong>{{ venc_fmt }}</strong></span>
           {% endif %}
         </div>
-
+      </div> <!-- ✅ FECHOU sub-left AQUI -->
+    
       <div class="sub-right">
         {% if _assin_ativa %}
           {% if dias is not none and dias <= 7 %}
@@ -1222,9 +1227,11 @@
         {% else %}
           <span class="sub-pill danger">Pendente</span>
         {% endif %}
-
+    
         <span class="sub-caret" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+          <svg viewBox="0 0 24 24">
+            <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2"/>
+          </svg>
         </span>
       </div>
     </summary>
