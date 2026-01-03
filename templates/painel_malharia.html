@@ -150,56 +150,6 @@
   @media (max-width:920px){ .hero-card{ grid-template-columns:1fr; } }
   .hero-ident{ display:flex; gap:14px; align-items:flex-start; min-width:0; position:relative; }
 
-  /* ===== AVATARES DO TOPO/DROPDOWN e HERO ===== */
-  .profile-pill .avatar,
-  .pm-header .avatar{
-    width:24px; height:24px; border-radius:50%; border:1px solid var(--line); background:#f2f2ff;
-    position:relative; overflow:hidden; line-height:0; display:block;
-  }
-  .hero-avatar{
-    width:64px; height:64px; border-radius:50%; border:1px solid var(--line);
-    background: radial-gradient(120% 120% at 10% 10%, #f4f3ff, #f0ecff 60%, #ebe6ff 100%);
-    position:relative; overflow:visible; line-height:0; display:block; flex:0 0 64px;
-  }
-  .profile-pill .avatar > img.js-avatar,
-  .pm-header .avatar > img.js-avatar,
-  .hero-avatar > img.js-avatar{
-    position:absolute !important; inset:0 !important;
-    width:100% !important; height:100% !important; max-width:none !important; max-height:none !important;
-    display:block !important; object-fit:cover !important; object-position:50% 50% !important;
-    border-radius:50% !important;
-    -webkit-mask-image: radial-gradient(circle, #000 99%, transparent 100%) !important;
-    mask-image: radial-gradient(circle, #000 99%, transparent 100%) !important;
-    aspect-ratio:auto !important; z-index:1; -webkit-user-drag:none; user-select:none;
-  }
-  .hero-avatar svg{ width:30px; height:30px; stroke:var(--olive); fill:none; stroke-width:1.8; }
-
-  /* ===== Botão do lápis (editar foto) ===== */
-  .edit-pencil{
-    position:absolute; right:-6px; bottom:-6px; width:28px; height:28px; border-radius:9999px;
-    border:1px solid var(--line); background:#fff; display:grid; place-items:center; cursor:pointer;
-    z-index:3001; box-shadow:0 2px 6px rgba(0,0,0,.08);
-    transition:transform .12s ease, background .12s ease;
-  }
-  .edit-pencil:hover{ background:var(--olive-50); transform:translateY(-1px); }
-  .edit-pencil:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
-  .edit-pencil svg{ width:16px; height:16px; stroke:#555; fill:none; stroke-width:1.8; }
-
-  /* ===== Popover de opções ===== */
-  .photo-menu{
-    position:absolute; left:0; bottom:72px; width:240px;
-    background:#fff; border:1px solid var(--line); border-radius:12px;
-    box-shadow:0 8px 24px rgba(0,0,0,.06);
-    opacity:0; pointer-events:none; transform:translateY(6px);
-    transition:.15s; z-index:3000;
-  }
-  .photo-menu.open{ opacity:1; pointer-events:auto; transform:translateY(0); }
-  .photo-item{ display:flex; align-items:center; gap:10px; width:100%; background:transparent; border:0; padding:10px 12px; cursor:pointer; }
-  .photo-item:hover{ background:#f6f7fb; }
-  .photo-item:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
-  .photo-item svg{ width:18px; height:18px; stroke:#444; fill:none; stroke-width:1.8; flex:0 0 18px; }
-  .photo-overlay{ position:fixed; inset:0; background:transparent; z-index:1200; }
-
   .hero-nome{ font-size:1.25rem; font-weight:800; color:#161616; line-height:1.2; }
   .hero-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
   .chip{
@@ -844,15 +794,7 @@
       justify-content:space-between;
       gap:16px;
     }
-    
-    /* esquerda: só avatar */
-    .hero-card.hero-top .hero-left{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      min-width:0;
-    }
-    
+         
     /* performance: card moderno */
     .hero-card.hero-top .perf-mini{
       border:1px solid var(--line-olive);
@@ -908,6 +850,24 @@
       }
     }
 
+    /* Ações lado a lado no título (Visualizações + Cadastrar Tear) */
+    .sec-actions{
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    
+    /* Mobile: mantém alinhado e sem quebrar feio */
+    @media (max-width:520px){
+      .sec-actions{ gap:8px; }
+      .sec-actions .btn-roxo{
+        height:32px;
+        font-size:.80rem;
+        padding:0 10px;
+        white-space:nowrap;
+      }
+    }
+   
   </style>
 </head>
 <body>
@@ -1165,9 +1125,13 @@
 
   <div class="sec-title">
     <h2>Teares Cadastrados:</h2>
-    <a href="{{ url_for('teares_form') }}" class="btn-roxo">+ Cadastrar Tear</a>
+    
+    <div class="sec-actions">
+      <a href="{{ url_for('performance_acesso') }}" class="btn-roxo">Visualizações</a>
+      <a href="{{ url_for('teares_form') }}" class="btn-roxo">+ Cadastrar Tear</a>    
+    </div>
   </div>
-
+  
   <div class="table-wrapper">
     <table>
       <thead>
