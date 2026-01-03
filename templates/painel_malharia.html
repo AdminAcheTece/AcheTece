@@ -747,6 +747,34 @@
     }
     .sub-hint{ font-size:12.5px; color:#666; margin-right:auto; }
 
+    /* Sub-resumo: plano + vencimento */
+    .sub-sub{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      align-items:center;
+    }
+    
+    /* No desktop, coloca o "•" antes do vencimento */
+    .sub-venc::before{
+      content:"•";
+      margin:0 6px 0 2px;
+      color:#8a8a8a;
+      font-weight:700;
+    }
+    
+    /* CELULAR: força "Vence em ..." virar 2ª linha inteira */
+    @media (max-width:520px){
+      .sub-sub{ display:block; }
+      .sub-plan{ display:block; }
+      .sub-venc{
+        display:block;
+        margin-top:2px;
+        white-space:nowrap; /* evita quebrar "Vence em 12/12/2025" */
+      }
+      .sub-venc::before{ content:""; margin:0; }
+    }
+
     /* ===== HERO CLEAN (UX moderna) ===== */
     .hero-card.hero-clean{
       grid-template-columns: 1fr 320px;
@@ -957,6 +985,24 @@
       stroke-width:1.8;
     }
 
+    /* DESKTOP: aumenta um pouco o ícone + nome no dropdown */
+    @media (min-width:901px){
+      .pm-header{
+        padding:14px 14px;
+      }
+      .pm-header .avatar{
+        width:32px;
+        height:32px;
+      }
+      .pm-header strong{
+        font-size:16px;
+        line-height:1.1;
+      }
+      .pm-header small{
+        font-size:12.5px;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -1083,8 +1129,15 @@
       <div class="sub-left">
         <div class="sub-title">Assinatura</div>
         <div class="sub-sub">
-          Plano: <strong>{% if is_anual %}Anual (15% OFF){% else %}Mensal{% endif %}</strong>
-          {% if venc_fmt %} • Vence em <strong>{{ venc_fmt }}</strong>{% endif %}
+          <span class="sub-plan">
+            Plano: <strong>{% if is_anual %}Anual (15% OFF){% else %}Mensal{% endif %}</strong>
+          </span>
+        
+          {% if venc_fmt %}
+            <span class="sub-venc">
+              Vence em <strong>{{ venc_fmt }}</strong>
+            </span>
+          {% endif %}
         </div>
       </div>
 
