@@ -296,7 +296,7 @@
           </tr>
         </thead>
         <tbody>
-          {% for p in series %}
+          {% for p in series|reverse %}
           <tr>
             <td>{{ p.data }}</td>
             <td>{{ p.visitas }}</td>
