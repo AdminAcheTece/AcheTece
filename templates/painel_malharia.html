@@ -1082,6 +1082,21 @@
     .sub-left{ flex:1 1 auto; min-width:0; }
     .sub-right{ flex:0 0 auto; margin-left:auto; white-space:nowrap; }
 
+    /* CELULAR: alinhar "Plano" e "Vence em" à esquerda (sem mexer no desktop) */
+    @media (max-width:520px){
+      .sub-left .sub-sub{
+        text-align:left;
+        align-items:flex-start; /* caso o .sub-sub esteja como flex em algum override */
+      }
+    
+      .sub-left .sub-sub .meta-plano,
+      .sub-left .sub-sub .meta-venc{
+        display:block;
+        width:100%;
+        text-align:left;
+      }
+    }
+
   </style>
 </head>
 <body>
