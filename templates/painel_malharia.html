@@ -69,18 +69,42 @@
   .icon-btn:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
   .icon-btn svg{ width:18px; height:18px; stroke:#444; fill:none; stroke-width:1.8; }
 
+  /* Perfil no mesmo “tamanho de círculo” dos botões ao lado (icon-btn = 36x36) */
   .profile-pill{
-    display:inline-flex; align-items:center; gap:8px; padding:4px 10px;
-    border:1px solid var(--line); border-radius:9999px; background:#fff; cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+  
+    width:36px;          /* igual icon-btn */
+    height:36px;         /* igual icon-btn */
+    padding:0;
+  
+    border:1px solid var(--line);
+    border-radius:9999px;
+    background:#fff;
+    cursor:pointer;
+    transition:.18s background-color, .18s transform;
     box-shadow:none !important;
   }
+  
+  .profile-pill:hover{ background:var(--olive-50); transform:translateY(-1px); }
+  .profile-pill:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
+  
+  /* avatar dentro do botão (proporcional) */
   .profile-pill .avatar{
-    width:24px; height:24px; border-radius:50%; overflow:hidden; background:#f2f2ff;
-    display:grid; place-items:center; border:1px solid var(--line);
+    width:26px;          /* igual ao seu padrão anterior */
+    height:26px;
+    border-radius:50%;
+    overflow:hidden;
+    background:#f2f2ff;
+    display:grid;
+    place-items:center;
+    border:1px solid var(--line);
   }
-  .profile-pill .name{ max-width:120px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:700; font-size:14px; }
-  .caret{ width:14px; height:14px; stroke:#555; }
-  @media (max-width:520px){ .profile-pill .name{ display:none; } }
+  
+  .profile-pill .name,
+  .profile-pill .caret{ display:none !important; }
+
 
   .profile-menu{
     position:absolute; right:14px; top:56px; width:280px;
