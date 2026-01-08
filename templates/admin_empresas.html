@@ -213,10 +213,11 @@
     colgroup col:nth-child(2){ width:15%; } /* Apelido*/
     colgroup col:nth-child(3){ width:23%; } /* Email  */
     colgroup col:nth-child(4){ width:9%;  } /* Status */
-    colgroup col:nth-child(5){ width:12%; } /* Data   */
-    colgroup col:nth-child(6){ width:11%; } /* Cidade */
-    colgroup col:nth-child(7){ width:4%;  } /* UF     */
-    colgroup col:nth-child(8){ width:8%;  } /* Ações  */
+    colgroup col:nth-child(5){ width:9%;  } /* Plano */
+    colgroup col:nth-child(6){ width:12%; } /* Data   */
+    colgroup col:nth-child(7){ width:11%; } /* Cidade */
+    colgroup col:nth-child(8){ width:4%;  } /* UF     */
+    colgroup col:nth-child(9){ width:8%;  } /* Ações  */
   
     /* >>> Cabeçalho igual ao da index (cor + fonte normal) <<< */
     thead th{
@@ -365,6 +366,12 @@
           <option value="pendente" {% if status == 'pendente' %}selected{% endif %}>Pendente</option>
           <option value="aprovado" {% if status == 'aprovado' %}selected{% endif %}>Aprovado</option>
         </select>
+        <label for="plano">Plano:</label>
+        <select id="plano" name="plano">
+          <option value="todos"  {{ 'selected' if plano=='todos' else '' }}>Todos</option>
+          <option value="mensal" {{ 'selected' if plano=='mensal' else '' }}>Mensal</option>
+          <option value="anual"  {{ 'selected' if plano=='anual'  else '' }}>Anual</option>
+        </select>
       </div>
 
       <div class="campo">
@@ -419,6 +426,7 @@
             <th>Apelido</th>
             <th>Email</th>
             <th>Status</th>
+            <th>Plano</th>
             <th>Data Pagamento</th>
             <th>Cidade</th>
             <th>Estado</th>
@@ -440,6 +448,7 @@
             <td title="{{ empresa.apelido }}">{{ empresa.apelido }}</td>
             <td title="{{ empresa.email }}">{{ empresa.email }}</td>
             <td title="{{ empresa.status_pagamento }}">{{ empresa.status_pagamento }}</td>
+            <td title="{{ (e.plano or 'mensal')|lower in ['anual','annual','yearly','12m','ano'] and 'Anual' or 'Mensal' }}</td>
             <td title="{{ empresa.data_pagamento.strftime('%Y-%m-%d %H:%M') if empresa.data_pagamento else '' }}">
               {{ empresa.data_pagamento.strftime('%Y-%m-%d %H:%M') if empresa.data_pagamento else '' }}
             </td>
