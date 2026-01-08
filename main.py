@@ -316,6 +316,14 @@ def send_email(to: str, subject: str, html: str, text: Optional[str] = None) -> 
     current_app.logger.error(f"[send_email] nenhum backend aceitou. http_last={why} smtp_last={why2}")
     return False
 
+def _plano_label(p: str | None) -> str:
+    p = (p or "").strip().lower()
+    if p in ("anual","annual","ano","yearly","12m"):
+        return "Anual"
+    return "Mensal"
+
+app.jinja_env.filters["plano_label"] = _plano_label
+
 # --------------------------------------------------------------------
 # E-mail transacional: Pagamento confirmado (AcheTece)
 # --------------------------------------------------------------------
@@ -1342,6 +1350,20 @@ def _ensure_empresa_address_columns():
     except Exception as e:
         app.logger.warning(f"[BOOT] ensure endereco/cep failed: {e}")
 
+def _ensure_empresa_plano_column():
+    try:
+        with db.engine.connect() as con:
+            con.exec_driver_sql(
+                "ALTER TABLE empresa ADD COLUMN IF NOT EXISTS plano VARCHAR(16) DEFAULT 'mensal'"
+            )
+            con.exec_driver_sql(
+                "UPDATE empresa SET plano='mensal' WHERE plano IS NULL OR TRIM(plano)=''"
+            )
+        app.logger.info("[BOOT] coluna empresa.plano garantida.")
+    except Exception as e:
+        app.logger.warning(f"[BOOT] coluna plano: {e}")
+     
+
 def _ensure_empresa_foto_column():
     """
     Garante que a tabela 'empresa' tenha a coluna foto_url (VARCHAR(255)).
@@ -1404,6 +1426,7 @@ def _run_bootstrap_once():
     try:
         # 1) cria tabelas base
         db.create_all()
+        _ensure_empresa_plano_column()
 
         # 2) GARANTE colunas críticas ANTES de qualquer query em Empresa
         _ensure_pagamento_cols()
@@ -3197,36 +3220,52 @@ def admin_logout():
 
 from datetime import datetime, timedelta
 
+from datetime import datetime, timedelta
+from sqlalchemy import func  # <- garante o import
+
 @app.route('/admin/empresas', methods=['GET', 'POST'])
 @login_admin_requerido
 def admin_empresas():
     pagina = int(request.args.get('pagina', 1))
     por_pagina = 10
 
-    # ✅ Status oficiais
     STATUS_VALIDOS = {"ativo", "pendente"}
 
+    # valores padrão
     status = ''
     data_inicio = ''
     data_fim = ''
+    f_plano = 'todos'  # <- NOVO: filtro de plano (mensal|anual|todos)
 
     query = Empresa.query
 
+    # ----- POST: lê filtros do formulário e redireciona para GET com querystring
     if request.method == 'POST':
-        status = (request.form.get('status', '') or '').strip().lower()
+        status      = (request.form.get('status', '') or '').strip().lower()
         data_inicio = (request.form.get('data_inicio', '') or '').strip()
-        data_fim = (request.form.get('data_fim', '') or '').strip()
-        return redirect(url_for('admin_empresas', pagina=1, status=status, data_inicio=data_inicio, data_fim=data_fim))
+        data_fim    = (request.form.get('data_fim', '') or '').strip()
+        f_plano     = (request.form.get('plano', 'todos') or 'todos').strip().lower()  # <- NOVO
 
-    status = (request.args.get('status', '') or '').strip().lower()
+        return redirect(url_for(
+            'admin_empresas',
+            pagina=1,
+            status=status,
+            data_inicio=data_inicio,
+            data_fim=data_fim,
+            plano=f_plano,               # <- NOVO
+        ))
+
+    # ----- GET: aplica filtros
+    status      = (request.args.get('status', '') or '').strip().lower()
     data_inicio = (request.args.get('data_inicio', '') or '').strip()
-    data_fim = (request.args.get('data_fim', '') or '').strip()
+    data_fim    = (request.args.get('data_fim', '') or '').strip()
+    f_plano     = (request.args.get('plano', 'todos') or 'todos').strip().lower()  # <- NOVO
 
-    # ✅ filtro de status seguro
+    # status
     if status in STATUS_VALIDOS:
         query = query.filter(Empresa.status_pagamento == status)
 
-    # ✅ datas robustas e inclusivas (fim do dia)
+    # datas (inclusive no fim do dia)
     if data_inicio:
         try:
             dt_ini = datetime.strptime(data_inicio, "%Y-%m-%d")
@@ -3237,9 +3276,25 @@ def admin_empresas():
     if data_fim:
         try:
             dt_fim = datetime.strptime(data_fim, "%Y-%m-%d") + timedelta(days=1)
-            query = query.filter(Empresa.data_pagamento < dt_fim)  # pega o dia inteiro
+            query = query.filter(Empresa.data_pagamento < dt_fim)
         except ValueError:
             pass
+
+    # ----- NOVO: filtro por PLANO (Mensal/Anual)
+    # normaliza possíveis valores já gravados
+    if f_plano == 'mensal':
+        query = query.filter(
+            func.lower(func.coalesce(Empresa.plano, 'mensal')).in_(
+                ['mensal', 'monthly', '1m', '']
+            )
+        )
+    elif f_plano == 'anual':
+        query = query.filter(
+            func.lower(func.coalesce(Empresa.plano, 'mensal')).in_(
+                ['anual', 'annual', 'yearly', '12m', 'ano']
+            )
+        )
+    # 'todos' não filtra
 
     total = query.count()
     empresas = (query
@@ -3257,7 +3312,8 @@ def admin_empresas():
         total_paginas=total_paginas,
         status=status,
         data_inicio=data_inicio,
-        data_fim=data_fim
+        data_fim=data_fim,
+        plano=f_plano,                 # <- NOVO: devolve pro template manter seleção
     )
 
 @app.route('/admin/editar_status/<int:empresa_id>', methods=['GET', 'POST'])
