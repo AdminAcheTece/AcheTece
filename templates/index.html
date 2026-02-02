@@ -124,6 +124,40 @@
       font-size: 25px;     /* mobile proporcional (25→14 / 34→~19) */
     }
   }
+
+  /* Subtítulo abaixo da frase principal */
+  .page-subhint{
+    margin-top:12px;
+    font-size: 20px;     /* desktop - ajuste aqui se quiser maior/menor */
+    line-height: 1.35;
+    color:#2a2535;
+    opacity:.86;
+  }
+  
+  /* Bullets de confiança */
+  .page-trust{
+    margin-top:14px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:18px;
+    flex-wrap:wrap;
+    font-size:16px;      /* desktop - ajuste aqui se quiser */
+    color:#2a2535;
+    opacity:.92;
+  }
+  .page-trust span{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-weight:600;
+  }
+  
+  @media (max-width:600px){
+    .page-subhint{ font-size: 16px; }  /* mobile - ajuste aqui */
+    .page-trust{ font-size: 14px; }    /* mobile - ajuste aqui */
+  }
+
     
   /* Botões topo (mobile) */
   .filters-toggle-bar{display:none; gap:8px; margin:8px 0 6px;}
@@ -390,8 +424,18 @@
     <div class="page-outer">
 
       <!-- Mensagem orientativa -->
-      <div class="page-hint" id="hint-teares" role="note">
-        Para encontrar o <strong>tear</strong> e a <strong>malharia ideal</strong> para sua produção, use os filtros abaixo.
+      <div class="page-hint" role="note">
+        Para encontrar o <strong>tear e a malharia ideal</strong> para sua produção, use os filtros abaixo.
+      
+        <div class="page-subhint">
+          Fornecedores e teares com informações estruturadas — contato direto e decisão mais rápida.
+        </div>
+      
+        <div class="page-trust">
+          <span>✓ Dados organizados</span>
+          <span>✓ Contato direto</span>
+          <span>✓ Filtros técnicos</span>
+        </div>
       </div>
 
       <!-- Botões topo (mobile) -->
