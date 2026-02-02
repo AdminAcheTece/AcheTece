@@ -398,18 +398,20 @@
   
   /* === Conta Malharia: preto + lime; inverte no hover === */
   .header-right .btn-perfil{
-    background:#000 !important;          /* fundo PRETO */
-    color:var(--lime) !important;        /* texto LIME */
+    background:#fff !important;      /* fundo branco */
+    color:#000 !important;           /* texto preto */
     border:0 !important;
     box-shadow:none !important;
     transition:background-color .15s ease, color .15s ease, transform .15s ease;
   }
+  
+  /* Mantém o hover “atual” (lime) */
   .header-right .btn-perfil:hover{
-    background:var(--lime) !important;   /* inverte */
+    background:var(--lime) !important;
     color:#000 !important;
-    border:0 !important;
-    box-shadow:none !important;
   }
+  
+  /* Active */
   .header-right .btn-perfil:active{
     background:var(--lime-700) !important;
     color:#000 !important;
@@ -426,7 +428,7 @@
     <div class="header-left">
       <div class="logo">
         <a href="{{ url_for('index') }}" aria-label="Página inicial">
-          <img src="/static/logo.jpg" alt="Logo AcheTece" decoding="async" fetchpriority="high">
+          <img src="/static/Logo Branco_fundo preto.png" alt="Logo AcheTece" decoding="async" fetchpriority="high">
         </a>
       </div>
     </div>
