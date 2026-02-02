@@ -55,38 +55,84 @@
     .desktop-only{ display:none; }
   }
 
-  /* ===== HEADER ===== */
+  /* ===== HEADER (AJUSTADO) ===== */
   .navbar{
-    background:#000;                 /* fundo preto */
-    border-radius:9999px;            /* arredondado */
-    max-width:1280px;                /* mesma largura do miolo */
-    margin:14px auto;                /* centraliza e dá respiro */
-    padding:12px 18px;               /* altura “premium” */
+    background:#000;
+    border-radius:9999px;
+    width:calc(100% - 24px);      /* MAIS LARGA no desktop (mais próxima das laterais) */
+    max-width:none;               /* remove limite de 1280px */
+    margin:14px auto;
+    padding:12px 18px;
     display:flex;
     align-items:center;
+    justify-content:space-between;
+    gap:12px;
     overflow:visible;
     box-shadow:0 10px 28px rgba(0,0,0,.18);
   }
-  
-  /* Logo branca: tamanho */
+
+  .header-left,.header-right{display:flex;align-items:center;}
+  .hdr-actions{display:flex;align-items:center;gap:12px;}
+
+  /* Logo (desktop) */
   .navbar .logo img{
     height:40px !important;
     width:auto !important;
     display:block;
   }
-  
-  /* espaço entre logo e botão */
-  .header-right{ margin-left:auto; }
-  .hdr-actions{ gap:12px; }
-  
-  /* Mobile */
+
+  /* Botão Conta Malharia (BLINDADO contra style.css) */
+  .navbar .btn-perfil{
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    height:44px !important;
+    padding:0 22px !important;
+    border-radius:9999px !important;
+    font-weight:800 !important;
+    text-decoration:none !important;     /* remove underline */
+    background:#fff !important;          /* fundo branco */
+    color:#000 !important;               /* texto preto */
+    border:0 !important;
+    box-shadow:none !important;
+    line-height:1 !important;
+    white-space:nowrap !important;
+    cursor:pointer;
+    transition: background-color .15s ease, color .15s ease, transform .15s ease;
+  }
+
+  /* Hover mantendo padrão atual (lime) */
+  .navbar .btn-perfil:hover{
+    background:var(--lime) !important;
+    color:#111 !important;
+    transform:translateY(-1px);
+  }
+  .navbar .btn-perfil:active{
+    background:var(--lime-700) !important;
+    color:#111 !important;
+    transform:translateY(0);
+  }
+  .navbar .btn-perfil:focus-visible{
+    outline:2px solid var(--lime);
+    outline-offset:2px;
+  }
+
+  /* Mobile: logo 50% menor + header mais compacto */
   @media (max-width:900px){
     .navbar{
       border-radius:18px;
-      margin:10px 12px;             /* evita colar nas bordas */
+      width:calc(100% - 20px);
+      margin:10px auto;
       padding:10px 12px;
     }
-    .navbar .logo img{ height:36px !important; }
+    .navbar .logo img{
+      height:18px !important; /* 50% menor */
+    }
+    .navbar .btn-perfil{
+      height:36px !important;
+      padding:0 14px !important;
+      font-size:13px !important;
+    }
   }
 
   /* ===== PROMO ===== */
@@ -129,7 +175,7 @@
     margin:0 auto;
     padding:0 16px;
   }
-  
+
   /* Container */
   .page-hint{
     margin:10px 0 6px;
@@ -137,20 +183,20 @@
     text-align:center;
     color:#000;
   }
-  
+
   /* Título principal */
   #hint-teares{
     font-size:60px !important;  /* desktop */
     line-height:1.15;
   }
-  
+
   @media (max-width:600px){
     #hint-teares{
       font-size:25px !important; /* mobile */
       margin-top:8px;
     }
   }
-  
+
   /* Subtítulo */
   .page-subhint{
     margin-top:12px;
@@ -159,7 +205,7 @@
     color:#2a2535;
     opacity:.86;
   }
-  
+
   /* Bullets */
   .page-trust{
     margin-top:14px;
@@ -179,12 +225,12 @@
     gap:8px;
     font-weight:600;
   }
-  
+
   @media (max-width:600px){
     .page-subhint{ font-size:16px; }
     .page-trust{ font-size:14px; }
   }
-    
+
   /* Botões topo (mobile) */
   .filters-toggle-bar{display:none; gap:8px; margin:8px 0 6px;}
   .btn-pill{
@@ -314,23 +360,12 @@
   .pager .info{font-size:13px;color:#666}
   .pager select{height:36px;border:1px solid #ddd;border-radius:10px;padding:0 10px;background:#fff}
 
-  /* ===== Desktop: centralizar o botão do topo ===== */
-  @media (min-width:821px){
-    .btn-perfil{
-      height:44px;
-      padding:0 20px;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      line-height:1 !important;
-    }
-  }
-
   /* ===== Desktop: zebra + cabeçalho mais visível na tabela (tons oliva) ===== */
   @media (min-width:821px){
     .teares-table thead th{
-      background:var(--olive-100);
-      color:var(--olive-dark);
+      background: var(--olive) !important;
+      color: #fff !important;
+      border-bottom: 1px solid var(--olive-600) !important;
     }
     .teares-table tbody tr:nth-child(odd){  background:#FFFFFF; }
     .teares-table tbody tr:nth-child(even){ background:var(--olive-50); }
@@ -343,92 +378,23 @@
     .card-info2{font-size:12px;}
     .empresa-top .nome{font-size:.95rem;}
   }
-
-  /* ======= HOVER NEON (sem “borda/anel”) ======= */
-  /* transições */
-  .promo-cta,
-  .btn-perfil,
-  .btn-open-filters,
-  .btn-new-search,
-  .btn-limpar{
-    transition: background-color .15s ease, color .15s ease;
-  }
-
-  /* HOVER: verde neon + texto preto, SEM box-shadow e SEM border */
-  .promo-cta:hover,
-  .btn-perfil:hover,
-  .btn-open-filters:hover,
-  .btn-new-search:hover,
-  .btn-limpar:hover{
-    background: var(--lime) !important;
-    color:#111 !important;
-    border:0 !important;
-    box-shadow:none !important;
-  }
-
-  /* ACTIVE */
-  .promo-cta:active,
-  .btn-perfil:active,
-  .btn-open-filters:active,
-  .btn-new-search:active,
-  .btn-limpar:active{
-    background: var(--lime-700) !important;
-    border:0 !important;
-    box-shadow:none !important;
-  }
-
-  /* foco visível sem “anel” exagerado */
-  .promo-cta:focus-visible,
-  .btn-perfil:focus-visible,
-  .btn-open-filters:focus-visible,
-  .btn-new-search:focus-visible,
-  .btn-limpar:focus-visible{
-    outline: 2px solid var(--lime);
-    outline-offset: 2px;
-  }
-
-  /* Cabeçalho da tabela com as cores dos botões (oliva + texto branco) */
-  @media (min-width:821px){
-    .teares-table thead th{
-      background: var(--olive) !important;   /* mesma cor do botão base */
-      color: #fff !important;                 /* texto branco, como nos botões */
-      border-bottom: 1px solid var(--olive-600) !important; /* linha discreta */
-    }
-  }
-  
-  /* === Conta Malharia: preto + lime; inverte no hover === */
-  .header-right .btn-perfil{
-    background:#fff !important;      /* fundo branco */
-    color:#000 !important;           /* texto preto */
-    border:0 !important;
-    box-shadow:none !important;
-    transition:background-color .15s ease, color .15s ease, transform .15s ease;
-  }
-  
-  /* Mantém o hover “atual” (lime) */
-  .header-right .btn-perfil:hover{
-    background:var(--lime) !important;
-    color:#000 !important;
-  }
-  
-  /* Active */
-  .header-right .btn-perfil:active{
-    background:var(--lime-700) !important;
-    color:#000 !important;
-  }
-  .header-right .btn-perfil svg{         /* se tiver ícone, acompanha a cor */
-    color:currentColor; fill:currentColor; stroke:currentColor;
-  }
 </style>
 </head>
 <body>
-  
+
   <!-- Cabeçalho -->
   <header class="navbar">
     <div class="header-left">
       <div class="logo">
         <a href="{{ url_for('index') }}" aria-label="Página inicial">
-          <img src="/static/Logo Branco_fundo preto.png" alt="Logo AcheTece" decoding="async" fetchpriority="high">
+          <img
+            src="/static/Logo%20Branco_fundo%20preto.png"
+            data-alt="/static/logo_branco.png,/static/Logo%20Branco_fundo%20preto.png"
+            alt="Logo AcheTece"
+            decoding="async"
+            fetchpriority="high"
+            onerror="(function(img){var s=img.getAttribute('data-alt');if(!s){img.onerror=null;return;}var a=s.split(',');img.setAttribute('data-alt', a.slice(1).join(','));img.src=a[0];})(this);"
+          >
         </a>
       </div>
     </div>
@@ -450,11 +416,11 @@
         <div id="hint-teares">
           Para encontrar o <strong>tear e a malharia ideal</strong> para sua produção, use os filtros abaixo.
         </div>
-      
+
         <div class="page-subhint">
           Fornecedores e teares com informações estruturadas — contato direto e decisão mais rápida.
         </div>
-      
+
         <div class="page-trust">
           <span>✓ Dados organizados</span>
           <span>✓ Contato direto</span>
@@ -814,7 +780,7 @@
     </div>
     <a href="/cadastrar_empresa" class="cta-btn">Cadastrar</a>
   </section>
-  
+
   <!-- Rodapé -->
   <footer class="site-footer">
     <div class="footer-inner">
@@ -887,7 +853,7 @@
           } else {
             fetch(url, {method:"POST", headers:{'Content-Type':'application/json'}, body:str, keepalive:true}).catch(()=>{});
           }
-        }catch(e){ /* silencia erros para não travar navegação */ }
+        }catch(e){ }
       }
 
       document.addEventListener('click', function(e){
@@ -966,16 +932,12 @@
         if (preUF){
           loadCities(preUF, preCity);
         } else {
-          // sem UF selecionado
           clearAndBaseOption(cidadeSel, 'Selecione o estado primeiro');
           cidadeSel.disabled = true;
         }
 
-        // Quando o usuário escolher uma UF, recarrega a lista de cidades
         estadoSel.addEventListener('change', function(){
-          // Observação: ao alterar UF o formulário será submetido (auto-apply),
-          // e na volta esta função rodará novamente preenchendo as cidades da UF.
-          // Nada a fazer aqui além de deixar o comportamento padrão.
+          // auto-apply já submete o form; mantém comportamento padrão
         });
       }
     })();
