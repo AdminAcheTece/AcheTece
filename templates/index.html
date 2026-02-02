@@ -74,11 +74,12 @@
   .header-left,.header-right{display:flex;align-items:center;}
   .hdr-actions{display:flex;align-items:center;gap:12px;}
 
-  /* Logo (desktop) */
+  /* Logo (DESKTOP) - reduz para caber bem dentro da faixa */
   .navbar .logo img{
-    height:40px !important;
+    height:28px !important;    /* ajuste aqui: 24 / 26 / 28 / 30 */
     width:auto !important;
     display:block;
+    object-fit:contain;
   }
 
   /* Botão Conta Malharia (BLINDADO contra style.css) */
