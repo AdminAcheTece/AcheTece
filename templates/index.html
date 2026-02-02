@@ -109,27 +109,40 @@
   .footer-col a:hover{text-decoration:underline;}
 
   /* ===== LAYOUT ===== */
-  .page-outer{max-width:1280px;margin:0 auto;padding:0 16px;}
-  .page-hint{margin:10px 0 6px;padding:6px 0;text-align:center;font-size:25px;color:#000;}
-  @media (max-width:600px){ .page-hint{font-size:14px;margin-top:8px} }
-
-  /* ===== Destaque da frase central (somente essa frase) ===== */
-  #hint-teares{
-    font-size: 56px;       /* desktop (antes era 25px) */
-    line-height: 1.2;
+  .page-outer{
+    max-width:1280px;
+    margin:0 auto;
+    padding:0 16px;
   }
   
+  /* Container (não controla o tamanho do texto principal) */
+  .page-hint{
+    margin:10px 0 6px;
+    padding:6px 0;
+    text-align:center;
+    color:#000;
+  }
+  
+  /* ===== Destaque da frase central (somente essa frase) ===== */
+  /* Se o id estiver no próprio .page-hint, esta regra controla o tamanho */
+  #hint-teares{
+    font-size:56px;   /* desktop */
+    line-height:1.2;
+  }
+  
+  /* Mobile: mantém proporcional */
   @media (max-width:600px){
     #hint-teares{
-      font-size: 25px;     /* mobile proporcional (25→14 / 34→~19) */
+      font-size:25px; /* mobile */
+      margin-top:8px; /* mantém seu ajuste visual no mobile */
     }
   }
-
+  
   /* Subtítulo abaixo da frase principal */
   .page-subhint{
     margin-top:12px;
-    font-size: 20px;     /* desktop - ajuste aqui se quiser maior/menor */
-    line-height: 1.35;
+    font-size:20px;   /* desktop - ajuste aqui */
+    line-height:1.35;
     color:#2a2535;
     opacity:.86;
   }
@@ -142,10 +155,11 @@
     justify-content:center;
     gap:18px;
     flex-wrap:wrap;
-    font-size:16px;      /* desktop - ajuste aqui se quiser */
+    font-size:16px;   /* desktop - ajuste aqui */
     color:#2a2535;
     opacity:.92;
   }
+  
   .page-trust span{
     display:inline-flex;
     align-items:center;
@@ -153,9 +167,10 @@
     font-weight:600;
   }
   
+  /* Mobile: subtítulo e bullets menores */
   @media (max-width:600px){
-    .page-subhint{ font-size: 16px; }  /* mobile - ajuste aqui */
-    .page-trust{ font-size: 14px; }    /* mobile - ajuste aqui */
+    .page-subhint{ font-size:16px; }  /* mobile - ajuste aqui */
+    .page-trust{ font-size:14px; }    /* mobile - ajuste aqui */
   }
     
   /* Botões topo (mobile) */
@@ -424,18 +439,20 @@
 
       <!-- Mensagem orientativa -->
       <div class="page-hint" role="note">
+      <div class="page-title">
         Para encontrar o <strong>tear e a malharia ideal</strong> para sua produção, use os filtros abaixo.
-      
-        <div class="page-subhint">
-          Fornecedores e teares com informações estruturadas — contato direto e decisão mais rápida.
-        </div>
-      
-        <div class="page-trust">
-          <span>✓ Dados organizados</span>
-          <span>✓ Contato direto</span>
-          <span>✓ Filtros técnicos</span>
-        </div>
       </div>
+    
+      <div class="page-subhint">
+        Fornecedores e teares com informações estruturadas — contato direto e decisão mais rápida.
+      </div>
+    
+      <div class="page-trust">
+        <span>✓ Dados organizados</span>
+        <span>✓ Contato direto</span>
+        <span>✓ Filtros técnicos</span>
+      </div>
+    </div>
 
       <!-- Botões topo (mobile) -->
       <div class="filters-toggle-bar">
