@@ -55,33 +55,42 @@
     .desktop-only{ display:none; }
   }
 
-  /* ===== HEADER (AJUSTADO) ===== */
+  /* ===== HEADER (FIXO) ===== */
   .navbar{
+    position: fixed;
+    top: 12px;                 /* ajuste a distância do topo */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2000;
+  
     background:#000;
     border-radius:9999px;
-    width:calc(100% - 220px);      /* MAIS LARGA no desktop (mais próxima das laterais) */
-    max-width:none;               /* remove limite de 1280px */
-    margin:14px auto;
+  
+    width:calc(100% - 220px);  /* ajuste aqui a distância das laterais no desktop */
+    max-width:none;
+    margin:0;                  /* fixed + centralização via left/transform */
     padding:12px 18px;
+  
     display:flex;
     align-items:center;
     justify-content:space-between;
     gap:12px;
+  
     overflow:visible;
     box-shadow:0 10px 28px rgba(0,0,0,.18);
   }
-
+  
   .header-left,.header-right{display:flex;align-items:center;}
   .hdr-actions{display:flex;align-items:center;gap:12px;}
-
-  /* Logo (DESKTOP) - reduz para caber bem dentro da faixa */
+  
+  /* Logo (DESKTOP) */
   .navbar .logo img{
-    height:60px !important;    /* ajuste aqui: 24 / 26 / 28 / 30 */
+    height:60px !important;     /* ajuste aqui desktop */
     width:auto !important;
     display:block;
     object-fit:contain;
   }
-
+  
   /* Botão Conta Malharia (BLINDADO contra style.css) */
   .navbar .btn-perfil{
     display:inline-flex !important;
@@ -91,9 +100,9 @@
     padding:0 22px !important;
     border-radius:9999px !important;
     font-weight:800 !important;
-    text-decoration:none !important;     /* remove underline */
-    background:#fff !important;          /* fundo branco */
-    color:#000 !important;               /* texto preto */
+    text-decoration:none !important;
+    background:#fff !important;
+    color:#000 !important;
     border:0 !important;
     box-shadow:none !important;
     line-height:1 !important;
@@ -101,8 +110,7 @@
     cursor:pointer;
     transition: background-color .15s ease, color .15s ease, transform .15s ease;
   }
-
-  /* Hover mantendo padrão atual (lime) */
+  
   .navbar .btn-perfil:hover{
     background:var(--lime) !important;
     color:#111 !important;
@@ -117,17 +125,17 @@
     outline:2px solid var(--lime);
     outline-offset:2px;
   }
-
-  /* Mobile: logo 50% menor + header mais compacto */
+  
+  /* Mobile: header mais compacto */
   @media (max-width:900px){
     .navbar{
-      border-radius:34px;
+      top: 10px;
+      border-radius:34px;          /* ajuste arredondamento no mobile */
       width:calc(100% - 20px);
-      margin:10px auto;
       padding:10px 12px;
     }
     .navbar .logo img{
-      height:60px !important;
+      height:60px !important;      /* ajuste aqui mobile */
     }
     .navbar .btn-perfil{
       height:36px !important;
@@ -136,6 +144,17 @@
     }
   }
 
+  /* Reserva espaço para o header fixo (evita o conteúdo ficar por trás) */
+  body{
+    padding-top: 118px;   /* DESKTOP: ajuste aqui (110, 118, 126...) */
+  }
+  
+  @media (max-width:900px){
+    body{
+      padding-top: 98px;  /* MOBILE: ajuste aqui (90, 98, 106...) */
+    }
+  }  
+    
   /* ===== PROMO ===== */
   .promo-bar{
     background:#000;color:#fff;display:flex;align-items:center;justify-content:center;gap:12px;
