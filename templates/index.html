@@ -202,6 +202,23 @@
   body.menu-open .mobile-menu-backdrop{ display:block; }
   body.menu-open .mobile-menu{ display:block; }
 
+  /* Força o ícone (as 3 linhas) sempre branco no estado normal */
+  .btn-menu svg{
+    width:20px;
+    height:20px;
+    stroke:#fff !important;   /* cor das 3 linhas */
+  }
+  
+  /* Se quiser manter o hover lime com ícone escuro (fica bonito e legível) */
+  .btn-menu:hover svg{
+    stroke:#111 !important;
+  }
+  
+  /* Se quiser também no active */
+  .btn-menu:active svg{
+    stroke:#111 !important;
+  }
+  
   /* Mobile: header mais compacto + mostra botão menu */
   @media (max-width:900px){
     .navbar{
