@@ -113,6 +113,18 @@
   .page-hint{margin:10px 0 6px;padding:6px 0;text-align:center;font-size:25px;color:#000;}
   @media (max-width:600px){ .page-hint{font-size:14px;margin-top:8px} }
 
+  /* ===== Destaque da frase central (somente essa frase) ===== */
+  #hint-teares{
+    font-size: 34px;       /* desktop (antes era 25px) */
+    line-height: 1.2;
+  }
+  
+  @media (max-width:600px){
+    #hint-teares{
+      font-size: 19px;     /* mobile proporcional (25→14 / 34→~19) */
+    }
+  }
+    
   /* Botões topo (mobile) */
   .filters-toggle-bar{display:none; gap:8px; margin:8px 0 6px;}
   .btn-pill{
@@ -378,7 +390,7 @@
     <div class="page-outer">
 
       <!-- Mensagem orientativa -->
-      <div class="page-hint" role="note">
+      <div class="page-hint" id="hint-teares" role="note">
         Para encontrar o <strong>tear e a malharia ideal</strong> para sua produção, use os filtros abaixo.
       </div>
 
