@@ -123,25 +123,24 @@
     color:#000;
   }
   
-  /* ===== Destaque da frase central (somente essa frase) ===== */
-  /* Se o id estiver no próprio .page-hint, esta regra controla o tamanho */
+  /* ===== Título principal (somente a frase principal) ===== */
   #hint-teares{
-    font-size:100px;   /* desktop */
-    line-height:1.2;
+    font-size:100px !important;  /* desktop */
+    line-height:1.15;
   }
   
-  /* Mobile: mantém proporcional */
+  /* Mobile */
   @media (max-width:600px){
     #hint-teares{
-      font-size:50px; /* mobile */
-      margin-top:8px; /* mantém seu ajuste visual no mobile */
+      font-size:50px !important; /* mobile */
+      margin-top:8px;
     }
   }
   
   /* Subtítulo abaixo da frase principal */
   .page-subhint{
     margin-top:12px;
-    font-size:20px;   /* desktop - ajuste aqui */
+    font-size:20px;
     line-height:1.35;
     color:#2a2535;
     opacity:.86;
@@ -155,11 +154,10 @@
     justify-content:center;
     gap:18px;
     flex-wrap:wrap;
-    font-size:16px;   /* desktop - ajuste aqui */
+    font-size:16px;
     color:#2a2535;
     opacity:.92;
   }
-  
   .page-trust span{
     display:inline-flex;
     align-items:center;
@@ -169,8 +167,8 @@
   
   /* Mobile: subtítulo e bullets menores */
   @media (max-width:600px){
-    .page-subhint{ font-size:16px; }  /* mobile - ajuste aqui */
-    .page-trust{ font-size:14px; }    /* mobile - ajuste aqui */
+    .page-subhint{ font-size:16px; }
+    .page-trust{ font-size:14px; }
   }
     
   /* Botões topo (mobile) */
