@@ -388,8 +388,11 @@
     <div class="header-left">
       <div class="logo">
         <a href="{{ url_for('index') }}" aria-label="Página inicial">
-          <img src="/static/Logo%20Branco%20AcheTece_sem%20fundo.png" alt="Logo AcheTece" decoding="async" fetchpriority="high">
-            onerror="(function(img){var s=img.getAttribute('data-alt');if(!s){img.onerror=null;return;}var a=s.split(',');img.setAttribute('data-alt', a.slice(1).join(','));img.src=a[0];})(this);"
+          <img
+            src="{{ url_for('static', filename='Logo_Branco_AcheTece_sem_fundo.png') }}"
+            alt="Logo AcheTece"
+            decoding="async"
+            fetchpriority="high"
           >
         </a>
       </div>
