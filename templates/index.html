@@ -115,7 +115,7 @@
     padding:0 16px;
   }
   
-  /* Container (não controla o tamanho do texto principal) */
+  /* Container */
   .page-hint{
     margin:10px 0 6px;
     padding:6px 0;
@@ -123,13 +123,12 @@
     color:#000;
   }
   
-  /* ===== Título principal (somente a frase principal) ===== */
+  /* Título principal */
   #hint-teares{
     font-size:60px !important;  /* desktop */
     line-height:1.15;
   }
   
-  /* Mobile */
   @media (max-width:600px){
     #hint-teares{
       font-size:25px !important; /* mobile */
@@ -137,7 +136,7 @@
     }
   }
   
-  /* Subtítulo abaixo da frase principal */
+  /* Subtítulo */
   .page-subhint{
     margin-top:12px;
     font-size:20px;
@@ -146,7 +145,7 @@
     opacity:.86;
   }
   
-  /* Bullets de confiança */
+  /* Bullets */
   .page-trust{
     margin-top:14px;
     display:flex;
@@ -165,7 +164,6 @@
     font-weight:600;
   }
   
-  /* Mobile: subtítulo e bullets menores */
   @media (max-width:600px){
     .page-subhint{ font-size:16px; }
     .page-trust{ font-size:14px; }
@@ -437,20 +435,20 @@
 
       <!-- Mensagem orientativa -->
       <div class="page-hint" role="note">
-      <div id="hint-teares">
-        Para encontrar o <strong>tear e a malharia ideal</strong> para sua produção, use os filtros abaixo.
+        <div id="hint-teares">
+          Para encontrar o <strong>tear e a malharia ideal</strong> para sua produção, use os filtros abaixo.
+        </div>
+      
+        <div class="page-subhint">
+          Fornecedores e teares com informações estruturadas — contato direto e decisão mais rápida.
+        </div>
+      
+        <div class="page-trust">
+          <span>✓ Dados organizados</span>
+          <span>✓ Contato direto</span>
+          <span>✓ Filtros técnicos</span>
+        </div>
       </div>
-    
-      <div class="page-subhint">
-        Fornecedores e teares com informações estruturadas — contato direto e decisão mais rápida.
-      </div>
-    
-      <div class="page-trust">
-        <span>✓ Dados organizados</span>
-        <span>✓ Contato direto</span>
-        <span>✓ Filtros técnicos</span>
-      </div>
-    </div>
 
       <!-- Botões topo (mobile) -->
       <div class="filters-toggle-bar">
