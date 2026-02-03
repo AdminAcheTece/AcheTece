@@ -233,6 +233,48 @@
     width:18px;height:18px;flex:0 0 18px;color:#111;
   }
 
+  /* ===== Topo do menu mobile: logo + fechar ===== */
+  .mobile-menu .menu-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:12px 14px;
+    border-bottom:1px solid #eee;
+    background:#fff;
+  }
+  
+  /* Logo preta dentro do menu */
+  .mobile-menu .menu-logo{
+    display:inline-flex;
+    align-items:center;
+    text-decoration:none;
+  }
+  .mobile-menu .menu-logo img{
+    height:28px;   /* ajuste fino: 24 / 26 / 30 */
+    width:auto;
+    display:block;
+    object-fit:contain;
+  }
+  
+  /* Botão X: fundo limão neon + X preto */
+  .mobile-menu .menu-close{
+    width:40px;
+    height:40px;
+    border-radius:12px;
+    border:0;
+    background:var(--lime);
+    color:#000;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    font-size:28px;
+    line-height:1;
+    font-weight:900;
+  }
+  .mobile-menu .menu-close:hover{ background:var(--lime-700); }
+    
   /* Estado aberto */
   body.menu-open{ overflow:hidden; }
   body.menu-open .mobile-menu-backdrop{ display:block; }
@@ -580,19 +622,29 @@
 
   <!-- MENU MOBILE (SÓ NO MOBILE) -->
   <div class="mobile-menu-backdrop" id="menuBackdrop" aria-hidden="true"></div>
-
+  
   <nav class="mobile-menu" id="mobileMenu" aria-label="Menu do site">
     <div class="menu-head">
+      <!-- Logo preta à esquerda (logo.jpg) -->
+      <a href="{{ url_for('index') }}" class="menu-logo" aria-label="Ir para a busca">
+        <img
+          src="{{ url_for('static', filename='logo.jpg') }}"
+          alt="AcheTece"
+          decoding="async"
+        >
+      </a>
+  
+      <!-- Botão fechar (X) com fundo lime e X preto -->
       <button class="menu-close" id="closeMenuBtn" type="button" aria-label="Fechar menu">×</button>
     </div>
-
+  
     <a href="{{ url_for('index') }}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5Z"/>
       </svg>
       Buscar Tear
     </a>
-
+  
     <a href="{{ url_for('malharia_info') }}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="10"></circle>
@@ -601,7 +653,7 @@
       </svg>
       Como Funciona
     </a>
-
+  
     <a href="/login">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M20 21a8 8 0 0 0-16 0"></path>
@@ -609,7 +661,7 @@
       </svg>
       Já sou cadastrado
     </a>
-
+  
     <a href="{{ url_for('view_quem_somos') }}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="10"></circle>
@@ -618,7 +670,7 @@
       </svg>
       Quem Somos
     </a>
-
+  
     <a href="{{ url_for('contato') }}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M4 4h16v14H5.5L4 19.5V4Z"></path>
@@ -627,7 +679,7 @@
       </svg>
       Fale conosco
     </a>
-
+  
     <a href="{{ url_for('termos') }}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M6 2h9l3 3v17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"></path>
