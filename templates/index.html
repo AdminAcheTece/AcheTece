@@ -83,6 +83,42 @@
   .header-left,.header-right{display:flex;align-items:center;}
   .hdr-actions{display:flex;align-items:center;gap:12px;}
 
+  /* ===== NAV LINKS (DESKTOP) ===== */
+  .hdr-nav{
+    flex:1;                            /* ocupa o miolo da barra */
+    display:flex;
+    justify-content:center;             /* centraliza */
+    align-items:center;
+    gap:26px;                           /* distância entre links */
+  }
+  
+  .hdr-nav a{
+    color:#fff;
+    text-decoration:none;               /* sem sublinhado */
+    font-weight:700;
+    font-size:15px;
+    opacity:.92;
+    padding:8px 6px;                    /* área clicável melhor */
+    border-radius:10px;
+    transition: opacity .15s ease, background-color .15s ease, color .15s ease;
+  }
+  
+  .hdr-nav a:hover{
+    opacity:1;
+    background:rgba(255,255,255,.08);   /* hover discreto */
+  }
+  
+  /* Some no mobile (porque lá você já tem o botão menu) */
+  @media (max-width:900px){
+    .hdr-nav{ display:none; }
+  }
+  
+  /* (Opcional) se a tela ficar “apertada”, reduz gap e fonte */
+  @media (max-width:1100px){
+    .hdr-nav{ gap:18px; }
+    .hdr-nav a{ font-size:14px; }
+  }
+    
   /* Logo (DESKTOP) */
   .navbar .logo img{
     height:60px !important;     /* ajuste aqui desktop */
@@ -517,17 +553,25 @@
         </a>
       </div>
     </div>
-
+  
+    <!-- Links do topo (somente desktop) -->
+    <nav class="hdr-nav" aria-label="Navegação principal">
+      <a href="{{ url_for('view_quem_somos') }}">O AcheTece</a>
+      <a href="{{ url_for('malharia_info') }}">Como Funciona</a>
+      <a href="{{ url_for('contato') }}">Fale Conosco</a>
+    </nav>
+  
     <div class="header-right">
       <div class="hdr-actions">
         <a href="/login" class="btn-perfil" aria-label="Acessar sua conta da malharia" title="Acessar sua conta da malharia">
           <span>Conta Malharia</span>
         </a>
-
+  
         <!-- BOTÃO MENU (SÓ NO MOBILE) -->
-        <button class="btn-menu" id="openMenuBtn" type="button" aria-label="Abrir menu" aria-controls="mobileMenu" aria-expanded="false">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <path d="M4 7h16M4 12h16M4 17h16"/>
+        <button class="btn-menu" id="openMenuBtn" type="button"
+                aria-label="Abrir menu" aria-controls="mobileMenu" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 7h16M4 12h16M4 17h16" />
           </svg>
         </button>
       </div>
