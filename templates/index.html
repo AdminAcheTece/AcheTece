@@ -230,63 +230,80 @@
   border-bottom:1px solid #eee;
   background:#fff;
 
-  min-height:72px;          /* mantém o topo estável mesmo com logo maior */
+  min-height:72px;          /* mantém o topo estável */
 }
 
+/* Logo: ocupa o espaço disponível sem empurrar o X */
 .mobile-menu .menu-logo{
   display:flex;
   align-items:center;
   text-decoration:none;
-  min-width:0;              /* impede o logo “empurrar” o X */
+
+  flex:1;                   /* pega o espaço livre */
+  min-width:0;              /* permite encolher sem quebrar o layout */
+  overflow:hidden;          /* garante que nada “vaze” */
 }
 
-/* Logo preta dentro do menu — grande sem quebrar */
+/* Imagem da logo: grande, mas com limites seguros */
 .mobile-menu .menu-logo img{
-  height: clamp(44px, 10vw, 72px); /* ✅ ajuste aqui (máx. recomendado 72~80) */
+  height:clamp(50px, 10vw, 78px); /* ✅ ajuste principal: aumente o 78px se quiser (máx 84~90) */
   width:auto;
-  max-width:220px;          /* ✅ ajuste aqui se quiser mais largura */
+
+  max-width:240px;          /* ✅ ajuste largura: 220 / 240 / 260 */
   display:block;
   object-fit:contain;
 }
 
-/* Botão fechar: fundo lime + X preto mais fino */
+/* Botão fechar: fundo lime + X preto (não encolhe nunca) */
 .mobile-menu .menu-close{
-  flex:0 0 auto;
+  flex:0 0 auto;            /* não deixa o botão “ceder espaço” */
   width:40px;
   height:40px;
   border-radius:12px;
   border:0;
   background:var(--lime);
+
   display:inline-flex;
   align-items:center;
   justify-content:center;
+
   cursor:pointer;
+  padding:0;
 }
+
 .mobile-menu .menu-close:hover{ background:var(--lime-700); }
 
-/* X fino (espessura) */
+/* X fino (espessura) — precisa do <span> dentro do botão */
 .mobile-menu .menu-close span{
+  display:block;
   color:#000;
-  font-size:28px;
-  font-weight:300; /* ✅ ajuste aqui: 200/300/400 */
+
+  font-size:28px;           /* tamanho visual do X */
+  font-weight:300;          /* ✅ espessura: 200/300/400 */
   line-height:1;
 }
 
-/* Links do menu */
+/* Links do menu (se você usa um wrapper .menu-body) */
 .mobile-menu .menu-body{
   padding:10px 12px 12px;
 }
+
+/* Itens do menu */
 .mobile-menu a{
   display:flex;
   align-items:center;
   gap:10px;
+
   padding:10px 10px;
   border-radius:12px;
+
   text-decoration:none;
   color:#111;
   font-weight:600;
 }
+
 .mobile-menu a:hover{ background:#f6f6f6; }
+
 .mobile-menu svg{
   width:18px;
   height:18px;
