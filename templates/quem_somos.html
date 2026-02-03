@@ -36,6 +36,11 @@
     --maxw: 1100px;
     --borda-card:#D6DDE8;
     --borda-steps:#E4E9F3;
+
+    /* ✅ padrão de espaçamento do header no MOBILE */
+    --nav-mobile-pad-left: 8px;   /* diminua pra jogar a logo mais pra esquerda (ex: 6px) */
+    --nav-mobile-pad-right: 12px; /* mantenha pra não encostar no hambúrguer */
+    --nav-mobile-gap: 10px;       /* espaço entre Conta Malharia e hambúrguer */
   }
 
   *{ box-sizing:border-box; }
@@ -198,13 +203,25 @@
       top: 10px;
       border-radius:34px;
       width:calc(100% - 20px);
-      padding:10px 12px;
+  
+      /* ✅ aqui está o “padrão” e o controle do quanto a logo vai pra esquerda */
+      padding:10px var(--nav-mobile-pad-right) 10px var(--nav-mobile-pad-left);
     }
+  
     .hdr-nav{ display:none; }
     .btn-home{ display:none; }
     .btn-menu{ display:inline-flex; }
-
+  
+    /* ✅ garante que nada esteja empurrando a logo pra dentro */
+    .header-left{ margin:0; padding:0; }
+    .logo{ margin:0; padding:0; }
+  
+    /* mantém o tamanho (igual index) */
     .navbar .logo img{ height:60px !important; }
+  
+    /* ✅ distância padrão entre "Conta Malharia" e hambúrguer */
+    .hdr-actions{ gap: var(--nav-mobile-gap); }
+  
     .navbar .btn-perfil{
       height:36px !important;
       padding:0 14px !important;
