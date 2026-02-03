@@ -43,6 +43,11 @@
     /* LIME (hover neon) */
     --lime:#B6F34D;
     --lime-700:#A2E532;
+
+    /* ✅ padrão de espaçamento do header no MOBILE */
+    --nav-mobile-pad-left: 8px;   /* diminua pra jogar a logo mais pra esquerda (ex: 6px) */
+    --nav-mobile-pad-right: 12px; /* mantenha pra não encostar no hambúrguer */
+    --nav-mobile-gap: 10px;       /* espaço entre Conta Malharia e hambúrguer */
   }
 
   html, body { max-width:100%; overflow-x:hidden; }
@@ -111,6 +116,23 @@
   /* Some no mobile (porque lá você já tem o botão menu) */
   @media (max-width:900px){
     .hdr-nav{ display:none; }
+  
+    /* ✅ padroniza a “posição” da logo e dos botões no mobile */
+    .navbar{
+      padding-left: var(--nav-mobile-pad-left) !important;
+      padding-right: var(--nav-mobile-pad-right) !important;
+    }
+  
+    /* ✅ garante distância constante entre Conta Malharia e o hambúrguer */
+    .hdr-actions{
+      gap: var(--nav-mobile-gap) !important;
+    }
+  
+    /* ✅ evita qualquer margem/padding empurrar a logo pra dentro */
+    .header-left, .logo{
+      margin:0 !important;
+      padding:0 !important;
+    }
   }
   
   /* (Opcional) se a tela ficar “apertada”, reduz gap e fonte */
