@@ -52,6 +52,23 @@
     body{ padding-top: 98px; } /* MOBILE: espaço do header fixo */
   }
 
+  /* ===== Igualar o “miolo cinza” da index (remove faixa branca sob o header) ===== */
+  .faixa-cinza{
+    background: var(--site-bg);     /* mesmo cinza usado na index */
+    padding: 16px 0 48px;           /* igual ao padrão do miolo */
+  }
+
+  .page-outer{
+    max-width:1280px;
+    margin:0 auto;
+    padding:0 16px;
+  }
+    
+  /* (opcional) mantém cartões e faixas brancas como “cards” em cima do cinza */
+  .bg-white{
+    background:#fff;
+  }
+    
   /* =================== HEADER (IGUAL INDEX + CASINHA NO DESKTOP) =================== */
   .navbar{
     position: fixed;
@@ -551,44 +568,51 @@
     </div>
   </nav>
 
-  <!-- ===== HERO ===== -->
-  <section class="faixa bg-site">
-    <div class="wrap">
-      <h1 class="titulo">Quem Somos</h1>
-      <p class="lead">Uma <strong>Plataforma de busca</strong> que liga malharias com capacidade a empresas que precisam produzir — com conectividade e agilidade.</p>
-    </div>
-  </section>
-
-  <!-- ===== NOSSA MISSÃO ===== -->
-  <section class="faixa bg-white">
-    <div class="wrap">
-      <h2 class="titulo">Nossa missão</h2>
-      <p class="lead"><strong>Reduzir a ociosidade dos teares</strong> aproximando oferta e demanda com transparência e agilidade.</p>
-    </div>
-  </section>
-
-  <!-- ===== PROBLEMA ===== -->
-  <section class="faixa bg-site">
-    <div class="wrap">
-      <span class="pill">O problema real</span>
-      <h2 class="subtitulo" style="margin-top:10px;">Encontrar a malharia certa toma tempo e atrasa a produção.</h2>
-
-      <div class="pain-grid">
-        <div class="pain-card">
-          <strong>Contato com muitas malharias</strong>
-          <p>Várias ligações até achar o tear certo.</p>
+  <!-- ===== MIOLO CINZA (igual index) ===== -->
+  <div class="faixa-cinza">
+    <div class="page-outer">
+  
+      <!-- ===== HERO ===== -->
+      <section class="faixa bg-site">
+        <div class="wrap">
+          <h1 class="titulo">Quem Somos</h1>
+          <p class="lead">Uma <strong>Plataforma de busca</strong> que liga malharias com capacidade a empresas que precisam produzir — com conectividade e agilidade.</p>
         </div>
-        <div class="pain-card">
-          <strong>Informação técnica difusa</strong>
-          <p>Finura, diâmetro, tipo, tudo espalhado e difícil de comparar.</p>
+      </section>
+  
+      <!-- ===== NOSSA MISSÃO ===== -->
+      <section class="faixa bg-white">
+        <div class="wrap">
+          <h2 class="titulo">Nossa missão</h2>
+          <p class="lead"><strong>Reduzir a ociosidade dos teares</strong> aproximando oferta e demanda com transparência e agilidade.</p>
         </div>
-        <div class="pain-card">
-          <strong>Tempo perdido = custo</strong>
-          <p>A busca manual estoura prazos e eleva custos.</p>
+      </section>
+  
+      <!-- ===== PROBLEMA ===== -->
+      <section class="faixa bg-site">
+        <div class="wrap">
+          <span class="pill">O problema real</span>
+          <h2 class="subtitulo" style="margin-top:10px;">Encontrar a malharia certa toma tempo e atrasa a produção.</h2>
+  
+          <div class="pain-grid">
+            <div class="pain-card">
+              <strong>Contato com muitas malharias</strong>
+              <p>Várias ligações até achar o tear certo.</p>
+            </div>
+            <div class="pain-card">
+              <strong>Informação técnica difusa</strong>
+              <p>Finura, diâmetro, tipo, tudo espalhado e difícil de comparar.</p>
+            </div>
+            <div class="pain-card">
+              <strong>Tempo perdido = custo</strong>
+              <p>A busca manual estoura prazos e eleva custos.</p>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </section>
+      </section>
+  
+    </div><!-- /page-outer -->
+  </div><!-- /faixa-cinza -->
 
   <!-- ===== SOLUÇÃO ===== -->
   <section id="sec-solucao" class="faixa bg-site">
