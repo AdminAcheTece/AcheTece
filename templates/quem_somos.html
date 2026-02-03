@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Quem Somos - AcheTece</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
+
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
@@ -23,13 +23,10 @@
     --olive-100:#E6E7DE;
     --line-olive:#BFBFA8;
 
-    /* fundo global unificado com a index */
     --site-bg:#EAEAE8;
 
-    /* compatibilidade com CSS existente */
     --roxo:var(--olive);
 
-    /* hover neon */
     --lime:#B6F34D;
     --lime-700:#A2E532;
 
@@ -43,80 +40,282 @@
   }
 
   *{ box-sizing:border-box; }
-
+  html, body{ max-width:100%; overflow-x:hidden; }
   html{ color-scheme: light; }
-  html, body{
+  body{
     background: var(--site-bg) !important;
     color:var(--cinza-900);
     margin:0;
-  }
-
-  /* ===== Header ===== */
-  .navbar{
-    overflow:visible;
-    padding:6px 12px;
-    background:#fff;
-    border-bottom:1px solid #eee;
-    display:flex; align-items:center;
-  }
-  .header-left,.header-right{ display:flex; align-items:center; }
-  .header-right{ margin-left:auto; gap:10px; padding-right:12px; }
-  .logo{ display:inline-flex; align-items:center; }
-  .logo img{ display:block; }
-
-  @media (min-width:901px){
-    .navbar .logo img{ height:44px; width:auto; }
+    padding-top: 118px;   /* DESKTOP: espaço do header fixo */
   }
   @media (max-width:900px){
-    .navbar{ padding-right:22px; min-height:56px; }
-    .navbar .logo img{ height:54px !important; width:auto !important; }
-    .header-right{ gap:8px; padding-right:12px; }
-    .hamburger{ width:32px; height:32px; border-radius:9px; }
-    .hamburger span{ width:18px; }
+    body{ padding-top: 98px; } /* MOBILE: espaço do header fixo */
   }
 
-  .menu-wrap{ position: relative; }
-  .hamburger{
-    display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
-    width:36px; height:36px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
-    position:relative; z-index:10002;
-  }
-  .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
-  .hamburger span + span{ margin-top:4px; }
+  /* =================== HEADER (IGUAL INDEX + CASINHA NO DESKTOP) =================== */
+  .navbar{
+    position: fixed;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2000;
 
-  .menu-dropdown{
-    background:#fff; border:1px solid #eaeaea; border-radius:12px;
-    z-index:10001; max-height:80vh; overflow:auto;
-    opacity:0; pointer-events:none; transform: translateY(8px) scale(.98);
-    transition: opacity .18s ease, transform .18s ease;
+    background:#000;
+    border-radius:9999px;
+
+    width:calc(100% - 220px);  /* distância das laterais no desktop */
+    max-width:none;
+    margin:0;
+    padding:12px 18px;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+
+    overflow:visible;
+    box-shadow:0 10px 28px rgba(0,0,0,.18);
   }
-  .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
-  .menu-dropdown .menu-header{ display:flex; justify-content:flex-end; align-items:center; padding:8px 10px; }
-  .menu-dropdown .menu-close{
-    display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px;
-    background:#f0f2f5; border:0; border-radius:10px; cursor:pointer;
+
+  .header-left,.header-right{display:flex;align-items:center;}
+  .hdr-actions{display:flex;align-items:center;gap:12px;}
+
+  /* Logo (DESKTOP) */
+  .navbar .logo img{
+    height:60px !important;
+    width:auto !important;
+    display:block;
+    object-fit:contain;
   }
-  .menu-dropdown .menu-item{
-    display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222;
+
+  /* Links do topo (somente desktop) */
+  .hdr-nav{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    margin:0 10px;
+    flex:1;
+    justify-content:center;
   }
-  .menu-dropdown .menu-item:hover{
-    background:var(--olive-50); color:var(--olive); border-radius:8px;
+  .hdr-nav a{
+    color:#fff;
+    text-decoration:none;
+    font-weight:700;
+    font-size:15px;
+    opacity:.92;
+    transition: color .15s ease, opacity .15s ease;
+    white-space:nowrap;
   }
-  @media (min-width:769px){
-    .menu-dropdown{ position:absolute; top:calc(100% + 8px); right:0; min-width:220px; transform-origin: top right; }
+  .hdr-nav a:hover{ color:var(--lime); opacity:1; }
+
+  /* Botão Conta Malharia (blindado) */
+  .navbar .btn-perfil{
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    height:44px !important;
+    padding:0 22px !important;
+    border-radius:9999px !important;
+    font-weight:800 !important;
+    text-decoration:none !important;
+    background:#fff !important;
+    color:#000 !important;
+    border:0 !important;
+    box-shadow:none !important;
+    line-height:1 !important;
+    white-space:nowrap !important;
+    cursor:pointer;
+    transition: background-color .15s ease, color .15s ease, transform .15s ease;
   }
-  @media (max-width:768px){
-    .menu-wrap{ position: static; }
-    .menu-dropdown{
-      position: fixed; top: calc(var(--nav-h, 64px) + 8px); left: 50%;
-      transform: translate(-50%, 8px) scale(.98);
-      width:max-content; max-width:90vw; min-width:160px; border-radius:14px;
+  .navbar .btn-perfil:hover{
+    background:var(--lime) !important;
+    color:#111 !important;
+    transform:translateY(-1px);
+  }
+  .navbar .btn-perfil:active{
+    background:var(--lime-700) !important;
+    color:#111 !important;
+    transform:translateY(0);
+  }
+  .navbar .btn-perfil:focus-visible{
+    outline:2px solid var(--lime);
+    outline-offset:2px;
+  }
+
+  /* Casinha (somente desktop) — ao lado do Conta Malharia */
+  .btn-home{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:44px;
+    height:44px;
+    border-radius:9999px;
+    border:1px solid rgba(255,255,255,.22);
+    background:rgba(255,255,255,.08);
+    color:#fff;
+    text-decoration:none;
+    cursor:pointer;
+    transition: background-color .15s ease, color .15s ease, transform .15s ease;
+  }
+  .btn-home svg{
+    width:20px;height:20px;
+    stroke:currentColor;
+  }
+  .btn-home:hover{ background:var(--lime); color:#111; transform:translateY(-1px); }
+  .btn-home:active{ background:var(--lime-700); color:#111; transform:translateY(0); }
+  .btn-home:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
+
+  /* Botão menu (hambúrguer) — só no mobile */
+  .btn-menu{
+    display:none;
+    align-items:center;
+    justify-content:center;
+    width:44px;
+    height:44px;
+    border-radius:9999px;
+    border:1px solid rgba(255,255,255,.22);
+    background:rgba(255,255,255,.08);
+    color:#fff;
+    cursor:pointer;
+    transition: background-color .15s ease, color .15s ease, transform .15s ease;
+  }
+  .btn-menu:hover{ background:var(--lime); color:#111; transform:translateY(-1px); }
+  .btn-menu:active{ background:var(--lime-700); color:#111; transform:translateY(0); }
+  .btn-menu:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
+
+  /* Força as 3 linhas brancas no estado normal */
+  .btn-menu svg{ width:20px; height:20px; stroke:#fff !important; }
+  .btn-menu:hover svg, .btn-menu:active svg{ stroke:#111 !important; }
+
+  /* Mobile: header compacto + esconder nav + esconder casinha + mostrar menu */
+  @media (max-width:900px){
+    .navbar{
+      top: 10px;
+      border-radius:34px;
+      width:calc(100% - 20px);
+      padding:10px 12px;
     }
-    .menu-dropdown.open{ transform: translate(-50%,0) scale(1); }
+    .hdr-nav{ display:none; }
+    .btn-home{ display:none; }
+    .btn-menu{ display:inline-flex; }
+
+    .navbar .logo img{ height:60px !important; }
+    .navbar .btn-perfil{
+      height:36px !important;
+      padding:0 14px !important;
+      font-size:13px !important;
+    }
   }
 
-  .icon-btn{ display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px; background:#fff; cursor:pointer; }
-  .icon{ width:20px; height:20px; color:#222; }
+  /* =================== MENU MOBILE (IGUAL INDEX) =================== */
+  .mobile-menu-backdrop{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.35);
+    backdrop-filter: blur(2px);
+    display:none;
+    z-index:1990; /* abaixo do header */
+  }
+
+  .mobile-menu{
+    position:fixed;
+    top:98px;
+    right:14px;
+    width:min(92vw, 320px);
+    background:#fff;
+    border-radius:16px;
+    box-shadow:0 18px 40px rgba(0,0,0,.22);
+    padding:0;
+    display:none;
+    z-index:1991;
+    overflow:hidden;
+  }
+
+  /* Topo do menu: logo + fechar */
+  .mobile-menu .menu-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:10px 12px;
+    border-bottom:1px solid #eee;
+    background:#fff;
+    min-height:88px;
+  }
+
+  .mobile-menu .menu-logo{
+    flex:1;
+    min-width:0;
+    display:flex;
+    align-items:center;
+    text-decoration:none;
+  }
+  .mobile-menu .menu-logoBox{
+    flex:1;
+    min-width:0;
+    height:80px;       /* ajuste do tamanho do logo dentro do menu */
+    overflow:hidden;
+  }
+  .mobile-menu .menu-logoBox img{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    object-position:left center;
+    transform:scale(1.12);         /* se cortar: 1.08 | se “sobrar”: 1.16 */
+    transform-origin:left center;
+    display:block;
+  }
+
+  .mobile-menu .menu-close{
+    flex:0 0 auto;
+    width:40px;
+    height:40px;
+    border-radius:12px;
+    border:0;
+    background:var(--lime);
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    padding:0;
+  }
+  .mobile-menu .menu-close:hover{ background:var(--lime-700); }
+  .mobile-menu .menu-close .x-icon{
+    width:20px;height:20px;
+    stroke:#000;
+    stroke-width:1.8; /* espessura do X */
+    fill:none;
+    stroke-linecap:round;
+  }
+
+  .mobile-menu .menu-body{ padding:10px 12px 12px; }
+
+  .mobile-menu a{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 10px;
+    border-radius:12px;
+    text-decoration:none;
+    color:#111;
+    font-weight:600;
+  }
+  .mobile-menu a:hover{ background:#f6f6f6; }
+  .mobile-menu svg{
+    width:18px;height:18px;
+    flex:0 0 18px;
+    color:#111;
+  }
+
+  /* Estado aberto */
+  body.menu-open{ overflow:hidden; }
+  body.menu-open .mobile-menu-backdrop{ display:block; }
+  body.menu-open .mobile-menu{ display:block; }
+
+  /* Garante que o menu mobile não apareça no desktop */
+  @media (min-width:901px){
+    .mobile-menu, .mobile-menu-backdrop{ display:none !important; }
+  }
 
   /* =================== LAYOUT / FAIXAS =================== */
   .faixa{ width:100%; padding: var(--sec-pad) 16px; }
@@ -166,7 +365,6 @@
     transition: background-color .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease;
   }
 
-  /* Primário: preto + lime (inversão no hover) */
   .btn-primary{
     background:#000; color:var(--lime);
     border:1px solid #000;
@@ -177,7 +375,6 @@
   }
   .btn-primary:active{ background:var(--lime-700); color:#000; }
 
-  /* Secundário (ghost): outline preto, inverte p/ lime no hover */
   .btn-ghost{
     background:#fff; color:#111; border:1px solid #111;
   }
@@ -212,7 +409,6 @@
   .contato-item svg{ color:#fff; flex:0 0 22px; }
   .contato a{ color:#fff; text-decoration:none; }
 
-  /* Frase da solução alinhada à esquerda */
   #sec-solucao .lead{
     text-align: left !important;
     max-width: 920px;
@@ -221,80 +417,139 @@
     color: var(--cinza-900);
   }
 
-  /* Dark mode do SO: mantém claro */
   @media (prefers-color-scheme: dark) {
     html, body{ background: var(--site-bg) !important; color: var(--cinza-900); }
     .bg-site{ background: var(--site-bg) !important; }
   }
 
-  /* Espaçamento padronizado entre pill e título */
   .pill + .subtitulo,
   .pill + .titulo,
   .pill + h1,
   .pill + h2{ margin-top:16px !important; }
-</style>
+  </style>
 </head>
+
 <body>
 
-  <!-- ===== Cabeçalho ===== -->
+  <!-- ===== Cabeçalho (igual index; casinha só no desktop) ===== -->
   <header class="navbar">
     <div class="header-left">
-      <!-- LOGO link para a home -->
-      <a class="logo" href="{{ url_for('index') }}" aria-label="Página inicial">
-        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
-      </a>
+      <div class="logo">
+        <a href="{{ url_for('index') }}" aria-label="Página inicial">
+          <img
+            src="{{ url_for('static', filename='Logo_Branco_AcheTece_sem_fundo.png') }}"
+            alt="Logo AcheTece"
+            decoding="async"
+            fetchpriority="high"
+          >
+        </a>
+      </div>
     </div>
 
+    <!-- Links do topo (somente desktop) -->
+    <nav class="hdr-nav" aria-label="Navegação principal">
+      <a href="{{ url_for('quem_somos') }}">O AcheTece</a>
+      <a href="{{ url_for('malharia_info') }}">Como Funciona</a>
+      <a href="{{ url_for('contato') }}">Fale Conosco</a>
+    </nav>
+
     <div class="header-right">
-      <a href="{{ url_for('index') }}" class="icon-btn" aria-label="Página inicial" title="Página inicial">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 10.5 12 3l9 7.5"></path><path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path><path d="M9 21V12h6v9"></path>
-        </svg>
-      </a>
+      <div class="hdr-actions">
+        <a href="/login" class="btn-perfil" aria-label="Acessar sua conta da malharia" title="Acessar sua conta da malharia">
+          <span>Conta Malharia</span>
+        </a>
 
-      <div class="menu-wrap">
-        <button class="hamburger" id="hamburger" type="button" aria-label="Abrir menu" aria-controls="menu-lateral" aria-haspopup="menu" aria-expanded="false">
-          <span></span><span></span><span></span>
+        <!-- CASINHA (somente desktop) -->
+        <a href="{{ url_for('index') }}" class="btn-home" aria-label="Voltar ao início" title="Voltar ao início">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 10.5 12 3l9 7.5"></path>
+            <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
+            <path d="M9 21V12h6v9"></path>
+          </svg>
+        </a>
+
+        <!-- BOTÃO MENU (SÓ NO MOBILE) -->
+        <button class="btn-menu" id="openMenuBtn" type="button" aria-label="Abrir menu" aria-controls="mobileMenu" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M4 7h16M4 12h16M4 17h16"/>
+          </svg>
         </button>
-
-        <nav class="menu-dropdown" id="menu-lateral" role="menu" aria-label="Menu rápido">
-          <div class="menu-header">
-            <span>Menu</span>
-            <button type="button" class="menu-close" aria-label="Fechar menu">
-              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
-              </svg>
-            </button>
-          </div>
-
-          <a href="{{ url_for('buscar_teares') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="16.65" y1="16.65" x2="21" y2="21"></line></svg>
-            <span>Buscar Tear</span>
-          </a>
-          <a href="{{ url_for('malharia_info') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.5 9a2.5 2.5 0 1 1 4.1 2A3 3 0 0 0 12 13.6"></path><circle cx="12" cy="17" r="1.2" fill="currentColor"></circle></svg>
-            <span>Como Funciona</span>
-          </a>
-          <a href="{{ url_for('login') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 20a8 8 0 0 1 16 0"></path></svg>
-            <span>Já sou cadastrado</span>
-          </a>
-          <a href="{{ url_for('quem_somos') }}" class="menu-item" role="menuitem" aria-current="page">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="8" r="1.5" fill="currentColor"></circle><path d="M11 11h2v6h-2z" fill="currentColor"></path></svg>
-            <span>Quem Somos</span>
-          </a>
-          <a href="{{ url_for('contato') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v12H4z"></path><path d="M22 20H2"></path><path d="M22 8l-10 6L2 8" fill="none"></path></svg>
-            <span>Fale conosco</span>
-          </a>
-          <a href="{{ url_for('termos') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M8 8h8M8 12h8M8 16h5"></path></svg>
-            <span>Termos e Políticas</span>
-          </a>
-        </nav>
       </div>
     </div>
   </header>
+
+  <!-- ===== MENU MOBILE (SÓ NO MOBILE) ===== -->
+  <div class="mobile-menu-backdrop" id="menuBackdrop" aria-hidden="true"></div>
+
+  <nav class="mobile-menu" id="mobileMenu" aria-label="Menu do site">
+    <div class="menu-head">
+      <a href="{{ url_for('index') }}" class="menu-logo" aria-label="Ir para a busca">
+        <span class="menu-logoBox">
+          <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece" decoding="async">
+        </span>
+      </a>
+
+      <button class="menu-close" id="closeMenuBtn" type="button" aria-label="Fechar menu">
+        <svg class="x-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 6L18 18M18 6L6 18"></path>
+        </svg>
+      </button>
+    </div>
+
+    <div class="menu-body">
+      <a href="{{ url_for('index') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5Z"/>
+        </svg>
+        Buscar Tear
+      </a>
+
+      <a href="{{ url_for('malharia_info') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 16v-4"></path>
+          <path d="M12 8h.01"></path>
+        </svg>
+        Como Funciona
+      </a>
+
+      <a href="/login">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20 21a8 8 0 0 0-16 0"></path>
+          <circle cx="12" cy="8" r="4"></circle>
+        </svg>
+        Já sou cadastrado
+      </a>
+
+      <a href="{{ url_for('quem_somos') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 16v-4"></path>
+          <path d="M12 8h.01"></path>
+        </svg>
+        Quem Somos
+      </a>
+
+      <a href="{{ url_for('contato') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 4h16v14H5.5L4 19.5V4Z"></path>
+          <path d="M7 8h10"></path>
+          <path d="M7 12h7"></path>
+        </svg>
+        Fale conosco
+      </a>
+
+      <a href="{{ url_for('termos') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 2h9l3 3v17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"></path>
+          <path d="M9 9h6"></path>
+          <path d="M9 13h6"></path>
+          <path d="M9 17h6"></path>
+        </svg>
+        Termos e Políticas
+      </a>
+    </div>
+  </nav>
 
   <!-- ===== HERO ===== -->
   <section class="faixa bg-site">
@@ -385,7 +640,6 @@
           <div><strong>E-mail</strong> — <a href="mailto:gestao.achetece@gmail.com">gestao.achetece@gmail.com</a></div>
         </div>
         <div class="contato-item">
-          <!-- Ícone oficial WhatsApp -->
           <svg viewBox="0 0 32 32" width="22" height="22" fill="none" aria-hidden="true">
             <path d="M27.6 4.4A15.9 15.9 0 0 0 16 .7C7.6.7.8 7.4.8 15.6c0 2.7.7 5.2 2 7.5L1 31l7-1.8a15.5 15.5 0 0 0 7.9 2.1h.1c8.2 0 14.9-6.7 14.9-14.9 0-4-1.6-7.7-4.3-10.4Z" stroke="currentColor" stroke-width="1.6"/>
             <path d="M22.8 18.5c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.3-.7.1-1.9-1-3.2-1.8-4.5-4-.3-.4 0-.6.2-.8.2-.2.3-.4.5-.6.2-.3.2-.5 0-.8-.1-.2-.7-1.7-.9-2.3-.2-.5-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.3-.8.8-1.1 2-1.1 3.1 0 .4.1.9.3 1.3.5 1.1 1.2 2 2.1 3.1 1.3 1.6 2.9 2.7 4.7 3.6.5.2 1 .4 1.5.6.6.2 1.1.2 1.5.1.5-.1 1.8-.7 2.1-1.4.3-.7.3-1.3.2-1.4Z" fill="currentColor"/>
@@ -414,42 +668,31 @@
     </div>
   </footer>
 
-  <!-- Script do menu -->
+  <!-- ===== JS: Menu mobile (igual index) ===== -->
   <script>
-    (function () {
-      function closeAll() {
-        document.querySelectorAll('.menu-wrap .menu-dropdown.open').forEach(m => {
-          m.classList.remove('open');
-          const b = m.closest('.menu-wrap')?.querySelector('.hamburger');
-          if (b) b.setAttribute('aria-expanded', 'false');
-        });
+    (function(){
+      const openBtn = document.getElementById('openMenuBtn');
+      const closeBtn = document.getElementById('closeMenuBtn');
+      const backdrop = document.getElementById('menuBackdrop');
+
+      function openMenu(){
+        document.body.classList.add('menu-open');
+        if(openBtn) openBtn.setAttribute('aria-expanded','true');
       }
-      document.querySelectorAll('.menu-wrap').forEach(wrap => {
-        const btn  = wrap.querySelector('#hamburger');
-        const menu = wrap.querySelector('#menu-lateral');
-        const xBtn = wrap.querySelector('.menu-close');
-        if (!btn || !menu) return;
+      function closeMenu(){
+        document.body.classList.remove('menu-open');
+        if(openBtn) openBtn.setAttribute('aria-expanded','false');
+      }
 
-        btn.addEventListener('click', e => {
-          e.stopPropagation();
-          const willOpen = !menu.classList.contains('open');
-          closeAll();
-          menu.classList.toggle('open', willOpen);
-          btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-        });
+      if(openBtn) openBtn.addEventListener('click', openMenu);
+      if(closeBtn) closeBtn.addEventListener('click', closeMenu);
+      if(backdrop) backdrop.addEventListener('click', closeMenu);
 
-        xBtn?.addEventListener('click', e => {
-          e.stopPropagation();
-          menu.classList.remove('open');
-          btn.setAttribute('aria-expanded', 'false');
-        });
-
-        menu.addEventListener('click', e => e.stopPropagation());
+      document.addEventListener('keydown', (e)=>{
+        if(e.key === 'Escape') closeMenu();
       });
-
-      document.addEventListener('click', closeAll);
-      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
     })();
   </script>
+
 </body>
 </html>
