@@ -219,19 +219,16 @@
   overflow:hidden;        /* mantém bordas bonitas */
 }
 
-/* ===== TOPO DO MENU: logo + fechar (ÚNICO / SEM DUPLICAR) ===== */
-/* ===== TOPO DO MENU MOBILE: logo (grande) + X (fixo) ===== */
+/* ===== TOPO DO MENU MOBILE (SEM CORTAR A LOGO) ===== */
 .mobile-menu .menu-head{
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap:12px;
-
-  padding:12px 14px;
+  gap:10px;                 /* ↓ diminui o gap para sobrar largura pra logo */
+  padding:10px 12px;        /* ↓ menos padding lateral = mais espaço útil */
   border-bottom:1px solid #eee;
   background:#fff;
-
-  min-height:92px;     /* ✅ topo estável mesmo com logo grande */
+  min-height:88px;          /* topo estável */
 }
 
 /* Logo não empurra o X */
@@ -243,32 +240,32 @@
   text-decoration:none;
 }
 
-/* ✅ CAIXA da logo (é aqui que você controla o tamanho sem quebrar nada) */
+/* Caixa da logo (controla tamanho sem quebrar o layout) */
 .mobile-menu .menu-logoBox{
-  height:78px;         /* ✅ AUMENTE aqui: 78 -> 86 -> 92 */
-  max-width:260px;     /* ✅ AUMENTE se quiser: 260 -> 280 */
-  display:flex;
-  align-items:center;
-  overflow:hidden;     /* ✅ impede a logo de “invadir” o X */
+  flex:1;
+  min-width:0;
+  height:80px;              /* ✅ tamanho da logo (suba p/ 84/88 se quiser) */
+  overflow:hidden;          /* mantém tudo dentro, sem invadir o X */
 }
 
-/* Imagem dentro da caixa + zoom controlado */
+/* Imagem: ocupa a caixa e "zoom" controlado sem cortar */
 .mobile-menu .menu-logoBox img{
+  width:100%;
   height:100%;
-  width:auto;
-  display:block;
   object-fit:contain;
   object-position:left center;
 
-  transform:scale(1.25);           /* ✅ “zoom” sem desconfigurar */
-  transform-origin:left center;    /* fixa o zoom para a esquerda */
+  transform:scale(1.12);          /* ✅ AQUI está a correção do corte
+                                     Se ainda cortar: 1.08
+                                     Se sobrar muito espaço: 1.16 */
+  transform-origin:left center;
 }
 
-/* Botão fechar: fundo lime + X preto com espessura controlada */
+/* Botão fechar (X) não muda de lugar */
 .mobile-menu .menu-close{
   flex:0 0 auto;
-  width:44px;
-  height:44px;
+  width:40px;               /* ↓ ligeiramente menor para sobrar largura */
+  height:40px;
   border-radius:12px;
   border:0;
   background:var(--lime);
@@ -280,11 +277,12 @@
 }
 .mobile-menu .menu-close:hover{ background:var(--lime-700); }
 
+/* X com espessura real controlável */
 .mobile-menu .menu-close .x-icon{
-  width:22px;
-  height:22px;
+  width:20px;
+  height:20px;
   stroke:#000;
-  stroke-width:2;     /* ✅ espessura REAL do X (troque 2 por 1.6 se quiser mais fino) */
+  stroke-width:1.8;         /* ✅ espessura do X (ex.: 1.6 mais fino) */
   fill:none;
   stroke-linecap:round;
 }
