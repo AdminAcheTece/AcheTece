@@ -14,482 +14,468 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet" />
 
   <style>
-  :root{
-    --olive:#7B7424;
-    --olive-600:#5E581C;
-    --olive-dark:#434326;
-    --olive-50:#F1F2E8;
-    --olive-100:#E6E7DE;
-    --line-olive:#BFBFA8;
+    :root{
+      /* NOVA PALETA (padrão do site) */
+      --olive:#7B7424;
+      --olive-600:#5E581C;
+      --olive-dark:#434326;
+      --olive-50:#F1F2E8;
+      --olive-100:#E6E7DE;
+      --line-olive:#BFBFA8;
 
-    --bg-100:#F5F5F4;
-    --bg-150:#EAEAE8;
-    --site-bg: var(--bg-150);
+      --bg-100:#F5F5F4;
+      --bg-150:#EAEAE8;
+      --cinza-900:#111827;
 
-    --roxo:var(--olive);
-    --roxo-hover:var(--olive-600);
+      /* Compat */
+      --roxo:var(--olive);
+      --roxo-hover:var(--olive-600);
 
-    --lime:#B6F34D;
-    --lime-700:#A2E532;
+      /* LIME */
+      --lime:#B6F34D;
+      --lime-700:#A2E532;
 
-    --cinza-900:#111827;
-
-    /* ✅ padrão de espaçamento do header no MOBILE */
-    --nav-mobile-pad-left: 6px;
-    --nav-mobile-pad-right: 12px;
-    --nav-mobile-gap: 10px;
-  }
-
-  html, body { max-width:100%; overflow-x:hidden; }
-  *, *::before, *::after { box-sizing:border-box; }
-
-  body{
-    margin:0;
-    background:#fff !important;
-    color:var(--cinza-900);
-    font-family:'Inter', system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial, sans-serif;
-    padding-top:118px; /* DESKTOP */
-  }
-  @media (max-width:900px){
-    body{ padding-top:98px; } /* MOBILE */
-  }
-
-  /* ===== FAIXA CINZA DO MIOLO (igual index) ===== */
-  .faixa-cinza{ background:var(--site-bg); padding:16px 0 48px; }
-  .page-outer{ max-width:1280px; margin:0 auto; padding:0 16px; }
-
-  /* ================= HEADER (FIXO) ================= */
-  .navbar{
-    position: fixed;
-    top: 12px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 2000;
-
-    background:#000;
-    border-radius:9999px;
-
-    width:calc(100% - 220px);
-    max-width:none;
-    margin:0;
-    padding:12px 18px;
-
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:12px;
-
-    overflow:visible;
-    box-shadow:0 10px 28px rgba(0,0,0,.18);
-  }
-
-  .header-left,.header-right{display:flex;align-items:center;}
-  .hdr-actions{display:flex;align-items:center;gap:12px;}
-
-  /* ===== NAV LINKS (DESKTOP) — SOMENTE 3 ===== */
-  .hdr-nav{
-    flex:1;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    gap:26px;
-  }
-  .hdr-nav a{
-    color:#fff;
-    text-decoration:none;
-    font-weight:700;
-    font-size:15px;
-    opacity:.92;
-    padding:8px 6px;
-    border-radius:10px;
-    transition: opacity .15s ease, background-color .15s ease, color .15s ease;
-  }
-  .hdr-nav a:hover{
-    opacity:1;
-    background:rgba(255,255,255,.08);
-  }
-  @media (max-width:1100px){
-    .hdr-nav{ gap:18px; }
-    .hdr-nav a{ font-size:14px; }
-  }
-
-  @media (max-width:900px){
-    .hdr-nav{ display:none; }
-
-    .navbar{
-      padding-left: var(--nav-mobile-pad-left) !important;
-      padding-right: var(--nav-mobile-pad-right) !important;
+      /* Header mobile spacing */
+      --nav-mobile-pad-left: 6px;
+      --nav-mobile-pad-right: 12px;
+      --nav-mobile-gap: 10px;
     }
-    .hdr-actions{ gap: var(--nav-mobile-gap) !important; }
-    .header-left, .logo{ margin:0 !important; padding:0 !important; }
-  }
 
-  .navbar .logo img{
-    height:60px !important;
-    width:auto !important;
-    display:block;
-    object-fit:contain;
-  }
+    html, body{ max-width:100%; overflow-x:hidden; }
+    *, *::before, *::after{ box-sizing:border-box; }
 
-  .navbar .btn-perfil{
-    display:inline-flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-    height:44px !important;
-    padding:0 22px !important;
-    border-radius:9999px !important;
-    font-weight:800 !important;
-    text-decoration:none !important;
-    background:#fff !important;
-    color:#000 !important;
-    border:0 !important;
-    box-shadow:none !important;
-    line-height:1 !important;
-    white-space:nowrap !important;
-    cursor:pointer;
-    transition: background-color .15s ease, color .15s ease, transform .15s ease;
-  }
-  .navbar .btn-perfil:hover{ background:var(--lime) !important; color:#111 !important; transform:translateY(-1px); }
-  .navbar .btn-perfil:active{ background:var(--lime-700) !important; color:#111 !important; transform:translateY(0); }
-  .navbar .btn-perfil:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
-
-  /* ✅ Casinha (abre menu suspenso) */
-  .btn-home{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    width:44px;
-    height:44px;
-    border-radius:9999px;
-    border:1px solid rgba(255,255,255,.22);
-    background:rgba(255,255,255,.08);
-    color:#fff;
-    cursor:pointer;
-    transition: background-color .15s ease, color .15s ease, transform .15s ease;
-  }
-  .btn-home:hover{ background:var(--lime); color:#111; transform:translateY(-1px); }
-  .btn-home:active{ background:var(--lime-700); color:#111; transform:translateY(0); }
-  .btn-home:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
-  .btn-home svg{ width:20px; height:20px; stroke:#fff !important; }
-  .btn-home:hover svg, .btn-home:active svg{ stroke:#111 !important; }
-
-  /* Dropdown (menu suspenso da casinha) */
-  .home-dd{ position:relative; display:inline-flex; }
-  .home-menu{
-    position:absolute;
-    top: calc(100% + 10px);
-    right: 0;
-    min-width: 240px;
-    background:#fff;
-    border:1px solid #eaeaea;
-    border-radius:14px;
-    box-shadow:0 18px 40px rgba(0,0,0,.18);
-    padding:10px;
-    opacity:0;
-    pointer-events:none;
-    transform: translateY(8px) scale(.98);
-    transform-origin: top right;
-    transition: opacity .18s ease, transform .18s ease;
-    z-index:2100;
-  }
-  .home-menu.open{
-    opacity:1;
-    pointer-events:auto;
-    transform: translateY(0) scale(1);
-  }
-  .home-menu a{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding:10px 10px;
-    border-radius:12px;
-    text-decoration:none;
-    color:#111;
-    font-weight:700;
-  }
-  .home-menu a:hover{ background:#f6f6f6; }
-  .home-menu svg{ width:18px; height:18px; flex:0 0 18px; color:#111; }
-
-  /* ===== Botão hambúrguer ===== */
-  .btn-menu{
-    display:none;
-    align-items:center;
-    justify-content:center;
-    width:44px;
-    height:44px;
-    border-radius:9999px;
-    border:1px solid rgba(255,255,255,.22);
-    background:rgba(255,255,255,.08);
-    color:#fff;
-    cursor:pointer;
-    transition: background-color .15s ease, color .15s ease, transform .15s ease;
-  }
-  .btn-menu:hover{ background:var(--lime); color:#111; transform:translateY(-1px); }
-  .btn-menu:active{ background:var(--lime-700); color:#111; transform:translateY(0); }
-  .btn-menu:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
-  .btn-menu svg{ width:20px; height:20px; stroke:#fff !important; }
-  .btn-menu:hover svg, .btn-menu:active svg{ stroke:#111 !important; }
-
-  @media (max-width:900px){
-    .btn-menu{ display:inline-flex; }
-    .navbar{
-      top: 10px;
-      border-radius:34px;
-      width:calc(100% - 20px);
-      padding:10px 12px;
+    body{
+      background:#fff !important;
+      color:var(--cinza-900);
+      margin:0;
+      font-family:'Inter', system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial, sans-serif;
+      padding-top:118px; /* DESKTOP: reserva para header fixo */
     }
-    .navbar .logo img{ height:60px !important; }
+    @media (max-width:900px){
+      body{ padding-top:98px; } /* MOBILE */
+    }
+
+    /* ===== FAIXA CINZA (miolo) ===== */
+    .faixa-cinza{ background:var(--bg-150); padding:16px 0 48px; }
+    .page-outer{ max-width:1280px; margin:0 auto; padding:0 16px; }
+
+    /* ================= HEADER FIXO (padrão index/quem_somos) ================= */
+    .navbar{
+      position: fixed;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2000;
+
+      background:#000;
+      border-radius:9999px;
+
+      width:calc(100% - 220px);
+      max-width:none;
+      margin:0;
+      padding:12px 18px;
+
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+
+      overflow:visible;
+      box-shadow:0 10px 28px rgba(0,0,0,.18);
+    }
+
+    .header-left,.header-right{ display:flex; align-items:center; }
+    .hdr-actions{ display:flex; align-items:center; gap:12px; }
+
+    /* NAV LINKS (DESKTOP) — somente 3 links e nessa ordem */
+    .hdr-nav{
+      flex:1;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:26px;
+    }
+    .hdr-nav a{
+      color:#fff;
+      text-decoration:none;
+      font-weight:700;
+      font-size:15px;
+      opacity:.92;
+      padding:8px 6px;
+      border-radius:10px;
+      transition: opacity .15s ease, background-color .15s ease, color .15s ease;
+      white-space:nowrap;
+    }
+    .hdr-nav a:hover{
+      opacity:1;
+      background:rgba(255,255,255,.08);
+    }
+
+    /* Logo */
+    .navbar .logo img{
+      height:60px !important;
+      width:auto !important;
+      display:block;
+      object-fit:contain;
+    }
+
+    /* Botão CONTA MALHARIA */
     .navbar .btn-perfil{
-      height:36px !important;
-      padding:0 14px !important;
-      font-size:13px !important;
+      display:inline-flex !important;
+      align-items:center !important;
+      justify-content:center !important;
+      height:44px !important;
+      padding:0 22px !important;
+      border-radius:9999px !important;
+      font-weight:800 !important;
+      text-decoration:none !important;
+      background:#fff !important;
+      color:#000 !important;
+      border:0 !important;
+      box-shadow:none !important;
+      line-height:1 !important;
+      white-space:nowrap !important;
+      cursor:pointer;
+      transition: background-color .15s ease, color .15s ease, transform .15s ease;
     }
-    .btn-home{ width:36px; height:36px; }
-    .btn-menu{ width:36px; height:36px; }
-  }
+    .navbar .btn-perfil:hover{
+      background:var(--lime) !important;
+      color:#111 !important;
+      transform:translateY(-1px);
+    }
+    .navbar .btn-perfil:active{
+      background:var(--lime-700) !important;
+      color:#111 !important;
+      transform:translateY(0);
+    }
+    .navbar .btn-perfil:focus-visible{
+      outline:2px solid var(--lime);
+      outline-offset:2px;
+    }
 
-  /* ===== MENU MOBILE (painel) ===== */
-  .mobile-menu-backdrop{
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,.35);
-    backdrop-filter: blur(2px);
-    display:none;
-    z-index:1990;
-  }
+    /* Casinha — SEMPRE à direita do CONTA MALHARIA, e só leva para index */
+    .btn-home{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:44px;
+      height:44px;
+      border-radius:9999px;
+      border:1px solid rgba(255,255,255,.22);
+      background:rgba(255,255,255,.08);
+      color:#fff;
+      text-decoration:none;
+      cursor:pointer;
+      transition: background-color .15s ease, color .15s ease, transform .15s ease;
+    }
+    .btn-home:hover{ background:var(--lime); color:#111; transform:translateY(-1px); }
+    .btn-home:active{ background:var(--lime-700); color:#111; transform:translateY(0); }
+    .btn-home:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
+    .btn-home svg{ width:20px; height:20px; stroke:currentColor; }
 
-  .mobile-menu{
-    position:fixed;
-    top:98px;
-    right:14px;
-    width:min(92vw, 320px);
-    background:#fff;
-    border-radius:16px;
-    box-shadow:0 18px 40px rgba(0,0,0,.22);
-    padding:0;
-    display:none;
-    z-index:1991;
-    overflow:hidden;
-  }
+    /* Botão hambúrguer */
+    .btn-menu{
+      display:none;
+      align-items:center;
+      justify-content:center;
+      width:44px;
+      height:44px;
+      border-radius:9999px;
+      border:1px solid rgba(255,255,255,.22);
+      background:rgba(255,255,255,.08);
+      color:#fff;
+      cursor:pointer;
+      transition: background-color .15s ease, color .15s ease, transform .15s ease;
+    }
+    .btn-menu:hover{ background:var(--lime); color:#111; transform:translateY(-1px); }
+    .btn-menu:active{ background:var(--lime-700); color:#111; transform:translateY(0); }
+    .btn-menu:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
+    .btn-menu svg{ width:20px; height:20px; stroke:#fff !important; }
+    .btn-menu:hover svg, .btn-menu:active svg{ stroke:#111 !important; }
 
-  .mobile-menu .menu-head{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-    padding:10px 12px;
-    border-bottom:1px solid #eee;
-    background:#fff;
-    min-height:88px;
-  }
+    /* Mobile: esconde nav central e ajusta paddings */
+    @media (max-width:900px){
+      .hdr-nav{ display:none; }
 
-  .mobile-menu .menu-logo{
-    flex:1;
-    min-width:0;
-    display:flex;
-    align-items:center;
-    text-decoration:none;
-  }
+      .navbar{
+        top: 10px;
+        border-radius:34px;
+        width:calc(100% - 20px);
+        padding:10px 12px;
+        padding-left: var(--nav-mobile-pad-left) !important;
+        padding-right: var(--nav-mobile-pad-right) !important;
+      }
+      .hdr-actions{ gap: var(--nav-mobile-gap) !important; }
 
-  .mobile-menu .menu-logoBox{
-    flex:1;
-    min-width:0;
-    height:80px;
-    overflow:hidden;
-  }
+      .navbar .logo img{ height:60px !important; }
+      .navbar .btn-perfil{
+        height:36px !important;
+        padding:0 14px !important;
+        font-size:13px !important;
+      }
+      .btn-home{
+        width:36px;
+        height:36px;
+      }
+      .btn-menu{
+        display:inline-flex;
+        width:36px;
+        height:36px;
+      }
+    }
 
-  .mobile-menu .menu-logoBox img{
-    width:100%;
-    height:100%;
-    object-fit:contain;
-    object-position:left center;
-    transform:scale(1.12);
-    transform-origin:left center;
-  }
+    /* (Opcional) desktop apertado */
+    @media (max-width:1100px){
+      .hdr-nav{ gap:18px; }
+      .hdr-nav a{ font-size:14px; }
+    }
 
-  .mobile-menu .menu-close{
-    flex:0 0 auto;
-    width:40px;
-    height:40px;
-    border-radius:12px;
-    border:0;
-    background:var(--lime);
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    cursor:pointer;
-    padding:0;
-  }
-  .mobile-menu .menu-close:hover{ background:var(--lime-700); }
+    /* ===== MENU MOBILE (painel) ===== */
+    .mobile-menu-backdrop{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.35);
+      backdrop-filter: blur(2px);
+      display:none;
+      z-index:1990;
+    }
+    .mobile-menu{
+      position:fixed;
+      top:98px;
+      right:14px;
+      width:min(92vw, 320px);
+      background:#fff;
+      border-radius:16px;
+      box-shadow:0 18px 40px rgba(0,0,0,.22);
+      padding:0;
+      display:none;
+      z-index:1991;
+      overflow:hidden;
+    }
+    .mobile-menu .menu-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:10px 12px;
+      border-bottom:1px solid #eee;
+      background:#fff;
+      min-height:88px;
+    }
+    .mobile-menu .menu-logo{
+      flex:1;
+      min-width:0;
+      display:flex;
+      align-items:center;
+      text-decoration:none;
+    }
+    .mobile-menu .menu-logoBox{
+      flex:1;
+      min-width:0;
+      height:80px;
+      overflow:hidden;
+    }
+    .mobile-menu .menu-logoBox img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      object-position:left center;
+      transform:scale(1.12);
+      transform-origin:left center;
+    }
+    .mobile-menu .menu-close{
+      flex:0 0 auto;
+      width:40px;
+      height:40px;
+      border-radius:12px;
+      border:0;
+      background:var(--lime);
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      padding:0;
+    }
+    .mobile-menu .menu-close:hover{ background:var(--lime-700); }
+    .mobile-menu .menu-close .x-icon{
+      width:20px;
+      height:20px;
+      stroke:#000;
+      stroke-width:1.8;
+      fill:none;
+      stroke-linecap:round;
+    }
+    .mobile-menu .menu-body{ padding:10px 12px 12px; }
+    .mobile-menu a{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 10px;
+      border-radius:12px;
+      text-decoration:none;
+      color:#111;
+      font-weight:600;
+    }
+    .mobile-menu a:hover{ background:#f6f6f6; }
+    .mobile-menu svg{
+      width:18px;
+      height:18px;
+      flex:0 0 18px;
+      color:#111;
+    }
 
-  .mobile-menu .menu-close .x-icon{
-    width:20px;
-    height:20px;
-    stroke:#000;
-    stroke-width:1.8;
-    fill:none;
-    stroke-linecap:round;
-  }
+    body.menu-open{ overflow:hidden; }
+    body.menu-open .mobile-menu-backdrop{ display:block; }
+    body.menu-open .mobile-menu{ display:block; }
 
-  .mobile-menu .menu-body{ padding:10px 12px 12px; }
+    /* ================= CONTEÚDO (login_method) ================= */
+    .auth-wrap{
+      display:flex;
+      justify-content:center;
+      padding:24px 0 0;
+    }
+    .card{
+      width:100%;
+      max-width:520px;
+      background:#fff;
+      border:1px solid #eee;
+      border-radius:16px;
+      padding:24px 22px 18px;
+      box-shadow:0 4px 14px rgba(0,0,0,.04);
+    }
+    .title{
+      font-size:28px;
+      font-weight:800;
+      text-align:center;
+      margin:0 0 6px;
+      color:var(--olive-dark);
+    }
+    .subtitle{
+      text-align:center;
+      color:#555;
+      margin:0 0 14px;
+    }
 
-  .mobile-menu a{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding:10px 10px;
-    border-radius:12px;
-    text-decoration:none;
-    color:#111;
-    font-weight:600;
-  }
-  .mobile-menu a:hover{ background:#f6f6f6; }
+    .email-row{ text-align:center; margin-bottom:10px; }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      background:var(--olive-50);
+      border:1px solid var(--line-olive);
+      color:var(--olive);
+      border-radius:9999px;
+      padding:10px 18px;
+      font-weight:800;
+      font-size:15px;
+      max-width:100%;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
 
-  body.menu-open{ overflow:hidden; }
-  body.menu-open .mobile-menu-backdrop{ display:block; }
-  body.menu-open .mobile-menu{ display:block; }
+    .option{
+      width:100%;
+      display:grid;
+      grid-template-columns:auto 1fr auto;
+      align-items:center;
+      gap:14px;
+      border:1px solid #eee;
+      border-radius:14px;
+      padding:14px 16px;
+      background:#fff;
+      cursor:pointer;
+      margin:12px 0;
+      transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .12s ease;
+      text-align:left;
+    }
+    .option:hover{
+      background:var(--olive-50);
+      border-color:var(--line-olive);
+      box-shadow:0 0 0 3px rgba(191,191,168,.25);
+      transform:translateY(-1px);
+    }
+    .option:active{
+      background:#fff;
+      border-color:var(--olive);
+      transform:translateY(0);
+    }
+    .option:focus-visible{
+      outline:2px solid var(--lime);
+      outline-offset:2px;
+    }
 
-  /* ================= CARD / CONTEÚDO ================= */
-  .auth-wrap{ display:flex; justify-content:center; padding:24px 0 0; }
-  .card{
-    width:100%;
-    max-width:520px;
-    background:#fff;
-    border:1px solid #eee;
-    border-radius:16px;
-    padding:24px 22px 18px;
-    box-shadow:0 4px 14px rgba(0,0,0,.04);
-  }
-  .title{
-    font-size:28px;
-    font-weight:800;
-    text-align:center;
-    margin:0 0 6px;
-    color:var(--olive-dark);
-  }
-  .subtitle{ text-align:center; color:#555; margin:0 0 14px; }
+    .i-wrap{
+      width:46px;
+      height:46px;
+      border-radius:12px;
+      background:var(--olive-50);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border:1px solid var(--line-olive);
+      color:var(--olive);
+    }
+    .option:hover .i-wrap{
+      background:#fff;
+      border-color:var(--olive);
+      color:#111;
+    }
+    .i-wrap svg{ stroke: currentColor; }
 
-  .email-row{ text-align:center; margin-bottom:10px; }
-  .pill{
-    display:inline-flex; align-items:center; justify-content:center;
-    background:var(--olive-50);
-    border:1px solid var(--line-olive);
-    color:var(--olive);
-    border-radius:9999px; padding:10px 18px; font-weight:800; font-size:15px;
-  }
+    .opt-title{
+      font-weight:800;
+      margin:0 0 2px;
+      color:#231f35;
+      font-size:16px;
+      line-height:1.1;
+    }
+    .opt-sub{
+      margin:0;
+      color:#666;
+      font-size:13.5px;
+      line-height:1.25;
+    }
+    .arrow{
+      font-size:22px;
+      opacity:.6;
+      line-height:1;
+      justify-self:end;
+    }
 
-  /* ===== Opções (tiles clicáveis) ===== */
-  .option{
-    width:100%;
-    display:grid;
-    grid-template-columns:auto 1fr auto;
-    align-items:center;
-    gap:14px;
-    border:1px solid #eee;
-    border-radius:14px;
-    padding:14px 16px;
-    background:#fff;
-    cursor:pointer;
-    margin:12px 0;
-    transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .12s ease;
-    text-align:left;
-  }
-  .option:hover{
-    background:var(--olive-50);
-    border-color:var(--line-olive);
-    box-shadow:0 0 0 3px rgba(191,191,168,.25);
-    transform:translateY(-1px);
-  }
-  .option:active{ background:#fff; border-color:var(--olive); transform:translateY(0); }
-  .option:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
+    .back{
+      display:block;
+      margin-top:6px;
+      text-align:center;
+      color:var(--olive);
+      text-decoration:none;
+      font-weight:800;
+    }
+    .back:hover{ text-decoration:underline; }
+    .back:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
 
-  .i-wrap{
-    width:46px; height:46px; border-radius:12px;
-    background:var(--olive-50);
-    display:flex; align-items:center; justify-content:center;
-    border:1px solid var(--line-olive);
-  }
-  .option:hover .i-wrap{ background:#fff; border-color:var(--olive); }
+    .help{ margin:16px 0 0; text-align:center; font-size:14px; }
+    .help a{ color:var(--olive); text-decoration:none; font-weight:700; }
+    .help a:hover{ text-decoration:underline; }
+    .help a:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
 
-  .opt-title{ font-weight:800; margin:0 0 2px; color:#231f35; font-size:16px; line-height:1.1; }
-  .opt-sub{ margin:0; color:#666; font-size:13.5px; line-height:1.25; }
-  .arrow{ font-size:22px; opacity:.6; line-height:1; justify-self:end; }
+    .legal{
+      margin-top:8px;
+      font-size:12.5px;
+      color:#6f6f6f;
+      text-align:center;
+      line-height:1.45;
+    }
+    .legal a{ color:var(--olive); text-decoration:none; font-weight:700; }
+    .legal a:hover{ text-decoration:underline; }
+    .legal a:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
 
-  .option svg{ stroke: var(--olive-dark) !important; }
-
-  /* Links auxiliares */
-  .back{
-    display:block; margin-top:6px; text-align:center;
-    color:var(--olive); text-decoration:none; font-weight:800;
-  }
-  .back:hover{ text-decoration:underline; }
-  .back:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
-
-  .help{ margin:16px 0 0; text-align:center; font-size:14px; }
-  .help a{ color:var(--olive); text-decoration:none; font-weight:700; }
-  .help a:hover{ text-decoration:underline; }
-  .help a:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
-
-  .legal{
-    margin-top:8px; font-size:12.5px; color:#6f6f6f; text-align:center; line-height:1.45;
-  }
-  .legal a{ color:var(--olive); text-decoration:none; font-weight:700; }
-  .legal a:hover{ text-decoration:underline; }
-  .legal a:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
-
-  /* ===== CTA + FOOTER (padrão) ===== */
-  .cta-bar{
-    background:#000; color:#fff; padding:20px 16px;
-    display:flex; align-items:center; gap:16px; flex-wrap:wrap;
-    border-top:1px solid rgba(255,255,255,0.06);
-    justify-content:flex-start;
-  }
-  .cta-text h3{ margin:0 0 4px 0; font-size:18px; font-weight:700; line-height:1.2; }
-  .cta-text p{ margin:0; font-size:15px; opacity:.9; color:#fff; }
-
-  .cta-btn{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    height:44px;
-    padding:0 22px;
-    border-radius:9999px;
-    font-weight:800;
-    text-decoration:none;
-    background:#fff;
-    color:#000;
-    border:0;
-    transition: background-color .15s ease, color .15s ease, transform .15s ease;
-    white-space:nowrap;
-  }
-  .cta-btn:hover{ background:var(--lime); color:#111; transform:translateY(-1px); }
-  .cta-btn:active{ background:var(--lime-700); color:#111; transform:translateY(0); }
-
-  .site-footer{
-    background:#fff;color:#211a2a;border-top:1px solid #eee;padding:18px 16px 28px;
-  }
-  .footer-inner{
-    max-width:1180px;margin:0 auto;display:grid;grid-template-columns:auto 1fr;gap:20px 28px;align-items:start;
-  }
-  .footer-brand img{ height:44px;width:auto;display:block; }
-  .footer-cols{ display:grid;grid-template-columns: repeat(2, minmax(180px, 240px));gap:12px 28px; }
-  .footer-col h4{ margin:0 0 8px 0;font-size:14px;font-weight:700;color:#251c33; }
-  .footer-col ul{ list-style:none;margin:0;padding:0; }
-  .footer-col li+li{ margin-top:6px; }
-  .footer-col a{ color:#2a2535;text-decoration:none;font-size:14px; }
-  .footer-col a:hover{ text-decoration:underline; }
-
-  @media (max-width:900px){
-    .footer-inner{ grid-template-columns:1fr; }
-    .footer-cols{ grid-template-columns:1fr; }
-  }
-
-  @media (prefers-color-scheme: dark){
-    html, body{ background:#fff !important; color: var(--cinza-900); }
-  }
+    @media (prefers-color-scheme: dark) {
+      html, body{ background:#fff !important; color:var(--cinza-900); }
+    }
   </style>
 
-  <!-- ✅ Header padrão deve ser o ÚLTIMO do head -->
+  <!-- ✅ Header padrão (se existir no seu projeto) deve ser o ÚLTIMO do head -->
   <link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
 </head>
 
@@ -510,104 +496,102 @@
       </div>
     </div>
 
-    <!-- ✅ SOMENTE 3 LINKS -->
+    <!-- NAV (somente desktop) -->
     <nav class="hdr-nav" aria-label="Navegação principal">
       <a href="{{ url_for('quem_somos') }}">O AcheTece</a>
-      <a href="{{ url_for('malharia_info') }}">Como Funciona</a>
-      <a href="{{ url_for('contato') }}">Fale Conosco</a>
+      <a href="{{ url_for('malharia_info') }}">Como funciona</a>
+      <a href="{{ url_for('contato') }}">Fale conosco</a>
     </nav>
 
     <div class="header-right">
       <div class="hdr-actions">
+        <!-- CONTA MALHARIA -->
+        <a class="btn-perfil" href="{{ url_for('login') }}">CONTA MALHARIA</a>
 
-        <!-- ✅ Casinha com menu suspenso (estilo malharia_info) -->
-        <div class="home-dd">
-          <button class="btn-home" id="btnHome" type="button" aria-label="Abrir atalhos" aria-haspopup="menu" aria-expanded="false">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M3 10.5 12 3l9 7.5"></path>
-              <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
-              <path d="M9 21V12h6v9"></path>
-            </svg>
-          </button>
+        <!-- Casinha (sempre à direita do CONTA MALHARIA) -->
+        <a class="btn-home" href="{{ url_for('index') }}" aria-label="Página inicial" title="Página inicial">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 10.5 12 3l9 7.5"></path>
+            <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
+            <path d="M9 21V12h6v9"></path>
+          </svg>
+        </a>
 
-          <nav class="home-menu" id="homeMenu" role="menu" aria-label="Atalhos">
-            <a href="{{ url_for('buscar_teares') }}" role="menuitem">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <circle cx="11" cy="11" r="7"></circle>
-                <line x1="16.65" y1="16.65" x2="21" y2="21"></line>
-              </svg>
-              <span>Buscar Tear</span>
-            </a>
-
-            <a href="{{ url_for('login') }}" role="menuitem">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <circle cx="12" cy="8" r="4"></circle>
-                <path d="M4 20a8 8 0 0 1 16 0"></path>
-              </svg>
-              <span>Conta Malharia</span>
-            </a>
-
-            <a href="{{ url_for('termos') }}" role="menuitem">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <rect x="4" y="4" width="16" height="16" rx="2"></rect>
-                <path d="M8 8h8M8 12h8M8 16h5"></path>
-              </svg>
-              <span>Termos e Políticas</span>
-            </a>
-          </nav>
-        </div>
-
-        <a class="btn-perfil" href="{{ url_for('login') }}">Conta Malharia</a>
-
-        <button class="btn-menu" type="button" aria-label="Abrir menu" aria-controls="mobile-menu" aria-expanded="false">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <path d="M4 7h16"></path>
+        <!-- Hambúrguer (mobile) -->
+        <button class="btn-menu" type="button" aria-label="Abrir menu" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 6h16"></path>
             <path d="M4 12h16"></path>
-            <path d="M4 17h16"></path>
+            <path d="M4 18h16"></path>
           </svg>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- ===== Menu mobile ===== -->
-  <div class="mobile-menu-backdrop" data-menu-close></div>
+  <!-- Backdrop + Menu Mobile -->
+  <div class="mobile-menu-backdrop" aria-hidden="true"></div>
 
-  <aside class="mobile-menu" id="mobile-menu" role="dialog" aria-modal="true" aria-label="Menu">
+  <nav class="mobile-menu" aria-label="Menu do site">
     <div class="menu-head">
       <a class="menu-logo" href="{{ url_for('index') }}" aria-label="Página inicial">
         <span class="menu-logoBox">
-          <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
+          <img src="{{ url_for('static', filename='Logo_Branco_AcheTece_sem_fundo.png') }}" alt="Logo AcheTece">
         </span>
       </a>
-
-      <button class="menu-close" type="button" aria-label="Fechar menu" data-menu-close>
+      <button class="menu-close" type="button" aria-label="Fechar menu">
         <svg class="x-icon" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M6 6L18 18M18 6L6 18"></path>
         </svg>
       </button>
     </div>
 
-    <nav class="menu-body" aria-label="Atalhos">
-      <a href="{{ url_for('malharia_info') }}">Como Funciona</a>
-      <a href="{{ url_for('quem_somos') }}">O AcheTece</a>
-      <a href="{{ url_for('contato') }}">Fale Conosco</a>
-      <a href="{{ url_for('login') }}">Conta Malharia</a>
-      <a href="{{ url_for('buscar_teares') }}">Buscar Tear</a>
-      <a href="{{ url_for('termos') }}">Termos e Políticas</a>
-    </nav>
-  </aside>
+    <div class="menu-body">
+      <!-- Ordem do menu principal (mantém a regra) -->
+      <a href="{{ url_for('quem_somos') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="8" r="1.5" fill="currentColor"></circle><path d="M11 11h2v6h-2z" fill="currentColor"></path></svg>
+        <span>O AcheTece</span>
+      </a>
+
+      <a href="{{ url_for('malharia_info') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.5 9a2.5 2.5 0 1 1 4.1 2A3 3 0 0 0 12 13.6"></path><circle cx="12" cy="17" r="1.2" fill="currentColor"></circle></svg>
+        <span>Como funciona</span>
+      </a>
+
+      <a href="{{ url_for('contato') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v12H4z"></path><path d="M22 20H2"></path><path d="M22 8l-10 6L2 8" fill="none"></path></svg>
+        <span>Fale conosco</span>
+      </a>
+
+      <a href="{{ url_for('buscar_teares') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="16.65" y1="16.65" x2="21" y2="21"></line></svg>
+        <span>Buscar Tear</span>
+      </a>
+
+      <a href="{{ url_for('login') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"></circle><path d="M4 20a8 8 0 0 1 16 0"></path></svg>
+        <span>Conta Malharia</span>
+      </a>
+
+      <a href="{{ url_for('termos') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M8 8h8M8 12h8M8 16h5"></path></svg>
+        <span>Termos e Políticas</span>
+      </a>
+    </div>
+  </nav>
 
   <!-- ===== Conteúdo ===== -->
   <section class="faixa-cinza">
-    <main class="page-outer">
-      <div class="auth-wrap">
+    <div class="page-outer">
+      <main class="auth-wrap">
         <section class="card" aria-labelledby="t">
           <h1 id="t" class="title">Acesse sua conta</h1>
           <p class="subtitle">Escolha um método de acesso para a conta</p>
 
           <div class="email-row">
-            <span class="pill">{{ email or request.args.get('email','') }}</span>
+            <span class="pill" title="{{ email or request.args.get('email','') }}">
+              {{ email or request.args.get('email','') }}
+            </span>
           </div>
 
           <!-- Opção: receber código por e-mail -->
@@ -655,95 +639,37 @@
             <a href="{{ url_for('termos') }}">Política de Privacidade</a> do AcheTece.
           </p>
         </section>
-      </div>
-    </main>
+      </main>
+    </div>
   </section>
 
-  <!-- ===== Faixa preta (CTA) ===== -->
-  <section class="cta-bar">
-    <div class="cta-text">
-      <h3>É proprietário de uma malharia?</h3>
-      <p>Cadastre sua malharia e comece a receber novos pedidos.</p>
-    </div>
-    <a href="{{ url_for('malharia_info') }}" class="cta-btn">Cadastrar</a>
-  </section>
-
-  <!-- ===== Rodapé ===== -->
-  <footer class="site-footer">
-    <div class="footer-inner">
-      <div class="footer-brand">
-        <img src="{{ url_for('static', filename='logo_simbolo.png') }}" alt="AcheTece">
-      </div>
-      <div class="footer-cols">
-        <div class="footer-col">
-          <h4>Sobre nós</h4>
-          <ul>
-            <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
-            <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
-            <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
-            <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
-          </ul>
-        </div>
-        <div class="footer-col"><h4>&nbsp;</h4><ul><li>&nbsp;</li></ul></div>
-      </div>
-    </div>
-  </footer>
-
-  <!-- ===== JS: casinha (dropdown) + menu mobile ===== -->
+  <!-- ===== JS: menu mobile (padrão) ===== -->
   <script>
-    (function(){
-      // -------- Casinha (dropdown) --------
-      const btnHome = document.getElementById('btnHome');
-      const homeMenu = document.getElementById('homeMenu');
-
-      function closeHome(){
-        if (!homeMenu) return;
-        homeMenu.classList.remove('open');
-        btnHome && btnHome.setAttribute('aria-expanded','false');
-      }
-
-      btnHome && btnHome.addEventListener('click', (e)=>{
-        e.stopPropagation();
-        const willOpen = !homeMenu.classList.contains('open');
-        closeHome();
-        if (willOpen){
-          homeMenu.classList.add('open');
-          btnHome.setAttribute('aria-expanded','true');
-        }
-      });
-
-      homeMenu && homeMenu.addEventListener('click', (e)=> e.stopPropagation());
-
-      // -------- Menu mobile --------
-      const btn = document.querySelector('.btn-menu');
+    (function () {
+      const btnMenu = document.querySelector('.btn-menu');
       const backdrop = document.querySelector('.mobile-menu-backdrop');
-      const menu = document.querySelector('.mobile-menu');
-      const closeEls = document.querySelectorAll('[data-menu-close]');
+      const closeBtn = document.querySelector('.mobile-menu .menu-close');
 
       function openMenu(){
         document.body.classList.add('menu-open');
-        btn && btn.setAttribute('aria-expanded','true');
-        closeHome();
+        if (btnMenu) btnMenu.setAttribute('aria-expanded','true');
       }
       function closeMenu(){
         document.body.classList.remove('menu-open');
-        btn && btn.setAttribute('aria-expanded','false');
+        if (btnMenu) btnMenu.setAttribute('aria-expanded','false');
       }
 
-      btn && btn.addEventListener('click', (e)=>{
-        e.stopPropagation();
-        if (document.body.classList.contains('menu-open')) closeMenu();
-        else openMenu();
+      btnMenu?.addEventListener('click', (e) => {
+        e.preventDefault();
+        const isOpen = document.body.classList.contains('menu-open');
+        isOpen ? closeMenu() : openMenu();
       });
 
-      closeEls.forEach(el => el.addEventListener('click', (e)=>{ e.stopPropagation(); closeMenu(); }));
+      backdrop?.addEventListener('click', closeMenu);
+      closeBtn?.addEventListener('click', closeMenu);
 
-      menu && menu.addEventListener('click', (e)=> e.stopPropagation());
-      backdrop && backdrop.addEventListener('click', closeMenu);
-
-      document.addEventListener('click', ()=>{ closeHome(); closeMenu(); });
-      document.addEventListener('keydown', (e)=>{
-        if(e.key === 'Escape'){ closeHome(); closeMenu(); }
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeMenu();
       });
     })();
   </script>
