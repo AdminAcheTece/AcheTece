@@ -26,7 +26,7 @@ body.header-v1 .navbar{
   background:#000 !important;
   border-radius:9999px !important;
 
-  width: calc(100% - var(--nav-width-desktop)) !important;
+  width: calc(100% - var(--nav-width-desktop, 220px)) !important;
   max-width:none !important;
   margin:0 !important;
   padding: var(--nav-pad-y) var(--nav-pad-x) !important;
@@ -136,4 +136,20 @@ body.header-v1 .btn-menu svg{
 /* ===== DESKTOP ===== */
 @media (min-width:901px){
   body.header-v1 .btn-menu{ display:none !important; }
+}
+
+/* ✅ Correção definitiva: header SEMPRE largo no mobile */
+@media (max-width:900px){
+  body.header-v1 .navbar{
+    top: 10px !important;
+    width: calc(100% - 20px) !important;      /* ✅ largura correta no mobile */
+    border-radius: 34px !important;
+
+    /* padding controlado (com fallback) */
+    padding: 10px var(--nav-mobile-pad-right, 12px) 10px var(--nav-mobile-pad-left, 6px) !important;
+  }
+
+  /* ✅ força logo e botões existirem no mobile */
+  body.header-v1 .header-left{ display:flex !important; }
+  body.header-v1 .btn-menu{ display:inline-flex !important; }
 }
