@@ -174,6 +174,49 @@
     @media (prefers-color-scheme: dark){
       html, body{ background:#fff !important; color: var(--cinza-900); }
     }
+
+    /* ✅ CTA "Cadastrar" igual ao botão "Conta Malharia" (pill branco + hover lime) */
+    .cta-bar .cta-btn{
+      display:inline-flex !important;
+      align-items:center !important;
+      justify-content:center !important;
+    
+      height:44px !important;
+      padding:0 22px !important;
+      border-radius:9999px !important;
+    
+      font-weight:800 !important;
+      text-decoration:none !important;
+      white-space:nowrap !important;
+    
+      background:#fff !important;
+      color:#000 !important;
+    
+      border:0 !important;
+      box-shadow:none !important;
+      line-height:1 !important;
+    
+      cursor:pointer;
+      transition: background-color .15s ease, color .15s ease, transform .15s ease;
+    }
+    
+    .cta-bar .cta-btn:hover{
+      background:var(--lime) !important;
+      color:#111 !important;
+      transform:translateY(-1px);
+    }
+    
+    .cta-bar .cta-btn:active{
+      background:var(--lime-700) !important;
+      color:#111 !important;
+      transform:translateY(0);
+    }
+    
+    .cta-bar .cta-btn:focus-visible{
+      outline:2px solid var(--lime);
+      outline-offset:2px;
+    }
+    
   </style>
 
   <!-- ✅ Header padrão (SEMPRE o último do head) -->
