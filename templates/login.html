@@ -6,16 +6,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Favicon -->
-  <link rel="icon" type="image/x-icon" href="/static/favicon_final.ico">
-  <link rel="icon" type="image/png" href="/static/favicon_final.png">
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
 
   <!-- CSS principal -->
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      /* NOVA PALETA (padrão do site) */
+      /* PALETA (padrão) */
       --olive:#7B7424;
       --olive-600:#5E581C;
       --olive-dark:#434326;
@@ -25,9 +25,8 @@
 
       --bg-100:#F5F5F4;
       --bg-150:#EAEAE8;
-      --cinza-900:#111827;
 
-      /* Compat */
+      /* COMPAT */
       --roxo:var(--olive);
       --roxo-hover:var(--olive-600);
 
@@ -35,31 +34,27 @@
       --lime:#B6F34D;
       --lime-700:#A2E532;
 
-      /* Header mobile spacing */
+      /* MOBILE header spacing */
       --nav-mobile-pad-left: 6px;
       --nav-mobile-pad-right: 12px;
       --nav-mobile-gap: 10px;
     }
 
-    html, body{ max-width:100%; overflow-x:hidden; }
-    *, *::before, *::after{ box-sizing:border-box; }
+    html, body { max-width:100%; overflow-x:hidden; }
+    *, *::before, *::after { box-sizing:border-box; }
 
     body{
-      background:#fff !important;
-      color:var(--cinza-900);
       margin:0;
       font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      background:#fff;
+      color:#111827;
       padding-top:118px; /* DESKTOP */
     }
     @media (max-width:900px){
       body{ padding-top:98px; } /* MOBILE */
     }
 
-    /* ===== FAIXA CINZA (miolo) ===== */
-    .faixa-cinza{ background:var(--bg-150); padding:16px 0 48px; }
-    .page-outer{ max-width:1280px; margin:0 auto; padding:0 16px; }
-
-    /* ================= HEADER FIXO (padrão) ================= */
+    /* ===== HEADER (FIXO) ===== */
     .navbar{
       position: fixed;
       top: 12px;
@@ -84,10 +79,10 @@
       box-shadow:0 10px 28px rgba(0,0,0,.18);
     }
 
-    .header-left,.header-right{ display:flex; align-items:center; }
-    .hdr-actions{ display:flex; align-items:center; gap:12px; }
+    .header-left,.header-right{display:flex;align-items:center;}
+    .hdr-actions{display:flex;align-items:center;gap:12px;}
 
-    /* NAV LINKS (DESKTOP) — somente 3 links e nessa ordem */
+    /* NAV (DESKTOP) — ordem fixa */
     .hdr-nav{
       flex:1;
       display:flex;
@@ -104,14 +99,37 @@
       padding:8px 6px;
       border-radius:10px;
       transition: opacity .15s ease, background-color .15s ease, color .15s ease;
-      white-space:nowrap;
     }
     .hdr-nav a:hover{
       opacity:1;
       background:rgba(255,255,255,.08);
     }
 
-    /* Logo */
+    @media (max-width:900px){
+      .hdr-nav{ display:none; }
+
+      .navbar{
+        padding-left: var(--nav-mobile-pad-left) !important;
+        padding-right: var(--nav-mobile-pad-right) !important;
+        top: 10px;
+        border-radius:34px;
+        width:calc(100% - 20px);
+        padding:10px 12px;
+      }
+
+      .hdr-actions{ gap: var(--nav-mobile-gap) !important; }
+
+      .header-left, .logo{
+        margin:0 !important;
+        padding:0 !important;
+      }
+    }
+
+    @media (max-width:1100px){
+      .hdr-nav{ gap:18px; }
+      .hdr-nav a{ font-size:14px; }
+    }
+
     .navbar .logo img{
       height:60px !important;
       width:auto !important;
@@ -119,7 +137,7 @@
       object-fit:contain;
     }
 
-    /* Botão Conta Malharia */
+    /* Botão Conta Malharia (padrão) */
     .navbar .btn-perfil{
       display:inline-flex !important;
       align-items:center !important;
@@ -153,7 +171,7 @@
       outline-offset:2px;
     }
 
-    /* Casinha — SEMPRE à direita do Conta Malharia */
+    /* Casinha (sempre à direita do Conta Malharia) */
     .btn-home{
       display:inline-flex;
       align-items:center;
@@ -168,12 +186,14 @@
       cursor:pointer;
       transition: background-color .15s ease, color .15s ease, transform .15s ease;
     }
+    .btn-home svg{ width:20px; height:20px; stroke:#fff !important; }
     .btn-home:hover{ background:var(--lime); color:#111; transform:translateY(-1px); }
+    .btn-home:hover svg{ stroke:#111 !important; }
     .btn-home:active{ background:var(--lime-700); color:#111; transform:translateY(0); }
+    .btn-home:active svg{ stroke:#111 !important; }
     .btn-home:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
-    .btn-home svg{ width:20px; height:20px; stroke:currentColor; }
 
-    /* Botão hambúrguer (mobile) */
+    /* ===== MENU MOBILE (botão + backdrop + painel) ===== */
     .btn-menu{
       display:none;
       align-items:center;
@@ -193,39 +213,6 @@
     .btn-menu svg{ width:20px; height:20px; stroke:#fff !important; }
     .btn-menu:hover svg, .btn-menu:active svg{ stroke:#111 !important; }
 
-    @media (max-width:900px){
-      .hdr-nav{ display:none; }
-
-      .navbar{
-        top: 10px;
-        border-radius:34px;
-        width:calc(100% - 20px);
-        padding:10px 12px;
-        padding-left: var(--nav-mobile-pad-left) !important;
-        padding-right: var(--nav-mobile-pad-right) !important;
-      }
-      .hdr-actions{ gap: var(--nav-mobile-gap) !important; }
-
-      .navbar .logo img{ height:60px !important; }
-      .navbar .btn-perfil{
-        height:36px !important;
-        padding:0 14px !important;
-        font-size:13px !important;
-      }
-      .btn-home{ width:36px; height:36px; }
-      .btn-menu{
-        display:inline-flex;
-        width:36px;
-        height:36px;
-      }
-    }
-
-    @media (max-width:1100px){
-      .hdr-nav{ gap:18px; }
-      .hdr-nav a{ font-size:14px; }
-    }
-
-    /* ===== MENU MOBILE (painel) ===== */
     .mobile-menu-backdrop{
       position:fixed;
       inset:0;
@@ -247,6 +234,7 @@
       z-index:1991;
       overflow:hidden;
     }
+
     .mobile-menu .menu-head{
       display:flex;
       align-items:center;
@@ -300,6 +288,7 @@
       fill:none;
       stroke-linecap:round;
     }
+
     .mobile-menu .menu-body{ padding:10px 12px 12px; }
     .mobile-menu a{
       display:flex;
@@ -323,11 +312,22 @@
     body.menu-open .mobile-menu-backdrop{ display:block; }
     body.menu-open .mobile-menu{ display:block; }
 
-    /* ================= LOGIN (conteúdo) ================= */
+    @media (max-width:900px){
+      .btn-menu{ display:inline-flex; width:36px; height:36px; }
+      .btn-home{ width:36px; height:36px; }
+      .navbar .btn-perfil{ height:36px !important; padding:0 14px !important; font-size:13px !important; }
+      .navbar .logo img{ height:60px !important; }
+    }
+
+    /* ===== MIolo (cinza) ===== */
+    .faixa-cinza{ background:var(--bg-150); padding:16px 0 48px; }
+    .page-outer{ max-width:1280px; margin:0 auto; padding:0 16px; }
+
+    /* ===== CARD LOGIN ===== */
     .auth-wrap{
       display:flex;
       justify-content:center;
-      padding:24px 0 0;
+      padding:24px 0 40px;
     }
     .card{
       width:100%;
@@ -358,15 +358,20 @@
     .alert a{ color:var(--roxo); font-weight:700; text-decoration:none; }
     .alert a:hover{ text-decoration:underline; }
 
-    label{ font-weight:700; color:#2a233a; font-size:14px; display:block; margin:10px 0 6px; }
-
+    label{
+      font-weight:700;
+      color:#2a233a;
+      font-size:14px;
+      display:block;
+      margin:10px 0 6px;
+    }
     .input{
       width:100%;
       height:44px;
       border-radius:10px;
       padding:10px 12px;
       border:1px solid #cfd3dc;
-      background: var(--bg-100);
+      background:var(--bg-100);
       color:#2d2d2d;
       transition:border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
       background-clip: padding-box;
@@ -379,11 +384,10 @@
       box-shadow:0 0 0 3px rgba(123,116,36,.15);
     }
 
-    /* Neutraliza autofill */
     .input:-webkit-autofill,
     .input:-webkit-autofill:hover,
     .input:-webkit-autofill:focus,
-    .input:autofill {
+    .input:autofill{
       -webkit-box-shadow: 0 0 0 1000px var(--bg-100) inset !important;
               box-shadow: 0 0 0 1000px var(--bg-100) inset !important;
       -webkit-text-fill-color:#2d2d2d !important;
@@ -391,7 +395,6 @@
       transition: background-color 9999s ease-out 0s;
     }
 
-    /* Botão principal (preto + lime) */
     .btn{
       width:100%;
       height:46px;
@@ -428,7 +431,7 @@
     .oauth .oauth-btn:hover{ background:var(--olive-50); border-color:var(--olive-600); transform:translateY(-1px); }
     .oauth .oauth-btn img{ width:20px; height:20px; display:block; }
 
-    .signup, .help{ text-align:center; }
+    .signup, .help{ text-align:center; margin:8px 0 0; }
     .signup a, .help a{ color:var(--roxo); text-decoration:none; font-weight:700; }
     .signup a:hover, .help a:hover{ text-decoration:underline; }
 
@@ -442,18 +445,67 @@
     .legal a{ color:var(--roxo); text-decoration:none; }
     .legal a:hover{ text-decoration:underline; }
 
+    /* ===== CTA + FOOTER (padrão index) ===== */
+    .cta-bar{
+      background:#000;
+      color:#fff;
+      padding:20px 16px;
+      display:flex;
+      align-items:center;
+      gap:16px;
+      flex-wrap:wrap;
+      border-top:1px solid rgba(255,255,255,0.06);
+      margin-top:0;
+      justify-content:flex-start;
+    }
+    .cta-text h3{margin:0 0 4px 0;font-size:18px;font-weight:700;}
+    .cta-text p{margin:0;font-size:15px;opacity:.9;}
+    .cta-btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      height:44px;
+      padding:0 22px;
+      border-radius:9999px;
+      font-weight:800;
+      text-decoration:none;
+      background:#fff;
+      color:#000;
+      border:0;
+      line-height:1;
+      white-space:nowrap;
+      transition: background-color .15s ease, color .15s ease, transform .15s ease;
+    }
+    .cta-btn:hover{ background:var(--lime); color:#111; transform:translateY(-1px); }
+    .cta-btn:active{ background:var(--lime-700); color:#111; transform:translateY(0); }
+
+    .site-footer{background:#fff;color:#211a2a;border-top:1px solid #eee;padding:18px 16px 28px;}
+    .footer-inner{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:auto 1fr;gap:20px 28px;align-items:start;}
+    .footer-brand img{height:44px;width:auto;display:block;}
+    .footer-cols{display:grid;grid-template-columns:repeat(2,minmax(180px,240px));gap:12px 28px;}
+    .footer-col h4{margin:0 0 8px 0;font-size:14px;font-weight:700;color:#251c33;}
+    .footer-col ul{list-style:none;margin:0;padding:0;}
+    .footer-col li+li{margin-top:6px;}
+    .footer-col a{color:#2a2535;text-decoration:none;font-size:14px;}
+    .footer-col a:hover{text-decoration:underline;}
+
+    @media (max-width:900px){
+      .footer-inner{ grid-template-columns:1fr; }
+      .footer-cols{ grid-template-columns:1fr; }
+    }
+
     @media (prefers-color-scheme: dark){
-      html, body{ background:#fff !important; color: var(--cinza-900); }
+      html, body{ background:#fff !important; color:#111827; }
     }
   </style>
 
-  <!-- ✅ Header padrão (se existir no seu projeto) deve ser o ÚLTIMO do head -->
+  <!-- ✅ Header padrão deve ser o ÚLTIMO do head -->
   <link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
 </head>
 
 <body class="header-v1">
 
-  <!-- ===== Cabeçalho padrão ===== -->
+  <!-- Cabeçalho -->
   <header class="navbar">
     <div class="header-left">
       <div class="logo">
@@ -468,7 +520,7 @@
       </div>
     </div>
 
-    <!-- NAV (somente desktop) -->
+    <!-- ✅ Barra preta: somente estes 3 links (ordem fixa) -->
     <nav class="hdr-nav" aria-label="Navegação principal">
       <a href="{{ url_for('quem_somos') }}">O AcheTece</a>
       <a href="{{ url_for('malharia_info') }}">Como funciona</a>
@@ -477,41 +529,40 @@
 
     <div class="header-right">
       <div class="hdr-actions">
-        <!-- Conta Malharia -->
         <a class="btn-perfil" href="{{ url_for('login') }}">Conta Malharia</a>
 
-        <!-- Casinha (sempre à direita do Conta Malharia) -->
+        <!-- ✅ Casinha SEMPRE à direita do Conta Malharia -->
         <a class="btn-home" href="{{ url_for('index') }}" aria-label="Página inicial" title="Página inicial">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M3 10.5 12 3l9 7.5"></path>
             <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
             <path d="M9 21V12h6v9"></path>
           </svg>
         </a>
 
-        <!-- Hambúrguer (mobile) -->
-        <button class="btn-menu" type="button" aria-label="Abrir menu" aria-expanded="false">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M4 6h16"></path>
+        <button class="btn-menu" id="btnMenu" type="button" aria-label="Abrir menu" aria-controls="mobileMenu" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M4 7h16"></path>
             <path d="M4 12h16"></path>
-            <path d="M4 18h16"></path>
+            <path d="M4 17h16"></path>
           </svg>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- Backdrop + Menu Mobile -->
-  <div class="mobile-menu-backdrop" aria-hidden="true"></div>
+  <!-- Menu mobile (painel) -->
+  <div class="mobile-menu-backdrop" id="menuBackdrop" aria-hidden="true"></div>
 
-  <nav class="mobile-menu" aria-label="Menu do site">
+  <nav class="mobile-menu" id="mobileMenu" aria-label="Menu">
     <div class="menu-head">
       <a class="menu-logo" href="{{ url_for('index') }}" aria-label="Página inicial">
         <span class="menu-logoBox">
           <img src="{{ url_for('static', filename='Logo_Branco_AcheTece_sem_fundo.png') }}" alt="Logo AcheTece">
         </span>
       </a>
-      <button class="menu-close" type="button" aria-label="Fechar menu">
+
+      <button class="menu-close" id="menuClose" type="button" aria-label="Fechar menu">
         <svg class="x-icon" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M6 6L18 18M18 6L6 18"></path>
         </svg>
@@ -519,40 +570,51 @@
     </div>
 
     <div class="menu-body">
-      <!-- Ordem principal (regra) -->
-      <a href="{{ url_for('quem_somos') }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="8" r="1.5" fill="currentColor"></circle><path d="M11 11h2v6h-2z" fill="currentColor"></path></svg>
-        <span>O AcheTece</span>
+      <a href="{{ url_for('buscar_teares') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"></circle><line x1="16.65" y1="16.65" x2="21" y2="21"></line>
+        </svg>
+        Buscar Tear
       </a>
 
       <a href="{{ url_for('malharia_info') }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.5 9a2.5 2.5 0 1 1 4.1 2A3 3 0 0 0 12 13.6"></path><circle cx="12" cy="17" r="1.2" fill="currentColor"></circle></svg>
-        <span>Como funciona</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle><path d="M9.5 9a2.5 2.5 0 1 1 4.1 2A3 3 0 0 0 12 13.6"></path><circle cx="12" cy="17" r="1.2" fill="currentColor"></circle>
+        </svg>
+        Como funciona
+      </a>
+
+      <a href="{{ url_for('login') }}" aria-current="page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="8" r="4"></circle><path d="M4 20a8 8 0 0 1 16 0"></path>
+        </svg>
+        Conta Malharia
+      </a>
+
+      <a href="{{ url_for('quem_somos') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="8" r="1.5" fill="currentColor"></circle><path d="M11 11h2v6h-2z" fill="currentColor"></path>
+        </svg>
+        O AcheTece
       </a>
 
       <a href="{{ url_for('contato') }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v12H4z"></path><path d="M22 20H2"></path><path d="M22 8l-10 6L2 8" fill="none"></path></svg>
-        <span>Fale conosco</span>
-      </a>
-
-      <a href="{{ url_for('buscar_teares') }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="16.65" y1="16.65" x2="21" y2="21"></line></svg>
-        <span>Buscar Tear</span>
-      </a>
-
-      <a href="{{ url_for('login') }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"></circle><path d="M4 20a8 8 0 0 1 16 0"></path></svg>
-        <span>Conta Malharia</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M4 4h16v12H4z"></path><path d="M22 20H2"></path><path d="M22 8l-10 6L2 8" fill="none"></path>
+        </svg>
+        Fale conosco
       </a>
 
       <a href="{{ url_for('termos') }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M8 8h8M8 12h8M8 16h5"></path></svg>
-        <span>Termos e Políticas</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M8 8h8M8 12h8M8 16h5"></path>
+        </svg>
+        Termos e Políticas
       </a>
     </div>
   </nav>
 
-  <!-- ===== Conteúdo ===== -->
+  <!-- Conteúdo -->
   <section class="faixa-cinza">
     <div class="page-outer">
       <main class="auth-wrap">
@@ -562,7 +624,7 @@
           {% if no_account %}
           <div class="alert" role="alert">
             <b>Não existe uma conta com este e-mail.</b>
-            Não tem conta? <a href="/cadastrar_empresa">Cadastre-se</a>.
+            Não tem conta? <a href="{{ url_for('cadastrar_empresa') }}">Cadastre-se</a>.
           </div>
           {% elif error %}
           <div class="alert" role="alert">
@@ -572,11 +634,20 @@
 
           <form method="POST" action="{{ url_for('login') }}" novalidate>
             <label for="email">E-mail</label>
-            <input id="email" name="email" type="email" class="input" autocomplete="email" required
-                   value="{{ email or request.args.get('email','') }}">
+            <input
+              id="email"
+              name="email"
+              type="email"
+              class="input"
+              autocomplete="email"
+              required
+              value="{{ email or request.args.get('email','') }}"
+            >
+
             {% if request.args.get('next') %}
               <input type="hidden" name="next" value="{{ request.args.get('next') }}">
             {% endif %}
+
             <button type="submit" class="btn">Continuar</button>
           </form>
 
@@ -589,12 +660,12 @@
               aria-label="Entrar com Google"
               title="Entrar com Google"
             >
-              <img src="/static/icone_google.png" alt="" aria-hidden="true">
+              <img src="{{ url_for('static', filename='icone_google.png') }}" alt="" aria-hidden="true">
               <span>Entrar com Google</span>
             </a>
           </div>
 
-          <p class="signup">Não tem uma conta? <a href="/cadastrar_empresa">Cadastre-se</a></p>
+          <p class="signup">Não tem uma conta? <a href="{{ url_for('cadastrar_empresa') }}">Cadastre-se</a></p>
           <p class="help">Precisa de ajuda? <a href="{{ url_for('contato') }}">Fale conosco</a></p>
 
           <p class="legal">
@@ -607,38 +678,59 @@
     </div>
   </section>
 
-  <!-- ===== JS: menu mobile (padrão) ===== -->
+  <!-- Faixa preta (CTA) — padrão index -->
+  <section class="cta-bar">
+    <div class="cta-text">
+      <h3>É proprietário de uma malharia?</h3>
+      <p>Cadastre sua malharia e comece a receber novos pedidos.</p>
+    </div>
+    <a href="{{ url_for('malharia_info') }}" class="cta-btn">Cadastrar</a>
+  </section>
+
+  <!-- Rodapé — padrão index -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="{{ url_for('static', filename='logo_simbolo.png') }}" alt="AcheTece">
+      </div>
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h4>Sobre nós</h4>
+          <ul>
+            <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
+            <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
+            <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
+            <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
+          </ul>
+        </div>
+        <div class="footer-col"><h4>&nbsp;</h4><ul><li>&nbsp;</li></ul></div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- JS: menu mobile padrão -->
   <script>
-    (function () {
-      const btnMenu = document.querySelector('.btn-menu');
-      const backdrop = document.querySelector('.mobile-menu-backdrop');
-      const closeBtn = document.querySelector('.mobile-menu .menu-close');
+    (function(){
+      const btn = document.getElementById('btnMenu');
+      const backdrop = document.getElementById('menuBackdrop');
+      const closeBtn = document.getElementById('menuClose');
 
       function openMenu(){
         document.body.classList.add('menu-open');
-        if (btnMenu) btnMenu.setAttribute('aria-expanded','true');
+        btn && btn.setAttribute('aria-expanded','true');
       }
       function closeMenu(){
         document.body.classList.remove('menu-open');
-        if (btnMenu) btnMenu.setAttribute('aria-expanded','false');
+        btn && btn.setAttribute('aria-expanded','false');
       }
 
-      btnMenu?.addEventListener('click', (e) => {
-        e.preventDefault();
-        const isOpen = document.body.classList.contains('menu-open');
-        isOpen ? closeMenu() : openMenu();
-      });
-
-      backdrop?.addEventListener('click', closeMenu);
-      closeBtn?.addEventListener('click', closeMenu);
-
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeMenu();
-      });
+      btn && btn.addEventListener('click', (e)=>{ e.preventDefault(); document.body.classList.contains('menu-open') ? closeMenu() : openMenu(); });
+      backdrop && backdrop.addEventListener('click', closeMenu);
+      closeBtn && closeBtn.addEventListener('click', closeMenu);
+      document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeMenu(); });
     })();
   </script>
 
-  <!-- ajuste mobile google (mantido do seu código) -->
   <script>
     (function(){
       if (!/iphone|ipad|ipod|android/i.test(navigator.userAgent)) return;
