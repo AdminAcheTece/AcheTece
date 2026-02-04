@@ -10,9 +10,9 @@ body.header-v1{
   --nav-pad-x: 18px;
 
   /* mobile: controle fino */
-  --nav-mobile-pad-left: 6px;   /* logo mais pra esquerda */
-  --nav-mobile-pad-right: 12px;
-  --nav-mobile-gap: 10px;       /* gap entre Conta e hambúrguer */
+  --nav-mobile-pad-left: 2px;   /* logo mais pra esquerda */
+  --nav-mobile-pad-right: 10px;
+  --nav-mobile-gap: 8px;       /* gap entre Conta e hambúrguer */
 }
 
 /* base “blindada” */
