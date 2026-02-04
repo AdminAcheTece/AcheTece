@@ -11,10 +11,6 @@
 
   <!-- CSS principal -->
   <link rel="stylesheet" href="/static/style.css">
-
-  <!-- ✅ Header padrão (sempre depois do style.css) -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
-  
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
 
   <style>
@@ -632,6 +628,9 @@ body.menu-open .mobile-menu{ display:block; }
     .empresa-top .nome{font-size:.95rem;}
   }
   </style>
+
+<!-- ✅ Header padrão deve ser o ÚLTIMO do head -->
+<link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
 </head>
 <body class="header-v1">
 
