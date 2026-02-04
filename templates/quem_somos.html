@@ -38,7 +38,7 @@
     --borda-steps:#E4E9F3;
 
     /* ✅ padrão de espaçamento do header no MOBILE */
-    --nav-mobile-pad-left: 8px;   /* diminua pra jogar a logo mais pra esquerda (ex: 6px) */
+    --nav-mobile-pad-left: 6px;   /* diminua pra jogar a logo mais pra esquerda (ex: 6px) */
     --nav-mobile-pad-right: 12px; /* mantenha pra não encostar no hambúrguer */
     --nav-mobile-gap: 10px;       /* espaço entre Conta Malharia e hambúrguer */
   }
@@ -199,34 +199,41 @@
   .btn-menu:hover svg, .btn-menu:active svg{ stroke:#111 !important; }
 
   @media (max-width:900px){
-    .navbar{
-      top: 10px;
-      border-radius:34px;
-      width:calc(100% - 20px);
-  
-      /* ✅ aqui está o “padrão” e o controle do quanto a logo vai pra esquerda */
-      padding:10px var(--nav-mobile-pad-right) 10px var(--nav-mobile-pad-left);
-    }
-  
+
+    /* no mobile, some os links e a casinha (se existir) */
     .hdr-nav{ display:none; }
     .btn-home{ display:none; }
+  
+    /* botão hambúrguer aparece no mobile */
     .btn-menu{ display:inline-flex; }
   
-    /* ✅ garante que nada esteja empurrando a logo pra dentro */
-    .header-left{ margin:0; padding:0; }
-    .logo{ margin:0; padding:0; }
-  
-    /* mantém o tamanho (igual index) */
-    .navbar .logo img{ height:60px !important; }
-  
-    /* ✅ distância padrão entre "Conta Malharia" e hambúrguer */
-    .hdr-actions{ gap: var(--nav-mobile-gap); }
-  
-    .navbar .btn-perfil{
-      height:36px !important;
-      padding:0 14px !important;
-      font-size:13px !important;
+    /* ✅ PADRÃO DO INDEX: só controla o padding lateral via variáveis */
+    .navbar{
+      padding-left: var(--nav-mobile-pad-left) !important;
+      padding-right: var(--nav-mobile-pad-right) !important;
     }
+  
+    /* ✅ PADRÃO DO INDEX: distância constante entre Conta Malharia e hambúrguer */
+    .hdr-actions{
+      gap: var(--nav-mobile-gap) !important;
+    }
+  
+    /* ✅ PADRÃO DO INDEX: nada empurra a logo pra dentro */
+    .header-left, .logo{
+      margin:0 !important;
+      padding:0 !important;
+    }
+  
+    /* mantém a logo igual */
+    .navbar .logo img{
+      height:60px !important;
+    }
+  
+    /* ✅ IMPORTANTE:
+       Remova qualquer redução do botão no mobile.
+       (ou seja: NÃO use height:36 / padding menor / font-size menor aqui)
+       porque na index o botão segue “grande” e o header fica igual.
+    */
   }
 
   /* =================== MENU MOBILE (IGUAL INDEX) =================== */
