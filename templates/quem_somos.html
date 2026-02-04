@@ -11,10 +11,6 @@
 
   <!-- CSS principal -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
-  <!-- ✅ Header padrão -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
-  
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet" />
 
   <style>
@@ -554,6 +550,9 @@
   }
     
   </style>
+
+<!-- ✅ Header padrão deve ser o ÚLTIMO do head -->
+<link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
 </head>
 
 <body class="header-v1">
