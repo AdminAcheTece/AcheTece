@@ -87,6 +87,7 @@
   .header-left,.header-right{display:flex;align-items:center;}
   .hdr-actions{display:flex;align-items:center;gap:12px;}
 
+  /* ===== NAV LINKS (DESKTOP) — SOMENTE 3 ===== */
   .hdr-nav{
     flex:1;
     display:flex;
@@ -154,7 +155,7 @@
   .navbar .btn-perfil:active{ background:var(--lime-700) !important; color:#111 !important; transform:translateY(0); }
   .navbar .btn-perfil:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
 
-  /* ===== Botão hambúrguer (novo padrão) ===== */
+  /* ===== Botão hambúrguer ===== */
   .btn-menu{
     display:none;
     align-items:center;
@@ -485,7 +486,7 @@
 
 <body class="header-v1">
 
-  <!-- ===== Cabeçalho padrão (igual index/quem_somos) ===== -->
+  <!-- ===== Cabeçalho padrão ===== -->
   <header class="navbar">
     <div class="header-left">
       <div class="logo">
@@ -500,12 +501,11 @@
       </div>
     </div>
 
+    <!-- ✅ SOMENTE 3 LINKS -->
     <nav class="hdr-nav" aria-label="Navegação principal">
-      <a href="{{ url_for('buscar_teares') }}">Buscar Tear</a>
-      <a href="{{ url_for('malharia_info') }}">Como funciona</a>
-      <a href="{{ url_for('quem_somos') }}">Quem somos</a>
-      <a href="{{ url_for('contato') }}">Fale conosco</a>
-      <a href="{{ url_for('termos') }}">Termos</a>
+      <a href="{{ url_for('malharia_info') }}">Como Funciona</a>
+      <a href="{{ url_for('quem_somos') }}">O AcheTece</a>
+      <a href="{{ url_for('contato') }}">Fale Conosco</a>
     </nav>
 
     <div class="header-right">
@@ -523,7 +523,7 @@
     </div>
   </header>
 
-  <!-- ===== Menu mobile (padrão) ===== -->
+  <!-- ===== Menu mobile ===== -->
   <div class="mobile-menu-backdrop" data-menu-close></div>
 
   <aside class="mobile-menu" id="mobile-menu" role="dialog" aria-modal="true" aria-label="Menu">
@@ -542,12 +542,10 @@
     </div>
 
     <nav class="menu-body" aria-label="Atalhos">
-      <a href="{{ url_for('buscar_teares') }}">Buscar Tear</a>
-      <a href="{{ url_for('malharia_info') }}">Como funciona</a>
-      <a href="{{ url_for('login') }}" aria-current="page">Já sou cadastrado</a>
-      <a href="{{ url_for('quem_somos') }}">Quem somos</a>
-      <a href="{{ url_for('contato') }}">Fale conosco</a>
-      <a href="{{ url_for('termos') }}">Termos e Políticas</a>
+      <a href="{{ url_for('malharia_info') }}">Como Funciona</a>
+      <a href="{{ url_for('quem_somos') }}">O AcheTece</a>
+      <a href="{{ url_for('contato') }}">Fale Conosco</a>
+      <a href="{{ url_for('login') }}" aria-current="page">Conta Malharia</a>
     </nav>
   </aside>
 
@@ -645,7 +643,7 @@
     </div>
   </footer>
 
-  <!-- ===== JS: menu mobile (padrão) ===== -->
+  <!-- ===== JS: menu mobile ===== -->
   <script>
     (function(){
       const btn = document.querySelector('.btn-menu');
