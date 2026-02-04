@@ -2,335 +2,532 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>{{ 'Editar Tear' if tear else 'Cadastrar Tear' }}</title>
+  <title>{{ 'Editar Tear' if tear else 'Cadastrar Tear' }} - AcheTece</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Ícones -->
+  <!-- Favicons -->
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
 
   <!-- CSS principal -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+  <!-- CSS SOMENTE do conteúdo desta página (SEM HEADER AQUI) -->
   <style>
-  :root{
-    /* Paleta OLIVE (padrão novo) */
-    --olive:#7B7424;
-    --olive-600:#5E581C;
-    --olive-dark:#434326;
-    --olive-50:#F1F2E8;
-    --line-olive:#BFBFA8;
+    :root{
+      /* Paleta OLIVE (padrão novo) */
+      --olive:#7B7424;
+      --olive-600:#5E581C;
+      --olive-dark:#434326;
+      --olive-50:#F1F2E8;
+      --olive-100:#E6E7DE;
+      --line-olive:#BFBFA8;
 
-    /* Destaque neon para CTAs */
-    --lime:#B6F34D;
-    --lime-700:#A2E532;
+      /* Destaque neon para CTAs */
+      --lime:#B6F34D;
+      --lime-700:#A2E532;
 
-    /* Fundo global (igual à index) */
-    --site-bg:#EAEAE8;
+      /* Fundo global igual à index */
+      --site-bg:#EAEAE8;
 
-    /* Aliases p/ CSS legado */
-    --roxo:var(--olive);
-    --roxo-hover:var(--olive-600);
-  }
+      /* Compat/legado */
+      --roxo:var(--olive);
+      --roxo-hover:var(--olive-600);
 
-  html, body{
-    background: var(--site-bg);
-    color:#111;
-    margin:0;
-    font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-  }
-
-  /* ===== CABEÇALHO (padrão) ===== */
-  .navbar{
-    overflow:visible;
-    padding:6px 12px;
-    background:#fff;
-    border-bottom:1px solid #eee;
-    display:flex; align-items:center;
-  }
-  .header-left,.header-right{ display:flex; align-items:center; }
-  .header-right{ margin-left:auto; gap:20px; }
-
-  .logo{ display:inline-flex; align-items:center; }
-  .logo a{ display:inline-flex; align-items:center; text-decoration:none; }
-  /* Desktop: logo 44px | Mobile: 54px */
-  @media (min-width:901px){
-    .navbar .logo img{ height:44px; width:auto; display:block; }
-  }
-  @media (max-width:900px){
-    .navbar{ padding-right:22px; min-height:56px; }
-    .navbar .logo img{ height:54px !important; width:auto !important; display:block; }
-  }
-
-  /* Ícone Home + Hamburguer + Dropdown (padrão, sem bordas no hover) */
-  .icon-btn{
-    display:inline-flex; align-items:center; justify-content:center;
-    width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px;
-    background:#fff; cursor:pointer;
-    transition:background .15s ease, transform .12s ease;
-    box-shadow:none !important;
-  }
-  .icon-btn:hover{ background:var(--olive-50); transform:translateY(-1px); }
-  .icon-btn:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
-  .icon{ width:20px; height:20px; color:#222; }
-
-  .menu-wrap{ position: relative; }
-  .hamburger{
-    display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
-    width:36px; height:36px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
-    cursor:pointer; box-shadow:none !important;
-  }
-  .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
-  .hamburger span + span{ margin-top:4px; }
-
-  .menu-dropdown{
-    background:#fff; border:1px solid #eaeaea; border-radius:12px;
-    z-index:10001; max-height:80vh; overflow:auto; box-shadow:none !important;
-    opacity:0; pointer-events:none; transform: translateY(8px) scale(.98);
-    transition: opacity .18s ease, transform .18s ease;
-  }
-  .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
-  .menu-dropdown .menu-header{ display:flex; justify-content:flex-end; align-items:center; padding:8px 10px; }
-  .menu-dropdown .menu-close{
-    display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px;
-    background:#f0f2f5; border:0; border-radius:10px; cursor:pointer;
-  }
-  .menu-dropdown .menu-item{
-    display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222;
-  }
-  .menu-dropdown .menu-item:hover{ background:var(--olive-50); color:var(--olive); border-radius:8px; }
-
-  @media (min-width:769px){
-    .menu-dropdown{ position:absolute; top:calc(100% + 8px); right:0; min-width:220px; transform-origin: top right; }
-  }
-  @media (max-width:768px){
-    .menu-wrap{ position: static; }
-    .menu-dropdown{
-      position: fixed; top: calc(var(--nav-h, 64px) + 8px); left: 50%;
-      transform: translate(-50%, 8px) scale(.98); transform-origin: top center;
-      width:max-content; max-width:90vw; min-width:160px; border-radius:14px;
+      --cinza-900:#111827;
+      --maxw:1280px;
     }
-    .menu-dropdown.open{ transform: translate(-50%,0) scale(1); }
-  }
 
-  /* ===== CARD/CONTEÚDO ===== */
-  .container{
-    width:100%;
-    max-width:600px;
-    margin: 28px auto 44px;
-    background:#fff;
-    border:1px solid #e8ecf5;
-    border-radius:14px;
-    padding:20px 18px;
-    box-shadow:none !important;
-  }
-  h1.titulo{ margin:4px 0 16px; font-size:22px; font-weight:800; color:var(--olive-dark); }
+    html, body{ max-width:100%; overflow-x:hidden; }
+    *, *::before, *::after{ box-sizing:border-box; }
 
-  /* ===== FORM ===== */
-  .formulario label{
-    display:block; margin:10px 0 6px; font-weight:700; font-size:14px; color:#2a233a;
-  }
-  .formulario input,
-  .formulario select{
-    width:100%; height:42px; border-radius:10px; padding:0 12px;
-    border:1px solid #cfd3dc; background:#fff; font-size:14px;
-    transition:border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
-  }
-  .formulario input:focus,
-  .formulario select:focus{
-    outline:0;
-    border-color:var(--olive);
-    box-shadow:0 0 0 3px rgba(123,116,36,.15);
-    background:#fff;
-  }
-
-  /* Remove “azulado” pós-digitação/autofill */
-  input:-webkit-autofill,
-  select:-webkit-autofill{
-    -webkit-text-fill-color:#1e1b2b;
-    box-shadow:0 0 0 1000px #fff inset !important;
-    border:1px solid var(--line-olive);
-    transition:background-color 9999s ease-in-out 0s;
-  }
-
-  /* ===== BOTÕES (padrão global PRETO → LIME, sem bordas no hover) ===== */
-  /* Aplica no botão existente .botao-roxo sem trocar HTML */
-  button.botao-roxo,
-  .botao-roxo{
-    display:inline-flex; align-items:center; justify-content:center;
-    height:44px; padding:0 18px; border:0; border-radius:9999px;
-    background:#000; color:var(--lime); font-weight:800; font-size:14px; cursor:pointer;
-    transition: background-color .15s ease, color .15s ease, transform .12s ease;
-    margin-top:12px; box-shadow:none !important;
-  }
-  .botao-roxo:hover{
-    background:var(--lime); color:#000; transform:translateY(-2px);
-  }
-  .botao-roxo:active{
-    background:var(--lime-700); color:#000; transform:translateY(0);
-  }
-  .botao-roxo:focus{ outline:none; }
-  .botao-roxo:focus-visible{
-    outline:2px solid var(--lime);
-    outline-offset:2px;
-  }
-
-  .voltar-link{
-    display:inline-block; margin-top:14px; text-decoration:none; color:var(--olive); font-weight:700;
-  }
-  .voltar-link:hover{ text-decoration:underline; }
-
-  @media (max-width:560px){
-    .container{ margin:16px 12px 28px; }
-  }
-
-  /* Mantém claro em dark mode */
-  @media (prefers-color-scheme: dark){
-    html, body{ background: var(--site-bg) !important; color:#111; }
-  }
-
-  /* === BOTÃO SALVAR (padrão global PRETO → LIME, sem bordas no hover) === */
-  button.botao-roxo,
-  .botao-roxo,
-  button[type="submit"],
-  input[type="submit"]{
-    display:inline-flex; align-items:center; justify-content:center;
-    height:44px; padding:0 18px; border:0; border-radius:9999px;
-    background:#000; color:var(--lime); font-weight:800; font-size:14px;
-    cursor:pointer; box-shadow:none !important;
-    transition: background-color .15s ease, color .15s ease, transform .12s ease;
-    margin-top:12px;
-  }
-  
-  button.botao-roxo:hover,
-  .botao-roxo:hover,
-  button[type="submit"]:hover,
-  input[type="submit"]:hover{
-    background:var(--lime); color:#000; transform:translateY(-2px);
-    box-shadow:none !important;            /* sem anel/borda no hover */
-  }
-  
-  button.botao-roxo:active,
-  .botao-roxo:active,
-  button[type="submit"]:active,
-  input[type="submit"]:active{
-    background:var(--lime-700); color:#000; transform:translateY(0);
-  }
-  
-  button.botao-roxo:focus,
-  .botao-roxo:focus,
-  button[type="submit"]:focus,
-  input[type="submit"]:focus{
-    outline:none;                           /* remove foco padrão */
-  }
-  
-  button.botao-roxo:focus-visible,
-  .botao-roxo:focus-visible,
-  button[type="submit"]:focus-visible,
-  input[type="submit"]:focus-visible{
-    outline:2px solid var(--lime);          /* foco acessível */
-    outline-offset:2px;
-  }
-  
-  button.botao-roxo:disabled,
-  .botao-roxo:disabled,
-  button[type="submit"]:disabled,
-  input[type="submit"]:disabled{
-    opacity:.5; cursor:not-allowed; transform:none;
-  }
-  
-  /* Aumento sutil de fonte no mobile (opcional) */
-  @media (max-width:900px){
-    button.botao-roxo, .botao-roxo, button[type="submit"], input[type="submit"]{
-      font-size:20px;
+    body{
+      background:#fff;
+      color:var(--cinza-900);
+      margin:0;
+      font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
     }
-  }
 
-  /* === Linha de ações: botão + link lado a lado === */
-  .acoes{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    flex-wrap:wrap;         /* se apertar no mobile, quebra com elegância */
-    margin-top:12px;
-  }
-  
-  /* Mantém o padrão do link já aplicado (olive), só garante alinhamento */
-  .acoes .voltar-link{
-    display:inline-block;
-    font-weight:600;        /* menos intenso (antes podia estar 700) */
-    text-decoration:none;
-  }
-  .acoes .voltar-link:hover{
-    text-decoration:underline;
-  }
-  
-  /* === Suavização tipográfica (desktop) — igual às demais páginas === */
-  @media (min-width:901px){
-    h1.titulo{ font-weight:700 !important; }          /* antes 800 */
-    .formulario label{ font-weight:600 !important; }  /* antes 700 */
-    button.botao-roxo,
-    .botao-roxo{ font-weight:700 !important; }        /* antes 800 */
-  }
-  
-</style>
+    /* Miolo cinza + container central (igual padrão do site) */
+    .faixa-cinza{ background:var(--site-bg); padding:16px 0 48px; }
+    .page-outer{ max-width:var(--maxw); margin:0 auto; padding:0 16px; }
+
+    /* Card */
+    .wrap{ max-width: 760px; margin: 10px auto 0; }
+    .card{
+      background:#fff;
+      border:1px solid #eee;
+      border-radius:16px;
+      padding:18px 16px;
+    }
+
+    .top-actions{
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      gap:10px;
+      flex-wrap:wrap;
+      margin: 6px 0 12px;
+    }
+
+    .btn-sec{
+      display:inline-flex; align-items:center; justify-content:center;
+      height:40px; padding:0 16px;
+      border-radius:9999px;
+      border:1px solid #ddd;
+      background:#fff;
+      color:#111;
+      font-weight:900;
+      text-decoration:none;
+      cursor:pointer;
+      transition: background-color .15s ease, border-color .15s ease, transform .12s ease, color .15s ease;
+    }
+    .btn-sec:hover{
+      background:var(--olive-50);
+      border-color:var(--line-olive);
+      transform:translateY(-1px);
+      color:#111;
+    }
+    .btn-sec:active{ transform:translateY(0); }
+    .btn-sec:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
+
+    h1{
+      margin: 6px 0 4px;
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing:-0.02em;
+      color: var(--olive-dark);
+    }
+    .sub{
+      margin: 0 0 14px;
+      color:#5b5b5b;
+      line-height:1.45;
+      font-size:14.5px;
+    }
+
+    /* Form */
+    form{ margin-top: 6px; }
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    @media (max-width:720px){
+      .grid{ grid-template-columns:1fr; }
+      h1{ font-size:24px; }
+    }
+
+    label{
+      display:block;
+      margin: 0 0 6px;
+      font-weight:700;
+      font-size:14px;
+      color:#2a233a;
+    }
+    input, select{
+      width:100%;
+      height:44px;
+      border-radius:12px;
+      padding:0 12px;
+      border:1px solid #cfd3dc;
+      background:#fff;
+      font-size:15px;
+      transition:border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+    }
+    input:focus, select:focus{
+      outline:0;
+      border-color:var(--olive);
+      box-shadow:0 0 0 3px rgba(123,116,36,.15);
+      background:#fff;
+    }
+
+    /* Remove “azulado” pós-digitação/autofill */
+    input:-webkit-autofill,
+    select:-webkit-autofill{
+      -webkit-text-fill-color:#1e1b2b;
+      box-shadow:0 0 0 1000px #fff inset !important;
+      border:1px solid var(--line-olive);
+      transition:background-color 9999s ease-in-out 0s;
+    }
+
+    /* CTA principal (preto → lime) */
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      height:44px;
+      padding:0 22px;
+      border-radius:9999px;
+      border:0;
+      background:#000;
+      color:var(--lime);
+      font-weight:900;
+      font-size:15px;
+      text-decoration:none;
+      cursor:pointer;
+      transition: background-color .15s ease, color .15s ease, transform .12s ease;
+      box-shadow:none !important;
+      width:100%;
+      margin-top:12px;
+      line-height:1;
+    }
+    .btn:hover{ background:var(--lime); color:#000; transform:translateY(-2px); }
+    .btn:active{ background:var(--lime-700); color:#000; transform:translateY(0); }
+    .btn:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
+
+    /* Suavização tipográfica no desktop (igual seu padrão) */
+    @media (min-width:901px){
+      label{ font-weight:600; }
+      .btn{ font-weight:800; }
+      h1{ font-weight:800; }
+    }
+
+    /* CTA + Rodapé padrão (igual index) */
+    .cta-bar{
+      background:#000; color:#fff; padding:20px 16px;
+      display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+      border-top:1px solid rgba(255,255,255,0.06);
+      justify-content:flex-start;
+    }
+    .cta-text h3{ margin:0 0 4px 0; font-size:18px; font-weight:800; line-height:1.2; }
+    .cta-text p{ margin:0; font-size:15px; opacity:.9; }
+
+    /* CTA "Cadastrar" igual ao botão "Conta Malharia" (pill branco + hover lime) */
+    .cta-bar .cta-btn{
+      display:inline-flex !important;
+      align-items:center !important;
+      justify-content:center !important;
+      height:44px !important;
+      padding:0 22px !important;
+      border-radius:9999px !important;
+      font-weight:800 !important;
+      text-decoration:none !important;
+      white-space:nowrap !important;
+      background:#fff !important;
+      color:#000 !important;
+      border:0 !important;
+      box-shadow:none !important;
+      line-height:1 !important;
+      cursor:pointer;
+      transition: background-color .15s ease, color .15s ease, transform .15s ease;
+    }
+    .cta-bar .cta-btn:hover{
+      background:var(--lime) !important;
+      color:#111 !important;
+      transform:translateY(-1px);
+    }
+    .cta-bar .cta-btn:active{
+      background:var(--lime-700) !important;
+      color:#111 !important;
+      transform:translateY(0);
+    }
+    .cta-bar .cta-btn:focus-visible{
+      outline:2px solid var(--lime);
+      outline-offset:2px;
+    }
+
+    .site-footer{
+      background:#fff;color:#211a2a;border-top:1px solid #eee;padding:18px 16px 28px;
+    }
+    .footer-inner{
+      max-width:var(--maxw);margin:0 auto;display:grid;grid-template-columns:auto 1fr;
+      gap:20px 28px;align-items:start;
+    }
+    .footer-brand img{ height:44px;width:auto;display:block; }
+    .footer-cols{ display:grid;grid-template-columns: repeat(2, minmax(180px, 240px));gap:12px 28px; }
+    .footer-col h4{ margin:0 0 8px 0;font-size:14px;font-weight:800;color:#251c33; }
+    .footer-col ul{ list-style:none;margin:0;padding:0; }
+    .footer-col li+li{ margin-top:6px; }
+    .footer-col a{ color:#2a2535;text-decoration:none;font-size:14px; }
+    .footer-col a:hover{ text-decoration:underline; }
+
+    @media (max-width:900px){
+      .footer-inner{ grid-template-columns:1fr; }
+      .footer-cols{ grid-template-columns:1fr; }
+    }
+
+    @media (prefers-color-scheme: dark){
+      html, body{ background:#fff !important; color:var(--cinza-900); }
+    }
+  </style>
+
+  <!-- ✅ Header padrão (SEMPRE o último do head) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
 </head>
-<body>
 
-    <!-- Cabeçalho -->
-    <header>
-        <div class="logo">
-            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
-        </div>
-     </header>
+<body class="header-v1">
 
-    <!-- Conteúdo principal -->
-    <div class="container">
-        <h1 class="titulo">Cadastrar Tear</h1>
-
-        <form method="POST" class="formulario">
-            <label for="marca">Marca:</label>
-            <input type="text" id="marca" name="marca" required>
-
-            <label for="modelo">Modelo:</label>
-            <input type="text" id="modelo" name="modelo" required>
-
-            <label for="tipo">Tipo:</label>
-            <select id="tipo" name="tipo" required>
-                <option value="">-- Selecione --</option>
-                <option value="MONO">MONO</option>
-                <option value="DUPLA">DUPLA</option>
-            </select>
-
-            <label for="finura">Finura:</label>
-            <input type="number" id="finura" name="finura" required>
-
-            <label for="diametro">Diâmetro:</label>
-            <input type="number" id="diametro" name="diametro" required>
-
-            <!-- Corrigido: ids/names sem espaço -->
-            <label for="pistas_cilindro">Pistas Cilindro:</label>
-            <input type="number" id="pistas_cilindro" name="pistas_cilindro" required>
-
-            <label for="pistas_disco">Pistas Disco:</label>
-            <input type="number" id="pistas_disco" name="pistas_disco" required>
-            
-            <label for="alimentadores">Alimentadores:</label>
-            <input type="number" id="alimentadores" name="alimentadores" required>
-
-            <label for="elastano">Elastano:</label>
-            <select id="elastano" name="elastano" required>
-                <option value="">-- Selecione --</option>
-                <option value="Sim">Sim</option>
-                <option value="Não">Não</option>
-            </select>
-
-            <button type="submit" class="botao-salvar">Salvar Tear</button>
-        </form>
-
-        <a class="voltar-link" href="{{ url_for('painel_malharia') }}">← Voltar ao Painel</a>
+  <!-- ===== HEADER PADRÃO (igual index/quem_somos) ===== -->
+  <header class="navbar">
+    <div class="header-left">
+      <div class="logo">
+        <a href="{{ url_for('index') }}" aria-label="Página inicial">
+          <img
+            src="{{ url_for('static', filename='Logo_Branco_AcheTece_sem_fundo.png') }}"
+            alt="Logo AcheTece"
+            decoding="async"
+            fetchpriority="high"
+          >
+        </a>
+      </div>
     </div>
+
+    <!-- Links do topo (somente desktop) -->
+    <nav class="hdr-nav" aria-label="Navegação principal">
+      <a href="{{ url_for('quem_somos') }}">O AcheTece</a>
+      <a href="{{ url_for('malharia_info') }}">Como Funciona</a>
+      <a href="{{ url_for('contato') }}">Fale Conosco</a>
+    </nav>
+
+    <div class="header-right">
+      <div class="hdr-actions">
+        <a href="/login" class="btn-perfil" aria-label="Acessar sua conta da malharia" title="Acessar sua conta da malharia">
+          <span>Conta Malharia</span>
+        </a>
+
+        <!-- CASINHA (somente desktop) -->
+        <a href="{{ url_for('index') }}" class="btn-home" aria-label="Voltar ao início" title="Voltar ao início">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 10.5 12 3l9 7.5"></path>
+            <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
+            <path d="M9 21V12h6v9"></path>
+          </svg>
+        </a>
+
+        <!-- BOTÃO MENU (SÓ NO MOBILE) -->
+        <button class="btn-menu" id="openMenuBtn" type="button" aria-label="Abrir menu" aria-controls="mobileMenu" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M4 7h16M4 12h16M4 17h16"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== MENU MOBILE (SÓ NO MOBILE) ===== -->
+  <div class="mobile-menu-backdrop" id="menuBackdrop" aria-hidden="true"></div>
+
+  <nav class="mobile-menu" id="mobileMenu" aria-label="Menu do site">
+    <div class="menu-head">
+      <a href="{{ url_for('index') }}" class="menu-logo" aria-label="Ir para a busca">
+        <span class="menu-logoBox">
+          <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece" decoding="async">
+        </span>
+      </a>
+
+      <button class="menu-close" id="closeMenuBtn" type="button" aria-label="Fechar menu">
+        <svg class="x-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 6L18 18M18 6L6 18"></path>
+        </svg>
+      </button>
+    </div>
+
+    <div class="menu-body">
+      <a href="{{ url_for('index') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5Z"/>
+        </svg>
+        Buscar Tear
+      </a>
+
+      <a href="{{ url_for('malharia_info') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 16v-4"></path>
+          <path d="M12 8h.01"></path>
+        </svg>
+        Como Funciona
+      </a>
+
+      <a href="/login">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20 21a8 8 0 0 0-16 0"></path>
+          <circle cx="12" cy="8" r="4"></circle>
+        </svg>
+        Já sou cadastrado
+      </a>
+
+      <a href="{{ url_for('quem_somos') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 16v-4"></path>
+          <path d="M12 8h.01"></path>
+        </svg>
+        Quem Somos
+      </a>
+
+      <a href="{{ url_for('contato') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 4h16v14H5.5L4 19.5V4Z"></path>
+          <path d="M7 8h10"></path>
+          <path d="M7 12h7"></path>
+        </svg>
+        Fale conosco
+      </a>
+
+      <a href="{{ url_for('termos') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 2h9l3 3v17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"></path>
+          <path d="M9 9h6"></path>
+          <path d="M9 13h6"></path>
+          <path d="M9 17h6"></path>
+        </svg>
+        Termos e Políticas
+      </a>
+    </div>
+  </nav>
+
+  <!-- ===== CONTEÚDO ===== -->
+  <div class="faixa-cinza">
+    <div class="page-outer">
+      <div class="wrap">
+        <div class="top-actions">
+          <a class="btn-sec" href="{{ url_for('painel_malharia') }}">← Voltar ao painel</a>
+        </div>
+
+        <div class="card">
+          <h1>{{ 'Editar Tear' if tear else 'Cadastrar Tear' }}</h1>
+          <p class="sub">Preencha as informações do tear. Você pode editar depois quando precisar.</p>
+
+          <form method="POST" class="formulario" novalidate>
+            <div class="grid">
+              <div>
+                <label for="marca">Marca</label>
+                <input type="text" id="marca" name="marca" required
+                       value="{{ tear.marca if tear else '' }}" autocomplete="organization">
+              </div>
+
+              <div>
+                <label for="modelo">Modelo</label>
+                <input type="text" id="modelo" name="modelo" required
+                       value="{{ tear.modelo if tear else '' }}" autocomplete="off">
+              </div>
+
+              <div>
+                <label for="tipo">Tipo</label>
+                <select id="tipo" name="tipo" required>
+                  <option value="">-- Selecione --</option>
+                  <option value="MONO"  {% if tear and (tear.tipo|string)|upper == 'MONO' %}selected{% endif %}>MONO</option>
+                  <option value="DUPLA" {% if tear and (tear.tipo|string)|upper == 'DUPLA' %}selected{% endif %}>DUPLA</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="finura">Finura</label>
+                <input type="number" id="finura" name="finura" required min="0" step="1"
+                       value="{{ tear.finura if tear and tear.finura is not none else '' }}">
+              </div>
+
+              <div>
+                <label for="diametro">Diâmetro</label>
+                <input type="number" id="diametro" name="diametro" required min="0" step="1"
+                       value="{{ tear.diametro if tear and tear.diametro is not none else '' }}">
+              </div>
+
+              <div>
+                <label for="alimentadores">Alimentadores</label>
+                <input type="number" id="alimentadores" name="alimentadores" required min="0" step="1"
+                       value="{{ tear.alimentadores if tear and tear.alimentadores is not none else '' }}">
+              </div>
+
+              <div>
+                <label for="pistas_cilindro">Pistas cilindro</label>
+                <input type="number" id="pistas_cilindro" name="pistas_cilindro" required min="0" step="1"
+                       value="{{ tear.pistas_cilindro if tear and tear.pistas_cilindro is not none else '' }}">
+              </div>
+
+              <div>
+                <label for="pistas_disco">Pistas disco</label>
+                <input type="number" id="pistas_disco" name="pistas_disco" required min="0" step="1"
+                       value="{{ tear.pistas_disco if tear and tear.pistas_disco is not none else '' }}">
+              </div>
+
+              <div style="grid-column:1 / -1;">
+                <label for="elastano">Elastano</label>
+                <select id="elastano" name="elastano" required>
+                  <option value="">-- Selecione --</option>
+                  <option value="Sim"
+                    {% if tear and (tear.elastano is boolean) and tear.elastano %}selected
+                    {% elif tear and (tear.elastano is not boolean) and (tear.elastano|string)|lower in ['sim','s','true','1','on','com','tem','yes','y'] %}selected
+                    {% elif tear and (tear.kit_elastano is boolean) and tear.kit_elastano %}selected
+                    {% endif %}>Sim</option>
+
+                  <option value="Não"
+                    {% if tear and (tear.elastano is boolean) and (not tear.elastano) %}selected
+                    {% elif tear and (tear.elastano is not boolean) and (tear.elastano|string)|lower in ['nao','não','n','false','0','off','sem','no'] %}selected
+                    {% elif tear and (tear.kit_elastano is boolean) and (not tear.kit_elastano) %}selected
+                    {% endif %}>Não</option>
+                </select>
+              </div>
+            </div>
+
+            <button type="submit" class="btn">{{ 'Salvar alterações' if tear else 'Salvar tear' }}</button>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Faixa preta (CTA) ===== -->
+  <section class="cta-bar">
+    <div class="cta-text">
+      <h3>É proprietário de uma malharia?</h3>
+      <p>Cadastre sua malharia e comece a receber novos pedidos.</p>
+    </div>
+    <a href="{{ url_for('malharia_info') }}" class="cta-btn">Cadastrar</a>
+  </section>
+
+  <!-- ===== Rodapé ===== -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="{{ url_for('static', filename='logo_simbolo.png') }}" alt="AcheTece">
+      </div>
+
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h4>Sobre nós</h4>
+          <ul>
+            <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
+            <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
+            <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
+            <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>&nbsp;</h4>
+          <ul><li>&nbsp;</li></ul>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== JS: Menu mobile (padrão) ===== -->
+  <script>
+    (function(){
+      const openBtn = document.getElementById('openMenuBtn');
+      const closeBtn = document.getElementById('closeMenuBtn');
+      const backdrop = document.getElementById('menuBackdrop');
+
+      function openMenu(){
+        document.body.classList.add('menu-open');
+        if(openBtn) openBtn.setAttribute('aria-expanded','true');
+      }
+      function closeMenu(){
+        document.body.classList.remove('menu-open');
+        if(openBtn) openBtn.setAttribute('aria-expanded','false');
+      }
+
+      if(openBtn) openBtn.addEventListener('click', openMenu);
+      if(closeBtn) closeBtn.addEventListener('click', closeMenu);
+      if(backdrop) backdrop.addEventListener('click', closeMenu);
+
+      document.addEventListener('keydown', (e)=>{
+        if(e.key === 'Escape') closeMenu();
+      });
+    })();
+  </script>
+
 </body>
 </html>
