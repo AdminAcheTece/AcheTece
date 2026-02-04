@@ -1,0 +1,139 @@
+/* =========================================================
+   HEADER PADRÃO — AcheTece (VERSÃO V1)
+   Use em todas as páginas: <body class="header-v1">
+   ========================================================= */
+body.header-v1{
+  /* controles rápidos */
+  --nav-top: 12px;
+  --nav-width-desktop: 220px;   /* distância das laterais no desktop (maior = barra mais estreita) */
+  --nav-pad-y: 12px;
+  --nav-pad-x: 18px;
+
+  /* mobile: controle fino */
+  --nav-mobile-pad-left: 6px;   /* logo mais pra esquerda */
+  --nav-mobile-pad-right: 12px;
+  --nav-mobile-gap: 10px;       /* gap entre Conta e hambúrguer */
+}
+
+/* base “blindada” */
+body.header-v1 .navbar{
+  position: fixed !important;
+  top: var(--nav-top) !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 2000 !important;
+
+  background:#000 !important;
+  border-radius:9999px !important;
+
+  width: calc(100% - var(--nav-width-desktop)) !important;
+  max-width:none !important;
+  margin:0 !important;
+  padding: var(--nav-pad-y) var(--nav-pad-x) !important;
+
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:12px !important;
+
+  overflow:visible !important;
+  box-shadow:0 10px 28px rgba(0,0,0,.18) !important;
+}
+
+body.header-v1 .header-left,
+body.header-v1 .header-right{
+  display:flex !important;
+  align-items:center !important;
+}
+
+body.header-v1 .hdr-actions{
+  display:flex !important;
+  align-items:center !important;
+  gap:12px !important;
+}
+
+/* nav desktop */
+body.header-v1 .hdr-nav{
+  flex:1 !important;
+  display:flex !important;
+  justify-content:center !important;
+  align-items:center !important;
+  gap:26px !important;
+}
+body.header-v1 .hdr-nav a{
+  color:#fff !important;
+  text-decoration:none !important;
+  font-weight:700 !important;
+  font-size:15px !important;
+  opacity:.92 !important;
+  padding:8px 6px !important;
+  border-radius:10px !important;
+  transition: opacity .15s ease, background-color .15s ease, color .15s ease !important;
+}
+body.header-v1 .hdr-nav a:hover{
+  opacity:1 !important;
+  background:rgba(255,255,255,.08) !important;
+}
+
+/* logo */
+body.header-v1 .navbar .logo,
+body.header-v1 .navbar .header-left{
+  margin:0 !important;
+  padding:0 !important;
+}
+body.header-v1 .navbar .logo img{
+  height:60px !important;
+  width:auto !important;
+  display:block !important;
+  object-fit:contain !important;
+}
+
+/* botão conta (idêntico em todas) */
+body.header-v1 .navbar .btn-perfil{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  height:44px !important;
+  padding:0 22px !important;
+  border-radius:9999px !important;
+  font-weight:800 !important;
+  text-decoration:none !important;
+  background:#fff !important;
+  color:#000 !important;
+  border:0 !important;
+  box-shadow:none !important;
+  line-height:1 !important;
+  white-space:nowrap !important;
+}
+
+/* hambúrguer (tamanho fixo padrão) */
+body.header-v1 .btn-menu{
+  width:44px !important;
+  height:44px !important;
+  border-radius:9999px !important;
+}
+body.header-v1 .btn-menu svg{
+  width:20px !important;
+  height:20px !important;
+}
+
+/* ===== MOBILE ===== */
+@media (max-width:900px){
+  body.header-v1 .hdr-nav{ display:none !important; }
+
+  body.header-v1 .navbar{
+    padding-left: var(--nav-mobile-pad-left) !important;
+    padding-right: var(--nav-mobile-pad-right) !important;
+  }
+
+  body.header-v1 .hdr-actions{
+    gap: var(--nav-mobile-gap) !important;
+  }
+
+  body.header-v1 .btn-menu{ display:inline-flex !important; }
+}
+
+/* ===== DESKTOP ===== */
+@media (min-width:901px){
+  body.header-v1 .btn-menu{ display:none !important; }
+}
