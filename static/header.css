@@ -17,7 +17,7 @@ body.header-v1{
   --nav-mobile-gap: 10px;         /* espaço entre Conta e hambúrguer */
 
   /* micro-ajustes finos (opcional) */
-  --logo-shift-x: 0px;            /* ex.: -2px */
+  --logo-shift-x: -6px;            /* ex.: -2px */
   --actions-shift-x: 0px;         /* ex.: -3px */
 
   /* reserva de espaço do header fixo (padronizado em todas as páginas) */
