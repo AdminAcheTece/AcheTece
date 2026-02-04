@@ -11,6 +11,10 @@
 
   <!-- CSS principal -->
   <link rel="stylesheet" href="/static/style.css">
+
+  <!-- ✅ Header padrão (sempre depois do style.css) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
+  
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
 
   <style>
@@ -629,7 +633,7 @@ body.menu-open .mobile-menu{ display:block; }
   }
   </style>
 </head>
-<body>
+<body class="header-v1">
 
   <!-- Cabeçalho -->
   <header class="navbar">
