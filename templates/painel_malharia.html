@@ -555,6 +555,75 @@
     @media (prefers-color-scheme: dark){
       html, body{ background:#fff !important; color: var(--cinza-900); }
     }
+
+    /* ===== PATCH: Título + botões "Teares Cadastrados" no MOBILE ===== */
+
+    /* (Recomendado) evita “padding duplo” (page-outer já tem 16px) */
+    .container{
+      padding: 0 0 28px;  /* antes era 0 16px 28px */
+    }
+    
+    /* Desktop mantém como está */
+    .sec-title{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-top:28px;
+      margin-bottom:6px;
+    }
+    .sec-actions{
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    
+    /* Mobile: título em cima + botões embaixo (grid) */
+    @media (max-width: 640px){
+      .sec-title{
+        flex-direction:column;
+        align-items:stretch;
+        gap:10px;
+      }
+    
+      .sec-title h2{
+        margin:0;
+        font-size:22px;      /* ajusta o tamanho do título */
+        line-height:1.15;
+        text-align:left;
+      }
+    
+      /* Botões em 2 colunas quando couber */
+      .sec-actions{
+        width:100%;
+        display:grid;
+        grid-template-columns: 1fr 1fr;
+        gap:10px;
+      }
+    
+      /* Botões ocupam a célula inteira e não estouram */
+      .sec-actions .btn-roxo{
+        width:100% !important;
+        justify-content:center !important;
+        padding:0 10px !important;
+        font-size:13px !important;
+        height:38px !important;
+        min-width:0 !important;
+      }
+    }
+    
+    /* Mobile pequeno: empilha os botões (100% largura) */
+    @media (max-width: 420px){
+      .sec-actions{
+        grid-template-columns: 1fr;
+      }
+      .sec-actions .btn-roxo{
+        height:40px !important;
+        font-size:14px !important;
+      }
+    }
+
+    
   </style>
 
   <!-- ✅ Header padrão (SEMPRE o último do head) -->
