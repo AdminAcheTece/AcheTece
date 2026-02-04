@@ -1,21 +1,35 @@
 /* =========================================================
-   HEADER PADRÃO — AcheTece (VERSÃO V1)
-   Use em todas as páginas: <body class="header-v1">
+   AcheTece — HEADER PADRÃO (V1)
+   Requisito em TODAS as páginas: <body class="header-v1">
+   Este arquivo é a ÚNICA fonte de verdade do header + menu.
    ========================================================= */
+
 body.header-v1{
-  /* controles rápidos */
+  /* --------- controles rápidos --------- */
   --nav-top: 12px;
-  --nav-width-desktop: 220px;   /* distância das laterais no desktop (maior = barra mais estreita) */
+  --nav-width-desktop: 220px;     /* desktop: quanto maior, mais “estreita” a pílula */
   --nav-pad-y: 12px;
   --nav-pad-x: 18px;
 
-  /* mobile: controle fino */
-  --nav-mobile-pad-left: 2px;   /* logo mais pra esquerda */
-  --nav-mobile-pad-right: 10px;
-  --nav-mobile-gap: 8px;       /* gap entre Conta e hambúrguer */
+  /* mobile */
+  --nav-mobile-pad-left: 6px;     /* ↓ menor = logo mais pra esquerda */
+  --nav-mobile-pad-right: 12px;   /* ↑ maior = Conta+menu mais pra esquerda */
+  --nav-mobile-gap: 10px;         /* espaço entre Conta e hambúrguer */
+
+  /* micro-ajustes finos (opcional) */
+  --logo-shift-x: 0px;            /* ex.: -2px */
+  --actions-shift-x: 0px;         /* ex.: -3px */
+
+  /* reserva de espaço do header fixo (padronizado em todas as páginas) */
+  background:#fff;
+  padding-top:118px;
 }
 
-/* base “blindada” */
+@media (max-width:900px){
+  body.header-v1{ padding-top:98px; }
+}
+
+/* ===================== HEADER (faixa preta) ===================== */
 body.header-v1 .navbar{
   position: fixed !important;
   top: var(--nav-top) !important;
@@ -46,13 +60,26 @@ body.header-v1 .header-right{
   align-items:center !important;
 }
 
+body.header-v1 .logo{
+  margin:0 !important;
+  padding:0 !important;
+  transform: translateX(var(--logo-shift-x)) !important;
+}
+body.header-v1 .logo img{
+  height:60px !important;
+  width:auto !important;
+  display:block !important;
+  object-fit:contain !important;
+}
+
 body.header-v1 .hdr-actions{
   display:flex !important;
   align-items:center !important;
   gap:12px !important;
+  transform: translateX(var(--actions-shift-x)) !important;
 }
 
-/* nav desktop */
+/* NAV desktop */
 body.header-v1 .hdr-nav{
   flex:1 !important;
   display:flex !important;
@@ -75,21 +102,8 @@ body.header-v1 .hdr-nav a:hover{
   background:rgba(255,255,255,.08) !important;
 }
 
-/* logo */
-body.header-v1 .navbar .logo,
-body.header-v1 .navbar .header-left{
-  margin:0 !important;
-  padding:0 !important;
-}
-body.header-v1 .navbar .logo img{
-  height:60px !important;
-  width:auto !important;
-  display:block !important;
-  object-fit:contain !important;
-}
-
-/* botão conta (idêntico em todas) */
-body.header-v1 .navbar .btn-perfil{
+/* Conta Malharia */
+body.header-v1 .btn-perfil{
   display:inline-flex !important;
   align-items:center !important;
   justify-content:center !important;
@@ -104,52 +118,157 @@ body.header-v1 .navbar .btn-perfil{
   box-shadow:none !important;
   line-height:1 !important;
   white-space:nowrap !important;
+  cursor:pointer !important;
+  transition: background-color .15s ease, color .15s ease, transform .15s ease !important;
 }
+body.header-v1 .btn-perfil:hover{ background:var(--lime,#B6F34D) !important; color:#111 !important; transform:translateY(-1px) !important; }
+body.header-v1 .btn-perfil:active{ background:var(--lime-700,#A2E532) !important; color:#111 !important; transform:translateY(0) !important; }
 
-/* hambúrguer (tamanho fixo padrão) */
+/* (Opcional) casinha desktop — se existir na página */
+body.header-v1 .btn-home{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:44px;
+  height:44px;
+  border-radius:9999px;
+  border:1px solid rgba(255,255,255,.22);
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  text-decoration:none;
+  cursor:pointer;
+  transition: background-color .15s ease, color .15s ease, transform .15s ease;
+}
+body.header-v1 .btn-home:hover{ background:var(--lime,#B6F34D); color:#111; transform:translateY(-1px); }
+body.header-v1 .btn-home:active{ background:var(--lime-700,#A2E532); color:#111; transform:translateY(0); }
+body.header-v1 .btn-home svg{ width:20px;height:20px; stroke:currentColor; }
+
+/* Botão hambúrguer */
 body.header-v1 .btn-menu{
-  width:44px !important;
-  height:44px !important;
-  border-radius:9999px !important;
+  display:none; /* liga só no mobile */
+  align-items:center;
+  justify-content:center;
+  width:44px;
+  height:44px;
+  border-radius:9999px;
+  border:1px solid rgba(255,255,255,.22);
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  cursor:pointer;
+  transition: background-color .15s ease, color .15s ease, transform .15s ease;
 }
-body.header-v1 .btn-menu svg{
-  width:20px !important;
-  height:20px !important;
+body.header-v1 .btn-menu:hover{ background:var(--lime,#B6F34D); color:#111; transform:translateY(-1px); }
+body.header-v1 .btn-menu:active{ background:var(--lime-700,#A2E532); color:#111; transform:translateY(0); }
+body.header-v1 .btn-menu svg{ width:20px;height:20px; stroke:#fff !important; }
+body.header-v1 .btn-menu:hover svg,
+body.header-v1 .btn-menu:active svg{ stroke:#111 !important; }
+
+/* ===================== MENU MOBILE (padronizado) ===================== */
+body.header-v1 .mobile-menu-backdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.35);
+  backdrop-filter: blur(2px);
+  display:none;
+  z-index:1990;
+}
+body.header-v1 .mobile-menu{
+  position:fixed;
+  top:98px;
+  right:14px;
+  width:min(92vw, 320px);
+  background:#fff;
+  border-radius:16px;
+  box-shadow:0 18px 40px rgba(0,0,0,.22);
+  padding:0;
+  display:none;
+  z-index:1991;
+  overflow:hidden;
 }
 
-/* ===== MOBILE ===== */
+body.header-v1 .mobile-menu .menu-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:10px 12px;
+  border-bottom:1px solid #eee;
+  background:#fff;
+  min-height:88px;
+}
+body.header-v1 .mobile-menu .menu-logo{ flex:1; min-width:0; display:flex; align-items:center; text-decoration:none; }
+body.header-v1 .mobile-menu .menu-logoBox{ flex:1; min-width:0; height:80px; overflow:hidden; }
+body.header-v1 .mobile-menu .menu-logoBox img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  object-position:left center;
+  transform:scale(1.12);
+  transform-origin:left center;
+  display:block;
+}
+body.header-v1 .mobile-menu .menu-close{
+  flex:0 0 auto;
+  width:40px;
+  height:40px;
+  border-radius:12px;
+  border:0;
+  background:var(--lime,#B6F34D);
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  padding:0;
+}
+body.header-v1 .mobile-menu .menu-close:hover{ background:var(--lime-700,#A2E532); }
+body.header-v1 .mobile-menu .menu-close .x-icon{
+  width:20px;height:20px;
+  stroke:#000; stroke-width:1.8; fill:none; stroke-linecap:round;
+}
+body.header-v1 .mobile-menu .menu-body{ padding:10px 12px 12px; }
+body.header-v1 .mobile-menu a{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 10px;
+  border-radius:12px;
+  text-decoration:none;
+  color:#111;
+  font-weight:600;
+}
+body.header-v1 .mobile-menu a:hover{ background:#f6f6f6; }
+body.header-v1 .mobile-menu svg{ width:18px;height:18px; flex:0 0 18px; color:#111; }
+
+body.header-v1.menu-open{ overflow:hidden; }
+body.header-v1.menu-open .mobile-menu-backdrop{ display:block; }
+body.header-v1.menu-open .mobile-menu{ display:block; }
+
+/* ===================== MOBILE (igual em todas as páginas) ===================== */
 @media (max-width:900px){
-  body.header-v1 .hdr-nav{ display:none !important; }
-
   body.header-v1 .navbar{
-    padding-left: var(--nav-mobile-pad-left) !important;
-    padding-right: var(--nav-mobile-pad-right) !important;
+    top:10px !important;
+    width:calc(100% - 20px) !important;
+    border-radius:34px !important;
+    padding:10px var(--nav-mobile-pad-right,12px) 10px var(--nav-mobile-pad-left,6px) !important;
   }
 
-  body.header-v1 .hdr-actions{
-    gap: var(--nav-mobile-gap) !important;
-  }
-
+  body.header-v1 .hdr-nav{ display:none !important; }
+  body.header-v1 .btn-home{ display:none !important; }
   body.header-v1 .btn-menu{ display:inline-flex !important; }
+
+  body.header-v1 .hdr-actions{ gap: var(--nav-mobile-gap,10px) !important; }
+
+  /* botão conta mais compacto no mobile (padrão) */
+  body.header-v1 .btn-perfil{
+    height:36px !important;
+    padding:0 14px !important;
+    font-size:13px !important;
+  }
 }
 
-/* ===== DESKTOP ===== */
+/* ===================== DESKTOP ===================== */
 @media (min-width:901px){
   body.header-v1 .btn-menu{ display:none !important; }
-}
-
-/* ✅ Correção definitiva: header SEMPRE largo no mobile */
-@media (max-width:900px){
-  body.header-v1 .navbar{
-    top: 10px !important;
-    width: calc(100% - 20px) !important;      /* ✅ largura correta no mobile */
-    border-radius: 34px !important;
-
-    /* padding controlado (com fallback) */
-    padding: 10px var(--nav-mobile-pad-right, 12px) 10px var(--nav-mobile-pad-left, 6px) !important;
-  }
-
-  /* ✅ força logo e botões existirem no mobile */
-  body.header-v1 .header-left{ display:flex !important; }
-  body.header-v1 .btn-menu{ display:inline-flex !important; }
+  body.header-v1 .mobile-menu,
+  body.header-v1 .mobile-menu-backdrop{ display:none !important; }
 }
