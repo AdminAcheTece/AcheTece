@@ -1,658 +1,291 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>Painel da Malharia</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <title>Painel da Malharia - AcheTece</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+  <!-- CSS principal -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <!-- Favicons -->
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
 
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
+
+  <!-- CSS SOMENTE do conteúdo desta página (SEM HEADER AQUI) -->
   <style>
-  :root{
-    /* Paleta OLIVE (padrão novo) */
-    --olive:#7B7424;
-    --olive-600:#5E581C;
-    --olive-dark:#434326;
-    --olive-50:#F1F2E8;
-    --line-olive:#BFBFA8;
+    :root{
+      /* Paleta oliva (padrão novo) */
+      --olive:#7B7424;
+      --olive-600:#5E581C;
+      --olive-dark:#434326;
+      --olive-50:#F1F2E8;
+      --olive-100:#E6E7DE;
+      --line-olive:#BFBFA8;
 
-    /* Destaque neon para CTAs */
-    --lime:#B6F34D;
-    --lime-700:#A2E532;
+      --bg-150:#EAEAE8;   /* miolo cinza igual index */
+      --site-bg: var(--bg-150);
 
-    /* Fundo global igual à index */
-    --site-bg:#EAEAE8;
+      /* Compatibilidade com CSS legado */
+      --roxo:var(--olive);
+      --roxo-hover:var(--olive-600);
 
-    /* Compat/legado + neutros */
-    --text:#1f1f1f; --muted:#6b6b6b;
-    --line:#cfd3dc; --line-strong:#b9bfca;
-    --bg:#ffffff; --bg-soft:var(--site-bg);
-    --success:#2e7d32; --warn:#b85e00; --danger:#b00020;
+      /* Hover neon */
+      --lime:#B6F34D;
+      --lime-700:#A2E532;
 
-    /* Aliases para CSS antigo */
-    --roxo:var(--olive);
-    --roxo-hover:var(--olive-600);
-  }
+      /* Neutros */
+      --cinza-900:#111827;
+      --text:#1f1f1f;
+      --muted:#6b6b6b;
+      --line:#cfd3dc;
+      --line-strong:#b9bfca;
+      --bg:#ffffff;
 
-  .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+      /* Status */
+      --success:#2e7d32;
+      --warn:#b85e00;
+      --danger:#b00020;
 
-  html, body{ background:var(--bg-soft); color:var(--text); margin:0; }
-  th, td{ text-align:center; }
-
-  /* ======= TOPBAR ======= */
-  .topbar{
-    display:flex; align-items:center; gap:12px;
-    padding:8px 14px; background:#fff; border-bottom:1px solid var(--line);
-    position:sticky; top:0; z-index:50;
-  }
-  .topbar .logo img{ height:54px; }
-  @media (min-width:901px){ .topbar .logo img{ height:44px; } }
-  .topbar .spacer{ flex:1; }
-
-  .top-icons{ display:flex; align-items:center; gap:12px; }
-  .badge-wrap{ position:relative; }
-  .badge{
-    position:absolute; top:-6px; right:-6px; min-width:16px; height:16px;
-    padding:0 4px; border-radius:999px; background:#ff6b00; color:#fff;
-    font-size:11px; display:flex; align-items:center; justify-content:center; line-height:1;
-  }
-
-  .icon-btn{
-    display:inline-flex; align-items:center; justify-content:center;
-    width:36px; height:36px; border-radius:9999px; border:1px solid var(--line);
-    background:#fff; cursor:pointer; transition:.18s background-color, .18s transform;
-    box-shadow:none !important;
-  }
-  .icon-btn:hover{ background:var(--olive-50); transform:translateY(-1px); }
-  .icon-btn:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
-  .icon-btn svg{ width:18px; height:18px; stroke:#444; fill:none; stroke-width:1.8; }
-
-  /* Perfil no mesmo “tamanho de círculo” dos botões ao lado (icon-btn = 36x36) */
-  .profile-pill{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-  
-    width:36px;          /* igual icon-btn */
-    height:36px;         /* igual icon-btn */
-    padding:0;
-  
-    border:1px solid var(--line);
-    border-radius:9999px;
-    background:#fff;
-    cursor:pointer;
-    transition:.18s background-color, .18s transform;
-    box-shadow:none !important;
-  }
-  
-  .profile-pill:hover{ background:var(--olive-50); transform:translateY(-1px); }
-  .profile-pill:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
-  
-  /* avatar dentro do botão (proporcional) */
-  .profile-pill .avatar{
-    width:26px;          /* igual ao seu padrão anterior */
-    height:26px;
-    border-radius:50%;
-    overflow:hidden;
-    background:#f2f2ff;
-    display:grid;
-    place-items:center;
-    border:1px solid var(--line);
-  }
-  
-  .profile-pill .name,
-  .profile-pill .caret{ display:none !important; }
-
-
-  .profile-menu{
-    position:absolute; right:14px; top:56px; width:280px;
-    background:#fff; border:1px solid var(--line); border-radius:14px;
-    opacity:0; pointer-events:none; transform:translateY(8px) scale(.98);
-    transition:opacity .18s ease, transform .18s ease; z-index:60;
-  }
-  .profile-menu.open{ opacity:1; pointer-events:auto; transform:translateY(0) scale(1); }
-  .pm-header{ display:flex; align-items:center; gap:10px; padding:12px; border-bottom:1px solid var(--line); }
-  .pm-header .avatar{
-    width:24px; height:24px; border-radius:50%; overflow:hidden; background:#f2f2ff;
-    display:grid; place-items:center; border:1px solid var(--line);
-  }
-  .pm-group-title{ font-size:11px; color:#7a7a7a; letter-spacing:.02em; text-transform:uppercase; padding:10px 12px 4px; }
-  .pm-item{ display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222; }
-  .pm-item:hover{ background:var(--olive-50); color:var(--olive); border-radius:8px; }
-  .pm-item svg{ width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:1.8; }
-  .pm-sep{ height:1px; background:var(--line); margin:6px 0; }
-
-  .notify-panel{
-    position:absolute; right:70px; top:56px; width:320px; max-width:92vw;
-    background:#fff; border:1px solid var(--line); border-radius:14px;
-    opacity:0; pointer-events:none; transform:translateY(8px) scale(.98);
-    transition:opacity .18s ease, transform .18s ease; z-index:60;
-  }
-  .notify-panel.open{ opacity:1; pointer-events:auto; transform:translateY(0) scale(1); }
-  .np-header{ padding:10px 12px; border-bottom:1px solid var(--line); font-weight:800; }
-  .np-empty{ padding:14px 12px; color:#666; }
-  .np-item{ padding:10px 12px; border-bottom:1px solid #f1f2f6; }
-  .np-item:last-child{ border-bottom:0; }
-  .np-item small{ color:#777; }
-
-  /* ===== BOTÕES PADRÃO (preto → lime no hover; SEM borda no hover) ===== */
-  .btn{
-    display:inline-flex; align-items:center; justify-content:center;
-    height:40px; padding:0 16px; border-radius:9999px; border:0;
-    background:#000; color:var(--lime); font-weight:800; font-size:14px;
-    text-decoration:none; cursor:pointer; transition:.15s background-color, .15s color, .15s transform;
-    box-shadow:none !important;
-  }
-  .btn:hover{ background:var(--lime); color:#000; transform:translateY(-2px); }
-  .btn:active{ background:var(--lime-700); color:#000; transform:translateY(0); }
-  .btn:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
-
-  /* Versão “marca” (antes .btn-roxo) — agora OLIVE */
-  .btn-roxo{
-    display:inline-flex; align-items:center; justify-content:center;
-    height:40px; padding:0 16px; border:0; border-radius:9999px;
-    background:var(--olive); color:#fff; font-weight:800; font-size:14px;
-    text-decoration:none; cursor:pointer; transition:.15s background-color, .15s transform;
-    box-shadow:none !important;
-  }
-  .btn-roxo:hover{ background:var(--olive-600); transform:translateY(-1px); }
-  .btn-roxo:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
-
-  .container{ max-width:1100px; margin:0 auto; padding:0 16px 28px; }
-  h1.titulo{ text-align:center; margin:10px 0 4px; color:var(--olive-dark); }
-  h2{ margin:0; color:#1d1d1d; }
-
-  /* ===== HERO com duas colunas ===== */
-  .hero-card{
-    max-width:1100px; margin:14px auto 8px;
-    background:#fff; border:1px solid var(--line);
-    border-radius:22px; padding:18px;
-    display:grid; grid-template-columns:1.2fr .8fr; gap:20px; align-items:stretch;
-  }
-  @media (max-width:920px){ .hero-card{ grid-template-columns:1fr; } }
-  .hero-ident{ display:flex; gap:14px; align-items:flex-start; min-width:0; position:relative; }
-
-  .hero-nome{ font-size:1.25rem; font-weight:800; color:#161616; line-height:1.2; }
-  .hero-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
-  .chip{
-    display:inline-flex; align-items:center; gap:8px; height:32px; padding:0 12px;
-    border-radius:999px; font-weight:700; font-size:.85rem; border:1px solid var(--line);
-    background:#fff; color:#333; text-decoration:none;
-  }
-  .chip .dot{ width:8px; height:8px; border-radius:50%; }
-  .dot-success{ background:var(--success); }
-  .dot-warn{ background:var(--warn); }
-
-  /* ===== Coluna direita: Performance ===== */
-  .perf-mini{
-    border:1px solid var(--line); border-radius:16px; padding:14px; background:#fff;
-    display:flex; flex-direction:column; gap:8px; align-items:flex-start; justify-content:center;
-  }
-  .perf-mini-title{ font-weight:800; color:var(--olive-dark); }
-  .perf-mini-link{ font-weight:800; color:var(--olive); text-decoration:none; }
-  .perf-mini-link:hover{ text-decoration:underline; }
-
-  /* ===== NOVO: bloco assinatura e pagamento (UX moderna) ===== */
-  .billing-wrap{
-    max-width:1100px; margin:10px auto 0;
-  }
-  .billing-details{
-    background:#fff;
-    border:1px solid var(--line);
-    border-radius:18px;
-    overflow:hidden;
-  }
-  .billing-details > summary{
-    list-style:none;
-    cursor:pointer;
-    padding:14px 16px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:12px;
-  }
-  .billing-details > summary::-webkit-details-marker{ display:none; }
-  .billing-sum-left{
-    display:flex; flex-direction:column; gap:2px; min-width:0;
-  }
-  .billing-title{
-    font-weight:900;
-    color:#1b1b1b;
-  }
-  .billing-sub{
-    font-size:13px;
-    color:#666;
-  }
-  .billing-sum-right{
-    display:flex; align-items:center; gap:10px;
-  }
-  .billing-pill{
-    display:inline-flex; align-items:center; gap:8px;
-    height:30px; padding:0 12px; border-radius:999px;
-    border:1px solid var(--line);
-    background:var(--olive-50);
-    font-weight:800;
-    font-size:13px;
-    color:#222;
-    white-space:nowrap;
-  }
-
-  .billing-body{
-    border-top:1px solid var(--line);
-    padding:14px 16px 16px;
-    display:grid;
-    grid-template-columns: 1.1fr .9fr;
-    gap:14px;
-    align-items:start;
-  }
-  @media (max-width:900px){
-    .billing-body{ grid-template-columns:1fr; }
-  }
-  .billing-note{
-    background:var(--olive-50);
-    border:1px solid var(--line-olive);
-    border-radius:14px;
-    padding:12px;
-    color:#333;
-    font-size:14px;
-    line-height:1.5;
-  }
-  .billing-note strong{ color:#000; }
-
-  .plans{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:10px;
-  }
-  @media (max-width:520px){
-    .plans{ grid-template-columns:1fr; }
-  }
-  .plan-card{
-    border:1px solid var(--line);
-    border-radius:16px;
-    background:#fff;
-    padding:12px;
-    cursor:pointer;
-    display:flex;
-    gap:10px;
-    align-items:flex-start;
-    transition: transform .12s ease, border-color .12s ease, background .12s ease;
-  }
-  .plan-card:hover{ transform: translateY(-2px); }
-  .plan-card input{ margin-top:3px; }
-  .plan-card .ptitle{
-    font-weight:900; color:#111; line-height:1.1;
-    display:flex; gap:8px; align-items:center; flex-wrap:wrap;
-  }
-  .tag-off{
-    font-size:11px;
-    font-weight:900;
-    background:var(--lime);
-    color:#000;
-    border-radius:999px;
-    padding:3px 8px;
-    border:1px solid rgba(0,0,0,.1);
-  }
-  .pprice{
-    font-weight:900;
-    font-size:20px;
-    margin-top:4px;
-    color:#111;
-  }
-  .pmeta{
-    font-size:12.5px;
-    color:#666;
-    margin-top:2px;
-    line-height:1.35;
-  }
-  .plan-card.selected{
-    border-color: rgba(182,243,77,.75);
-    box-shadow: 0 0 0 3px rgba(182,243,77,.25);
-  }
-
-  .billing-actions{
-    margin-top:10px;
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
-    align-items:center;
-    justify-content:flex-end;
-  }
-  .billing-actions .hint{
-    font-size:12.5px;
-    color:#666;
-    margin-right:auto;
-  }
-
-  /* ===== TABELA ===== */
-  .table-wrapper{ overflow-x:auto; margin-top:8px; }
-  table{ width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--line); }
-  thead th{ background:#fafafa; }
-  th, td{ padding:10px; border:1px solid var(--line); }
-  tbody tr:hover{ background:#fcfcff; }
-
-  /* ===== Override: tabela (olive + zebra) ===== */
-  .table-wrapper table thead th{
-    background:#7B7424 !important;
-    color:#fff !important;
-    border-color:#5E581C !important;
-    font-weight:600;
-  }
-  .table-wrapper table tbody tr:nth-child(odd){  background:#fff; }
-  .table-wrapper table tbody tr:nth-child(even){ background:var(--olive-50); }
-  .table-wrapper table tbody td{ border-color: var(--line-olive); }
-
-  .sec-title{
-    display:flex; align-items:center; justify-content:space-between; gap:12px;
-    margin-top:28px; margin-bottom:4px;
-  }
-
-  /* ===== Ações por ícone ===== */
-  .acoes-wrap{ display:flex; justify-content:center; gap:8px; flex-wrap:wrap; }
-  .icon-btn.edit:hover svg{ stroke:var(--olive); }
-  .icon-btn.danger:hover svg{ stroke:var(--danger); }
-
-  /* ===== Mobile: cards ===== */
-  .teares-cards{ display:none; grid-template-columns:1fr; gap:10px; }
-  .tear-card{ border:1px solid var(--line); border-radius:14px; background:#fff; padding:12px; }
-  .tear-hd{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
-  .tear-title{ font-weight:800; color:#1d1d1d; }
-  .tear-actions{ display:flex; gap:8px; margin-left:auto; }
-  .tear-body{ display:grid; grid-template-columns:1fr 1fr; gap:8px 12px; }
-  .tear-item span{ display:block; font-size:11px; color:#777; }
-  .tear-item strong{ font-size:14px; color:#222; }
-
-  .it-tipo{ grid-column:1 / -1; }
-  .it-diametro{ grid-column:auto; }
-  .it-finura{ grid-column:auto; }
-  .it-alims{ grid-column:auto; }
-  .it-elastano{ grid-column:auto; }
-
-  @media (max-width:640px){
-    .table-wrapper{ display:none; }
-    .teares-cards{ display:grid; }
-  }
-
-  /* ===== Modal de Câmera ===== */
-  .cam-overlay{
-    position:fixed; inset:0; background:rgba(0,0,0,.65);
-    display:none; align-items:center; justify-content:center; z-index:70;
-  }
-  .cam-overlay.open{ display:flex; }
-  .cam-modal{
-    width:min(92vw, 520px); background:#fff; border-radius:16px; border:1px solid var(--line);
-    padding:12px; display:flex; flex-direction:column; gap:10px;
-  }
-  .cam-video{ width:100%; background:#000; border-radius:12px; overflow:hidden; }
-  .cam-actions{ display:flex; gap:10px; justify-content:flex-end; }
-  .cam-actions .btn{ background:#000; color:var(--lime); }
-  .cam-actions .btn:hover{ background:var(--lime); color:#000; transform:translateY(-2px); }
-  .cam-actions .btn:active{ background:var(--lime-700); color:#000; transform:translateY(0); }
-
-  /* === Override: botão "+ Cadastrar Tear" no padrão global (preto → lime) === */
-  button.btn-roxo,
-  a.btn-roxo,
-  .btn-roxo{
-    background:#000 !important;
-    color:var(--lime) !important;
-    border:0;
-    height:40px;
-    padding:0 18px;
-    border-radius:9999px;
-    font-weight:800;
-    text-decoration:none;
-    cursor:pointer;
-    transition: background-color .15s ease, color .15s ease, transform .12s ease;
-    box-shadow:none !important;
-  }
-  .btn-roxo:hover{
-    background:var(--lime) !important;
-    color:#000 !important;
-    transform:translateY(-2px);
-  }
-  .btn-roxo:active{
-    background:var(--lime-700) !important;
-    color:#000 !important;
-    transform:translateY(0);
-  }
-  .btn-roxo:focus{ outline:none; }
-  .btn-roxo:focus-visible{
-    outline:2px solid var(--lime);
-    outline-offset:2px;
-  }
-
-  /* Ícone compactado dentro da chip de vencimento */
-  .chip .ico{ width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:1.8; }
-
-  /* ===== Ajustes específicos para CELULAR (até 520px) ===== */
-  @media (max-width:520px){
-    .hero-chips{ gap:6px; align-items:flex-start; }
-    .hero-chips .chip{ height:auto; padding:6px 10px; gap:6px; font-size:0.80rem; max-width:100%; line-height:1.3; }
-    .hero-chips .chip .ico{ margin-top:1px; flex-shrink:0; }
-    .hero-chips .chip span{ white-space:normal; }
-
-    .sec-title{
-      flex-direction:row;
-      align-items:center;
-      justify-content:space-between;
-      gap:6px;
-      flex-wrap:nowrap;
+      --maxw:1280px;
     }
-    .sec-title h2{ font-size:0.95rem; margin:0; }
-    .sec-title .btn-roxo{
-      height:32px;
-      font-size:0.80rem;
-      padding:0 10px;
-      white-space:nowrap;
-    }
-  }
-    
-    /* ===== Assinatura e Pagamento (banner no painel) ===== */
-    .pay-wrap{
-      margin-top:14px;
+
+    html, body { max-width:100%; overflow-x:hidden; }
+    *, *::before, *::after { box-sizing:border-box; }
+
+    body{
       background:#fff;
-      border:1px solid var(--line);
-      border-radius:22px;
-      overflow:hidden;
+      color:var(--cinza-900);
+      margin:0;
+      font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
     }
-    .pay-head{
+
+    .sr-only{
+      position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+      overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+    }
+
+    /* Miolo cinza + container central (igual padrão) */
+    .faixa-cinza{ background: var(--site-bg); padding:16px 0 48px; }
+    .page-outer{ max-width:var(--maxw); margin:0 auto; padding:0 16px; }
+
+    /* ==========================================================
+       TOPO (ESPECÍFICO DO PAINEL):
+       - Sem "Conta Malharia"
+       - Manter Chat + Notificações + Perfil (ícones) à esquerda da casinha
+       - Ícones com mesma “cara” da casinha (tamanho/cores)
+       ========================================================== */
+
+    /* Blindagem visual dos 3 botões do painel para ficarem iguais à casinha */
+    .hdr-actions.painel-actions{
+      position:relative; /* base para popovers se necessário */
       display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:12px;
-      padding:16px 16px 12px;
+      align-items:center;
+      gap:10px;
+    }
+
+    /* Botões ícone (Chat, Notif, Perfil) com o mesmo estilo da casinha */
+    .hdr-actions.painel-actions .icon-btn,
+    .hdr-actions.painel-actions .profile-pill{
+      width:40px !important;
+      height:40px !important;
+      border-radius:12px !important;
+      border:1px solid #e4e4e4 !important;
+      background:#fff !important;
+      display:inline-flex !important;
+      align-items:center !important;
+      justify-content:center !important;
+      cursor:pointer;
+      padding:0 !important;
+      box-shadow:none !important;
+      transition: background-color .15s ease, transform .12s ease;
+    }
+    .hdr-actions.painel-actions .icon-btn:hover,
+    .hdr-actions.painel-actions .profile-pill:hover{
+      background:var(--olive-50) !important;
+      transform:translateY(-1px);
+    }
+    .hdr-actions.painel-actions .icon-btn:focus-visible,
+    .hdr-actions.painel-actions .profile-pill:focus-visible{
+      outline:2px solid var(--lime);
+      outline-offset:2px;
+    }
+
+    .hdr-actions.painel-actions .icon-btn svg{
+      width:20px !important;
+      height:20px !important;
+      stroke:#111 !important;
+      fill:none !important;
+      stroke-width:2 !important;
+      stroke-linecap:round;
+      stroke-linejoin:round;
+    }
+
+    .hdr-actions.painel-actions .profile-pill .user-ico{
+      width:20px !important;
+      height:20px !important;
+      display:block;
+      fill:none;
+      stroke:#111;
+      stroke-width:2;
+      stroke-linecap:round;
+      stroke-linejoin:round;
+    }
+
+    /* Badge (mantém funcional) */
+    .badge-wrap{ position:relative; }
+    .badge{
+      position:absolute; top:-6px; right:-6px; min-width:16px; height:16px;
+      padding:0 4px; border-radius:999px;
+      background:#ff6b00; color:#fff;
+      font-size:11px; display:flex; align-items:center; justify-content:center; line-height:1;
+      border:2px solid #fff;
+    }
+
+    /* Popovers (Notificações / Perfil) — posicionamento seguro abaixo do header */
+    .notify-panel{
+      position:fixed;
+      right:16px;
+      top: calc(var(--nav-h, 72px) + 10px);
+      width:320px; max-width:92vw;
+      background:#fff; border:1px solid var(--line); border-radius:14px;
+      opacity:0; pointer-events:none; transform:translateY(8px) scale(.98);
+      transition:opacity .18s ease, transform .18s ease;
+      z-index:9999;
+    }
+    .notify-panel.open{ opacity:1; pointer-events:auto; transform:translateY(0) scale(1); }
+    .np-header{ padding:10px 12px; border-bottom:1px solid var(--line); font-weight:800; }
+    .np-empty{ padding:14px 12px; color:#666; }
+    .np-item{ padding:10px 12px; border-bottom:1px solid #f1f2f6; }
+    .np-item:last-child{ border-bottom:0; }
+    .np-item small{ color:#777; }
+
+    .profile-menu{
+      position:fixed;
+      right:16px;
+      top: calc(var(--nav-h, 72px) + 10px);
+      width:280px; max-width:92vw;
+      background:#fff; border:1px solid var(--line); border-radius:14px;
+      opacity:0; pointer-events:none; transform:translateY(8px) scale(.98);
+      transition:opacity .18s ease, transform .18s ease;
+      z-index:9999;
+    }
+    .profile-menu.open{ opacity:1; pointer-events:auto; transform:translateY(0) scale(1); }
+
+    .pm-header{
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      text-align:center;
+      gap:10px;
+      padding:12px;
       border-bottom:1px solid var(--line);
     }
-    .pay-title{
-      font-weight:800;
-      color:#1d1d1d;
-      margin:0;
-    }
-    .pay-sub{
-      margin:4px 0 0;
-      color:#666;
-      font-size:14px;
-    }
-  
-    .pay-status{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      flex-wrap:wrap;
-      justify-content:flex-end;
-    }
-    .pill{
-      display:inline-flex; align-items:center; gap:8px;
-      padding:7px 12px;
-      border-radius:999px;
+    .pm-header .avatar-ico{
+      width:36px; height:36px;
+      border-radius:50%;
       border:1px solid var(--line);
       background:#fff;
-      font-weight:800;
-      font-size:13px;
-      color:#222;
-      white-space:nowrap;
-    }
-    .pill .dot{ width:8px; height:8px; border-radius:50%; display:inline-block; }
-    .pill-ok .dot{ background:var(--success); }
-    .pill-warn .dot{ background:var(--warn); }
-    .pill-bad .dot{ background:var(--danger); }
-  
-    .pay-body{
       display:grid;
-      grid-template-columns:1.1fr .9fr;
-      gap:16px;
-      padding:16px;
-      align-items:stretch;
-    }
-    @media (max-width:920px){
-      .pay-body{ grid-template-columns:1fr; }
-    }
-  
-    .pay-how{
-      background:var(--olive-50);
-      border:1px solid var(--line-olive);
-      border-radius:16px;
-      padding:14px;
-    }
-    .pay-how h4{
-      margin:0 0 8px;
-      font-weight:900;
-      color:#1d1d1d;
-    }
-    .pay-how ol{
-      margin:0;
-      padding-left:18px;
-      color:#222;
-    }
-    .pay-how li{ margin:6px 0; }
-    .pay-how .hint{
-      margin-top:10px;
-      color:#555;
-      font-size:13px;
-    }
-  
-    .plans{
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-    }
-    .plan-row{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
-    }
-    @media (max-width:520px){
-      .plan-row{ grid-template-columns:1fr; }
-    }
-  
-    .plan-card{
-      border:1px solid var(--line);
-      border-radius:18px;
-      padding:12px 12px;
-      background:#fff;
-      cursor:pointer;
-      transition:.15s transform, .15s border-color, .15s box-shadow;
-      position:relative;
-      min-height:92px;
-    }
-    .plan-card:hover{ transform:translateY(-1px); }
-    .plan-card input{ position:absolute; opacity:0; pointer-events:none; }
-  
-    .plan-card.selected{
-      border-color:var(--lime);
-      box-shadow:0 0 0 3px rgba(182,243,77,.25);
-    }
-  
-    .plan-top{
-      display:flex; align-items:center; gap:10px;
-      font-weight:900;
-    }
-    .radio-dot{
-      width:14px; height:14px; border-radius:50%;
-      border:2px solid #bbb; display:inline-block;
-      box-sizing:border-box;
-    }
-    .plan-card.selected .radio-dot{
-      border-color:var(--lime);
-      box-shadow:inset 0 0 0 4px #1d1d1d00;
-      background:var(--lime);
-    }
-    .plan-name{ font-weight:900; }
-    .plan-badge{
-      margin-left:auto;
-      background:var(--lime);
-      color:#000;
-      font-weight:900;
-      font-size:12px;
-      padding:4px 8px;
-      border-radius:999px;
-    }
-    .plan-price{
-      margin-top:6px;
-      font-size:22px;
-      font-weight:900;
+      place-items:center;
       color:#111;
     }
-    .plan-meta{
-      color:#666;
-      font-size:13px;
-      margin-top:4px;
-      line-height:1.35;
+    .pm-header .avatar-ico svg{
+      width:20px; height:20px;
+      stroke:currentColor; fill:none; stroke-width:1.8;
     }
-  
-    .pay-footer{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      margin-top:6px;
+
+    .pm-group-title{
+      font-size:11px; color:#7a7a7a; letter-spacing:.02em; text-transform:uppercase;
+      padding:10px 12px 4px;
     }
-    .pay-note{
-      color:#666;
-      font-size:13px;
+    .pm-item{
+      display:flex; align-items:center; gap:10px;
+      padding:10px 12px;
+      text-decoration:none; color:#222;
     }
-    .pay-cta{
-      margin-left:auto;
+    .pm-item:hover{ background:var(--olive-50); color:var(--olive); border-radius:8px; }
+    .pm-item svg{ width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:1.8; }
+    .pm-sep{ height:1px; background:var(--line); margin:6px 0; }
+
+    /* ==========================================================
+       CONTEÚDO DO PAINEL (mantém suas funcionalidades)
+       ========================================================== */
+
+    th, td{ text-align:center; }
+
+    .container{ max-width:1100px; margin:0 auto; padding:0 16px 28px; }
+
+    h1.titulo{
+      text-align:center;
+      margin:10px 0 4px;
+      color:var(--olive-dark);
+      font-size:28px;
+      font-weight:900;
+      letter-spacing:-0.02em;
     }
-    
-    /* ===== Assinatura / Pagamento (banner inteligente) ===== */
-    .pay-wrap{ max-width:1100px; margin:10px auto 0; padding:0 16px; }
-    .pay-card{
-      background:#fff; border:1px solid var(--line); border-radius:22px; padding:16px;
-      display:grid; grid-template-columns:1.1fr .9fr; gap:16px;
+
+    .painel-sub{
+      text-align:center;
+      margin:6px 0 14px;
+      font-weight:800;
+      font-size:14.5px;
+      color:#2b2b2b;
     }
-    @media (max-width:920px){ .pay-card{ grid-template-columns:1fr; } }
-  
-    .pay-hd{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:10px; }
-    .pay-title{ font-weight:800; color:var(--olive-dark); font-size:1.05rem; }
-    .pay-sub{ color:#666; font-size:.92rem; margin-top:2px; line-height:1.35; }
-  
-    .status-pill{
-      display:inline-flex; align-items:center; gap:8px;
-      padding:6px 10px; border-radius:999px; border:1px solid var(--line);
-      background:var(--olive-50); font-weight:800; font-size:.85rem;
+
+    h2{ margin:0; color:#1d1d1d; }
+
+    /* ===== Botões padrão (preto -> lime no hover) ===== */
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      height:40px; padding:0 16px; border-radius:9999px; border:0;
+      background:#000; color:var(--lime); font-weight:900; font-size:14px;
+      text-decoration:none; cursor:pointer;
+      transition:.15s background-color, .15s color, .12s transform;
+      box-shadow:none !important;
       white-space:nowrap;
     }
-    .status-pill.is-warn{ background:#fff3e6; border-color:#ffd4a8; color:#7a3d00; }
-    .status-pill.is-danger{ background:#ffe9ee; border-color:#ffc1cf; color:#7a0013; }
-  
-    .pay-box{ border:1px solid var(--line); border-radius:16px; padding:12px; background:#fff; }
-    .pay-box.soft{ background:var(--olive-50); }
-  
-    .pay-cta{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px; }
-    .btn-ghost{
-      display:inline-flex; align-items:center; justify-content:center;
-      height:40px; padding:0 16px; border-radius:9999px;
-      border:1px solid var(--line); background:transparent;
-      color:#111; font-weight:800; font-size:14px; text-decoration:none;
-      transition:.15s background-color, .15s transform;
-    }
-    .btn-ghost:hover{ background:var(--olive-50); transform:translateY(-1px); }
-    .btn-ghost:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
+    .btn:hover{ background:var(--lime); color:#000; transform:translateY(-2px); }
+    .btn:active{ background:var(--lime-700); color:#000; transform:translateY(0); }
+    .btn:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
 
-    /* ===== Assinatura (novo visual, sem conflito com seus .pay-*) ===== */
+    /* Botões “sec-actions” (padronizados como CTA principal) */
+    .btn-roxo,
+    a.btn-roxo,
+    button.btn-roxo{
+      background:#000 !important;
+      color:var(--lime) !important;
+      border:0 !important;
+      height:40px !important;
+      padding:0 18px !important;
+      border-radius:9999px !important;
+      font-weight:900 !important;
+      text-decoration:none !important;
+      cursor:pointer;
+      transition: background-color .15s ease, color .15s ease, transform .12s ease;
+      box-shadow:none !important;
+      white-space:nowrap;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .btn-roxo:hover{
+      background:var(--lime) !important;
+      color:#000 !important;
+      transform:translateY(-2px);
+    }
+    .btn-roxo:active{
+      background:var(--lime-700) !important;
+      color:#000 !important;
+      transform:translateY(0);
+    }
+    .btn-roxo:focus-visible{
+      outline:2px solid var(--lime);
+      outline-offset:2px;
+    }
+
+    /* ===== Assinatura (bloco colapsável) ===== */
     .sub-wrap{ max-width:1100px; margin:12px auto 0; }
     .sub-card{
       background:#fff; border:1px solid var(--line); border-radius:18px;
@@ -661,14 +294,33 @@
     .sub-sum{
       list-style:none; cursor:pointer;
       padding:14px 16px;
-      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      display:flex; align-items:flex-start; justify-content:space-between;
+      gap:12px;
+      flex-wrap:nowrap;
     }
     .sub-sum::-webkit-details-marker{ display:none; }
-    .sub-left{ min-width:0; }
+    .sub-left{ min-width:0; flex:1 1 auto; }
     .sub-title{ font-weight:900; color:#111; }
-    .sub-sub{ margin-top:3px; font-size:13px; color:#666; line-height:1.35; }
-    
-    .sub-right{ display:flex; align-items:center; gap:10px; }
+    .sub-sub{
+      margin-top:3px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      align-items:center;
+      font-size:13px;
+      color:#666;
+      line-height:1.35;
+    }
+
+    .sub-right{
+      margin-left:auto;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      white-space:nowrap;
+      flex:0 0 auto;
+    }
+
     .sub-pill{
       height:30px; padding:0 12px; border-radius:999px;
       display:inline-flex; align-items:center; justify-content:center;
@@ -678,17 +330,22 @@
     .sub-pill.ok{ background:#e9f7ef; border-color:#bfe7cc; color:#135b2b; }
     .sub-pill.warn{ background:#fff3e6; border-color:#ffd4a8; color:#7a3d00; }
     .sub-pill.danger{ background:#ffe9ee; border-color:#ffc1cf; color:#7a0013; }
-    
-    .sub-caret{ width:26px; height:26px; display:grid; place-items:center; border-radius:999px; border:1px solid var(--line); }
+
+    .sub-caret{
+      width:26px; height:26px;
+      display:grid; place-items:center;
+      border-radius:999px; border:1px solid var(--line);
+      background:#fff;
+    }
     .sub-caret svg{ width:16px; height:16px; color:#444; }
-    
+
     .sub-body{
       border-top:1px solid var(--line);
       padding:14px 16px 16px;
       display:grid; grid-template-columns:1.05fr .95fr; gap:14px;
     }
     @media (max-width:900px){ .sub-body{ grid-template-columns:1fr; } }
-    
+
     .sub-note{
       background:var(--olive-50);
       border:1px solid var(--line-olive);
@@ -699,10 +356,10 @@
     .sub-note ul{ margin:8px 0 0 18px; padding:0; }
     .sub-note li{ margin:6px 0; }
     .sub-tip{ margin-top:8px; font-size:13px; color:#555; }
-    
+
     .sub-plans{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
     @media (max-width:520px){ .sub-plans{ grid-template-columns:1fr; } }
-    
+
     .sub-plan{
       border:1px solid var(--line);
       border-radius:16px;
@@ -723,11 +380,7 @@
       border:2px solid #bbb;
       display:inline-block;
     }
-    .sub-plan.selected .sub-radio{
-      border-color:var(--lime);
-      background:var(--lime);
-    }
-    .sub-plan-name{ color:#111; }
+    .sub-plan.selected .sub-radio{ border-color:var(--lime); background:var(--lime); }
     .sub-badge{
       margin-left:auto;
       background:var(--lime); color:#000;
@@ -735,371 +388,180 @@
       padding:4px 8px; border-radius:999px;
       border:1px solid rgba(0,0,0,.12);
     }
-    
     .sub-price{ font-weight:900; font-size:20px; margin-top:6px; color:#111; }
-    .sub-price small{ font-size:13px; font-weight:800; color:#666; margin-left:6px; }
+    .sub-price small{ font-size:13px; font-weight:900; color:#666; margin-left:6px; }
     .sub-meta{ margin-top:4px; font-size:12.5px; color:#666; line-height:1.35; }
-    
+
     .sub-actions{
       grid-column:1 / -1;
       margin-top:4px;
-      display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end;
+      display:flex; gap:10px; flex-wrap:wrap;
+      align-items:center; justify-content:flex-end;
     }
     .sub-hint{ font-size:12.5px; color:#666; margin-right:auto; }
 
-    /* Sub-resumo: plano + vencimento */
-    .sub-sub{
-      display:flex;
-      flex-wrap:wrap;
-      gap:6px;
-      align-items:center;
-    }
-    
-    /* No desktop, coloca o "•" antes do vencimento */
-    .sub-venc::before{
-      content:"•";
-      margin:0 6px 0 2px;
-      color:#8a8a8a;
-      font-weight:700;
-    }
-    
-    /* CELULAR: força "Vence em ..." virar 2ª linha inteira */
-    @media (max-width:520px){
-      .sub-sub{ display:block; }
-      .sub-plan{ display:block; }
-      .sub-venc{
-        display:block;
-        margin-top:2px;
-        white-space:nowrap; /* evita quebrar "Vence em 12/12/2025" */
-      }
-      .sub-venc::before{ content:""; margin:0; }
-    }
-
-    /* Desktop/tablet: mantém “Plano … • Vence …” na mesma linha (se couber) */
-    .sub-sub .sub-line2{ margin-left:6px; }
-    
-    /* Celular: força “Vence em …” para baixo (sem borda) */
+    /* Mobile: alinhar “Plano” e “Vence em” à esquerda */
     @media (max-width:520px){
       .sub-sub{
         display:flex;
         flex-direction:column;
+        align-items:flex-start;
         gap:2px;
+        text-align:left;
       }
-      .sub-sub .sub-line1,
-      .sub-sub .sub-line2{
-        margin-left:0;
-      }
+      .sub-right{ gap:8px; }
     }
 
-    /* Mantém esquerda e direita na mesma linha, com a direita FIXA */
-    .sub-sum{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:12px;
-      flex-wrap:nowrap;              /* IMPORTANTE: impede o "Pendente" de cair pra baixo */
+    /* ===== Seção Teares ===== */
+    .sec-title{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      margin-top:28px; margin-bottom:6px;
     }
-    
-    .sub-left{ min-width:0; }        /* permite o texto quebrar na esquerda sem empurrar a direita */
-    
-    /* Força a área do status ("Pendente") a ficar colada à direita */
-    .sub-right{
-      margin-left:auto;
-      display:flex;
-      align-items:center;
-      gap:10px;
-      white-space:nowrap;            /* evita quebrar o "Pendente" */
-      flex:0 0 auto;
-    }
-
-    /* ===== HERO CLEAN (UX moderna) ===== */
-    .hero-card.hero-clean{
-      grid-template-columns: 1fr 320px;
-      align-items:center;
-    }
-    @media (max-width:920px){
-      .hero-card.hero-clean{ grid-template-columns:1fr; }
-    }
-    
-    .hero-kicker{
-      font-size:12px;
-      font-weight:900;
-      color:var(--olive);
-      letter-spacing:.02em;
-      text-transform:uppercase;
-      margin-bottom:4px;
-    }
-    .hero-sub{
-      margin-top:6px;
-      color:#666;
-      font-size:14px;
-      line-height:1.35;
-    }
-    
-    .perf-card{
-      border:1px solid var(--line);
-      border-radius:16px;
-      padding:14px;
-      background:#fff;
-      text-decoration:none;
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-      justify-content:center;
-      min-height:86px;
-      transition: transform .12s ease, background .12s ease;
-    }
-    .perf-card:hover{
-      background:var(--olive-50);
-      transform:translateY(-2px);
-    }
-    .perf-card-title{
-      font-weight:900;
-      color:var(--olive-dark);
-    }
-    .perf-card-link{
-      font-weight:900;
-      color:var(--olive);
-    }
-    /* ===== Ajustes TOP (override final) ===== */
-    .painel-sub{
-      text-align:center;
-      margin:6px 0 14px;
-      font-weight:800;          /* negrito, sem exagero */
-      font-size:14.5px;         /* levemente destacado */
-      color:#2b2b2b;
-    }
-    
-    /* HERO mais limpo: só avatar + performance */
-    .hero-card.hero-top{
-      max-width:1100px;
-      margin:12px auto 10px;
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:22px;
-      padding:14px 16px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:16px;
-    }
-         
-    /* performance: card moderno */
-    .hero-card.hero-top .perf-mini{
-      border:1px solid var(--line-olive);
-      background:var(--olive-50);
-      border-radius:18px;
-      padding:12px 14px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      width:min(420px, 100%);
-    }
-    
-    .hero-card.hero-top .perf-mini-title{
-      font-weight:900;
-      color:var(--olive-dark);
-    }
-    
-    /* botão moderno (sem link “solto”) */
-    .perf-btn{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      height:36px;
-      padding:0 14px;
-      border-radius:9999px;
-      border:1px solid var(--line);
-      background:#fff;
-      color:#111;
-      font-weight:900;
-      text-decoration:none;
-      transition:.15s background-color, .15s color, .12s transform, .15s border-color;
-    }
-    .perf-btn:hover{
-      background:#000;
-      color:var(--lime);
-      border-color:#000;
-      transform:translateY(-1px);
-    }
-    .perf-btn:active{
-      transform:translateY(0);
-    }
-    
-    /* mobile: empilha bonito */
-    @media (max-width:920px){
-      .hero-card.hero-top{
-        flex-direction:column;
-        align-items:stretch;
-      }
-      .hero-card.hero-top .perf-mini{
-        width:100%;
-      }
-    }
-
-    /* Ações lado a lado no título (Visualizações + Cadastrar Tear) */
     .sec-actions{
       display:flex;
       gap:10px;
       align-items:center;
     }
-    
-    /* Mobile: mantém alinhado e sem quebrar feio */
+
     @media (max-width:520px){
+      .sec-title{ gap:8px; }
       .sec-actions{ gap:8px; }
       .sec-actions .btn-roxo{
-        height:32px;
-        font-size:.80rem;
-        padding:0 10px;
-        white-space:nowrap;
+        height:32px !important;
+        font-size:.80rem !important;
+        padding:0 10px !important;
       }
     }
 
-    /* Dropdown: centraliza e reduz o avatar/ícone para 50% */
-    .profile-menu .pm-header{
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      gap: 10px;
-    }
-    
-    /* 50% do tamanho que estava (estava 24px; vai para 12px) 
-       Mas para ficar bonito visualmente, uso 16px (metade do “grande” que aparece). */
-    .profile-menu .pm-header .avatar{
-      width:32px !important;
-      height:32px !important;
-    }
-    
-    /* garante que imagem dentro acompanhe o novo tamanho */
-    .profile-menu .pm-header .avatar > img.js-avatar{
-      width:100% !important;
-      height:100% !important;
-      object-fit:cover !important;
-    }
-    
-    /* nome da empresa embaixo do avatar */
-    .profile-menu .pm-header strong{
-      display:block;
-      margin-top:2px;
-    }
-    
-    /* opcional: “Meu perfil” menor e mais discreto */
-    .profile-menu .pm-header small{
-      display:block;
-      margin-top:2px;
-    }
+    .table-wrapper{ overflow-x:auto; margin-top:8px; }
+    table{ width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--line); }
+    th, td{ padding:10px; border:1px solid var(--line); }
+    tbody tr:hover{ background:#fcfcff; }
 
-    /* Dropdown header: avatar em cima e nome embaixo */
-    .profile-menu .pm-header{
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      gap: 10px;
+    /* Cabeçalho olive + zebra */
+    .table-wrapper table thead th{
+      background:var(--olive) !important;
+      color:#fff !important;
+      border-color:var(--olive-600) !important;
+      font-weight:700;
     }
-    
-    /* tamanho do “avatar” do dropdown (ícone) */
-    .profile-menu .pm-header .avatar.avatar-ico{
-      width:32px !important;
-      height:32px !important;
-      border-radius:50%;
+    .table-wrapper table tbody tr:nth-child(odd){  background:#fff; }
+    .table-wrapper table tbody tr:nth-child(even){ background:var(--olive-50); }
+    .table-wrapper table tbody td{ border-color: var(--line-olive); }
+
+    /* Ações por ícone (editar/excluir) */
+    .acoes-wrap{ display:flex; justify-content:center; gap:8px; flex-wrap:wrap; }
+    .acoes-wrap .icon-btn{
+      width:36px; height:36px;
+      border-radius:12px;
       border:1px solid var(--line);
       background:#fff;
-      display:grid;
-      place-items:center;
-      color:#111; /* cor do ícone */
+      display:inline-flex; align-items:center; justify-content:center;
+      cursor:pointer;
+      transition:.15s background-color, .12s transform;
+      box-shadow:none !important;
     }
-    
-    /* ícone dentro do avatar */
-    .profile-menu .pm-header .avatar.avatar-ico svg{
-      width:20px;
-      height:20px;
-      stroke:currentColor;
-      fill:none;
-      stroke-width:1.8;
+    .acoes-wrap .icon-btn:hover{ background:var(--olive-50); transform:translateY(-1px); }
+    .acoes-wrap .icon-btn svg{ width:18px; height:18px; stroke:#444; fill:none; stroke-width:1.8; }
+    .acoes-wrap .icon-btn.edit:hover svg{ stroke:var(--olive); }
+    .acoes-wrap .icon-btn.danger:hover svg{ stroke:var(--danger); }
+
+    /* Mobile: cards */
+    .teares-cards{ display:none; grid-template-columns:1fr; gap:10px; }
+    .tear-card{ border:1px solid var(--line); border-radius:14px; background:#fff; padding:12px; }
+    .tear-hd{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+    .tear-title{ font-weight:900; color:#1d1d1d; }
+    .tear-actions{ display:flex; gap:8px; margin-left:auto; }
+    .tear-body{ display:grid; grid-template-columns:1fr 1fr; gap:8px 12px; }
+    .tear-item span{ display:block; font-size:11px; color:#777; }
+    .tear-item strong{ font-size:14px; color:#222; }
+    .it-tipo{ grid-column:1 / -1; }
+
+    @media (max-width:640px){
+      .table-wrapper{ display:none; }
+      .teares-cards{ display:grid; }
     }
 
-    /* DESKTOP: aumenta um pouco o ícone + nome no dropdown */
-    @media (min-width:901px){
-      .pm-header{
-        padding:14px 14px;
-      }
-      .pm-header .avatar{
-        width:32px;
-        height:32px;
-      }
-      .pm-header strong{
-        font-size:16px;
-        line-height:1.1;
-      }
-      .pm-header small{
-        font-size:12.5px;
-      }
+    /* ========= CTA & RODAPÉ (padrão global) ========= */
+    .cta-bar{
+      background:#000; color:#fff; padding:20px 16px;
+      display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+      border-top:1px solid rgba(255,255,255,0.06);
+      margin-top:0;
+      justify-content:flex-start;
+    }
+    .cta-text h3{ margin:0 0 4px 0; font-size:18px; font-weight:900; line-height:1.2; }
+    .cta-text p{ margin:0; font-size:15px; opacity:.9; }
+
+    /* CTA "Cadastrar" igual ao botão "Conta Malharia" (pill branco + hover lime) */
+    .cta-bar .cta-btn{
+      display:inline-flex !important;
+      align-items:center !important;
+      justify-content:center !important;
+
+      height:44px !important;
+      padding:0 22px !important;
+      border-radius:9999px !important;
+
+      font-weight:800 !important;
+      text-decoration:none !important;
+      white-space:nowrap !important;
+
+      background:#fff !important;
+      color:#000 !important;
+
+      border:0 !important;
+      box-shadow:none !important;
+      line-height:1 !important;
+
+      cursor:pointer;
+      transition: background-color .15s ease, color .15s ease, transform .15s ease;
+    }
+    .cta-bar .cta-btn:hover{
+      background:var(--lime) !important;
+      color:#111 !important;
+      transform:translateY(-1px);
+    }
+    .cta-bar .cta-btn:active{
+      background:var(--lime-700) !important;
+      color:#111 !important;
+      transform:translateY(0);
+    }
+    .cta-bar .cta-btn:focus-visible{
+      outline:2px solid var(--lime);
+      outline-offset:2px;
     }
 
-    /* Só DESKTOP: aumenta o ícone e o nome dentro do dropdown */
-    @media (min-width:901px){
-      .pm-header .avatar{
-        width:36px;      /* ajuste aqui */
-        height:36px;     /* ajuste aqui */
-      }
-    
-      .pm-header strong{
-        font-size:16px;  /* ajuste aqui */
-      }
-    
-      .pm-header small{
-        font-size:13px;  /* opcional */
-      }
+    .site-footer{
+      background:#fff;color:#211a2a;border-top:1px solid #eee;padding:18px 16px 28px;
+    }
+    .footer-inner{
+      max-width:var(--maxw);margin:0 auto;display:grid;grid-template-columns:auto 1fr;gap:20px 28px;align-items:start;
+    }
+    .footer-brand img{ height:44px;width:auto;display:block; }
+    .footer-cols{ display:grid;grid-template-columns: repeat(2, minmax(180px, 240px));gap:12px 28px; }
+    .footer-col h4{ margin:0 0 8px 0;font-size:14px;font-weight:900;color:#251c33; }
+    .footer-col ul{ list-style:none;margin:0;padding:0; }
+    .footer-col li+li{ margin-top:6px; }
+    .footer-col a{ color:#2a2535;text-decoration:none;font-size:14px; }
+    .footer-col a:hover{ text-decoration:underline; }
+
+    @media (max-width: 900px){
+      .footer-inner{ grid-template-columns:1fr; }
+      .footer-cols{ grid-template-columns:1fr; }
     }
 
-    .profile-pill{
-      width:36px; height:36px; /* mesmo “círculo” dos outros botões */
-      padding:0;
-      border-radius:9999px;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
+    /* Mantém claro mesmo em dark mode do SO */
+    @media (prefers-color-scheme: dark){
+      html, body{ background:#fff !important; color: var(--cinza-900); }
     }
-    
-    .profile-pill .avatar-ico{
-      width:20px; height:20px;
-      display:grid;
-      place-items:center;
-    }
-    
-    .profile-pill .user-ico{
-      width:20px; height:20px;
-      display:block;
-      fill:none;
-      stroke:#111;
-      stroke-width:2;
-    }
-    .sub-sum{ display:flex; justify-content:space-between; align-items:center; flex-wrap:nowrap; }
-    .sub-left{ flex:1 1 auto; min-width:0; }
-    .sub-right{ flex:0 0 auto; margin-left:auto; white-space:nowrap; }
-
-    /* CELULAR: alinhar "Plano" e "Vence em" à esquerda (sem mexer no desktop) */
-    @media (max-width:520px){
-      .sub-left .sub-sub{
-        text-align:left;
-        align-items:flex-start; /* caso o .sub-sub esteja como flex em algum override */
-      }
-    
-      .sub-left .sub-sub .meta-plano,
-      .sub-left .sub-sub .meta-venc{
-        display:block;
-        width:100%;
-        text-align:left;
-      }
-    }
-
   </style>
+
+  <!-- ✅ Header padrão (SEMPRE o último do head) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
 </head>
-<body>
+
+<body class="header-v1">
 
 {% set nome_empresa =
     (empresa.apelido if empresa and empresa.apelido else
@@ -1118,64 +580,174 @@
 
 {# Mostra bloco completo quando: pendente OU faltam <=7 dias #}
 {% set banner_full = (not _assin_ativa) or (dias is not none and dias <= 7) %}
+{% set is_anual = ('anual' in plano_sel) %}
 
-<header class="topbar">
-  <a class="logo" href="{{ url_for('index') }}" aria-label="Página inicial" title="Página inicial">
-    <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
-  </a>
-  <div class="spacer"></div>
+{% set chat_count = (chat_nao_lidos if chat_nao_lidos is defined else 0) %}
+{% set notif_count = (notificacoes if notificacoes is defined else 0) %}
 
-  {% set chat_count = (chat_nao_lidos if chat_nao_lidos is defined else 0) %}
-  {% set notif_count = (notificacoes if notificacoes is defined else 0) %}
+  <!-- ===== HEADER PADRÃO (com ajuste específico do painel) ===== -->
+  <header class="navbar">
+    <div class="header-left">
+      <div class="logo">
+        <a href="{{ url_for('index') }}" aria-label="Página inicial">
+          <img
+            src="{{ url_for('static', filename='Logo_Branco_AcheTece_sem_fundo.png') }}"
+            alt="Logo AcheTece"
+            decoding="async"
+            fetchpriority="high"
+          >
+        </a>
+      </div>
+    </div>
 
-  <div class="top-icons">
-    <a href="{{ url_for('fale_conosco') }}" class="icon-btn badge-wrap" aria-label="Chat" title="Chat">
-      <svg viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path></svg>
-      {% if chat_count|int > 0 %}<span class="badge">{{ chat_count }}</span>{% endif %}
-    </a>
-
-    <button id="notifToggle" class="icon-btn badge-wrap" aria-label="Notificações" title="Notificações" type="button">
-      <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-      {% if notif_count|int > 0 %}<span class="badge">{{ notif_count }}</span>{% endif %}
-    </button>
-    <nav id="notifPanel" class="notify-panel" aria-label="Notificações" role="dialog" aria-modal="false">
-      <div class="np-header">Notificações</div>
-      {% if (notificacoes_lista is defined) and notificacoes_lista %}
-        {% for n in notificacoes_lista %}
-          <div class="np-item">
-            <strong>{{ n.titulo }}</strong><br>
-            <small>{{ n.mensagem }}</small>
-          </div>
-        {% endfor %}
-      {% else %}
-        <div class="np-empty">Nenhuma notificação.</div>
-      {% endif %}
+    <!-- Links do topo (somente desktop) — ordem fixa -->
+    <nav class="hdr-nav" aria-label="Navegação principal">
+      <a href="{{ url_for('quem_somos') }}">O AcheTece</a>
+      <a href="{{ url_for('malharia_info') }}">Como Funciona</a>
+      <a href="{{ url_for('contato') }}">Fale Conosco</a>
     </nav>
 
-    <button class="profile-pill" id="profileToggle" type="button" aria-haspopup="menu" aria-expanded="false" title="Abrir menu do perfil">
-      <span class="avatar avatar-ico" aria-hidden="true">
-        <svg class="user-ico" viewBox="0 0 24 24">
+    <div class="header-right">
+      <div class="hdr-actions painel-actions">
+
+        <!-- Chat -->
+        <a href="{{ url_for('fale_conosco') }}" class="icon-btn badge-wrap" aria-label="Chat" title="Chat">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path>
+          </svg>
+          {% if chat_count|int > 0 %}<span class="badge">{{ chat_count }}</span>{% endif %}
+        </a>
+
+        <!-- Notificações -->
+        <button id="notifToggle" class="icon-btn badge-wrap" aria-label="Notificações" title="Notificações" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+          {% if notif_count|int > 0 %}<span class="badge">{{ notif_count }}</span>{% endif %}
+        </button>
+
+        <!-- Perfil -->
+        <button class="profile-pill" id="profileToggle" type="button" aria-haspopup="menu" aria-expanded="false" title="Abrir menu do perfil">
+          <span class="avatar avatar-ico" aria-hidden="true" style="border:0;background:transparent;width:auto;height:auto;">
+            <svg class="user-ico" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z"></path>
+              <path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path>
+            </svg>
+          </span>
+        </button>
+
+        <!-- CASINHA (sempre à direita) -->
+        <a href="{{ url_for('index') }}" class="btn-home" aria-label="Voltar ao início" title="Voltar ao início">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 10.5 12 3l9 7.5"></path>
+            <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
+            <path d="M9 21V12h6v9"></path>
+          </svg>
+        </a>
+
+        <!-- BOTÃO MENU (SÓ NO MOBILE) -->
+        <button class="btn-menu" id="openMenuBtn" type="button" aria-label="Abrir menu" aria-controls="mobileMenu" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M4 7h16M4 12h16M4 17h16"/>
+          </svg>
+        </button>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== MENU MOBILE (SÓ NO MOBILE) ===== -->
+  <div class="mobile-menu-backdrop" id="menuBackdrop" aria-hidden="true"></div>
+
+  <nav class="mobile-menu" id="mobileMenu" aria-label="Menu do site">
+    <div class="menu-head">
+      <a href="{{ url_for('index') }}" class="menu-logo" aria-label="Ir para a busca">
+        <span class="menu-logoBox">
+          <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece" decoding="async">
+        </span>
+      </a>
+
+      <button class="menu-close" id="closeMenuBtn" type="button" aria-label="Fechar menu">
+        <svg class="x-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 6L18 18M18 6L6 18"></path>
+        </svg>
+      </button>
+    </div>
+
+    <div class="menu-body">
+      <a href="{{ url_for('index') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5Z"/>
+        </svg>
+        Buscar Tear
+      </a>
+
+      <a href="{{ url_for('malharia_info') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 16v-4"></path>
+          <path d="M12 8h.01"></path>
+        </svg>
+        Como Funciona
+      </a>
+
+      <a href="{{ url_for('quem_somos') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 16v-4"></path>
+          <path d="M12 8h.01"></path>
+        </svg>
+        Quem Somos
+      </a>
+
+      <a href="{{ url_for('contato') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 4h16v14H5.5L4 19.5V4Z"></path>
+          <path d="M7 8h10"></path>
+          <path d="M7 12h7"></path>
+        </svg>
+        Fale conosco
+      </a>
+
+      <a href="{{ url_for('termos') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 2h9l3 3v17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a1 1 0 0 1 1-1Z"></path>
+          <path d="M9 9h6"></path>
+          <path d="M9 13h6"></path>
+          <path d="M9 17h6"></path>
+        </svg>
+        Termos e Políticas
+      </a>
+    </div>
+  </nav>
+
+  <!-- ===== Popover Notificações ===== -->
+  <nav id="notifPanel" class="notify-panel" aria-label="Notificações" role="dialog" aria-modal="false">
+    <div class="np-header">Notificações</div>
+    {% if (notificacoes_lista is defined) and notificacoes_lista %}
+      {% for n in notificacoes_lista %}
+        <div class="np-item">
+          <strong>{{ n.titulo }}</strong><br>
+          <small>{{ n.mensagem }}</small>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="np-empty">Nenhuma notificação.</div>
+    {% endif %}
+  </nav>
+
+  <!-- ===== Dropdown Perfil ===== -->
+  <nav class="profile-menu" id="profileMenu" role="menu" aria-label="Menu de perfil">
+    <div class="pm-header">
+      <span class="avatar-ico" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
           <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z"></path>
           <path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path>
         </svg>
       </span>
-    </button>
-  </div>
-
-  <!-- Dropdown Perfil -->
-  <nav class="profile-menu" id="profileMenu" role="menu" aria-label="Menu de perfil">
-    <div class="pm-header">
-      <span class="avatar avatar-ico" aria-hidden="true">
-        <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
-          <circle cx="12" cy="12" r="10"></circle>
-          <circle cx="12" cy="10" r="3" fill="currentColor" stroke="none"></circle>
-          <path d="M6.8 19.2c1.6-3 4-4.4 5.2-4.4s3.6 1.4 5.2 4.4"
-                fill="currentColor" stroke="none"></path>
-        </svg>
-      </span>
-    
       <div>
-        <strong>{{ nome_empresa }}</strong><br>        
+        <strong>{{ nome_empresa }}</strong>
       </div>
     </div>
 
@@ -1190,7 +762,6 @@
     </a>
 
     <div class="pm-group-title">Assinatura</div>
-    <!-- NOVO: leva para o bloco #assinatura dentro do painel -->
     <a href="{{ url_for('painel_malharia') }}#assinatura" class="pm-item" role="menuitem" title="Assinatura e pagamento">
       <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"></rect><path d="M3 10h18"></path></svg>
       <span>{% if _assin_ativa %}Minha assinatura (ativa){% else %}Assinatura pendente (pagar){% endif %}</span>
@@ -1207,301 +778,369 @@
       <span>Sair</span>
     </a>
   </nav>
-  
-</header>
 
-<div class="container">
-  <h1 class="titulo">Painel da Malharia</h1>
-  <p style="text-align:center;">Bem-vindo(a), <strong>{{ nome_empresa }}</strong>!</p>
-  <p class="painel-sub">Gerencie seus teares e assinatura em um só lugar.</p>
- 
-{# ===== Assinatura (única, limpa e colapsável) ===== #}
-{% set is_anual = ('anual' in plano_sel) %}
+  <!-- ===== CONTEÚDO (miolo cinza) ===== -->
+  <div class="faixa-cinza">
+    <div class="page-outer">
 
-<section id="assinatura" class="sub-wrap" aria-label="Assinatura e pagamento">
-  <details class="sub-card" {% if banner_full %}open{% endif %}>
-    <summary class="sub-sum">
-      <div class="sub-left">
-        <div class="sub-title">Assinatura</div>
-    
-        <div class="sub-sub">
-          <span class="meta-plano">Plano: <strong>{% if is_anual %}Anual{% else %}Mensal{% endif %}</strong></span>
-          {% if venc_fmt %}
-            <span class="meta-venc">• Vence em <strong>{{ venc_fmt }}</strong></span>
-          {% endif %}
-        </div>
-      </div> <!-- ✅ FECHOU sub-left AQUI -->
-    
-      <div class="sub-right">
-        {% if _assin_ativa %}
-          {% if dias is not none and dias <= 7 %}
-            <span class="sub-pill warn">Vencendo</span>
-          {% else %}
-            <span class="sub-pill ok">Ativa</span>
-          {% endif %}
-        {% else %}
-          <span class="sub-pill danger">Pendente</span>
-        {% endif %}
-    
-        <span class="sub-caret" aria-hidden="true">
-          <svg viewBox="0 0 24 24">
-            <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2"/>
-          </svg>
-        </span>
-      </div>
-    </summary>
+      <div class="container">
+        <h1 class="titulo">Painel da Malharia</h1>
+        <p style="text-align:center;margin:0 0 6px;">Bem-vindo(a), <strong>{{ nome_empresa }}</strong>!</p>
+        <p class="painel-sub">Gerencie seus teares e assinatura em um só lugar.</p>
 
-    <div class="sub-body">
-      <div class="sub-note">
-        <strong>Como funciona</strong>
-        <ul>
-          <li>Escolha o plano (mensal ou anual).</li>
-          <li>Você será redirecionado(a) ao <strong>Mercado Pago</strong>.</li>
-          <li>Após aprovação, o AcheTece libera o acesso e envia e-mail de confirmação.</li>
-        </ul>
-        <div class="sub-tip">Dica: se estiver pendente, pague por aqui para evitar bloqueio do painel.</div>
-      </div>
-
-      <div class="sub-plans" role="radiogroup" aria-label="Seleção de plano">
-        <button type="button" class="sub-plan {% if not is_anual %}selected{% endif %}" data-sub-plan="mensal">
-          <div class="sub-plan-top">
-            <span class="sub-radio" aria-hidden="true"></span>
-            <span class="sub-plan-name">Mensal</span>
-          </div>
-          <div class="sub-price">
-            {% if preco_mensal is defined %}R$ {{ '%.2f'|format(preco_mensal)|replace('.', ',') }}{% else %}R$ 47,00{% endif %}
-            <small>/mês</small>
-          </div>
-          <div class="sub-meta">Recorrente mensal. Cancele quando quiser.</div>
-        </button>
-
-        <button type="button" class="sub-plan {% if is_anual %}selected{% endif %}" data-sub-plan="anual">
-          <div class="sub-plan-top">
-            <span class="sub-radio" aria-hidden="true"></span>
-            <span class="sub-plan-name">Anual</span>
-            <span class="sub-badge">15% OFF</span>
-          </div>
-          <div class="sub-price">
-            {% if preco_anual is defined %}R$ {{ '%.2f'|format(preco_anual)|replace('.', ',') }}{% else %}R$ 479,40{% endif %}
-            <small>/ano</small>
-          </div>
-          <div class="sub-meta">Economize no ano e mantenha acesso contínuo.</div>
-        </button>
-
-        <div class="sub-actions">
-          <span class="sub-hint">Você será redirecionado(a) ao Mercado Pago.</span>
-
-          <a id="subCta" class="btn"
-             href="{{ url_for('checkout', plano=('anual' if is_anual else 'mensal')) }}">
-            {% if _assin_ativa %}Renovar agora{% else %}Continuar para pagamento{% endif %}
-          </a>
-          
-        </div>
-      </div>
-    </div>
-  </details>
-</section>
-{# ===== /Assinatura ===== #}
-
-  <div class="sec-title">
-    <h2>Teares Cadastrados:</h2>
-    
-    <div class="sec-actions">
-      <a href="{{ url_for('performance_acesso') }}" class="btn-roxo">Visualizações</a>
-      <a href="{{ url_for('teares_form') }}" class="btn-roxo">+ Cadastrar Tear</a>    
-    </div>
-  </div>
-  
-  <div class="table-wrapper">
-    <table>
-      <thead>
-        <tr>
-          <th>Marca</th>
-          <th>Modelo</th>
-          <th>Tipo</th>
-          <th>Galga/Finura</th>
-          <th>Diâmetro</th>
-          <th>Alimentadores</th>
-          <th>Pistas (cil)</th>
-          <th>Pistas (disco)</th>
-          <th>Elastano</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% set _vaz = '—' %}
-        {% if lista_teares and lista_teares|length %}
-          {% for tear in lista_teares %}
-          <tr>
-            <td>{{ tear.marca or _vaz }}</td>
-            <td>{{ tear.modelo or _vaz }}</td>
-            <td>{{ tear.tipo or _vaz }}</td>
-            <td>{{ tear.finura or tear.galga or _vaz }}</td>
-            <td>{{ tear.diametro or _vaz }}</td>
-            <td>{{ tear.alimentadores or _vaz }}</td>
-            <td>{{ tear.pistas_cilindro or _vaz }}</td>
-            <td>{{ tear.pistas_disco or _vaz }}</td>
-            <td>
-              {% set raw = tear.elastano if (tear.elastano is not none) else tear.kit_elastano %}
-              {% if raw is boolean %}
-                {{ 'Sim' if raw else 'Não' }}
-              {% else %}
-                {% set s = (raw|string).strip().lower() %}
-                {% if s in ['sim','s','true','t','on','1','com','tem','yes','y'] %}Sim
-                {% elif s in ['não','nao','n','false','f','off','0','sem','no'] %}Não
-                {% else %}{{ _vaz }}{% endif %}
-              {% endif %}
-            </td>
-            <td>
-              <div class="acoes-wrap">
-                <a href="{{ url_for('editar_tear', id=tear.id) }}" class="icon-btn edit" title="Editar tear" aria-label="Editar">
-                  <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                  <span class="sr-only">Editar</span>
-                </a>
-                <form method="POST"
-                      action="{{ url_for('excluir_tear', id=tear.id) }}"
-                      onsubmit="return confirm('Confirma excluir este tear? Essa ação é irreversível.');"
-                      style="display:inline">
-                  <input type="hidden" name="next" value="{{ url_for('painel_malharia') }}">
-                  <button type="submit" class="icon-btn danger" title="Excluir tear" aria-label="Excluir">
-                    <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path></svg>
-                    <span class="sr-only">Excluir</span>
-                  </button>
-                </form>
+        <!-- ===== Assinatura ===== -->
+        <section id="assinatura" class="sub-wrap" aria-label="Assinatura e pagamento">
+          <details class="sub-card" {% if banner_full %}open{% endif %}>
+            <summary class="sub-sum">
+              <div class="sub-left">
+                <div class="sub-title">Assinatura</div>
+                <div class="sub-sub">
+                  <span class="meta-plano">Plano: <strong>{% if is_anual %}Anual{% else %}Mensal{% endif %}</strong></span>
+                  {% if venc_fmt %}
+                    <span class="meta-venc">• Vence em <strong>{{ venc_fmt }}</strong></span>
+                  {% endif %}
+                </div>
               </div>
-            </td>
-          </tr>
-          {% endfor %}
-        {% else %}
-          <tr><td colspan="10">Nenhum tear cadastrado ainda.</td></tr>
-        {% endif %}
-      </tbody>
-    </table>
-  </div>
 
-  <div class="teares-cards">
-    {% if lista_teares|length %}
-      {% for tear in lista_teares %}
-        <div class="tear-card">
-          <div class="tear-hd">
-            <div class="tear-title">{{ tear.marca or '-' }} — {{ tear.modelo or '-' }}</div>
-            <div class="tear-actions">
-              <a href="{{ url_for('editar_tear', id=tear.id) }}" class="icon-btn edit" title="Editar">
-                <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-              </a>
-              <form method="POST"
-                    action="{{ url_for('excluir_tear', id=tear.id) }}"
-                    onsubmit="return confirm('Confirma excluir este tear? Essa ação é irreversível.');">
-                <input type="hidden" name="next" value="{{ url_for('painel_malharia') }}">
-                <button type="submit" class="icon-btn danger" title="Excluir">
-                  <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path></svg>
+              <div class="sub-right">
+                {% if _assin_ativa %}
+                  {% if dias is not none and dias <= 7 %}
+                    <span class="sub-pill warn">Vencendo</span>
+                  {% else %}
+                    <span class="sub-pill ok">Ativa</span>
+                  {% endif %}
+                {% else %}
+                  <span class="sub-pill danger">Pendente</span>
+                {% endif %}
+
+                <span class="sub-caret" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                </span>
+              </div>
+            </summary>
+
+            <div class="sub-body">
+              <div class="sub-note">
+                <strong>Como funciona</strong>
+                <ul>
+                  <li>Escolha o plano (mensal ou anual).</li>
+                  <li>Você será redirecionado(a) ao <strong>Mercado Pago</strong>.</li>
+                  <li>Após aprovação, o AcheTece libera o acesso e envia e-mail de confirmação.</li>
+                </ul>
+                <div class="sub-tip">Dica: se estiver pendente, pague por aqui para evitar bloqueio do painel.</div>
+              </div>
+
+              <div class="sub-plans" role="radiogroup" aria-label="Seleção de plano">
+                <button type="button" class="sub-plan {% if not is_anual %}selected{% endif %}" data-sub-plan="mensal">
+                  <div class="sub-plan-top">
+                    <span class="sub-radio" aria-hidden="true"></span>
+                    <span class="sub-plan-name">Mensal</span>
+                  </div>
+                  <div class="sub-price">
+                    {% if preco_mensal is defined %}R$ {{ '%.2f'|format(preco_mensal)|replace('.', ',') }}{% else %}R$ 47,00{% endif %}
+                    <small>/mês</small>
+                  </div>
+                  <div class="sub-meta">Recorrente mensal. Cancele quando quiser.</div>
                 </button>
-              </form>
-            </div>
-          </div>
 
-          <div class="tear-body">
-            <div class="tear-item it-tipo"><span>Tipo</span><strong>{{ tear.tipo or '-' }}</strong></div>
-            <div class="tear-item it-diametro"><span>Diâmetro</span><strong>{{ tear.diametro if tear.diametro is not none else '-' }}</strong></div>
-            <div class="tear-item it-finura"><span>Finura</span><strong>{{ tear.finura if tear.finura is not none else '-' }}</strong></div>
-            <div class="tear-item it-alims"><span>Alimentadores</span><strong>{{ tear.alimentadores if tear.alimentadores is not none else '-' }}</strong></div>
-            <div class="tear-item it-elastano"><span>Elastano</span><strong>{{ 'Sim' if (tear.elastano or tear.kit_elastano) else 'Não' }}</strong></div>
+                <button type="button" class="sub-plan {% if is_anual %}selected{% endif %}" data-sub-plan="anual">
+                  <div class="sub-plan-top">
+                    <span class="sub-radio" aria-hidden="true"></span>
+                    <span class="sub-plan-name">Anual</span>
+                    <span class="sub-badge">15% OFF</span>
+                  </div>
+                  <div class="sub-price">
+                    {% if preco_anual is defined %}R$ {{ '%.2f'|format(preco_anual)|replace('.', ',') }}{% else %}R$ 479,40{% endif %}
+                    <small>/ano</small>
+                  </div>
+                  <div class="sub-meta">Economize no ano e mantenha acesso contínuo.</div>
+                </button>
+
+                <div class="sub-actions">
+                  <span class="sub-hint">Você será redirecionado(a) ao Mercado Pago.</span>
+                  <a id="subCta" class="btn" href="{{ url_for('checkout', plano=('anual' if is_anual else 'mensal')) }}">
+                    {% if _assin_ativa %}Renovar agora{% else %}Continuar para pagamento{% endif %}
+                  </a>
+                </div>
+              </div>
+            </div>
+          </details>
+        </section>
+        <!-- ===== /Assinatura ===== -->
+
+        <div class="sec-title">
+          <h2>Teares Cadastrados:</h2>
+          <div class="sec-actions">
+            <a href="{{ url_for('performance_acesso') }}" class="btn-roxo">Visualizações</a>
+            <a href="{{ url_for('teares_form') }}" class="btn-roxo">+ Cadastrar Tear</a>
           </div>
         </div>
-      {% endfor %}
-    {% else %}
-      <div class="tear-card">Nenhum tear cadastrado ainda.</div>
-    {% endif %}
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Marca</th>
+                <th>Modelo</th>
+                <th>Tipo</th>
+                <th>Galga/Finura</th>
+                <th>Diâmetro</th>
+                <th>Alimentadores</th>
+                <th>Pistas (cil)</th>
+                <th>Pistas (disco)</th>
+                <th>Elastano</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% set _vaz = '—' %}
+              {% if lista_teares and lista_teares|length %}
+                {% for tear in lista_teares %}
+                <tr>
+                  <td>{{ tear.marca or _vaz }}</td>
+                  <td>{{ tear.modelo or _vaz }}</td>
+                  <td>{{ tear.tipo or _vaz }}</td>
+                  <td>{{ tear.finura or tear.galga or _vaz }}</td>
+                  <td>{{ tear.diametro or _vaz }}</td>
+                  <td>{{ tear.alimentadores or _vaz }}</td>
+                  <td>{{ tear.pistas_cilindro or _vaz }}</td>
+                  <td>{{ tear.pistas_disco or _vaz }}</td>
+                  <td>
+                    {% set raw = tear.elastano if (tear.elastano is not none) else tear.kit_elastano %}
+                    {% if raw is boolean %}
+                      {{ 'Sim' if raw else 'Não' }}
+                    {% else %}
+                      {% set s = (raw|string).strip().lower() %}
+                      {% if s in ['sim','s','true','t','on','1','com','tem','yes','y'] %}Sim
+                      {% elif s in ['não','nao','n','false','f','off','0','sem','no'] %}Não
+                      {% else %}{{ _vaz }}{% endif %}
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="acoes-wrap">
+                      <a href="{{ url_for('editar_tear', id=tear.id) }}" class="icon-btn edit" title="Editar tear" aria-label="Editar">
+                        <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                        <span class="sr-only">Editar</span>
+                      </a>
+                      <form method="POST"
+                            action="{{ url_for('excluir_tear', id=tear.id) }}"
+                            onsubmit="return confirm('Confirma excluir este tear? Essa ação é irreversível.');"
+                            style="display:inline">
+                        <input type="hidden" name="next" value="{{ url_for('painel_malharia') }}">
+                        <button type="submit" class="icon-btn danger" title="Excluir tear" aria-label="Excluir">
+                          <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path></svg>
+                          <span class="sr-only">Excluir</span>
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              {% else %}
+                <tr><td colspan="10">Nenhum tear cadastrado ainda.</td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="teares-cards">
+          {% if lista_teares|length %}
+            {% for tear in lista_teares %}
+              <div class="tear-card">
+                <div class="tear-hd">
+                  <div class="tear-title">{{ tear.marca or '-' }} — {{ tear.modelo or '-' }}</div>
+                  <div class="tear-actions">
+                    <a href="{{ url_for('editar_tear', id=tear.id) }}" class="icon-btn edit" title="Editar">
+                      <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                    </a>
+                    <form method="POST"
+                          action="{{ url_for('excluir_tear', id=tear.id) }}"
+                          onsubmit="return confirm('Confirma excluir este tear? Essa ação é irreversível.');">
+                      <input type="hidden" name="next" value="{{ url_for('painel_malharia') }}">
+                      <button type="submit" class="icon-btn danger" title="Excluir">
+                        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path></svg>
+                      </button>
+                    </form>
+                  </div>
+                </div>
+
+                <div class="tear-body">
+                  <div class="tear-item it-tipo"><span>Tipo</span><strong>{{ tear.tipo or '-' }}</strong></div>
+                  <div class="tear-item"><span>Diâmetro</span><strong>{{ tear.diametro if tear.diametro is not none else '-' }}</strong></div>
+                  <div class="tear-item"><span>Finura</span><strong>{{ tear.finura if tear.finura is not none else '-' }}</strong></div>
+                  <div class="tear-item"><span>Alimentadores</span><strong>{{ tear.alimentadores if tear.alimentadores is not none else '-' }}</strong></div>
+                  <div class="tear-item"><span>Elastano</span><strong>{{ 'Sim' if (tear.elastano or tear.kit_elastano) else 'Não' }}</strong></div>
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="tear-card">Nenhum tear cadastrado ainda.</div>
+          {% endif %}
+        </div>
+
+      </div>
+    </div>
   </div>
-</div>
 
-<script>
-  (function(){
-    // ===== MENU PERFIL =====
-    const toggle = document.getElementById('profileToggle');
-    const menu   = document.getElementById('profileMenu');
+  <!-- ===== Faixa preta (CTA) ===== -->
+  <section class="cta-bar">
+    <div class="cta-text">
+      <h3>É proprietário de uma malharia?</h3>
+      <p>Cadastre sua malharia e comece a receber novos pedidos.</p>
+    </div>
+    <a href="{{ url_for('malharia_info') }}" class="cta-btn">Cadastrar</a>
+  </section>
 
-    function closeMenu(){
-      menu?.classList.remove('open');
-      toggle?.setAttribute('aria-expanded','false');
-    }
-    function openMenu(){
-      menu?.classList.add('open');
-      toggle?.setAttribute('aria-expanded','true');
-    }
-    function toggleMenu(){
-      if (!menu) return;
-      menu.classList.contains('open') ? closeMenu() : openMenu();
-    }
+  <!-- ===== Rodapé ===== -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="{{ url_for('static', filename='logo_simbolo.png') }}" alt="AcheTece">
+      </div>
 
-    toggle?.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      toggleMenu();
-    });
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h4>Sobre nós</h4>
+          <ul>
+            <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
+            <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
+            <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
+            <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
+          </ul>
+        </div>
 
-    // ===== NOTIFICAÇÕES =====
-    const nbtn   = document.getElementById('notifToggle');
-    const npanel = document.getElementById('notifPanel');
+        <div class="footer-col">
+          <h4>&nbsp;</h4>
+          <ul><li>&nbsp;</li></ul>
+        </div>
+      </div>
+    </div>
+  </footer>
 
-    function closeNotif(){ npanel?.classList.remove('open'); }
-    function toggleNotif(e){
-      e.stopPropagation();
-      npanel?.classList.toggle('open');
-    }
-
-    nbtn?.addEventListener('click', toggleNotif);
-
-    // ===== ASSINATURA: seleciona plano e atualiza CTA =====
-    const subCta   = document.getElementById('subCta');
-    const subPlans = Array.from(document.querySelectorAll('[data-sub-plan]'));
-
-    const hrefMensal = "{{ url_for('checkout', plano='mensal') }}";
-    const hrefAnual  = "{{ url_for('checkout', plano='anual') }}";
-
-    function setSubPlan(val){
-      if (!val) return;
-      const normalized = (String(val).toLowerCase().includes('anual')) ? 'anual' : 'mensal';
-
-      subPlans.forEach(btn => {
-        const isSelected = (btn.dataset.subPlan === normalized);
-        btn.classList.toggle('selected', isSelected);
-        btn.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
-      });
-
-      if (subCta){
-        subCta.href = (normalized === 'anual') ? hrefAnual : hrefMensal;
+  <!-- ===== JS: Medir altura do header para popovers ===== -->
+  <script>
+    (function(){
+      function setNavH(){
+        const nav = document.querySelector('.navbar');
+        const h = nav ? nav.offsetHeight : 0;
+        document.documentElement.style.setProperty('--nav-h', h + 'px');
       }
-    }
+      setNavH();
+      window.addEventListener('resize', setNavH);
+    })();
+  </script>
 
-    if (subPlans.length){
-      subPlans.forEach(btn => {
-        btn.addEventListener('click', (e)=>{
-          e.preventDefault();
-          e.stopPropagation();
-          setSubPlan(btn.dataset.subPlan);
-        });
+  <!-- ===== JS: Menu mobile (padrão) ===== -->
+  <script>
+    (function(){
+      const openBtn = document.getElementById('openMenuBtn');
+      const closeBtn = document.getElementById('closeMenuBtn');
+      const backdrop = document.getElementById('menuBackdrop');
+
+      function openMenu(){
+        document.body.classList.add('menu-open');
+        if(openBtn) openBtn.setAttribute('aria-expanded','true');
+      }
+      function closeMenu(){
+        document.body.classList.remove('menu-open');
+        if(openBtn) openBtn.setAttribute('aria-expanded','false');
+      }
+
+      if(openBtn) openBtn.addEventListener('click', (e)=>{ e.stopPropagation(); openMenu(); });
+      if(closeBtn) closeBtn.addEventListener('click', (e)=>{ e.stopPropagation(); closeMenu(); });
+      if(backdrop) backdrop.addEventListener('click', closeMenu);
+
+      document.addEventListener('keydown', (e)=>{
+        if(e.key === 'Escape') closeMenu();
       });
+    })();
+  </script>
 
-      // inicializa com o plano atual do servidor
-      setSubPlan("{{ 'anual' if is_anual else 'mensal' }}");
-    }
+  <!-- ===== JS: Perfil + Notificações + Assinatura ===== -->
+  <script>
+    (function(){
+      // ===== MENU PERFIL =====
+      const toggle = document.getElementById('profileToggle');
+      const menu   = document.getElementById('profileMenu');
 
-    // ===== FECHAR AO CLICAR FORA / ESC =====
-    document.addEventListener('click', ()=>{
-      closeMenu();
-      closeNotif();
-    });
+      function closeMenu(){
+        menu?.classList.remove('open');
+        toggle?.setAttribute('aria-expanded','false');
+      }
+      function openMenu(){
+        menu?.classList.add('open');
+        toggle?.setAttribute('aria-expanded','true');
+      }
+      function toggleMenu(e){
+        if(e) e.stopPropagation();
+        if (!menu) return;
+        menu.classList.contains('open') ? closeMenu() : openMenu();
+      }
+      toggle?.addEventListener('click', toggleMenu);
 
-    document.addEventListener('keydown', (e)=>{
-      if (e.key === 'Escape'){
+      // ===== NOTIFICAÇÕES =====
+      const nbtn   = document.getElementById('notifToggle');
+      const npanel = document.getElementById('notifPanel');
+
+      function closeNotif(){ npanel?.classList.remove('open'); }
+      function toggleNotif(e){
+        e.stopPropagation();
+        npanel?.classList.toggle('open');
+      }
+      nbtn?.addEventListener('click', toggleNotif);
+
+      // ===== ASSINATURA: seleciona plano e atualiza CTA =====
+      const subCta   = document.getElementById('subCta');
+      const subPlans = Array.from(document.querySelectorAll('[data-sub-plan]'));
+
+      const hrefMensal = "{{ url_for('checkout', plano='mensal') }}";
+      const hrefAnual  = "{{ url_for('checkout', plano='anual') }}";
+
+      function setSubPlan(val){
+        if (!val) return;
+        const normalized = (String(val).toLowerCase().includes('anual')) ? 'anual' : 'mensal';
+
+        subPlans.forEach(btn => {
+          const isSelected = (btn.dataset.subPlan === normalized);
+          btn.classList.toggle('selected', isSelected);
+          btn.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+        });
+
+        if (subCta){
+          subCta.href = (normalized === 'anual') ? hrefAnual : hrefMensal;
+        }
+      }
+
+      if (subPlans.length){
+        subPlans.forEach(btn => {
+          btn.addEventListener('click', (e)=>{
+            e.preventDefault();
+            e.stopPropagation();
+            setSubPlan(btn.dataset.subPlan);
+          });
+        });
+        setSubPlan("{{ 'anual' if is_anual else 'mensal' }}");
+      }
+
+      // ===== FECHAR AO CLICAR FORA / ESC =====
+      document.addEventListener('click', ()=>{
         closeMenu();
         closeNotif();
-      }
-    });
+      });
 
-    menu?.addEventListener('click', (e)=> e.stopPropagation());
-    npanel?.addEventListener('click', (e)=> e.stopPropagation());
-  })();
-</script>
+      document.addEventListener('keydown', (e)=>{
+        if (e.key === 'Escape'){
+          closeMenu();
+          closeNotif();
+        }
+      });
+
+      menu?.addEventListener('click', (e)=> e.stopPropagation());
+      npanel?.addEventListener('click', (e)=> e.stopPropagation());
+    })();
+  </script>
+
 </body>
 </html>
