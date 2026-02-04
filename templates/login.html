@@ -14,134 +14,369 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
 
   <style>
-  /* =================== TOKENS / PALETA (padrão novo) =================== */
   :root{
+    /* NOVA PALETA */
     --olive:#7B7424;
-    --olive-600:#5E581C;        /* hover/ativo */
-    --olive-dark:#434326;       /* textos/acento escuro */
-    --olive-50:#F1F2E8;         /* fundo claro */
-    --olive-100:#E6E7DE;        /* áreas destacadas / cabeçalhos */
-    --line-olive:#BFBFA8;       /* bordas suaves */
+    --olive-600:#5E581C;
+    --olive-dark:#434326;
+    --olive-50:#F1F2E8;
+    --olive-100:#E6E7DE;
+    --line-olive:#BFBFA8;
 
-    --site-bg:#F7F7FA;          /* cinza 150 padronizado */
-    --bg-100:#F5F5F4;           /* fundo dos inputs/cards claros */
+    --bg-100:#F5F5F4;
+    --bg-150:#EAEAE8;
+    --site-bg: var(--bg-150);
 
-    /* compat. com CSS existente nesta página */
+    /* Compat */
     --roxo:var(--olive);
+    --roxo-hover:var(--olive-600);
 
-    /* CTAs especiais preto + lime (inversão no hover) */
+    /* LIME */
     --lime:#B6F34D;
     --lime-700:#A2E532;
+
+    /* ✅ padrão de espaçamento do header no MOBILE */
+    --nav-mobile-pad-left: 6px;
+    --nav-mobile-pad-right: 12px;
+    --nav-mobile-gap: 10px;
   }
 
-  html, body{
-    background: var(--site-bg);
-    font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  html, body { max-width:100%; overflow-x:hidden; }
+  *, *::before, *::after { box-sizing:border-box; }
+
+  body{
     margin:0;
+    background:#fff !important;
     color:#2d2d2d;
+    font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    padding-top:118px;   /* DESKTOP */
   }
-
-  /* ===== HEADER ===== */
-  .navbar{
-    overflow:visible; padding:6px 12px; background:#fff; border-bottom:1px solid #eee; display:flex; align-items:center;
-  }
-  .header-left,.header-right{ display:flex; align-items:center; }
-  .header-right{ margin-left:auto; gap:10px; padding-right:12px; }
-  .logo{ display:inline-flex; align-items:center; }
-  .logo a{ display:inline-flex; align-items:center; text-decoration:none; }
-  .logo img{ display:block; height:auto; width:auto; }
-  @media (min-width:901px){ .navbar .logo img{ height:44px; width:auto; } }
   @media (max-width:900px){
-    .navbar{ padding-right:22px; min-height:56px; }
-    .navbar .logo img{ height:54px !important; width:auto !important; }
-    .header-right{ gap:8px; }
+    body{ padding-top:98px; } /* MOBILE */
   }
-  .icon-btn{
-    display:inline-flex; align-items:center; justify-content:center;
-    width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px; background:#fff; cursor:pointer;
-  }
-  .icon{ width:20px; height:20px; color:#222; }
 
-  /* Menu sanduíche + dropdown */
-  .menu-wrap{ position: relative; }
-  .hamburger{
-    display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
-    width:36px; height:36px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
-    position:relative; z-index:10002;
-  }
-  .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
-  .hamburger span + span{ margin-top:4px; }
-  @media (max-width:900px){ .hamburger{ width:32px; height:32px; border-radius:9px; } .hamburger span{ width:18px; } }
+  /* ===== FAIXA CINZA DO MIOLO (igual index) ===== */
+  .faixa-cinza{ background:var(--site-bg); padding:16px 0 48px; }
+  .page-outer{ max-width:1280px; margin:0 auto; padding:0 16px; }
 
-  .menu-dropdown{
-    background:#fff; border:1px solid #eaeaea; border-radius:12px;
-    z-index:10001; max-height:80vh; overflow:auto;
-    opacity:0; pointer-events:none; transform: translateY(8px) scale(.98);
-    transition: opacity .18s ease, transform .18s ease;
-  }
-  .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
-  .menu-dropdown .menu-header{ display:flex; justify-content:flex-end; align-items:center; padding:8px 10px; }
-  .menu-dropdown .menu-close{ display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; background:#f0f2f5; border:0; border-radius:10px; cursor:pointer; }
-  .menu-dropdown .menu-item{ display:flex; align-items:center; gap:10px; padding:10px 12px; text-decoration:none; color:#222; border-radius:8px; }
-  .menu-dropdown .menu-item:hover{ background:var(--olive-50); color:var(--roxo); }
+  /* ================= HEADER (FIXO) ================= */
+  .navbar{
+    position: fixed;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2000;
 
-  /* ===== CARD / CONTEÚDO ===== */
-  .auth-wrap{ min-height:calc(100vh - 110px); display:flex; justify-content:center; padding:24px 16px; }
+    background:#000;
+    border-radius:9999px;
+
+    width:calc(100% - 220px);
+    max-width:none;
+    margin:0;
+    padding:12px 18px;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+
+    overflow:visible;
+    box-shadow:0 10px 28px rgba(0,0,0,.18);
+  }
+
+  .header-left,.header-right{display:flex;align-items:center;}
+  .hdr-actions{display:flex;align-items:center;gap:12px;}
+
+  .hdr-nav{
+    flex:1;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:26px;
+  }
+  .hdr-nav a{
+    color:#fff;
+    text-decoration:none;
+    font-weight:700;
+    font-size:15px;
+    opacity:.92;
+    padding:8px 6px;
+    border-radius:10px;
+    transition: opacity .15s ease, background-color .15s ease, color .15s ease;
+  }
+  .hdr-nav a:hover{
+    opacity:1;
+    background:rgba(255,255,255,.08);
+  }
+
+  @media (max-width:1100px){
+    .hdr-nav{ gap:18px; }
+    .hdr-nav a{ font-size:14px; }
+  }
+
+  @media (max-width:900px){
+    .hdr-nav{ display:none; }
+
+    .navbar{
+      padding-left: var(--nav-mobile-pad-left) !important;
+      padding-right: var(--nav-mobile-pad-right) !important;
+    }
+    .hdr-actions{ gap: var(--nav-mobile-gap) !important; }
+    .header-left, .logo{ margin:0 !important; padding:0 !important; }
+  }
+
+  .navbar .logo img{
+    height:60px !important;
+    width:auto !important;
+    display:block;
+    object-fit:contain;
+  }
+
+  .navbar .btn-perfil{
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    height:44px !important;
+    padding:0 22px !important;
+    border-radius:9999px !important;
+    font-weight:800 !important;
+    text-decoration:none !important;
+    background:#fff !important;
+    color:#000 !important;
+    border:0 !important;
+    box-shadow:none !important;
+    line-height:1 !important;
+    white-space:nowrap !important;
+    cursor:pointer;
+    transition: background-color .15s ease, color .15s ease, transform .15s ease;
+  }
+  .navbar .btn-perfil:hover{ background:var(--lime) !important; color:#111 !important; transform:translateY(-1px); }
+  .navbar .btn-perfil:active{ background:var(--lime-700) !important; color:#111 !important; transform:translateY(0); }
+  .navbar .btn-perfil:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
+
+  /* ===== Botão hambúrguer (novo padrão) ===== */
+  .btn-menu{
+    display:none;
+    align-items:center;
+    justify-content:center;
+    width:44px;
+    height:44px;
+    border-radius:9999px;
+    border:1px solid rgba(255,255,255,.22);
+    background:rgba(255,255,255,.08);
+    color:#fff;
+    cursor:pointer;
+    transition: background-color .15s ease, color .15s ease, transform .15s ease;
+  }
+  .btn-menu:hover{ background:var(--lime); color:#111; transform:translateY(-1px); }
+  .btn-menu:active{ background:var(--lime-700); color:#111; transform:translateY(0); }
+  .btn-menu:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
+  .btn-menu svg{ width:20px; height:20px; stroke:#fff !important; }
+  .btn-menu:hover svg, .btn-menu:active svg{ stroke:#111 !important; }
+
+  @media (max-width:900px){
+    .btn-menu{ display:inline-flex; }
+    .navbar{
+      top: 10px;
+      border-radius:34px;
+      width:calc(100% - 20px);
+      padding:10px 12px;
+    }
+    .navbar .logo img{ height:60px !important; }
+    .navbar .btn-perfil{
+      height:36px !important;
+      padding:0 14px !important;
+      font-size:13px !important;
+    }
+    .btn-menu{ width:36px; height:36px; }
+  }
+
+  /* ===== MENU MOBILE (painel) ===== */
+  .mobile-menu-backdrop{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.35);
+    backdrop-filter: blur(2px);
+    display:none;
+    z-index:1990;
+  }
+
+  .mobile-menu{
+    position:fixed;
+    top:98px;
+    right:14px;
+    width:min(92vw, 320px);
+    background:#fff;
+    border-radius:16px;
+    box-shadow:0 18px 40px rgba(0,0,0,.22);
+    padding:0;
+    display:none;
+    z-index:1991;
+    overflow:hidden;
+  }
+
+  .mobile-menu .menu-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:10px 12px;
+    border-bottom:1px solid #eee;
+    background:#fff;
+    min-height:88px;
+  }
+
+  .mobile-menu .menu-logo{
+    flex:1;
+    min-width:0;
+    display:flex;
+    align-items:center;
+    text-decoration:none;
+  }
+
+  .mobile-menu .menu-logoBox{
+    flex:1;
+    min-width:0;
+    height:80px;
+    overflow:hidden;
+  }
+
+  .mobile-menu .menu-logoBox img{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    object-position:left center;
+    transform:scale(1.12);
+    transform-origin:left center;
+  }
+
+  .mobile-menu .menu-close{
+    flex:0 0 auto;
+    width:40px;
+    height:40px;
+    border-radius:12px;
+    border:0;
+    background:var(--lime);
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    padding:0;
+  }
+  .mobile-menu .menu-close:hover{ background:var(--lime-700); }
+
+  .mobile-menu .menu-close .x-icon{
+    width:20px;
+    height:20px;
+    stroke:#000;
+    stroke-width:1.8;
+    fill:none;
+    stroke-linecap:round;
+  }
+
+  .mobile-menu .menu-body{ padding:10px 12px 12px; }
+
+  .mobile-menu a{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 10px;
+    border-radius:12px;
+    text-decoration:none;
+    color:#111;
+    font-weight:600;
+  }
+  .mobile-menu a:hover{ background:#f6f6f6; }
+
+  body.menu-open{ overflow:hidden; }
+  body.menu-open .mobile-menu-backdrop{ display:block; }
+  body.menu-open .mobile-menu{ display:block; }
+
+  /* ================= LOGIN (conteúdo) ================= */
+  .auth-wrap{
+    display:flex;
+    justify-content:center;
+    padding:24px 0 0;
+  }
+
   .card{
-    width:100%; max-width:520px;
-    background:#fff; border:1px solid #eee; border-radius:16px;
-    padding:24px 22px 18px; box-shadow:0 4px 14px rgba(0,0,0,.04);
+    width:100%;
+    max-width:520px;
+    background:#fff;
+    border:1px solid #eee;
+    border-radius:16px;
+    padding:24px 22px 18px;
+    box-shadow:0 4px 14px rgba(0,0,0,.04);
   }
+
   h1.title{
-    font-size:28px; font-weight:800; text-align:center; margin:0 0 18px;
+    font-size:28px;
+    font-weight:800;
+    text-align:center;
+    margin:0 0 18px;
     color:var(--olive-dark);
   }
 
-  /* Mensagens de alerta */
   .alert{
-    border-radius:12px; padding:12px 14px; margin:0 0 16px;
-    border:1px solid #ffd7d7; background:#fff3f3; color:#7a2222; font-size:14px;
+    border-radius:12px;
+    padding:12px 14px;
+    margin:0 0 16px;
+    border:1px solid #ffd7d7;
+    background:#fff3f3;
+    color:#7a2222;
+    font-size:14px;
   }
   .alert a{ color:var(--roxo); font-weight:700; text-decoration:none; }
   .alert a:hover{ text-decoration:underline; }
 
-  /* ===== FORM ===== */
-  label{ font-weight:700; color:#2a233a; font-size:14px; display:block; margin:10px 0 6px; }
+  label{
+    font-weight:700;
+    color:#2a233a;
+    font-size:14px;
+    display:block;
+    margin:10px 0 6px;
+  }
 
   .input{
-    width:100%; height:44px;
-    border-radius:10px; padding:10px 12px;
+    width:100%;
+    height:44px;
+    border-radius:10px;
+    padding:10px 12px;
     border:1px solid #cfd3dc;
-    background: var(--bg-100);            /* fundo claro padronizado (sem azul) */
+    background: var(--bg-100);
     color:#2d2d2d;
     transition:border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
-    background-clip: padding-box;         /* evita “tinta” do autofill vazar */
+    background-clip: padding-box;
   }
   .input::placeholder{ color:#8a8a8a; opacity:.95; }
-
   .input:focus{
     outline:0;
-    background:#fff;                      /* ligeiro destaque no foco */
+    background:#fff;
     border-color:var(--roxo);
     box-shadow:0 0 0 3px rgba(123,116,36,.15);
   }
 
-  /* 🔒 Neutraliza azul/amarelo do AUTOFILL (Chrome/Edge/Safari) */
   .input:-webkit-autofill,
   .input:-webkit-autofill:hover,
   .input:-webkit-autofill:focus,
-  .input:autofill {
+  .input:autofill{
     -webkit-box-shadow: 0 0 0 1000px var(--bg-100) inset !important;
             box-shadow: 0 0 0 1000px var(--bg-100) inset !important;
     -webkit-text-fill-color:#2d2d2d !important;
     caret-color:#2d2d2d;
-    transition: background-color 9999s ease-out 0s; /* evita flash */
+    transition: background-color 9999s ease-out 0s;
   }
 
-  /* ===== BOTÃO PRINCIPAL (preto + lime; inverte no hover) ===== */
   .btn{
-    width:100%; height:46px; border:0; border-radius:9999px;
-    background:#000; color:var(--lime); font-weight:800; margin:16px 0 18px; cursor:pointer;
+    width:100%;
+    height:46px;
+    border:0;
+    border-radius:9999px;
+    background:#000;
+    color:var(--lime);
+    font-weight:800;
+    margin:16px 0 18px;
+    cursor:pointer;
     transition:background-color .15s ease, color .15s ease, transform .15s ease;
     font-size:1rem;
   }
@@ -152,7 +387,6 @@
   .sep{ display:flex; align-items:center; gap:10px; color:#777; margin:4px 0 12px; }
   .sep:before,.sep:after{ content:""; flex:1; height:1px; background:#eee; }
 
-  /* ===== OAUTH ===== */
   .oauth{ display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:10px; }
   .oauth a{ text-decoration:none; }
   .oauth .oauth-btn{
@@ -164,183 +398,286 @@
   .oauth .oauth-btn:hover{ background:var(--olive-50); border-color:var(--olive-600); transform:translateY(-1px); }
   .oauth .oauth-btn img{ width:20px; height:20px; display:block; }
 
-  /* Links auxiliares */
   .signup, .help{ text-align:center; }
   .signup a, .help a{ color:var(--roxo); text-decoration:none; font-weight:700; }
   .signup a:hover, .help a:hover{ text-decoration:underline; }
 
-  .legal{ margin-top:8px; font-size:12.5px; color:#6f6f6f; text-align:center; line-height:1.45; }
+  .legal{
+    margin-top:8px;
+    font-size:12.5px;
+    color:#6f6f6f;
+    text-align:center;
+    line-height:1.45;
+  }
   .legal a{ color:var(--roxo); text-decoration:none; }
   .legal a:hover{ text-decoration:underline; }
 
-  /* === Fundo padronizado igual à index (cinza do miolo) === */
-  :root{ --site-bg: #EAEAE8; }            /* mesmo tom usado na index */
-  html, body{ background: var(--site-bg) !important; }
-</style>
-</head>
-<body>
+  /* ================= CTA + FOOTER (padrão) ================= */
+  .cta-bar{
+    background:#000;
+    color:#fff;
+    padding:20px 16px;
+    display:flex;
+    align-items:center;
+    gap:16px;
+    flex-wrap:wrap;
+    border-top:1px solid rgba(255,255,255,0.06);
+    margin-top:0;
+    justify-content:flex-start;
+  }
+  .cta-text h3{ margin:0 0 4px 0; font-size:18px; font-weight:700; }
+  .cta-text p{ margin:0; font-size:15px; opacity:.9; color:#fff; }
 
-  <!-- ===== HEADER ===== -->
+  /* Botão Cadastrar = igual "Conta Malharia" */
+  .cta-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    height:44px;
+    padding:0 22px;
+    border-radius:9999px;
+    font-weight:800;
+    text-decoration:none;
+    background:#fff;
+    color:#000;
+    border:0;
+    transition: background-color .15s ease, color .15s ease, transform .15s ease;
+    white-space:nowrap;
+  }
+  .cta-btn:hover{ background:var(--lime); color:#111; transform:translateY(-1px); }
+  .cta-btn:active{ background:var(--lime-700); color:#111; transform:translateY(0); }
+
+  .site-footer{
+    background:#fff;
+    color:#211a2a;
+    border-top:1px solid #eee;
+    padding:18px 16px 28px;
+  }
+  .footer-inner{
+    max-width:1180px;
+    margin:0 auto;
+    display:grid;
+    grid-template-columns:auto 1fr;
+    gap:20px 28px;
+    align-items:start;
+  }
+  .footer-brand img{height:44px;width:auto;display:block;}
+  .footer-cols{display:grid;grid-template-columns:repeat(2,minmax(180px,240px));gap:12px 28px;}
+  .footer-col h4{margin:0 0 8px 0;font-size:14px;font-weight:700;color:#251c33;}
+  .footer-col ul{list-style:none;margin:0;padding:0;}
+  .footer-col li+li{margin-top:6px;}
+  .footer-col a{color:#2a2535;text-decoration:none;font-size:14px;}
+  .footer-col a:hover{text-decoration:underline;}
+
+  @media (max-width:900px){
+    .footer-inner{ grid-template-columns:1fr; }
+    .footer-cols{ grid-template-columns:1fr; }
+  }
+
+  @media (prefers-color-scheme: dark){
+    html, body{ background:#fff !important; color:#2d2d2d; }
+  }
+  </style>
+
+  <!-- ✅ Header padrão deve ser o ÚLTIMO do head -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
+</head>
+
+<body class="header-v1">
+
+  <!-- ===== Cabeçalho padrão (igual index/quem_somos) ===== -->
   <header class="navbar">
     <div class="header-left">
-      <!-- Logo como link para a home -->
-      <a class="logo" href="{{ url_for('index') }}" aria-label="Página inicial">
-        <img src="/static/logo.jpg" alt="AcheTece">
-      </a>
+      <div class="logo">
+        <a href="{{ url_for('index') }}" aria-label="Página inicial">
+          <img
+            src="{{ url_for('static', filename='Logo_Branco_AcheTece_sem_fundo.png') }}"
+            alt="Logo AcheTece"
+            decoding="async"
+            fetchpriority="high"
+          >
+        </a>
+      </div>
     </div>
 
+    <nav class="hdr-nav" aria-label="Navegação principal">
+      <a href="{{ url_for('buscar_teares') }}">Buscar Tear</a>
+      <a href="{{ url_for('malharia_info') }}">Como funciona</a>
+      <a href="{{ url_for('quem_somos') }}">Quem somos</a>
+      <a href="{{ url_for('contato') }}">Fale conosco</a>
+      <a href="{{ url_for('termos') }}">Termos</a>
+    </nav>
+
     <div class="header-right">
-      <!-- Casinha -->
-      <a href="{{ url_for('index') }}" class="icon-btn" aria-label="Página inicial" title="Página inicial">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M3 10.5 12 3l9 7.5"></path>
-          <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
-          <path d="M9 21V12h6v9"></path>
-        </svg>
-      </a>
+      <div class="hdr-actions">
+        <a class="btn-perfil" href="{{ url_for('login') }}">Conta Malharia</a>
 
-      <!-- Menu sanduíche -->
-      <div class="menu-wrap">
-        <button class="hamburger" id="hamburger" type="button" aria-label="Abrir menu" aria-controls="menu-lateral" aria-haspopup="menu" aria-expanded="false">
-          <span></span><span></span><span></span>
+        <button class="btn-menu" type="button" aria-label="Abrir menu" aria-controls="mobile-menu" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M4 7h16"></path>
+            <path d="M4 12h16"></path>
+            <path d="M4 17h16"></path>
+          </svg>
         </button>
-
-        <nav class="menu-dropdown" id="menu-lateral" role="menu" aria-label="Menu rápido">
-          <div class="menu-header">
-            <button type="button" class="menu-close" aria-label="Fechar menu">
-              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
-              </svg>
-            </button>
-          </div>
-
-          <a href="{{ url_for('buscar_teares') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="16.65" y1="16.65" x2="21" y2="21"></line></svg>
-            <span>Buscar Tear</span>
-          </a>
-          <a href="{{ url_for('malharia_info') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.5 9a2.5 2.5 0 1 1 4.1 2A3 3 0 0 0 12 13.6"></path><circle cx="12" cy="17" r="1.2" fill="currentColor"></circle></svg>
-            <span>Como Funciona</span>
-          </a>
-          <a href="{{ url_for('login') }}" class="menu-item" role="menuitem" aria-current="page">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 20a8 8 0 0 1 16 0"></path></svg>
-            <span>Já sou cadastrado</span>
-          </a>
-          <a href="{{ url_for('quem_somos') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="8" r="1.5" fill="currentColor"></circle><path d="M11 11h2v6h-2z" fill="currentColor"></path></svg>
-            <span>Quem Somos</span>
-          </a>
-          <a href="{{ url_for('contato') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v12H4z"></path><path d="M22 20H2"></path><path d="M22 8l-10 6L2 8" fill="none"></path></svg>
-            <span>Fale conosco</span>
-          </a>
-          <a href="{{ url_for('termos') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M8 8h8M8 12h8M8 16h5"></path></svg>
-            <span>Termos e Políticas</span>
-          </a>
-        </nav>
       </div>
     </div>
   </header>
 
-  <!-- ===== CONTEÚDO ===== -->
-  <main class="auth-wrap">
-    <section class="card" aria-labelledby="t">
-      <h1 id="t" class="title">Acesse a sua conta</h1>
+  <!-- ===== Menu mobile (padrão) ===== -->
+  <div class="mobile-menu-backdrop" data-menu-close></div>
 
-      {% if no_account %}
-      <div class="alert" role="alert">
-        <b>Não existe uma conta com este e-mail.</b>
-        Não tem conta? <a href="/cadastrar_empresa">Cadastre-se</a>.
+  <aside class="mobile-menu" id="mobile-menu" role="dialog" aria-modal="true" aria-label="Menu">
+    <div class="menu-head">
+      <a class="menu-logo" href="{{ url_for('index') }}" aria-label="Página inicial">
+        <span class="menu-logoBox">
+          <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
+        </span>
+      </a>
+
+      <button class="menu-close" type="button" aria-label="Fechar menu" data-menu-close>
+        <svg class="x-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 6L18 18M18 6L6 18"></path>
+        </svg>
+      </button>
+    </div>
+
+    <nav class="menu-body" aria-label="Atalhos">
+      <a href="{{ url_for('buscar_teares') }}">Buscar Tear</a>
+      <a href="{{ url_for('malharia_info') }}">Como funciona</a>
+      <a href="{{ url_for('login') }}" aria-current="page">Já sou cadastrado</a>
+      <a href="{{ url_for('quem_somos') }}">Quem somos</a>
+      <a href="{{ url_for('contato') }}">Fale conosco</a>
+      <a href="{{ url_for('termos') }}">Termos e Políticas</a>
+    </nav>
+  </aside>
+
+  <!-- ===== Conteúdo ===== -->
+  <section class="faixa-cinza">
+    <main class="page-outer">
+      <div class="auth-wrap">
+        <section class="card" aria-labelledby="t">
+          <h1 id="t" class="title">Acesse a sua conta</h1>
+
+          {% if no_account %}
+          <div class="alert" role="alert">
+            <b>Não existe uma conta com este e-mail.</b>
+            Não tem conta? <a href="/cadastrar_empresa">Cadastre-se</a>.
+          </div>
+          {% elif error %}
+          <div class="alert" role="alert">
+            <b>{{ error }}</b>
+          </div>
+          {% endif %}
+
+          <form method="POST" action="{{ url_for('login') }}" novalidate>
+            <label for="email">E-mail</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              class="input"
+              autocomplete="email"
+              required
+              value="{{ email or request.args.get('email','') }}"
+            >
+
+            {% if request.args.get('next') %}
+              <input type="hidden" name="next" value="{{ request.args.get('next') }}">
+            {% endif %}
+
+            <button type="submit" class="btn">Continuar</button>
+          </form>
+
+          <div class="sep">Ou conecte com</div>
+
+          <div class="oauth">
+            <a
+              class="oauth-btn"
+              href="{{ url_for('oauth_google') }}?ctx=empresa{% if request.args.get('next') %}&next={{ request.args.get('next')|urlencode }}{% endif %}"
+              aria-label="Entrar com Google"
+              title="Entrar com Google"
+            >
+              <img src="/static/icone_google.png" alt="" aria-hidden="true">
+              <span>Entrar com Google</span>
+            </a>
+          </div>
+
+          <p class="signup">Não tem uma conta? <a href="/cadastrar_empresa">Cadastre-se</a></p>
+          <p class="help">Precisa de ajuda? <a href="{{ url_for('contato') }}">Fale conosco</a></p>
+
+          <p class="legal">
+            Ao continuar, você concorda com os
+            <a href="{{ url_for('termos') }}">Termos de Uso</a> e a
+            <a href="{{ url_for('termos') }}">Política de Privacidade</a> do AcheTece.
+          </p>
+        </section>
       </div>
-      {% elif error %}
-      <div class="alert" role="alert">
-        <b>{{ error }}</b>
+    </main>
+  </section>
+
+  <!-- ===== Faixa preta (CTA) ===== -->
+  <section class="cta-bar">
+    <div class="cta-text">
+      <h3>É proprietário de uma malharia?</h3>
+      <p>Cadastre sua malharia e comece a receber novos pedidos.</p>
+    </div>
+    <a href="{{ url_for('malharia_info') }}" class="cta-btn">Cadastrar</a>
+  </section>
+
+  <!-- ===== Rodapé ===== -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="{{ url_for('static', filename='logo_simbolo.png') }}" alt="AcheTece">
       </div>
-      {% endif %}
-
-      <!-- action do login mantida -->
-      <form method="POST" action="{{ url_for('login') }}" novalidate>
-        <label for="email">E-mail</label>
-        <input id="email" name="email" type="email" class="input" autocomplete="email" required
-               value="{{ email or request.args.get('email','') }}">
-        <!-- (opcional) preserva 'next' também no fluxo por e-mail -->
-        {% if request.args.get('next') %}
-          <input type="hidden" name="next" value="{{ request.args.get('next') }}">
-        {% endif %}
-        <button type="submit" class="btn">Continuar</button>
-      </form>
-
-      <div class="sep">Ou conecte com</div>
-
-      <!-- ===== GOOGLE OAUTH (ctx=empresa + preserva next) ===== -->
-      <div class="oauth">
-        <a
-          class="oauth-btn"
-          href="{{ url_for('oauth_google') }}?ctx=empresa{% if request.args.get('next') %}&next={{ request.args.get('next')|urlencode }}{% endif %}"
-          aria-label="Entrar com Google"
-          title="Entrar com Google"
-        >
-          <img src="/static/icone_google.png" alt="" aria-hidden="true">
-          <span>Entrar com Google</span>
-        </a>
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h4>Sobre nós</h4>
+          <ul>
+            <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
+            <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
+            <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
+            <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
+          </ul>
+        </div>
+        <div class="footer-col"><h4>&nbsp;</h4><ul><li>&nbsp;</li></ul></div>
       </div>
+    </div>
+  </footer>
 
-      <p class="signup">Não tem uma conta? <a href="/cadastrar_empresa">Cadastre-se</a></p>
-      <p class="help">Precisa de ajuda? <a href="{{ url_for('contato') }}">Fale conosco</a></p>
-
-      <p class="legal">
-        Ao continuar, você concorda com os
-        <a href="{{ url_for('termos') }}">Termos de Uso</a> e a
-        <a href="{{ url_for('termos') }}">Política de Privacidade</a> do AcheTece.
-      </p>
-    </section>
-  </main>
-
-  <!-- ===== JS: menu sanduíche ===== -->
+  <!-- ===== JS: menu mobile (padrão) ===== -->
   <script>
-    (function () {
-      function closeAll() {
-        document.querySelectorAll('.menu-wrap .menu-dropdown.open').forEach(m => {
-          m.classList.remove('open');
-          const b = m.closest('.menu-wrap')?.querySelector('.hamburger');
-          if (b) b.setAttribute('aria-expanded', 'false');
-        });
+    (function(){
+      const btn = document.querySelector('.btn-menu');
+      const backdrop = document.querySelector('.mobile-menu-backdrop');
+      const menu = document.querySelector('.mobile-menu');
+      const closeEls = document.querySelectorAll('[data-menu-close]');
+
+      function openMenu(){
+        document.body.classList.add('menu-open');
+        btn && btn.setAttribute('aria-expanded','true');
       }
-      document.querySelectorAll('.menu-wrap').forEach(wrap => {
-        const btn  = wrap.querySelector('#hamburger');
-        const menu = wrap.querySelector('#menu-lateral');
-        const xBtn = wrap.querySelector('.menu-close');
-        if (!btn || !menu) return;
+      function closeMenu(){
+        document.body.classList.remove('menu-open');
+        btn && btn.setAttribute('aria-expanded','false');
+      }
 
-        btn.addEventListener('click', e => {
-          e.stopPropagation();
-          const willOpen = !menu.classList.contains('open');
-          closeAll();
-          menu.classList.toggle('open', willOpen);
-          btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-        });
-
-        xBtn?.addEventListener('click', e => {
-          e.stopPropagation();
-          menu.classList.remove('open');
-          btn.setAttribute('aria-expanded', 'false');
-        });
-
-        menu.addEventListener('click', e => e.stopPropagation());
+      btn && btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        if (document.body.classList.contains('menu-open')) closeMenu();
+        else openMenu();
       });
 
-      document.addEventListener('click', closeAll);
-      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
+      closeEls.forEach(el => el.addEventListener('click', (e)=>{ e.stopPropagation(); closeMenu(); }));
 
-      // ajuda o dropdown no mobile a considerar a altura do header
-      function setNavH(){
-        const nav = document.querySelector('.navbar')?.offsetHeight || 0;
-        document.documentElement.style.setProperty('--nav-h', nav + 'px');
-      }
-      setNavH(); window.addEventListener('resize', setNavH);
+      menu && menu.addEventListener('click', (e)=> e.stopPropagation());
+      backdrop && backdrop.addEventListener('click', closeMenu);
+
+      document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeMenu(); });
     })();
   </script>
+
+  <!-- (mantido) força login em alguns mobiles -->
   <script>
   (function(){
     if (!/iphone|ipad|ipod|android/i.test(navigator.userAgent)) return;
@@ -348,5 +685,6 @@
     if (a) a.href += (a.href.indexOf('?')>-1 ? '&' : '?') + 'force_login=1';
   })();
   </script>
+
 </body>
 </html>
