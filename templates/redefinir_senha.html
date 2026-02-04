@@ -5,260 +5,499 @@
   <title>Redefinir Senha - AcheTece</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Favicons -->
+  <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
 
-  <!-- CSS base (opcional) -->
+  <!-- CSS principal -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
 
+  <!-- CSS SOMENTE do conteúdo desta página (SEM HEADER AQUI) -->
   <style>
     :root{
-      --roxo:#8A00FF;
-      --roxo-hover:#A63DFF;
-      --laranja:#F28C00;
-      --laranja-hover:#E57F00;
-      --site-bg:#F7F7FA; /* cinza 150 padronizado */
+      /* Paleta oliva (padrão novo) */
+      --olive:#7B7424;
+      --olive-600:#5E581C;
+      --olive-dark:#434326;
+      --olive-50:#F1F2E8;
+      --olive-100:#E6E7DE;
+      --line-olive:#BFBFA8;
+
+      --bg-150:#EAEAE8;  /* miolo cinza igual index */
+      --site-bg: var(--bg-150);
+
+      /* Compatibilidade */
+      --roxo:var(--olive);
+      --roxo-hover:var(--olive-600);
+
+      /* Hover neon */
+      --lime:#B6F34D;
+      --lime-700:#A2E532;
+
+      --cinza-900:#111827;
+      --maxw:1280px;
+
+      /* Sucesso */
+      --verde-ok-bg:#EAF9F0;
+      --verde-ok-bd:#B9E8CC;
+      --verde-ok-tx:#0F5132;
+
+      /* Erro */
+      --erro-bg:#FFE8E8;
+      --erro-bd:#FFC7C7;
+      --erro-tx:#8A1F1F;
     }
 
-    html, body{
+    html, body { max-width:100%; overflow-x:hidden; }
+    *, *::before, *::after { box-sizing:border-box; }
+
+    body{
+      background:#fff;
+      color:var(--cinza-900);
       margin:0;
-      background:var(--site-bg);
       font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-      color:#1e1b2b;
     }
 
-    /* ===== NAVBAR (padrão) ===== */
-    .navbar{
-      overflow:visible; padding:6px 12px;
-      background:#fff; border-bottom:1px solid #eee;
-      display:flex; align-items:center;
-    }
-    .header-left,.header-right{ display:flex; align-items:center; }
-    .header-right{ margin-left:auto; gap:20px; }
-    .logo a{ display:inline-flex; align-items:center; text-decoration:none; }
-    .logo img{ height:44px; width:auto; display:block; }
-    @media (max-width:900px){
-      .logo img{ height:54px; }
-    }
+    /* Miolo cinza + container central (igual index/quem_somos/fale_conosco) */
+    .faixa-cinza{ background: var(--site-bg); padding:16px 0 48px; }
+    .page-outer{ max-width:var(--maxw); margin:0 auto; padding:0 16px; }
 
-    .icon-btn{
-      display:inline-flex; align-items:center; justify-content:center;
-      width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px;
-      background:#fff; cursor:pointer; transition:box-shadow .2s, transform .02s, background .2s;
-    }
-    .icon-btn:hover{ background:#f7f7f7; }
-    .icon{ width:20px; height:20px; color:#222; }
+    /* ========= CONTEÚDO ========= */
+    .page-wrap{ max-width: 980px; margin: 10px auto 0; }
 
-    .menu-wrap{ position:relative; }
-    .hamburger{
-      display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
-      width:36px; height:36px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
-      box-shadow:none !important; cursor:pointer; position:relative; z-index:10002;
-    }
-    .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
-    .hamburger span + span{ margin-top:4px; }
-
-    .menu-dropdown{
-      background:#fff; border:1px solid #eaeaea; border-radius:12px; box-shadow:none !important;
-      z-index:10001; max-height:80vh; overflow:auto;
-      opacity:0; pointer-events:none; transform: translateY(8px) scale(.98);
-      transition: opacity .18s ease, transform .18s ease;
-    }
-    .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
-
-    .menu-dropdown .menu-header{ display:flex; justify-content:flex-end; align-items:center; padding:8px 10px; }
-    .menu-dropdown .menu-close{
-      display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px;
-      background:#f0f2f5; border:0; border-radius:10px; cursor:pointer;
-    }
-    .menu-dropdown .menu-item{
-      font-weight:400; display:flex; align-items:center; gap:10px; padding:10px 12px;
-      text-decoration:none; color:#222;
-    }
-    .menu-dropdown .menu-item:hover{ background:#f5f7ff; color:var(--roxo); border-radius:8px; }
-
-    @media (min-width:769px){
-      .menu-dropdown{ position:absolute; top:calc(100% + 8px); right:0; min-width:220px; max-width:320px; padding-right:2px; transform-origin: top right; }
-    }
-    @media (max-width:768px){
-      .menu-wrap{ position: static; }
-      .menu-dropdown{
-        position: fixed; top: calc(var(--nav-h, 64px) + 8px); left: 50%;
-        width:max-content; max-width:90vw; min-width:160px; padding:4px 0;
-        max-height: calc(100vh - var(--nav-h, 64px) - 24px);
-        transform: translate(-50%, 8px) scale(.98); transform-origin: top center;
-        border-radius:14px; -webkit-overflow-scrolling:touch;
-      }
-      .menu-dropdown.open{ transform: translate(-50%,0) scale(1); }
-    }
-
-    /* ===== LAYOUT do card ===== */
-    .wrap{
-      min-height:calc(100vh - 110px);
-      display:flex; justify-content:center;
-      padding:24px 16px;
-    }
-    .card{
-      width:100%; max-width:520px;
-      background:#fff; border:1px solid #eee; border-radius:16px;
-      padding:28px 24px; box-shadow:0 4px 14px rgba(0,0,0,.04);
-    }
-    h1.title{ font-size:28px; font-weight:800; text-align:center; margin:0 0 12px; color:#1e1b2b; }
-
-    label{ display:block; font-weight:700; color:#2a233a; font-size:14px; margin:10px 0 6px; }
-    .input{
-      width:100%; height:44px; border-radius:12px; padding:10px 12px;
-      border:1.5px solid #cfd3dc; background:#fbfaff; font-size:15px;
-    }
-    .input:focus{ outline:none; border-color:#a895ff; box-shadow:0 0 0 4px #f1ecff; }
-
-    .btn{
-      width:100%; height:48px; border-radius:9999px; border:0;
-      background:var(--laranja); color:#fff; font-weight:800; cursor:pointer;
-      margin-top:12px; font-size:16px; /* desktop base */
-      line-height:1.1;
-    }
-    .btn:hover{ background:var(--laranja-hover); }
-    /* Celular: mantém legível sem estourar o botão */
-    @media (max-width:900px){
-      .btn{ font-size:16px; }
-    }
-    @media (max-width:360px){
-      .btn{ font-size:15px; }
-    }
-
-    .alert{
-      border-radius:12px; padding:12px 14px; margin:0 0 14px;
-      border:1px solid #e9e9e9; background:#f8f9ff; color:#1e1b2b; font-size:14px;
+    .titulo{
+      margin: 8px 0 2px 0;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing:-0.02em;
       text-align:center;
     }
-
-    .links-row{
-      display:flex; justify-content:center; gap:18px; margin:12px 0 6px; font-weight:800;
+    .sub{
+      margin: 0 auto 18px;
+      color:#555;
+      text-align:center;
+      max-width: 720px;
+      line-height:1.45;
+      font-size:15px;
     }
-    .links-row a{ color:#5b2fff; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
-    .links-row a:hover{ text-decoration:underline; }
-    .links-row .back:before{ content:"‹"; font-size:18px; line-height:1; }
-  </style>
-</head>
-<body>
 
-  <!-- ===== NAVBAR ===== -->
+    .box-form{
+      background:#fff;
+      border:1px solid #eee;
+      border-radius:12px;
+      padding:16px;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    .box-form h3{
+      margin: 0 0 10px 0;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    /* Formulário (mesmo padrão do fale_conosco) */
+    form.contato label{ display:block; font-weight:800; margin:12px 0 6px; color:#2a233a; }
+    form.contato input{
+      width:100%;
+      padding:12px;
+      border:1px solid #ddd;
+      border-radius:10px;
+      font-family: inherit;
+      font-size: 15px;
+      background:#fff;
+      color:#111;
+      transition:border-color .15s ease, box-shadow .15s ease;
+    }
+    form.contato input:focus{
+      outline:none;
+      border-color:var(--olive);
+      box-shadow:0 0 0 3px rgba(123,116,36,.15);
+    }
+
+    .acoes{
+      margin-top:16px;
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:flex-start;
+      flex-wrap:wrap;
+    }
+
+    /* Botão principal — preto + lime (inverte no hover) */
+    .btn-enviar{
+      background:#000;
+      color:var(--lime);
+      border:1px solid #000;
+      border-radius:9999px;
+      padding:12px 22px;
+      font-weight:900;
+      cursor:pointer;
+      line-height:1;
+      display:inline-block;
+      transition: background-color .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .12s ease;
+      white-space:nowrap;
+    }
+    .btn-enviar:hover{
+      background:var(--lime);
+      color:#000;
+      border-color:var(--lime);
+      box-shadow:0 0 0 3px rgba(182,243,77,.25);
+      transform:translateY(-1px);
+    }
+    .btn-enviar:active{
+      background:var(--lime-700);
+      color:#000;
+      transform:translateY(0);
+    }
+    .btn-enviar:focus-visible{
+      outline:2px solid var(--lime);
+      outline-offset:2px;
+    }
+
+    /* Link voltar */
+    .voltar{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      font-weight:900;
+      text-decoration:none;
+      color:#2a2535;
+      padding:10px 4px;
+    }
+    .voltar:hover{ text-decoration:underline; }
+    .voltar::before{ content:"‹"; font-size:18px; line-height:1; color:var(--olive); }
+
+    /* Mensagens */
+    .msg-erro{
+      margin:12px 0 0;
+      padding:10px 12px;
+      border-radius:10px;
+      background:var(--erro-bg);
+      border:1px solid var(--erro-bd);
+      color:var(--erro-tx);
+      font-size:14px;
+    }
+    .msg-ok{
+      margin:12px 0 0;
+      padding:10px 12px;
+      border-radius:10px;
+      background:var(--verde-ok-bg);
+      border:1px solid var(--verde-ok-bd);
+      color:var(--verde-ok-tx);
+      font-size:14px;
+    }
+
+    /* ========= CTA & RODAPÉ (igual padrão do fale_conosco) ========= */
+    .cta-bar{
+      background:#000; color:#fff; padding:20px 16px;
+      display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+      border-top:1px solid rgba(255,255,255,0.06); margin-top:0; justify-content:flex-start;
+    }
+    .cta-text h3{ margin:0 0 4px 0; font-size:18px; font-weight:800; line-height:1.2; }
+    .cta-text p{ margin:0; font-size:15px; opacity:.9; }
+
+    .cta-btn{
+      display:inline-block;
+      text-decoration:none;
+      font-weight:900;
+      padding:10px 22px;
+      border-radius:9999px;
+      background:#000;
+      color:var(--lime);
+      border:1px solid #000;
+      transition: background-color .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .12s ease;
+    }
+    .cta-btn:hover{
+      background:var(--lime);
+      color:#000;
+      border-color:var(--lime);
+      box-shadow:0 0 0 3px rgba(182,243,77,.22);
+      transform:translateY(-1px);
+    }
+    .cta-btn:active{ background:var(--lime-700); color:#000; transform:translateY(0); }
+
+    .site-footer{
+      background:#fff;color:#211a2a;border-top:1px solid #eee;padding:18px 16px 28px;
+    }
+    .footer-inner{
+      max-width:var(--maxw);margin:0 auto;display:grid;grid-template-columns:auto 1fr;gap:20px 28px;align-items:start;
+    }
+    .footer-brand img{ height:44px;width:auto;display:block; }
+    .footer-cols{ display:grid;grid-template-columns: repeat(2, minmax(180px, 240px));gap:12px 28px; }
+    .footer-col h4{ margin:0 0 8px 0;font-size:14px;font-weight:800;color:#251c33; }
+    .footer-col ul{ list-style:none;margin:0;padding:0; }
+    .footer-col li+li{ margin-top:6px; }
+    .footer-col a{ color:#2a2535;text-decoration:none;font-size:14px; }
+    .footer-col a:hover{ text-decoration:underline; }
+
+    @media (max-width: 900px){
+      .footer-inner{ grid-template-columns:1fr; }
+      .footer-cols{ grid-template-columns:1fr; }
+      .titulo{ font-size:24px; }
+    }
+
+    /* Mantém claro mesmo em dark mode do SO */
+    @media (prefers-color-scheme: dark){
+      html, body{ background:#fff !important; color: var(--cinza-900); }
+    }
+
+    /* ✅ CTA "Cadastrar" igual ao botão "Conta Malharia" (pill branco + hover lime) */
+    .cta-bar .cta-btn{
+      display:inline-flex !important;
+      align-items:center !important;
+      justify-content:center !important;
+
+      height:44px !important;
+      padding:0 22px !important;
+      border-radius:9999px !important;
+
+      font-weight:800 !important;
+      text-decoration:none !important;
+      white-space:nowrap !important;
+
+      background:#fff !important;
+      color:#000 !important;
+
+      border:0 !important;
+      box-shadow:none !important;
+      line-height:1 !important;
+
+      cursor:pointer;
+      transition: background-color .15s ease, color .15s ease, transform .15s ease;
+    }
+    .cta-bar .cta-btn:hover{
+      background:var(--lime) !important;
+      color:#111 !important;
+      transform:translateY(-1px);
+    }
+    .cta-bar .cta-btn:active{
+      background:var(--lime-700) !important;
+      color:#111 !important;
+      transform:translateY(0);
+    }
+    .cta-bar .cta-btn:focus-visible{
+      outline:2px solid var(--lime);
+      outline-offset:2px;
+    }
+  </style>
+
+  <!-- ✅ Header padrão (SEMPRE o último do head) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
+</head>
+
+<body class="header-v1">
+
+  <!-- ===== HEADER PADRÃO (igual fale_conosco) ===== -->
   <header class="navbar">
     <div class="header-left">
       <div class="logo">
-        <a href="{{ url_for('index') }}" aria-label="Página inicial" title="Página inicial">
-          <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
+        <a href="{{ url_for('index') }}" aria-label="Página inicial">
+          <img
+            src="{{ url_for('static', filename='Logo_Branco_AcheTece_sem_fundo.png') }}"
+            alt="Logo AcheTece"
+            decoding="async"
+            fetchpriority="high"
+          >
         </a>
       </div>
     </div>
 
+    <!-- Links do topo (somente desktop) -->
+    <nav class="hdr-nav" aria-label="Navegação principal">
+      <a href="{{ url_for('quem_somos') }}">O AcheTece</a>
+      <a href="{{ url_for('malharia_info') }}">Como Funciona</a>
+      <a href="{{ url_for('contato') }}">Fale Conosco</a>
+    </nav>
+
     <div class="header-right">
-      <!-- Casinha -->
-      <a href="{{ url_for('index') }}" class="icon-btn" aria-label="Página inicial" title="Página inicial">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M3 10.5 12 3l9 7.5"></path>
-          <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
-          <path d="M9 21V12h6v9"></path>
-        </svg>
-      </a>
+      <div class="hdr-actions">
+        <a href="/login" class="btn-perfil" aria-label="Acessar sua conta da malharia" title="Acessar sua conta da malharia">
+          <span>Conta Malharia</span>
+        </a>
 
-      <!-- Menu sanduíche -->
-      <div class="menu-wrap">
-        <button class="hamburger" id="hamburger" type="button" aria-label="Abrir menu" aria-controls="menu-lateral" aria-haspopup="menu" aria-expanded="false">
-          <span></span><span></span><span></span>
+        <!-- CASINHA (somente desktop) -->
+        <a href="{{ url_for('index') }}" class="btn-home" aria-label="Voltar ao início" title="Voltar ao início">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 10.5 12 3l9 7.5"></path>
+            <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
+            <path d="M9 21V12h6v9"></path>
+          </svg>
+        </a>
+
+        <!-- BOTÃO MENU (SÓ NO MOBILE) -->
+        <button class="btn-menu" id="openMenuBtn" type="button" aria-label="Abrir menu" aria-controls="mobileMenu" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M4 7h16M4 12h16M4 17h16"/>
+          </svg>
         </button>
-
-        <nav class="menu-dropdown" id="menu-lateral" role="menu" aria-label="Menu rápido">
-          <div class="menu-header">
-            <button type="button" class="menu-close" aria-label="Fechar menu">
-              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
-              </svg>
-            </button>
-          </div>
-
-          <a href="{{ url_for('buscar_teares') }}" class="menu-item" role="menuitem">Buscar Tear</a>
-          <a href="{{ url_for('malharia_info') }}" class="menu-item" role="menuitem">Como Funciona</a>
-          <a href="{{ url_for('login') }}" class="menu-item" role="menuitem">Já sou cadastrado</a>
-          <a href="{{ url_for('quem_somos') }}" class="menu-item" role="menuitem">Quem Somos</a>
-          <a href="{{ url_for('contato') }}" class="menu-item" role="menuitem">Fale conosco</a>
-          <a href="{{ url_for('termos') }}" class="menu-item" role="menuitem">Termos e Políticas</a>
-        </nav>
       </div>
     </div>
   </header>
 
-  <!-- ===== CONTEÚDO ===== -->
-  <main class="wrap" role="main">
-    <section class="card" aria-labelledby="t">
-      <h1 id="t" class="title">Redefinir Senha</h1>
+  <!-- ===== MENU MOBILE (SÓ NO MOBILE) ===== -->
+  <div class="mobile-menu-backdrop" id="menuBackdrop" aria-hidden="true"></div>
 
-      {% if mensagem %}
-        <div class="alert">{{ mensagem }}</div>
-      {% endif %}
+  <nav class="mobile-menu" id="mobileMenu" aria-label="Menu do site">
+    <div class="menu-head">
+      <a href="{{ url_for('index') }}" class="menu-logo" aria-label="Ir para a busca">
+        <span class="menu-logoBox">
+          <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece" decoding="async">
+        </span>
+      </a>
 
-      <form method="POST" novalidate>
-        <label for="senha">Nova senha</label>
-        <input id="senha" class="input" type="password" name="senha" placeholder="Digite a nova senha" required>
-        <button class="btn" type="submit">Salvar nova senha</button>
-      </form>
+      <button class="menu-close" id="closeMenuBtn" type="button" aria-label="Fechar menu">
+        <svg class="x-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 6L18 18M18 6L6 18"></path>
+        </svg>
+      </button>
+    </div>
 
-      <div class="links-row">
-        <a class="back" href="{{ url_for('login') }}">Voltar ao login</a>
+    <div class="menu-body">
+      <a href="{{ url_for('index') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5Z"/>
+        </svg>
+        Buscar Tear
+      </a>
+
+      <a href="{{ url_for('malharia_info') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 16v-4"></path>
+          <path d="M12 8h.01"></path>
+        </svg>
+        Como Funciona
+      </a>
+
+      <a href="/login">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20 21a8 8 0 0 0-16 0"></path>
+          <circle cx="12" cy="8" r="4"></circle>
+        </svg>
+        Já sou cadastrado
+      </a>
+
+      <a href="{{ url_for('quem_somos') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 16v-4"></path>
+          <path d="M12 8h.01"></path>
+        </svg>
+        Quem Somos
+      </a>
+
+      <a href="{{ url_for('contato') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 4h16v14H5.5L4 19.5V4Z"></path>
+          <path d="M7 8h10"></path>
+          <path d="M7 12h7"></path>
+        </svg>
+        Fale conosco
+      </a>
+
+      <a href="{{ url_for('termos') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 2h9l3 3v17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"></path>
+          <path d="M9 9h6"></path>
+          <path d="M9 13h6"></path>
+          <path d="M9 17h6"></path>
+        </svg>
+        Termos e Políticas
+      </a>
+    </div>
+  </nav>
+
+  <!-- ===== CONTEÚDO (miolo cinza) ===== -->
+  <div class="faixa-cinza">
+    <div class="page-outer">
+
+      <div class="page-wrap">
+        <h1 class="titulo">Redefinir Senha</h1>
+        <p class="sub">Defina sua nova senha para acessar sua Conta Malharia.</p>
+
+        <section class="box-form">
+          <h3>Nova senha</h3>
+
+          {% if mensagem %}
+            <div class="msg-erro" role="status">{{ mensagem }}</div>
+          {% endif %}
+
+          <form class="contato" method="POST" novalidate>
+            <label for="senha">Nova senha</label>
+            <input id="senha" name="senha" type="password" placeholder="Digite a nova senha" required>
+
+            <div class="acoes">
+              <button class="btn-enviar" type="submit">Salvar nova senha</button>
+              <a class="voltar" href="{{ url_for('login') }}">Voltar ao login</a>
+            </div>
+          </form>
+        </section>
       </div>
-    </section>
-  </main>
 
-  <!-- ===== Scripts do menu ===== -->
-  <script>
-    (function () {
-      function closeAll() {
-        document.querySelectorAll('.menu-wrap .menu-dropdown.open').forEach(m => {
-          m.classList.remove('open');
-          const b = m.closest('.menu-wrap')?.querySelector('.hamburger');
-          if (b) b.setAttribute('aria-expanded', 'false');
-        });
-      }
-      document.querySelectorAll('.menu-wrap').forEach(wrap => {
-        const btn  = wrap.querySelector('#hamburger');
-        const menu = wrap.querySelector('#menu-lateral');
-        const xBtn = wrap.querySelector('.menu-close');
-        if (!btn || !menu) return;
+    </div>
+  </div>
 
-        btn.addEventListener('click', e => {
-          e.stopPropagation();
-          const willOpen = !menu.classList.contains('open');
-          closeAll();
-          menu.classList.toggle('open', willOpen);
-          btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-        });
+  <!-- ===== Faixa preta (CTA) ===== -->
+  <section class="cta-bar">
+    <div class="cta-text">
+      <h3>É proprietário de uma malharia?</h3>
+      <p>Cadastre sua malharia e comece a receber novos pedidos.</p>
+    </div>
+    <a href="{{ url_for('malharia_info') }}" class="cta-btn">Cadastrar</a>
+  </section>
 
-        xBtn?.addEventListener('click', e => {
-          e.stopPropagation();
-          menu.classList.remove('open');
-          btn.setAttribute('aria-expanded', 'false');
-        });
+  <!-- ===== Rodapé ===== -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="{{ url_for('static', filename='logo_simbolo.png') }}" alt="AcheTece">
+      </div>
 
-        menu.addEventListener('click', e => e.stopPropagation());
-      });
-      document.addEventListener('click', closeAll);
-      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
-    })();
-  </script>
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h4>Sobre nós</h4>
+          <ul>
+            <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
+            <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
+            <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
+            <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
+          </ul>
+        </div>
 
-  <!-- Medir altura do topo para popover mobile -->
+        <div class="footer-col">
+          <h4>&nbsp;</h4>
+          <ul><li>&nbsp;</li></ul>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== JS: Menu mobile (padrão) ===== -->
   <script>
     (function(){
-      function setNavH(){
-        const nav = document.querySelector('.navbar')?.offsetHeight || 0;
-        document.documentElement.style.setProperty('--nav-h', nav + 'px');
+      const openBtn = document.getElementById('openMenuBtn');
+      const closeBtn = document.getElementById('closeMenuBtn');
+      const backdrop = document.getElementById('menuBackdrop');
+
+      function openMenu(){
+        document.body.classList.add('menu-open');
+        if(openBtn) openBtn.setAttribute('aria-expanded','true');
       }
-      setNavH();
-      window.addEventListener('resize', setNavH);
+      function closeMenu(){
+        document.body.classList.remove('menu-open');
+        if(openBtn) openBtn.setAttribute('aria-expanded','false');
+      }
+
+      if(openBtn) openBtn.addEventListener('click', openMenu);
+      if(closeBtn) closeBtn.addEventListener('click', closeMenu);
+      if(backdrop) backdrop.addEventListener('click', closeMenu);
+
+      document.addEventListener('keydown', (e)=>{
+        if(e.key === 'Escape') closeMenu();
+      });
     })();
   </script>
+
 </body>
 </html>
