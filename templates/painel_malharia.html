@@ -25,7 +25,7 @@
       --olive-100:#E6E7DE;
       --line-olive:#BFBFA8;
 
-      --bg-150:#EAEAE8;   /* miolo cinza igual index */
+      --bg-150:#EAEAE8;   /* miolo cinza igual index/admin */
       --site-bg: var(--bg-150);
 
       /* Compatibilidade com CSS legado */
@@ -56,7 +56,8 @@
     *, *::before, *::after { box-sizing:border-box; }
 
     body{
-      background:#fff;
+      /* ✅ FUNDO IGUAL AO ADMIN: cinza base no corpo da página */
+      background: var(--site-bg);
       color:var(--cinza-900);
       margin:0;
       font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
@@ -70,6 +71,15 @@
     /* Miolo cinza + container central (igual padrão) */
     .faixa-cinza{ background: var(--site-bg); padding:16px 0 48px; }
     .page-outer{ max-width:var(--maxw); margin:0 auto; padding:0 16px; }
+
+    /* ✅ PATCH FUNDO: impede “retângulo branco gigante” herdado do style.css */
+    .page-outer,
+    .container{
+      background: transparent !important;
+      border: 0 !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+    }
 
     /* ==========================================================
        TOPO (ESPECÍFICO DO PAINEL):
@@ -551,9 +561,9 @@
       .footer-cols{ grid-template-columns:1fr; }
     }
 
-    /* Mantém claro mesmo em dark mode do SO */
+    /* ✅ Mantém claro mesmo em dark mode do SO (sem voltar para branco) */
     @media (prefers-color-scheme: dark){
-      html, body{ background:#fff !important; color: var(--cinza-900); }
+      html, body{ background: var(--site-bg) !important; color: var(--cinza-900); }
     }
 
     /* ===== PATCH: Título + botões "Teares Cadastrados" no MOBILE ===== */
@@ -562,7 +572,7 @@
     .container{
       padding: 0 0 28px;  /* antes era 0 16px 28px */
     }
-    
+
     /* Desktop mantém como está */
     .sec-title{
       display:flex;
@@ -577,7 +587,7 @@
       gap:10px;
       align-items:center;
     }
-    
+
     /* Mobile: título em cima + botões embaixo (grid) */
     @media (max-width: 640px){
       .sec-title{
@@ -585,14 +595,14 @@
         align-items:stretch;
         gap:10px;
       }
-    
+
       .sec-title h2{
         margin:0;
         font-size:22px;      /* ajusta o tamanho do título */
         line-height:1.15;
         text-align:left;
       }
-    
+
       /* Botões em 2 colunas quando couber */
       .sec-actions{
         width:100%;
@@ -600,7 +610,7 @@
         grid-template-columns: 1fr 1fr;
         gap:10px;
       }
-    
+
       /* Botões ocupam a célula inteira e não estouram */
       .sec-actions .btn-roxo{
         width:100% !important;
@@ -611,7 +621,7 @@
         min-width:0 !important;
       }
     }
-    
+
     /* Mobile pequeno: empilha os botões (100% largura) */
     @media (max-width: 420px){
       .sec-actions{
@@ -623,7 +633,6 @@
       }
     }
 
-    
   </style>
 
   <!-- ✅ Header padrão (SEMPRE o último do head) -->
