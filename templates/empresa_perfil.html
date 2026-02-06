@@ -4,11 +4,18 @@
   <meta charset="UTF-8" />
   <title>Perfil da Malharia</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}" />
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}" />
+
+  <!-- CSS global -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
+
   <style>
     :root{
-      /* Paleta OLIVE (padrão novo) */
+      /* Paleta OLIVE (padrão) */
       --olive:#7B7424;
       --olive-600:#5E581C;
       --olive-dark:#434326;
@@ -19,125 +26,224 @@
       --lime:#B6F34D;
       --lime-700:#A2E532;
 
-      /* Fundo global (igual à index) */
+      /* Fundo global (igual index) */
       --site-bg:#EAEAE8;
 
       /* Neutros */
       --card:#ffffff;
-      --line:#e9e9ee;
-      --text:#111318;
-      --muted:#70737c;
+      --line:#e8ecf5;
+      --text:#111827;
+      --muted:#6b7280;
 
-      /* Compat com CSS anterior */
-      --accent:var(--olive);
-      --accent-soft:var(--olive-50);
-      --pill:#F0F1F4;
-
-      --shadow:0 6px 20px rgba(0,0,0,.06);
       --radius:16px;
     }
 
-    *{box-sizing:border-box}
-    html,body{margin:0;padding:0}
+    html, body{ max-width:100%; overflow-x:hidden; }
+    *, *::before, *::after{ box-sizing:border-box; }
+
     body{
-      font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
+      margin:0;
+      font-family:'Inter',system-ui,Segoe UI,Roboto,Arial,sans-serif;
       color:var(--text);
-      background:var(--site-bg);
-      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+      background:#fff;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
     }
 
-    a{color:var(--accent); text-decoration:none; font-weight:800;}
-    a:hover{text-decoration:underline}
+    /* Faixa cinza (padrão do site) */
+    .faixa-cinza{ background:var(--site-bg); padding:18px 0 42px; }
+    .page-outer{ max-width:1100px; margin:0 auto; padding:0 16px; }
 
-    .wrap{max-width:1100px;margin:0 auto;padding:16px; overflow-x:hidden}
-
-    /* Navbar minimal */
-    .navbar{padding:8px 12px;background:#fff;border-bottom:1px solid #eee}
-    .logo a{display:inline-flex;align-items:center}
-    .logo img{height:44px;width:auto;display:block}
+    /* Botão topo "Voltar ao painel" (igual ao padrão da performance) */
+    .top-back{
+      display:flex;
+      justify-content:center;
+      margin: 10px 0 14px;
+    }
+    .btn-top-back{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      height:40px;
+      padding:0 18px;
+      border-radius:9999px;
+      border:1px solid #d9d9d9;
+      background:#fff;
+      color:#111;
+      font-weight:800;
+      text-decoration:none;
+      transition: transform .12s ease, background-color .15s ease;
+      box-shadow:none !important;
+    }
+    .btn-top-back:hover{ background:#fafafa; transform:translateY(-1px); text-decoration:none; }
+    .btn-top-back:active{ transform:translateY(0); }
+    .btn-top-back:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
 
     /* Cards */
     .card{
-      background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
-      box-shadow:var(--shadow); padding:18px; margin:14px 0;
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:none !important;
+      padding:18px;
+      margin:14px 0;
     }
 
     /* Header da empresa */
     .head{
-      display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:16px;
+      flex-wrap:wrap;
     }
-    .title{margin:0;font-size:24px;font-weight:800; color:var(--olive-dark);}
-    .sub{margin:6px 0 0;color:var(--muted);font-weight:600}
+    .title{
+      margin:0;
+      font-size:24px;
+      font-weight:800;
+      color:var(--olive-dark);
+      letter-spacing:-0.01em;
+    }
+    .sub{
+      margin:6px 0 0;
+      color:var(--muted);
+      font-weight:600;
+    }
     .pill{
-      display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:9999px;
-      background:var(--pill);border:1px solid #e7e8ec;font-size:12.5px;font-weight:800;color:#222;
+      display:inline-flex;
+      align-items:center;
+      height:26px;
+      padding:0 10px;
+      border-radius:9999px;
+      background:#F0F1F4;
+      border:1px solid #e7e8ec;
+      font-size:12.5px;
+      font-weight:800;
+      color:#222;
     }
-    .pill-row{margin-top:8px}
+    .pill-row{ margin-top:8px; }
 
-    /* Botões – Padrão global PRETO → LIME (sem bordas no hover) */
-    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    /* Botões do header do card */
+    .actions{ display:flex; gap:10px; flex-wrap:wrap; }
     .btn{
-      display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 16px;
-      border-radius:9999px;border:0;background:#000;color:var(--lime);
-      font-weight:800; transition:background-color .15s, color .15s, transform .12s;
-      box-shadow:none !important; text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      height:38px;
+      padding:0 16px;
+      border-radius:9999px;
+      border:0;
+      background:#000;
+      color:var(--lime);
+      font-weight:800;
+      text-decoration:none;
+      transition: background-color .15s, color .15s, transform .12s;
+      box-shadow:none !important;
     }
-    .btn:hover{background:var(--lime); color:#000; transform:translateY(-2px); text-decoration:none;}
-    .btn:active{background:var(--lime-700); color:#000; transform:translateY(0);}
-    .btn:focus{outline:none;}
-    .btn:focus-visible{outline:2px solid var(--lime); outline-offset:2px;}
-    .btn-icon{height:38px;padding:0 12px}
+    .btn:hover{ background:var(--lime); color:#000; transform:translateY(-2px); text-decoration:none; }
+    .btn:active{ background:var(--lime-700); color:#000; transform:translateY(0); }
+    .btn:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
 
-    /* Versão leve/ghost para links secundários */
-    .btn-ghost{border:0;background:transparent;color:var(--text)}
-    .btn-ghost:hover{background:var(--olive-50); color:#000; text-decoration:none}
+    /* Ícone apenas */
+    .btn-icon{ height:38px; padding:0 12px; }
+
+    /* Versão ghost (WhatsApp) */
+    .btn-ghost{
+      border:0;
+      background:transparent;
+      color:var(--text);
+    }
+    .btn-ghost:hover{ background:var(--olive-50); color:#000; transform:translateY(-1px); }
 
     /* Ícones */
-    .svg{width:18px;height:18px;display:inline-block;vertical-align:middle;flex:0 0 18px}
+    .svg{ width:18px; height:18px; display:inline-block; vertical-align:middle; flex:0 0 18px; }
 
-    /* Seção informações da empresa */
-    .sec-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 10px}
-    h2.sec{margin:0;font-size:20px;font-weight:800; color:#1e1b2b;}
-    .maps-link{display:inline-flex;align-items:center;gap:8px;font-weight:800;color:var(--olive)}
-    .maps-link .svg{width:19px;height:19px}
-    .maps-link--inline{display:none;margin:8px 10px 0}
+    /* Seção informações */
+    .sec-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin:0 0 10px;
+    }
+    h2.sec{
+      margin:0;
+      font-size:20px;
+      font-weight:800;
+      color:#1e1b2b;
+    }
+    .maps-link{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      font-weight:800;
+      color:var(--olive);
+      text-decoration:none;
+    }
+    .maps-link:hover{ text-decoration:underline; }
+    .maps-link .svg{ width:19px; height:19px; }
 
-    .empresa-grid{display:grid;grid-template-columns:1.2fr .9fr;gap:18px;align-items:start}
-    @media (max-width:900px){ .empresa-grid{grid-template-columns:1fr} }
+    .maps-link--inline{ display:none; margin:8px 10px 0; }
+
+    .empresa-grid{
+      display:grid;
+      grid-template-columns:1.2fr .9fr;
+      gap:18px;
+      align-items:start;
+    }
+    @media (max-width:900px){ .empresa-grid{ grid-template-columns:1fr; } }
 
     .dados{
-      display:grid; grid-template-columns:180px 1fr; gap:10px 14px;
-      border:1px solid var(--line); border-radius:12px; padding:14px; background:#fff;
+      display:grid;
+      grid-template-columns:180px 1fr;
+      gap:10px 14px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:14px;
+      background:#fff;
     }
-    @media (max-width:640px){ .dados{grid-template-columns:132px 1fr} }
+    @media (max-width:640px){ .dados{ grid-template-columns:132px 1fr; } }
 
     .dados dt{
-      font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:800;
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+      color:var(--muted);
+      font-weight:800;
     }
     .dados dd{
-      margin:0; font-size:15px; font-weight:600; color:var(--text); min-width:0;
+      margin:0;
+      font-size:15px;
+      font-weight:600;
+      color:var(--text);
+      min-width:0;
     }
-    .v{display:block; line-height:1.45; color:var(--text); font-weight:700; font-size:16px}
-    .v--soft{font-weight:600; font-size:15px}
-    .dados dd, .dados a{word-break:break-word; overflow-wrap:anywhere}
+    .v{ display:block; line-height:1.45; color:var(--text); font-weight:700; font-size:16px; }
+    .v--soft{ font-weight:600; font-size:15px; }
+    .dados dd, .dados a{ word-break:break-word; overflow-wrap:anywhere; }
 
-    .addr .linha{display:block}
-    .addr .rua{font-weight:700}
-    .addr .local, .addr .cep{color:var(--text); font-weight:600}
+    .addr .linha{ display:block; }
+    .addr .rua{ font-weight:700; }
+    .addr .local, .addr .cep{ color:var(--text); font-weight:600; }
 
     /* Mapa */
-    .mapa{border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#fff}
-    .mapa iframe{width:100%; height:220px; border:0; display:block}
-    @media (max-width:640px){ .mapa iframe{height:180px} }
-    .mapa small{display:block; padding:8px 10px; color:#666}
+    .mapa{
+      border:1px solid var(--line);
+      border-radius:12px;
+      overflow:hidden;
+      background:#fff;
+    }
+    .mapa iframe{ width:100%; height:220px; border:0; display:block; }
+    @media (max-width:640px){ .mapa iframe{ height:180px; } }
+    .mapa small{ display:block; padding:8px 10px; color:#666; }
 
-    /* Mostrar/ocultar "Ver no Maps" certo por breakpoint */
+    /* Mostrar/ocultar Maps por breakpoint */
     @media (max-width:900px){
-      .maps-link{display:none}
-      .maps-link--inline{display:inline-flex}
+      .maps-link{ display:none; }
+      .maps-link--inline{ display:inline-flex; }
     }
 
-    /* ====== Teares no formato de TABELA (igual à index) ====== */
+    /* ===== Teares em tabela ===== */
     .table-wrap{
       border:1px solid var(--line);
       border-radius:12px;
@@ -149,246 +255,426 @@
       border-collapse:collapse;
       min-width:620px;
     }
-    /* Cabeçalho mais discreto */
     .teares-table thead th{
       background:var(--olive);
-      color:rgba(255,255,245,.92);   /* off-white suave */
+      color:rgba(255,255,245,.92);
       padding:12px 16px;
-      text-align:center;             /* centraliza títulos */
-      font-weight:700;               /* menos pesado que 800 */
+      text-align:center;
+      font-weight:700;
       vertical-align:middle;
+      white-space:nowrap;
     }
-    /* Células */
     .teares-table tbody td{
       padding:14px 16px;
       font-weight:700;
       color:var(--text);
       border-top:1px solid #f0f0f0;
-      text-align:center;             /* centraliza valores */
+      text-align:center;
       vertical-align:middle;
+      white-space:nowrap;
     }
     .teares-table tbody tr:nth-child(even){
       background:var(--olive-50);
     }
 
-    .footer-spacer{height:8px}
+    /* ===== CTA + FOOTER padrão (igual index) ===== */
+    .cta-bar{
+      background:#000; color:#fff; padding:20px 16px;
+      display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+      border-top:1px solid rgba(255,255,255,0.06);
+      justify-content:flex-start;
+    }
+    .cta-text h3{ margin:0 0 4px 0; font-size:18px; font-weight:800; line-height:1.2; }
+    .cta-text p{ margin:0; font-size:15px; opacity:.9; }
+    .cta-bar .cta-btn{
+      display:inline-flex !important;
+      align-items:center !important;
+      justify-content:center !important;
+      height:44px !important;
+      padding:0 22px !important;
+      border-radius:9999px !important;
+      font-weight:800 !important;
+      text-decoration:none !important;
+      white-space:nowrap !important;
+      background:#fff !important;
+      color:#000 !important;
+      border:0 !important;
+      box-shadow:none !important;
+      line-height:1 !important;
+      cursor:pointer;
+      transition: background-color .15s ease, color .15s ease, transform .15s ease;
+    }
+    .cta-bar .cta-btn:hover{ background:var(--lime) !important; color:#111 !important; transform:translateY(-1px); }
+    .cta-bar .cta-btn:active{ background:var(--lime-700) !important; color:#111 !important; transform:translateY(0); }
+    .cta-bar .cta-btn:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
 
-    /* === Suavização tipográfica (desktop) — menos “negrito” nos destaques === */
-    @media (min-width: 901px){
-    
-      /* Títulos e subtítulo */
-      .title{ font-weight:700 !important; }          /* antes 800 */
-      .sub{   font-weight:500 !important; }          /* antes 600 */
-    
-      /* Seções / cabeçalhos */
-      h2.sec, .sec{ font-weight:700 !important; }    /* antes 800 */
-      .maps-link, .maps-link--inline{ font-weight:600 !important; } /* antes 800 */
-    
-      /* Pills e botões do header */
-      .pill{ font-weight:700 !important; }           /* antes 800 */
-      .btn, .btn-ghost{ font-weight:600 !important; }/* antes 800 */
-    
-      /* Bloco de dados (dt/dd e variações) */
-      .dados dt{ font-weight:700 !important; letter-spacing:.03em; } /* antes 900 */
-      .dados dd{ font-weight:600 !important; }        /* antes 600/700 misto */
-      .v{        font-weight:600 !important; }        /* antes 700 */
-      .v--soft{  font-weight:500 !important; }        /* antes 600 */
-    
-      /* Cards de teares */
-      .tear-head .k{ font-weight:700 !important; }    /* antes 800 */
-      .tear-head .v{ font-weight:700 !important; }    /* antes 900 */
-      .kv .k{        font-weight:600 !important; }    /* antes 700 */
-      .kv .v{        font-weight:700 !important; }    /* antes 800 */
-    
-      /* Caso existam <b> ou <strong> no conteúdo */
-      b, strong{ font-weight:600 !important; }
+    .site-footer{
+      background:#fff;color:#211a2a;border-top:1px solid #eee;padding:18px 16px 28px;
+    }
+    .footer-inner{
+      max-width:1100px;margin:0 auto;display:grid;grid-template-columns:auto 1fr;
+      gap:20px 28px;align-items:start;
+    }
+    .footer-brand img{ height:44px;width:auto;display:block; }
+    .footer-cols{ display:grid;grid-template-columns: repeat(2, minmax(180px, 240px));gap:12px 28px; }
+    .footer-col h4{ margin:0 0 8px 0;font-size:14px;font-weight:800;color:#251c33; }
+    .footer-col ul{ list-style:none;margin:0;padding:0; }
+    .footer-col li+li{ margin-top:6px; }
+    .footer-col a{ color:#2a2535;text-decoration:none;font-size:14px; }
+    .footer-col a:hover{ text-decoration:underline; }
+    @media (max-width:900px){
+      .footer-inner{ grid-template-columns:1fr; }
+      .footer-cols{ grid-template-columns:1fr; }
     }
 
+    /* Suavização tipográfica (desktop) */
+    @media (min-width: 901px){
+      .title{ font-weight:700 !important; }
+      .sub{ font-weight:500 !important; }
+      h2.sec{ font-weight:700 !important; }
+      .maps-link, .maps-link--inline{ font-weight:600 !important; }
+      .pill{ font-weight:700 !important; }
+      .btn, .btn-ghost{ font-weight:600 !important; }
+      .dados dt{ font-weight:700 !important; letter-spacing:.03em; }
+      .dados dd{ font-weight:600 !important; }
+      .v{ font-weight:600 !important; }
+      .v--soft{ font-weight:500 !important; }
+      b, strong{ font-weight:600 !important; }
+    }
   </style>
+
+  <!-- ✅ Header padrão (SEMPRE o último do head) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
 </head>
-<body>
+
+<body class="header-v1">
+
+  <!-- ===== HEADER PADRÃO ===== -->
   <header class="navbar">
-    <div class="logo">
-      <a href="{{ url_for('index') }}" aria-label="Página inicial">
-        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
-      </a>
+    <div class="header-left">
+      <div class="logo">
+        <a href="{{ url_for('index') }}" aria-label="Página inicial">
+          <img
+            src="{{ url_for('static', filename='Logo_Branco_AcheTece_sem_fundo.png') }}"
+            alt="Logo AcheTece"
+            decoding="async"
+            fetchpriority="high"
+          >
+        </a>
+      </div>
+    </div>
+
+    <!-- Links topo (desktop) — ordem fixa -->
+    <nav class="hdr-nav" aria-label="Navegação principal">
+      <a href="{{ url_for('quem_somos') }}">O AcheTece</a>
+      <a href="{{ url_for('malharia_info') }}">Como Funciona</a>
+      <a href="{{ url_for('contato') }}">Fale Conosco</a>
+    </nav>
+
+    <div class="header-right">
+      <div class="hdr-actions">
+        <a href="{{ url_for('login') }}" class="btn-perfil" aria-label="Acessar sua conta da malharia" title="Acessar sua conta da malharia">
+          <span>Conta Malharia</span>
+        </a>
+
+        <!-- Casinha (sempre à direita do Conta Malharia) -->
+        <a href="{{ url_for('index') }}" class="btn-home" aria-label="Voltar ao início" title="Voltar ao início">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 10.5 12 3l9 7.5"></path>
+            <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
+            <path d="M9 21V12h6v9"></path>
+          </svg>
+        </a>
+
+        <!-- Menu (somente mobile) -->
+        <button class="btn-menu" id="openMenuBtn" type="button" aria-label="Abrir menu" aria-controls="mobileMenu" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M4 7h16M4 12h16M4 17h16"/>
+          </svg>
+        </button>
+      </div>
     </div>
   </header>
 
-  <main class="wrap">
-    <!-- Cabeçalho -->
-    <section class="card">
-      <div class="head">
-        <div>
-          <h1 class="title">{{ empresa.apelido or empresa.nome_fantasia or empresa.razao_social or 'Malharia' }}</h1>
-          <p class="sub">
-            {% if empresa.cidade %}{{ empresa.cidade }}{% if empresa.estado %}/{{ empresa.estado }}{% endif %}{% endif %}
-          </p>
-          {% if teares %}
-            <div class="pill-row"><span class="pill">{{ teares|length }} tear(es)</span></div>
-          {% endif %}
-        </div>
-        <div class="actions">
-          {% set _fone = empresa.telefone or empresa.contato_telefone or empresa.celular %}
-          {% set _wa = empresa.contato_whatsapp or (('https://wa.me/' ~ ('55' ~ _fone|replace(' ','')|replace('(','')|replace(')','')|replace('-','') if _fone and not (_fone|replace(' ','')|replace('(','')|replace(')','')|replace('-','') ).startswith('55') else _fone|replace(' ','')|replace('(','')|replace(')','')|replace('-',''))) if _fone else None) %}
-          {% if _wa %}
-            <a class="btn btn-ghost btn-icon" href="{{ _wa }}" target="_blank" rel="noopener" aria-label="WhatsApp">
-              <svg class="svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M20.52 3.48A11.77 11.77 0 0 0 12.01 0C5.4 0 .03 5.37.03 12c0 2.11.55 4.17 1.6 5.99L0 24l6.19-1.61A11.93 11.93 0 0 0 12 24c6.62 0 12-5.37 12-12 0-3.21-1.25-6.23-3.48-8.52Zm-8.51 18.2a9.9 9.9 0 0 1-5.05-1.39l-.36-.21-3.68.96.98-3.58-.23-.37A9.92 9.92 0 1 1 21.9 12c0 5.46-4.44 9.68-9.89 9.68Zm5.68-7.25c-.31-.16-1.83-.9-2.11-1.01-.28-.11-.48-.16-.68.16-.2.31-.78 1.01-.96 1.22-.18.21-.36.23-.66.08-.31-.16-1.31-.48-2.49-1.52-.92-.82-1.54-1.82-1.72-2.13-.18-.31-.02-.48.13-.64.14-.14.31-.36.47-.54.16-.18.21-.31.31-.52.1-.21.05-.39-.03-.55-.08-.16-.68-1.63-.93-2.24-.24-.58-.49-.5-.68-.51l-.58-.01c-.2 0-.52.08-.79.39-.27.31-1.04 1.02-1.04 2.49 0 1.47 1.07 2.9 1.22 3.1.15.2 2.12 3.24 5.14 4.54.72.31 1.28.5 1.71.64.72.23 1.38.2 1.9.12.58-.09 1.83-.75 2.09-1.47.26-.72.26-1.33.18-1.46-.08-.13-.28-.21-.59-.37Z"/>
-              </svg>
-            </a>
-          {% endif %}
-          <a class="btn" href="{{ url_for('index') }}">Voltar</a>
-        </div>
-      </div>
-    </section>
+  <!-- ===== MENU MOBILE ===== -->
+  <div class="mobile-menu-backdrop" id="menuBackdrop" aria-hidden="true"></div>
 
-    {# ==== Endereço e Maps ==== #}
-    {% set _logradouro = empresa.endereco or empresa.logradouro or empresa.endereco_completo %}
-    {% set _numero     = empresa.numero %}
-    {% set _bairro     = empresa.bairro %}
-    {% set _cidade     = empresa.cidade %}
-    {% set _estado     = empresa.estado %}
-    {% set _cep        = empresa.cep %}
-    {% set tem_end = _logradouro or _numero or _bairro or _cidade or _estado or _cep %}
-    {% set endereco_full = (
-      (_logradouro or '') ~
-      (', ' ~ _numero if _numero else '') ~
-      (', ' ~ _bairro if _bairro else '') ~
-      (', ' ~ _cidade if _cidade else '') ~
-      ( '/' ~ _estado if _estado else '') ~
-      ( ' • CEP ' ~ _cep if _cep else '')
-    ).strip().strip(',') %}
-    {% set mapa_q = (endereco_full or ((_cidade or '') ~ ' ' ~ (_estado or ''))) | replace(' ', '+') %}
-    {% set map_url = 'https://www.google.com/maps?q=' ~ mapa_q %}
+  <nav class="mobile-menu" id="mobileMenu" aria-label="Menu do site">
+    <div class="menu-head">
+      <a href="{{ url_for('index') }}" class="menu-logo" aria-label="Ir para a busca">
+        <span class="menu-logoBox">
+          <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece" decoding="async">
+        </span>
+      </a>
 
-    <section class="card">
-      <div class="sec-head">
-        <h2 class="sec">Informações da empresa</h2>
-        {% if tem_end %}
-          <a class="maps-link" href="{{ map_url }}" target="_blank" rel="noopener">
-            <svg class="svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M12 2C7.86 2 4.5 5.36 4.5 9.5c0 5.25 7.5 12 7.5 12s7.5-6.75 7.5-12C19.5 5.36 16.14 2 12 2Zm0 10.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z"/>
-            </svg>
-            Ver no Maps
-          </a>
-        {% endif %}
+      <button class="menu-close" id="closeMenuBtn" type="button" aria-label="Fechar menu">
+        <svg class="x-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 6L18 18M18 6L6 18"></path>
+        </svg>
+      </button>
+    </div>
+
+    <div class="menu-body">
+      <a href="{{ url_for('index') }}">Buscar Tear</a>
+      <a href="{{ url_for('malharia_info') }}">Como Funciona</a>
+      <a href="{{ url_for('login') }}">Já sou cadastrado</a>
+      <a href="{{ url_for('quem_somos') }}">Quem Somos</a>
+      <a href="{{ url_for('contato') }}">Fale conosco</a>
+      <a href="{{ url_for('termos') }}">Termos e Políticas</a>
+    </div>
+  </nav>
+
+  <!-- ===== CONTEÚDO ===== -->
+  <div class="faixa-cinza">
+    <div class="page-outer">
+
+      <!-- ✅ Voltar ao painel (sempre no topo) -->
+      <div class="top-back">
+        <a class="btn-top-back" href="{{ url_for('painel_malharia') }}">← Voltar ao painel</a>
       </div>
 
-      <div class="empresa-grid">
-        <dl class="dados">
-          {% set _pn = empresa.contato_nome or empresa.responsavel_nome or empresa.responsavel %}
-          {% set _sn = empresa.contato_sobrenome or empresa.responsavel_sobrenome %}
-          {% set pessoa_contato = ((_pn or '') ~ (' ' ~ _sn if _sn else '')).strip() %}
-          <dt>Pessoa de contato</dt>
-          <dd><span class="v">{{ pessoa_contato if pessoa_contato else '—' }}</span></dd>
+      <!-- Cabeçalho -->
+      <section class="card">
+        <div class="head">
+          <div>
+            <h1 class="title">{{ empresa.apelido or empresa.nome_fantasia or empresa.razao_social or 'Malharia' }}</h1>
+            <p class="sub">
+              {% if empresa.cidade %}{{ empresa.cidade }}{% if empresa.estado %}/{{ empresa.estado }}{% endif %}{% endif %}
+            </p>
+            {% if teares %}
+              <div class="pill-row"><span class="pill">{{ teares|length }} tear(es)</span></div>
+            {% endif %}
+          </div>
 
-          <dt>Telefone</dt>
-          <dd>
+          <div class="actions">
             {% set _fone = empresa.telefone or empresa.contato_telefone or empresa.celular %}
-            {% if _fone %}
-              {% set fraw = _fone|replace(' ','')|replace('(','')|replace(')','')|replace('-','') %}
-              {% if fraw.startswith('55') %}{% set fraw = fraw[2:] %}{% endif %}
-              {% set ddd = fraw[:2] %}
-              {% set resto = fraw[2:] %}
-              {% if resto|length == 9 %}
-                {% set p1 = resto[:5] %}{% set p2 = resto[5:] %}
-              {% else %}
-                {% set p1 = resto[:4] %}{% set p2 = resto[4:] %}
-              {% endif %}
-              {% set display = '(' ~ ddd ~ ') ' ~ p1 ~ '-' ~ p2 %}
-              {% set telhref = 'tel:' ~ ('55' ~ fraw if not fraw.startswith('55') else fraw) %}
-              <a href="{{ telhref }}">{{ display }}</a>
-            {% else %}—{% endif %}
-          </dd>
+            {% set _wa = empresa.contato_whatsapp or (('https://wa.me/' ~ ('55' ~ _fone|replace(' ','')|replace('(','')|replace(')','')|replace('-','') if _fone and not (_fone|replace(' ','')|replace('(','')|replace(')','')|replace('-','') ).startswith('55') else _fone|replace(' ','')|replace('(','')|replace(')','')|replace('-',''))) if _fone else None) %}
+            {% if _wa %}
+              <a class="btn btn-ghost btn-icon" href="{{ _wa }}" target="_blank" rel="noopener" aria-label="WhatsApp" title="WhatsApp">
+                <svg class="svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M20.52 3.48A11.77 11.77 0 0 0 12.01 0C5.4 0 .03 5.37.03 12c0 2.11.55 4.17 1.6 5.99L0 24l6.19-1.61A11.93 11.93 0 0 0 12 24c6.62 0 12-5.37 12-12 0-3.21-1.25-6.23-3.48-8.52Zm-8.51 18.2a9.9 9.9 0 0 1-5.05-1.39l-.36-.21-3.68.96.98-3.58-.23-.37A9.92 9.92 0 1 1 21.9 12c0 5.46-4.44 9.68-9.89 9.68Zm5.68-7.25c-.31-.16-1.83-.9-2.11-1.01-.28-.11-.48-.16-.68.16-.2.31-.78 1.01-.96 1.22-.18.21-.36.23-.66.08-.31-.16-1.31-.48-2.49-1.52-.92-.82-1.54-1.82-1.72-2.13-.18-.31-.02-.48.13-.64.14-.14.31-.36.47-.54.16-.18.21-.31.31-.52.1-.21.05-.39-.03-.55-.08-.16-.68-1.63-.93-2.24-.24-.58-.49-.5-.68-.51l-.58-.01c-.2 0-.52.08-.79.39-.27.31-1.04 1.02-1.04 2.49 0 1.47 1.07 2.9 1.22 3.1.15.2 2.12 3.24 5.14 4.54.72.31 1.28.5 1.71.64.72.23 1.38.2 1.9.12.58-.09 1.83-.75 2.09-1.47.26-.72.26-1.33.18-1.46-.08-.13-.28-.21-.59-.37Z"/>
+                </svg>
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </section>
 
-          <dt>E-mail</dt>
-          <dd>
-            {% set _email = empresa.email or empresa.contato_email %}
-            {% if _email %}
-              <a href="mailto:{{ _email }}"><span class="v--soft">{{ _email }}</span></a>
-            {% else %}—{% endif %}
-          </dd>
+      {# ==== Endereço e Maps ==== #}
+      {% set _logradouro = empresa.endereco or empresa.logradouro or empresa.endereco_completo %}
+      {% set _numero     = empresa.numero %}
+      {% set _bairro     = empresa.bairro %}
+      {% set _cidade     = empresa.cidade %}
+      {% set _estado     = empresa.estado %}
+      {% set _cep        = empresa.cep %}
+      {% set tem_end = _logradouro or _numero or _bairro or _cidade or _estado or _cep %}
+      {% set endereco_full = (
+        (_logradouro or '') ~
+        (', ' ~ _numero if _numero else '') ~
+        (', ' ~ _bairro if _bairro else '') ~
+        (', ' ~ _cidade if _cidade else '') ~
+        ( '/' ~ _estado if _estado else '') ~
+        ( ' • CEP ' ~ _cep if _cep else '')
+      ).strip().strip(',') %}
+      {% set mapa_q = (endereco_full or ((_cidade or '') ~ ' ' ~ (_estado or ''))) | replace(' ', '+') %}
+      {% set map_url = 'https://www.google.com/maps?q=' ~ mapa_q %}
 
-          <dt>Endereço</dt>
-          <dd>
-            {% if tem_end %}
-              <div class="addr">
-                <span class="linha rua v">
-                  {{ _logradouro or '' }}{% if _numero %}, {{ _numero }}{% endif %}{% if _bairro %} – {{ _bairro }}{% endif %}
-                </span>
-                <span class="linha local v--soft">
-                  {{ _cidade or '' }}{% if _estado %}/{{ _estado }}{% endif %}
-                  {% if _cep %}<span class="cep"> • CEP {{ _cep }}</span>{% endif %}
-                </span>
-              </div>
-            {% else %}—{% endif %}
-          </dd>
-        </dl>
-
-        <div class="mapa">
+      <section class="card">
+        <div class="sec-head">
+          <h2 class="sec">Informações da empresa</h2>
           {% if tem_end %}
-            <!-- Link "Ver no Maps" perto do mapa (só mobile) -->
-            <a class="maps-link maps-link--inline" href="{{ map_url }}" target="_blank" rel="noopener">
+            <a class="maps-link" href="{{ map_url }}" target="_blank" rel="noopener">
               <svg class="svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M12 2C7.86 2 4.5 5.36 4.5 9.5c0 5.25 7.5 12 7.5 12s7.5-6.75 7.5-12C19.5 5.36 16.14 2 12 2Zm0 10.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z"/>
               </svg>
               Ver no Maps
             </a>
-            <iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="{{ map_url }}&output=embed" title="Mapa"></iframe>
-            <small>Localização aproximada com base no endereço cadastrado.</small>
-          {% else %}
-            <div style="padding:14px;">Sem endereço cadastrado para exibir no mapa.</div>
           {% endif %}
         </div>
-      </div>
-    </section>
 
-    <!-- Teares da malharia (AGORA EM TABELA, IGUAL À INDEX) -->
-    <section class="card">
-      <h2 class="sec" style="margin-bottom:10px">Teares desta malharia</h2>
+        <div class="empresa-grid">
+          <dl class="dados">
+            {% set _pn = empresa.contato_nome or empresa.responsavel_nome or empresa.responsavel %}
+            {% set _sn = empresa.contato_sobrenome or empresa.responsavel_sobrenome %}
+            {% set pessoa_contato = ((_pn or '') ~ (' ' ~ _sn if _sn else '')).strip() %}
 
-      {% if teares and teares|length %}
-        <div class="table-wrap" role="region" aria-label="Tabela de teares">
-          <table class="teares-table">
-            <thead>
-              <tr>
-                <th>Tipo</th>
-                <th>Galga</th>
-                <th>Diâmetro</th>
-                <th>Alimentadores</th>
-                <th>Kit elastano</th>
-              </tr>
-            </thead>
-            <tbody>
-            {% for t in teares %}
-              <tr>
-                <td>{{ t.tipo or '—' }}</td>
-                <td>{{ t.finura or t.galga or '—' }}</td>
-                <td>{{ t.diametro or '—' }}</td>
-                <td>{{ t.alimentadores or '—' }}</td>
-                <td>
-                  {% set raw = t.elastano if (t.elastano is not none) else t.kit_elastano %}
-                  {% if raw is boolean %}
-                    {{ 'Sim' if raw else 'Não' }}
-                  {% else %}
-                    {% set s = (raw|string).strip().lower() %}
-                    {% if s in ['sim','s','true','t','on','1','com','tem','yes','y'] %}Sim
-                    {% elif s in ['não','nao','n','false','f','off','0','sem','no'] %}Não
-                    {% else %}—{% endif %}
-                  {% endif %}
-                </td>
-              </tr>
-            {% endfor %}
-            </tbody>
-          </table>
+            <dt>Pessoa de contato</dt>
+            <dd><span class="v">{{ pessoa_contato if pessoa_contato else '—' }}</span></dd>
+
+            <dt>Telefone</dt>
+            <dd>
+              {% set _fone = empresa.telefone or empresa.contato_telefone or empresa.celular %}
+              {% if _fone %}
+                {% set fraw = _fone|replace(' ','')|replace('(','')|replace(')','')|replace('-','') %}
+                {% if fraw.startswith('55') %}{% set fraw = fraw[2:] %}{% endif %}
+                {% set ddd = fraw[:2] %}
+                {% set resto = fraw[2:] %}
+                {% if resto|length == 9 %}
+                  {% set p1 = resto[:5] %}{% set p2 = resto[5:] %}
+                {% else %}
+                  {% set p1 = resto[:4] %}{% set p2 = resto[4:] %}
+                {% endif %}
+                {% set display = '(' ~ ddd ~ ') ' ~ p1 ~ '-' ~ p2 %}
+                {% set telhref = 'tel:' ~ ('55' ~ fraw if not fraw.startswith('55') else fraw) %}
+                <a href="{{ telhref }}">{{ display }}</a>
+              {% else %}—{% endif %}
+            </dd>
+
+            <dt>E-mail</dt>
+            <dd>
+              {% set _email = empresa.email or empresa.contato_email %}
+              {% if _email %}
+                <a href="mailto:{{ _email }}"><span class="v--soft">{{ _email }}</span></a>
+              {% else %}—{% endif %}
+            </dd>
+
+            <dt>Endereço</dt>
+            <dd>
+              {% if tem_end %}
+                <div class="addr">
+                  <span class="linha rua v">
+                    {{ _logradouro or '' }}{% if _numero %}, {{ _numero }}{% endif %}{% if _bairro %} – {{ _bairro }}{% endif %}
+                  </span>
+                  <span class="linha local v--soft">
+                    {{ _cidade or '' }}{% if _estado %}/{{ _estado }}{% endif %}
+                    {% if _cep %}<span class="cep"> • CEP {{ _cep }}</span>{% endif %}
+                  </span>
+                </div>
+              {% else %}—{% endif %}
+            </dd>
+          </dl>
+
+          <div class="mapa">
+            {% if tem_end %}
+              <a class="maps-link maps-link--inline" href="{{ map_url }}" target="_blank" rel="noopener">
+                <svg class="svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 2C7.86 2 4.5 5.36 4.5 9.5c0 5.25 7.5 12 7.5 12s7.5-6.75 7.5-12C19.5 5.36 16.14 2 12 2Zm0 10.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z"/>
+                </svg>
+                Ver no Maps
+              </a>
+              <iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="{{ map_url }}&output=embed" title="Mapa"></iframe>
+              <small>Localização aproximada com base no endereço cadastrado.</small>
+            {% else %}
+              <div style="padding:14px;">Sem endereço cadastrado para exibir no mapa.</div>
+            {% endif %}
+          </div>
         </div>
-      {% else %}
-        <div>Nenhum tear cadastrado para esta empresa.</div>
-      {% endif %}
-    </section>
+      </section>
 
-    <div class="footer-spacer"></div>
-  </main>
+      <!-- Teares -->
+      <section class="card">
+        <h2 class="sec" style="margin-bottom:10px">Teares desta malharia</h2>
+
+        {% if teares and teares|length %}
+          <div class="table-wrap" role="region" aria-label="Tabela de teares">
+            <table class="teares-table">
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th>Galga</th>
+                  <th>Diâmetro</th>
+                  <th>Alimentadores</th>
+                  <th>Kit elastano</th>
+                </tr>
+              </thead>
+              <tbody>
+              {% for t in teares %}
+                <tr>
+                  <td>{{ t.tipo or '—' }}</td>
+                  <td>{{ t.finura or t.galga or '—' }}</td>
+                  <td>{{ t.diametro or '—' }}</td>
+                  <td>{{ t.alimentadores or '—' }}</td>
+                  <td>
+                    {% set raw = t.elastano if (t.elastano is not none) else t.kit_elastano %}
+                    {% if raw is boolean %}
+                      {{ 'Sim' if raw else 'Não' }}
+                    {% else %}
+                      {% set s = (raw|string).strip().lower() %}
+                      {% if s in ['sim','s','true','t','on','1','com','tem','yes','y'] %}Sim
+                      {% elif s in ['não','nao','n','false','f','off','0','sem','no'] %}Não
+                      {% else %}—{% endif %}
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div>Nenhum tear cadastrado para esta empresa.</div>
+        {% endif %}
+      </section>
+
+    </div>
+  </div>
+
+  <!-- ===== Faixa preta (CTA) ===== -->
+  <section class="cta-bar">
+    <div class="cta-text">
+      <h3>É proprietário de uma malharia?</h3>
+      <p>Cadastre sua malharia e comece a receber novos pedidos.</p>
+    </div>
+    <a href="{{ url_for('cadastrar_empresa') }}" class="cta-btn">Cadastrar</a>
+  </section>
+
+  <!-- ===== Rodapé ===== -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="{{ url_for('static', filename='logo_simbolo.png') }}" alt="AcheTece">
+      </div>
+
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h4>Sobre nós</h4>
+          <ul>
+            <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
+            <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
+            <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
+            <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>&nbsp;</h4>
+          <ul><li>&nbsp;</li></ul>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== JS: Menu mobile (padrão) + altura do header ===== -->
+  <script>
+    (function(){
+      const openBtn = document.getElementById('openMenuBtn');
+      const closeBtn = document.getElementById('closeMenuBtn');
+      const backdrop = document.getElementById('menuBackdrop');
+
+      function setNavH(){
+        const nav = document.querySelector('.navbar')?.offsetHeight || 0;
+        document.documentElement.style.setProperty('--nav-h', nav + 'px');
+      }
+
+      function openMenu(){
+        document.body.classList.add('menu-open');
+        if(openBtn) openBtn.setAttribute('aria-expanded','true');
+      }
+      function closeMenu(){
+        document.body.classList.remove('menu-open');
+        if(openBtn) openBtn.setAttribute('aria-expanded','false');
+      }
+
+      setNavH(); window.addEventListener('resize', setNavH);
+
+      if(openBtn) openBtn.addEventListener('click', openMenu);
+      if(closeBtn) closeBtn.addEventListener('click', closeMenu);
+      if(backdrop) backdrop.addEventListener('click', closeMenu);
+
+      document.addEventListener('keydown', (e)=>{
+        if(e.key === 'Escape') closeMenu();
+      });
+    })();
+  </script>
+
 </body>
 </html>
