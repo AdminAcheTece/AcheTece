@@ -52,11 +52,48 @@
     .faixa-cinza{ background:var(--site-bg); padding:18px 0 42px; }
     .page-outer{ max-width:980px; margin:0 auto; padding:0 16px; }
 
+    /* ===== TOPO (Voltar ao painel) — padrão PERFORMANCE ===== */
+    .top{
+      display:flex;
+      align-items:center;
+      justify-content:center; /* igual ao visual da performance */
+      margin: 2px 0 14px;
+    }
+    .btn-outline{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      height:40px;
+      padding:0 16px;
+      border-radius:9999px;
+      border:1.5px solid #e3e3e7;
+      background:#fff;
+      color:#1f1f1f;
+      font-weight:800;
+      text-decoration:none;
+      transition: background .15s ease, color .15s ease, border-color .15s ease, transform .12s ease;
+      box-shadow:none !important;
+      white-space:nowrap;
+    }
+    .btn-outline:hover{
+      background:var(--olive);
+      color:#fff;
+      border-color:var(--olive);
+      transform:translateY(-1px);
+    }
+    .btn-outline:active{
+      background:var(--olive-600);
+      border-color:var(--olive-600);
+      transform:translateY(0);
+    }
+    .btn-outline:focus{ outline:none; }
+    .btn-outline:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
+
     /* Card */
     .card{
       width:100%;
       max-width:620px;
-      margin: 6px auto 0;
+      margin: 0 auto;
       background:#fff;
       border:1px solid var(--line);
       border-radius:16px;
@@ -143,20 +180,11 @@
     .btn:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
     .btn:disabled{ opacity:.5; cursor:not-allowed; transform:none; }
 
-    .link-voltar{
-      display:inline-block;
-      color:var(--olive);
-      text-decoration:none;
-      font-weight:800;
-    }
-    .link-voltar:hover{ color:var(--olive-600); text-decoration:underline; }
-
     /* Suavização tipográfica (desktop) */
     @media (min-width:901px){
       h1.titulo{ font-weight:700 !important; }
       .formulario label{ font-weight:600 !important; }
-      .btn{ font-weight:700 !important; }
-      .link-voltar{ font-weight:600 !important; }
+      .btn, .btn-outline{ font-weight:700 !important; }
     }
 
     /* ===== CTA + FOOTER padrão (igual index) ===== */
@@ -345,6 +373,11 @@
   <div class="faixa-cinza">
     <div class="page-outer">
 
+      <!-- ✅ Voltar ao painel (padrão Performance) -->
+      <div class="top">
+        <a class="btn-outline" href="{{ url_for('painel_malharia') }}">← Voltar ao painel</a>
+      </div>
+
       <div class="card">
         <h1 class="titulo">Editar Tear</h1>
 
@@ -397,7 +430,6 @@
 
           <div class="acoes">
             <button type="submit" class="btn">Salvar</button>
-            <a class="link-voltar" href="{{ url_for('painel_malharia') }}">← Voltar ao Painel Malharia</a>
           </div>
         </form>
       </div>
