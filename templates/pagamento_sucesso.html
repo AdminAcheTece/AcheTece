@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Pagamento Aprovado - AcheTece</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- Open Graph para compartilhamento -->
   <meta property="og:title" content="Pagamento confirmado - AcheTece">
@@ -17,17 +17,15 @@
 
   <!-- CSS principal -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <!-- Header padrão (ÚLTIMO do head) -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet" />
 
   <style>
     :root{
-      /* Paleta OLIVE (padrão do site) */
+      /* PALETA (padrão) */
       --olive:#7B7424;
       --olive-600:#5E581C;
       --olive-dark:#434326;
       --olive-50:#F1F2E8;
-      --line-olive:#BFBFA8;
 
       --bg-150:#EAEAE8;
       --site-bg: var(--bg-150);
@@ -36,149 +34,133 @@
       --lime:#B6F34D;
       --lime-700:#A2E532;
 
-      /* Neutros */
-      --text:#111318;
-      --muted:#5b5f6a;
+      --text:#111;
+      --muted:#555;
+      --maxw:1280px;
 
-      /* Estado sucesso */
-      --success:#2e7d32;
+      /* Sucesso */
+      --ok:#1b7f3a;
+      --ok-soft:#e8f5e9;
     }
 
-    html, body{ max-width:100%; overflow-x:hidden; }
-    *, *::before, *::after{ box-sizing:border-box; }
+    html, body { max-width:100%; overflow-x:hidden; }
+    *, *::before, *::after { box-sizing:border-box; }
 
-    /* ✅ faixa branca do topo + base (header.css cuida do padding-top) */
+    /* ✅ “faixa branca” do topo (igual pagamento_erro/quem_somos) */
     body{
       background:#fff !important;
       color:var(--text);
       margin:0;
       font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
     }
 
-    /* ✅ miolo cinza (igual quem_somos/index) */
+    /* ✅ Miolo cinza */
     .faixa-cinza{
       background: var(--site-bg);
       padding: 16px 0 48px;
     }
     .page-outer{
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 0 16px;
+      max-width:var(--maxw);
+      margin:0 auto;
+      padding:0 16px;
     }
 
     /* Card central */
-    .card{
-      max-width: 720px;
-      margin: 18px auto 0;
+    .pay-card{
+      max-width: 640px;
+      margin: 28px auto 0;
       background:#fff;
-      border:1px solid rgba(0,0,0,.10);
-      border-radius:18px;
-      padding: 30px 22px;
+      border:1px solid rgba(0,0,0,.08);
+      border-radius:16px;
+      padding:32px 26px;
       text-align:center;
-      box-shadow:none;
+      box-shadow:none !important;
     }
 
-    /* Logo dentro do card */
     .logo-box{
       display:flex;
       justify-content:center;
-      margin: 6px 0 10px;
+      margin-bottom:18px;
     }
     .logo-box img{
-      max-height: 72px; /* ajuste aqui se quiser maior */
+      max-height:120px; /* ✅ igual pagamento_erro (ajuste aqui se quiser maior/menor) */
       width:auto;
       display:block;
     }
 
     .icone{
-      font-size: 62px;
-      line-height: 1;
-      margin: 10px 0 6px;
-      color: var(--success);
+      font-size:56px;
+      line-height:1;
+      margin: 6px 0 10px;
     }
 
     h1{
-      margin: 6px 0 10px;
-      font-size: clamp(26px, 3.3vw, 34px);
-      letter-spacing: -0.01em;
-      color: var(--success);
-      font-weight: 800;
+      margin:0 0 10px;
+      font-size:28px;
+      letter-spacing:-0.01em;
+      color:var(--ok);
+      font-weight:800;
     }
-
     p{
-      margin: 0 auto;
-      max-width: 560px;
-      color: var(--muted);
-      font-size: 16px;
-      line-height: 1.6;
+      margin:0 0 18px;
+      color:var(--muted);
+      font-size:16px;
+      line-height:1.55;
+      font-weight:600;
     }
-    .p-spacer{ margin-top: 12px; }
 
-    /* Botão padrão: preto -> lime (igual site) */
+    /* Botão padrão: preto → lime */
     .botao-acao{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      min-height:44px;
-      padding: 10px 22px;
-      border:0;
-      border-radius:9999px;
-      background:#000;
-      color: var(--lime);
-      font-weight: 800;
-      font-size: 16px;
+      display:inline-flex; align-items:center; justify-content:center;
+      height:44px; padding:0 22px;
+      border:0; border-radius:9999px;
+      background:#000; color:var(--lime);
+      font-size:15px; font-weight:800;
       text-decoration:none;
       cursor:pointer;
       transition: background-color .15s ease, color .15s ease, transform .12s ease;
       box-shadow:none !important;
-      margin-top: 18px;
+      white-space:nowrap;
     }
-    .botao-acao:hover{
-      background: var(--lime);
-      color:#000;
-      transform: translateY(-2px);
-      text-decoration:none;
-    }
-    .botao-acao:active{
-      background: var(--lime-700);
-      color:#000;
-      transform: translateY(0);
-    }
+    .botao-acao:hover{ background:var(--lime); color:#000; transform:translateY(-2px); }
+    .botao-acao:active{ background:var(--lime-700); color:#000; transform:translateY(0); }
     .botao-acao:focus{ outline:none; }
-    .botao-acao:focus-visible{
-      outline:2px solid var(--lime);
-      outline-offset:2px;
-    }
+    .botao-acao:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
 
-    /* Suporte */
     .suporte{
-      margin-top: 16px;
-      font-size: 14px;
-      color:#6b6f79;
+      margin-top:16px;
+      font-size:14px;
+      color:#777;
+      font-weight:600;
     }
     .suporte a{
-      color: var(--olive);
-      font-weight: 800;
+      color:var(--olive);
       text-decoration:none;
+      font-weight:800;
     }
     .suporte a:hover{ text-decoration:underline; }
 
-    @media (max-width:480px){
-      .card{ margin: 14px 0 0; padding: 26px 16px; border-radius:16px; }
-      .logo-box img{ max-height: 66px; }
+    @media (max-width:560px){
+      .pay-card{ padding:26px 18px; margin-top:18px; }
+      h1{ font-size:24px; }
+      p{ font-size:15px; }
     }
 
-    /* ✅ mantém a faixa branca também em dark mode */
-    @media (prefers-color-scheme: dark){
+    /* ✅ Não “quebra” a faixa branca em dark mode */
+    @media (prefers-color-scheme: dark) {
       html, body{ background:#fff !important; color: var(--text); }
     }
   </style>
+
+  <!-- ✅ Header padrão deve ser o ÚLTIMO do head -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
 </head>
 
 <body class="header-v1">
 
-  <!-- ===== Header padrão (igual quem_somos/index) ===== -->
+  <!-- ===== Cabeçalho (igual pagamento_erro/quem_somos) ===== -->
   <header class="navbar">
     <div class="header-left">
       <div class="logo">
@@ -244,65 +226,20 @@
     </div>
 
     <div class="menu-body">
-      <a href="{{ url_for('index') }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5Z"/>
-        </svg>
-        Buscar Tear
-      </a>
-
-      <a href="{{ url_for('malharia_info') }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="10"></circle>
-          <path d="M12 16v-4"></path>
-          <path d="M12 8h.01"></path>
-        </svg>
-        Como Funciona
-      </a>
-
-      <a href="/login">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M20 21a8 8 0 0 0-16 0"></path>
-          <circle cx="12" cy="8" r="4"></circle>
-        </svg>
-        Já sou cadastrado
-      </a>
-
-      <a href="{{ url_for('quem_somos') }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="10"></circle>
-          <path d="M12 16v-4"></path>
-          <path d="M12 8h.01"></path>
-        </svg>
-        Quem Somos
-      </a>
-
-      <a href="{{ url_for('contato') }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M4 4h16v14H5.5L4 19.5V4Z"></path>
-          <path d="M7 8h10"></path>
-          <path d="M7 12h7"></path>
-        </svg>
-        Fale conosco
-      </a>
-
-      <a href="{{ url_for('termos') }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M6 2h9l3 3v17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"></path>
-          <path d="M9 9h6"></path>
-          <path d="M9 13h6"></path>
-          <path d="M9 17h6"></path>
-        </svg>
-        Termos e Políticas
-      </a>
+      <a href="{{ url_for('index') }}">Buscar Tear</a>
+      <a href="{{ url_for('malharia_info') }}">Como Funciona</a>
+      <a href="/login">Já sou cadastrado</a>
+      <a href="{{ url_for('quem_somos') }}">Quem Somos</a>
+      <a href="{{ url_for('contato') }}">Fale conosco</a>
+      <a href="{{ url_for('termos') }}">Termos e Políticas</a>
     </div>
   </nav>
 
-  <!-- ✅ Conteúdo dentro do miolo cinza -->
+  <!-- ✅ Conteúdo no “miolo cinza” -->
   <div class="faixa-cinza">
     <div class="page-outer">
 
-      <div class="card" role="status" aria-live="polite">
+      <div class="pay-card">
         <div class="logo-box">
           <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
         </div>
@@ -316,7 +253,7 @@
           Agora você pode acessar a plataforma normalmente.
         </p>
 
-        <p class="p-spacer">
+        <p>
           📬 Você receberá um e-mail com mais informações em instantes.
         </p>
 
@@ -332,7 +269,25 @@
     </div>
   </div>
 
-  <!-- ===== JS: Menu mobile (igual index/quem_somos) ===== -->
+  <!-- ===== Rodapé (igual padrão das páginas) ===== -->
+  <footer>
+    <div class="footer-container">
+      <div class="footer-block">
+        <img src="{{ url_for('static', filename='logo_simbolo.png') }}" alt="AcheTece" class="footer-logo" width="32" height="32"/>
+        <div>
+          <h4 class="footer-title">Sobre nós</h4>
+          <ul class="footer-links">
+            <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
+            <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
+            <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
+            <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== JS: Menu mobile (igual pagamento_erro/quem_somos) ===== -->
   <script>
     (function(){
       const openBtn = document.getElementById('openMenuBtn');
