@@ -11,7 +11,7 @@
 
   <!-- CSS global -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
+  <link href="l="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
 
   <style>
     :root{
@@ -45,20 +45,22 @@
       margin:0;
       font-family:'Inter',system-ui,Segoe UI,Roboto,Arial,sans-serif;
       color:var(--text);
-      background:#fff;
+      background:var(--site-bg);
       -webkit-font-smoothing:antialiased;
       -moz-osx-font-smoothing:grayscale;
     }
 
-    /* Faixa cinza (padrão do site) */
-    .faixa-cinza{ background:var(--site-bg); padding:18px 0 42px; }
+    /* Containers */
     .page-outer{ max-width:1100px; margin:0 auto; padding:0 16px; }
 
-    /* Botão topo "Voltar ao painel" (igual ao padrão da performance) */
+    /* ===== BOTÃO "VOLTAR AO PAINEL" — NO TOPO (igual padrão performance) ===== */
+    .top-back-area{
+      background:var(--site-bg);
+      padding:18px 0 10px;  /* bem no topo do conteúdo */
+    }
     .top-back{
       display:flex;
       justify-content:center;
-      margin: 10px 0 14px;
     }
     .btn-top-back{
       display:inline-flex;
@@ -74,10 +76,17 @@
       text-decoration:none;
       transition: transform .12s ease, background-color .15s ease;
       box-shadow:none !important;
+      white-space:nowrap;
     }
     .btn-top-back:hover{ background:#fafafa; transform:translateY(-1px); text-decoration:none; }
     .btn-top-back:active{ transform:translateY(0); }
     .btn-top-back:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
+
+    /* ===== ÁREA PRINCIPAL (cinza) ===== */
+    .main-area{
+      background:var(--site-bg);
+      padding:0 0 42px;
+    }
 
     /* Cards */
     .card{
@@ -424,14 +433,18 @@
     </div>
   </nav>
 
-  <!-- ===== CONTEÚDO ===== -->
-  <div class="faixa-cinza">
+  <!-- ✅ BOTÃO NO TOPO (logo abaixo do header) -->
+  <section class="top-back-area">
     <div class="page-outer">
-
-      <!-- ✅ Voltar ao painel (sempre no topo) -->
       <div class="top-back">
         <a class="btn-top-back" href="{{ url_for('painel_malharia') }}">← Voltar ao painel</a>
       </div>
+    </div>
+  </section>
+
+  <!-- ===== CONTEÚDO ===== -->
+  <main class="main-area">
+    <div class="page-outer">
 
       <!-- Cabeçalho -->
       <section class="card">
@@ -503,9 +516,9 @@
 
             <dt>Telefone</dt>
             <dd>
-              {% set _fone = empresa.telefone or empresa.contato_telefone or empresa.celular %}
-              {% if _fone %}
-                {% set fraw = _fone|replace(' ','')|replace('(','')|replace(')','')|replace('-','') %}
+              {% set _fone2 = empresa.telefone or empresa.contato_telefone or empresa.celular %}
+              {% if _fone2 %}
+                {% set fraw = _fone2|replace(' ','')|replace('(','')|replace(')','')|replace('-','') %}
                 {% if fraw.startswith('55') %}{% set fraw = fraw[2:] %}{% endif %}
                 {% set ddd = fraw[:2] %}
                 {% set resto = fraw[2:] %}
@@ -606,7 +619,7 @@
       </section>
 
     </div>
-  </div>
+  </main>
 
   <!-- ===== Faixa preta (CTA) ===== -->
   <section class="cta-bar">
@@ -643,17 +656,12 @@
     </div>
   </footer>
 
-  <!-- ===== JS: Menu mobile (padrão) + altura do header ===== -->
+  <!-- ===== JS: Menu mobile (padrão) ===== -->
   <script>
     (function(){
       const openBtn = document.getElementById('openMenuBtn');
       const closeBtn = document.getElementById('closeMenuBtn');
       const backdrop = document.getElementById('menuBackdrop');
-
-      function setNavH(){
-        const nav = document.querySelector('.navbar')?.offsetHeight || 0;
-        document.documentElement.style.setProperty('--nav-h', nav + 'px');
-      }
 
       function openMenu(){
         document.body.classList.add('menu-open');
@@ -663,8 +671,6 @@
         document.body.classList.remove('menu-open');
         if(openBtn) openBtn.setAttribute('aria-expanded','false');
       }
-
-      setNavH(); window.addEventListener('resize', setNavH);
 
       if(openBtn) openBtn.addEventListener('click', openMenu);
       if(closeBtn) closeBtn.addEventListener('click', closeMenu);
