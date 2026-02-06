@@ -5,13 +5,13 @@
   <title>Editar Dados da Malharia</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Favicons -->
+  <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
 
-  <!-- CSS global -->
+  <!-- CSS principal -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet" />
 
   <style>
     :root{
@@ -25,295 +25,178 @@
       --lime:#B6F34D;
       --lime-700:#A2E532;
 
+      /* Fundo do miolo (igual ao padrão) */
       --site-bg:#EAEAE8;
 
-      --text:#111827;
-      --muted:#6b7280;
-      --line:#cfd3dc;
-      --card:#ffffff;
+      /* Aliases p/ legado */
+      --roxo:var(--olive);
+      --roxo-hover:var(--olive-600);
 
-      --radius:16px;
+      --text:#111;
+      --line:#cfd3dc;
+
+      --maxw:1280px;
     }
 
     html, body{ max-width:100%; overflow-x:hidden; }
     *, *::before, *::after{ box-sizing:border-box; }
 
+    /* ✅ Mantém a “faixa branca” abaixo do header (padrão do quem_somos) */
     body{
+      background:#fff !important;
+      color:var(--text);
       margin:0;
       font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-      background:var(--site-bg) !important;
-      color:var(--text);
       -webkit-font-smoothing:antialiased;
       -moz-osx-font-smoothing:grayscale;
     }
 
-    /* ===== Wrapper padrão ===== */
-    .page-outer{ max-width:1100px; margin:0 auto; padding:0 16px; }
-
-    /* ✅ Faixa clara padrão abaixo do menu (como painel_malharia) */
-    .header-understrip{
-      background:#fff;
-      border-bottom:1px solid #eee;
-      height:28px;
+    /* ✅ Miolo cinza ÚNICO (remove a “listra” extra) */
+    .faixa-cinza{
+      background: var(--site-bg);
+      padding: 16px 0 48px;
     }
-    @media (max-width:900px){
-      .header-understrip{ height:22px; }
+    .page-outer{
+      max-width: var(--maxw);
+      margin: 0 auto;
+      padding: 0 16px;
     }
 
-    /* ===== Área principal (cinza) ===== */
-    .main-area{
-      background:var(--site-bg);
-      padding:16px 0 42px; /* mantém tudo no mesmo fundo cinza */
-    }
-
-    /* ===== Botão "Voltar ao painel" (padrão performance) ===== */
+    /* Botão “Voltar ao painel” no topo (estilo da performance) */
     .top-back{
       display:flex;
       justify-content:center;
-      padding:0 0 16px; /* só espaçamento (continua no cinza) */
+      margin: 10px 0 18px; /* sem criar faixa extra */
     }
-    .btn-top-back{
+    .btn-back{
       display:inline-flex;
       align-items:center;
-      justify-content:center;
+      gap:10px;
       height:40px;
       padding:0 18px;
       border-radius:9999px;
-      border:1px solid #d9d9d9;
       background:#fff;
       color:#111;
-      font-weight:800;
+      border:1px solid rgba(0,0,0,.14);
       text-decoration:none;
-      transition: transform .12s ease, background-color .15s ease;
+      font-weight:800;
       box-shadow:none !important;
+      transition: background-color .15s ease, border-color .15s ease, transform .12s ease, color .15s ease;
+      line-height:1;
       white-space:nowrap;
     }
-    .btn-top-back:hover{ background:#fafafa; transform:translateY(-1px); text-decoration:none; }
-    .btn-top-back:active{ transform:translateY(0); }
-    .btn-top-back:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
+    .btn-back:hover{
+      background: var(--lime);
+      border-color: var(--lime);
+      color:#000;
+      transform: translateY(-1px);
+      text-decoration:none;
+    }
+    .btn-back:active{
+      background: var(--lime-700);
+      border-color: var(--lime-700);
+      color:#000;
+      transform: translateY(0);
+    }
+    .btn-back:focus{ outline:none; }
+    .btn-back:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
 
-    /* ===== Card ===== */
+    /* ===== CARD / CONTEÚDO ===== */
     .container{
       width:100%;
-      max-width:640px;
-      margin:0 auto 44px;
-      background:var(--card);
+      max-width:600px;
+      margin: 0 auto;              /* ✅ evita “quebrar” o fundo com margens externas */
+      background:#fff;
       border:1px solid #e8ecf5;
-      border-radius:var(--radius);
-      padding:24px 22px 20px;
+      border-radius:14px;
+      padding:24px 20px;
       box-shadow:none !important;
     }
-    @media (max-width:560px){
-      .container{ margin:0 12px 28px; padding:20px 16px; }
-    }
-
     h1.titulo{
       text-align:center;
-      margin:0 0 18px;
       font-size:24px;
       font-weight:700;
+      margin:0 0 18px;
       color:var(--olive-dark);
-      letter-spacing:-0.01em;
     }
 
     /* Mensagens */
     .mensagem-sucesso{
-      background:#e8f5e9;
-      color:#1b5e20;
-      border:1px solid #81c784;
-      padding:14px;
-      border-radius:12px;
-      margin:0 0 16px;
-      text-align:center;
-      font-weight:700;
+      background:#e8f5e9; color:#1b5e20; border:1px solid #81c784;
+      padding:14px; border-radius:10px; margin-bottom:16px; text-align:center;
     }
     .mensagem-erro{
-      background:#ffe6e6;
-      color:#b30000;
-      border:1px solid #ff4d4d;
-      padding:16px;
-      border-radius:12px;
-      margin:0 0 16px;
-      text-align:center;
-      animation:aparecer .4s ease-in-out;
+      background:#ffe6e6; color:#b30000; border:1px solid #ff4d4d;
+      padding:16px; border-radius:10px; margin-bottom:16px; text-align:center;
     }
     .mensagem-erro .icone{ font-size:26px; display:block; margin-bottom:6px; }
-    @keyframes aparecer{ from{opacity:0; transform:scale(.98)} to{opacity:1; transform:scale(1)} }
 
-    .mensagem-erro .botao-voltar{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      height:40px;
-      padding:0 16px;
-      border-radius:9999px;
-      border:0;
-      background:#000;
-      color:var(--lime);
-      font-weight:800;
-      text-decoration:none;
-      margin-top:10px;
-      transition: background-color .15s ease, color .15s ease, transform .12s ease;
-      box-shadow:none !important;
-    }
-    .mensagem-erro .botao-voltar:hover{ background:var(--lime); color:#000; transform:translateY(-2px); }
-    .mensagem-erro .botao-voltar:active{ background:var(--lime-700); color:#000; transform:translateY(0); }
-    .mensagem-erro .botao-voltar:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
-
-    /* ===== Form ===== */
+    /* ===== FORM ===== */
     .formulario label{
-      display:block;
-      margin:10px 0 6px;
-      font-weight:600;
-      font-size:14px;
-      color:#2a233a;
+      display:block; margin:10px 0 6px;
+      font-weight:700; font-size:14px; color:#2a233a;
     }
-
-    .formulario input,
-    .formulario select{
+    .formulario input,.formulario select{
       width:100%;
-      height:44px;
-      padding:10px 12px;
+      padding:12px;
       border:1px solid var(--line);
       border-radius:10px;
       font-size:14px;
       background:#fff;
-      margin-bottom:14px;
+      margin-bottom:16px;
       transition:border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
     }
-
-    .formulario input:focus,
-    .formulario select:focus{
+    .formulario input:focus,.formulario select:focus{
       outline:0;
       border-color:var(--olive);
       box-shadow:0 0 0 3px rgba(123,116,36,.15);
       background:#fff;
     }
-
-    /* Autofill claro */
-    input:-webkit-autofill,
-    select:-webkit-autofill{
+    input:-webkit-autofill, select:-webkit-autofill{
       -webkit-text-fill-color:#1e1b2b;
       box-shadow:0 0 0 1000px #fff inset !important;
       border:1px solid var(--line-olive);
       transition:background-color 9999s ease-in-out 0s;
     }
 
-    /* Erros por campo */
-    .erro-campo{ border:2px solid #e11d48 !important; background:#fff5f5 !important; }
-    .mensagem-campo{ color:#e11d48; font-size:13px; margin-top:-10px; margin-bottom:12px; font-weight:600; }
-
-    /* ===== Botão salvar (PRETO → LIME) ===== */
-    .botao-roxo,
-    button[type="submit"],
-    input[type="submit"]{
+    /* ===== BOTÃO (padrão global PRETO → LIME) ===== */
+    .botao-roxo{
       width:100%;
       height:46px;
       border:0;
       border-radius:9999px;
       background:#000;
       color:var(--lime);
-      font-weight:800;
+      font-weight:700;
       font-size:14px;
       cursor:pointer;
-      margin-top:6px;
+      margin-top:4px;
       transition: background-color .15s ease, color .15s ease, transform .12s ease;
       box-shadow:none !important;
     }
-    .botao-roxo:hover,
-    button[type="submit"]:hover,
-    input[type="submit"]:hover{
-      background:var(--lime);
-      color:#000;
-      transform:translateY(-2px);
-    }
-    .botao-roxo:active,
-    button[type="submit"]:active,
-    input[type="submit"]:active{
-      background:var(--lime-700);
-      color:#000;
-      transform:translateY(0);
-    }
-    .botao-roxo:focus-visible,
-    button[type="submit"]:focus-visible,
-    input[type="submit"]:focus-visible{
-      outline:2px solid var(--lime);
-      outline-offset:2px;
+    .botao-roxo:hover{ background:var(--lime); color:#000; transform:translateY(-2px); }
+    .botao-roxo:active{ background:var(--lime-700); color:#000; transform:translateY(0); }
+    .botao-roxo:focus{ outline:none; }
+    .botao-roxo:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
+
+    @media (max-width:560px){
+      .container{ padding:20px 16px; }
+      .top-back{ margin: 8px 0 16px; }
     }
 
-    /* ===== Faixa preta (CTA) + Footer padrão ===== */
-    .cta-bar{
-      background:#000;
-      color:#fff;
-      padding:20px 16px;
-      display:flex;
-      align-items:center;
-      gap:16px;
-      flex-wrap:wrap;
-      border-top:1px solid rgba(255,255,255,0.06);
-      justify-content:flex-start;
-    }
-    .cta-text h3{ margin:0 0 4px 0; font-size:18px; font-weight:800; line-height:1.2; }
-    .cta-text p{ margin:0; font-size:15px; opacity:.9; }
-
-    .cta-bar .cta-btn{
-      display:inline-flex !important;
-      align-items:center !important;
-      justify-content:center !important;
-      height:44px !important;
-      padding:0 22px !important;
-      border-radius:9999px !important;
-      font-weight:800 !important;
-      text-decoration:none !important;
-      white-space:nowrap !important;
-      background:#fff !important;
-      color:#000 !important;
-      border:0 !important;
-      box-shadow:none !important;
-      cursor:pointer;
-      transition: background-color .15s ease, color .15s ease, transform .15s ease;
-    }
-    .cta-bar .cta-btn:hover{ background:var(--lime) !important; color:#111 !important; transform:translateY(-1px); }
-    .cta-bar .cta-btn:active{ background:var(--lime-700) !important; color:#111 !important; transform:translateY(0); }
-    .cta-bar .cta-btn:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
-
-    .site-footer{
-      background:#fff;
-      color:#211a2a;
-      border-top:1px solid #eee;
-      padding:18px 16px 28px;
-    }
-    .footer-inner{
-      max-width:1100px;
-      margin:0 auto;
-      display:grid;
-      grid-template-columns:auto 1fr;
-      gap:20px 28px;
-      align-items:start;
-    }
-    .footer-brand img{ height:44px; width:auto; display:block; }
-    .footer-col h4{ margin:0 0 8px 0; font-size:14px; font-weight:800; color:#251c33; }
-    .footer-col ul{ list-style:none; margin:0; padding:0; }
-    .footer-col li+li{ margin-top:6px; }
-    .footer-col a{ color:#2a2535; text-decoration:none; font-size:14px; font-weight:600; }
-    .footer-col a:hover{ text-decoration:underline; }
-
-    @media (max-width:900px){
-      .footer-inner{ grid-template-columns:1fr; }
-    }
-
+    /* Mantém claro em dark mode */
     @media (prefers-color-scheme: dark){
-      html, body{ background:var(--site-bg) !important; color:#111; }
+      html, body{ background:#fff !important; color:#111; }
     }
   </style>
 
-  <!-- ✅ Header padrão (SEMPRE o último do head) -->
+  <!-- ✅ Header padrão deve ser o ÚLTIMO do head -->
   <link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
 </head>
 
 <body class="header-v1">
 
-  <!-- ===== HEADER PADRÃO ===== -->
+  <!-- ===== Cabeçalho padrão (igual quem_somos) ===== -->
   <header class="navbar">
     <div class="header-left">
       <div class="logo">
@@ -328,7 +211,7 @@
       </div>
     </div>
 
-    <!-- Links topo (desktop) — ordem fixa -->
+    <!-- Links do topo (somente desktop) -->
     <nav class="hdr-nav" aria-label="Navegação principal">
       <a href="{{ url_for('quem_somos') }}">O AcheTece</a>
       <a href="{{ url_for('malharia_info') }}">Como Funciona</a>
@@ -337,11 +220,11 @@
 
     <div class="header-right">
       <div class="hdr-actions">
-        <a href="{{ url_for('login') }}" class="btn-perfil" aria-label="Acessar sua conta da malharia" title="Acessar sua conta da malharia">
+        <a href="{{ url_for('painel_malharia') }}" class="btn-perfil" aria-label="Conta Malharia" title="Conta Malharia">
           <span>Conta Malharia</span>
         </a>
 
-        <!-- Casinha -->
+        <!-- CASINHA (somente desktop) -->
         <a href="{{ url_for('index') }}" class="btn-home" aria-label="Voltar ao início" title="Voltar ao início">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M3 10.5 12 3l9 7.5"></path>
@@ -350,7 +233,7 @@
           </svg>
         </a>
 
-        <!-- Menu (mobile) -->
+        <!-- BOTÃO MENU (SÓ NO MOBILE) -->
         <button class="btn-menu" id="openMenuBtn" type="button" aria-label="Abrir menu" aria-controls="mobileMenu" aria-expanded="false">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
             <path d="M4 7h16M4 12h16M4 17h16"/>
@@ -360,10 +243,7 @@
     </div>
   </header>
 
-  <!-- ✅ Faixa clara padrão abaixo do menu -->
-  <div class="header-understrip" aria-hidden="true"></div>
-
-  <!-- ===== MENU MOBILE ===== -->
+  <!-- ===== MENU MOBILE (SÓ NO MOBILE) ===== -->
   <div class="mobile-menu-backdrop" id="menuBackdrop" aria-hidden="true"></div>
 
   <nav class="mobile-menu" id="mobileMenu" aria-label="Menu do site">
@@ -384,20 +264,20 @@
     <div class="menu-body">
       <a href="{{ url_for('index') }}">Buscar Tear</a>
       <a href="{{ url_for('malharia_info') }}">Como Funciona</a>
-      <a href="{{ url_for('login') }}">Já sou cadastrado</a>
+      <a href="{{ url_for('painel_malharia') }}">Conta Malharia</a>
       <a href="{{ url_for('quem_somos') }}">Quem Somos</a>
       <a href="{{ url_for('contato') }}">Fale conosco</a>
       <a href="{{ url_for('termos') }}">Termos e Políticas</a>
     </div>
   </nav>
 
-  <!-- ===== CONTEÚDO ===== -->
-  <main class="main-area">
+  <!-- ✅ TODO o conteúdo dentro do “miolo cinza” (sem listras extras) -->
+  <div class="faixa-cinza">
     <div class="page-outer">
 
-      <!-- Botão "Voltar ao painel" no topo (em fundo cinza) -->
+      <!-- ✅ Botão no TOPO do miolo cinza -->
       <div class="top-back">
-        <a class="btn-top-back" href="{{ url_for('painel_malharia') }}">← Voltar ao painel</a>
+        <a class="btn-back" href="{{ url_for('painel_malharia') }}">← Voltar ao painel</a>
       </div>
 
       <div class="container">
@@ -410,23 +290,21 @@
         {% if erro %}
           <div class="mensagem-erro">
             <div class="icone">⚠️</div>
-            <p style="margin:0;"><strong>Erro:</strong> {{ erro }}</p>
+            <p><strong>Erro:</strong> {{ erro }}</p>
             <a href="#formulario" class="botao-voltar">← Corrigir dados</a>
           </div>
         {% endif %}
 
         <form method="POST" action="{{ url_for('editar_empresa') }}" class="formulario" id="formulario" autocomplete="off">
-          <label for="nome">Nome da Empresa</label>
-          <input type="text" id="nome" name="nome" value="{{ nome or '' }}"
-                 class="{% if erros and erros.get('nome') %}erro-campo{% endif %}">
+          <label for="nome">Nome da Empresa:</label>
+          <input type="text" id="nome" name="nome" value="{{ nome or '' }}" class="{% if erros and erros.get('nome') %}erro-campo{% endif %}">
           {% if erros and erros.get('nome') %}<div class="mensagem-campo">{{ erros.get('nome') }}</div>{% endif %}
 
           <label for="apelido">Apelido da Empresa</label>
-          <input type="text" id="apelido" name="apelido" value="{{ apelido or '' }}"
-                 class="{% if erros and erros.get('apelido') %}erro-campo{% endif %}">
+          <input type="text" id="apelido" name="apelido" value="{{ apelido or '' }}" class="{% if erros and erros.get('apelido') %}erro-campo{% endif %}">
           {% if erros and erros.get('apelido') %}<div class="mensagem-campo">{{ erros.get('apelido') }}</div>{% endif %}
 
-          <label for="responsavel_nome">Nome do responsável <span style="color:#d00000">*</span></label>
+          <label for="responsavel_nome">Nome do responsável *</label>
           <input type="text" id="responsavel_nome" name="responsavel_nome"
                  value="{{ responsavel_nome or '' }}" placeholder="Ex.: Maria"
                  class="{% if erros and erros.get('responsavel_nome') %}erro-campo{% endif %}">
@@ -438,7 +316,7 @@
                  class="{% if erros and erros.get('responsavel_sobrenome') %}erro-campo{% endif %}">
           {% if erros and erros.get('responsavel_sobrenome') %}<div class="mensagem-campo">{{ erros.get('responsavel_sobrenome') }}</div>{% endif %}
 
-          <label for="estado">Estado</label>
+          <label for="estado">Estado:</label>
           <select id="estado" name="estado" class="{% if erros and erros.get('estado') %}erro-campo{% endif %}">
             <option value="">Selecione o estado</option>
             {% for uf in estados %}
@@ -447,15 +325,13 @@
           </select>
           {% if erros and erros.get('estado') %}<div class="mensagem-campo">{{ erros.get('estado') }}</div>{% endif %}
 
-          <label for="cidade">Cidade</label>
+          <label for="cidade">Cidade:</label>
           <select id="cidade" name="cidade" data-inicial="{{ cidade or '' }}"
                   class="{% if erros and erros.get('cidade') %}erro-campo{% endif %}">
             <option value="">Selecione a cidade</option>
-            {% if cidades %}
-              {% for c in cidades %}
-                <option value="{{ c }}" {% if cidade == c %}selected{% endif %}>{{ c }}</option>
-              {% endfor %}
-            {% endif %}
+            {% for c in cidades %}
+              <option value="{{ c }}" {% if cidade == c %}selected{% endif %}>{{ c }}</option>
+            {% endfor %}
           </select>
           {% if erros and erros.get('cidade') %}<div class="mensagem-campo">{{ erros.get('cidade') }}</div>{% endif %}
 
@@ -467,13 +343,12 @@
 
           <label for="cep">CEP <span style="color:#d00000">*</span></label>
           <input type="text" id="cep" name="cep" required
-                 inputmode="numeric" pattern="^\d{5}-?\d{3}$"
-                 title="Digite no formato 00000-000 ou 00000000"
-                 autocomplete="postal-code" placeholder="00000-000" maxlength="9"
+                 inputmode="numeric" pattern="\d{5}-?\d{3}" title="Digite no formato 00000-000 ou 00000000"
+                 autocomplete="postal-code" placeholder="00000-000"
                  value="{{ cep or '' }}" class="{% if erros and erros.get('cep') %}erro-campo{% endif %}">
           {% if erros and erros.get('cep') %}<div class="mensagem-campo">{{ erros.get('cep') }}</div>{% endif %}
 
-          <label for="telefone">Telefone</label>
+          <label for="telefone">Telefone:</label>
           <input type="tel" id="telefone" name="telefone"
                  pattern="[0-9]{10,13}" placeholder="47999991234"
                  title="Digite apenas números, ex: 47999991234"
@@ -481,51 +356,21 @@
                  class="{% if erros and erros.get('telefone') %}erro-campo{% endif %}">
           {% if erros and erros.get('telefone') %}<div class="mensagem-campo">{{ erros.get('telefone') }}</div>{% endif %}
 
-          <label for="email">E-mail</label>
-          <input type="email" id="email" name="email" value="{{ email or '' }}"
-                 class="{% if erros and erros.get('email') %}erro-campo{% endif %}">
+          <label for="email">E-mail:</label>
+          <input type="email" id="email" name="email" value="{{ email or '' }}" class="{% if erros and erros.get('email') %}erro-campo{% endif %}">
           {% if erros and erros.get('email') %}<div class="mensagem-campo">{{ erros.get('email') }}</div>{% endif %}
 
           <label for="senha">Nova Senha (opcional)</label>
-          <input type="password" id="senha" name="senha" autocomplete="new-password"
-                 placeholder="Deixe em branco para manter a atual">
+          <input type="password" id="senha" name="senha" autocomplete="new-password" placeholder="Deixe em branco para manter a atual">
 
           <button type="submit" class="botao-roxo">Salvar Alterações</button>
         </form>
       </div>
 
     </div>
-  </main>
+  </div>
 
-  <!-- ===== Faixa preta (CTA) ===== -->
-  <section class="cta-bar">
-    <div class="cta-text">
-      <h3>É proprietário de uma malharia?</h3>
-      <p>Cadastre sua malharia e comece a receber novos pedidos.</p>
-    </div>
-    <a href="{{ url_for('cadastrar_empresa') }}" class="cta-btn">Cadastrar</a>
-  </section>
-
-  <!-- ===== Rodapé ===== -->
-  <footer class="site-footer">
-    <div class="footer-inner">
-      <div class="footer-brand">
-        <img src="{{ url_for('static', filename='logo_simbolo.png') }}" alt="AcheTece">
-      </div>
-
-      <div class="footer-col">
-        <h4>Sobre nós</h4>
-        <ul>
-          <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
-          <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
-          <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
-          <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
-        </ul>
-      </div>
-    </div>
-  </footer>
-
-  <!-- ===== JS: Menu mobile (padrão) ===== -->
+  <!-- ===== JS: Menu mobile (igual index/quem_somos) ===== -->
   <script>
     (function(){
       const openBtn = document.getElementById('openMenuBtn');
@@ -548,17 +393,10 @@
       document.addEventListener('keydown', (e)=>{
         if(e.key === 'Escape') closeMenu();
       });
-
-      // (opcional) expõe altura do header para CSS que use --nav-h
-      function setNavH(){
-        const nav = document.querySelector('.navbar')?.offsetHeight || 0;
-        document.documentElement.style.setProperty('--nav-h', nav + 'px');
-      }
-      setNavH(); window.addEventListener('resize', setNavH);
     })();
   </script>
 
-  <!-- ===== JS: cidades dinâmicas por UF ===== -->
+  <!-- ===== Script: cidades dinâmicas por UF ===== -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const ufSelect = document.getElementById('estado');
@@ -567,8 +405,10 @@
       async function carregarCidades(uf, preselecionada = '') {
         if (!uf) {
           cidadeSelect.innerHTML = '<option value="">Selecione a cidade</option>';
+          cidadeSelect.disabled = true;
           return;
         }
+        cidadeSelect.disabled = true;
         cidadeSelect.innerHTML = '<option value="">Carregando...</option>';
         try {
           const resp = await fetch(`/api/cidades?uf=${encodeURIComponent(uf)}`);
@@ -577,15 +417,16 @@
 
           const options = ['<option value="">Selecione a cidade</option>']
             .concat(cidades.map(c => {
-              const sel = (preselecionada && preselecionada === c) ? ' selected' : '';
               const safe = String(c).replace(/"/g,'&quot;');
+              const sel  = (preselecionada && preselecionada === c) ? ' selected' : '';
               return `<option value="${safe}"${sel}>${c}</option>`;
             }));
-
           cidadeSelect.innerHTML = options.join('');
+          cidadeSelect.disabled = false;
         } catch (err) {
           console.error(err);
           cidadeSelect.innerHTML = '<option value="">Falha ao carregar cidades</option>';
+          cidadeSelect.disabled = false;
         }
       }
 
@@ -594,33 +435,6 @@
       const ufInicial = ufSelect.value;
       const cidadeInicial = cidadeSelect.getAttribute('data-inicial') || '';
       if (ufInicial) carregarCidades(ufInicial, cidadeInicial);
-    });
-  </script>
-
-  <!-- ===== JS: máscara CEP ===== -->
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const cep = document.getElementById('cep');
-      if (!cep) return;
-
-      function formatCEP(v){
-        const d = v.replace(/\D/g, '').slice(0, 8);
-        if (d.length <= 5) return d;
-        return d.slice(0,5) + '-' + d.slice(5);
-      }
-
-      cep.addEventListener('input', () => {
-        const cur = cep.value;
-        const fmt = formatCEP(cur);
-        if (cur !== fmt) cep.value = fmt;
-        cep.setCustomValidity('');
-      });
-
-      cep.addEventListener('invalid', () => {
-        if (cep.validity.patternMismatch) {
-          cep.setCustomValidity('Digite o CEP no formato 00000-000 ou 00000000');
-        }
-      });
     });
   </script>
 
