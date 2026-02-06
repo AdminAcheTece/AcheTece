@@ -1,120 +1,284 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <title>Pagamento Recusado - AcheTece</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- Ícone da aba (favicon) -->
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
-    
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #fff0f0;
-            margin: 0;
-            padding: 0;
-        }
+  <meta charset="UTF-8" />
+  <title>Pagamento Recusado - AcheTece</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-        .container {
-            max-width: 600px;
-            margin: 60px auto;
-            background: #fff;
-            padding: 32px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
 
-        h1 {
-            color: #dc3545;
-            margin-bottom: 20px;
-        }
+  <!-- CSS principal -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet" />
 
-        p {
-            color: #555;
-            font-size: 16px;
-            margin-bottom: 30px;
-        }
+  <style>
+    :root{
+      /* PALETA (padrão) */
+      --olive:#7B7424;
+      --olive-600:#5E581C;
+      --olive-dark:#434326;
+      --olive-50:#F1F2E8;
 
-        .botao-acao {
-            background-color: #8A00FF;
-            color: white;
-            padding: 14px 24px;
-            font-size: 16px;
-            font-weight: bold;
-            border: none;
-            border-radius: 10px;
-            text-decoration: none;
-            transition: background-color 0.3s ease;
-            display: inline-block;
-        }
+      --bg-150:#EAEAE8;
+      --site-bg: var(--bg-150);
 
-        .botao-acao:hover {
-            background-color: #002f91;
-        }
+      /* CTA */
+      --lime:#B6F34D;
+      --lime-700:#A2E532;
 
-        .logo {
-            text-align: center;
-            margin-bottom: 30px;
-        }
+      --text:#111;
+      --muted:#555;
+      --maxw:1280px;
+    }
 
-        .logo img {
-            max-height: 80px;
-        }
+    html, body { max-width:100%; overflow-x:hidden; }
+    *, *::before, *::after { box-sizing:border-box; }
 
-        .icone {
-            font-size: 60px;
-            color: #dc3545;
-            margin-bottom: 10px;
-        }
+    /* ✅ “faixa branca” do topo (igual quem_somos) */
+    body{
+      background:#fff !important;
+      color:var(--text);
+      margin:0;
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
 
-        /* Tokens para o CTA (iguais ao aprovado) */
-        :root{
-          --lime:#B6F34D;
-          --lime-700:#A2E532;
-        }
-        
-        /* Botão padrão: preto → lime no hover; sem bordas/anel */
-        .botao-acao{
-          display:inline-flex; align-items:center; justify-content:center;
-          padding:14px 24px; height:44px;
-          border:0; border-radius:9999px;
-          background:#000; color:var(--lime);
-          font-size:16px; font-weight:800; text-decoration:none; cursor:pointer;
-          transition:background-color .15s ease, color .15s ease, transform .12s ease;
-          box-shadow:none !important;
-        }
-        .botao-acao:hover{
-          background:var(--lime); color:#000; transform:translateY(-2px);
-        }
-        .botao-acao:active{
-          background:var(--lime-700); color:#000; transform:translateY(0);
-        }
-        .botao-acao:focus{ outline:none; }
-        .botao-acao:focus-visible{
-          outline:2px solid var(--lime); outline-offset:2px;
-        }
+    /* ✅ Miolo cinza */
+    .faixa-cinza{
+      background: var(--site-bg);
+      padding: 16px 0 48px;
+    }
+    .page-outer{
+      max-width:var(--maxw);
+      margin:0 auto;
+      padding:0 16px;
+    }
 
-    </style>
+    /* Card central */
+    .pay-card{
+      max-width: 640px;
+      margin: 28px auto 0;
+      background:#fff;
+      border:1px solid rgba(0,0,0,.08);
+      border-radius:16px;
+      padding:32px 26px;
+      text-align:center;
+      box-shadow:none !important;
+    }
+
+    .logo-box{
+      display:flex;
+      justify-content:center;
+      margin-bottom:18px;
+    }
+    .logo-box img{
+      max-height:64px;
+      width:auto;
+      display:block;
+    }
+
+    .icone{
+      font-size:56px;
+      line-height:1;
+      margin: 6px 0 10px;
+    }
+
+    h1{
+      margin:0 0 10px;
+      font-size:28px;
+      letter-spacing:-0.01em;
+      color:#b30000;
+      font-weight:800;
+    }
+    p{
+      margin:0 0 20px;
+      color:var(--muted);
+      font-size:16px;
+      line-height:1.55;
+      font-weight:600;
+    }
+
+    /* Botão padrão: preto → lime */
+    .botao-acao{
+      display:inline-flex; align-items:center; justify-content:center;
+      height:44px; padding:0 22px;
+      border:0; border-radius:9999px;
+      background:#000; color:var(--lime);
+      font-size:15px; font-weight:800;
+      text-decoration:none;
+      cursor:pointer;
+      transition: background-color .15s ease, color .15s ease, transform .12s ease;
+      box-shadow:none !important;
+      white-space:nowrap;
+    }
+    .botao-acao:hover{ background:var(--lime); color:#000; transform:translateY(-2px); }
+    .botao-acao:active{ background:var(--lime-700); color:#000; transform:translateY(0); }
+    .botao-acao:focus{ outline:none; }
+    .botao-acao:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
+
+    @media (max-width:560px){
+      .pay-card{ padding:26px 18px; margin-top:18px; }
+      h1{ font-size:24px; }
+      p{ font-size:15px; }
+    }
+
+    /* ✅ Não “quebra” a faixa branca em dark mode */
+    @media (prefers-color-scheme: dark) {
+      html, body{ background:#fff !important; color: var(--text); }
+    }
+  </style>
+
+  <!-- ✅ Header padrão deve ser o ÚLTIMO do head -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
 </head>
-<body>
 
-    <div class="container">
-        <div class="logo">
-            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
+<body class="header-v1">
+
+  <!-- ===== Cabeçalho (igual quem_somos) ===== -->
+  <header class="navbar">
+    <div class="header-left">
+      <div class="logo">
+        <a href="{{ url_for('index') }}" aria-label="Página inicial">
+          <img
+            src="{{ url_for('static', filename='Logo_Branco_AcheTece_sem_fundo.png') }}"
+            alt="Logo AcheTece"
+            decoding="async"
+            fetchpriority="high"
+          >
+        </a>
+      </div>
+    </div>
+
+    <!-- Links do topo (somente desktop) -->
+    <nav class="hdr-nav" aria-label="Navegação principal">
+      <a href="{{ url_for('quem_somos') }}">O AcheTece</a>
+      <a href="{{ url_for('malharia_info') }}">Como Funciona</a>
+      <a href="{{ url_for('contato') }}">Fale Conosco</a>
+    </nav>
+
+    <div class="header-right">
+      <div class="hdr-actions">
+        <a href="/login" class="btn-perfil" aria-label="Acessar sua conta da malharia" title="Acessar sua conta da malharia">
+          <span>Conta Malharia</span>
+        </a>
+
+        <!-- CASINHA (somente desktop) -->
+        <a href="{{ url_for('index') }}" class="btn-home" aria-label="Voltar ao início" title="Voltar ao início">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 10.5 12 3l9 7.5"></path>
+            <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
+            <path d="M9 21V12h6v9"></path>
+          </svg>
+        </a>
+
+        <!-- BOTÃO MENU (SÓ NO MOBILE) -->
+        <button class="btn-menu" id="openMenuBtn" type="button" aria-label="Abrir menu" aria-controls="mobileMenu" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M4 7h16M4 12h16M4 17h16"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== MENU MOBILE (SÓ NO MOBILE) ===== -->
+  <div class="mobile-menu-backdrop" id="menuBackdrop" aria-hidden="true"></div>
+
+  <nav class="mobile-menu" id="mobileMenu" aria-label="Menu do site">
+    <div class="menu-head">
+      <a href="{{ url_for('index') }}" class="menu-logo" aria-label="Ir para a busca">
+        <span class="menu-logoBox">
+          <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece" decoding="async">
+        </span>
+      </a>
+
+      <button class="menu-close" id="closeMenuBtn" type="button" aria-label="Fechar menu">
+        <svg class="x-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 6L18 18M18 6L6 18"></path>
+        </svg>
+      </button>
+    </div>
+
+    <div class="menu-body">
+      <a href="{{ url_for('index') }}">Buscar Tear</a>
+      <a href="{{ url_for('malharia_info') }}">Como Funciona</a>
+      <a href="/login">Já sou cadastrado</a>
+      <a href="{{ url_for('quem_somos') }}">Quem Somos</a>
+      <a href="{{ url_for('contato') }}">Fale conosco</a>
+      <a href="{{ url_for('termos') }}">Termos e Políticas</a>
+    </div>
+  </nav>
+
+  <!-- ✅ Conteúdo no “miolo cinza” -->
+  <div class="faixa-cinza">
+    <div class="page-outer">
+
+      <div class="pay-card">
+        <div class="logo-box">
+          <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
         </div>
 
         <div class="icone">❌</div>
 
         <h1>Pagamento Recusado</h1>
 
-        <p>Ocorreu uma falha ao processar seu pagamento.<br>Tente novamente com outro método ou verifique os dados do seu cartão.</p>
+        <p>
+          Ocorreu uma falha ao processar seu pagamento.<br>
+          Tente novamente com outro método ou verifique os dados do seu cartão.
+        </p>
 
         <a href="{{ url_for('pagar') }}" class="botao-acao">Tentar pagar novamente</a>
+      </div>
+
     </div>
+  </div>
+
+  <!-- ===== Rodapé (igual padrão das páginas) ===== -->
+  <footer>
+    <div class="footer-container">
+      <div class="footer-block">
+        <img src="{{ url_for('static', filename='logo_simbolo.png') }}" alt="AcheTece" class="footer-logo" width="32" height="32"/>
+        <div>
+          <h4 class="footer-title">Sobre nós</h4>
+          <ul class="footer-links">
+            <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
+            <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
+            <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
+            <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== JS: Menu mobile (igual quem_somos) ===== -->
+  <script>
+    (function(){
+      const openBtn = document.getElementById('openMenuBtn');
+      const closeBtn = document.getElementById('closeMenuBtn');
+      const backdrop = document.getElementById('menuBackdrop');
+
+      function openMenu(){
+        document.body.classList.add('menu-open');
+        if(openBtn) openBtn.setAttribute('aria-expanded','true');
+      }
+      function closeMenu(){
+        document.body.classList.remove('menu-open');
+        if(openBtn) openBtn.setAttribute('aria-expanded','false');
+      }
+
+      if(openBtn) openBtn.addEventListener('click', openMenu);
+      if(closeBtn) closeBtn.addEventListener('click', closeMenu);
+      if(backdrop) backdrop.addEventListener('click', closeMenu);
+
+      document.addEventListener('keydown', (e)=>{
+        if(e.key === 'Escape') closeMenu();
+      });
+    })();
+  </script>
 
 </body>
 </html>
