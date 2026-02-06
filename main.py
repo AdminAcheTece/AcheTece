@@ -34,6 +34,7 @@ from flask import current_app, request
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.utils import make_msgid, formataddr
+from authlib.integrations.flask_client import OAuth
 
 # SMTP direto (fallback)
 import smtplib, ssl
@@ -101,6 +102,20 @@ RESEND_DOMAIN  = os.getenv("RESEND_DOMAIN", "achetece.com.br")
 EMAIL_FROM     = os.getenv("EMAIL_FROM", f"AcheTece <no-reply@{RESEND_DOMAIN}>")
 REPLY_TO       = os.getenv("REPLY_TO", "")
 SITE_URL       = os.getenv("SITE_URL", "https://www.achetece.com.br")
+
+# === Google OAuth (Authlib) — registro do provedor ===
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
+
+# Instancia o Authlib e registra o provedor Google usando OIDC
+oauth = OAuth(app)
+oauth.register(
+    name="google",
+    client_id=GOOGLE_CLIENT_ID,
+    client_secret=GOOGLE_CLIENT_SECRET,
+    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+    client_kwargs={"scope": "openid email profile"}
+)
 
 def _extract_email(addr: str) -> str:
     m = re.search(r"<([^>]+)>", addr or "")
@@ -2217,10 +2232,9 @@ def oauth_google():
     
     return oauth.google.authorize_redirect(
         redirect_uri,
-        prompt="login",      # força a tela de inserir outro e-mail (mobile resolve)
-        max_age=0,           # ignora sessão anterior
-        display="touch",     # layout mobile
-        hl="pt-BR",
+        prompt=prompt,       # usa o valor calculado acima (login | select_account)
+        max_age=0,
+        hl="pt-BR"
     )
 
 @app.get("/oauth/google/callback")
