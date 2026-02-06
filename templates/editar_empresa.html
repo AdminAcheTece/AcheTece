@@ -41,22 +41,26 @@
     body{
       margin:0;
       font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-      background:var(--site-bg);
+      background:var(--site-bg) !important;
       color:var(--text);
       -webkit-font-smoothing:antialiased;
       -moz-osx-font-smoothing:grayscale;
     }
 
-    /* ===== Botão "Voltar ao painel" no TOPO (padrão performance) ===== */
+    /* ===== Wrapper padrão ===== */
     .page-outer{ max-width:1100px; margin:0 auto; padding:0 16px; }
 
-    .top-back-area{
+    /* ✅ Unificado dentro do MAIN (remove “faixa” entre seções) */
+    .main-area{
       background:var(--site-bg);
-      padding:18px 0 10px;
+      padding:18px 0 42px;
     }
+
+    /* ===== Botão "Voltar ao painel" (padrão performance) ===== */
     .top-back{
       display:flex;
       justify-content:center;
+      padding:0 0 18px; /* espaçamento abaixo do botão (sem criar faixa separada) */
     }
     .btn-top-back{
       display:inline-flex;
@@ -78,16 +82,11 @@
     .btn-top-back:active{ transform:translateY(0); }
     .btn-top-back:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
 
-    /* ===== Conteúdo ===== */
-    .main-area{
-      background:var(--site-bg);
-      padding:0 0 42px;
-    }
-
+    /* ===== Card ===== */
     .container{
       width:100%;
       max-width:640px;
-      margin: 14px auto 44px;
+      margin:0 auto 44px; /* antes tinha margem-top; agora fica “colado” no fluxo do main */
       background:var(--card);
       border:1px solid #e8ecf5;
       border-radius:var(--radius);
@@ -96,7 +95,7 @@
     }
 
     @media (max-width:560px){
-      .container{ margin:12px 12px 28px; padding:20px 16px; }
+      .container{ margin:0 12px 28px; padding:20px 16px; }
     }
 
     h1.titulo{
@@ -195,7 +194,7 @@
     .erro-campo{ border:2px solid #e11d48 !important; background:#fff5f5 !important; }
     .mensagem-campo{ color:#e11d48; font-size:13px; margin-top:-10px; margin-bottom:12px; font-weight:600; }
 
-    /* ===== Botão salvar (padrão global PRETO → LIME) ===== */
+    /* ===== Botão salvar (PRETO → LIME) ===== */
     .botao-roxo,
     button[type="submit"],
     input[type="submit"]{
@@ -386,18 +385,14 @@
     </div>
   </nav>
 
-  <!-- ✅ BOTÃO "Voltar ao painel" no topo -->
-  <section class="top-back-area">
-    <div class="page-outer">
-      <div class="top-back">
-        <a class="btn-top-back" href="{{ url_for('painel_malharia') }}">← Voltar ao painel</a>
-      </div>
-    </div>
-  </section>
-
   <!-- ===== CONTEÚDO ===== -->
   <main class="main-area">
     <div class="page-outer">
+
+      <!-- ✅ BOTÃO "Voltar ao painel" no topo (sem criar faixa separada) -->
+      <div class="top-back">
+        <a class="btn-top-back" href="{{ url_for('painel_malharia') }}">← Voltar ao painel</a>
+      </div>
 
       <div class="container">
         <h1 class="titulo">Editar Dados da Malharia</h1>
@@ -557,7 +552,7 @@
     })();
   </script>
 
-  <!-- ===== JS: cidades dinâmicas por UF (mantém padrão do cadastrar) ===== -->
+  <!-- ===== JS: cidades dinâmicas por UF ===== -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const ufSelect = document.getElementById('estado');
