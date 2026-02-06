@@ -3,16 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <title>Editar Dados da Malharia</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Ícone da aba (favicon) -->
+  <!-- Favicons -->
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
 
-  <!-- CSS principal -->
+  <!-- CSS global -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet" />
-
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
 
   <style>
     :root{
@@ -22,387 +21,543 @@
       --olive-dark:#434326;
       --olive-50:#F1F2E8;
       --line-olive:#BFBFA8;
-  
+
       --lime:#B6F34D;
       --lime-700:#A2E532;
-  
+
       --site-bg:#EAEAE8;
-  
-      /* Aliases p/ legado roxo */
-      --roxo:var(--olive);
-      --roxo-hover:var(--olive-600);
-  
-      --text:#1f1f1f;
+
+      --text:#111827;
+      --muted:#6b7280;
       --line:#cfd3dc;
+      --card:#ffffff;
+
+      --radius:16px;
     }
-  
-    /* Base + suavização */
-    html, body{
-      background: var(--site-bg);
-      color:#111;
+
+    html, body{ max-width:100%; overflow-x:hidden; }
+    *, *::before, *::after{ box-sizing:border-box; }
+
+    body{
       margin:0;
       font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+      background:var(--site-bg);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
     }
-    h1,h2,h3{ font-weight:700; }   /* antes 800 */
-    strong,b{ font-weight:600; }   /* menos “brilho” */
-  
-    /* ===== CABEÇALHO ===== */
-    .navbar{
-      overflow:visible; padding:6px 12px;
-      background:#fff; border-bottom:1px solid #eee;
-      display:flex; align-items:center;
+
+    /* ===== Botão "Voltar ao painel" no TOPO (padrão performance) ===== */
+    .page-outer{ max-width:1100px; margin:0 auto; padding:0 16px; }
+
+    .top-back-area{
+      background:var(--site-bg);
+      padding:18px 0 10px;
     }
-    .header-left,.header-right{ display:flex; align-items:center; }
-    .header-right{ margin-left:auto; gap:20px; }
-    .logo{ display:inline-flex; align-items:center; }
-    .logo a{ display:inline-flex; align-items:center; text-decoration:none; }
-    @media (min-width:901px){ .navbar .logo img{ height:44px; width:auto; display:block; } }
-    @media (max-width:900px){
-      .navbar{ padding-right:22px; min-height:56px; }
-      .navbar .logo img{ height:54px !important; width:auto !important; display:block; }
+    .top-back{
+      display:flex;
+      justify-content:center;
     }
-  
-    /* Home + Hamburguer + Dropdown */
-    .icon-btn{
-      display:inline-flex; align-items:center; justify-content:center;
-      width:36px; height:36px; border:1px solid #e4e4e4; border-radius:10px;
-      background:#fff; cursor:pointer;
-      transition:background .15s ease, transform .12s ease;
+    .btn-top-back{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      height:40px;
+      padding:0 18px;
+      border-radius:9999px;
+      border:1px solid #d9d9d9;
+      background:#fff;
+      color:#111;
+      font-weight:800;
+      text-decoration:none;
+      transition: transform .12s ease, background-color .15s ease;
       box-shadow:none !important;
+      white-space:nowrap;
     }
-    .icon-btn:hover{ background:var(--olive-50); transform:translateY(-1px); }
-    .icon-btn:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
-    .icon{ width:20px; height:20px; color:#222; }
-  
-    .menu-wrap{ position: relative; }
-    .hamburger{
-      display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
-      width:36px; height:36px; border:1px solid #d6d6d6; border-radius:10px; background:#fff;
-      cursor:pointer;
+    .btn-top-back:hover{ background:#fafafa; transform:translateY(-1px); text-decoration:none; }
+    .btn-top-back:active{ transform:translateY(0); }
+    .btn-top-back:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
+
+    /* ===== Conteúdo ===== */
+    .main-area{
+      background:var(--site-bg);
+      padding:0 0 42px;
     }
-    .hamburger span{ display:block; width:20px; height:2px; background:#1c1b22; border-radius:2px; }
-    .hamburger span + span{ margin-top:4px; }
-  
-    .menu-dropdown{
-      background:#fff; border:1px solid #eaeaea; border-radius:12px;
-      z-index:10001; max-height:80vh; overflow:auto;
-      opacity:0; pointer-events:none; transform: translateY(8px) scale(.98);
-      transition: opacity .18s ease, transform .18s ease;
-    }
-    .menu-dropdown.open{ opacity:1; pointer-events:auto; transform: translateY(0) scale(1); }
-    .menu-dropdown .menu-header{ display:flex; justify-content:flex-end; align-items:center; padding:8px 10px; }
-    .menu-dropdown .menu-close{
-      display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px;
-      background:#f0f2f5; border:0; border-radius:10px; cursor:pointer;
-    }
-    .menu-dropdown .menu-item{
-      display:flex; align-items:center; gap:10px; padding:10px 12px;
-      text-decoration:none; color:#222; border-radius:8px;
-    }
-    .menu-dropdown .menu-item:hover{ background:var(--olive-50); color:var(--olive); }
-  
-    @media (min-width:769px){
-      .menu-dropdown{ position:absolute; top:calc(100% + 8px); right:0; min-width:220px; transform-origin: top right; }
-    }
-    @media (max-width:768px){
-      .menu-wrap{ position: static; }
-      .menu-dropdown{
-        position: fixed; top: calc(var(--nav-h, 64px) + 8px); left: 50%;
-        transform: translate(-50%, 8px) scale(.98); transform-origin: top center;
-        width:max-content; max-width:90vw; min-width:160px; border-radius:14px;
-      }
-      .menu-dropdown.open{ transform: translate(-50%,0) scale(1); }
-    }
-  
-    /* ===== CARD / CONTEÚDO ===== */
+
     .container{
       width:100%;
-      max-width:600px;
-      margin: 28px auto 44px;
-      background:#fff;
+      max-width:640px;
+      margin: 14px auto 44px;
+      background:var(--card);
       border:1px solid #e8ecf5;
-      border-radius:14px;
-      padding:24px 20px;
+      border-radius:var(--radius);
+      padding:24px 22px 20px;
       box-shadow:none !important;
     }
-    h1.titulo{
-      text-align:center; font-size:24px; font-weight:700; margin:0 0 18px;
-      color:var(--olive-dark);
+
+    @media (max-width:560px){
+      .container{ margin:12px 12px 28px; padding:20px 16px; }
     }
-  
+
+    h1.titulo{
+      text-align:center;
+      margin:0 0 18px;
+      font-size:24px;
+      font-weight:700;
+      color:var(--olive-dark);
+      letter-spacing:-0.01em;
+    }
+
     /* Mensagens */
     .mensagem-sucesso{
-      background:#e8f5e9; color:#1b5e20; border:1px solid #81c784;
-      padding:14px; border-radius:10px; margin-bottom:16px; text-align:center;
+      background:#e8f5e9;
+      color:#1b5e20;
+      border:1px solid #81c784;
+      padding:14px;
+      border-radius:12px;
+      margin:0 0 16px;
+      text-align:center;
+      font-weight:700;
     }
     .mensagem-erro{
-      background:#ffe6e6; color:#b30000; border:1px solid #ff4d4d;
-      padding:16px; border-radius:10px; margin-bottom:16px; text-align:center;
+      background:#ffe6e6;
+      color:#b30000;
+      border:1px solid #ff4d4d;
+      padding:16px;
+      border-radius:12px;
+      margin:0 0 16px;
+      text-align:center;
+      animation:aparecer .4s ease-in-out;
     }
     .mensagem-erro .icone{ font-size:26px; display:block; margin-bottom:6px; }
-  
-    /* ===== FORM ===== */
+    @keyframes aparecer{ from{opacity:0; transform:scale(.98)} to{opacity:1; transform:scale(1)} }
+
+    .mensagem-erro .botao-voltar{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      height:40px;
+      padding:0 16px;
+      border-radius:9999px;
+      border:0;
+      background:#000;
+      color:var(--lime);
+      font-weight:800;
+      text-decoration:none;
+      margin-top:10px;
+      transition: background-color .15s ease, color .15s ease, transform .12s ease;
+      box-shadow:none !important;
+    }
+    .mensagem-erro .botao-voltar:hover{ background:var(--lime); color:#000; transform:translateY(-2px); }
+    .mensagem-erro .botao-voltar:active{ background:var(--lime-700); color:#000; transform:translateY(0); }
+    .mensagem-erro .botao-voltar:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
+
+    /* ===== Form ===== */
     .formulario label{
-      display:block; margin:10px 0 6px;
-      font-weight:700; font-size:14px; color:#2a233a;
+      display:block;
+      margin:10px 0 6px;
+      font-weight:600;
+      font-size:14px;
+      color:#2a233a;
     }
-    .formulario input,.formulario select{
-      width:100%; padding:12px; border:1px solid var(--line); border-radius:10px; font-size:14px; background:#fff;
-      margin-bottom:16px; transition:border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+
+    .formulario input,
+    .formulario select{
+      width:100%;
+      height:44px;
+      padding:10px 12px;
+      border:1px solid var(--line);
+      border-radius:10px;
+      font-size:14px;
+      background:#fff;
+      margin-bottom:14px;
+      transition:border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
     }
-    .formulario input:focus,.formulario select:focus{
+
+    .formulario input:focus,
+    .formulario select:focus{
       outline:0;
       border-color:var(--olive);
       box-shadow:0 0 0 3px rgba(123,116,36,.15);
       background:#fff;
     }
+
     /* Autofill claro */
-    input:-webkit-autofill, select:-webkit-autofill{
+    input:-webkit-autofill,
+    select:-webkit-autofill{
       -webkit-text-fill-color:#1e1b2b;
       box-shadow:0 0 0 1000px #fff inset !important;
       border:1px solid var(--line-olive);
       transition:background-color 9999s ease-in-out 0s;
     }
-  
-    /* ===== BOTÃO (padrão global PRETO → LIME, sem bordas no hover) ===== */
-    .botao-roxo{
-      width:100%; height:46px;
-      border:0; border-radius:9999px;
-      background:#000; color:var(--lime);
-      font-weight:700; font-size:14px; cursor:pointer;
-      margin-top:4px;
+
+    /* Erros por campo */
+    .erro-campo{ border:2px solid #e11d48 !important; background:#fff5f5 !important; }
+    .mensagem-campo{ color:#e11d48; font-size:13px; margin-top:-10px; margin-bottom:12px; font-weight:600; }
+
+    /* ===== Botão salvar (padrão global PRETO → LIME) ===== */
+    .botao-roxo,
+    button[type="submit"],
+    input[type="submit"]{
+      width:100%;
+      height:46px;
+      border:0;
+      border-radius:9999px;
+      background:#000;
+      color:var(--lime);
+      font-weight:800;
+      font-size:14px;
+      cursor:pointer;
+      margin-top:6px;
       transition: background-color .15s ease, color .15s ease, transform .12s ease;
       box-shadow:none !important;
     }
-    .botao-roxo:hover{ background:var(--lime); color:#000; transform:translateY(-2px); }
-    .botao-roxo:active{ background:var(--lime-700); color:#000; transform:translateY(0); }
-    .botao-roxo:focus{ outline:none; }
-    .botao-roxo:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
-  
-    /* Link Voltar */
-    .link-voltar-painel{
-      display:inline-block; width:100%; text-align:center; margin-top:10px; text-decoration:none;
-      font-weight:700; color:var(--olive);
+    .botao-roxo:hover,
+    button[type="submit"]:hover,
+    input[type="submit"]:hover{
+      background:var(--lime);
+      color:#000;
+      transform:translateY(-2px);
     }
-    .link-voltar-painel:hover{ text-decoration:underline; }
-  
-    /* ===== (Opcional) Tabelas que apareçam nesta página ===== */
-    .table-wrap{ overflow-x:auto; }
-    table{
-      width:100%; border-collapse:collapse; background:#fff;
-      border:1px solid #d7d1a4; border-radius:12px; overflow:hidden;
+    .botao-roxo:active,
+    button[type="submit"]:active,
+    input[type="submit"]:active{
+      background:var(--lime-700);
+      color:#000;
+      transform:translateY(0);
     }
-    thead th{
-      background:var(--olive); color:#fff; font-weight:600; letter-spacing:.01em;
-      text-align:center; padding:10px; border-bottom:1px solid #968f3f;
+    .botao-roxo:focus-visible,
+    button[type="submit"]:focus-visible,
+    input[type="submit"]:focus-visible{
+      outline:2px solid var(--lime);
+      outline-offset:2px;
     }
-    thead th + th{ border-left:1px solid #8f8942; }
-    tbody td{ padding:10px; text-align:center; border:1px solid #ded9b3; }
-    tbody tr:nth-child(odd){ background:#fafaf7; }
-  
-    @media (max-width:560px){
-      .container{ margin:16px 12px 28px; }
+
+    /* ===== Faixa preta (CTA) + Footer padrão ===== */
+    .cta-bar{
+      background:#000;
+      color:#fff;
+      padding:20px 16px;
+      display:flex;
+      align-items:center;
+      gap:16px;
+      flex-wrap:wrap;
+      border-top:1px solid rgba(255,255,255,0.06);
+      justify-content:flex-start;
     }
+    .cta-text h3{ margin:0 0 4px 0; font-size:18px; font-weight:800; line-height:1.2; }
+    .cta-text p{ margin:0; font-size:15px; opacity:.9; }
+
+    .cta-bar .cta-btn{
+      display:inline-flex !important;
+      align-items:center !important;
+      justify-content:center !important;
+      height:44px !important;
+      padding:0 22px !important;
+      border-radius:9999px !important;
+      font-weight:800 !important;
+      text-decoration:none !important;
+      white-space:nowrap !important;
+      background:#fff !important;
+      color:#000 !important;
+      border:0 !important;
+      box-shadow:none !important;
+      cursor:pointer;
+      transition: background-color .15s ease, color .15s ease, transform .15s ease;
+    }
+    .cta-bar .cta-btn:hover{ background:var(--lime) !important; color:#111 !important; transform:translateY(-1px); }
+    .cta-bar .cta-btn:active{ background:var(--lime-700) !important; color:#111 !important; transform:translateY(0); }
+    .cta-bar .cta-btn:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
+
+    .site-footer{
+      background:#fff;
+      color:#211a2a;
+      border-top:1px solid #eee;
+      padding:18px 16px 28px;
+    }
+    .footer-inner{
+      max-width:1100px;
+      margin:0 auto;
+      display:grid;
+      grid-template-columns:auto 1fr;
+      gap:20px 28px;
+      align-items:start;
+    }
+    .footer-brand img{ height:44px; width:auto; display:block; }
+    .footer-cols{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(180px, 240px));
+      gap:12px 28px;
+    }
+    .footer-col h4{ margin:0 0 8px 0; font-size:14px; font-weight:800; color:#251c33; }
+    .footer-col ul{ list-style:none; margin:0; padding:0; }
+    .footer-col li+li{ margin-top:6px; }
+    .footer-col a{ color:#2a2535; text-decoration:none; font-size:14px; }
+    .footer-col a:hover{ text-decoration:underline; }
+
+    @media (max-width:900px){
+      .footer-inner{ grid-template-columns:1fr; }
+      .footer-cols{ grid-template-columns:1fr; }
+    }
+
     @media (prefers-color-scheme: dark){
-      html, body{ background: var(--site-bg) !important; color:#111; }
+      html, body{ background:var(--site-bg) !important; color:#111; }
     }
   </style>
-</head>
-<body>
 
-  <!-- ===== NAVBAR ===== -->
+  <!-- ✅ Header padrão (SEMPRE o último do head) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
+</head>
+
+<body class="header-v1">
+
+  <!-- ===== HEADER PADRÃO ===== -->
   <header class="navbar">
     <div class="header-left">
       <div class="logo">
-        <a href="{{ url_for('index') }}" aria-label="Página inicial AcheTece" title="Ir para a página inicial">
-          <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece" decoding="async" fetchpriority="high">
+        <a href="{{ url_for('index') }}" aria-label="Página inicial">
+          <img
+            src="{{ url_for('static', filename='Logo_Branco_AcheTece_sem_fundo.png') }}"
+            alt="Logo AcheTece"
+            decoding="async"
+            fetchpriority="high"
+          >
         </a>
       </div>
     </div>
 
+    <!-- Links topo (desktop) — ordem fixa -->
+    <nav class="hdr-nav" aria-label="Navegação principal">
+      <a href="{{ url_for('quem_somos') }}">O AcheTece</a>
+      <a href="{{ url_for('malharia_info') }}">Como Funciona</a>
+      <a href="{{ url_for('contato') }}">Fale Conosco</a>
+    </nav>
+
     <div class="header-right">
-      <!-- Casinha -->
-      <a href="{{ url_for('index') }}" class="icon-btn" aria-label="Página inicial" title="Página inicial">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M3 10.5 12 3l9 7.5"></path>
-          <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
-          <path d="M9 21V12h6v9"></path>
-        </svg>
-      </a>
+      <div class="hdr-actions">
+        <a href="{{ url_for('login') }}" class="btn-perfil" aria-label="Acessar sua conta da malharia" title="Acessar sua conta da malharia">
+          <span>Conta Malharia</span>
+        </a>
 
-      <!-- Menu sanduíche -->
-      <div class="menu-wrap">
-        <button class="hamburger" id="hamburger" type="button" aria-label="Abrir menu"
-                aria-controls="menu-lateral" aria-haspopup="menu" aria-expanded="false">
-          <span></span><span></span><span></span>
+        <!-- Casinha (sempre à direita do Conta Malharia) -->
+        <a href="{{ url_for('index') }}" class="btn-home" aria-label="Voltar ao início" title="Voltar ao início">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 10.5 12 3l9 7.5"></path>
+            <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
+            <path d="M9 21V12h6v9"></path>
+          </svg>
+        </a>
+
+        <!-- Menu (somente mobile) -->
+        <button class="btn-menu" id="openMenuBtn" type="button" aria-label="Abrir menu" aria-controls="mobileMenu" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M4 7h16M4 12h16M4 17h16"/>
+          </svg>
         </button>
-
-        <nav class="menu-dropdown" id="menu-lateral" role="menu" aria-label="Menu rápido">
-          <div class="menu-header">
-            <button type="button" class="menu-close" aria-label="Fechar menu">
-              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
-              </svg>
-            </button>
-          </div>
-
-          <a href="{{ url_for('buscar_teares') }}" class="menu-item" role="menuitem">Buscar Tear</a>
-          <a href="{{ url_for('malharia_info') }}" class="menu-item" role="menuitem">Como Funciona</a>
-          <a href="{{ url_for('login') }}" class="menu-item" role="menuitem">Já sou cadastrado</a>
-          <a href="{{ url_for('quem_somos') }}" class="menu-item" role="menuitem">Quem Somos</a>
-          <a href="{{ url_for('contato') }}" class="menu-item" role="menuitem">Fale conosco</a>
-          <a href="{{ url_for('termos') }}" class="menu-item" role="menuitem">Termos e Políticas</a>
-        </nav>
       </div>
     </div>
   </header>
 
-  <!-- ===== CONTEÚDO ===== -->
-  <div class="container">
-    <h1 class="titulo">Editar Dados da Malharia</h1>
+  <!-- ===== MENU MOBILE ===== -->
+  <div class="mobile-menu-backdrop" id="menuBackdrop" aria-hidden="true"></div>
 
-    {% if request.args.get('ok') == '1' %}
-      <div class="mensagem-sucesso">Alterações salvas com sucesso! Redirecionando…</div>
-    {% endif %}
+  <nav class="mobile-menu" id="mobileMenu" aria-label="Menu do site">
+    <div class="menu-head">
+      <a href="{{ url_for('index') }}" class="menu-logo" aria-label="Ir para a busca">
+        <span class="menu-logoBox">
+          <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece" decoding="async">
+        </span>
+      </a>
 
-    {% if erro %}
-      <div class="mensagem-erro">
-        <div class="icone">⚠️</div>
-        <p><strong>Erro:</strong> {{ erro }}</p>
-        <a href="#formulario" class="botao-voltar">← Corrigir dados</a>
+      <button class="menu-close" id="closeMenuBtn" type="button" aria-label="Fechar menu">
+        <svg class="x-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 6L18 18M18 6L6 18"></path>
+        </svg>
+      </button>
+    </div>
+
+    <div class="menu-body">
+      <a href="{{ url_for('index') }}">Buscar Tear</a>
+      <a href="{{ url_for('malharia_info') }}">Como Funciona</a>
+      <a href="{{ url_for('login') }}">Já sou cadastrado</a>
+      <a href="{{ url_for('quem_somos') }}">Quem Somos</a>
+      <a href="{{ url_for('contato') }}">Fale conosco</a>
+      <a href="{{ url_for('termos') }}">Termos e Políticas</a>
+    </div>
+  </nav>
+
+  <!-- ✅ BOTÃO "Voltar ao painel" no topo -->
+  <section class="top-back-area">
+    <div class="page-outer">
+      <div class="top-back">
+        <a class="btn-top-back" href="{{ url_for('painel_malharia') }}">← Voltar ao painel</a>
       </div>
-    {% endif %}
+    </div>
+  </section>
 
-    <form method="POST" action="{{ url_for('editar_empresa') }}" class="formulario" id="formulario" autocomplete="off">
-      <label for="nome">Nome da Empresa:</label>
-      <input type="text" id="nome" name="nome" value="{{ nome or '' }}" class="{% if erros and erros.get('nome') %}erro-campo{% endif %}">
-      {% if erros and erros.get('nome') %}<div class="mensagem-campo">{{ erros.get('nome') }}</div>{% endif %}
+  <!-- ===== CONTEÚDO ===== -->
+  <main class="main-area">
+    <div class="page-outer">
 
-      <!-- Apelido sem ":" -->
-      <label for="apelido">Apelido da Empresa</label>
-      <input type="text" id="apelido" name="apelido" value="{{ apelido or '' }}" class="{% if erros and erros.get('apelido') %}erro-campo{% endif %}">
-      {% if erros and erros.get('apelido') %}<div class="mensagem-campo">{{ erros.get('apelido') }}</div>{% endif %}
+      <div class="container">
+        <h1 class="titulo">Editar Dados da Malharia</h1>
 
-      <!-- Nome do responsável -->
-      <label for="responsavel_nome">Nome do responsável *</label>
-      <input type="text" id="responsavel_nome" name="responsavel_nome"
-             value="{{ responsavel_nome or '' }}" placeholder="Ex.: Maria"
-             class="{% if erros and erros.get('responsavel_nome') %}erro-campo{% endif %}">
-      {% if erros and erros.get('responsavel_nome') %}<div class="mensagem-campo">{{ erros.get('responsavel_nome') }}</div>{% endif %}
+        {% if request.args.get('ok') == '1' %}
+          <div class="mensagem-sucesso">Alterações salvas com sucesso! Redirecionando…</div>
+        {% endif %}
 
-      <label for="responsavel_sobrenome">Sobrenome do responsável (opcional)</label>
-      <input type="text" id="responsavel_sobrenome" name="responsavel_sobrenome"
-             value="{{ responsavel_sobrenome or '' }}" placeholder="Ex.: Silva"
-             class="{% if erros and erros.get('responsavel_sobrenome') %}erro-campo{% endif %}">
-      {% if erros and erros.get('responsavel_sobrenome') %}<div class="mensagem-campo">{{ erros.get('responsavel_sobrenome') }}</div>{% endif %}
+        {% if erro %}
+          <div class="mensagem-erro">
+            <div class="icone">⚠️</div>
+            <p style="margin:0;"><strong>Erro:</strong> {{ erro }}</p>
+            <a href="#formulario" class="botao-voltar">← Corrigir dados</a>
+          </div>
+        {% endif %}
 
-      <label for="estado">Estado:</label>
-      <select id="estado" name="estado" class="{% if erros and erros.get('estado') %}erro-campo{% endif %}">
-        <option value="">Selecione o estado</option>
-        {% for uf in estados %}
-          <option value="{{ uf }}" {% if estado == uf %}selected{% endif %}>{{ uf }}</option>
-        {% endfor %}
-      </select>
-      {% if erros and erros.get('estado') %}<div class="mensagem-campo">{{ erros.get('estado') }}</div>{% endif %}
+        <form method="POST" action="{{ url_for('editar_empresa') }}" class="formulario" id="formulario" autocomplete="off">
+          <label for="nome">Nome da Empresa</label>
+          <input type="text" id="nome" name="nome" value="{{ nome or '' }}"
+                 class="{% if erros and erros.get('nome') %}erro-campo{% endif %}">
+          {% if erros and erros.get('nome') %}<div class="mensagem-campo">{{ erros.get('nome') }}</div>{% endif %}
 
-      <label for="cidade">Cidade:</label>
-      <select id="cidade" name="cidade" data-inicial="{{ cidade or '' }}"
-              class="{% if erros and erros.get('cidade') %}erro-campo{% endif %}">
-        <option value="">Selecione a cidade</option>
-        {% for c in cidades %}
-          <option value="{{ c }}" {% if cidade == c %}selected{% endif %}>{{ c }}</option>
-        {% endfor %}
-      </select>
-      {% if erros and erros.get('cidade') %}<div class="mensagem-campo">{{ erros.get('cidade') }}</div>{% endif %}
+          <label for="apelido">Apelido da Empresa</label>
+          <input type="text" id="apelido" name="apelido" value="{{ apelido or '' }}"
+                 class="{% if erros and erros.get('apelido') %}erro-campo{% endif %}">
+          {% if erros and erros.get('apelido') %}<div class="mensagem-campo">{{ erros.get('apelido') }}</div>{% endif %}
 
-      <!-- NOVOS CAMPOS: Endereço completo e CEP (ambos obrigatórios) -->
-      <label for="endereco">Endereço completo <span style="color:#d00000">*</span></label>
-      <input type="text" id="endereco" name="endereco" required
-             autocomplete="street-address" placeholder="Rua, número, complemento, bairro"
-             value="{{ endereco or '' }}" class="{% if erros and erros.get('endereco') %}erro-campo{% endif %}">
-      {% if erros and erros.get('endereco') %}<div class="mensagem-campo">{{ erros.get('endereco') }}</div>{% endif %}
+          <label for="responsavel_nome">Nome do responsável <span style="color:#d00000">*</span></label>
+          <input type="text" id="responsavel_nome" name="responsavel_nome"
+                 value="{{ responsavel_nome or '' }}" placeholder="Ex.: Maria"
+                 class="{% if erros and erros.get('responsavel_nome') %}erro-campo{% endif %}">
+          {% if erros and erros.get('responsavel_nome') %}<div class="mensagem-campo">{{ erros.get('responsavel_nome') }}</div>{% endif %}
 
-      <label for="cep">CEP <span style="color:#d00000">*</span></label>
-      <input type="text" id="cep" name="cep" required
-             inputmode="numeric" pattern="\d{5}-?\d{3}" title="Digite no formato 00000-000 ou 00000000"
-             autocomplete="postal-code" placeholder="00000-000"
-             value="{{ cep or '' }}" class="{% if erros and erros.get('cep') %}erro-campo{% endif %}">
-      {% if erros and erros.get('cep') %}<div class="mensagem-campo">{{ erros.get('cep') }}</div>{% endif %}
+          <label for="responsavel_sobrenome">Sobrenome do responsável (opcional)</label>
+          <input type="text" id="responsavel_sobrenome" name="responsavel_sobrenome"
+                 value="{{ responsavel_sobrenome or '' }}" placeholder="Ex.: Silva"
+                 class="{% if erros and erros.get('responsavel_sobrenome') %}erro-campo{% endif %}">
+          {% if erros and erros.get('responsavel_sobrenome') %}<div class="mensagem-campo">{{ erros.get('responsavel_sobrenome') }}</div>{% endif %}
 
-      <label for="telefone">Telefone:</label>
-      <input type="tel" id="telefone" name="telefone"
-             pattern="[0-9]{10,13}" placeholder="47999991234"
-             title="Digite apenas números, ex: 47999991234"
-             value="{{ telefone or '' }}"
-             class="{% if erros and erros.get('telefone') %}erro-campo{% endif %}">
-      {% if erros and erros.get('telefone') %}<div class="mensagem-campo">{{ erros.get('telefone') }}</div>{% endif %}
+          <label for="estado">Estado</label>
+          <select id="estado" name="estado" class="{% if erros and erros.get('estado') %}erro-campo{% endif %}">
+            <option value="">Selecione o estado</option>
+            {% for uf in estados %}
+              <option value="{{ uf }}" {% if estado == uf %}selected{% endif %}>{{ uf }}</option>
+            {% endfor %}
+          </select>
+          {% if erros and erros.get('estado') %}<div class="mensagem-campo">{{ erros.get('estado') }}</div>{% endif %}
 
-      <label for="email">E-mail:</label>
-      <input type="email" id="email" name="email" value="{{ email or '' }}" class="{% if erros and erros.get('email') %}erro-campo{% endif %}">
-      {% if erros and erros.get('email') %}<div class="mensagem-campo">{{ erros.get('email') }}</div>{% endif %}
+          <label for="cidade">Cidade</label>
+          <select id="cidade" name="cidade" data-inicial="{{ cidade or '' }}"
+                  class="{% if erros and erros.get('cidade') %}erro-campo{% endif %}">
+            <option value="">Selecione a cidade</option>
+            {% if cidades %}
+              {% for c in cidades %}
+                <option value="{{ c }}" {% if cidade == c %}selected{% endif %}>{{ c }}</option>
+              {% endfor %}
+            {% endif %}
+          </select>
+          {% if erros and erros.get('cidade') %}<div class="mensagem-campo">{{ erros.get('cidade') }}</div>{% endif %}
 
-      <!-- Senha: deixar em branco para manter -->
-      <label for="senha">Nova Senha (opcional)</label>
-      <input type="password" id="senha" name="senha" autocomplete="new-password" placeholder="Deixe em branco para manter a atual">
+          <label for="endereco">Endereço completo <span style="color:#d00000">*</span></label>
+          <input type="text" id="endereco" name="endereco" required
+                 autocomplete="street-address" placeholder="Rua, número, complemento, bairro"
+                 value="{{ endereco or '' }}" class="{% if erros and erros.get('endereco') %}erro-campo{% endif %}">
+          {% if erros and erros.get('endereco') %}<div class="mensagem-campo">{{ erros.get('endereco') }}</div>{% endif %}
 
-      <!-- Botão no final, roxo e arredondado -->
-      <button type="submit" class="botao-roxo">Salvar Alterações</button>
-      <a class="link-voltar-painel" href="{{ url_for('painel_malharia') }}">← Voltar ao Painel da Malharia</a>
-    </form>
-  </div>
+          <label for="cep">CEP <span style="color:#d00000">*</span></label>
+          <input type="text" id="cep" name="cep" required
+                 inputmode="numeric" pattern="^\d{5}-?\d{3}$"
+                 title="Digite no formato 00000-000 ou 00000000"
+                 autocomplete="postal-code" placeholder="00000-000" maxlength="9"
+                 value="{{ cep or '' }}" class="{% if erros and erros.get('cep') %}erro-campo{% endif %}">
+          {% if erros and erros.get('cep') %}<div class="mensagem-campo">{{ erros.get('cep') }}</div>{% endif %}
 
-  <!-- ===== Scripts do MENU ===== -->
-  <script>
-    (function () {
-      function closeAll() {
-        document.querySelectorAll('.menu-wrap .menu-dropdown.open').forEach(m => {
-          m.classList.remove('open');
-          const b = m.closest('.menu-wrap')?.querySelector('.hamburger');
-          if (b) b.setAttribute('aria-expanded', 'false');
-        });
-      }
-      document.querySelectorAll('.menu-wrap').forEach(wrap => {
-        const btn  = wrap.querySelector('#hamburger');
-        const menu = wrap.querySelector('#menu-lateral');
-        const xBtn = wrap.querySelector('.menu-close');
-        if (!btn || !menu) return;
+          <label for="telefone">Telefone</label>
+          <input type="tel" id="telefone" name="telefone"
+                 pattern="[0-9]{10,13}" placeholder="47999991234"
+                 title="Digite apenas números, ex: 47999991234"
+                 value="{{ telefone or '' }}"
+                 class="{% if erros and erros.get('telefone') %}erro-campo{% endif %}">
+          {% if erros and erros.get('telefone') %}<div class="mensagem-campo">{{ erros.get('telefone') }}</div>{% endif %}
 
-        btn.addEventListener('click', e => {
-          e.stopPropagation();
-          const willOpen = !menu.classList.contains('open');
-          closeAll();
-          menu.classList.toggle('open', willOpen);
-          btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-        });
+          <label for="email">E-mail</label>
+          <input type="email" id="email" name="email" value="{{ email or '' }}"
+                 class="{% if erros and erros.get('email') %}erro-campo{% endif %}">
+          {% if erros and erros.get('email') %}<div class="mensagem-campo">{{ erros.get('email') }}</div>{% endif %}
 
-        xBtn?.addEventListener('click', e => {
-          e.stopPropagation();
-          menu.classList.remove('open');
-          btn.setAttribute('aria-expanded', 'false');
-        });
+          <label for="senha">Nova Senha (opcional)</label>
+          <input type="password" id="senha" name="senha" autocomplete="new-password"
+                 placeholder="Deixe em branco para manter a atual">
 
-        menu.addEventListener('click', e => e.stopPropagation());
-      });
-      document.addEventListener('click', closeAll);
-      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
-    })();
-  </script>
+          <button type="submit" class="botao-roxo">Salvar Alterações</button>
+        </form>
+      </div>
 
-  <!-- Altura do topo (fallback 64px se não calcular) -->
+    </div>
+  </main>
+
+  <!-- ===== Faixa preta (CTA) ===== -->
+  <section class="cta-bar">
+    <div class="cta-text">
+      <h3>É proprietário de uma malharia?</h3>
+      <p>Cadastre sua malharia e comece a receber novos pedidos.</p>
+    </div>
+    <a href="{{ url_for('cadastrar_empresa') }}" class="cta-btn">Cadastrar</a>
+  </section>
+
+  <!-- ===== Rodapé ===== -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="{{ url_for('static', filename='logo_simbolo.png') }}" alt="AcheTece">
+      </div>
+
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h4>Sobre nós</h4>
+          <ul>
+            <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
+            <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
+            <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
+            <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>&nbsp;</h4>
+          <ul><li>&nbsp;</li></ul>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== JS: Menu mobile (padrão) ===== -->
   <script>
     (function(){
-      function setNavH(){
-        const nav = document.querySelector('.navbar')?.offsetHeight || 0;
-        document.documentElement.style.setProperty('--nav-h', nav + 'px');
+      const openBtn = document.getElementById('openMenuBtn');
+      const closeBtn = document.getElementById('closeMenuBtn');
+      const backdrop = document.getElementById('menuBackdrop');
+
+      function openMenu(){
+        document.body.classList.add('menu-open');
+        if(openBtn) openBtn.setAttribute('aria-expanded','true');
       }
-      setNavH();
-      window.addEventListener('resize', setNavH);
+      function closeMenu(){
+        document.body.classList.remove('menu-open');
+        if(openBtn) openBtn.setAttribute('aria-expanded','false');
+      }
+
+      if(openBtn) openBtn.addEventListener('click', openMenu);
+      if(closeBtn) closeBtn.addEventListener('click', closeMenu);
+      if(backdrop) backdrop.addEventListener('click', closeMenu);
+
+      document.addEventListener('keydown', (e)=>{
+        if(e.key === 'Escape') closeMenu();
+      });
     })();
   </script>
 
-  <!-- ===== Script: cidades dinâmicas por UF ===== -->
+  <!-- ===== JS: cidades dinâmicas por UF (mantém padrão do cadastrar) ===== -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const ufSelect = document.getElementById('estado');
@@ -411,10 +566,8 @@
       async function carregarCidades(uf, preselecionada = '') {
         if (!uf) {
           cidadeSelect.innerHTML = '<option value="">Selecione a cidade</option>';
-          cidadeSelect.disabled = true;
           return;
         }
-        cidadeSelect.disabled = true;
         cidadeSelect.innerHTML = '<option value="">Carregando...</option>';
         try {
           const resp = await fetch(`/api/cidades?uf=${encodeURIComponent(uf)}`);
@@ -423,16 +576,15 @@
 
           const options = ['<option value="">Selecione a cidade</option>']
             .concat(cidades.map(c => {
+              const sel = (preselecionada && preselecionada === c) ? ' selected' : '';
               const safe = String(c).replace(/"/g,'&quot;');
-              const sel  = (preselecionada && preselecionada === c) ? ' selected' : '';
               return `<option value="${safe}"${sel}>${c}</option>`;
             }));
+
           cidadeSelect.innerHTML = options.join('');
-          cidadeSelect.disabled = false;
         } catch (err) {
           console.error(err);
           cidadeSelect.innerHTML = '<option value="">Falha ao carregar cidades</option>';
-          cidadeSelect.disabled = false;
         }
       }
 
@@ -441,6 +593,33 @@
       const ufInicial = ufSelect.value;
       const cidadeInicial = cidadeSelect.getAttribute('data-inicial') || '';
       if (ufInicial) carregarCidades(ufInicial, cidadeInicial);
+    });
+  </script>
+
+  <!-- ===== JS: máscara CEP ===== -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const cep = document.getElementById('cep');
+      if (!cep) return;
+
+      function formatCEP(v){
+        const d = v.replace(/\D/g, '').slice(0, 8);
+        if (d.length <= 5) return d;
+        return d.slice(0,5) + '-' + d.slice(5);
+      }
+
+      cep.addEventListener('input', () => {
+        const cur = cep.value;
+        const fmt = formatCEP(cur);
+        if (cur !== fmt) cep.value = fmt;
+        cep.setCustomValidity('');
+      });
+
+      cep.addEventListener('invalid', () => {
+        if (cep.validity.patternMismatch) {
+          cep.setCustomValidity('Digite o CEP no formato 00000-000 ou 00000000');
+        }
+      });
     });
   </script>
 
