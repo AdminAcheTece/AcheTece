@@ -1,104 +1,310 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <title>Pagamento Aprovado - AcheTece</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>Pagamento Aprovado - AcheTece</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Open Graph para compartilhamento -->
-    <meta property="og:title" content="Pagamento confirmado - AcheTece">
-    <meta property="og:description" content="Seu pagamento foi aprovado. Acesse a plataforma e comece a divulgar seus teares.">
-    <meta property="og:image" content="{{ url_for('static', filename='logo.jpg', _external=True) }}">
-    <meta property="og:url" content="{{ url_for('pagamento_sucesso', _external=True) }}">
+  <!-- Open Graph para compartilhamento -->
+  <meta property="og:title" content="Pagamento confirmado - AcheTece">
+  <meta property="og:description" content="Seu pagamento foi aprovado. Acesse a plataforma e comece a divulgar seus teares.">
+  <meta property="og:image" content="{{ url_for('static', filename='logo.jpg', _external=True) }}">
+  <meta property="og:url" content="{{ url_for('pagamento_sucesso', _external=True) }}">
 
-    <!-- Ícone da aba (favicon) -->
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}"> 
-    
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-        }
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
 
-        .container {
-            max-width: 600px;
-            margin: 60px auto;
-            background: #fff;
-            padding: 32px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
+  <!-- CSS principal -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <!-- Header padrão (ÚLTIMO do head) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
 
-        h1 {
-            color: #2e7d32; /* verde escuro */
-            margin-bottom: 20px;
-        }
+  <style>
+    :root{
+      /* Paleta OLIVE (padrão do site) */
+      --olive:#7B7424;
+      --olive-600:#5E581C;
+      --olive-dark:#434326;
+      --olive-50:#F1F2E8;
+      --line-olive:#BFBFA8;
 
-        p {
-            color: #555;
-            font-size: 16px;
-            margin-bottom: 20px;
-            line-height: 1.6;
-        }
+      --bg-150:#EAEAE8;
+      --site-bg: var(--bg-150);
 
-        .botao-acao {
-            background-color: #8A00FF;
-            color: white;
-            padding: 14px 24px;
-            font-size: 16px;
-            font-weight: bold;
-            border: none;
-            border-radius: 10px;
-            text-decoration: none;
-            transition: background-color 0.3s ease;
-            display: inline-block;
-        }
+      /* CTA */
+      --lime:#B6F34D;
+      --lime-700:#A2E532;
 
-        .botao-acao:hover {
-            background-color: #002f91;
-        }
+      /* Neutros */
+      --text:#111318;
+      --muted:#5b5f6a;
 
-        .logo {
-            text-align: center;
-            margin-bottom: 30px;
-        }
+      /* Estado sucesso */
+      --success:#2e7d32;
+    }
 
-        .logo img {
-            max-height: 80px;
-        }
+    html, body{ max-width:100%; overflow-x:hidden; }
+    *, *::before, *::after{ box-sizing:border-box; }
 
-        .icone {
-            font-size: 60px;
-            color: #2e7d32;
-            margin-bottom: 10px;
-        }
+    /* ✅ faixa branca do topo + base (header.css cuida do padding-top) */
+    body{
+      background:#fff !important;
+      color:var(--text);
+      margin:0;
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    }
 
-        .suporte {
-            font-size: 14px;
-            color: #888;
-            margin-top: 20px;
-        }
+    /* ✅ miolo cinza (igual quem_somos/index) */
+    .faixa-cinza{
+      background: var(--site-bg);
+      padding: 16px 0 48px;
+    }
+    .page-outer{
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
 
-        .suporte a {
-            color: #8A00FF;
-            text-decoration: none;
-        }
+    /* Card central */
+    .card{
+      max-width: 720px;
+      margin: 18px auto 0;
+      background:#fff;
+      border:1px solid rgba(0,0,0,.10);
+      border-radius:18px;
+      padding: 30px 22px;
+      text-align:center;
+      box-shadow:none;
+    }
 
-        .suporte a:hover {
-            text-decoration: underline;
-        }
-    </style>
+    /* Logo dentro do card */
+    .logo-box{
+      display:flex;
+      justify-content:center;
+      margin: 6px 0 10px;
+    }
+    .logo-box img{
+      max-height: 72px; /* ajuste aqui se quiser maior */
+      width:auto;
+      display:block;
+    }
+
+    .icone{
+      font-size: 62px;
+      line-height: 1;
+      margin: 10px 0 6px;
+      color: var(--success);
+    }
+
+    h1{
+      margin: 6px 0 10px;
+      font-size: clamp(26px, 3.3vw, 34px);
+      letter-spacing: -0.01em;
+      color: var(--success);
+      font-weight: 800;
+    }
+
+    p{
+      margin: 0 auto;
+      max-width: 560px;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    .p-spacer{ margin-top: 12px; }
+
+    /* Botão padrão: preto -> lime (igual site) */
+    .botao-acao{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:44px;
+      padding: 10px 22px;
+      border:0;
+      border-radius:9999px;
+      background:#000;
+      color: var(--lime);
+      font-weight: 800;
+      font-size: 16px;
+      text-decoration:none;
+      cursor:pointer;
+      transition: background-color .15s ease, color .15s ease, transform .12s ease;
+      box-shadow:none !important;
+      margin-top: 18px;
+    }
+    .botao-acao:hover{
+      background: var(--lime);
+      color:#000;
+      transform: translateY(-2px);
+      text-decoration:none;
+    }
+    .botao-acao:active{
+      background: var(--lime-700);
+      color:#000;
+      transform: translateY(0);
+    }
+    .botao-acao:focus{ outline:none; }
+    .botao-acao:focus-visible{
+      outline:2px solid var(--lime);
+      outline-offset:2px;
+    }
+
+    /* Suporte */
+    .suporte{
+      margin-top: 16px;
+      font-size: 14px;
+      color:#6b6f79;
+    }
+    .suporte a{
+      color: var(--olive);
+      font-weight: 800;
+      text-decoration:none;
+    }
+    .suporte a:hover{ text-decoration:underline; }
+
+    @media (max-width:480px){
+      .card{ margin: 14px 0 0; padding: 26px 16px; border-radius:16px; }
+      .logo-box img{ max-height: 66px; }
+    }
+
+    /* ✅ mantém a faixa branca também em dark mode */
+    @media (prefers-color-scheme: dark){
+      html, body{ background:#fff !important; color: var(--text); }
+    }
+  </style>
 </head>
-<body>
 
-    <div class="container">
-        <div class="logo">
-            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
+<body class="header-v1">
+
+  <!-- ===== Header padrão (igual quem_somos/index) ===== -->
+  <header class="navbar">
+    <div class="header-left">
+      <div class="logo">
+        <a href="{{ url_for('index') }}" aria-label="Página inicial">
+          <img
+            src="{{ url_for('static', filename='Logo_Branco_AcheTece_sem_fundo.png') }}"
+            alt="Logo AcheTece"
+            decoding="async"
+            fetchpriority="high"
+          >
+        </a>
+      </div>
+    </div>
+
+    <!-- Links do topo (somente desktop) -->
+    <nav class="hdr-nav" aria-label="Navegação principal">
+      <a href="{{ url_for('quem_somos') }}">O AcheTece</a>
+      <a href="{{ url_for('malharia_info') }}">Como Funciona</a>
+      <a href="{{ url_for('contato') }}">Fale Conosco</a>
+    </nav>
+
+    <div class="header-right">
+      <div class="hdr-actions">
+        <a href="/login" class="btn-perfil" aria-label="Acessar sua conta da malharia" title="Acessar sua conta da malharia">
+          <span>Conta Malharia</span>
+        </a>
+
+        <!-- CASINHA (somente desktop) -->
+        <a href="{{ url_for('index') }}" class="btn-home" aria-label="Voltar ao início" title="Voltar ao início">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 10.5 12 3l9 7.5"></path>
+            <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
+            <path d="M9 21V12h6v9"></path>
+          </svg>
+        </a>
+
+        <!-- BOTÃO MENU (SÓ NO MOBILE) -->
+        <button class="btn-menu" id="openMenuBtn" type="button" aria-label="Abrir menu" aria-controls="mobileMenu" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M4 7h16M4 12h16M4 17h16"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== MENU MOBILE (SÓ NO MOBILE) ===== -->
+  <div class="mobile-menu-backdrop" id="menuBackdrop" aria-hidden="true"></div>
+
+  <nav class="mobile-menu" id="mobileMenu" aria-label="Menu do site">
+    <div class="menu-head">
+      <a href="{{ url_for('index') }}" class="menu-logo" aria-label="Ir para a busca">
+        <span class="menu-logoBox">
+          <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece" decoding="async">
+        </span>
+      </a>
+
+      <button class="menu-close" id="closeMenuBtn" type="button" aria-label="Fechar menu">
+        <svg class="x-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 6L18 18M18 6L6 18"></path>
+        </svg>
+      </button>
+    </div>
+
+    <div class="menu-body">
+      <a href="{{ url_for('index') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5Z"/>
+        </svg>
+        Buscar Tear
+      </a>
+
+      <a href="{{ url_for('malharia_info') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 16v-4"></path>
+          <path d="M12 8h.01"></path>
+        </svg>
+        Como Funciona
+      </a>
+
+      <a href="/login">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20 21a8 8 0 0 0-16 0"></path>
+          <circle cx="12" cy="8" r="4"></circle>
+        </svg>
+        Já sou cadastrado
+      </a>
+
+      <a href="{{ url_for('quem_somos') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 16v-4"></path>
+          <path d="M12 8h.01"></path>
+        </svg>
+        Quem Somos
+      </a>
+
+      <a href="{{ url_for('contato') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 4h16v14H5.5L4 19.5V4Z"></path>
+          <path d="M7 8h10"></path>
+          <path d="M7 12h7"></path>
+        </svg>
+        Fale conosco
+      </a>
+
+      <a href="{{ url_for('termos') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 2h9l3 3v17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"></path>
+          <path d="M9 9h6"></path>
+          <path d="M9 13h6"></path>
+          <path d="M9 17h6"></path>
+        </svg>
+        Termos e Políticas
+      </a>
+    </div>
+  </nav>
+
+  <!-- ✅ Conteúdo dentro do miolo cinza -->
+  <div class="faixa-cinza">
+    <div class="page-outer">
+
+      <div class="card" role="status" aria-live="polite">
+        <div class="logo-box">
+          <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
         </div>
 
         <div class="icone">✅</div>
@@ -106,18 +312,51 @@
         <h1>Pagamento Aprovado</h1>
 
         <p>
-            Seu pagamento foi confirmado com sucesso!<br>
-            Agora você pode acessar a plataforma normalmente.<br><br>
-            📬 Você receberá um e-mail com mais informações em instantes.
+          Seu pagamento foi confirmado com sucesso!<br>
+          Agora você pode acessar a plataforma normalmente.
+        </p>
+
+        <p class="p-spacer">
+          📬 Você receberá um e-mail com mais informações em instantes.
         </p>
 
         <a href="{{ url_for('login') }}" class="botao-acao">Ir para o login</a>
 
         <p class="suporte">
-            Caso não receba o e-mail em até 5 minutos,<br>
-            verifique sua caixa de spam ou <a href="https://wa.me/5547999999999" target="_blank">fale com nosso suporte</a>.
+          Caso não receba o e-mail em até 5 minutos,<br>
+          verifique sua caixa de spam ou
+          <a href="https://wa.me/5547999999999" target="_blank" rel="noopener">fale com nosso suporte</a>.
         </p>
+      </div>
+
     </div>
+  </div>
+
+  <!-- ===== JS: Menu mobile (igual index/quem_somos) ===== -->
+  <script>
+    (function(){
+      const openBtn = document.getElementById('openMenuBtn');
+      const closeBtn = document.getElementById('closeMenuBtn');
+      const backdrop = document.getElementById('menuBackdrop');
+
+      function openMenu(){
+        document.body.classList.add('menu-open');
+        if(openBtn) openBtn.setAttribute('aria-expanded','true');
+      }
+      function closeMenu(){
+        document.body.classList.remove('menu-open');
+        if(openBtn) openBtn.setAttribute('aria-expanded','false');
+      }
+
+      if(openBtn) openBtn.addEventListener('click', openMenu);
+      if(closeBtn) closeBtn.addEventListener('click', closeMenu);
+      if(backdrop) backdrop.addEventListener('click', closeMenu);
+
+      document.addEventListener('keydown', (e)=>{
+        if(e.key === 'Escape') closeMenu();
+      });
+    })();
+  </script>
 
 </body>
 </html>
