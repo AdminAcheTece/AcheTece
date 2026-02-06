@@ -37,16 +37,12 @@
       --text:#111;
       --muted:#555;
       --maxw:1280px;
-
-      /* Sucesso */
-      --ok:#1b7f3a;
-      --ok-soft:#e8f5e9;
     }
 
     html, body { max-width:100%; overflow-x:hidden; }
     *, *::before, *::after { box-sizing:border-box; }
 
-    /* ✅ “faixa branca” do topo (igual pagamento_erro/quem_somos) */
+    /* ✅ “faixa branca” do topo (igual pagamento_erro / quem_somos) */
     body{
       background:#fff !important;
       color:var(--text);
@@ -85,7 +81,7 @@
       margin-bottom:18px;
     }
     .logo-box img{
-      max-height:120px; /* ✅ igual pagamento_erro (ajuste aqui se quiser maior/menor) */
+      max-height:120px;
       width:auto;
       display:block;
     }
@@ -100,14 +96,20 @@
       margin:0 0 10px;
       font-size:28px;
       letter-spacing:-0.01em;
-      color:var(--ok);
+      color:#1f7a2a; /* verde sucesso */
       font-weight:800;
     }
     p{
-      margin:0 0 18px;
+      margin:0 0 16px;
       color:var(--muted);
       font-size:16px;
       line-height:1.55;
+      font-weight:600;
+    }
+    .hint{
+      margin-top:14px;
+      color:#6a6a6a;
+      font-size:13.5px;
       font-weight:600;
     }
 
@@ -129,19 +131,6 @@
     .botao-acao:focus{ outline:none; }
     .botao-acao:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
 
-    .suporte{
-      margin-top:16px;
-      font-size:14px;
-      color:#777;
-      font-weight:600;
-    }
-    .suporte a{
-      color:var(--olive);
-      text-decoration:none;
-      font-weight:800;
-    }
-    .suporte a:hover{ text-decoration:underline; }
-
     @media (max-width:560px){
       .pay-card{ padding:26px 18px; margin-top:18px; }
       h1{ font-size:24px; }
@@ -160,7 +149,7 @@
 
 <body class="header-v1">
 
-  <!-- ===== Cabeçalho (igual pagamento_erro/quem_somos) ===== -->
+  <!-- ===== Cabeçalho (igual pagamento_erro / quem_somos) ===== -->
   <header class="navbar">
     <div class="header-left">
       <div class="logo">
@@ -239,31 +228,29 @@
   <div class="faixa-cinza">
     <div class="page-outer">
 
-      <div class="pay-card">
+      <div class="pay-card" role="status" aria-live="polite">
         <div class="logo-box">
           <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
         </div>
 
         <div class="icone">✅</div>
 
-        <h1>Pagamento Aprovado</h1>
+        <h1>Pagamento aprovado</h1>
 
         <p>
           Seu pagamento foi confirmado com sucesso!<br>
-          Agora você pode acessar a plataforma normalmente.
-        </p>
-
-        <p>
-          📬 Você receberá um e-mail com mais informações em instantes.
+          Estamos validando seu acesso. Isso leva só alguns segundos.
         </p>
 
         <a href="{{ url_for('login') }}" class="botao-acao">Ir para o login</a>
 
-        <p class="suporte">
-          Caso não receba o e-mail em até 5 minutos,<br>
-          verifique sua caixa de spam ou
-          <a href="https://wa.me/5547999999999" target="_blank" rel="noopener">fale com nosso suporte</a>.
-        </p>
+        <div class="hint" id="hint">
+          Você será redirecionado automaticamente quando o acesso estiver liberado.
+        </div>
+
+        <noscript>
+          <div class="hint">Ative o JavaScript para validação automática. Você pode prosseguir pelo botão acima.</div>
+        </noscript>
       </div>
 
     </div>
@@ -287,7 +274,7 @@
     </div>
   </footer>
 
-  <!-- ===== JS: Menu mobile (igual pagamento_erro/quem_somos) ===== -->
+  <!-- ===== JS: Menu mobile (igual pagamento_erro / quem_somos) ===== -->
   <script>
     (function(){
       const openBtn = document.getElementById('openMenuBtn');
@@ -310,6 +297,40 @@
       document.addEventListener('keydown', (e)=>{
         if(e.key === 'Escape') closeMenu();
       });
+    })();
+  </script>
+
+  <!-- (Opcional) Validação automática do acesso e redirecionamento -->
+  <script>
+    (function () {
+      const urlParams = new URLSearchParams(window.location.search);
+      const ext = urlParams.get('ext'); // opcional
+      const maxTries = 90; // ~ 6 minutos (90 * 4s)
+      let tries = 0;
+
+      async function checarStatus() {
+        try {
+          const qs = ext ? ("?ext=" + encodeURIComponent(ext)) : "";
+          const res = await fetch("/api/pagamento_status" + qs, { cache: "no-store" });
+          if (res.ok) {
+            const js = await res.json();
+            if (js && js.status === "ativo") {
+              window.location.href = "/login";
+              return;
+            }
+          }
+        } catch (e) {}
+
+        tries++;
+        if (tries < maxTries) {
+          setTimeout(checarStatus, 4000);
+        } else {
+          const hint = document.getElementById("hint");
+          if (hint) hint.textContent = "Se preferir, clique em “Ir para o login” para continuar.";
+        }
+      }
+
+      setTimeout(checarStatus, 2500);
     })();
   </script>
 
