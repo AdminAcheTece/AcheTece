@@ -50,17 +50,27 @@
     /* ===== Wrapper padrão ===== */
     .page-outer{ max-width:1100px; margin:0 auto; padding:0 16px; }
 
-    /* ✅ Unificado dentro do MAIN (remove “faixa” entre seções) */
+    /* ✅ Faixa clara padrão abaixo do menu (como painel_malharia) */
+    .header-understrip{
+      background:#fff;
+      border-bottom:1px solid #eee;
+      height:28px;
+    }
+    @media (max-width:900px){
+      .header-understrip{ height:22px; }
+    }
+
+    /* ===== Área principal (cinza) ===== */
     .main-area{
       background:var(--site-bg);
-      padding:18px 0 42px;
+      padding:16px 0 42px; /* mantém tudo no mesmo fundo cinza */
     }
 
     /* ===== Botão "Voltar ao painel" (padrão performance) ===== */
     .top-back{
       display:flex;
       justify-content:center;
-      padding:0 0 18px; /* espaçamento abaixo do botão (sem criar faixa separada) */
+      padding:0 0 16px; /* só espaçamento (continua no cinza) */
     }
     .btn-top-back{
       display:inline-flex;
@@ -86,14 +96,13 @@
     .container{
       width:100%;
       max-width:640px;
-      margin:0 auto 44px; /* antes tinha margem-top; agora fica “colado” no fluxo do main */
+      margin:0 auto 44px;
       background:var(--card);
       border:1px solid #e8ecf5;
       border-radius:var(--radius);
       padding:24px 22px 20px;
       box-shadow:none !important;
     }
-
     @media (max-width:560px){
       .container{ margin:0 12px 28px; padding:20px 16px; }
     }
@@ -283,20 +292,14 @@
       align-items:start;
     }
     .footer-brand img{ height:44px; width:auto; display:block; }
-    .footer-cols{
-      display:grid;
-      grid-template-columns: repeat(2, minmax(180px, 240px));
-      gap:12px 28px;
-    }
     .footer-col h4{ margin:0 0 8px 0; font-size:14px; font-weight:800; color:#251c33; }
     .footer-col ul{ list-style:none; margin:0; padding:0; }
     .footer-col li+li{ margin-top:6px; }
-    .footer-col a{ color:#2a2535; text-decoration:none; font-size:14px; }
+    .footer-col a{ color:#2a2535; text-decoration:none; font-size:14px; font-weight:600; }
     .footer-col a:hover{ text-decoration:underline; }
 
     @media (max-width:900px){
       .footer-inner{ grid-template-columns:1fr; }
-      .footer-cols{ grid-template-columns:1fr; }
     }
 
     @media (prefers-color-scheme: dark){
@@ -338,7 +341,7 @@
           <span>Conta Malharia</span>
         </a>
 
-        <!-- Casinha (sempre à direita do Conta Malharia) -->
+        <!-- Casinha -->
         <a href="{{ url_for('index') }}" class="btn-home" aria-label="Voltar ao início" title="Voltar ao início">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M3 10.5 12 3l9 7.5"></path>
@@ -347,7 +350,7 @@
           </svg>
         </a>
 
-        <!-- Menu (somente mobile) -->
+        <!-- Menu (mobile) -->
         <button class="btn-menu" id="openMenuBtn" type="button" aria-label="Abrir menu" aria-controls="mobileMenu" aria-expanded="false">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
             <path d="M4 7h16M4 12h16M4 17h16"/>
@@ -356,6 +359,9 @@
       </div>
     </div>
   </header>
+
+  <!-- ✅ Faixa clara padrão abaixo do menu -->
+  <div class="header-understrip" aria-hidden="true"></div>
 
   <!-- ===== MENU MOBILE ===== -->
   <div class="mobile-menu-backdrop" id="menuBackdrop" aria-hidden="true"></div>
@@ -389,7 +395,7 @@
   <main class="main-area">
     <div class="page-outer">
 
-      <!-- ✅ BOTÃO "Voltar ao painel" no topo (sem criar faixa separada) -->
+      <!-- Botão "Voltar ao painel" no topo (em fundo cinza) -->
       <div class="top-back">
         <a class="btn-top-back" href="{{ url_for('painel_malharia') }}">← Voltar ao painel</a>
       </div>
@@ -507,21 +513,14 @@
         <img src="{{ url_for('static', filename='logo_simbolo.png') }}" alt="AcheTece">
       </div>
 
-      <div class="footer-cols">
-        <div class="footer-col">
-          <h4>Sobre nós</h4>
-          <ul>
-            <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
-            <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
-            <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
-            <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
-          </ul>
-        </div>
-
-        <div class="footer-col">
-          <h4>&nbsp;</h4>
-          <ul><li>&nbsp;</li></ul>
-        </div>
+      <div class="footer-col">
+        <h4>Sobre nós</h4>
+        <ul>
+          <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
+          <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
+          <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
+          <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
+        </ul>
       </div>
     </div>
   </footer>
@@ -549,6 +548,13 @@
       document.addEventListener('keydown', (e)=>{
         if(e.key === 'Escape') closeMenu();
       });
+
+      // (opcional) expõe altura do header para CSS que use --nav-h
+      function setNavH(){
+        const nav = document.querySelector('.navbar')?.offsetHeight || 0;
+        document.documentElement.style.setProperty('--nav-h', nav + 'px');
+      }
+      setNavH(); window.addEventListener('resize', setNavH);
     })();
   </script>
 
