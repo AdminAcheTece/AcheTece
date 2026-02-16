@@ -37,6 +37,7 @@ from email.utils import make_msgid, formataddr
 from authlib.integrations.flask_client import OAuth
 from training_catalog import TRAINING_CATALOG, get_module, get_lesson
 from sqlalchemy import UniqueConstraint
+from flask import render_template, abort, send_from_directory
 
 # SMTP direto (fallback)
 import smtplib, ssl
