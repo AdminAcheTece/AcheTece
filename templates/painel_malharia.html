@@ -246,6 +246,94 @@
 
     h2{ margin:0; color:#1d1d1d; }
 
+    /* ====== NOVO: AÇÕES RÁPIDAS (Teares x Treinamento) ====== */
+    .pm-quick{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:16px;
+      max-width:1100px;
+      margin: 10px auto 14px auto;
+      padding: 0 0; /* container já controla padding */
+    }
+
+    .pm-quick-card{
+      display:block;
+      text-decoration:none;
+      border:1px solid rgba(0,0,0,.08);
+      background:#fff;
+      border-radius:18px;
+      padding:16px 16px;
+      box-shadow: 0 6px 18px rgba(0,0,0,.06);
+      transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+      color: inherit;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .pm-quick-card:hover{
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(0,0,0,.10);
+    }
+
+    .pm-quick-title{
+      font-weight: 900;
+      font-size: 16px;
+      margin-bottom: 6px;
+      color:#111;
+      letter-spacing:-0.01em;
+    }
+
+    .pm-quick-desc{
+      font-size: 13px;
+      color:#444;
+      opacity: .92;
+      line-height: 1.35;
+      margin-bottom: 10px;
+    }
+
+    .pm-quick-cta{
+      font-weight: 900;
+      font-size: 13px;
+      color:#111;
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+    }
+
+    .pm-quick-cta svg{
+      width:16px; height:16px;
+      stroke: currentColor;
+      fill:none;
+      stroke-width:2;
+      stroke-linecap:round;
+      stroke-linejoin:round;
+      transform: translateY(0.5px);
+    }
+
+    /* Destaque do Treinamento (sem exagero) */
+    .pm-quick-highlight{
+      border-color: rgba(123,116,36,.35);
+      box-shadow: 0 0 0 3px rgba(182,243,77,.12), 0 6px 18px rgba(0,0,0,.06);
+    }
+
+    /* Label pequeno opcional */
+    .pm-quick-tag{
+      position:absolute;
+      top:12px;
+      right:12px;
+      font-size:11px;
+      font-weight:900;
+      padding:6px 10px;
+      border-radius:999px;
+      background: rgba(182,243,77,.95);
+      color:#000;
+      border:1px solid rgba(0,0,0,.10);
+    }
+
+    @media (max-width: 860px){
+      .pm-quick{ grid-template-columns: 1fr; }
+    }
+
     /* ===== Botões padrão (preto -> lime no hover) ===== */
     .btn{
       display:inline-flex; align-items:center; justify-content:center;
@@ -875,6 +963,33 @@
         <p style="text-align:center;margin:0 0 6px;">Bem-vindo(a), <strong>{{ nome_empresa }}</strong>!</p>
         <p class="painel-sub">Gerencie seus teares e assinatura em um só lugar.</p>
 
+        <!-- ✅ NOVO BLOCO: AÇÕES RÁPIDAS (VISÃO CLARA: TEARES x TREINAMENTO) -->
+        <div class="pm-quick" aria-label="Ações rápidas do painel">
+          <a class="pm-quick-card" href="#teares">
+            <div class="pm-quick-title">Teares</div>
+            <div class="pm-quick-desc">Ver tabela, cadastrar e editar teares da sua malharia.</div>
+            <div class="pm-quick-cta">
+              Abrir gestão de teares
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 18l6-6-6-6"></path>
+              </svg>
+            </div>
+          </a>
+
+          <a class="pm-quick-card pm-quick-highlight" href="{{ url_for('treinamento_home') }}">
+            <span class="pm-quick-tag">NOVO</span>
+            <div class="pm-quick-title">Treinamento Operacional</div>
+            <div class="pm-quick-desc">Acessar rotinas, padrões e conteúdos para o time operar com excelência.</div>
+            <div class="pm-quick-cta">
+              Acessar treinamento
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 18l6-6-6-6"></path>
+              </svg>
+            </div>
+          </a>
+        </div>
+        <!-- ✅ /NOVO BLOCO -->
+
         <!-- ===== Assinatura ===== -->
         <section id="assinatura" class="sub-wrap" aria-label="Assinatura e pagamento">
           <details class="sub-card" {% if banner_full %}open{% endif %}>
@@ -956,6 +1071,9 @@
           </details>
         </section>
         <!-- ===== /Assinatura ===== -->
+
+        <!-- ✅ ÂNCORA: destino do card "Teares" -->
+        <div id="teares"></div>
 
         <div class="sec-title">
           <h2>Teares Cadastrados:</h2>
