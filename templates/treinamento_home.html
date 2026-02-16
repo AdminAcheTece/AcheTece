@@ -140,6 +140,131 @@
       .hdr-text-btn{ padding:0 10px; font-size:12.5px; }
     }
 
+    /* ==========================
+       ✅ ÍNDICE DO TREINAMENTO
+       ========================== */
+    .train-wrap{
+      margin-top:10px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    .train-search{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:10px 12px;
+    }
+    .train-search input{
+      width:100%;
+      border:0;
+      outline:none;
+      font-size:14px;
+      background:transparent;
+    }
+    .train-search svg{
+      width:18px; height:18px;
+      stroke:#444; fill:none; stroke-width:2;
+      stroke-linecap:round; stroke-linejoin:round;
+      flex:0 0 auto;
+    }
+
+    .mod-grid{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:12px;
+    }
+    @media (max-width: 980px){ .mod-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 640px){ .mod-grid{ grid-template-columns: 1fr; } }
+
+    .mod-card{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:14px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      transition: transform .12s ease, border-color .12s ease;
+    }
+    .mod-card:hover{
+      transform: translateY(-2px);
+      border-color: rgba(182,243,77,.85);
+    }
+
+    .mod-top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .mod-title{
+      margin:0;
+      font-size:16px;
+      font-weight:900;
+      color:#111;
+      line-height:1.2;
+    }
+    .mod-pill{
+      height:28px;
+      padding:0 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:var(--olive-50);
+      font-weight:900;
+      font-size:12px;
+      white-space:nowrap;
+      flex:0 0 auto;
+    }
+
+    .mod-desc{
+      margin:0;
+      color:#555;
+      font-size:13px;
+      line-height:1.35;
+      min-height:34px;
+    }
+
+    .lesson-list{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      margin-top:4px;
+    }
+    .lesson-link{
+      text-decoration:none;
+      color:#222;
+      font-weight:800;
+      font-size:13px;
+      padding:8px 10px;
+      border-radius:12px;
+      border:1px solid #f0f0f0;
+      background:#fafafa;
+    }
+    .lesson-link:hover{
+      background:var(--olive-50);
+      border-color: var(--line-olive);
+      color: var(--olive);
+    }
+    .lesson-more{
+      font-size:12px;
+      color:#666;
+      font-weight:800;
+    }
+
+    .mod-actions{
+      margin-top:auto;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      align-items:center;
+    }
+
     /* CTA & Footer iguais ao painel */
     .cta-bar{
       background:#000; color:#fff; padding:20px 16px;
@@ -256,7 +381,7 @@
         {% if notif_count|int > 0 %}<span class="badge">{{ notif_count }}</span>{% endif %}
       </button>
 
-      <!-- Perfil (se você usa o mesmo menu do painel, pode colar aqui também) -->
+      <!-- Perfil -->
       <button class="profile-pill" id="profileToggle" type="button" aria-haspopup="menu" aria-expanded="false" title="Abrir menu do perfil">
         <span class="avatar avatar-ico" aria-hidden="true" style="border:0;background:transparent;width:auto;height:auto;">
           <svg class="user-ico" viewBox="0 0 24 24" aria-hidden="true">
@@ -293,12 +418,67 @@
       <h1 class="titulo">Treinamento Operacional</h1>
       <p class="painel-sub">Acesse rotinas, padrões e conteúdos operacionais do seu time.</p>
 
-      <!-- Aqui entra seu conteúdo do treinamento -->
-      <div style="background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;">
-        <strong>Conteúdo do Treinamento</strong>
-        <p style="margin:8px 0 0;color:#444;">
-          Coloque aqui o menu/índice do treinamento, módulos, cards, PDFs, vídeos etc.
-        </p>
+      <!-- ✅ Índice de módulos/aulas (recoloca a navegação que você “perdeu”) -->
+      <div class="train-wrap">
+
+        <div class="train-search">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="M21 21l-4.3-4.3"></path>
+          </svg>
+          <input id="modSearch" type="text" placeholder="Buscar módulo ou aula..." autocomplete="off">
+        </div>
+
+        {# Espera receber "modulos" do Flask: render_template("treinamento_home.html", modulos=...) #}
+        {% set modulos = (modulos if modulos is defined and modulos is not none else []) %}
+
+        {% if modulos|length %}
+          <div class="mod-grid" id="modGrid">
+            {% for m in modulos %}
+              <article class="mod-card" data-filter="{{ (m.titulo ~ ' ' ~ (m.descricao or '') ) | lower }}">
+                <div class="mod-top">
+                  <h3 class="mod-title">{{ m.titulo }}</h3>
+                  <span class="mod-pill">{{ (m.aulas|length) if (m.aulas is defined and m.aulas is not none) else 0 }} aulas</span>
+                </div>
+
+                {% if m.descricao %}
+                  <p class="mod-desc">{{ m.descricao }}</p>
+                {% else %}
+                  <p class="mod-desc">Acesse as aulas e materiais deste módulo.</p>
+                {% endif %}
+
+                <div class="lesson-list">
+                  {% set aulas = (m.aulas if m.aulas is defined and m.aulas is not none else []) %}
+                  {% for a in aulas[:3] %}
+                    <a class="lesson-link"
+                       href="{{ url_for('treinamento_aula', modulo_id=m.id, aula_id=a.id) }}">
+                      {{ a.titulo }}
+                    </a>
+                  {% endfor %}
+
+                  {% if aulas|length > 3 %}
+                    <span class="lesson-more">+ {{ aulas|length - 3 }} aulas</span>
+                  {% endif %}
+                </div>
+
+                <div class="mod-actions">
+                  <a class="hdr-text-btn" href="{{ url_for('treinamento_modulo', modulo_id=m.id) }}">
+                    Abrir módulo
+                  </a>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div style="background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;">
+            <strong>Nenhum módulo disponível.</strong>
+            <p style="margin:8px 0 0;color:#444;">
+              Para aparecer aqui, o Flask precisa passar <code>modulos</code> no <code>render_template</code>.
+              Ex.: <code>render_template('treinamento_home.html', modulos=SEUS_MODULOS)</code>
+            </p>
+          </div>
+        {% endif %}
+
       </div>
 
     </div>
@@ -349,6 +529,23 @@
     }
     setNavH();
     window.addEventListener('resize', setNavH);
+  })();
+</script>
+
+<!-- ✅ JS: busca/filtra módulos e aulas -->
+<script>
+  (function(){
+    const input = document.getElementById('modSearch');
+    const cards = Array.from(document.querySelectorAll('.mod-card'));
+    if(!input || !cards.length) return;
+
+    input.addEventListener('input', ()=>{
+      const q = (input.value || '').trim().toLowerCase();
+      cards.forEach(c=>{
+        const hay = ((c.getAttribute('data-filter') || '') + ' ' + (c.innerText || '').toLowerCase());
+        c.style.display = hay.includes(q) ? '' : 'none';
+      });
+    });
   })();
 </script>
 
