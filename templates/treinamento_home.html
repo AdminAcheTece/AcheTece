@@ -5,6 +5,7 @@
   <title>Treinamento Operacional - AcheTece</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+  <!-- Base -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
@@ -12,962 +13,812 @@
 
   <style>
     :root{
-      /* Paleta AcheTece (olive/lime) */
+      /* Paleta AcheTece (clara + destaques) */
       --olive:#7B7424;
       --olive-600:#5E581C;
       --olive-dark:#434326;
+
       --olive-50:#F1F2E8;
       --olive-100:#E6E7DE;
       --line-olive:#BFBFA8;
 
-      --lime:#B6F34D;
-      --lime-700:#A2E532;
-
-      /* Fundo */
       --bg-150:#EAEAE8;
       --site-bg: var(--bg-150);
 
-      /* Neutros */
-      --cinza-900:#111827;
-      --text:#1f1f1f;
-      --muted:#60636b;
-      --line:#cfd3dc;
-      --card:#ffffff;
+      --lime:#B6F34D;
+      --lime-700:#A2E532;
 
-      --maxw:1280px;
-      --content:1100px;
+      --text:#111827;
+      --muted:#4b5563;
+      --line:#cfd3dc;
+      --white:#ffffff;
+
+      --maxw:1180px;
+
+      /* Tipografia maior (bem mais visível) */
+      --h1: clamp(34px, 5vw, 64px);
+      --h2: clamp(22px, 3.2vw, 34px);
+      --p:  clamp(16px, 1.5vw, 20px);
+      --small: 14px;
     }
 
     html, body { max-width:100%; overflow-x:hidden; }
     *, *::before, *::after { box-sizing:border-box; }
 
     body{
-      background: var(--site-bg);
-      color:var(--cinza-900);
       margin:0;
+      background: var(--site-bg);
+      color: var(--text);
       font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
     }
 
-    /* layout base */
-    .faixa-ead{
-      background: var(--site-bg);
-      padding: 14px 0 48px;
+    /* =========================================================
+       HEADER NOVO (BRANCO, FIXO, CLEAN)
+       - Logo preta (ou arquivo preto)
+       - Links: O Treinamento / Módulos / Fale conosco
+       - Só a casinha para voltar ao Painel Malharia
+       ========================================================= */
+    .train-header{
+      position: sticky;
+      top: 0;
+      z-index: 9999;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(17,24,39,0.08);
     }
-    .page-outer{ max-width:var(--maxw); margin:0 auto; padding:0 16px; }
 
-    /* evita “retângulo branco gigante” herdado */
-    .page-outer,
-    .container{
-      background: transparent !important;
-      border: 0 !important;
-      box-shadow: none !important;
-      border-radius: 0 !important;
-    }
-
-    .container{ max-width:var(--content); margin:0 auto; padding:0 0 28px; }
-
-    /* =========================
-       HEADER: mesmos ícones do painel
-       ========================= */
-    .hdr-actions.painel-actions{
+    .th-inner{
+      max-width: var(--maxw);
+      margin: 0 auto;
+      padding: 14px 18px;
       display:flex;
       align-items:center;
-      gap:10px;
+      gap:18px;
     }
-    .hdr-actions.painel-actions .icon-btn,
-    .hdr-actions.painel-actions .profile-pill{
-      width:40px !important;
-      height:40px !important;
-      border-radius:12px !important;
-      border:1px solid #e4e4e4 !important;
-      background:#fff !important;
-      display:inline-flex !important;
-      align-items:center !important;
-      justify-content:center !important;
-      cursor:pointer;
-      padding:0 !important;
-      box-shadow:none !important;
+
+    .th-logo{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      text-decoration:none;
+      color: var(--text);
+      min-width: 210px;
+    }
+
+    .th-logo img{
+      height: 42px;
+      width: auto;
+      display:block;
+      /* IMPORTANTE:
+         Se você tiver logo preto, use no src do <img>.
+         Se sua logo for branca, você pode aplicar:
+         filter: invert(1);
+         (mas isso inverteria também uma logo já preta) */
+    }
+
+    .th-nav{
+      display:flex;
+      align-items:center;
+      gap:18px;
+      margin-left:auto;
+    }
+
+    .th-nav a{
+      text-decoration:none;
+      color: var(--text);
+      font-weight: 900;
+      font-size: 18px; /* maior */
+      padding: 10px 12px;
+      border-radius: 999px;
+      transition: background-color .15s ease, transform .12s ease;
+      white-space: nowrap;
+    }
+    .th-nav a:hover{
+      background: rgba(182,243,77,.35);
+      transform: translateY(-1px);
+    }
+
+    .th-right{
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+
+    .home-btn{
+      width:46px;
+      height:46px;
+      border-radius: 14px;
+      border: 1px solid rgba(17,24,39,0.12);
+      background: #fff;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      text-decoration:none;
       transition: background-color .15s ease, transform .12s ease;
     }
-    .hdr-actions.painel-actions .icon-btn:hover,
-    .hdr-actions.painel-actions .profile-pill:hover{
-      background:var(--olive-50) !important;
-      transform:translateY(-1px);
+    .home-btn:hover{
+      background: rgba(182,243,77,.35);
+      transform: translateY(-1px);
     }
-    .hdr-actions.painel-actions .icon-btn svg{
-      width:20px !important;
-      height:20px !important;
-      stroke:#111 !important;
-      fill:none !important;
-      stroke-width:2 !important;
+    .home-btn svg{
+      width:22px;
+      height:22px;
+      stroke:#111;
+      fill:none;
+      stroke-width:2;
       stroke-linecap:round;
       stroke-linejoin:round;
     }
 
-    /* Botão textual Teares (header) */
-    .hdr-text-btn{
-      height:40px;
-      padding:0 14px;
-      border-radius:9999px;
-      border:1px solid #e4e4e4;
-      background:#fff;
-      color:#000;
-      font-weight:900;
-      font-size:13.5px;
-      text-decoration:none;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      cursor:pointer;
-      white-space:nowrap;
-      transition: background-color .15s ease, transform .12s ease;
+    @media (max-width: 860px){
+      .th-inner{ padding: 12px 14px; }
+      .th-logo{ min-width:auto; }
+      .th-nav a{ font-size:16px; padding:9px 10px; }
     }
-    .hdr-text-btn:hover{ background:var(--lime); transform:translateY(-1px); }
-    .hdr-text-btn:active{ background:var(--lime-700); transform:translateY(0); }
-    .hdr-text-btn:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
-    @media (max-width:520px){ .hdr-text-btn{ padding:0 10px; font-size:12.5px; } }
-
-    /* =========================
-       Breadcrumb (EaD vibe)
-       ========================= */
-    .ead-crumb{
-      margin-top: 10px;
-      background: rgba(255,255,255,0.75);
-      border:1px solid var(--line);
-      border-radius: 16px;
-      padding: 10px 12px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-    }
-    .crumb-left{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      min-width:0;
-    }
-    .crumb-dot{
-      width:10px;height:10px;border-radius:999px;
-      background: var(--lime);
-      border: 1px solid rgba(0,0,0,.15);
-      flex:0 0 auto;
-    }
-    .crumb-text{
-      font-weight:900;
-      color:#111;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .crumb-sub{
-      font-size:12.5px;
-      color: var(--muted);
-      font-weight:800;
-      white-space:nowrap;
+    @media (max-width: 640px){
+      .th-nav{ gap:8px; }
+      .th-nav a{ font-size:15px; padding:8px 8px; }
+      .th-logo img{ height:38px; }
+      .home-btn{ width:44px; height:44px; }
     }
 
-    /* =========================
-       HERO (diferente do painel)
-       ========================= */
+    /* =========================================================
+       LAYOUT
+       ========================================================= */
+    .wrap{
+      max-width: var(--maxw);
+      margin: 0 auto;
+      padding: 26px 18px 56px;
+    }
+
+    /* HERO (inspirado no anexo) */
     .hero{
-      margin-top:12px;
-      background: linear-gradient(180deg, #F8F9F4 0%, #FFFFFF 60%, #FFFFFF 100%);
-      border: 1px solid var(--line);
-      border-radius: 22px;
-      padding: 18px;
-      position: relative;
+      background: linear-gradient(180deg, rgba(255,255,255,0.82), rgba(255,255,255,0.70));
+      border: 1px solid rgba(17,24,39,0.08);
+      border-radius: 28px;
+      padding: clamp(18px, 3vw, 34px);
+      box-shadow: 0 18px 50px rgba(17,24,39,0.06);
       overflow:hidden;
+      position:relative;
     }
-    .hero:before{
+
+    .hero::after{
       content:"";
       position:absolute;
-      inset:-40px -40px auto auto;
-      width:220px; height:220px;
-      background: radial-gradient(circle at 30% 30%, rgba(182,243,77,.55), rgba(182,243,77,0) 70%);
+      right:-120px;
+      top:-120px;
+      width: 320px;
+      height: 320px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, rgba(182,243,77,.55), rgba(182,243,77,0));
       pointer-events:none;
-      transform: rotate(12deg);
     }
+
     .hero-grid{
       display:grid;
-      grid-template-columns: 1.15fr .85fr;
-      gap:14px;
-      align-items:stretch;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 22px;
+      align-items: stretch;
       position:relative;
-      z-index:1;
-    }
-    @media (max-width:900px){ .hero-grid{ grid-template-columns:1fr; } }
-
-    .hero-title{
-      margin:0;
-      color: var(--olive-dark);
-      font-size: 30px;
-      font-weight: 900;
-      letter-spacing:-0.02em;
-      line-height:1.08;
-    }
-    .hero-sub{
-      margin:8px 0 0;
-      color:#2b2b2b;
-      font-weight:800;
-      font-size:14.5px;
-      line-height:1.35;
-      max-width: 56ch;
     }
 
-    .hero-actions{
-      margin-top:12px;
+    @media (max-width: 980px){
+      .hero-grid{ grid-template-columns: 1fr; }
+    }
+
+    .hero-kicker{
       display:flex;
-      gap:10px;
-      flex-wrap:wrap;
       align-items:center;
+      gap:10px;
+      font-weight: 900;
+      color: var(--olive-dark);
+      letter-spacing: .01em;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    .dot{
+      width:10px; height:10px;
+      border-radius: 50%;
+      background: var(--lime);
+      box-shadow: 0 0 0 6px rgba(182,243,77,.25);
+    }
+
+    .hero h1{
+      margin: 0 0 10px;
+      font-size: var(--h1);
+      line-height: 1.03;
+      letter-spacing: -0.03em;
+    }
+
+    .hero p{
+      margin: 0 0 18px;
+      font-size: var(--p);
+      line-height: 1.45;
+      color: rgba(17,24,39,0.78);
+      font-weight: 700;
+    }
+
+    .hero-cta{
+      display:flex;
+      gap:12px;
+      flex-wrap: wrap;
+      align-items:center;
+      margin-top: 10px;
     }
 
     .btn-primary{
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      height:42px;
-      padding:0 18px;
-      border-radius:9999px;
+      height:54px;
+      padding: 0 22px;
+      border-radius: 999px;
       border:0;
       background:#000;
       color: var(--lime);
-      font-weight:900;
-      font-size:14px;
+      font-weight: 900;
+      font-size: 18px;
       text-decoration:none;
       cursor:pointer;
-      transition:.15s background-color, .15s color, .12s transform;
-      white-space:nowrap;
+      transition: background-color .15s ease, color .15s ease, transform .12s ease;
+      white-space: nowrap;
     }
-    .btn-primary:hover{ background:var(--lime); color:#000; transform:translateY(-2px); }
-    .btn-primary:active{ background:var(--lime-700); color:#000; transform:translateY(0); }
-    .btn-primary:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
+    .btn-primary:hover{ background: var(--lime); color:#000; transform: translateY(-2px); }
+    .btn-primary:active{ background: var(--lime-700); transform: translateY(0); }
 
     .btn-ghost{
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      height:42px;
-      padding:0 16px;
-      border-radius:9999px;
-      border:1px solid var(--line);
-      background:#fff;
-      color:#111;
-      font-weight:900;
-      font-size:14px;
+      height:54px;
+      padding: 0 22px;
+      border-radius: 999px;
+      border: 1px solid rgba(17,24,39,0.18);
+      background: rgba(255,255,255,0.75);
+      color: #111;
+      font-weight: 900;
+      font-size: 18px;
       text-decoration:none;
       cursor:pointer;
-      transition:.15s background-color, .12s transform;
-      white-space:nowrap;
+      transition: background-color .15s ease, transform .12s ease, border-color .15s ease;
+      white-space: nowrap;
     }
-    .btn-ghost:hover{ background:var(--olive-50); transform:translateY(-1px); }
-    .btn-ghost:active{ background:var(--olive-100); transform:translateY(0); }
-    .btn-ghost:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
+    .btn-ghost:hover{ background:#fff; border-color: rgba(182,243,77,.9); transform: translateY(-2px); }
+    .btn-ghost:active{ transform: translateY(0); }
 
-    /* progress card */
+    /* CARD de progresso (lado direito) */
     .progress-card{
-      background: rgba(255,255,255,.85);
-      border:1px solid var(--line);
-      border-radius: 18px;
-      padding: 14px;
+      background: rgba(255,255,255,0.86);
+      border: 1px solid rgba(17,24,39,0.10);
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: 0 10px 30px rgba(17,24,39,0.06);
       display:flex;
       flex-direction:column;
-      justify-content:space-between;
-      gap:10px;
-      min-height: 132px;
+      gap: 14px;
+      height:100%;
     }
+
     .pc-top{
       display:flex;
-      justify-content:space-between;
-      gap:10px;
       align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
     }
-    .pc-label{
-      font-weight:900;
-      color:#111;
-      font-size:13px;
+    .pc-title{
+      font-weight: 900;
+      font-size: 18px;
+      margin:0;
     }
-    .pc-percent{
-      font-weight:900;
-      color:#111;
-      font-size:13px;
-      background: var(--olive-50);
-      border:1px solid var(--line);
-      border-radius:999px;
-      padding:6px 10px;
-      white-space:nowrap;
+    .pc-pill{
+      height: 36px;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(17,24,39,0.12);
+      background: rgba(241,242,232,0.9);
+      font-weight: 900;
+      font-size: 16px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      white-space: nowrap;
     }
+
     .bar{
-      height:12px;
-      background:#f0f2f6;
-      border:1px solid #e7eaf1;
-      border-radius:999px;
+      width: 100%;
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(17,24,39,0.08);
       overflow:hidden;
+      border: 1px solid rgba(17,24,39,0.08);
     }
     .bar > span{
       display:block;
       height:100%;
-      width:0%;
-      background: linear-gradient(90deg, rgba(182,243,77,.95), rgba(123,116,36,.65));
+      width: 0%;
+      background: linear-gradient(90deg, var(--lime), rgba(182,243,77,.65));
     }
+
     .pc-stats{
       display:grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap:8px;
-      margin-top:2px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
     }
+    @media (max-width: 520px){
+      .pc-stats{ grid-template-columns: 1fr; }
+    }
+
     .stat{
       background:#fff;
-      border:1px solid #eef0f4;
-      border-radius:14px;
-      padding:10px;
+      border: 1px solid rgba(17,24,39,0.10);
+      border-radius: 18px;
+      padding: 14px;
+      text-align:center;
     }
-    .stat b{
-      display:block;
-      font-size:15px;
-      color:#111;
-      font-weight:900;
-      line-height:1.1;
+    .stat .n{
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      margin:0;
     }
-    .stat span{
-      display:block;
-      margin-top:4px;
-      font-size:11.5px;
-      color: var(--muted);
-      font-weight:800;
+    .stat .l{
+      font-size: 14px;
+      font-weight: 900;
+      color: rgba(17,24,39,0.62);
+      margin-top: 2px;
     }
-    @media (max-width:520px){ .pc-stats{ grid-template-columns:1fr; } }
 
-    /* =========================
-       Seções (benefícios / resultados)
-       ========================= */
-    .section{
-      margin-top:14px;
-      background:#fff;
-      border:1px solid var(--line);
+    /* “O que entrega” */
+    .deliver{
+      margin-top: 18px;
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    @media (max-width: 980px){ .deliver{ grid-template-columns: 1fr; } }
+
+    .dcard{
+      background: rgba(255,255,255,0.85);
+      border: 1px solid rgba(17,24,39,0.10);
       border-radius: 22px;
       padding: 16px;
+      box-shadow: 0 10px 28px rgba(17,24,39,0.05);
     }
-    .sec-hd{
-      display:flex;
-      align-items:flex-end;
-      justify-content:space-between;
-      gap:12px;
-      flex-wrap:wrap;
-      margin-bottom:10px;
-    }
-    .sec-title{
-      margin:0;
-      color:#111;
-      font-size:18px;
-      font-weight:900;
-      letter-spacing:-0.01em;
-    }
-    .sec-desc{
-      margin:4px 0 0;
-      color: var(--muted);
-      font-weight:800;
-      font-size:13.5px;
-      line-height:1.35;
-    }
-
-    .feat-grid{
-      display:grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap:10px;
-      margin-top:10px;
-    }
-    @media (max-width:900px){ .feat-grid{ grid-template-columns:1fr; } }
-
-    .feat{
-      border:1px solid #eef0f4;
-      border-radius: 18px;
-      padding:12px;
-      background: linear-gradient(180deg, #FFFFFF, #FBFBF8);
-    }
-    .feat-top{
+    .dtop{
       display:flex;
       align-items:center;
-      gap:10px;
-      margin-bottom:6px;
+      gap: 12px;
+      margin-bottom: 8px;
     }
-    .ico{
-      width:36px;height:36px;
-      border-radius:14px;
-      background: var(--olive-50);
-      border:1px solid var(--line);
+    .dico{
+      width:44px; height:44px;
+      border-radius: 16px;
+      background: rgba(241,242,232,0.95);
+      border: 1px solid rgba(17,24,39,0.08);
       display:grid;
       place-items:center;
       flex:0 0 auto;
     }
-    .ico svg{ width:18px;height:18px; stroke:#111; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
-    .feat b{
-      font-size:14px;
-      font-weight:900;
-      color:#111;
+    .dico svg{
+      width:22px; height:22px;
+      stroke: #111;
+      fill:none;
+      stroke-width:2;
+      stroke-linecap:round;
+      stroke-linejoin:round;
     }
-    .feat p{
+    .dtitle{
+      font-weight: 900;
+      font-size: 18px;
       margin:0;
-      color:#555;
-      font-weight:800;
-      font-size:13px;
-      line-height:1.35;
+    }
+    .dtext{
+      margin:0;
+      color: rgba(17,24,39,0.74);
+      font-weight: 700;
+      font-size: 16px;
+      line-height: 1.4;
     }
 
-    /* =========================
-       Índice de módulos (novo design)
-       ========================= */
-    .train-wrap{ margin-top:14px; display:flex; flex-direction:column; gap:12px; }
+    /* =========================================================
+       MÓDULOS
+       ========================================================= */
+    .section{
+      margin-top: 26px;
+    }
 
-    .train-search{
+    .sec-head{
       display:flex;
-      gap:10px;
-      align-items:center;
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:18px;
-      padding:12px 12px;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
     }
-    .train-search input{
+
+    .sec-head h2{
+      margin:0;
+      font-size: var(--h2);
+      letter-spacing: -0.02em;
+    }
+    .sec-head p{
+      margin:0;
+      color: rgba(17,24,39,0.66);
+      font-weight: 800;
+      font-size: 16px;
+    }
+
+    .search{
+      width: 100%;
+      margin-top: 10px;
+      background: rgba(255,255,255,0.85);
+      border: 1px solid rgba(17,24,39,0.10);
+      border-radius: 18px;
+      padding: 12px 14px;
+      display:flex;
+      align-items:center;
+      gap: 12px;
+    }
+    .search svg{
+      width: 22px; height: 22px;
+      stroke:#111; fill:none; stroke-width:2;
+      stroke-linecap:round; stroke-linejoin:round;
+      opacity:.7;
+      flex:0 0 auto;
+    }
+    .search input{
       width:100%;
       border:0;
       outline:none;
-      font-size:14px;
-      background:transparent;
-      font-weight:700;
+      background: transparent;
+      font-size: 18px;
+      font-weight: 800;
       color:#111;
     }
-    .train-search svg{
-      width:18px; height:18px;
-      stroke:#444; fill:none; stroke-width:2;
-      stroke-linecap:round; stroke-linejoin:round;
-      flex:0 0 auto;
-    }
 
-    .mod-grid{
+    .mods{
+      margin-top: 14px;
       display:grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap:12px;
+      gap: 14px;
     }
-    @media (max-width: 980px){ .mod-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    @media (max-width: 640px){ .mod-grid{ grid-template-columns: 1fr; } }
+    @media (max-width: 980px){ .mods{ grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 640px){ .mods{ grid-template-columns: 1fr; } }
 
-    .mod-card{
-      background: linear-gradient(180deg, #FFFFFF, #FBFBF8);
-      border:1px solid var(--line);
-      border-radius: 22px;
-      padding:14px;
+    .mcard{
+      background: rgba(255,255,255,0.9);
+      border: 1px solid rgba(17,24,39,0.10);
+      border-radius: 24px;
+      padding: 18px;
+      box-shadow: 0 12px 34px rgba(17,24,39,0.06);
+      transition: transform .12s ease, border-color .12s ease;
       display:flex;
       flex-direction:column;
-      gap:10px;
-      transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease;
-      position:relative;
-      overflow:hidden;
+      gap: 12px;
+      min-height: 220px;
     }
-    .mod-card:hover{
-      transform: translateY(-2px);
+    .mcard:hover{
+      transform: translateY(-3px);
       border-color: rgba(182,243,77,.85);
-      box-shadow: 0 0 0 3px rgba(182,243,77,.16);
     }
 
-    .mod-top{
+    .mhead{
       display:flex;
       align-items:flex-start;
       justify-content:space-between;
-      gap:10px;
+      gap: 12px;
     }
-    .mod-title{
+    .mtitle{
       margin:0;
-      font-size:15.5px;
-      font-weight:900;
-      color:#111;
-      line-height:1.2;
-      letter-spacing:-0.01em;
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
     }
-
-    .mod-badges{
+    .mpills{
       display:flex;
-      gap:8px;
-      align-items:center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content:flex-end;
       flex:0 0 auto;
     }
     .pill{
-      height:28px;
-      padding:0 10px;
-      border-radius:999px;
-      border:1px solid var(--line);
-      background: var(--olive-50);
-      font-weight:900;
-      font-size:12px;
-      white-space:nowrap;
-      color:#111;
+      height: 34px;
+      padding: 0 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(17,24,39,0.12);
+      background: rgba(241,242,232,0.95);
+      font-weight: 900;
+      font-size: 14px;
       display:inline-flex;
       align-items:center;
       justify-content:center;
-    }
-    .pill.ok{
-      background:#e9f7ef;
-      border-color:#bfe7cc;
-      color:#135b2b;
-    }
-    .pill.warn{
-      background:#fff3e6;
-      border-color:#ffd4a8;
-      color:#7a3d00;
+      white-space: nowrap;
     }
 
-    .mod-desc{
+    .mdesc{
       margin:0;
-      color:#555;
-      font-size:13px;
-      line-height:1.35;
-      font-weight:800;
-      min-height:36px;
+      color: rgba(17,24,39,0.72);
+      font-weight: 700;
+      font-size: 16px;
+      line-height: 1.35;
+      min-height: 46px;
     }
 
-    .mod-progress{
-      margin-top:2px;
-      display:flex;
-      align-items:center;
-      gap:10px;
-    }
-    .mod-progress .bar{ flex:1 1 auto; height:10px; }
-    .mod-progress .pct{
-      font-weight:900;
-      font-size:12px;
-      color:#111;
-      white-space:nowrap;
-    }
-
-    .mod-actions{
+    .mfoot{
       margin-top:auto;
       display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      justify-content:flex-end;
       align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      flex-wrap: wrap;
     }
-    .mod-actions a{
-      text-decoration:none;
+
+    .mini{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      min-width: 190px;
+      flex:1 1 auto;
     }
-    .mod-btn{
-      height:40px;
-      padding:0 14px;
-      border-radius:9999px;
-      border:1px solid #e4e4e4;
-      background:#fff;
-      color:#000;
-      font-weight:900;
-      font-size:13.5px;
+    .mini .bar{ height: 10px; }
+    .mini small{
+      font-weight: 900;
+      color: rgba(17,24,39,0.66);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .mcta{
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      cursor:pointer;
-      transition: background-color .15s ease, transform .12s ease;
-      white-space:nowrap;
+      height: 46px;
+      padding: 0 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(17,24,39,0.16);
+      background: #fff;
+      color:#111;
+      font-weight: 900;
+      font-size: 16px;
+      text-decoration:none;
+      transition: background-color .15s ease, transform .12s ease, border-color .15s ease;
+      white-space: nowrap;
     }
-    .mod-btn:hover{ background:var(--lime); transform:translateY(-1px); }
-    .mod-btn:active{ background:var(--lime-700); transform:translateY(0); }
-    .mod-btn:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
-
-    /* “marca d’água” suave */
-    .mod-card:after{
-      content:"";
-      position:absolute;
-      right:-60px;
-      bottom:-60px;
-      width:180px; height:180px;
-      background: radial-gradient(circle at 30% 30%, rgba(123,116,36,.16), rgba(123,116,36,0) 70%);
-      pointer-events:none;
-      transform: rotate(-10deg);
+    .mcta:hover{
+      background: rgba(182,243,77,.35);
+      border-color: rgba(182,243,77,.85);
+      transform: translateY(-2px);
     }
 
-    /* =========================
-       CTA & Footer (padrão global)
-       ========================= */
-    .cta-bar{
-      background:#000; color:#fff; padding:20px 16px;
-      display:flex; align-items:center; gap:16px; flex-wrap:wrap;
-      border-top:1px solid rgba(255,255,255,0.06);
-      justify-content:flex-start;
-      margin-top:0;
-    }
-    .cta-text h3{ margin:0 0 4px 0; font-size:18px; font-weight:900; line-height:1.2; }
-    .cta-text p{ margin:0; font-size:15px; opacity:.9; }
-
-    .cta-bar .cta-btn{
-      display:inline-flex !important;
-      align-items:center !important;
-      justify-content:center !important;
-      height:44px !important;
-      padding:0 22px !important;
-      border-radius:9999px !important;
-      font-weight:800 !important;
-      text-decoration:none !important;
-      white-space:nowrap !important;
-      background:#fff !important;
-      color:#000 !important;
-      border:0 !important;
-      box-shadow:none !important;
-      cursor:pointer;
-      transition: background-color .15s ease, color .15s ease, transform .15s ease;
-    }
-    .cta-bar .cta-btn:hover{ background:var(--lime) !important; color:#111 !important; transform:translateY(-1px); }
-    .cta-bar .cta-btn:active{ background:var(--lime-700) !important; color:#111 !important; transform:translateY(0); }
-
-    .site-footer{
-      background:#fff;color:#211a2a;border-top:1px solid #eee;padding:18px 16px 28px;
-    }
-    .footer-inner{
-      max-width:var(--maxw);margin:0 auto;display:grid;grid-template-columns:auto 1fr;gap:20px 28px;align-items:start;
-    }
-    .footer-brand img{ height:44px;width:auto;display:block; }
-    .footer-cols{ display:grid;grid-template-columns: repeat(2, minmax(180px, 240px));gap:12px 28px; }
-    .footer-col h4{ margin:0 0 8px 0;font-size:14px;font-weight:900;color:#251c33; }
-    .footer-col ul{ list-style:none;margin:0;padding:0; }
-    .footer-col li+li{ margin-top:6px; }
-    .footer-col a{ color:#2a2535;text-decoration:none;font-size:14px; }
-    .footer-col a:hover{ text-decoration:underline; }
-
-    @media (max-width: 900px){
-      .footer-inner{ grid-template-columns:1fr; }
-      .footer-cols{ grid-template-columns:1fr; }
-    }
-
-    @media (prefers-color-scheme: dark){
-      html, body{ background: var(--site-bg) !important; color: var(--cinza-900); }
+    /* Footer minimal */
+    .mini-footer{
+      margin-top: 34px;
+      color: rgba(17,24,39,0.55);
+      font-weight: 800;
+      font-size: 14px;
+      text-align:center;
+      padding: 10px 0 0;
     }
   </style>
-
-  <!-- Header padrão global -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
 </head>
 
-<body class="header-v1">
+<body>
 
 {% set nome_empresa =
     (empresa.apelido if empresa and empresa.apelido else
      (empresa.nome_fantasia if empresa and empresa.nome_fantasia else
       (empresa.razao_social if empresa and empresa.razao_social else 'Minha Malharia'))) %}
 
-{% set chat_count = (chat_nao_lidos if chat_nao_lidos is defined else 0) %}
-{% set notif_count = (notificacoes if notificacoes is defined else 0) %}
-{% set modules_list = (modules if modules is defined and modules is not none else []) %}
+{# "modules" vem do main.py: modules=modules_view #}
+{% set modules = (modules if modules is defined and modules is not none else []) %}
 {% set gp = (global_percent if global_percent is defined and global_percent is not none else 0) %}
 
-{# Totais para estatísticas #}
-{% set total_modules = modules_list|length %}
-{% set total_lessons = 0 %}
-{% for m in modules_list %}
-  {% set total_lessons = total_lessons + (m.lessons_count if m.lessons_count is defined else 0) %}
+{# Totais para cards #}
+{% set ns = namespace(lessons_total=0) %}
+{% for m in modules %}
+  {% set ns.lessons_total = ns.lessons_total + (m.lessons_count if m.lessons_count is defined else 0) %}
 {% endfor %}
 
-{# “Continuar” aponta para o primeiro módulo não 100%, senão o primeiro #}
-{% set continue_key = (modules_list[0].key if total_modules > 0 else None) %}
-{% for m in modules_list %}
-  {% if (m.percent is defined) and (m.percent|int < 100) and (continue_key is none or continue_key == (modules_list[0].key if total_modules>0 else None)) %}
-    {% set continue_key = m.key %}
-  {% endif %}
-{% endfor %}
+<!-- HEADER NOVO -->
+<header class="train-header">
+  <div class="th-inner">
 
-<header class="navbar">
-  <div class="header-left">
-    <div class="logo">
-      <a href="{{ url_for('index') }}" aria-label="Página inicial">
-        <img
-          src="{{ url_for('static', filename='Logo_Branco_AcheTece_sem_fundo.png') }}"
-          alt="Logo AcheTece"
-          decoding="async"
-          fetchpriority="high"
-        >
-      </a>
-    </div>
-  </div>
+    <!-- Logo (use aqui seu arquivo preto) -->
+    <a class="th-logo" href="#top" aria-label="Ir para o topo do Treinamento">
+      <!-- TROQUE o filename abaixo pelo nome EXATO do seu logo preto -->
+      <img src="{{ url_for('static', filename='Logo_Preto_AcheTece_sem_fundo.png') }}" alt="AcheTece" decoding="async">
+    </a>
 
-  <nav class="hdr-nav" aria-label="Navegação principal">
-    <a href="{{ url_for('quem_somos') }}">O AcheTece</a>
-    <a href="{{ url_for('malharia_info') }}">Como Funciona</a>
-    <a href="{{ url_for('contato') }}">Fale Conosco</a>
-  </nav>
+    <nav class="th-nav" aria-label="Navegação do Treinamento">
+      <a href="#top">O Treinamento</a>
+      <a href="#modulos">Módulos</a>
+      <a href="{{ url_for('contato') }}">Fale conosco</a>
+    </nav>
 
-  <div class="header-right">
-    <div class="hdr-actions painel-actions">
-
-      <!-- No Treinamento aparece "Teares" -->
-      <a href="{{ url_for('painel_malharia') }}" class="hdr-text-btn" title="Voltar para o Painel (Teares)">
-        Teares
-      </a>
-
-      <!-- Chat -->
-      <a href="{{ url_for('fale_conosco') }}" class="icon-btn badge-wrap" aria-label="Chat" title="Chat">
+    <div class="th-right">
+      <!-- Casinha: volta ao Painel Malharia -->
+      <a class="home-btn" href="{{ url_for('painel_malharia') }}" aria-label="Voltar ao Painel Malharia" title="Voltar ao Painel Malharia">
         <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path>
-        </svg>
-        {% if chat_count|int > 0 %}<span class="badge">{{ chat_count }}</span>{% endif %}
-      </a>
-
-      <!-- Notificações -->
-      <button id="notifToggle" class="icon-btn badge-wrap" aria-label="Notificações" title="Notificações" type="button">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
-          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-        </svg>
-        {% if notif_count|int > 0 %}<span class="badge">{{ notif_count }}</span>{% endif %}
-      </button>
-
-      <!-- Perfil -->
-      <button class="profile-pill" id="profileToggle" type="button" aria-haspopup="menu" aria-expanded="false" title="Abrir menu do perfil">
-        <span class="avatar avatar-ico" aria-hidden="true" style="border:0;background:transparent;width:auto;height:auto;">
-          <svg class="user-ico" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z"></path>
-            <path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path>
-          </svg>
-        </span>
-      </button>
-
-      <!-- Casinha -->
-      <a href="{{ url_for('index') }}" class="btn-home" aria-label="Voltar ao início" title="Voltar ao início">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M3 10.5 12 3l9 7.5"></path>
           <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
           <path d="M9 21V12h6v9"></path>
         </svg>
       </a>
-
-      <!-- Menu mobile -->
-      <button class="btn-menu" id="openMenuBtn" type="button" aria-label="Abrir menu" aria-controls="mobileMenu" aria-expanded="false">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-          <path d="M4 7h16M4 12h16M4 17h16"/>
-        </svg>
-      </button>
-
     </div>
+
   </div>
 </header>
 
-<div class="faixa-ead">
-  <div class="page-outer">
-    <div class="container">
+<div class="wrap" id="top">
 
-      <!-- Breadcrumb / contexto -->
-      <div class="ead-crumb" aria-label="Contexto do treinamento">
-        <div class="crumb-left">
-          <span class="crumb-dot" aria-hidden="true"></span>
-          <div style="min-width:0;">
-            <div class="crumb-text">Treinamento Operacional</div>
-            <div class="crumb-sub">Ambiente EaD • {{ nome_empresa }}</div>
-          </div>
+  <!-- HERO -->
+  <section class="hero" aria-label="Apresentação do Treinamento">
+    <div class="hero-grid">
+
+      <div>
+        <div class="hero-kicker">
+          <span class="dot" aria-hidden="true"></span>
+          <span>Treinamento Operacional • Ambiente EaD • {{ nome_empresa }}</span>
         </div>
-        <div class="crumb-sub">Acompanhe o progresso e avance por módulos</div>
+
+        <h1>Treinamento Operacional</h1>
+        <p>
+          Formação prática para elevar padrão, reduzir defeitos e aumentar produtividade —
+          com conteúdos objetivos, rastreáveis e aplicáveis no chão de fábrica.
+        </p>
+
+        <div class="hero-cta">
+          <a class="btn-primary" href="#modulos">Ver módulos</a>
+          <a class="btn-ghost" href="{{ url_for('treinamento_home') }}#modulos">Continuar treinamento</a>
+        </div>
       </div>
 
-      <!-- HERO -->
-      <section class="hero" aria-label="Apresentação do treinamento">
-        <div class="hero-grid">
-          <div>
-            <h1 class="hero-title">Treinamento Operacional</h1>
-            <p class="hero-sub">
-              Formação prática para elevar padrão, reduzir defeitos e aumentar produtividade — com conteúdos objetivos, rastreáveis e aplicáveis no chão de fábrica.
+      <aside class="progress-card" aria-label="Progresso geral do treinamento">
+        <div class="pc-top">
+          <p class="pc-title">Progresso geral</p>
+          <span class="pc-pill">{{ gp|int }}%</span>
+        </div>
+
+        <div class="bar" aria-hidden="true">
+          <span style="width: {{ gp|int }}%;"></span>
+        </div>
+
+        <div class="pc-stats">
+          <div class="stat">
+            <p class="n">{{ modules|length }}</p>
+            <div class="l">Módulos</div>
+          </div>
+          <div class="stat">
+            <p class="n">{{ ns.lessons_total }}</p>
+            <div class="l">Aulas</div>
+          </div>
+          <div class="stat">
+            <p class="n">
+              {% if gp|int >= 100 %}Concluído{% else %}Em andamento{% endif %}
             </p>
-
-            <div class="hero-actions">
-              {% if continue_key %}
-                <a class="btn-primary" href="{{ url_for('treinamento_modulo', module_key=continue_key) }}">
-                  Continuar treinamento
-                </a>
-              {% else %}
-                <a class="btn-primary" href="{{ url_for('treinamento_home') }}">Abrir treinamento</a>
-              {% endif %}
-              <a class="btn-ghost" href="#modulos">Ver módulos</a>
-            </div>
-          </div>
-
-          <aside class="progress-card" aria-label="Progresso geral">
-            <div class="pc-top">
-              <div class="pc-label">Progresso Geral</div>
-              <div class="pc-percent">{{ gp|int }}%</div>
-            </div>
-
-            <div class="bar" aria-label="Barra de progresso">
-              <span style="width: {{ gp|int }}%;"></span>
-            </div>
-
-            <div class="pc-stats">
-              <div class="stat">
-                <b>{{ total_modules }}</b>
-                <span>Módulos</span>
-              </div>
-              <div class="stat">
-                <b>{{ total_lessons }}</b>
-                <span>Aulas</span>
-              </div>
-              <div class="stat">
-                <b>{% if gp|int >= 100 %}Concluído{% else %}Em andamento{% endif %}</b>
-                <span>Status</span>
-              </div>
-            </div>
-          </aside>
-        </div>
-      </section>
-
-      <!-- O que é / Benefícios -->
-      <section class="section" aria-label="Objetivo e ganhos">
-        <div class="sec-hd">
-          <div>
-            <h2 class="sec-title">O que este treinamento entrega</h2>
-            <p class="sec-desc">Uma jornada curta, direta e operacional — para padronizar, treinar e manter consistência.</p>
+            <div class="l">Status</div>
           </div>
         </div>
-
-        <div class="feat-grid">
-          <div class="feat">
-            <div class="feat-top">
-              <div class="ico" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"></path></svg>
-              </div>
-              <b>Padrão mínimo e rotina</b>
-            </div>
-            <p>O time aprende o “jeito certo” de operar, registrar e agir antes do defeito virar perda.</p>
-          </div>
-
-          <div class="feat">
-            <div class="feat-top">
-              <div class="ico" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><path d="M3 3v18h18"></path><path d="M7 13l3 3 7-7"></path></svg>
-              </div>
-              <b>Redução de defeitos</b>
-            </div>
-            <p>Menos barramento, variação, retrabalho e desperdício — com causa e ação imediata.</p>
-          </div>
-
-          <div class="feat">
-            <div class="feat-top">
-              <div class="ico" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><path d="M12 2v20"></path><path d="M2 12h20"></path></svg>
-              </div>
-              <b>Treino contínuo</b>
-            </div>
-            <p>Conteúdos prontos para onboarding e reciclagem — sem depender de “quem sabe mais” no turno.</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- MÓDULOS -->
-      <section id="modulos" class="section" aria-label="Jornada de aprendizagem">
-        <div class="sec-hd">
-          <div>
-            <h2 class="sec-title">Jornada de Aprendizagem</h2>
-            <p class="sec-desc">Escolha um módulo para avançar. O progresso é registrado por aula.</p>
-          </div>
-        </div>
-
-        <div class="train-wrap">
-
-          <div class="train-search" aria-label="Buscar módulo">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="11" cy="11" r="7"></circle>
-              <path d="M21 21l-4.3-4.3"></path>
-            </svg>
-            <input id="modSearch" type="text" placeholder="Buscar módulo..." autocomplete="off">
-          </div>
-
-          {% if modules_list|length %}
-            <div class="mod-grid" id="modGrid">
-              {% for m in modules_list %}
-                {% set pct = (m.percent|int if m.percent is defined else 0) %}
-                {% set status_label = 'Concluído' if pct >= 100 else ('Em andamento' if pct > 0 else 'Não iniciado') %}
-
-                <article class="mod-card" data-filter="{{ ((m.title or '') ~ ' ' ~ (m.desc or '')) | lower }}">
-                  <div class="mod-top">
-                    <h3 class="mod-title">{{ m.title }}</h3>
-                    <div class="mod-badges">
-                      <span class="pill {% if pct>=100 %}ok{% elif pct>0 %}warn{% endif %}">{{ status_label }}</span>
-                      <span class="pill">{{ m.lessons_count if m.lessons_count is defined else 0 }} aulas</span>
-                    </div>
-                  </div>
-
-                  <p class="mod-desc">{{ m.desc if m.desc else 'Acesse as aulas e materiais deste módulo.' }}</p>
-
-                  <div class="mod-progress" aria-label="Progresso do módulo">
-                    <div class="bar"><span style="width: {{ pct }}%;"></span></div>
-                    <div class="pct">{{ pct }}%</div>
-                  </div>
-
-                  <div class="mod-actions">
-                    <a class="mod-btn" href="{{ url_for('treinamento_modulo', module_key=m.key) }}">Abrir módulo</a>
-                  </div>
-                </article>
-              {% endfor %}
-            </div>
-          {% else %}
-            <div style="background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;">
-              <strong>Nenhum módulo disponível.</strong>
-              <p style="margin:8px 0 0;color:#444;font-weight:800;">
-                Verifique se o Flask está passando <code>modules</code> no <code>render_template</code>.
-              </p>
-            </div>
-          {% endif %}
-        </div>
-      </section>
+      </aside>
 
     </div>
+
+    <!-- O que entrega -->
+    <div class="deliver" aria-label="O que este treinamento entrega">
+      <div class="dcard">
+        <div class="dtop">
+          <div class="dico" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M20 6 9 17l-5-5"></path>
+            </svg>
+          </div>
+          <p class="dtitle">Padrão mínimo e rotina</p>
+        </div>
+        <p class="dtext">
+          O time aprende o “jeito certo” de operar, registrar e agir antes do defeito virar perda.
+        </p>
+      </div>
+
+      <div class="dcard">
+        <div class="dtop">
+          <div class="dico" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M4 19V5"></path>
+              <path d="M8 17V9"></path>
+              <path d="M12 17V7"></path>
+              <path d="M16 17v-5"></path>
+              <path d="M20 17v-3"></path>
+            </svg>
+          </div>
+          <p class="dtitle">Redução de defeitos</p>
+        </div>
+        <p class="dtext">
+          Menos barramento, variação e retrabalho — com causa provável + ação imediata.
+        </p>
+      </div>
+
+      <div class="dcard">
+        <div class="dtop">
+          <div class="dico" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 2v20"></path>
+              <path d="M2 12h20"></path>
+            </svg>
+          </div>
+          <p class="dtitle">Treino contínuo</p>
+        </div>
+        <p class="dtext">
+          Conteúdos prontos para onboarding e reciclagem — sem depender de “quem sabe mais” no turno.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- MÓDULOS -->
+  <section class="section" id="modulos" aria-label="Módulos do treinamento">
+    <div class="sec-head">
+      <div>
+        <h2>Jornada de Aprendizagem</h2>
+        <p>Escolha um módulo para avançar. O progresso é registrado por aula.</p>
+      </div>
+    </div>
+
+    <div class="search" role="search">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"></circle>
+        <path d="M21 21l-4.3-4.3"></path>
+      </svg>
+      <input id="modSearch" type="text" placeholder="Buscar módulo..." autocomplete="off" />
+    </div>
+
+    {% if modules|length %}
+      <div class="mods" id="modsGrid">
+        {% for m in modules %}
+          <article class="mcard" data-filter="{{ (m.title ~ ' ' ~ (m.desc or '') ) | lower }}">
+            <div class="mhead">
+              <h3 class="mtitle">{{ m.title }}</h3>
+              <div class="mpills">
+                <span class="pill">{{ (m.percent if m.percent is defined else 0) | int }}%</span>
+                <span class="pill">{{ (m.lessons_count if m.lessons_count is defined else 0) | int }} aulas</span>
+              </div>
+            </div>
+
+            <p class="mdesc">{{ m.desc or 'Acesse as aulas e materiais deste módulo.' }}</p>
+
+            <div class="mfoot">
+              <div class="mini" aria-label="Barra de progresso do módulo">
+                <div class="bar" aria-hidden="true">
+                  <span style="width: {{ (m.percent if m.percent is defined else 0) | int }}%;"></span>
+                </div>
+                <small>{{ (m.percent if m.percent is defined else 0) | int }}%</small>
+              </div>
+
+              <a class="mcta" href="{{ url_for('treinamento_modulo', module_key=m.key) }}">
+                Abrir módulo
+              </a>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="margin-top:14px;background:#fff;border:1px solid rgba(17,24,39,0.10);border-radius:22px;padding:18px;font-weight:800;">
+        Nenhum módulo disponível.
+      </div>
+    {% endif %}
+  </section>
+
+  <div class="mini-footer">
+    Treinamento Operacional • AcheTece
   </div>
+
 </div>
 
-<!-- CTA padrão global -->
-<section class="cta-bar">
-  <div class="cta-text">
-    <h3>É proprietário de uma malharia?</h3>
-    <p>Cadastre sua malharia e comece a receber novos pedidos.</p>
-  </div>
-  <a href="{{ url_for('malharia_info') }}" class="cta-btn">Cadastrar</a>
-</section>
-
-<!-- Footer padrão global -->
-<footer class="site-footer">
-  <div class="footer-inner">
-    <div class="footer-brand">
-      <img src="{{ url_for('static', filename='logo_simbolo.png') }}" alt="AcheTece">
-    </div>
-
-    <div class="footer-cols">
-      <div class="footer-col">
-        <h4>Sobre nós</h4>
-        <ul>
-          <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
-          <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
-          <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
-          <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
-        </ul>
-      </div>
-
-      <div class="footer-col">
-        <h4>&nbsp;</h4>
-        <ul><li>&nbsp;</li></ul>
-      </div>
-    </div>
-  </div>
-</footer>
-
-<!-- JS: medir altura do header -->
 <script>
-  (function(){
-    function setNavH(){
-      const nav = document.querySelector('.navbar');
-      const h = nav ? nav.offsetHeight : 0;
-      document.documentElement.style.setProperty('--nav-h', h + 'px');
-    }
-    setNavH();
-    window.addEventListener('resize', setNavH);
-  })();
-</script>
-
-<!-- JS: busca/filtra módulos -->
-<script>
+  // Busca simples (módulos)
   (function(){
     const input = document.getElementById('modSearch');
-    const cards = Array.from(document.querySelectorAll('.mod-card'));
+    const cards = Array.from(document.querySelectorAll('.mcard'));
     if(!input || !cards.length) return;
 
     input.addEventListener('input', ()=>{
