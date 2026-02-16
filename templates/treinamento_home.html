@@ -9,7 +9,7 @@
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
 
-  <!-- ✅ Fonte nova (mais “fina” e agradável, estilo referência) -->
+  <!-- Fonte nova (mais fina/agradável) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -21,7 +21,7 @@
       --olive-dark:#434326;
       --olive-50:#F1F2E8;
 
-      --bg-150:#EAEAE8;          /* fundo cinza claro (mantém) */
+      --bg-150:#EAEAE8;
       --site-bg: var(--bg-150);
 
       --lime:#B6F34D;
@@ -32,7 +32,7 @@
       --line:#d7dbe3;
 
       --maxw:1200px;
-      --navH:84px;               /* altura “lógica” do topo (ajustado via JS) */
+      --navH:84px;
     }
 
     html, body { max-width:100%; overflow-x:hidden; }
@@ -46,7 +46,7 @@
     }
 
     /* =========================
-       ✅ Topbar branca arredondada (FIXA)
+       Topbar branca arredondada (FIXA)
        ========================= */
     .topbar-wrap{
       position:fixed;
@@ -54,7 +54,7 @@
       left:0;
       right:0;
       z-index:9999;
-      pointer-events:none; /* permite clique só dentro do container */
+      pointer-events:none;
     }
     .topbar{
       pointer-events:auto;
@@ -82,10 +82,15 @@
       align-items:center;
       text-decoration:none;
     }
+
+    /* ✅ AJUSTE 2: logo bem maior (proporção próxima do botão casinha) */
     .brand img{
-      height:34px;
+      height:44px;          /* era 34px */
       width:auto;
       display:block;
+    }
+    @media (max-width: 680px){
+      .brand img{ height:40px; }
     }
 
     .nav-links{
@@ -100,7 +105,7 @@
       color:#111;
       font-weight:700;
       letter-spacing:-0.01em;
-      font-size:18px;            /* ✅ maior */
+      font-size:18px;
       padding:10px 8px;
       border-radius:14px;
       transition: background-color .15s ease, transform .12s ease;
@@ -139,63 +144,201 @@
       stroke-linejoin:round;
     }
 
-    /* ✅ Conteúdo rola por baixo do topo fixo */
+    /* Conteúdo rola por baixo do topo fixo */
     main{
       padding-top: calc(var(--navH) + 22px);
     }
 
     /* =========================
-       ✅ HERO (fonte grande, centralizada)
+       HERO grande (centralizado)
        ========================= */
     .hero{
       max-width:var(--maxw);
       margin:0 auto;
       padding:26px 18px 10px;
-      text-align:center;         /* ✅ centralizado como referência */
+      text-align:center;
     }
-
     .hero h1{
       margin:0;
-      font-size: clamp(44px, 6vw, 86px);  /* ✅ bem grande */
+      font-size: clamp(44px, 6vw, 86px);
       line-height: 0.92;
       letter-spacing:-0.03em;
-      font-weight:800;           /* Manrope fica “limpo” mesmo em bold */
+      font-weight:800;
       color:#222;
     }
     .hero p{
       margin:14px auto 0;
       max-width: 980px;
-      font-size: clamp(18px, 2.1vw, 28px); /* ✅ grande e legível */
+      font-size: clamp(18px, 2.1vw, 28px);
       line-height:1.25;
       color:#3b3b3b;
       font-weight:500;
     }
 
     /* =========================
-       ✅ MÓDULOS (sem os elementos que você pediu para excluir)
-       - Sem “pílula” do topo do treinamento
-       - Sem botões “continuar/ver módulos”
-       - Sem barra de busca
-       - Sem texto “Escolha um módulo...”
-       - Sem breadcrumb “AcheTece • Treinamento...”
-       - Sem “Treinamento” como seção extra
+       ✅ AJUSTE 1: Status completo do curso (Progresso Geral)
        ========================= */
     .section{
       max-width:var(--maxw);
       margin:0 auto;
-      padding: 22px 18px 38px;
+      padding: 18px 18px 34px;
     }
 
+    .progress-card{
+      background:#fff;
+      border:1px solid rgba(17,24,39,0.10);
+      border-radius:24px;
+      padding:16px 16px 14px;
+      box-shadow: 0 10px 28px rgba(17,24,39,0.06);
+      display:flex;
+      align-items:stretch;
+      justify-content:space-between;
+      gap:16px;
+      overflow:hidden;
+    }
+
+    .progress-left{
+      flex: 1 1 auto;
+      min-width: 260px;
+    }
+
+    .progress-title{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:10px;
+    }
+    .progress-title h3{
+      margin:0;
+      font-size:18px;
+      font-weight:800;
+      letter-spacing:-0.02em;
+    }
+    .progress-badge{
+      height:34px;
+      padding:0 14px;
+      border-radius:999px;
+      border:1px solid rgba(17,24,39,0.10);
+      background: rgba(182,243,77,.18);
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:800;
+      font-size:14px;
+      color:#111;
+      white-space:nowrap;
+    }
+
+    .progress-bar{
+      height:12px;
+      border-radius:999px;
+      background: rgba(17,24,39,0.08);
+      overflow:hidden;
+      border:1px solid rgba(17,24,39,0.06);
+    }
+    .progress-bar > span{
+      display:block;
+      height:100%;
+      width: 0%;
+      background: linear-gradient(90deg, rgba(182,243,77,1), rgba(123,116,36,1));
+      border-radius:999px;
+      transition: width .25s ease;
+    }
+
+    .progress-metrics{
+      margin-top:12px;
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:10px;
+    }
+    .metric{
+      background:#fff;
+      border:1px solid rgba(17,24,39,0.10);
+      border-radius:18px;
+      padding:12px 12px;
+      text-align:center;
+    }
+    .metric .num{
+      display:block;
+      font-size:22px;
+      font-weight:800;
+      letter-spacing:-0.02em;
+      color:#111;
+      line-height:1.1;
+    }
+    .metric .lbl{
+      display:block;
+      margin-top:2px;
+      font-size:13px;
+      font-weight:700;
+      color:#4b5563;
+    }
+
+    .progress-right{
+      flex:0 0 260px;
+      border-left:1px solid rgba(17,24,39,0.08);
+      padding-left:16px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap:10px;
+    }
+    .status-pill{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      height:44px;
+      padding:0 14px;
+      border-radius:999px;
+      border:1px solid rgba(17,24,39,0.10);
+      background: rgba(241,242,232,0.85);
+      font-weight:800;
+      color:#111;
+      font-size:14px;
+      white-space:nowrap;
+    }
+    .dot{
+      width:10px;height:10px;border-radius:999px;
+      background: rgba(182,243,77,1);
+      box-shadow: 0 0 0 4px rgba(182,243,77,.18);
+    }
+    .hint{
+      margin:0;
+      font-size:13px;
+      color:#6b7280;
+      font-weight:600;
+      line-height:1.3;
+    }
+
+    @media (max-width: 980px){
+      .progress-card{
+        flex-direction:column;
+      }
+      .progress-right{
+        border-left:0;
+        padding-left:0;
+        border-top:1px solid rgba(17,24,39,0.08);
+        padding-top:12px;
+        flex: 0 0 auto;
+      }
+    }
+
+    /* =========================
+       Módulos
+       ========================= */
     .mods-grid{
       display:grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap:16px;
-      margin-top: 8px;
+      margin-top: 16px;
+      padding-bottom: 4px;
     }
     @media (max-width: 980px){ .mods-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     @media (max-width: 680px){
       .topbar{ border-radius:24px; padding:12px 14px; }
-      .nav-links{ display:none; } /* mobile: simplifica para ficar clean */
+      .nav-links{ display:none; }
       .brand{ min-width:auto; }
       .mods-grid{ grid-template-columns: 1fr; }
     }
@@ -226,7 +369,7 @@
 
     .mod-title{
       margin:0;
-      font-size:20px;            /* ✅ maior */
+      font-size:20px;
       font-weight:800;
       letter-spacing:-0.02em;
       line-height:1.15;
@@ -258,7 +401,7 @@
     .mod-desc{
       margin:0;
       color:#4b5563;
-      font-size:15px;            /* ✅ maior */
+      font-size:15px;
       line-height:1.35;
       font-weight:500;
       min-height: 42px;
@@ -292,7 +435,6 @@
       transform: translateY(-1px);
     }
 
-    /* Estado vazio */
     .empty{
       background:#fff;
       border:1px solid rgba(17,24,39,0.10);
@@ -311,24 +453,18 @@
       font-size:15px;
       line-height:1.35;
     }
-
-    /* (Opcional) Se quiser manter CTA/rodapé do painel, pode reativar depois.
-       Aqui eu NÃO coloquei para ficar “clean” como você pediu (somente necessário). */
   </style>
 </head>
 
 <body>
 
-{% set chat_count = (chat_nao_lidos if chat_nao_lidos is defined else 0) %}
-{% set notif_count = (notificacoes if notificacoes is defined else 0) %}
-
-<!-- ✅ Topbar branca fixa (arredondada, afastada das laterais) -->
+<!-- ✅ Topbar branca fixa -->
 <div class="topbar-wrap">
   <header class="topbar" id="topbar">
     <div class="brand">
-      <!-- ✅ Logo em preto (troque o filename pelo seu arquivo preto) -->
+      <!-- Troque o filename pelo seu arquivo preto real -->
       <a href="{{ url_for('treinamento_home') }}" aria-label="Treinamento - Início">
-        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
+        <img src="{{ url_for('static', filename='Logo_Preto_AcheTece_sem_fundo.png') }}" alt="AcheTece">
       </a>
     </div>
 
@@ -338,7 +474,6 @@
       <a href="{{ url_for('contato') }}">Fale conosco</a>
     </nav>
 
-    <!-- ✅ Único botão/ícone à direita: casinha para voltar ao Painel Malharia -->
     <a class="home-btn" href="{{ url_for('painel_malharia') }}" aria-label="Voltar ao Painel Malharia" title="Voltar ao Painel Malharia">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M3 10.5 12 3l9 7.5"></path>
@@ -350,7 +485,7 @@
 </div>
 
 <main>
-  <!-- ✅ HERO grande (centralizado) -->
+  <!-- HERO -->
   <section class="hero" id="o-treinamento">
     <h1>Treinamento Operacional</h1>
     <p>
@@ -359,10 +494,78 @@
     </p>
   </section>
 
-  <!-- ✅ Módulos (direto ao ponto, sem extras que você pediu para remover) -->
-  <section class="section" id="modulos">
+  <!-- ✅ Progresso Geral (status completo do curso) -->
+  <section class="section" aria-label="Progresso do curso">
     {% set modules = (modules if modules is defined and modules is not none else []) %}
+    {% set global_percent = (global_percent if global_percent is defined and global_percent is not none else 0) %}
 
+    {# tenta usar valores enviados pelo Flask (se existirem); caso não existam, calcula um resumo simples #}
+    {% set total_modules = modules|length %}
+    {% set total_lessons = (total_lessons if total_lessons is defined and total_lessons is not none else 0) %}
+    {% if total_lessons == 0 %}
+      {% for m in modules %}
+        {% set total_lessons = total_lessons + (m.lessons_count if m.lessons_count is defined and m.lessons_count is not none else 0) %}
+      {% endfor %}
+    {% endif %}
+
+    {% set done_lessons = (done_lessons if done_lessons is defined and done_lessons is not none else None) %}
+    {% if done_lessons is none %}
+      {# aproximação: usa global_percent sobre total_lessons #}
+      {% set done_lessons = ((global_percent|int) * (total_lessons|int) / 100) | round | int %}
+    {% endif %}
+
+    {% set status_text = (status_text if status_text is defined and status_text is not none else None) %}
+    {% if status_text is none %}
+      {% if global_percent|int >= 100 %}
+        {% set status_text = "Concluído" %}
+      {% elif global_percent|int > 0 %}
+        {% set status_text = "Em andamento" %}
+      {% else %}
+        {% set status_text = "Não iniciado" %}
+      {% endif %}
+    {% endif %}
+
+    <div class="progress-card">
+      <div class="progress-left">
+        <div class="progress-title">
+          <h3>Progresso geral</h3>
+          <span class="progress-badge">{{ global_percent|int }}%</span>
+        </div>
+
+        <div class="progress-bar" aria-label="Barra de progresso geral">
+          <span style="width: {{ global_percent|int }}%;"></span>
+        </div>
+
+        <div class="progress-metrics" aria-label="Resumo do progresso">
+          <div class="metric">
+            <span class="num">{{ total_modules }}</span>
+            <span class="lbl">Módulos</span>
+          </div>
+          <div class="metric">
+            <span class="num">{{ total_lessons }}</span>
+            <span class="lbl">Aulas</span>
+          </div>
+          <div class="metric">
+            <span class="num">{{ done_lessons }}</span>
+            <span class="lbl">Concluídas</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="progress-right" aria-label="Status do curso">
+        <div class="status-pill">
+          <span class="dot" aria-hidden="true"></span>
+          {{ status_text }}
+        </div>
+        <p class="hint">
+          O progresso é registrado por aula e consolidado aqui.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Módulos -->
+  <section class="section" id="modulos" aria-label="Módulos do treinamento">
     {% if modules|length %}
       <div class="mods-grid">
         {% for m in modules %}
@@ -382,7 +585,6 @@
             {% endif %}
 
             <div class="mod-actions">
-              <!-- ✅ Usa seu endpoint real: treinamento_modulo(module_key) -->
               <a class="btn-open" href="{{ url_for('treinamento_modulo', module_key=m.key) }}">Abrir módulo</a>
             </div>
           </article>
@@ -391,7 +593,7 @@
     {% else %}
       <div class="empty">
         <strong>Nenhum módulo disponível.</strong>
-        <p>Verifique se o Flask está enviando <code>modules</code> no <code>render_template</code>.</p>
+        <p>Verifique se o Flask está enviando <code>modules</code> e <code>global_percent</code> no <code>render_template</code>.</p>
       </div>
     {% endif %}
   </section>
@@ -402,7 +604,7 @@
     function setNavH(){
       const bar = document.getElementById('topbar');
       const h = bar ? bar.offsetHeight : 84;
-      document.documentElement.style.setProperty('--navH', (h + 28) + 'px'); // + folga do topo
+      document.documentElement.style.setProperty('--navH', (h + 28) + 'px');
     }
     setNavH();
     window.addEventListener('resize', setNavH);
