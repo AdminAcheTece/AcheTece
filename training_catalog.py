@@ -17,7 +17,7 @@ TRAINING_CATALOG: List[Dict[str, Any]] = [
                 "title": "Fluxo ponta a ponta (fio → tear → rolo → revisão → expedição)",
                 "minutes": 12,
                 # arquivo protegido (fica em training_files/)
-                "file": "m0_fluxo.pdf",
+                "file": "m0_onboarding.pdf",
                 "summary": "Entender o processo completo e onde nascem os principais desperdícios.",
             },
             {
