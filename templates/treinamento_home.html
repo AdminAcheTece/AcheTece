@@ -8,26 +8,34 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&display=swap" rel="stylesheet">
 
   <style>
     :root{
+      /* Paleta AcheTece (olive/lime) */
       --olive:#7B7424;
       --olive-600:#5E581C;
       --olive-dark:#434326;
       --olive-50:#F1F2E8;
+      --olive-100:#E6E7DE;
       --line-olive:#BFBFA8;
-
-      --bg-150:#EAEAE8;
-      --site-bg: var(--bg-150);
 
       --lime:#B6F34D;
       --lime-700:#A2E532;
 
+      /* Fundo */
+      --bg-150:#EAEAE8;
+      --site-bg: var(--bg-150);
+
+      /* Neutros */
       --cinza-900:#111827;
+      --text:#1f1f1f;
+      --muted:#60636b;
       --line:#cfd3dc;
+      --card:#ffffff;
 
       --maxw:1280px;
+      --content:1100px;
     }
 
     html, body { max-width:100%; overflow-x:hidden; }
@@ -40,9 +48,14 @@
       font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
     }
 
-    .faixa-cinza{ background: var(--site-bg); padding:16px 0 48px; }
+    /* layout base */
+    .faixa-ead{
+      background: var(--site-bg);
+      padding: 14px 0 48px;
+    }
     .page-outer{ max-width:var(--maxw); margin:0 auto; padding:0 16px; }
 
+    /* evita “retângulo branco gigante” herdado */
     .page-outer,
     .container{
       background: transparent !important;
@@ -51,25 +64,11 @@
       border-radius: 0 !important;
     }
 
-    .container{ max-width:1100px; margin:0 auto; padding:0 16px 28px; }
+    .container{ max-width:var(--content); margin:0 auto; padding:0 0 28px; }
 
-    h1.titulo{
-      text-align:center;
-      margin:10px 0 6px;
-      color:var(--olive-dark);
-      font-size:28px;
-      font-weight:900;
-      letter-spacing:-0.02em;
-    }
-    .painel-sub{
-      text-align:center;
-      margin:0 0 14px;
-      font-weight:800;
-      font-size:14.5px;
-      color:#2b2b2b;
-    }
-
-    /* === mesmo estilo dos ícones do painel === */
+    /* =========================
+       HEADER: mesmos ícones do painel
+       ========================= */
     .hdr-actions.painel-actions{
       display:flex;
       align-items:center;
@@ -105,17 +104,7 @@
       stroke-linejoin:round;
     }
 
-    /* Badge (caso style.css não tenha) */
-    .badge-wrap{ position:relative; }
-    .badge{
-      position:absolute; top:-6px; right:-6px; min-width:16px; height:16px;
-      padding:0 4px; border-radius:999px;
-      background:#ff6b00; color:#fff;
-      font-size:11px; display:flex; align-items:center; justify-content:center; line-height:1;
-      border:2px solid #fff;
-    }
-
-    /* Botão Teares/Treinamento no header */
+    /* Botão textual Teares (header) */
     .hdr-text-btn{
       height:40px;
       padding:0 14px;
@@ -133,32 +122,303 @@
       white-space:nowrap;
       transition: background-color .15s ease, transform .12s ease;
     }
-    .hdr-text-btn:hover{
-      background:var(--lime);
-      transform:translateY(-1px);
+    .hdr-text-btn:hover{ background:var(--lime); transform:translateY(-1px); }
+    .hdr-text-btn:active{ background:var(--lime-700); transform:translateY(0); }
+    .hdr-text-btn:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
+    @media (max-width:520px){ .hdr-text-btn{ padding:0 10px; font-size:12.5px; } }
+
+    /* =========================
+       Breadcrumb (EaD vibe)
+       ========================= */
+    .ead-crumb{
+      margin-top: 10px;
+      background: rgba(255,255,255,0.75);
+      border:1px solid var(--line);
+      border-radius: 16px;
+      padding: 10px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
     }
-    .hdr-text-btn:active{
-      background:var(--lime-700);
-      transform:translateY(0);
+    .crumb-left{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      min-width:0;
     }
-    .hdr-text-btn:focus-visible{
-      outline:2px solid var(--lime);
-      outline-offset:2px;
+    .crumb-dot{
+      width:10px;height:10px;border-radius:999px;
+      background: var(--lime);
+      border: 1px solid rgba(0,0,0,.15);
+      flex:0 0 auto;
+    }
+    .crumb-text{
+      font-weight:900;
+      color:#111;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .crumb-sub{
+      font-size:12.5px;
+      color: var(--muted);
+      font-weight:800;
+      white-space:nowrap;
     }
 
-    @media (max-width:520px){
-      .hdr-text-btn{ padding:0 10px; font-size:12.5px; }
+    /* =========================
+       HERO (diferente do painel)
+       ========================= */
+    .hero{
+      margin-top:12px;
+      background: linear-gradient(180deg, #F8F9F4 0%, #FFFFFF 60%, #FFFFFF 100%);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 18px;
+      position: relative;
+      overflow:hidden;
+    }
+    .hero:before{
+      content:"";
+      position:absolute;
+      inset:-40px -40px auto auto;
+      width:220px; height:220px;
+      background: radial-gradient(circle at 30% 30%, rgba(182,243,77,.55), rgba(182,243,77,0) 70%);
+      pointer-events:none;
+      transform: rotate(12deg);
+    }
+    .hero-grid{
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap:14px;
+      align-items:stretch;
+      position:relative;
+      z-index:1;
+    }
+    @media (max-width:900px){ .hero-grid{ grid-template-columns:1fr; } }
+
+    .hero-title{
+      margin:0;
+      color: var(--olive-dark);
+      font-size: 30px;
+      font-weight: 900;
+      letter-spacing:-0.02em;
+      line-height:1.08;
+    }
+    .hero-sub{
+      margin:8px 0 0;
+      color:#2b2b2b;
+      font-weight:800;
+      font-size:14.5px;
+      line-height:1.35;
+      max-width: 56ch;
     }
 
-    /* ==========================
-       ✅ ÍNDICE DO TREINAMENTO
-       ========================== */
-    .train-wrap{
-      margin-top:10px;
+    .hero-actions{
+      margin-top:12px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    .btn-primary{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      height:42px;
+      padding:0 18px;
+      border-radius:9999px;
+      border:0;
+      background:#000;
+      color: var(--lime);
+      font-weight:900;
+      font-size:14px;
+      text-decoration:none;
+      cursor:pointer;
+      transition:.15s background-color, .15s color, .12s transform;
+      white-space:nowrap;
+    }
+    .btn-primary:hover{ background:var(--lime); color:#000; transform:translateY(-2px); }
+    .btn-primary:active{ background:var(--lime-700); color:#000; transform:translateY(0); }
+    .btn-primary:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
+
+    .btn-ghost{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      height:42px;
+      padding:0 16px;
+      border-radius:9999px;
+      border:1px solid var(--line);
+      background:#fff;
+      color:#111;
+      font-weight:900;
+      font-size:14px;
+      text-decoration:none;
+      cursor:pointer;
+      transition:.15s background-color, .12s transform;
+      white-space:nowrap;
+    }
+    .btn-ghost:hover{ background:var(--olive-50); transform:translateY(-1px); }
+    .btn-ghost:active{ background:var(--olive-100); transform:translateY(0); }
+    .btn-ghost:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
+
+    /* progress card */
+    .progress-card{
+      background: rgba(255,255,255,.85);
+      border:1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px;
       display:flex;
       flex-direction:column;
-      gap:12px;
+      justify-content:space-between;
+      gap:10px;
+      min-height: 132px;
     }
+    .pc-top{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:flex-start;
+    }
+    .pc-label{
+      font-weight:900;
+      color:#111;
+      font-size:13px;
+    }
+    .pc-percent{
+      font-weight:900;
+      color:#111;
+      font-size:13px;
+      background: var(--olive-50);
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:6px 10px;
+      white-space:nowrap;
+    }
+    .bar{
+      height:12px;
+      background:#f0f2f6;
+      border:1px solid #e7eaf1;
+      border-radius:999px;
+      overflow:hidden;
+    }
+    .bar > span{
+      display:block;
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, rgba(182,243,77,.95), rgba(123,116,36,.65));
+    }
+    .pc-stats{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:8px;
+      margin-top:2px;
+    }
+    .stat{
+      background:#fff;
+      border:1px solid #eef0f4;
+      border-radius:14px;
+      padding:10px;
+    }
+    .stat b{
+      display:block;
+      font-size:15px;
+      color:#111;
+      font-weight:900;
+      line-height:1.1;
+    }
+    .stat span{
+      display:block;
+      margin-top:4px;
+      font-size:11.5px;
+      color: var(--muted);
+      font-weight:800;
+    }
+    @media (max-width:520px){ .pc-stats{ grid-template-columns:1fr; } }
+
+    /* =========================
+       Seções (benefícios / resultados)
+       ========================= */
+    .section{
+      margin-top:14px;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius: 22px;
+      padding: 16px;
+    }
+    .sec-hd{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+    .sec-title{
+      margin:0;
+      color:#111;
+      font-size:18px;
+      font-weight:900;
+      letter-spacing:-0.01em;
+    }
+    .sec-desc{
+      margin:4px 0 0;
+      color: var(--muted);
+      font-weight:800;
+      font-size:13.5px;
+      line-height:1.35;
+    }
+
+    .feat-grid{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:10px;
+      margin-top:10px;
+    }
+    @media (max-width:900px){ .feat-grid{ grid-template-columns:1fr; } }
+
+    .feat{
+      border:1px solid #eef0f4;
+      border-radius: 18px;
+      padding:12px;
+      background: linear-gradient(180deg, #FFFFFF, #FBFBF8);
+    }
+    .feat-top{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-bottom:6px;
+    }
+    .ico{
+      width:36px;height:36px;
+      border-radius:14px;
+      background: var(--olive-50);
+      border:1px solid var(--line);
+      display:grid;
+      place-items:center;
+      flex:0 0 auto;
+    }
+    .ico svg{ width:18px;height:18px; stroke:#111; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .feat b{
+      font-size:14px;
+      font-weight:900;
+      color:#111;
+    }
+    .feat p{
+      margin:0;
+      color:#555;
+      font-weight:800;
+      font-size:13px;
+      line-height:1.35;
+    }
+
+    /* =========================
+       Índice de módulos (novo design)
+       ========================= */
+    .train-wrap{ margin-top:14px; display:flex; flex-direction:column; gap:12px; }
 
     .train-search{
       display:flex;
@@ -166,8 +426,8 @@
       align-items:center;
       background:#fff;
       border:1px solid var(--line);
-      border-radius:16px;
-      padding:10px 12px;
+      border-radius:18px;
+      padding:12px 12px;
     }
     .train-search input{
       width:100%;
@@ -175,6 +435,8 @@
       outline:none;
       font-size:14px;
       background:transparent;
+      font-weight:700;
+      color:#111;
     }
     .train-search svg{
       width:18px; height:18px;
@@ -192,18 +454,21 @@
     @media (max-width: 640px){ .mod-grid{ grid-template-columns: 1fr; } }
 
     .mod-card{
-      background:#fff;
+      background: linear-gradient(180deg, #FFFFFF, #FBFBF8);
       border:1px solid var(--line);
-      border-radius:18px;
+      border-radius: 22px;
       padding:14px;
       display:flex;
       flex-direction:column;
       gap:10px;
-      transition: transform .12s ease, border-color .12s ease;
+      transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease;
+      position:relative;
+      overflow:hidden;
     }
     .mod-card:hover{
       transform: translateY(-2px);
       border-color: rgba(182,243,77,.85);
+      box-shadow: 0 0 0 3px rgba(182,243,77,.16);
     }
 
     .mod-top{
@@ -214,27 +479,42 @@
     }
     .mod-title{
       margin:0;
-      font-size:16px;
+      font-size:15.5px;
       font-weight:900;
       color:#111;
       line-height:1.2;
+      letter-spacing:-0.01em;
     }
-    .mod-pills{
+
+    .mod-badges{
       display:flex;
-      gap:6px;
+      gap:8px;
       align-items:center;
       flex:0 0 auto;
-      white-space:nowrap;
     }
-    .mod-pill{
+    .pill{
       height:28px;
       padding:0 10px;
       border-radius:999px;
       border:1px solid var(--line);
-      background:var(--olive-50);
+      background: var(--olive-50);
       font-weight:900;
       font-size:12px;
       white-space:nowrap;
+      color:#111;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .pill.ok{
+      background:#e9f7ef;
+      border-color:#bfe7cc;
+      color:#135b2b;
+    }
+    .pill.warn{
+      background:#fff3e6;
+      border-color:#ffd4a8;
+      color:#7a3d00;
     }
 
     .mod-desc{
@@ -242,45 +522,22 @@
       color:#555;
       font-size:13px;
       line-height:1.35;
-      min-height:34px;
+      font-weight:800;
+      min-height:36px;
     }
 
-    .lesson-list{
+    .mod-progress{
+      margin-top:2px;
       display:flex;
-      flex-direction:column;
-      gap:8px;
-      margin-top:4px;
-    }
-    .lesson-link{
-      text-decoration:none;
-      color:#222;
-      font-weight:800;
-      font-size:13px;
-      padding:8px 10px;
-      border-radius:12px;
-      border:1px solid #f0f0f0;
-      background:#fafafa;
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
       align-items:center;
+      gap:10px;
     }
-    .lesson-link:hover{
-      background:var(--olive-50);
-      border-color: var(--line-olive);
-      color: var(--olive);
-    }
-    .lesson-meta{
-      font-size:12px;
-      color:#666;
+    .mod-progress .bar{ flex:1 1 auto; height:10px; }
+    .mod-progress .pct{
       font-weight:900;
-      white-space:nowrap;
-      flex:0 0 auto;
-    }
-    .lesson-more{
       font-size:12px;
-      color:#666;
-      font-weight:800;
+      color:#111;
+      white-space:nowrap;
     }
 
     .mod-actions{
@@ -291,13 +548,50 @@
       justify-content:flex-end;
       align-items:center;
     }
+    .mod-actions a{
+      text-decoration:none;
+    }
+    .mod-btn{
+      height:40px;
+      padding:0 14px;
+      border-radius:9999px;
+      border:1px solid #e4e4e4;
+      background:#fff;
+      color:#000;
+      font-weight:900;
+      font-size:13.5px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      transition: background-color .15s ease, transform .12s ease;
+      white-space:nowrap;
+    }
+    .mod-btn:hover{ background:var(--lime); transform:translateY(-1px); }
+    .mod-btn:active{ background:var(--lime-700); transform:translateY(0); }
+    .mod-btn:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
 
-    /* CTA & Footer iguais ao painel */
+    /* “marca d’água” suave */
+    .mod-card:after{
+      content:"";
+      position:absolute;
+      right:-60px;
+      bottom:-60px;
+      width:180px; height:180px;
+      background: radial-gradient(circle at 30% 30%, rgba(123,116,36,.16), rgba(123,116,36,0) 70%);
+      pointer-events:none;
+      transform: rotate(-10deg);
+    }
+
+    /* =========================
+       CTA & Footer (padrão global)
+       ========================= */
     .cta-bar{
       background:#000; color:#fff; padding:20px 16px;
       display:flex; align-items:center; gap:16px; flex-wrap:wrap;
       border-top:1px solid rgba(255,255,255,0.06);
       justify-content:flex-start;
+      margin-top:0;
     }
     .cta-text h3{ margin:0 0 4px 0; font-size:18px; font-weight:900; line-height:1.2; }
     .cta-text p{ margin:0; font-size:15px; opacity:.9; }
@@ -319,16 +613,8 @@
       cursor:pointer;
       transition: background-color .15s ease, color .15s ease, transform .15s ease;
     }
-    .cta-bar .cta-btn:hover{
-      background:var(--lime) !important;
-      color:#111 !important;
-      transform:translateY(-1px);
-    }
-    .cta-bar .cta-btn:active{
-      background:var(--lime-700) !important;
-      color:#111 !important;
-      transform:translateY(0);
-    }
+    .cta-bar .cta-btn:hover{ background:var(--lime) !important; color:#111 !important; transform:translateY(-1px); }
+    .cta-bar .cta-btn:active{ background:var(--lime-700) !important; color:#111 !important; transform:translateY(0); }
 
     .site-footer{
       background:#fff;color:#211a2a;border-top:1px solid #eee;padding:18px 16px 28px;
@@ -348,8 +634,13 @@
       .footer-inner{ grid-template-columns:1fr; }
       .footer-cols{ grid-template-columns:1fr; }
     }
+
+    @media (prefers-color-scheme: dark){
+      html, body{ background: var(--site-bg) !important; color: var(--cinza-900); }
+    }
   </style>
 
+  <!-- Header padrão global -->
   <link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
 </head>
 
@@ -362,6 +653,23 @@
 
 {% set chat_count = (chat_nao_lidos if chat_nao_lidos is defined else 0) %}
 {% set notif_count = (notificacoes if notificacoes is defined else 0) %}
+{% set modules_list = (modules if modules is defined and modules is not none else []) %}
+{% set gp = (global_percent if global_percent is defined and global_percent is not none else 0) %}
+
+{# Totais para estatísticas #}
+{% set total_modules = modules_list|length %}
+{% set total_lessons = 0 %}
+{% for m in modules_list %}
+  {% set total_lessons = total_lessons + (m.lessons_count if m.lessons_count is defined else 0) %}
+{% endfor %}
+
+{# “Continuar” aponta para o primeiro módulo não 100%, senão o primeiro #}
+{% set continue_key = (modules_list[0].key if total_modules > 0 else None) %}
+{% for m in modules_list %}
+  {% if (m.percent is defined) and (m.percent|int < 100) and (continue_key is none or continue_key == (modules_list[0].key if total_modules>0 else None)) %}
+    {% set continue_key = m.key %}
+  {% endif %}
+{% endfor %}
 
 <header class="navbar">
   <div class="header-left">
@@ -386,7 +694,7 @@
   <div class="header-right">
     <div class="hdr-actions painel-actions">
 
-      <!-- ✅ Aqui inverte: no Treinamento aparece "Teares" -->
+      <!-- No Treinamento aparece "Teares" -->
       <a href="{{ url_for('painel_malharia') }}" class="hdr-text-btn" title="Voltar para o Painel (Teares)">
         Teares
       </a>
@@ -438,120 +746,176 @@
   </div>
 </header>
 
-<!-- Conteúdo -->
-<div class="faixa-cinza">
+<div class="faixa-ead">
   <div class="page-outer">
     <div class="container">
-      <h1 class="titulo">Treinamento Operacional</h1>
-      <p class="painel-sub">Acesse rotinas, padrões e conteúdos operacionais do seu time.</p>
 
-      <div class="train-wrap">
+      <!-- Breadcrumb / contexto -->
+      <div class="ead-crumb" aria-label="Contexto do treinamento">
+        <div class="crumb-left">
+          <span class="crumb-dot" aria-hidden="true"></span>
+          <div style="min-width:0;">
+            <div class="crumb-text">Treinamento Operacional</div>
+            <div class="crumb-sub">Ambiente EaD • {{ nome_empresa }}</div>
+          </div>
+        </div>
+        <div class="crumb-sub">Acompanhe o progresso e avance por módulos</div>
+      </div>
 
-        <div class="train-search">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="11" cy="11" r="7"></circle>
-            <path d="M21 21l-4.3-4.3"></path>
-          </svg>
-          <input id="modSearch" type="text" placeholder="Buscar módulo ou aula..." autocomplete="off">
+      <!-- HERO -->
+      <section class="hero" aria-label="Apresentação do treinamento">
+        <div class="hero-grid">
+          <div>
+            <h1 class="hero-title">Treinamento Operacional</h1>
+            <p class="hero-sub">
+              Formação prática para elevar padrão, reduzir defeitos e aumentar produtividade — com conteúdos objetivos, rastreáveis e aplicáveis no chão de fábrica.
+            </p>
+
+            <div class="hero-actions">
+              {% if continue_key %}
+                <a class="btn-primary" href="{{ url_for('treinamento_modulo', module_key=continue_key) }}">
+                  Continuar treinamento
+                </a>
+              {% else %}
+                <a class="btn-primary" href="{{ url_for('treinamento_home') }}">Abrir treinamento</a>
+              {% endif %}
+              <a class="btn-ghost" href="#modulos">Ver módulos</a>
+            </div>
+          </div>
+
+          <aside class="progress-card" aria-label="Progresso geral">
+            <div class="pc-top">
+              <div class="pc-label">Progresso Geral</div>
+              <div class="pc-percent">{{ gp|int }}%</div>
+            </div>
+
+            <div class="bar" aria-label="Barra de progresso">
+              <span style="width: {{ gp|int }}%;"></span>
+            </div>
+
+            <div class="pc-stats">
+              <div class="stat">
+                <b>{{ total_modules }}</b>
+                <span>Módulos</span>
+              </div>
+              <div class="stat">
+                <b>{{ total_lessons }}</b>
+                <span>Aulas</span>
+              </div>
+              <div class="stat">
+                <b>{% if gp|int >= 100 %}Concluído{% else %}Em andamento{% endif %}</b>
+                <span>Status</span>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- O que é / Benefícios -->
+      <section class="section" aria-label="Objetivo e ganhos">
+        <div class="sec-hd">
+          <div>
+            <h2 class="sec-title">O que este treinamento entrega</h2>
+            <p class="sec-desc">Uma jornada curta, direta e operacional — para padronizar, treinar e manter consistência.</p>
+          </div>
         </div>
 
-        {# ✅ Fallback: aceita modulos OU modules #}
-        {% set modulos_lista =
-            (modulos if modulos is defined and modulos is not none and modulos|length
-             else (modules if modules is defined and modules is not none else [])) %}
-
-        {% if modulos_lista and modulos_lista|length %}
-          <div class="mod-grid" id="modGrid">
-            {% for m in modulos_lista %}
-
-              {% set m_key   = (m.key if m.key is defined else '') %}
-              {% set m_title = (m.title if m.title is defined and m.title else (m.titulo if m.titulo is defined and m.titulo else 'Módulo')) %}
-              {% set m_desc  = (m.desc if m.desc is defined and m.desc else (m.descricao if m.descricao is defined and m.descricao else 'Acesse as aulas e materiais deste módulo.')) %}
-              {% set m_percent = (m.percent if m.percent is defined and m.percent is not none else None) %}
-
-              {# Aulas: no seu main.py é "lessons" #}
-              {% set aulas =
-                  (m.lessons if m.lessons is defined and m.lessons is not none
-                   else (m.aulas if m.aulas is defined and m.aulas is not none else [])) %}
-
-              {% set aulas_count =
-                  (m.lessons_count if m.lessons_count is defined and m.lessons_count is not none
-                   else (aulas|length)) %}
-
-              <article class="mod-card">
-                <div class="mod-top">
-                  <h3 class="mod-title">{{ m_title }}</h3>
-                  <div class="mod-pills">
-                    {% if m_percent is not none %}
-                      <span class="mod-pill">{{ m_percent }}%</span>
-                    {% endif %}
-                    <span class="mod-pill">{{ aulas_count }} aulas</span>
-                  </div>
-                </div>
-
-                <p class="mod-desc">{{ m_desc }}</p>
-
-                {% if aulas and aulas|length %}
-                  <div class="lesson-list">
-                    {% for a in aulas[:3] %}
-                      {% set a_key   = (a.key if a.key is defined else '') %}
-                      {% set a_title = (a.title if a.title is defined and a.title else (a.titulo if a.titulo is defined and a.titulo else 'Aula')) %}
-                      {% set a_min   = (a.minutes if a.minutes is defined and a.minutes is not none else None) %}
-
-                      {% if m_key and a_key %}
-                        <a class="lesson-link"
-                           href="{{ url_for('treinamento_aula', module_key=m_key, lesson_key=a_key) }}">
-                          <span>{{ a_title }}</span>
-                          {% if a_min is not none %}
-                            <span class="lesson-meta">{{ a_min }} min</span>
-                          {% endif %}
-                        </a>
-                      {% else %}
-                        <div class="lesson-link" style="cursor:default;">
-                          <span>{{ a_title }}</span>
-                          {% if a_min is not none %}
-                            <span class="lesson-meta">{{ a_min }} min</span>
-                          {% endif %}
-                        </div>
-                      {% endif %}
-                    {% endfor %}
-
-                    {% if aulas|length > 3 %}
-                      <span class="lesson-more">+ {{ aulas|length - 3 }} aulas</span>
-                    {% endif %}
-                  </div>
-                {% endif %}
-
-                <div class="mod-actions">
-                  {% if m_key %}
-                    <a class="hdr-text-btn" href="{{ url_for('treinamento_modulo', module_key=m_key) }}">
-                      Abrir módulo
-                    </a>
-                  {% else %}
-                    <span class="hdr-text-btn" style="opacity:.6;cursor:not-allowed;">Abrir módulo</span>
-                  {% endif %}
-                </div>
-              </article>
-
-            {% endfor %}
+        <div class="feat-grid">
+          <div class="feat">
+            <div class="feat-top">
+              <div class="ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"></path></svg>
+              </div>
+              <b>Padrão mínimo e rotina</b>
+            </div>
+            <p>O time aprende o “jeito certo” de operar, registrar e agir antes do defeito virar perda.</p>
           </div>
-        {% else %}
-          <div style="background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;">
-            <strong>Nenhum módulo disponível.</strong>
-            <p style="margin:8px 0 0;color:#444;">
-              O Flask precisa passar <code>modules</code> ou <code>modulos</code> no <code>render_template</code>.
-              Ex.: <code>render_template('treinamento_home.html', modules=modules_view)</code>
-            </p>
-          </div>
-        {% endif %}
 
-      </div>
+          <div class="feat">
+            <div class="feat-top">
+              <div class="ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M3 3v18h18"></path><path d="M7 13l3 3 7-7"></path></svg>
+              </div>
+              <b>Redução de defeitos</b>
+            </div>
+            <p>Menos barramento, variação, retrabalho e desperdício — com causa e ação imediata.</p>
+          </div>
+
+          <div class="feat">
+            <div class="feat-top">
+              <div class="ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 2v20"></path><path d="M2 12h20"></path></svg>
+              </div>
+              <b>Treino contínuo</b>
+            </div>
+            <p>Conteúdos prontos para onboarding e reciclagem — sem depender de “quem sabe mais” no turno.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- MÓDULOS -->
+      <section id="modulos" class="section" aria-label="Jornada de aprendizagem">
+        <div class="sec-hd">
+          <div>
+            <h2 class="sec-title">Jornada de Aprendizagem</h2>
+            <p class="sec-desc">Escolha um módulo para avançar. O progresso é registrado por aula.</p>
+          </div>
+        </div>
+
+        <div class="train-wrap">
+
+          <div class="train-search" aria-label="Buscar módulo">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="M21 21l-4.3-4.3"></path>
+            </svg>
+            <input id="modSearch" type="text" placeholder="Buscar módulo..." autocomplete="off">
+          </div>
+
+          {% if modules_list|length %}
+            <div class="mod-grid" id="modGrid">
+              {% for m in modules_list %}
+                {% set pct = (m.percent|int if m.percent is defined else 0) %}
+                {% set status_label = 'Concluído' if pct >= 100 else ('Em andamento' if pct > 0 else 'Não iniciado') %}
+
+                <article class="mod-card" data-filter="{{ ((m.title or '') ~ ' ' ~ (m.desc or '')) | lower }}">
+                  <div class="mod-top">
+                    <h3 class="mod-title">{{ m.title }}</h3>
+                    <div class="mod-badges">
+                      <span class="pill {% if pct>=100 %}ok{% elif pct>0 %}warn{% endif %}">{{ status_label }}</span>
+                      <span class="pill">{{ m.lessons_count if m.lessons_count is defined else 0 }} aulas</span>
+                    </div>
+                  </div>
+
+                  <p class="mod-desc">{{ m.desc if m.desc else 'Acesse as aulas e materiais deste módulo.' }}</p>
+
+                  <div class="mod-progress" aria-label="Progresso do módulo">
+                    <div class="bar"><span style="width: {{ pct }}%;"></span></div>
+                    <div class="pct">{{ pct }}%</div>
+                  </div>
+
+                  <div class="mod-actions">
+                    <a class="mod-btn" href="{{ url_for('treinamento_modulo', module_key=m.key) }}">Abrir módulo</a>
+                  </div>
+                </article>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div style="background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;">
+              <strong>Nenhum módulo disponível.</strong>
+              <p style="margin:8px 0 0;color:#444;font-weight:800;">
+                Verifique se o Flask está passando <code>modules</code> no <code>render_template</code>.
+              </p>
+            </div>
+          {% endif %}
+        </div>
+      </section>
 
     </div>
   </div>
 </div>
 
-<!-- CTA + Rodapé (mesmos do painel) -->
+<!-- CTA padrão global -->
 <section class="cta-bar">
   <div class="cta-text">
     <h3>É proprietário de uma malharia?</h3>
@@ -560,6 +924,7 @@
   <a href="{{ url_for('malharia_info') }}" class="cta-btn">Cadastrar</a>
 </section>
 
+<!-- Footer padrão global -->
 <footer class="site-footer">
   <div class="footer-inner">
     <div class="footer-brand">
@@ -585,9 +950,22 @@
   </div>
 </footer>
 
+<!-- JS: medir altura do header -->
 <script>
   (function(){
-    // Busca simples (usa texto do card)
+    function setNavH(){
+      const nav = document.querySelector('.navbar');
+      const h = nav ? nav.offsetHeight : 0;
+      document.documentElement.style.setProperty('--nav-h', h + 'px');
+    }
+    setNavH();
+    window.addEventListener('resize', setNavH);
+  })();
+</script>
+
+<!-- JS: busca/filtra módulos -->
+<script>
+  (function(){
     const input = document.getElementById('modSearch');
     const cards = Array.from(document.querySelectorAll('.mod-card'));
     if(!input || !cards.length) return;
@@ -595,8 +973,8 @@
     input.addEventListener('input', ()=>{
       const q = (input.value || '').trim().toLowerCase();
       cards.forEach(c=>{
-        const hay = (c.innerText || '').toLowerCase();
-        c.style.display = (!q || hay.includes(q)) ? '' : 'none';
+        const hay = (c.getAttribute('data-filter') || '') + ' ' + (c.innerText || '').toLowerCase();
+        c.style.display = hay.includes(q) ? '' : 'none';
       });
     });
   })();
