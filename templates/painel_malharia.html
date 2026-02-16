@@ -95,7 +95,7 @@
       align-items:center;
       gap:10px;
     }
-
+        
     /* Botões ícone (Chat, Notif, Perfil) com o mesmo estilo da casinha */
     .hdr-actions.painel-actions .icon-btn,
     .hdr-actions.painel-actions .profile-pill{
@@ -144,6 +144,41 @@
       stroke-linejoin:round;
     }
 
+    /* Botão de texto no header (Treinamento / Teares) */
+    .hdr-text-btn{
+      height:40px;
+      padding:0 14px;
+      border-radius:9999px;
+      border:1px solid #e4e4e4;
+      background:#fff;
+      color:#000;
+      font-weight:900;
+      font-size:13.5px;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      white-space:nowrap;
+      transition: background-color .15s ease, transform .12s ease;
+    }
+    .hdr-text-btn:hover{
+      background:var(--lime);
+      transform:translateY(-1px);
+    }
+    .hdr-text-btn:active{
+      background:var(--lime-700);
+      transform:translateY(0);
+    }
+    .hdr-text-btn:focus-visible{
+      outline:2px solid var(--lime);
+      outline-offset:2px;
+    }
+    
+    @media (max-width:520px){
+      .hdr-text-btn{ padding:0 10px; font-size:12.5px; }
+    }
+    
     /* Badge (mantém funcional) */
     .badge-wrap{ position:relative; }
     .badge{
@@ -776,6 +811,11 @@
     <div class="header-right">
       <div class="hdr-actions painel-actions">
 
+        <!-- Treinamento (botão antes do Chat) -->
+        <a href="{{ url_for('treinamento_home') }}" class="hdr-text-btn" title="Treinamento Operacional">
+          Treinamento
+        </a>
+        
         <!-- Chat -->
         <a href="{{ url_for('fale_conosco') }}" class="icon-btn badge-wrap" aria-label="Chat" title="Chat">
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -961,34 +1001,7 @@
       <div class="container">
         <h1 class="titulo">Painel da Malharia</h1>
         <p style="text-align:center;margin:0 0 6px;">Bem-vindo(a), <strong>{{ nome_empresa }}</strong>!</p>
-        <p class="painel-sub">Gerencie seus teares e assinatura em um só lugar.</p>
-
-        <!-- ✅ NOVO BLOCO: AÇÕES RÁPIDAS (VISÃO CLARA: TEARES x TREINAMENTO) -->
-        <div class="pm-quick" aria-label="Ações rápidas do painel">
-          <a class="pm-quick-card" href="#teares">
-            <div class="pm-quick-title">Teares</div>
-            <div class="pm-quick-desc">Ver tabela, cadastrar e editar teares da sua malharia.</div>
-            <div class="pm-quick-cta">
-              Abrir gestão de teares
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M9 18l6-6-6-6"></path>
-              </svg>
-            </div>
-          </a>
-
-          <a class="pm-quick-card pm-quick-highlight" href="{{ url_for('treinamento_home') }}">
-            <span class="pm-quick-tag">NOVO</span>
-            <div class="pm-quick-title">Treinamento Operacional</div>
-            <div class="pm-quick-desc">Acessar rotinas, padrões e conteúdos para o time operar com excelência.</div>
-            <div class="pm-quick-cta">
-              Acessar treinamento
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M9 18l6-6-6-6"></path>
-              </svg>
-            </div>
-          </a>
-        </div>
-        <!-- ✅ /NOVO BLOCO -->
+        <p class="painel-sub">Gerencie seus teares e assinatura em um só lugar.</p>       
 
         <!-- ===== Assinatura ===== -->
         <section id="assinatura" class="sub-wrap" aria-label="Assinatura e pagamento">
