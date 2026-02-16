@@ -69,7 +69,7 @@
       color:#2b2b2b;
     }
 
-    /* === mesmo estilo dos ícones do painel === */
+    /* === ações do header (igual painel) === */
     .hdr-actions.painel-actions{
       display:flex;
       align-items:center;
@@ -105,7 +105,17 @@
       stroke-linejoin:round;
     }
 
-    /* Botão Teares/Treinamento no header */
+    /* Badge (se não vier do seu CSS global) */
+    .badge-wrap{ position:relative; }
+    .badge{
+      position:absolute; top:-6px; right:-6px; min-width:16px; height:16px;
+      padding:0 4px; border-radius:999px;
+      background:#ff6b00; color:#fff;
+      font-size:11px; display:flex; align-items:center; justify-content:center; line-height:1;
+      border:2px solid #fff;
+    }
+
+    /* Botão Teares no header */
     .hdr-text-btn{
       height:40px;
       padding:0 14px;
@@ -123,147 +133,142 @@
       white-space:nowrap;
       transition: background-color .15s ease, transform .12s ease;
     }
-    .hdr-text-btn:hover{
-      background:var(--lime);
-      transform:translateY(-1px);
-    }
-    .hdr-text-btn:active{
-      background:var(--lime-700);
-      transform:translateY(0);
-    }
-    .hdr-text-btn:focus-visible{
-      outline:2px solid var(--lime);
-      outline-offset:2px;
-    }
+    .hdr-text-btn:hover{ background:var(--lime); transform:translateY(-1px); }
+    .hdr-text-btn:active{ background:var(--lime-700); transform:translateY(0); }
+    .hdr-text-btn:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
 
     @media (max-width:520px){
       .hdr-text-btn{ padding:0 10px; font-size:12.5px; }
     }
 
-    /* ==========================
-       ✅ ÍNDICE DO TREINAMENTO
-       ========================== */
-    .train-wrap{
-      margin-top:10px;
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-    }
-
+    /* ===== Treinamento: busca + módulos ===== */
     .train-search{
-      display:flex;
-      gap:10px;
-      align-items:center;
+      margin: 10px auto 14px;
+      max-width: 920px;
       background:#fff;
       border:1px solid var(--line);
-      border-radius:16px;
-      padding:10px 12px;
+      border-radius: 999px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding: 10px 14px;
     }
+    .train-search svg{ width:18px;height:18px; stroke:#555; fill:none; stroke-width:2; }
     .train-search input{
-      width:100%;
       border:0;
       outline:none;
+      width:100%;
       font-size:14px;
       background:transparent;
     }
-    .train-search svg{
-      width:18px; height:18px;
-      stroke:#444; fill:none; stroke-width:2;
-      stroke-linecap:round; stroke-linejoin:round;
-      flex:0 0 auto;
-    }
 
-    .mod-grid{
+    .mods{
+      max-width: 920px;
+      margin: 0 auto;
       display:grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap:12px;
+      gap:10px;
     }
-    @media (max-width: 980px){ .mod-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    @media (max-width: 640px){ .mod-grid{ grid-template-columns: 1fr; } }
 
-    .mod-card{
+    .mod{
       background:#fff;
       border:1px solid var(--line);
       border-radius:18px;
-      padding:14px;
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-      transition: transform .12s ease, border-color .12s ease;
-    }
-    .mod-card:hover{
-      transform: translateY(-2px);
-      border-color: rgba(182,243,77,.85);
+      overflow:hidden;
     }
 
-    .mod-top{
+    .mod summary{
+      list-style:none;
+      cursor:pointer;
+      padding:14px 16px;
       display:flex;
       align-items:flex-start;
       justify-content:space-between;
-      gap:10px;
+      gap:12px;
     }
+    .mod summary::-webkit-details-marker{ display:none; }
+
     .mod-title{
-      margin:0;
-      font-size:16px;
       font-weight:900;
       color:#111;
       line-height:1.2;
     }
+    .mod-desc{
+      margin-top:4px;
+      color:#555;
+      font-size:13.5px;
+      line-height:1.35;
+    }
+
     .mod-pill{
-      height:28px;
+      height:30px;
       padding:0 10px;
       border-radius:999px;
       border:1px solid var(--line);
-      background:var(--olive-50);
-      font-weight:900;
-      font-size:12px;
-      white-space:nowrap;
-      flex:0 0 auto;
-    }
-
-    .mod-desc{
-      margin:0;
-      color:#555;
-      font-size:13px;
-      line-height:1.35;
-      min-height:34px;
-    }
-
-    .lesson-list{
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-      margin-top:4px;
-    }
-    .lesson-link{
-      text-decoration:none;
+      background: var(--olive-50);
       color:#222;
-      font-weight:800;
-      font-size:13px;
-      padding:8px 10px;
-      border-radius:12px;
-      border:1px solid #f0f0f0;
-      background:#fafafa;
-    }
-    .lesson-link:hover{
-      background:var(--olive-50);
-      border-color: var(--line-olive);
-      color: var(--olive);
-    }
-    .lesson-more{
-      font-size:12px;
-      color:#666;
-      font-weight:800;
+      font-weight:900;
+      font-size:12.5px;
+      white-space:nowrap;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
     }
 
-    .mod-actions{
-      margin-top:auto;
+    .mod-body{
+      border-top:1px solid var(--line);
+      padding: 12px 16px 16px;
+    }
+
+    .lesson{
       display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      justify-content:flex-end;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      padding:10px 0;
+      border-bottom:1px solid #f1f2f6;
+    }
+    .lesson:last-child{ border-bottom:0; padding-bottom:0; }
+
+    .lesson-left{ min-width:0; }
+    .lesson-title{ font-weight:900; color:#1d1d1d; }
+    .lesson-meta{ margin-top:3px; color:#666; font-size:12.5px; line-height:1.35; }
+    .lesson-meta strong{ color:#333; }
+
+    .lesson-actions{
+      flex:0 0 auto;
+      display:flex;
+      gap:8px;
       align-items:center;
     }
+
+    .btn-open{
+      height:36px;
+      padding:0 14px;
+      border-radius:999px;
+      background:#000;
+      color:var(--lime);
+      font-weight:900;
+      font-size:13px;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      transition:.15s background-color, .15s color, .12s transform;
+      white-space:nowrap;
+    }
+    .btn-open:hover{ background:var(--lime); color:#000; transform:translateY(-1px); }
+    .btn-open:active{ background:var(--lime-700); color:#000; transform:translateY(0); }
+
+    .empty{
+      max-width:920px;
+      margin: 0 auto;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:14px 16px;
+      color:#333;
+    }
+    code{ background:#f4f4f4; padding:2px 6px; border-radius:8px; }
 
     /* CTA & Footer iguais ao painel */
     .cta-bar{
@@ -335,6 +340,11 @@
 
 {% set chat_count = (chat_nao_lidos if chat_nao_lidos is defined else 0) %}
 {% set notif_count = (notificacoes if notificacoes is defined else 0) %}
+
+{# ✅ Compatibilidade: aceita "modulos" ou "modules" #}
+{% set modulos_lista =
+    (modulos if modulos is defined and modulos is not none else
+     (modules if modules is defined and modules is not none else [])) %}
 
 <header class="navbar">
   <div class="header-left">
@@ -418,74 +428,70 @@
       <h1 class="titulo">Treinamento Operacional</h1>
       <p class="painel-sub">Acesse rotinas, padrões e conteúdos operacionais do seu time.</p>
 
-      <!-- ✅ Índice de módulos/aulas (recoloca a navegação que você “perdeu”) -->
-      <div class="train-wrap">
+      <!-- Busca -->
+      <div class="train-search">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"></circle>
+          <path d="M20 20l-3.5-3.5"></path>
+        </svg>
+        <input id="trainSearch" type="search" placeholder="Buscar módulo ou aula..." autocomplete="off">
+      </div>
 
-        <div class="train-search">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="11" cy="11" r="7"></circle>
-            <path d="M21 21l-4.3-4.3"></path>
-          </svg>
-          <input id="modSearch" type="text" placeholder="Buscar módulo ou aula..." autocomplete="off">
-        </div>
-
-        {# Espera receber "modulos" do Flask: render_template("treinamento_home.html", modulos=...) #}
-        {% set modulos = (modulos if modulos is defined and modulos is not none else []) %}
-
-        {% if modulos|length %}
-          <div class="mod-grid" id="modGrid">
-            {% for m in modulos %}
-              <article class="mod-card" data-filter="{{ (m.titulo ~ ' ' ~ (m.descricao or '') ) | lower }}">
-                <div class="mod-top">
-                  <h3 class="mod-title">{{ m.titulo }}</h3>
-                  <span class="mod-pill">{{ (m.aulas|length) if (m.aulas is defined and m.aulas is not none) else 0 }} aulas</span>
+      {% if modulos_lista and modulos_lista|length %}
+        <div class="mods" id="modsWrap">
+          {% for m in modulos_lista %}
+            {% set aulas = (m.lessons if m.lessons is defined else (m.get('lessons') if m.get is defined else [])) %}
+            <details class="mod" data-mod data-text="{{ (m.title ~ ' ' ~ (m.desc or ''))|lower }}">
+              <summary>
+                <div style="min-width:0;">
+                  <div class="mod-title">{{ m.title }}</div>
+                  <div class="mod-desc">{{ m.desc }}</div>
                 </div>
+                <span class="mod-pill">{{ (aulas|length) if aulas else 0 }} aulas</span>
+              </summary>
 
-                {% if m.descricao %}
-                  <p class="mod-desc">{{ m.descricao }}</p>
+              <div class="mod-body">
+                {% if aulas and aulas|length %}
+                  {% for a in aulas %}
+                    <div class="lesson" data-lesson data-text="{{ (a.title ~ ' ' ~ (a.summary or ''))|lower }}">
+                      <div class="lesson-left">
+                        <div class="lesson-title">{{ a.title }}</div>
+                        <div class="lesson-meta">
+                          {% if a.minutes is defined %}<strong>{{ a.minutes }} min</strong> • {% endif %}
+                          {{ a.summary or '' }}
+                        </div>
+                      </div>
+                      <div class="lesson-actions">
+                        <a class="btn-open" href="{{ url_for('treinamento_aula', modulo_id=m.key, aula_id=a.key) }}">Abrir</a>
+                      </div>
+                    </div>
+                  {% endfor %}
                 {% else %}
-                  <p class="mod-desc">Acesse as aulas e materiais deste módulo.</p>
+                  <div style="color:#666;">Nenhuma aula cadastrada neste módulo.</div>
                 {% endif %}
 
-                <div class="lesson-list">
-                  {% set aulas = (m.aulas if m.aulas is defined and m.aulas is not none else []) %}
-                  {% for a in aulas[:3] %}
-                    <a class="lesson-link"
-                       href="{{ url_for('treinamento_aula', modulo_id=m.id, aula_id=a.id) }}">
-                      {{ a.titulo }}
-                    </a>
-                  {% endfor %}
-
-                  {% if aulas|length > 3 %}
-                    <span class="lesson-more">+ {{ aulas|length - 3 }} aulas</span>
-                  {% endif %}
+                <div style="margin-top:10px;">
+                  <a class="btn-open" href="{{ url_for('treinamento_modulo', modulo_id=m.key) }}">Ver módulo</a>
                 </div>
-
-                <div class="mod-actions">
-                  <a class="hdr-text-btn" href="{{ url_for('treinamento_modulo', modulo_id=m.id) }}">
-                    Abrir módulo
-                  </a>
-                </div>
-              </article>
-            {% endfor %}
+              </div>
+            </details>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty">
+          <strong>Nenhum módulo disponível.</strong>
+          <div style="margin-top:8px;">
+            Para aparecer aqui, o Flask precisa passar <code>modulos</code> no <code>render_template</code>.<br>
+            Ex.: <code>render_template('treinamento_home.html', modulos=TRAINING_CATALOG)</code>
           </div>
-        {% else %}
-          <div style="background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;">
-            <strong>Nenhum módulo disponível.</strong>
-            <p style="margin:8px 0 0;color:#444;">
-              Para aparecer aqui, o Flask precisa passar <code>modulos</code> no <code>render_template</code>.
-              Ex.: <code>render_template('treinamento_home.html', modulos=SEUS_MODULOS)</code>
-            </p>
-          </div>
-        {% endif %}
-
-      </div>
+        </div>
+      {% endif %}
 
     </div>
   </div>
 </div>
 
-<!-- CTA + Rodapé (mesmos do painel) -->
+<!-- CTA + Rodapé -->
 <section class="cta-bar">
   <div class="cta-text">
     <h3>É proprietário de uma malharia?</h3>
@@ -519,33 +525,40 @@
   </div>
 </footer>
 
-<!-- JS mínimo para medir header / abrir menus (reaproveite do painel se quiser) -->
 <script>
+  // Busca (filtra módulos e aulas no front)
   (function(){
-    function setNavH(){
-      const nav = document.querySelector('.navbar');
-      const h = nav ? nav.offsetHeight : 0;
-      document.documentElement.style.setProperty('--nav-h', h + 'px');
-    }
-    setNavH();
-    window.addEventListener('resize', setNavH);
-  })();
-</script>
+    const input = document.getElementById('trainSearch');
+    const mods = Array.from(document.querySelectorAll('[data-mod]'));
 
-<!-- ✅ JS: busca/filtra módulos e aulas -->
-<script>
-  (function(){
-    const input = document.getElementById('modSearch');
-    const cards = Array.from(document.querySelectorAll('.mod-card'));
-    if(!input || !cards.length) return;
+    function normalize(s){ return (s || '').toString().toLowerCase().trim(); }
 
-    input.addEventListener('input', ()=>{
-      const q = (input.value || '').trim().toLowerCase();
-      cards.forEach(c=>{
-        const hay = ((c.getAttribute('data-filter') || '') + ' ' + (c.innerText || '').toLowerCase());
-        c.style.display = hay.includes(q) ? '' : 'none';
+    function apply(){
+      const q = normalize(input.value);
+      mods.forEach(mod => {
+        const modText = normalize(mod.getAttribute('data-text'));
+        const lessons = Array.from(mod.querySelectorAll('[data-lesson]'));
+        let anyLesson = false;
+
+        lessons.forEach(ls => {
+          const t = normalize(ls.getAttribute('data-text'));
+          const show = !q || t.includes(q) || modText.includes(q);
+          ls.style.display = show ? '' : 'none';
+          if (show) anyLesson = true;
+        });
+
+        const showModule = !q || modText.includes(q) || anyLesson;
+        mod.style.display = showModule ? '' : 'none';
+
+        // abre automaticamente se bater na busca
+        if (q && showModule) mod.open = true;
+        if (!q) mod.open = false;
       });
-    });
+    }
+
+    if (input){
+      input.addEventListener('input', apply);
+    }
   })();
 </script>
 
