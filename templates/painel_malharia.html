@@ -838,8 +838,15 @@
       <svg viewBox="0 0 24 24"><path d="M3 3v18h18"></path><path d="M7 13l3 3 7-7"></path></svg>
       <span>Performance de acesso</span>
     </a>
-    <a href="{{ url_for('treinamento_home') }}">Treinamento Operacional</a>
-
+    <a href="{{ url_for('treinamento_home') }}" class="pm-item" role="menuitem" title="Treinamento Operacional">
+      <svg viewBox="0 0 24 24">
+        <path d="M4 19.5V4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"></path>
+        <path d="M8 6h8"></path>
+        <path d="M8 10h8"></path>
+        <path d="M8 14h6"></path>
+      </svg>
+      <span>Treinamento Operacional</span>
+    </a>
     
     <div class="pm-group-title">Assinatura</div>
     <a href="{{ url_for('painel_malharia') }}#assinatura" class="pm-item" role="menuitem" title="Assinatura e pagamento">
