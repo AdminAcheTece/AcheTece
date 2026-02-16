@@ -5,21 +5,22 @@
   <title>Treinamento Operacional - AcheTece</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Base -->
+  <!-- CSS base do projeto -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <!-- Favicons -->
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
+
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      /* Paleta AcheTece (clara + destaques) */
+      /* Paleta AcheTece (OLIVE + neutros claros) */
       --olive:#7B7424;
       --olive-600:#5E581C;
       --olive-dark:#434326;
-
       --olive-50:#F1F2E8;
-      --olive-100:#E6E7DE;
       --line-olive:#BFBFA8;
 
       --bg-150:#EAEAE8;
@@ -28,119 +29,128 @@
       --lime:#B6F34D;
       --lime-700:#A2E532;
 
-      --text:#111827;
-      --muted:#4b5563;
+      --cinza-900:#111827;
+      --text:#101418;
+      --muted:#5c6470;
       --line:#cfd3dc;
-      --white:#ffffff;
 
-      --maxw:1180px;
-
-      /* Tipografia maior (bem mais visível) */
-      --h1: clamp(34px, 5vw, 64px);
-      --h2: clamp(22px, 3.2vw, 34px);
-      --p:  clamp(16px, 1.5vw, 20px);
-      --small: 14px;
+      --maxw:1280px;
     }
 
     html, body { max-width:100%; overflow-x:hidden; }
     *, *::before, *::after { box-sizing:border-box; }
 
     body{
-      margin:0;
       background: var(--site-bg);
-      color: var(--text);
+      color: var(--cinza-900);
+      margin:0;
       font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
     }
 
-    /* =========================================================
-       HEADER NOVO (BRANCO, FIXO, CLEAN)
-       - Logo preta (ou arquivo preto)
-       - Links: O Treinamento / Módulos / Fale conosco
-       - Só a casinha para voltar ao Painel Malharia
-       ========================================================= */
-    .train-header{
+    /* ==========
+       NAV (FAIXA BRANCA FIXA, ARREDONDADA E AFASTADA DAS LATERAIS)
+       (Conforme seu anexo 3, mas com fontes maiores)
+       ========== */
+    .top-wrap{
       position: sticky;
-      top: 0;
+      top: 14px;
       z-index: 9999;
-      background: rgba(255,255,255,0.92);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid rgba(17,24,39,0.08);
+      padding: 0 16px;
     }
 
-    .th-inner{
+    .topbar{
       max-width: var(--maxw);
       margin: 0 auto;
+      background: #fff;
+      border: 1px solid #ececec;
+      border-radius: 28px;
+      box-shadow: 0 12px 30px rgba(16,24,40,.10);
       padding: 14px 18px;
       display:flex;
       align-items:center;
-      gap:18px;
+      justify-content:space-between;
+      gap:16px;
     }
 
-    .th-logo{
+    .brand{
       display:flex;
       align-items:center;
       gap:12px;
-      text-decoration:none;
-      color: var(--text);
-      min-width: 210px;
+      min-width: 180px;
     }
 
-    .th-logo img{
-      height: 42px;
-      width: auto;
-      display:block;
-      /* IMPORTANTE:
-         Se você tiver logo preto, use no src do <img>.
-         Se sua logo for branca, você pode aplicar:
-         filter: invert(1);
-         (mas isso inverteria também uma logo já preta) */
-    }
-
-    .th-nav{
+    .brand a{
       display:flex;
       align-items:center;
-      gap:18px;
-      margin-left:auto;
+      gap:10px;
+      text-decoration:none;
+      color:#111;
     }
 
-    .th-nav a{
-      text-decoration:none;
-      color: var(--text);
-      font-weight: 900;
-      font-size: 18px; /* maior */
-      padding: 10px 12px;
-      border-radius: 999px;
-      transition: background-color .15s ease, transform .12s ease;
-      white-space: nowrap;
+    .brand img{
+      height: 34px; /* maior que o padrão */
+      width:auto;
+      display:block;
     }
-    .th-nav a:hover{
-      background: rgba(182,243,77,.35);
+
+    .brand .brand-text{
+      font-weight:900;
+      font-size:20px; /* maior */
+      letter-spacing:-.02em;
+      line-height:1;
+    }
+
+    .nav-links{
+      display:flex;
+      align-items:center;
+      gap:34px;
+      justify-content:center;
+      flex: 1 1 auto;
+    }
+    .nav-links a{
+      color:#111;
+      text-decoration:none;
+      font-weight:900;
+      font-size:20px; /* fontes grandes */
+      letter-spacing:-.01em;
+      padding:10px 10px;
+      border-radius:999px;
+      transition: background-color .15s ease, transform .12s ease;
+      white-space:nowrap;
+    }
+    .nav-links a:hover{
+      background: var(--olive-50);
       transform: translateY(-1px);
     }
 
-    .th-right{
+    .nav-actions{
       display:flex;
       align-items:center;
-      gap:12px;
+      gap:10px;
+      min-width: 90px;
+      justify-content:flex-end;
     }
 
-    .home-btn{
+    /* Só fica a casinha (retorna para painel malharia) */
+    .btn-home{
       width:46px;
       height:46px;
-      border-radius: 14px;
-      border: 1px solid rgba(17,24,39,0.12);
-      background: #fff;
+      border-radius:14px;
+      border:1px solid #e4e4e4;
+      background:#fff;
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      text-decoration:none;
+      cursor:pointer;
       transition: background-color .15s ease, transform .12s ease;
+      text-decoration:none;
+      color:#111;
     }
-    .home-btn:hover{
-      background: rgba(182,243,77,.35);
+    .btn-home:hover{
+      background: var(--olive-50);
       transform: translateY(-1px);
     }
-    .home-btn svg{
+    .btn-home svg{
       width:22px;
       height:22px;
       stroke:#111;
@@ -150,686 +160,615 @@
       stroke-linejoin:round;
     }
 
-    @media (max-width: 860px){
-      .th-inner{ padding: 12px 14px; }
-      .th-logo{ min-width:auto; }
-      .th-nav a{ font-size:16px; padding:9px 10px; }
+    /* Mobile: reduz links para caber, mantendo "grande" */
+    @media (max-width: 980px){
+      .nav-links{ gap:16px; }
+      .nav-links a{ font-size:18px; padding:8px 8px; }
+      .brand .brand-text{ display:none; }
     }
-    @media (max-width: 640px){
-      .th-nav{ gap:8px; }
-      .th-nav a{ font-size:15px; padding:8px 8px; }
-      .th-logo img{ height:38px; }
-      .home-btn{ width:44px; height:44px; }
+    @media (max-width: 720px){
+      .topbar{ padding: 12px 14px; }
+      .brand img{ height: 30px; }
+      .nav-links{ gap:10px; }
+      .nav-links a{ font-size:16px; }
+      .btn-home{ width:42px; height:42px; border-radius:12px; }
+    }
+    @media (max-width: 520px){
+      .nav-links{
+        gap:8px;
+      }
+      .nav-links a{
+        font-size:14px;
+        padding:8px 6px;
+      }
     }
 
-    /* =========================================================
-       LAYOUT
-       ========================================================= */
-    .wrap{
+    /* ==========
+       LAYOUT PÁGINA
+       ========== */
+    .page{
       max-width: var(--maxw);
       margin: 0 auto;
-      padding: 26px 18px 56px;
+      padding: 26px 16px 54px;
     }
 
-    /* HERO (inspirado no anexo) */
+    /* HERO centralizado e com fonte grande (como seu anexo 5) */
     .hero{
-      background: linear-gradient(180deg, rgba(255,255,255,0.82), rgba(255,255,255,0.70));
-      border: 1px solid rgba(17,24,39,0.08);
-      border-radius: 28px;
-      padding: clamp(18px, 3vw, 34px);
-      box-shadow: 0 18px 50px rgba(17,24,39,0.06);
-      overflow:hidden;
-      position:relative;
-    }
-
-    .hero::after{
-      content:"";
-      position:absolute;
-      right:-120px;
-      top:-120px;
-      width: 320px;
-      height: 320px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, rgba(182,243,77,.55), rgba(182,243,77,0));
-      pointer-events:none;
-    }
-
-    .hero-grid{
-      display:grid;
-      grid-template-columns: 1.1fr .9fr;
-      gap: 22px;
-      align-items: stretch;
-      position:relative;
-    }
-
-    @media (max-width: 980px){
-      .hero-grid{ grid-template-columns: 1fr; }
+      margin-top: 18px; /* deixa um respiro após a barra */
+      text-align:center;
+      padding: 34px 10px 10px;
     }
 
     .hero-kicker{
-      display:flex;
+      display:inline-flex;
       align-items:center;
       gap:10px;
-      font-weight: 900;
-      color: var(--olive-dark);
-      letter-spacing: .01em;
+      font-weight:900;
+      color:#111;
+      background: rgba(255,255,255,.65);
+      border:1px solid rgba(207,211,220,.9);
+      padding:10px 14px;
+      border-radius:999px;
+      box-shadow: 0 10px 24px rgba(16,24,40,.06);
+      margin-bottom: 18px;
       font-size: 16px;
-      margin-bottom: 10px;
     }
-    .dot{
-      width:10px; height:10px;
-      border-radius: 50%;
+    .hero-dot{
+      width:10px;
+      height:10px;
+      border-radius:999px;
       background: var(--lime);
-      box-shadow: 0 0 0 6px rgba(182,243,77,.25);
+      border:1px solid rgba(0,0,0,.10);
     }
 
     .hero h1{
-      margin: 0 0 10px;
-      font-size: var(--h1);
-      line-height: 1.03;
-      letter-spacing: -0.03em;
+      margin: 0 auto;
+      max-width: 980px;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 0.98;
+      color: #0b0f14;
+      font-size: clamp(44px, 6.4vw, 88px); /* bem grande */
     }
 
     .hero p{
-      margin: 0 0 18px;
-      font-size: var(--p);
-      line-height: 1.45;
-      color: rgba(17,24,39,0.78);
-      font-weight: 700;
+      margin: 18px auto 0;
+      max-width: 920px;
+      font-weight: 800;
+      color: #2a2f36;
+      line-height: 1.35;
+      font-size: clamp(18px, 2.2vw, 26px);
     }
 
-    .hero-cta{
+    /* Botões do hero (clean e grandes) */
+    .hero-actions{
+      margin-top: 22px;
       display:flex;
       gap:12px;
-      flex-wrap: wrap;
-      align-items:center;
-      margin-top: 10px;
+      justify-content:center;
+      flex-wrap:wrap;
     }
 
     .btn-primary{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      height:54px;
+      height: 54px;
       padding: 0 22px;
-      border-radius: 999px;
-      border:0;
+      border-radius: 9999px;
       background:#000;
       color: var(--lime);
       font-weight: 900;
       font-size: 18px;
-      text-decoration:none;
+      border: 0;
       cursor:pointer;
-      transition: background-color .15s ease, color .15s ease, transform .12s ease;
-      white-space: nowrap;
-    }
-    .btn-primary:hover{ background: var(--lime); color:#000; transform: translateY(-2px); }
-    .btn-primary:active{ background: var(--lime-700); transform: translateY(0); }
-
-    .btn-ghost{
+      text-decoration:none;
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      height:54px;
+      transition: background-color .15s ease, color .15s ease, transform .12s ease;
+      white-space:nowrap;
+    }
+    .btn-primary:hover{ background: var(--lime); color:#000; transform: translateY(-2px); }
+    .btn-primary:active{ background: var(--lime-700); color:#000; transform: translateY(0); }
+
+    .btn-ghost{
+      height: 54px;
       padding: 0 22px;
-      border-radius: 999px;
-      border: 1px solid rgba(17,24,39,0.18);
-      background: rgba(255,255,255,0.75);
+      border-radius: 9999px;
+      background: rgba(255,255,255,.75);
+      border: 1px solid rgba(207,211,220,.95);
       color: #111;
       font-weight: 900;
       font-size: 18px;
-      text-decoration:none;
       cursor:pointer;
-      transition: background-color .15s ease, transform .12s ease, border-color .15s ease;
-      white-space: nowrap;
-    }
-    .btn-ghost:hover{ background:#fff; border-color: rgba(182,243,77,.9); transform: translateY(-2px); }
-    .btn-ghost:active{ transform: translateY(0); }
-
-    /* CARD de progresso (lado direito) */
-    .progress-card{
-      background: rgba(255,255,255,0.86);
-      border: 1px solid rgba(17,24,39,0.10);
-      border-radius: 22px;
-      padding: 18px;
-      box-shadow: 0 10px 30px rgba(17,24,39,0.06);
-      display:flex;
-      flex-direction:column;
-      gap: 14px;
-      height:100%;
-    }
-
-    .pc-top{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:12px;
-    }
-    .pc-title{
-      font-weight: 900;
-      font-size: 18px;
-      margin:0;
-    }
-    .pc-pill{
-      height: 36px;
-      padding: 0 14px;
-      border-radius: 999px;
-      border: 1px solid rgba(17,24,39,0.12);
-      background: rgba(241,242,232,0.9);
-      font-weight: 900;
-      font-size: 16px;
+      text-decoration:none;
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      white-space: nowrap;
+      transition: background-color .15s ease, transform .12s ease;
+      white-space:nowrap;
     }
+    .btn-ghost:hover{ background:#fff; transform: translateY(-2px); }
+    .btn-ghost:active{ transform: translateY(0); }
 
-    .bar{
-      width: 100%;
-      height: 14px;
-      border-radius: 999px;
-      background: rgba(17,24,39,0.08);
-      overflow:hidden;
-      border: 1px solid rgba(17,24,39,0.08);
-    }
-    .bar > span{
-      display:block;
-      height:100%;
-      width: 0%;
-      background: linear-gradient(90deg, var(--lime), rgba(182,243,77,.65));
-    }
-
-    .pc-stats{
-      display:grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
-    @media (max-width: 520px){
-      .pc-stats{ grid-template-columns: 1fr; }
-    }
-
-    .stat{
-      background:#fff;
-      border: 1px solid rgba(17,24,39,0.10);
-      border-radius: 18px;
-      padding: 14px;
-      text-align:center;
-    }
-    .stat .n{
-      font-size: 26px;
-      font-weight: 900;
-      letter-spacing: -0.02em;
-      margin:0;
-    }
-    .stat .l{
-      font-size: 14px;
-      font-weight: 900;
-      color: rgba(17,24,39,0.62);
-      margin-top: 2px;
-    }
-
-    /* “O que entrega” */
-    .deliver{
-      margin-top: 18px;
-      display:grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-    }
-    @media (max-width: 980px){ .deliver{ grid-template-columns: 1fr; } }
-
-    .dcard{
-      background: rgba(255,255,255,0.85);
-      border: 1px solid rgba(17,24,39,0.10);
-      border-radius: 22px;
-      padding: 16px;
-      box-shadow: 0 10px 28px rgba(17,24,39,0.05);
-    }
-    .dtop{
-      display:flex;
-      align-items:center;
-      gap: 12px;
-      margin-bottom: 8px;
-    }
-    .dico{
-      width:44px; height:44px;
-      border-radius: 16px;
-      background: rgba(241,242,232,0.95);
-      border: 1px solid rgba(17,24,39,0.08);
-      display:grid;
-      place-items:center;
-      flex:0 0 auto;
-    }
-    .dico svg{
-      width:22px; height:22px;
-      stroke: #111;
-      fill:none;
-      stroke-width:2;
-      stroke-linecap:round;
-      stroke-linejoin:round;
-    }
-    .dtitle{
-      font-weight: 900;
-      font-size: 18px;
-      margin:0;
-    }
-    .dtext{
-      margin:0;
-      color: rgba(17,24,39,0.74);
-      font-weight: 700;
-      font-size: 16px;
-      line-height: 1.4;
-    }
-
-    /* =========================================================
-       MÓDULOS
-       ========================================================= */
+    /* ==========
+       SEÇÕES (cards claros + destaque suave olive/lime)
+       ========== */
     .section{
       margin-top: 26px;
     }
 
-    .sec-head{
+    .card{
+      background: rgba(255,255,255,.82);
+      border: 1px solid rgba(207,211,220,.95);
+      border-radius: 22px;
+      box-shadow: 0 14px 28px rgba(16,24,40,.06);
+      padding: 18px;
+    }
+
+    .section-title{
       display:flex;
       align-items:flex-end;
       justify-content:space-between;
-      gap: 14px;
-      flex-wrap: wrap;
-      margin-bottom: 12px;
+      gap:14px;
+      margin: 0 0 10px 0;
     }
-
-    .sec-head h2{
+    .section-title h2{
       margin:0;
-      font-size: var(--h2);
-      letter-spacing: -0.02em;
+      font-weight: 900;
+      letter-spacing: -.02em;
+      color:#0b0f14;
+      font-size: clamp(22px, 2.7vw, 34px);
+      line-height:1.1;
     }
-    .sec-head p{
-      margin:0;
-      color: rgba(17,24,39,0.66);
+    .section-title .hint{
+      color: var(--muted);
       font-weight: 800;
-      font-size: 16px;
+      font-size: 14px;
+      white-space:nowrap;
+    }
+    @media (max-width:720px){
+      .section-title{
+        flex-direction:column;
+        align-items:flex-start;
+      }
+      .section-title .hint{ white-space:normal; }
     }
 
-    .search{
-      width: 100%;
-      margin-top: 10px;
-      background: rgba(255,255,255,0.85);
-      border: 1px solid rgba(17,24,39,0.10);
-      border-radius: 18px;
-      padding: 12px 14px;
+    /* Mover progresso mais para baixo (sobre os módulos) */
+    .progress-card{
+      position: relative;
+      overflow:hidden;
+    }
+    .progress-glow{
+      position:absolute;
+      right:-90px; top:-90px;
+      width: 230px; height: 230px;
+      background: radial-gradient(circle at 30% 30%, rgba(182,243,77,.45), rgba(182,243,77,0) 70%);
+      pointer-events:none;
+    }
+
+    .progress-head{
       display:flex;
       align-items:center;
-      gap: 12px;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom: 10px;
+    }
+    .progress-head strong{
+      font-size: 18px;
+      font-weight: 900;
+      color:#111;
+    }
+    .progress-pill{
+      height: 34px;
+      padding: 0 12px;
+      border-radius: 999px;
+      background: var(--olive-50);
+      border: 1px solid rgba(191,191,168,.9);
+      font-weight: 900;
+      color: var(--olive-dark);
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      font-size: 14px;
+      white-space:nowrap;
+    }
+
+    .bar{
+      width:100%;
+      height: 14px;
+      background: rgba(17,24,39,.08);
+      border-radius: 999px;
+      overflow:hidden;
+      border: 1px solid rgba(0,0,0,.06);
+    }
+    .bar > span{
+      display:block;
+      height:100%;
+      width: {{ (global_percent if global_percent is defined else 0) | int }}%;
+      background: linear-gradient(90deg, var(--lime), rgba(123,116,36,.55));
+      border-radius: 999px;
+    }
+
+    .stats{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:12px;
+      margin-top: 14px;
+    }
+    .stat{
+      border: 1px solid rgba(207,211,220,.95);
+      border-radius: 18px;
+      background: rgba(255,255,255,.85);
+      padding: 14px;
+      text-align:center;
+    }
+    .stat .num{
+      font-weight: 900;
+      font-size: 28px;
+      letter-spacing:-.02em;
+      color:#111;
+      line-height:1.05;
+    }
+    .stat .lab{
+      margin-top:4px;
+      font-weight: 900;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    @media (max-width:640px){
+      .stats{ grid-template-columns: 1fr; }
+    }
+
+    /* Busca + módulos */
+    .search{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      background: rgba(255,255,255,.92);
+      border: 1px solid rgba(207,211,220,.95);
+      border-radius: 18px;
+      padding: 14px 14px;
+      margin-top: 12px;
     }
     .search svg{
-      width: 22px; height: 22px;
-      stroke:#111; fill:none; stroke-width:2;
-      stroke-linecap:round; stroke-linejoin:round;
-      opacity:.7;
+      width:22px;
+      height:22px;
+      stroke:#3c4450;
+      fill:none;
+      stroke-width:2;
+      stroke-linecap:round;
+      stroke-linejoin:round;
       flex:0 0 auto;
     }
     .search input{
       width:100%;
       border:0;
       outline:none;
-      background: transparent;
       font-size: 18px;
-      font-weight: 800;
+      font-weight: 700;
+      background:transparent;
       color:#111;
     }
+    .search input::placeholder{
+      color:#7b8491;
+      font-weight:700;
+    }
 
-    .mods{
-      margin-top: 14px;
+    .mod-grid{
       display:grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 14px;
+      margin-top: 14px;
     }
-    @media (max-width: 980px){ .mods{ grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    @media (max-width: 640px){ .mods{ grid-template-columns: 1fr; } }
+    @media (max-width: 980px){ .mod-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 640px){ .mod-grid{ grid-template-columns: 1fr; } }
 
-    .mcard{
-      background: rgba(255,255,255,0.9);
-      border: 1px solid rgba(17,24,39,0.10);
-      border-radius: 24px;
-      padding: 18px;
-      box-shadow: 0 12px 34px rgba(17,24,39,0.06);
+    .mod-card{
+      background: rgba(255,255,255,.86);
+      border: 1px solid rgba(207,211,220,.95);
+      border-radius: 22px;
+      padding: 16px;
+      box-shadow: 0 14px 26px rgba(16,24,40,.06);
       transition: transform .12s ease, border-color .12s ease;
       display:flex;
       flex-direction:column;
-      gap: 12px;
-      min-height: 220px;
+      gap:12px;
+      min-height: 210px;
     }
-    .mcard:hover{
+    .mod-card:hover{
       transform: translateY(-3px);
       border-color: rgba(182,243,77,.85);
     }
 
-    .mhead{
+    .mod-top{
       display:flex;
       align-items:flex-start;
       justify-content:space-between;
-      gap: 12px;
+      gap:12px;
     }
-    .mtitle{
+    .mod-title{
       margin:0;
+      font-weight: 900;
+      letter-spacing: -.02em;
+      color:#0b0f14;
       font-size: 20px;
-      font-weight: 900;
-      letter-spacing: -0.02em;
-      line-height: 1.15;
+      line-height:1.15;
     }
-    .mpills{
+    .mod-badges{
       display:flex;
-      gap: 8px;
-      flex-wrap: wrap;
+      gap:8px;
+      flex-wrap:wrap;
       justify-content:flex-end;
-      flex:0 0 auto;
-    }
-    .pill{
-      height: 34px;
-      padding: 0 12px;
-      border-radius: 999px;
-      border: 1px solid rgba(17,24,39,0.12);
-      background: rgba(241,242,232,0.95);
-      font-weight: 900;
-      font-size: 14px;
-      display:inline-flex;
       align-items:center;
-      justify-content:center;
-      white-space: nowrap;
     }
+    .badge{
+      height: 30px;
+      padding: 0 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(207,211,220,.95);
+      background: var(--olive-50);
+      font-weight: 900;
+      font-size: 12.5px;
+      white-space:nowrap;
+      color:#111;
+    }
+    .badge.ok{ background:#e9f7ef; border-color:#bfe7cc; color:#135b2b; }
+    .badge.warn{ background:#fff3e6; border-color:#ffd4a8; color:#7a3d00; }
 
-    .mdesc{
+    .mod-desc{
       margin:0;
-      color: rgba(17,24,39,0.72);
+      color:#434b57;
       font-weight: 700;
-      font-size: 16px;
+      font-size: 14.5px;
       line-height: 1.35;
-      min-height: 46px;
+      min-height: 40px;
     }
 
-    .mfoot{
+    .mod-foot{
       margin-top:auto;
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap: 12px;
-      flex-wrap: wrap;
+      gap:10px;
+      flex-wrap:wrap;
     }
 
-    .mini{
+    .progress-mini{
       display:flex;
       align-items:center;
-      gap: 10px;
-      min-width: 190px;
-      flex:1 1 auto;
-    }
-    .mini .bar{ height: 10px; }
-    .mini small{
+      gap:10px;
+      color:#36404c;
       font-weight: 900;
-      color: rgba(17,24,39,0.66);
-      font-size: 14px;
-      white-space: nowrap;
+      font-size: 13px;
+    }
+    .mini-bar{
+      width: 120px;
+      height: 10px;
+      background: rgba(17,24,39,.08);
+      border-radius:999px;
+      overflow:hidden;
+      border: 1px solid rgba(0,0,0,.06);
+    }
+    .mini-bar > span{
+      display:block;
+      height:100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--lime), rgba(123,116,36,.55));
+      border-radius:999px;
     }
 
-    .mcta{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
+    .open-btn{
       height: 46px;
       padding: 0 16px;
       border-radius: 999px;
-      border: 1px solid rgba(17,24,39,0.16);
-      background: #fff;
+      border: 1px solid rgba(207,211,220,.95);
+      background:#fff;
       color:#111;
       font-weight: 900;
-      font-size: 16px;
+      font-size: 15px;
       text-decoration:none;
-      transition: background-color .15s ease, transform .12s ease, border-color .15s ease;
-      white-space: nowrap;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      transition: background-color .15s ease, transform .12s ease;
+      white-space:nowrap;
     }
-    .mcta:hover{
-      background: rgba(182,243,77,.35);
-      border-color: rgba(182,243,77,.85);
-      transform: translateY(-2px);
-    }
+    .open-btn:hover{ background: var(--olive-50); transform: translateY(-2px); }
+    .open-btn:active{ transform: translateY(0); }
 
-    /* Footer minimal */
-    .mini-footer{
+    /* âncoras (scroll suave) */
+    html{ scroll-behavior:smooth; }
+
+    /* Footer discreto (mantém padrão sem pesar) */
+    .foot{
       margin-top: 34px;
-      color: rgba(17,24,39,0.55);
-      font-weight: 800;
-      font-size: 14px;
+      color: #6a7380;
+      font-weight: 700;
+      font-size: 13px;
       text-align:center;
-      padding: 10px 0 0;
+      padding: 18px 0 6px;
     }
   </style>
 </head>
 
 <body>
 
-{% set nome_empresa =
-    (empresa.apelido if empresa and empresa.apelido else
-     (empresa.nome_fantasia if empresa and empresa.nome_fantasia else
-      (empresa.razao_social if empresa and empresa.razao_social else 'Minha Malharia'))) %}
+  {% set global_pct = (global_percent if global_percent is defined else 0) | int %}
+  {% set modules_list = (modules if modules is defined and modules is not none else []) %}
 
-{# "modules" vem do main.py: modules=modules_view #}
-{% set modules = (modules if modules is defined and modules is not none else []) %}
-{% set gp = (global_percent if global_percent is defined and global_percent is not none else 0) %}
+  <!-- FAIXA BRANCA FIXA -->
+  <div class="top-wrap">
+    <header class="topbar" role="banner">
+      <div class="brand">
+        <a href="#topo" aria-label="Ir para o início do Treinamento">
+          <!-- ✅ Troque o filename abaixo pelo seu logo preto real -->
+          <img src="{{ url_for('static', filename='Logo_Preto_AcheTece_sem_fundo.png') }}" alt="AcheTece (Treinamento)">
+          <span class="brand-text">Treinamento</span>
+        </a>
+      </div>
 
-{# Totais para cards #}
-{% set ns = namespace(lessons_total=0) %}
-{% for m in modules %}
-  {% set ns.lessons_total = ns.lessons_total + (m.lessons_count if m.lessons_count is defined else 0) %}
-{% endfor %}
+      <nav class="nav-links" aria-label="Menu do Treinamento">
+        <a href="#o-treinamento">O Treinamento</a>
+        <a href="#modulos">Módulos</a>
+        <a href="{{ url_for('contato') }}">Fale conosco</a>
+      </nav>
 
-<!-- HEADER NOVO -->
-<header class="train-header">
-  <div class="th-inner">
-
-    <!-- Logo (use aqui seu arquivo preto) -->
-    <a class="th-logo" href="#top" aria-label="Ir para o topo do Treinamento">
-      <!-- TROQUE o filename abaixo pelo nome EXATO do seu logo preto -->
-      <img src="{{ url_for('static', filename='Logo_Preto_AcheTece_sem_fundo.png') }}" alt="AcheTece" decoding="async">
-    </a>
-
-    <nav class="th-nav" aria-label="Navegação do Treinamento">
-      <a href="#top">O Treinamento</a>
-      <a href="#modulos">Módulos</a>
-      <a href="{{ url_for('contato') }}">Fale conosco</a>
-    </nav>
-
-    <div class="th-right">
-      <!-- Casinha: volta ao Painel Malharia -->
-      <a class="home-btn" href="{{ url_for('painel_malharia') }}" aria-label="Voltar ao Painel Malharia" title="Voltar ao Painel Malharia">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M3 10.5 12 3l9 7.5"></path>
-          <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
-          <path d="M9 21V12h6v9"></path>
-        </svg>
-      </a>
-    </div>
-
+      <div class="nav-actions">
+        <!-- ✅ ÚNICO BOTÃO NO HEADER: casinha para voltar ao Painel Malharia -->
+        <a class="btn-home" href="{{ url_for('painel_malharia') }}" aria-label="Voltar ao Painel Malharia" title="Voltar ao Painel Malharia">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 10.5 12 3l9 7.5"></path>
+            <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
+            <path d="M9 21V12h6v9"></path>
+          </svg>
+        </a>
+      </div>
+    </header>
   </div>
-</header>
 
-<div class="wrap" id="top">
+  <main class="page" id="topo">
 
-  <!-- HERO -->
-  <section class="hero" aria-label="Apresentação do Treinamento">
-    <div class="hero-grid">
-
-      <div>
-        <div class="hero-kicker">
-          <span class="dot" aria-hidden="true"></span>
-          <span>Treinamento Operacional • Ambiente EaD • {{ nome_empresa }}</span>
-        </div>
-
-        <h1>Treinamento Operacional</h1>
-        <p>
-          Formação prática para elevar padrão, reduzir defeitos e aumentar produtividade —
-          com conteúdos objetivos, rastreáveis e aplicáveis no chão de fábrica.
-        </p>
-
-        <div class="hero-cta">
-          <a class="btn-primary" href="#modulos">Ver módulos</a>
-          <a class="btn-ghost" href="{{ url_for('treinamento_home') }}#modulos">Continuar treinamento</a>
-        </div>
+    <!-- HERO CENTRAL (como seu anexo 5) -->
+    <section class="hero" id="o-treinamento" aria-label="Apresentação do Treinamento">
+      <div class="hero-kicker">
+        <span class="hero-dot" aria-hidden="true"></span>
+        Treinamento Operacional • Ambiente EaD • AcheTece
       </div>
 
-      <aside class="progress-card" aria-label="Progresso geral do treinamento">
-        <div class="pc-top">
-          <p class="pc-title">Progresso geral</p>
-          <span class="pc-pill">{{ gp|int }}%</span>
+      <h1>Treinamento<br>Operacional</h1>
+
+      <p>
+        Formação prática para elevar padrão, reduzir defeitos e aumentar produtividade —
+        com conteúdos objetivos, rastreáveis e aplicáveis no chão de fábrica.
+      </p>
+
+      <div class="hero-actions">
+        <a class="btn-primary" href="#modulos">Continuar treinamento</a>
+        <a class="btn-ghost" href="#modulos">Ver módulos</a>
+      </div>
+    </section>
+
+    <!-- (Mais embaixo) PROGRESSO GERAL — acima dos módulos, porém mais “pra baixo” -->
+    <section class="section" aria-label="Progresso geral">
+      <div class="card progress-card">
+        <div class="progress-glow" aria-hidden="true"></div>
+
+        <div class="progress-head">
+          <strong>Progresso geral</strong>
+          <span class="progress-pill">{{ global_pct }}%</span>
         </div>
 
-        <div class="bar" aria-hidden="true">
-          <span style="width: {{ gp|int }}%;"></span>
+        <div class="bar" aria-label="Barra de progresso geral">
+          <span></span>
         </div>
 
-        <div class="pc-stats">
+        <div class="stats" aria-label="Indicadores do treinamento">
           <div class="stat">
-            <p class="n">{{ modules|length }}</p>
-            <div class="l">Módulos</div>
-          </div>
-          <div class="stat">
-            <p class="n">{{ ns.lessons_total }}</p>
-            <div class="l">Aulas</div>
+            <div class="num">{{ modules_list|length }}</div>
+            <div class="lab">Módulos</div>
           </div>
           <div class="stat">
-            <p class="n">
-              {% if gp|int >= 100 %}Concluído{% else %}Em andamento{% endif %}
-            </p>
-            <div class="l">Status</div>
+            <div class="num">
+              {# Somatório de aulas (se vier lessons_count) #}
+              {% set total_aulas = 0 %}
+              {% for m in modules_list %}
+                {% set total_aulas = total_aulas + (m.lessons_count if m.lessons_count is defined else 0) %}
+              {% endfor %}
+              {{ total_aulas }}
+            </div>
+            <div class="lab">Aulas</div>
+          </div>
+          <div class="stat">
+            <div class="num">Em andamento</div>
+            <div class="lab">Status</div>
           </div>
         </div>
-      </aside>
-
-    </div>
-
-    <!-- O que entrega -->
-    <div class="deliver" aria-label="O que este treinamento entrega">
-      <div class="dcard">
-        <div class="dtop">
-          <div class="dico" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path d="M20 6 9 17l-5-5"></path>
-            </svg>
-          </div>
-          <p class="dtitle">Padrão mínimo e rotina</p>
-        </div>
-        <p class="dtext">
-          O time aprende o “jeito certo” de operar, registrar e agir antes do defeito virar perda.
-        </p>
       </div>
+    </section>
 
-      <div class="dcard">
-        <div class="dtop">
-          <div class="dico" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path d="M4 19V5"></path>
-              <path d="M8 17V9"></path>
-              <path d="M12 17V7"></path>
-              <path d="M16 17v-5"></path>
-              <path d="M20 17v-3"></path>
-            </svg>
-          </div>
-          <p class="dtitle">Redução de defeitos</p>
-        </div>
-        <p class="dtext">
-          Menos barramento, variação e retrabalho — com causa provável + ação imediata.
-        </p>
-      </div>
-
-      <div class="dcard">
-        <div class="dtop">
-          <div class="dico" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path d="M12 2v20"></path>
-              <path d="M2 12h20"></path>
-            </svg>
-          </div>
-          <p class="dtitle">Treino contínuo</p>
-        </div>
-        <p class="dtext">
-          Conteúdos prontos para onboarding e reciclagem — sem depender de “quem sabe mais” no turno.
-        </p>
-      </div>
-    </div>
-  </section>
-
-  <!-- MÓDULOS -->
-  <section class="section" id="modulos" aria-label="Módulos do treinamento">
-    <div class="sec-head">
-      <div>
+    <!-- MÓDULOS -->
+    <section class="section" id="modulos" aria-label="Módulos do treinamento">
+      <div class="section-title">
         <h2>Jornada de Aprendizagem</h2>
-        <p>Escolha um módulo para avançar. O progresso é registrado por aula.</p>
+        <div class="hint">Escolha um módulo para avançar. O progresso é registrado por aula.</div>
       </div>
-    </div>
 
-    <div class="search" role="search">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="11" cy="11" r="7"></circle>
-        <path d="M21 21l-4.3-4.3"></path>
-      </svg>
-      <input id="modSearch" type="text" placeholder="Buscar módulo..." autocomplete="off" />
-    </div>
+      <div class="search" role="search" aria-label="Buscar módulo">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"></circle>
+          <path d="M21 21l-4.3-4.3"></path>
+        </svg>
+        <input id="modSearch" type="text" placeholder="Buscar módulo..." autocomplete="off">
+      </div>
 
-    {% if modules|length %}
-      <div class="mods" id="modsGrid">
-        {% for m in modules %}
-          <article class="mcard" data-filter="{{ (m.title ~ ' ' ~ (m.desc or '') ) | lower }}">
-            <div class="mhead">
-              <h3 class="mtitle">{{ m.title }}</h3>
-              <div class="mpills">
-                <span class="pill">{{ (m.percent if m.percent is defined else 0) | int }}%</span>
-                <span class="pill">{{ (m.lessons_count if m.lessons_count is defined else 0) | int }} aulas</span>
-              </div>
-            </div>
-
-            <p class="mdesc">{{ m.desc or 'Acesse as aulas e materiais deste módulo.' }}</p>
-
-            <div class="mfoot">
-              <div class="mini" aria-label="Barra de progresso do módulo">
-                <div class="bar" aria-hidden="true">
-                  <span style="width: {{ (m.percent if m.percent is defined else 0) | int }}%;"></span>
+      {% if modules_list|length %}
+        <div class="mod-grid" id="modGrid">
+          {% for m in modules_list %}
+            <article class="mod-card"
+                     data-filter="{{ (m.title ~ ' ' ~ (m.desc or '')) | lower }}">
+              <div class="mod-top">
+                <h3 class="mod-title">{{ m.title }}</h3>
+                <div class="mod-badges">
+                  {% if m.percent is defined %}
+                    {% if m.percent|int >= 70 %}
+                      <span class="badge ok">{{ m.percent|int }}%</span>
+                    {% elif m.percent|int > 0 %}
+                      <span class="badge warn">{{ m.percent|int }}%</span>
+                    {% else %}
+                      <span class="badge">0%</span>
+                    {% endif %}
+                  {% endif %}
+                  <span class="badge">{{ (m.lessons_count if m.lessons_count is defined else 0) }} aulas</span>
                 </div>
-                <small>{{ (m.percent if m.percent is defined else 0) | int }}%</small>
               </div>
 
-              <a class="mcta" href="{{ url_for('treinamento_modulo', module_key=m.key) }}">
-                Abrir módulo
-              </a>
-            </div>
-          </article>
-        {% endfor %}
-      </div>
-    {% else %}
-      <div style="margin-top:14px;background:#fff;border:1px solid rgba(17,24,39,0.10);border-radius:22px;padding:18px;font-weight:800;">
-        Nenhum módulo disponível.
-      </div>
-    {% endif %}
-  </section>
+              <p class="mod-desc">{{ m.desc or 'Acesse as aulas e materiais deste módulo.' }}</p>
 
-  <div class="mini-footer">
-    Treinamento Operacional • AcheTece
-  </div>
+              <div class="mod-foot">
+                <div class="progress-mini" aria-label="Progresso do módulo">
+                  <div class="mini-bar" aria-hidden="true">
+                    <span style="width: {{ (m.percent if m.percent is defined else 0) | int }}%;"></span>
+                  </div>
+                  {{ (m.percent if m.percent is defined else 0) | int }}%
+                </div>
 
-</div>
+                <a class="open-btn"
+                   href="{{ url_for('treinamento_modulo', module_key=m.key) }}">
+                  Abrir módulo
+                </a>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="card">
+          <strong style="font-size:18px;">Nenhum módulo disponível.</strong>
+          <p style="margin:10px 0 0;color:#444;font-weight:700;">
+            O Flask precisa passar <code>modules</code> no <code>render_template</code>.
+          </p>
+        </div>
+      {% endif %}
+    </section>
 
-<script>
-  // Busca simples (módulos)
-  (function(){
-    const input = document.getElementById('modSearch');
-    const cards = Array.from(document.querySelectorAll('.mcard'));
-    if(!input || !cards.length) return;
+    <div class="foot">AcheTece • Treinamento Operacional</div>
+  </main>
 
-    input.addEventListener('input', ()=>{
-      const q = (input.value || '').trim().toLowerCase();
-      cards.forEach(c=>{
-        const hay = (c.getAttribute('data-filter') || '') + ' ' + (c.innerText || '').toLowerCase();
-        c.style.display = hay.includes(q) ? '' : 'none';
+  <!-- JS: filtra módulos -->
+  <script>
+    (function(){
+      const input = document.getElementById('modSearch');
+      const cards = Array.from(document.querySelectorAll('.mod-card'));
+      if(!input || !cards.length) return;
+
+      input.addEventListener('input', ()=>{
+        const q = (input.value || '').trim().toLowerCase();
+        cards.forEach(c=>{
+          const hay = (c.getAttribute('data-filter') || '') + ' ' + (c.innerText || '').toLowerCase();
+          c.style.display = hay.includes(q) ? '' : 'none';
+        });
       });
-    });
-  })();
-</script>
+    })();
+  </script>
 
 </body>
 </html>
