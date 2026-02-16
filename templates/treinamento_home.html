@@ -5,36 +5,34 @@
   <title>Treinamento Operacional - AcheTece</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- CSS base do projeto -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
-  <!-- Favicons -->
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
 
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&display=swap" rel="stylesheet">
+  <!-- ✅ Fonte nova (mais “fina” e agradável, estilo referência) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      /* Paleta AcheTece (OLIVE + neutros claros) */
       --olive:#7B7424;
       --olive-600:#5E581C;
       --olive-dark:#434326;
       --olive-50:#F1F2E8;
-      --line-olive:#BFBFA8;
 
-      --bg-150:#EAEAE8;
+      --bg-150:#EAEAE8;          /* fundo cinza claro (mantém) */
       --site-bg: var(--bg-150);
 
       --lime:#B6F34D;
       --lime-700:#A2E532;
 
-      --cinza-900:#111827;
-      --text:#101418;
-      --muted:#5c6470;
-      --line:#cfd3dc;
+      --text:#111827;
+      --muted:#4b5563;
+      --line:#d7dbe3;
 
-      --maxw:1280px;
+      --maxw:1200px;
+      --navH:84px;               /* altura “lógica” do topo (ajustado via JS) */
     }
 
     html, body { max-width:100%; overflow-x:hidden; }
@@ -42,34 +40,35 @@
 
     body{
       background: var(--site-bg);
-      color: var(--cinza-900);
+      color: var(--text);
       margin:0;
-      font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      font-family:'Manrope', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
     }
 
-    /* ==========
-       NAV (FAIXA BRANCA FIXA, ARREDONDADA E AFASTADA DAS LATERAIS)
-       (Conforme seu anexo 3, mas com fontes maiores)
-       ========== */
-    .top-wrap{
-      position: sticky;
-      top: 14px;
-      z-index: 9999;
-      padding: 0 16px;
+    /* =========================
+       ✅ Topbar branca arredondada (FIXA)
+       ========================= */
+    .topbar-wrap{
+      position:fixed;
+      top:14px;
+      left:0;
+      right:0;
+      z-index:9999;
+      pointer-events:none; /* permite clique só dentro do container */
     }
-
     .topbar{
-      max-width: var(--maxw);
-      margin: 0 auto;
-      background: #fff;
-      border: 1px solid #ececec;
-      border-radius: 28px;
-      box-shadow: 0 12px 30px rgba(16,24,40,.10);
-      padding: 14px 18px;
+      pointer-events:auto;
+      max-width:var(--maxw);
+      margin:0 auto;
+      padding:14px 18px;
+      background:#fff;
+      border:1px solid rgba(17,24,39,0.08);
+      border-radius:9999px;
+      box-shadow: 0 10px 30px rgba(17,24,39,0.08);
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:16px;
+      gap:18px;
     }
 
     .brand{
@@ -78,26 +77,15 @@
       gap:12px;
       min-width: 180px;
     }
-
     .brand a{
-      display:flex;
+      display:inline-flex;
       align-items:center;
-      gap:10px;
       text-decoration:none;
-      color:#111;
     }
-
     .brand img{
-      height: 34px; /* maior que o padrão */
+      height:34px;
       width:auto;
       display:block;
-    }
-
-    .brand .brand-text{
-      font-weight:900;
-      font-size:20px; /* maior */
-      letter-spacing:-.02em;
-      line-height:1;
     }
 
     .nav-links{
@@ -105,52 +93,43 @@
       align-items:center;
       gap:34px;
       justify-content:center;
-      flex: 1 1 auto;
+      flex:1 1 auto;
     }
     .nav-links a{
-      color:#111;
       text-decoration:none;
-      font-weight:900;
-      font-size:20px; /* fontes grandes */
-      letter-spacing:-.01em;
-      padding:10px 10px;
-      border-radius:999px;
+      color:#111;
+      font-weight:700;
+      letter-spacing:-0.01em;
+      font-size:18px;            /* ✅ maior */
+      padding:10px 8px;
+      border-radius:14px;
       transition: background-color .15s ease, transform .12s ease;
       white-space:nowrap;
     }
     .nav-links a:hover{
-      background: var(--olive-50);
+      background: rgba(182,243,77,.20);
       transform: translateY(-1px);
     }
 
-    .nav-actions{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      min-width: 90px;
-      justify-content:flex-end;
-    }
-
-    /* Só fica a casinha (retorna para painel malharia) */
-    .btn-home{
-      width:46px;
-      height:46px;
+    .home-btn{
+      width:44px;
+      height:44px;
       border-radius:14px;
-      border:1px solid #e4e4e4;
+      border:1px solid rgba(17,24,39,0.10);
       background:#fff;
       display:inline-flex;
       align-items:center;
       justify-content:center;
       cursor:pointer;
       transition: background-color .15s ease, transform .12s ease;
+      flex:0 0 auto;
       text-decoration:none;
-      color:#111;
     }
-    .btn-home:hover{
-      background: var(--olive-50);
+    .home-btn:hover{
+      background: rgba(182,243,77,.25);
       transform: translateY(-1px);
     }
-    .btn-home svg{
+    .home-btn svg{
       width:22px;
       height:22px;
       stroke:#111;
@@ -160,615 +139,275 @@
       stroke-linejoin:round;
     }
 
-    /* Mobile: reduz links para caber, mantendo "grande" */
-    @media (max-width: 980px){
-      .nav-links{ gap:16px; }
-      .nav-links a{ font-size:18px; padding:8px 8px; }
-      .brand .brand-text{ display:none; }
-    }
-    @media (max-width: 720px){
-      .topbar{ padding: 12px 14px; }
-      .brand img{ height: 30px; }
-      .nav-links{ gap:10px; }
-      .nav-links a{ font-size:16px; }
-      .btn-home{ width:42px; height:42px; border-radius:12px; }
-    }
-    @media (max-width: 520px){
-      .nav-links{
-        gap:8px;
-      }
-      .nav-links a{
-        font-size:14px;
-        padding:8px 6px;
-      }
+    /* ✅ Conteúdo rola por baixo do topo fixo */
+    main{
+      padding-top: calc(var(--navH) + 22px);
     }
 
-    /* ==========
-       LAYOUT PÁGINA
-       ========== */
-    .page{
-      max-width: var(--maxw);
-      margin: 0 auto;
-      padding: 26px 16px 54px;
-    }
-
-    /* HERO centralizado e com fonte grande (como seu anexo 5) */
+    /* =========================
+       ✅ HERO (fonte grande, centralizada)
+       ========================= */
     .hero{
-      margin-top: 18px; /* deixa um respiro após a barra */
-      text-align:center;
-      padding: 34px 10px 10px;
-    }
-
-    .hero-kicker{
-      display:inline-flex;
-      align-items:center;
-      gap:10px;
-      font-weight:900;
-      color:#111;
-      background: rgba(255,255,255,.65);
-      border:1px solid rgba(207,211,220,.9);
-      padding:10px 14px;
-      border-radius:999px;
-      box-shadow: 0 10px 24px rgba(16,24,40,.06);
-      margin-bottom: 18px;
-      font-size: 16px;
-    }
-    .hero-dot{
-      width:10px;
-      height:10px;
-      border-radius:999px;
-      background: var(--lime);
-      border:1px solid rgba(0,0,0,.10);
+      max-width:var(--maxw);
+      margin:0 auto;
+      padding:26px 18px 10px;
+      text-align:center;         /* ✅ centralizado como referência */
     }
 
     .hero h1{
-      margin: 0 auto;
-      max-width: 980px;
-      font-weight: 900;
-      letter-spacing: -0.04em;
-      line-height: 0.98;
-      color: #0b0f14;
-      font-size: clamp(44px, 6.4vw, 88px); /* bem grande */
-    }
-
-    .hero p{
-      margin: 18px auto 0;
-      max-width: 920px;
-      font-weight: 800;
-      color: #2a2f36;
-      line-height: 1.35;
-      font-size: clamp(18px, 2.2vw, 26px);
-    }
-
-    /* Botões do hero (clean e grandes) */
-    .hero-actions{
-      margin-top: 22px;
-      display:flex;
-      gap:12px;
-      justify-content:center;
-      flex-wrap:wrap;
-    }
-
-    .btn-primary{
-      height: 54px;
-      padding: 0 22px;
-      border-radius: 9999px;
-      background:#000;
-      color: var(--lime);
-      font-weight: 900;
-      font-size: 18px;
-      border: 0;
-      cursor:pointer;
-      text-decoration:none;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      transition: background-color .15s ease, color .15s ease, transform .12s ease;
-      white-space:nowrap;
-    }
-    .btn-primary:hover{ background: var(--lime); color:#000; transform: translateY(-2px); }
-    .btn-primary:active{ background: var(--lime-700); color:#000; transform: translateY(0); }
-
-    .btn-ghost{
-      height: 54px;
-      padding: 0 22px;
-      border-radius: 9999px;
-      background: rgba(255,255,255,.75);
-      border: 1px solid rgba(207,211,220,.95);
-      color: #111;
-      font-weight: 900;
-      font-size: 18px;
-      cursor:pointer;
-      text-decoration:none;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      transition: background-color .15s ease, transform .12s ease;
-      white-space:nowrap;
-    }
-    .btn-ghost:hover{ background:#fff; transform: translateY(-2px); }
-    .btn-ghost:active{ transform: translateY(0); }
-
-    /* ==========
-       SEÇÕES (cards claros + destaque suave olive/lime)
-       ========== */
-    .section{
-      margin-top: 26px;
-    }
-
-    .card{
-      background: rgba(255,255,255,.82);
-      border: 1px solid rgba(207,211,220,.95);
-      border-radius: 22px;
-      box-shadow: 0 14px 28px rgba(16,24,40,.06);
-      padding: 18px;
-    }
-
-    .section-title{
-      display:flex;
-      align-items:flex-end;
-      justify-content:space-between;
-      gap:14px;
-      margin: 0 0 10px 0;
-    }
-    .section-title h2{
       margin:0;
-      font-weight: 900;
-      letter-spacing: -.02em;
-      color:#0b0f14;
-      font-size: clamp(22px, 2.7vw, 34px);
-      line-height:1.1;
+      font-size: clamp(44px, 6vw, 86px);  /* ✅ bem grande */
+      line-height: 0.92;
+      letter-spacing:-0.03em;
+      font-weight:800;           /* Manrope fica “limpo” mesmo em bold */
+      color:#222;
     }
-    .section-title .hint{
-      color: var(--muted);
-      font-weight: 800;
-      font-size: 14px;
-      white-space:nowrap;
-    }
-    @media (max-width:720px){
-      .section-title{
-        flex-direction:column;
-        align-items:flex-start;
-      }
-      .section-title .hint{ white-space:normal; }
+    .hero p{
+      margin:14px auto 0;
+      max-width: 980px;
+      font-size: clamp(18px, 2.1vw, 28px); /* ✅ grande e legível */
+      line-height:1.25;
+      color:#3b3b3b;
+      font-weight:500;
     }
 
-    /* Mover progresso mais para baixo (sobre os módulos) */
-    .progress-card{
-      position: relative;
-      overflow:hidden;
-    }
-    .progress-glow{
-      position:absolute;
-      right:-90px; top:-90px;
-      width: 230px; height: 230px;
-      background: radial-gradient(circle at 30% 30%, rgba(182,243,77,.45), rgba(182,243,77,0) 70%);
-      pointer-events:none;
-    }
-
-    .progress-head{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      margin-bottom: 10px;
-    }
-    .progress-head strong{
-      font-size: 18px;
-      font-weight: 900;
-      color:#111;
-    }
-    .progress-pill{
-      height: 34px;
-      padding: 0 12px;
-      border-radius: 999px;
-      background: var(--olive-50);
-      border: 1px solid rgba(191,191,168,.9);
-      font-weight: 900;
-      color: var(--olive-dark);
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      font-size: 14px;
-      white-space:nowrap;
+    /* =========================
+       ✅ MÓDULOS (sem os elementos que você pediu para excluir)
+       - Sem “pílula” do topo do treinamento
+       - Sem botões “continuar/ver módulos”
+       - Sem barra de busca
+       - Sem texto “Escolha um módulo...”
+       - Sem breadcrumb “AcheTece • Treinamento...”
+       - Sem “Treinamento” como seção extra
+       ========================= */
+    .section{
+      max-width:var(--maxw);
+      margin:0 auto;
+      padding: 22px 18px 38px;
     }
 
-    .bar{
-      width:100%;
-      height: 14px;
-      background: rgba(17,24,39,.08);
-      border-radius: 999px;
-      overflow:hidden;
-      border: 1px solid rgba(0,0,0,.06);
-    }
-    .bar > span{
-      display:block;
-      height:100%;
-      width: {{ (global_percent if global_percent is defined else 0) | int }}%;
-      background: linear-gradient(90deg, var(--lime), rgba(123,116,36,.55));
-      border-radius: 999px;
-    }
-
-    .stats{
+    .mods-grid{
       display:grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap:12px;
-      margin-top: 14px;
+      gap:16px;
+      margin-top: 8px;
     }
-    .stat{
-      border: 1px solid rgba(207,211,220,.95);
-      border-radius: 18px;
-      background: rgba(255,255,255,.85);
-      padding: 14px;
-      text-align:center;
+    @media (max-width: 980px){ .mods-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 680px){
+      .topbar{ border-radius:24px; padding:12px 14px; }
+      .nav-links{ display:none; } /* mobile: simplifica para ficar clean */
+      .brand{ min-width:auto; }
+      .mods-grid{ grid-template-columns: 1fr; }
     }
-    .stat .num{
-      font-weight: 900;
-      font-size: 28px;
-      letter-spacing:-.02em;
-      color:#111;
-      line-height:1.05;
-    }
-    .stat .lab{
-      margin-top:4px;
-      font-weight: 900;
-      color: var(--muted);
-      font-size: 13px;
-    }
-    @media (max-width:640px){
-      .stats{ grid-template-columns: 1fr; }
-    }
-
-    /* Busca + módulos */
-    .search{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      background: rgba(255,255,255,.92);
-      border: 1px solid rgba(207,211,220,.95);
-      border-radius: 18px;
-      padding: 14px 14px;
-      margin-top: 12px;
-    }
-    .search svg{
-      width:22px;
-      height:22px;
-      stroke:#3c4450;
-      fill:none;
-      stroke-width:2;
-      stroke-linecap:round;
-      stroke-linejoin:round;
-      flex:0 0 auto;
-    }
-    .search input{
-      width:100%;
-      border:0;
-      outline:none;
-      font-size: 18px;
-      font-weight: 700;
-      background:transparent;
-      color:#111;
-    }
-    .search input::placeholder{
-      color:#7b8491;
-      font-weight:700;
-    }
-
-    .mod-grid{
-      display:grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
-      margin-top: 14px;
-    }
-    @media (max-width: 980px){ .mod-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    @media (max-width: 640px){ .mod-grid{ grid-template-columns: 1fr; } }
 
     .mod-card{
-      background: rgba(255,255,255,.86);
-      border: 1px solid rgba(207,211,220,.95);
-      border-radius: 22px;
-      padding: 16px;
-      box-shadow: 0 14px 26px rgba(16,24,40,.06);
-      transition: transform .12s ease, border-color .12s ease;
+      background:#fff;
+      border:1px solid rgba(17,24,39,0.10);
+      border-radius:22px;
+      padding:18px;
       display:flex;
       flex-direction:column;
-      gap:12px;
-      min-height: 210px;
+      gap:10px;
+      box-shadow: 0 10px 28px rgba(17,24,39,0.06);
+      transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease;
     }
     .mod-card:hover{
-      transform: translateY(-3px);
-      border-color: rgba(182,243,77,.85);
+      transform: translateY(-2px);
+      border-color: rgba(182,243,77,.75);
+      box-shadow: 0 14px 34px rgba(17,24,39,0.10);
     }
 
-    .mod-top{
+    .mod-head{
       display:flex;
       align-items:flex-start;
       justify-content:space-between;
       gap:12px;
     }
+
     .mod-title{
       margin:0;
-      font-weight: 900;
-      letter-spacing: -.02em;
-      color:#0b0f14;
-      font-size: 20px;
+      font-size:20px;            /* ✅ maior */
+      font-weight:800;
+      letter-spacing:-0.02em;
       line-height:1.15;
+      color:#111;
     }
-    .mod-badges{
+
+    .mod-meta{
       display:flex;
       gap:8px;
       flex-wrap:wrap;
       justify-content:flex-end;
-      align-items:center;
+      flex:0 0 auto;
     }
-    .badge{
-      height: 30px;
-      padding: 0 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(207,211,220,.95);
-      background: var(--olive-50);
-      font-weight: 900;
-      font-size: 12.5px;
-      white-space:nowrap;
+
+    .pill{
+      height:30px;
+      padding:0 12px;
+      border-radius:999px;
+      border:1px solid rgba(17,24,39,0.10);
+      background: rgba(241,242,232,0.9);
+      font-size:13px;
+      font-weight:800;
       color:#111;
+      display:inline-flex;
+      align-items:center;
+      white-space:nowrap;
     }
-    .badge.ok{ background:#e9f7ef; border-color:#bfe7cc; color:#135b2b; }
-    .badge.warn{ background:#fff3e6; border-color:#ffd4a8; color:#7a3d00; }
 
     .mod-desc{
       margin:0;
-      color:#434b57;
-      font-weight: 700;
-      font-size: 14.5px;
-      line-height: 1.35;
-      min-height: 40px;
+      color:#4b5563;
+      font-size:15px;            /* ✅ maior */
+      line-height:1.35;
+      font-weight:500;
+      min-height: 42px;
     }
 
-    .mod-foot{
+    .mod-actions{
       margin-top:auto;
       display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      flex-wrap:wrap;
+      justify-content:flex-end;
+      padding-top:8px;
     }
 
-    .progress-mini{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      color:#36404c;
-      font-weight: 900;
-      font-size: 13px;
-    }
-    .mini-bar{
-      width: 120px;
-      height: 10px;
-      background: rgba(17,24,39,.08);
-      border-radius:999px;
-      overflow:hidden;
-      border: 1px solid rgba(0,0,0,.06);
-    }
-    .mini-bar > span{
-      display:block;
-      height:100%;
-      width: 0%;
-      background: linear-gradient(90deg, var(--lime), rgba(123,116,36,.55));
-      border-radius:999px;
-    }
-
-    .open-btn{
-      height: 46px;
-      padding: 0 16px;
-      border-radius: 999px;
-      border: 1px solid rgba(207,211,220,.95);
+    .btn-open{
+      height:44px;
+      padding:0 18px;
+      border-radius:9999px;
+      border:1px solid rgba(17,24,39,0.12);
       background:#fff;
       color:#111;
-      font-weight: 900;
-      font-size: 15px;
+      font-weight:800;
+      font-size:15px;
       text-decoration:none;
       display:inline-flex;
       align-items:center;
       justify-content:center;
+      cursor:pointer;
       transition: background-color .15s ease, transform .12s ease;
-      white-space:nowrap;
     }
-    .open-btn:hover{ background: var(--olive-50); transform: translateY(-2px); }
-    .open-btn:active{ transform: translateY(0); }
-
-    /* âncoras (scroll suave) */
-    html{ scroll-behavior:smooth; }
-
-    /* Footer discreto (mantém padrão sem pesar) */
-    .foot{
-      margin-top: 34px;
-      color: #6a7380;
-      font-weight: 700;
-      font-size: 13px;
-      text-align:center;
-      padding: 18px 0 6px;
+    .btn-open:hover{
+      background: rgba(182,243,77,.35);
+      transform: translateY(-1px);
     }
+
+    /* Estado vazio */
+    .empty{
+      background:#fff;
+      border:1px solid rgba(17,24,39,0.10);
+      border-radius:22px;
+      padding:18px;
+      box-shadow: 0 10px 28px rgba(17,24,39,0.06);
+      margin-top: 10px;
+    }
+    .empty strong{
+      font-size:18px;
+      font-weight:800;
+    }
+    .empty p{
+      margin:8px 0 0;
+      color:#444;
+      font-size:15px;
+      line-height:1.35;
+    }
+
+    /* (Opcional) Se quiser manter CTA/rodapé do painel, pode reativar depois.
+       Aqui eu NÃO coloquei para ficar “clean” como você pediu (somente necessário). */
   </style>
 </head>
 
 <body>
 
-  {% set global_pct = (global_percent if global_percent is defined else 0) | int %}
-  {% set modules_list = (modules if modules is defined and modules is not none else []) %}
+{% set chat_count = (chat_nao_lidos if chat_nao_lidos is defined else 0) %}
+{% set notif_count = (notificacoes if notificacoes is defined else 0) %}
 
-  <!-- FAIXA BRANCA FIXA -->
-  <div class="top-wrap">
-    <header class="topbar" role="banner">
-      <div class="brand">
-        <a href="#topo" aria-label="Ir para o início do Treinamento">
-          <!-- ✅ Troque o filename abaixo pelo seu logo preto real -->
-          <img src="{{ url_for('static', filename='Logo_Preto_AcheTece_sem_fundo.png') }}" alt="AcheTece (Treinamento)">
-          <span class="brand-text">Treinamento</span>
-        </a>
-      </div>
+<!-- ✅ Topbar branca fixa (arredondada, afastada das laterais) -->
+<div class="topbar-wrap">
+  <header class="topbar" id="topbar">
+    <div class="brand">
+      <!-- ✅ Logo em preto (troque o filename pelo seu arquivo preto) -->
+      <a href="{{ url_for('treinamento_home') }}" aria-label="Treinamento - Início">
+        <img src="{{ url_for('static', filename='Logo_Preto_AcheTece_sem_fundo.png') }}" alt="AcheTece">
+      </a>
+    </div>
 
-      <nav class="nav-links" aria-label="Menu do Treinamento">
-        <a href="#o-treinamento">O Treinamento</a>
-        <a href="#modulos">Módulos</a>
-        <a href="{{ url_for('contato') }}">Fale conosco</a>
-      </nav>
+    <nav class="nav-links" aria-label="Menu do treinamento">
+      <a href="{{ url_for('treinamento_home') }}#o-treinamento">O Treinamento</a>
+      <a href="{{ url_for('treinamento_home') }}#modulos">Módulos</a>
+      <a href="{{ url_for('contato') }}">Fale conosco</a>
+    </nav>
 
-      <div class="nav-actions">
-        <!-- ✅ ÚNICO BOTÃO NO HEADER: casinha para voltar ao Painel Malharia -->
-        <a class="btn-home" href="{{ url_for('painel_malharia') }}" aria-label="Voltar ao Painel Malharia" title="Voltar ao Painel Malharia">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3 10.5 12 3l9 7.5"></path>
-            <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
-            <path d="M9 21V12h6v9"></path>
-          </svg>
-        </a>
-      </div>
-    </header>
-  </div>
+    <!-- ✅ Único botão/ícone à direita: casinha para voltar ao Painel Malharia -->
+    <a class="home-btn" href="{{ url_for('painel_malharia') }}" aria-label="Voltar ao Painel Malharia" title="Voltar ao Painel Malharia">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M3 10.5 12 3l9 7.5"></path>
+        <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
+        <path d="M9 21V12h6v9"></path>
+      </svg>
+    </a>
+  </header>
+</div>
 
-  <main class="page" id="topo">
+<main>
+  <!-- ✅ HERO grande (centralizado) -->
+  <section class="hero" id="o-treinamento">
+    <h1>Treinamento Operacional</h1>
+    <p>
+      Formação prática para elevar padrão, reduzir defeitos e aumentar produtividade — com conteúdos objetivos,
+      rastreáveis e aplicáveis no chão de fábrica.
+    </p>
+  </section>
 
-    <!-- HERO CENTRAL (como seu anexo 5) -->
-    <section class="hero" id="o-treinamento" aria-label="Apresentação do Treinamento">
-      <div class="hero-kicker">
-        <span class="hero-dot" aria-hidden="true"></span>
-        Treinamento Operacional • Ambiente EaD • AcheTece
-      </div>
+  <!-- ✅ Módulos (direto ao ponto, sem extras que você pediu para remover) -->
+  <section class="section" id="modulos">
+    {% set modules = (modules if modules is defined and modules is not none else []) %}
 
-      <h1>Treinamento<br>Operacional</h1>
-
-      <p>
-        Formação prática para elevar padrão, reduzir defeitos e aumentar produtividade —
-        com conteúdos objetivos, rastreáveis e aplicáveis no chão de fábrica.
-      </p>
-
-      <div class="hero-actions">
-        <a class="btn-primary" href="#modulos">Continuar treinamento</a>
-        <a class="btn-ghost" href="#modulos">Ver módulos</a>
-      </div>
-    </section>
-
-    <!-- (Mais embaixo) PROGRESSO GERAL — acima dos módulos, porém mais “pra baixo” -->
-    <section class="section" aria-label="Progresso geral">
-      <div class="card progress-card">
-        <div class="progress-glow" aria-hidden="true"></div>
-
-        <div class="progress-head">
-          <strong>Progresso geral</strong>
-          <span class="progress-pill">{{ global_pct }}%</span>
-        </div>
-
-        <div class="bar" aria-label="Barra de progresso geral">
-          <span></span>
-        </div>
-
-        <div class="stats" aria-label="Indicadores do treinamento">
-          <div class="stat">
-            <div class="num">{{ modules_list|length }}</div>
-            <div class="lab">Módulos</div>
-          </div>
-          <div class="stat">
-            <div class="num">
-              {# Somatório de aulas (se vier lessons_count) #}
-              {% set total_aulas = 0 %}
-              {% for m in modules_list %}
-                {% set total_aulas = total_aulas + (m.lessons_count if m.lessons_count is defined else 0) %}
-              {% endfor %}
-              {{ total_aulas }}
+    {% if modules|length %}
+      <div class="mods-grid">
+        {% for m in modules %}
+          <article class="mod-card">
+            <div class="mod-head">
+              <h3 class="mod-title">{{ m.title }}</h3>
+              <div class="mod-meta">
+                <span class="pill">{{ (m.percent if m.percent is defined else 0) }}%</span>
+                <span class="pill">{{ (m.lessons_count if m.lessons_count is defined else 0) }} aulas</span>
+              </div>
             </div>
-            <div class="lab">Aulas</div>
-          </div>
-          <div class="stat">
-            <div class="num">Em andamento</div>
-            <div class="lab">Status</div>
-          </div>
-        </div>
+
+            {% if m.desc %}
+              <p class="mod-desc">{{ m.desc }}</p>
+            {% else %}
+              <p class="mod-desc">Acesse as aulas e materiais deste módulo.</p>
+            {% endif %}
+
+            <div class="mod-actions">
+              <!-- ✅ Usa seu endpoint real: treinamento_modulo(module_key) -->
+              <a class="btn-open" href="{{ url_for('treinamento_modulo', module_key=m.key) }}">Abrir módulo</a>
+            </div>
+          </article>
+        {% endfor %}
       </div>
-    </section>
-
-    <!-- MÓDULOS -->
-    <section class="section" id="modulos" aria-label="Módulos do treinamento">
-      <div class="section-title">
-        <h2>Jornada de Aprendizagem</h2>
-        <div class="hint">Escolha um módulo para avançar. O progresso é registrado por aula.</div>
+    {% else %}
+      <div class="empty">
+        <strong>Nenhum módulo disponível.</strong>
+        <p>Verifique se o Flask está enviando <code>modules</code> no <code>render_template</code>.</p>
       </div>
+    {% endif %}
+  </section>
+</main>
 
-      <div class="search" role="search" aria-label="Buscar módulo">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="11" cy="11" r="7"></circle>
-          <path d="M21 21l-4.3-4.3"></path>
-        </svg>
-        <input id="modSearch" type="text" placeholder="Buscar módulo..." autocomplete="off">
-      </div>
-
-      {% if modules_list|length %}
-        <div class="mod-grid" id="modGrid">
-          {% for m in modules_list %}
-            <article class="mod-card"
-                     data-filter="{{ (m.title ~ ' ' ~ (m.desc or '')) | lower }}">
-              <div class="mod-top">
-                <h3 class="mod-title">{{ m.title }}</h3>
-                <div class="mod-badges">
-                  {% if m.percent is defined %}
-                    {% if m.percent|int >= 70 %}
-                      <span class="badge ok">{{ m.percent|int }}%</span>
-                    {% elif m.percent|int > 0 %}
-                      <span class="badge warn">{{ m.percent|int }}%</span>
-                    {% else %}
-                      <span class="badge">0%</span>
-                    {% endif %}
-                  {% endif %}
-                  <span class="badge">{{ (m.lessons_count if m.lessons_count is defined else 0) }} aulas</span>
-                </div>
-              </div>
-
-              <p class="mod-desc">{{ m.desc or 'Acesse as aulas e materiais deste módulo.' }}</p>
-
-              <div class="mod-foot">
-                <div class="progress-mini" aria-label="Progresso do módulo">
-                  <div class="mini-bar" aria-hidden="true">
-                    <span style="width: {{ (m.percent if m.percent is defined else 0) | int }}%;"></span>
-                  </div>
-                  {{ (m.percent if m.percent is defined else 0) | int }}%
-                </div>
-
-                <a class="open-btn"
-                   href="{{ url_for('treinamento_modulo', module_key=m.key) }}">
-                  Abrir módulo
-                </a>
-              </div>
-            </article>
-          {% endfor %}
-        </div>
-      {% else %}
-        <div class="card">
-          <strong style="font-size:18px;">Nenhum módulo disponível.</strong>
-          <p style="margin:10px 0 0;color:#444;font-weight:700;">
-            O Flask precisa passar <code>modules</code> no <code>render_template</code>.
-          </p>
-        </div>
-      {% endif %}
-    </section>
-
-    <div class="foot">AcheTece • Treinamento Operacional</div>
-  </main>
-
-  <!-- JS: filtra módulos -->
-  <script>
-    (function(){
-      const input = document.getElementById('modSearch');
-      const cards = Array.from(document.querySelectorAll('.mod-card'));
-      if(!input || !cards.length) return;
-
-      input.addEventListener('input', ()=>{
-        const q = (input.value || '').trim().toLowerCase();
-        cards.forEach(c=>{
-          const hay = (c.getAttribute('data-filter') || '') + ' ' + (c.innerText || '').toLowerCase();
-          c.style.display = hay.includes(q) ? '' : 'none';
-        });
-      });
-    })();
-  </script>
+<script>
+  (function(){
+    function setNavH(){
+      const bar = document.getElementById('topbar');
+      const h = bar ? bar.offsetHeight : 84;
+      document.documentElement.style.setProperty('--navH', (h + 28) + 'px'); // + folga do topo
+    }
+    setNavH();
+    window.addEventListener('resize', setNavH);
+  })();
+</script>
 
 </body>
 </html>
