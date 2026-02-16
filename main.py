@@ -35,6 +35,8 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.utils import make_msgid, formataddr
 from authlib.integrations.flask_client import OAuth
+from training_catalog import TRAINING_CATALOG, get_module, get_lesson
+from sqlalchemy import UniqueConstraint
 
 # SMTP direto (fallback)
 import smtplib, ssl
@@ -1147,6 +1149,25 @@ class OtpToken(db.Model):
     ip = db.Column(db.String(64))
     user_agent = db.Column(db.String(255))
 
+class TrainingProgress(db.Model):
+    __tablename__ = "training_progress"
+
+    id = db.Column(db.Integer, primary_key=True)
+    company_id = db.Column(db.Integer, db.ForeignKey("empresa.id"), index=True, nullable=False)
+
+    module_key = db.Column(db.String(32), index=True, nullable=False)
+    lesson_key = db.Column(db.String(32), index=True, nullable=False)
+
+    status = db.Column(db.String(16), default="not_started", nullable=False)  # not_started | in_progress | done
+    score = db.Column(db.Integer, nullable=True)
+
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    completed_at = db.Column(db.DateTime, nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("company_id", "module_key", "lesson_key", name="uq_training_progress"),
+    )
+
 # === Helpers de autenticação/empresa =========================================
 # flask_login é opcional no projeto; faça import seguro
 try:
@@ -1462,6 +1483,11 @@ def _run_bootstrap_once():
         db.session.rollback()
         app.logger.error("[BOOT] adiado: %s", e)
 
+    try:
+        TrainingProgress.__table__.create(bind=db.engine, checkfirst=True)
+    except Exception as e:
+        app.logger.warning(f"[BOOT] create training_progress failed: {e}")
+
 @app.before_request
 def _bootstrap_and_analytics_lazy():
     global _ANALYTICS_READY
@@ -1486,11 +1512,11 @@ def _no_cache_on_panel(resp):
         p  = request.path or "/"
 
         # páginas do painel (ajuste a lista se seu endpoint tiver outro nome)
-        panel_endpoints = {"painel_malharia"}
+        panel_endpoints = {""}
         # também forçamos no-store no POST de upload (o response é um redirect 302)
         upload_endpoints = {"perfil_foto_upload"}
 
-        if ep in panel_endpoints or ep in upload_endpoints or p.endswith("/painel_malharia"):
+        if ep in panel_endpoints or ep in upload_endpoints or p.endswith("/"):
             resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
             resp.headers["Pragma"] = "no-cache"
             resp.headers["Expires"] = "0"
@@ -2157,7 +2183,7 @@ def validate_login_code():
         session["empresa_id"] = emp.id
         session["empresa_apelido"] = emp.apelido or emp.nome or emp.email.split("@")[0]
         flash("Bem-vindo!", "success")
-        return redirect(url_for("painel_malharia"))
+        return redirect(url_for(""))
 
     flash("E-mail ainda não cadastrado. Conclua seu cadastro para continuar.", "info")
     return redirect(url_for("cadastro_get", email=email))
@@ -2201,7 +2227,7 @@ def post_login_password():
 
     session["empresa_id"] = user.id
     session["empresa_apelido"] = user.apelido or user.nome or user.email.split("@")[0]
-    return redirect(url_for("painel_malharia"))
+    return redirect(url_for(""))
 
 from flask import request, session, redirect, url_for, flash
 
@@ -2209,7 +2235,7 @@ from flask import request, session, redirect, url_for, flash
 def oauth_google():
     # contexto padrão "empresa" e preserva redirecionamento
     ctx = request.args.get("ctx", "empresa")
-    nxt = request.args.get("next") or url_for("painel_malharia")
+    nxt = request.args.get("next") or url_for("")
 
     # guarda em sessão para usar no callback
     session["oauth_ctx"] = ctx
@@ -2253,7 +2279,7 @@ def oauth_google_callback():
     foto  = userinfo.get("picture")
 
     ctx = session.pop("oauth_ctx", "empresa")
-    nxt = session.pop("oauth_next", url_for("painel_malharia"))
+    nxt = session.pop("oauth_next", url_for(""))
 
     if not email:
         flash("Não foi possível obter o e-mail do Google.", "danger")
@@ -2548,6 +2574,266 @@ def _empresa_avatar_url(emp) -> str | None:
         app.logger.warning(f"[avatar] _empresa_avatar_url erro: {e}")
 
     return None
+
+from flask import send_from_directory
+
+TRAINING_FILES_DIR = os.path.join(app.root_path, "training_files")
+
+
+def _training_progress_map(company_id: int) -> dict:
+    """
+    Retorna dict:
+      {(module_key, lesson_key): {"status":..., "score":..., "completed_at":...}}
+    """
+    mp = {}
+    try:
+        rows = TrainingProgress.query.filter_by(company_id=company_id).all()
+        for r in rows:
+            mp[(r.module_key, r.lesson_key)] = {
+                "status": r.status,
+                "score": r.score,
+                "completed_at": r.completed_at,
+                "updated_at": r.updated_at,
+            }
+    except Exception:
+        pass
+    return mp
+
+
+def _training_upsert(company_id: int, module_key: str, lesson_key: str, status: str, score: int | None = None):
+    module_key = (module_key or "").strip().lower()
+    lesson_key = (lesson_key or "").strip().lower()
+    status = (status or "not_started").strip().lower()
+
+    if status not in ("not_started", "in_progress", "done"):
+        status = "in_progress"
+
+    row = TrainingProgress.query.filter_by(
+        company_id=company_id, module_key=module_key, lesson_key=lesson_key
+    ).first()
+
+    now = datetime.utcnow()
+
+    if not row:
+        row = TrainingProgress(
+            company_id=company_id,
+            module_key=module_key,
+            lesson_key=lesson_key,
+            status=status,
+            score=score,
+            updated_at=now,
+            completed_at=(now if status == "done" else None),
+        )
+        db.session.add(row)
+    else:
+        row.status = status
+        if score is not None:
+            row.score = score
+        row.updated_at = now
+        if status == "done" and not row.completed_at:
+            row.completed_at = now
+
+    db.session.commit()
+
+
+def _training_percent_for_module(module: dict, progress_map: dict) -> int:
+    lessons = module.get("lessons") or []
+    if not lessons:
+        return 0
+    done = 0
+    for a in lessons:
+        k = (module.get("key"), a.get("key"))
+        st = (progress_map.get(k) or {}).get("status")
+        if st == "done":
+            done += 1
+    return int(round((done / max(1, len(lessons))) * 100))
+
+
+def _training_global_percent(progress_map: dict) -> int:
+    total = 0
+    done = 0
+    for m in TRAINING_CATALOG:
+        for a in (m.get("lessons") or []):
+            total += 1
+            st = (progress_map.get((m.get("key"), a.get("key"))) or {}).get("status")
+            if st == "done":
+                done += 1
+    if total == 0:
+        return 0
+    return int(round((done / total) * 100))
+
+
+# -----------------------------
+# Arquivos do treinamento (PROTEGIDOS)
+# -----------------------------
+@app.get("/painel/treinamento/arquivo/<path:filename>", endpoint="treinamento_file")
+def treinamento_file(filename):
+    emp, _u = _get_empresa_usuario_da_sessao()
+    if not emp:
+        return redirect(url_for("login"))
+
+    # (opcional) se quiser travar por assinatura ativa, troque para:
+    # if not emp.assinatura_ativa and not DEMO_MODE: return redirect(url_for("painel_malharia"))
+
+    safe_name = os.path.basename(filename)  # evita path traversal
+    abs_path = os.path.join(TRAINING_FILES_DIR, safe_name)
+    if not os.path.exists(abs_path):
+        abort(404)
+
+    return send_from_directory(TRAINING_FILES_DIR, safe_name, as_attachment=False)
+
+
+# -----------------------------
+# Home do Treinamento
+# -----------------------------
+@app.get("/painel/treinamento", endpoint="treinamento_home")
+def treinamento_home():
+    emp, _u = _get_empresa_usuario_da_sessao()
+    if not emp:
+        return redirect(url_for("login"))
+
+    progress = _training_progress_map(emp.id)
+    modules_view = []
+    for m in TRAINING_CATALOG:
+        modules_view.append({
+            "key": m.get("key"),
+            "title": m.get("title"),
+            "desc": m.get("desc"),
+            "percent": _training_percent_for_module(m, progress),
+            "lessons_count": len(m.get("lessons") or []),
+        })
+
+    return render_template(
+        "treinamento_home.html",
+        empresa=emp,
+        modules=modules_view,
+        global_percent=_training_global_percent(progress),
+    )
+
+
+# -----------------------------
+# Página do Módulo (lista de aulas)
+# -----------------------------
+@app.get("/painel/treinamento/<module_key>", endpoint="treinamento_modulo")
+def treinamento_modulo(module_key):
+    emp, _u = _get_empresa_usuario_da_sessao()
+    if not emp:
+        return redirect(url_for("login"))
+
+    mod = get_module(module_key)
+    if not mod:
+        abort(404)
+
+    progress = _training_progress_map(emp.id)
+
+    lessons_view = []
+    for a in (mod.get("lessons") or []):
+        st = (progress.get((mod.get("key"), a.get("key"))) or {}).get("status") or "not_started"
+        lessons_view.append({
+            "key": a.get("key"),
+            "title": a.get("title"),
+            "minutes": a.get("minutes"),
+            "summary": a.get("summary"),
+            "status": st,
+        })
+
+    return render_template(
+        "treinamento_modulo.html",
+        empresa=emp,
+        module=mod,
+        lessons=lessons_view,
+        percent=_training_percent_for_module(mod, progress),
+    )
+
+
+# -----------------------------
+# Página da Aula (conteúdo + PDF + quiz + marcar concluída)
+# -----------------------------
+@app.get("/painel/treinamento/<module_key>/<lesson_key>", endpoint="treinamento_aula")
+def treinamento_aula(module_key, lesson_key):
+    emp, _u = _get_empresa_usuario_da_sessao()
+    if not emp:
+        return redirect(url_for("login"))
+
+    mod = get_module(module_key)
+    aula = get_lesson(module_key, lesson_key)
+    if not mod or not aula:
+        abort(404)
+
+    progress = _training_progress_map(emp.id)
+    st = (progress.get((mod.get("key"), aula.get("key"))) or {}).get("status") or "not_started"
+
+    # Ao entrar na aula, marca como "in_progress" se ainda não iniciou
+    if st == "not_started":
+        try:
+            _training_upsert(emp.id, mod.get("key"), aula.get("key"), "in_progress")
+            st = "in_progress"
+        except Exception:
+            pass
+
+    file_name = aula.get("file")
+    file_url = url_for("treinamento_file", filename=file_name) if file_name else None
+
+    return render_template(
+        "treinamento_aula.html",
+        empresa=emp,
+        module=mod,
+        lesson=aula,
+        status=st,
+        file_url=file_url,
+    )
+
+
+@app.post("/painel/treinamento/<module_key>/<lesson_key>/concluir", endpoint="treinamento_concluir")
+def treinamento_concluir(module_key, lesson_key):
+    emp, _u = _get_empresa_usuario_da_sessao()
+    if not emp:
+        return redirect(url_for("login"))
+
+    mod = get_module(module_key)
+    aula = get_lesson(module_key, lesson_key)
+    if not mod or not aula:
+        abort(404)
+
+    _training_upsert(emp.id, mod.get("key"), aula.get("key"), "done")
+    flash("Aula marcada como concluída ✅", "success")
+    return redirect(url_for("treinamento_modulo", module_key=mod.get("key")))
+
+
+@app.post("/painel/treinamento/<module_key>/<lesson_key>/quiz", endpoint="treinamento_quiz")
+def treinamento_quiz(module_key, lesson_key):
+    emp, _u = _get_empresa_usuario_da_sessao()
+    if not emp:
+        return redirect(url_for("login"))
+
+    mod = get_module(module_key)
+    aula = get_lesson(module_key, lesson_key)
+    if not mod or not aula:
+        abort(404)
+
+    quiz = aula.get("quiz") or []
+    if not quiz:
+        flash("Esta aula não possui quiz.", "info")
+        return redirect(url_for("treinamento_aula", module_key=mod.get("key"), lesson_key=aula.get("key")))
+
+    total = len(quiz)
+    acertos = 0
+
+    for i, q in enumerate(quiz):
+        ans = q.get("answer")
+        picked = request.form.get(f"q{i}")
+        try:
+            picked_i = int(picked) if picked is not None else -1
+        except Exception:
+            picked_i = -1
+        if picked_i == ans:
+            acertos += 1
+
+    score = int(round((acertos / max(1, total)) * 100))
+    _training_upsert(emp.id, mod.get("key"), aula.get("key"), "in_progress", score=score)
+
+    flash(f"Quiz registrado: {score}% ✅", "success")
+    return redirect(url_for("treinamento_aula", module_key=mod.get("key"), lesson_key=aula.get("key")))
 
 @app.route("/perfil/foto_upload", methods=["POST"], endpoint="perfil_foto_upload")
 def perfil_foto_upload():
