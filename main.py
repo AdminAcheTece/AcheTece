@@ -38,6 +38,7 @@ from authlib.integrations.flask_client import OAuth
 from training_catalog import TRAINING_CATALOG, get_module, get_lesson
 from sqlalchemy import UniqueConstraint
 from flask import render_template, abort, send_from_directory
+from models import ProgressoAula
 
 # SMTP direto (fallback)
 import smtplib, ssl
