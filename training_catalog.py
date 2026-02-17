@@ -9,36 +9,39 @@ from typing import Any, Dict, List, Optional
 TRAINING_CATALOG: List[Dict[str, Any]] = [
     {
         "key": "m0",
-        "title": "Módulo 0 — Boas-vindas e regras de chão de fábrica",
-        "desc": "Visão geral do processo, postura operacional, padrões mínimos e segurança.",
+        "title": "Módulo 0 — Apresentação do Projeto para Diretoria",
+        "desc": "Apresentar e aprovar o Programa (escopo, investimento, governança).",
         "lessons": [
             {
                 "key": "a1",
-                "title": "Fluxo ponta a ponta (fio → tear → rolo → revisão → expedição)",
+                "title": "Contexto e por que agora",
                 "minutes": 12,
                 # arquivo protegido (fica em training_files/)
                 "file": "m0_onboarding.pdf",
-                "summary": "Entender o processo completo e onde nascem os principais desperdícios.",
+                "summary": "Diante da alta rotatividade e dificuldade de contratação, é essencial padronizar o onboarding com rotina e método para proteger conhecimento crítico, elevar qualidade e produtividade e reduzir riscos de segurança.",
             },
             {
                 "key": "a2",
-                "title": "Padrão mínimo para pedir ajuda (4 itens) + registro de anomalias",
+                "title": "Objetivos estratégicos do Programa",
                 "minutes": 10,
                 "file": "m0_pedir_ajuda.pdf",
-                "summary": "Como pedir ajuda de forma objetiva e rastreável.",
-                "quiz": [
-                    {
-                        "q": "Qual é o objetivo do padrão mínimo ao pedir ajuda?",
-                        "options": [
-                            "Acelerar a resposta e evitar retrabalho",
-                            "Substituir o líder de turno",
-                            "Evitar que a manutenção atue",
-                            "Aumentar o tempo de máquina parada",
-                        ],
-                        "answer": 0,
-                    }
-                ],
+                "summary": "Reduzir o tempo até a autonomia, estabilizar o processo, cortar retrabalho por defeitos e padronizar decisões, com trilha clara de crescimento por função.",
             },
+            {
+                "key": "a3",
+                "title": "Escopo (áreas cobertas)",
+                "minutes": 10,
+                "file": "m0_pedir_ajuda.pdf",
+                "summary": "Escopo completo da malharia circular: onboarding e regras, segurança, fundamentos têxteis, fluxo ponta a ponta, funções, qualidade e rotinas, TPM/manutenção, PCP/OEE e desenvolvimento/liberação de artigos.",
+            },
+            {
+                "key": "a4",
+                "title": "Método (como o aprendizado vira resultado)",
+                "minutes": 10,
+                "file": "m0_pedir_ajuda.pdf",
+                "summary": "Método prático e curto no chão de fábrica, com microdoses diárias e liberação por competência, apoiado por padrões simples e materiais de setor (cartões, checklists, registros e mini-quizzes).",
+            },
+                            
         ],
     },
     {
