@@ -2779,7 +2779,10 @@ def treinamento_aula(module_key, lesson_key):
     st = (progress.get((mod.get("key"), aula.get("key"))) or {}).get("status") or "not_started"
 
     # Ao entrar na aula, marca como "in_progress" se ainda não iniciou
-    if st == "not_started":
+    # (exceto quando acabamos de desmarcar e voltamos via redirect)
+    skip_autostart = session.pop("_skip_autostart", False)
+    
+    if st == "not_started" and not skip_autostart:
         try:
             _training_upsert(emp.id, mod.get("key"), aula.get("key"), "in_progress")
             st = "in_progress"
@@ -2803,58 +2806,40 @@ from flask import current_app, abort, redirect, url_for
 
 @app.post("/treinamento/<module_key>/<lesson_key>/concluir")
 def treinamento_concluir(module_key, lesson_key):
-    empresa_id = session.get("empresa_id")
-    if not empresa_id:
+    emp, _u = _get_empresa_usuario_da_sessao()
+    if not emp:
         return redirect(url_for("login"))
 
-    # Use o seu model real (aqui mantive ProgressoAula, pois o log confirma que existe)
-    Model = globals().get("ProgressoAula")
-    if Model is None:
-        current_app.logger.exception("Modelo ProgressoAula não encontrado.")
-        abort(500)
+    mod = get_module(module_key)
+    aula = get_lesson(module_key, lesson_key)
+    if not mod or not aula:
+        abort(404)
 
-    filtros = {"empresa_id": empresa_id}
+    progress = _training_progress_map(emp.id)
+    st = (progress.get((mod.get("key"), aula.get("key"))) or {}).get("status") or "not_started"
 
-    # módulo / aula (seu log mostra que seu model usa 'modulo' e 'aula')
-    if hasattr(Model, "modulo"):
-        filtros["modulo"] = module_key
+    # TOGGLE baseado no MESMO sistema que a tela usa
+    if st == "done":
+        # DESMARCAR -> volta para não iniciada
+        try:
+            _training_upsert(emp.id, mod.get("key"), aula.get("key"), "not_started", score=None)
+        except TypeError:
+            _training_upsert(emp.id, mod.get("key"), aula.get("key"), "not_started")
+
+        # evita que o GET auto-marque in_progress ao recarregar
+        session["_skip_autostart"] = True
+
+        current_app.logger.info(f"[TOGGLE] DESMARCOU via _training_upsert: emp={emp.id} mod={mod.get('key')} aula={aula.get('key')}")
     else:
-        filtros["module_key"] = module_key
+        # MARCAR -> concluída
+        try:
+            _training_upsert(emp.id, mod.get("key"), aula.get("key"), "done")
+        except Exception:
+            _training_upsert(emp.id, mod.get("key"), aula.get("key"), "done")
 
-    if hasattr(Model, "aula"):
-        filtros["aula"] = lesson_key
-    else:
-        filtros["lesson_key"] = lesson_key
+        current_app.logger.info(f"[TOGGLE] MARCOU via _training_upsert: emp={emp.id} mod={mod.get('key')} aula={aula.get('key')}")
 
-    prog = Model.query.filter_by(**filtros).first()
-    now = datetime.utcnow()
-
-    # ✅ TOGGLE POR EXISTÊNCIA:
-    # - existe => DESMARCAR (volta para "Não iniciada") apagando registro
-    # - não existe => MARCAR criando registro
-    if prog:
-        db.session.delete(prog)
-        db.session.commit()
-        current_app.logger.info(f"[TOGGLE] DESMARCOU (DELETE): model={Model.__name__} filtros={filtros}")
-        return redirect(url_for("treinamento_aula", module_key=module_key, lesson_key=lesson_key))
-
-    prog = Model(**filtros)
-
-    # se existirem campos extras, seta sem quebrar
-    if hasattr(prog, "status"):
-        prog.status = "done"
-    if hasattr(prog, "completed_at"):
-        prog.completed_at = now
-    if hasattr(prog, "updated_at"):
-        prog.updated_at = now
-    if hasattr(prog, "created_at"):
-        prog.created_at = now
-
-    db.session.add(prog)
-    db.session.commit()
-    current_app.logger.info(f"[TOGGLE] MARCOU (CREATE): model={Model.__name__} filtros={filtros}")
-
-    return redirect(url_for("treinamento_aula", module_key=module_key, lesson_key=lesson_key))
+    return redirect(url_for("treinamento_aula", module_key=mod.get("key"), lesson_key=aula.get("key")))
 
 @app.post("/painel/treinamento/<module_key>/<lesson_key>/quiz", endpoint="treinamento_quiz")
 def treinamento_quiz(module_key, lesson_key):
