@@ -2784,22 +2784,44 @@ def treinamento_aula(module_key, lesson_key):
         file_url=file_url,
     )
 
-
-@app.post("/painel/treinamento/<module_key>/<lesson_key>/concluir", endpoint="treinamento_concluir")
+@app.post("/treinamento/<module_key>/<lesson_key>/concluir")
 def treinamento_concluir(module_key, lesson_key):
-    emp, _u = _get_empresa_usuario_da_sessao()
-    if not emp:
+    empresa_id = session.get("empresa_id")
+    if not empresa_id:
         return redirect(url_for("login"))
 
-    mod = get_module(module_key)
-    aula = get_lesson(module_key, lesson_key)
-    if not mod or not aula:
-        abort(404)
+    # Exemplo de modelo (ajuste para o seu nome real)
+    # ProgressoAula: empresa_id, module_key, lesson_key, status, updated_at, completed_at
+    prog = (ProgressoAula.query
+            .filter_by(empresa_id=empresa_id, module_key=module_key, lesson_key=lesson_key)
+            .first())
 
-    _training_upsert(emp.id, mod.get("key"), aula.get("key"), "done")
-    flash("Aula marcada como concluída ✅", "success")
-    return redirect(url_for("treinamento_modulo", module_key=mod.get("key")))
+    if not prog:
+        prog = ProgressoAula(
+            empresa_id=empresa_id,
+            module_key=module_key,
+            lesson_key=lesson_key,
+            status="done",
+            completed_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+        db.session.add(prog)
+    else:
+        if prog.status == "done":
+            # DESMARCAR
+            prog.status = "not_started"   # ou "in_progress" se quiser manter como “visitada”
+            prog.completed_at = None
+        else:
+            # MARCAR
+            prog.status = "done"
+            prog.completed_at = datetime.utcnow()
 
+        prog.updated_at = datetime.utcnow()
+
+    db.session.commit()
+
+    # volta para a aula (e tudo recalcula: módulo e home)
+    return redirect(url_for("treinamento_aula", module_key=module_key, lesson_key=lesson_key))
 
 @app.post("/painel/treinamento/<module_key>/<lesson_key>/quiz", endpoint="treinamento_quiz")
 def treinamento_quiz(module_key, lesson_key):
