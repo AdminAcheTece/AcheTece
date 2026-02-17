@@ -38,7 +38,6 @@ from authlib.integrations.flask_client import OAuth
 from training_catalog import TRAINING_CATALOG, get_module, get_lesson
 from sqlalchemy import UniqueConstraint
 from flask import render_template, abort, send_from_directory
-from models import ProgressoAula
 
 # SMTP direto (fallback)
 import smtplib, ssl
@@ -1168,6 +1167,20 @@ class TrainingProgress(db.Model):
 
     __table_args__ = (
         UniqueConstraint("company_id", "module_key", "lesson_key", name="uq_training_progress"),
+    )
+
+class ProgressoAula(db.Model):
+    __tablename__ = "progresso_aula"
+    id = db.Column(db.Integer, primary_key=True)
+
+    empresa_id = db.Column(db.Integer, db.ForeignKey("empresa.id"), nullable=False, index=True)
+    modulo = db.Column(db.String(20), nullable=False, index=True)  # ex: "m0"
+    aula = db.Column(db.String(20), nullable=False, index=True)    # ex: "a1"
+
+    concluido_em = db.Column(db.DateTime, nullable=True)
+
+    __table_args__ = (
+        db.UniqueConstraint("empresa_id", "modulo", "aula", name="uq_prog_aula_empresa_modulo_aula"),
     )
 
 # === Helpers de autenticação/empresa =========================================
@@ -2785,43 +2798,94 @@ def treinamento_aula(module_key, lesson_key):
         file_url=file_url,
     )
 
+from flask import current_app, abort
+from datetime import datetime
+
 @app.post("/treinamento/<module_key>/<lesson_key>/concluir")
 def treinamento_concluir(module_key, lesson_key):
     empresa_id = session.get("empresa_id")
     if not empresa_id:
         return redirect(url_for("login"))
 
-    # Exemplo de modelo (ajuste para o seu nome real)
-    # ProgressoAula: empresa_id, module_key, lesson_key, status, updated_at, completed_at
-    prog = (ProgressoAula.query
-            .filter_by(empresa_id=empresa_id, module_key=module_key, lesson_key=lesson_key)
-            .first())
+    # 1) Resolver o model (evita NameError e ajuda se você tiver outro nome real)
+    Model = (
+        globals().get("ProgressoAula")
+        or globals().get("ProgressoTreinamento")
+        or globals().get("TreinamentoProgresso")
+        or globals().get("AulaProgresso")
+    )
+    if Model is None:
+        current_app.logger.exception("Modelo de progresso de aula não encontrado (ProgressoAula/alternativas).")
+        abort(500)
 
+    # 2) Montar filtros compatíveis com nomes de colunas diferentes
+    filtros = {"empresa_id": empresa_id}
+
+    if hasattr(Model, "module_key"):
+        filtros["module_key"] = module_key
+    elif hasattr(Model, "modulo"):
+        filtros["modulo"] = module_key
+    elif hasattr(Model, "module"):
+        filtros["module"] = module_key
+    else:
+        current_app.logger.exception("Model de progresso sem coluna de módulo (module_key/modulo/module).")
+        abort(500)
+
+    if hasattr(Model, "lesson_key"):
+        filtros["lesson_key"] = lesson_key
+    elif hasattr(Model, "aula"):
+        filtros["aula"] = lesson_key
+    elif hasattr(Model, "lesson"):
+        filtros["lesson"] = lesson_key
+    else:
+        current_app.logger.exception("Model de progresso sem coluna de aula (lesson_key/aula/lesson).")
+        abort(500)
+
+    prog = Model.query.filter_by(**filtros).first()
+    now = datetime.utcnow()
+
+    # Helpers para setar campos só se existirem
+    def _set(obj, field, value):
+        if hasattr(obj, field):
+            setattr(obj, field, value)
+
+    # 3) Toggle: criar se não existe; se existe, alternar concluído/não concluído
     if not prog:
-        prog = ProgressoAula(
-            empresa_id=empresa_id,
-            module_key=module_key,
-            lesson_key=lesson_key,
-            status="done",
-            completed_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
-        )
+        prog = Model(**filtros)
+        _set(prog, "status", "done")
+        _set(prog, "is_done", True)
+        _set(prog, "completed_at", now)
+        _set(prog, "updated_at", now)
         db.session.add(prog)
     else:
-        if prog.status == "done":
+        # Detecta "concluído" por prioridade: status -> completed_at -> is_done
+        if hasattr(prog, "status"):
+            concluido = (prog.status == "done")
+        elif hasattr(prog, "completed_at"):
+            concluido = (prog.completed_at is not None)
+        elif hasattr(prog, "is_done"):
+            concluido = bool(prog.is_done)
+        else:
+            # Se não há nenhum campo, não dá pra togglar com segurança
+            current_app.logger.exception("Model de progresso não possui status/completed_at/is_done.")
+            abort(500)
+
+        if concluido:
             # DESMARCAR
-            prog.status = "not_started"   # ou "in_progress" se quiser manter como “visitada”
-            prog.completed_at = None
+            _set(prog, "status", "not_started")   # ajuste se preferir "in_progress"
+            _set(prog, "is_done", False)
+            _set(prog, "completed_at", None)
         else:
             # MARCAR
-            prog.status = "done"
-            prog.completed_at = datetime.utcnow()
+            _set(prog, "status", "done")
+            _set(prog, "is_done", True)
+            _set(prog, "completed_at", now)
 
-        prog.updated_at = datetime.utcnow()
+        _set(prog, "updated_at", now)
 
     db.session.commit()
 
-    # volta para a aula (e tudo recalcula: módulo e home)
+    # volta para a aula
     return redirect(url_for("treinamento_aula", module_key=module_key, lesson_key=lesson_key))
 
 @app.post("/painel/treinamento/<module_key>/<lesson_key>/quiz", endpoint="treinamento_quiz")
