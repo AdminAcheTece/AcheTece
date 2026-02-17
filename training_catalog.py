@@ -46,8 +46,13 @@ TRAINING_CATALOG: List[Dict[str, Any]] = [
     },
     {
         "key": "m1",
-        "title": "Módulo 1 — Operação básica no tear (rotinas e atenção ao detalhe)",
-        "desc": "Rotina do operador, pontos críticos e como evitar defeitos comuns.",
+        "title": "Módulo 1 — Integração + Regras do Jogo do Setor (onboarding)",
+        "desc": "Resultado (competência observável)
+•	Explica o que é sucesso no setor: segurança primeiro, depois qualidade, depois produtividade.
+•	Conhece regras do setor (conduta, comunicação, disciplina de corredor/posto).
+•	Sabe pedir ajuda do jeito certo: mensagem curta + dados mínimos.
+•	Entende a trilha: o que aprende agora, o que vem depois e como será avaliado.
+",
         "lessons": [
             {
                 "key": "a1",
