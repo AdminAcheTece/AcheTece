@@ -24,7 +24,7 @@ TRAINING_CATALOG: List[Dict[str, Any]] = [
                 "key": "a2",
                 "title": "Aula 2 - Objetivos estratégicos do Programa",
                 "minutes": 10,
-                "file": "m0_pedir_ajuda.pdf",
+                "file": "m0_aula_2.pdf",
                 "summary": "Reduzir o tempo até a autonomia, estabilizar o processo, cortar retrabalho por defeitos e padronizar decisões, com trilha clara de crescimento por função.",
             },
             {
