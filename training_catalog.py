@@ -9,12 +9,12 @@ from typing import Any, Dict, List, Optional
 TRAINING_CATALOG: List[Dict[str, Any]] = [
     {
         "key": "m0",
-        "title": "Módulo 0 — Apresentação do Projeto para Diretoria",
+        "title": "Módulo 0 — Apresentação do Programa de Treinamento",
         "desc": "Apresentar e aprovar o Programa (escopo, investimento, governança).",
         "lessons": [
             {
                 "key": "a1",
-                "title": "Contexto e por que agora",
+                "title": "Aula 1 - Contexto e por que agora",
                 "minutes": 12,
                 # arquivo protegido (fica em training_files/)
                 "file": "m0_onboarding.pdf",
@@ -22,21 +22,21 @@ TRAINING_CATALOG: List[Dict[str, Any]] = [
             },
             {
                 "key": "a2",
-                "title": "Objetivos estratégicos do Programa",
+                "title": "Aula 2 - Objetivos estratégicos do Programa",
                 "minutes": 10,
                 "file": "m0_pedir_ajuda.pdf",
                 "summary": "Reduzir o tempo até a autonomia, estabilizar o processo, cortar retrabalho por defeitos e padronizar decisões, com trilha clara de crescimento por função.",
             },
             {
                 "key": "a3",
-                "title": "Escopo (áreas cobertas)",
+                "title": "Aula 3 - Escopo (áreas cobertas)",
                 "minutes": 10,
                 "file": "m0_pedir_ajuda.pdf",
                 "summary": "Escopo completo da malharia circular: onboarding e regras, segurança, fundamentos têxteis, fluxo ponta a ponta, funções, qualidade e rotinas, TPM/manutenção, PCP/OEE e desenvolvimento/liberação de artigos.",
             },
             {
                 "key": "a4",
-                "title": "Método (como o aprendizado vira resultado)",
+                "title": "Aula 4 - Método (como o aprendizado vira resultado)",
                 "minutes": 10,
                 "file": "m0_pedir_ajuda.pdf",
                 "summary": "Método prático e curto no chão de fábrica, com microdoses diárias e liberação por competência, apoiado por padrões simples e materiais de setor (cartões, checklists, registros e mini-quizzes).",
