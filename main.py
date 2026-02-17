@@ -2184,7 +2184,7 @@ def validate_login_code():
         session["empresa_id"] = emp.id
         session["empresa_apelido"] = emp.apelido or emp.nome or emp.email.split("@")[0]
         flash("Bem-vindo!", "success")
-        return redirect(url_for(""))
+        return redirect(url_for("painel_malharia"))
 
     flash("E-mail ainda não cadastrado. Conclua seu cadastro para continuar.", "info")
     return redirect(url_for("cadastro_get", email=email))
