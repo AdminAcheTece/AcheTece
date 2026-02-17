@@ -514,7 +514,13 @@
       <!-- Card de ações -->
       <aside class="actions-card" aria-label="Ações da aula">
         <form method="post" action="{{ url_for('treinamento_concluir', module_key=module.key, lesson_key=lesson.key) }}">
-          <button type="submit" class="btn-primary">Marcar como concluída</button>
+          <button type="submit" class="btn-primary">
+            {% if status == "done" %}
+              Desmarcar como concluída
+            {% else %}
+              Marcar como concluída
+            {% endif %}
+          </button>
         </form>
 
         <a class="btn-open" href="{{ url_for('treinamento_modulo', module_key=module.key) }}">← Voltar ao módulo</a>
