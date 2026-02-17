@@ -2804,13 +2804,17 @@ from datetime import datetime
 from datetime import datetime
 from flask import current_app, abort, redirect, url_for
 
+from datetime import datetime
+from flask import current_app, abort, redirect, url_for
+
 @app.post("/treinamento/<module_key>/<lesson_key>/concluir")
 def treinamento_concluir(module_key, lesson_key):
     empresa_id = session.get("empresa_id")
     if not empresa_id:
         return redirect(url_for("login"))
 
-    # Resolve o model existente (ajuste a lista se seu nome real for outro)
+    # Use O MESMO model que você usa para montar o status nas telas.
+    # Se você tiver o nome real, troque aqui e remova o fallback.
     Model = (
         globals().get("ProgressoAula")
         or globals().get("ProgressoTreinamento")
@@ -2818,12 +2822,13 @@ def treinamento_concluir(module_key, lesson_key):
         or globals().get("AulaProgresso")
     )
     if Model is None:
-        current_app.logger.exception("Modelo de progresso não encontrado (ProgressoAula/alternativas).")
+        current_app.logger.exception("Modelo de progresso não encontrado.")
         abort(500)
 
-    # Monta filtros compatíveis com nomes de colunas diferentes
+    # Filtros compatíveis com chaves diferentes
     filtros = {"empresa_id": empresa_id}
 
+    # módulo
     if hasattr(Model, "module_key"):
         filtros["module_key"] = module_key
     elif hasattr(Model, "modulo"):
@@ -2831,9 +2836,10 @@ def treinamento_concluir(module_key, lesson_key):
     elif hasattr(Model, "module"):
         filtros["module"] = module_key
     else:
-        current_app.logger.exception("Model de progresso sem coluna de módulo (module_key/modulo/module).")
+        current_app.logger.exception("Model sem coluna de módulo.")
         abort(500)
 
+    # aula
     if hasattr(Model, "lesson_key"):
         filtros["lesson_key"] = lesson_key
     elif hasattr(Model, "aula"):
@@ -2841,34 +2847,124 @@ def treinamento_concluir(module_key, lesson_key):
     elif hasattr(Model, "lesson"):
         filtros["lesson"] = lesson_key
     else:
-        current_app.logger.exception("Model de progresso sem coluna de aula (lesson_key/aula/lesson).")
+        current_app.logger.exception("Model sem coluna de aula.")
         abort(500)
 
     prog = Model.query.filter_by(**filtros).first()
     now = datetime.utcnow()
 
-    def _set(obj, field, value):
-        if hasattr(obj, field):
-            setattr(obj, field, value)
+    def has(field): 
+        return hasattr(prog, field) if prog else False
 
-    # ✅ Toggle por existência (funciona mesmo sem status/completed_at/is_done)
-    if prog:
-        # DESMARCAR: remove o registro
-        db.session.delete(prog)
+    def setf(field, value):
+        if prog is not None and hasattr(prog, field):
+            setattr(prog, field, value)
+
+    # Campos comuns (PT/EN) que podem existir no seu model
+    BOOL_FIELDS = ["is_done", "done", "concluida", "concluido", "finalizado", "completed"]
+    DT_FIELDS   = ["completed_at", "completed_on", "concluida_em", "concluido_em", "finalizado_em", "data_conclusao"]
+    ST_FIELDS   = ["status", "estado", "situacao"]
+
+    def detect_concluido():
+        # 1) status textual
+        for f in ST_FIELDS:
+            if has(f):
+                val = (getattr(prog, f) or "").strip().lower()
+                return val in {"done", "concluida", "concluído", "concluido", "completed", "finalizado"}
+        # 2) boolean
+        for f in BOOL_FIELDS:
+            if has(f):
+                return bool(getattr(prog, f))
+        # 3) datetime
+        for f in DT_FIELDS:
+            if has(f):
+                return getattr(prog, f) is not None
+        # 4) fallback: existência do registro
+        return True
+
+    if prog is None:
+        # MARCAR (cria)
+        prog = Model(**filtros)
+        db.session.add(prog)
+
+        # tenta marcar usando campos existentes
+        for f in ST_FIELDS:
+            if hasattr(prog, f):
+                setattr(prog, f, "done")
+                break
+        for f in BOOL_FIELDS:
+            if hasattr(prog, f):
+                setattr(prog, f, True)
+        for f in DT_FIELDS:
+            if hasattr(prog, f):
+                setattr(prog, f, now)
+
+        # timestamps genéricos
+        for f in ["updated_at", "created_at", "atualizado_em", "criado_em"]:
+            if hasattr(prog, f):
+                setattr(prog, f, now)
+
         db.session.commit()
+
+        current_app.logger.info(f"[TOGGLE] MARCOU: model={Model.__name__} filtros={filtros}")
         return redirect(url_for("treinamento_aula", module_key=module_key, lesson_key=lesson_key))
 
-    # MARCAR: cria o registro mínimo
-    prog = Model(**filtros)
+    # prog existe -> alterna
+    concluido = detect_concluido()
 
-    # Se existirem campos de timestamp no seu model, atualiza sem quebrar
-    _set(prog, "updated_at", now)
-    _set(prog, "created_at", now)
-    _set(prog, "atualizado_em", now)
-    _set(prog, "criado_em", now)
+    if concluido:
+        # DESMARCAR
+        changed = False
 
-    db.session.add(prog)
-    db.session.commit()
+        # se houver status, coloca como não iniciada
+        for f in ST_FIELDS:
+            if hasattr(prog, f):
+                setattr(prog, f, "not_started")
+                changed = True
+
+        # boolean false
+        for f in BOOL_FIELDS:
+            if hasattr(prog, f):
+                setattr(prog, f, False)
+                changed = True
+
+        # datas nulas
+        for f in DT_FIELDS:
+            if hasattr(prog, f):
+                setattr(prog, f, None)
+                changed = True
+
+        # se não existe nenhum campo “marcável”, fallback: deletar o registro
+        if not changed:
+            db.session.delete(prog)
+
+        # updated_at se existir
+        for f in ["updated_at", "atualizado_em"]:
+            if hasattr(prog, f):
+                setattr(prog, f, now)
+
+        db.session.commit()
+        current_app.logger.info(f"[TOGGLE] DESMARCOU: model={Model.__name__} filtros={filtros} changed={changed}")
+
+    else:
+        # MARCAR
+        for f in ST_FIELDS:
+            if hasattr(prog, f):
+                setattr(prog, f, "done")
+                break
+        for f in BOOL_FIELDS:
+            if hasattr(prog, f):
+                setattr(prog, f, True)
+        for f in DT_FIELDS:
+            if hasattr(prog, f):
+                setattr(prog, f, now)
+
+        for f in ["updated_at", "atualizado_em"]:
+            if hasattr(prog, f):
+                setattr(prog, f, now)
+
+        db.session.commit()
+        current_app.logger.info(f"[TOGGLE] MARCOU (existente): model={Model.__name__} filtros={filtros}")
 
     return redirect(url_for("treinamento_aula", module_key=module_key, lesson_key=lesson_key))
 
