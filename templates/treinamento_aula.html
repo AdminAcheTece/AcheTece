@@ -443,6 +443,33 @@
       transform: scale(1.8);
       transform-origin: left center;
     }
+
+    /* =========================
+       Fonte: garantir igualdade entre títulos e botões
+       ========================= */
+    :root{
+      --font-ui: 'Manrope', system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    
+    body{
+      font-family: var(--font-ui);
+    }
+    
+    /* força controles de formulário a usar a mesma fonte do site */
+    button,
+    input,
+    select,
+    textarea{
+      font-family: var(--font-ui) !important;
+    }
+    
+    /* reforço nas classes de botões (caso algum CSS externo sobrescreva) */
+    .btn-open,
+    .btn-primary,
+    .btn-mini{
+      font-family: var(--font-ui) !important;
+      letter-spacing: -0.01em; /* opcional: deixa mais “coeso” com seus títulos */
+    }
   </style>
 </head>
 
