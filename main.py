@@ -2801,13 +2801,16 @@ def treinamento_aula(module_key, lesson_key):
 from flask import current_app, abort
 from datetime import datetime
 
+from datetime import datetime
+from flask import current_app, abort, redirect, url_for
+
 @app.post("/treinamento/<module_key>/<lesson_key>/concluir")
 def treinamento_concluir(module_key, lesson_key):
     empresa_id = session.get("empresa_id")
     if not empresa_id:
         return redirect(url_for("login"))
 
-    # 1) Resolver o model (evita NameError e ajuda se você tiver outro nome real)
+    # Resolve o model existente (ajuste a lista se seu nome real for outro)
     Model = (
         globals().get("ProgressoAula")
         or globals().get("ProgressoTreinamento")
@@ -2815,10 +2818,10 @@ def treinamento_concluir(module_key, lesson_key):
         or globals().get("AulaProgresso")
     )
     if Model is None:
-        current_app.logger.exception("Modelo de progresso de aula não encontrado (ProgressoAula/alternativas).")
+        current_app.logger.exception("Modelo de progresso não encontrado (ProgressoAula/alternativas).")
         abort(500)
 
-    # 2) Montar filtros compatíveis com nomes de colunas diferentes
+    # Monta filtros compatíveis com nomes de colunas diferentes
     filtros = {"empresa_id": empresa_id}
 
     if hasattr(Model, "module_key"):
@@ -2844,48 +2847,29 @@ def treinamento_concluir(module_key, lesson_key):
     prog = Model.query.filter_by(**filtros).first()
     now = datetime.utcnow()
 
-    # Helpers para setar campos só se existirem
     def _set(obj, field, value):
         if hasattr(obj, field):
             setattr(obj, field, value)
 
-    # 3) Toggle: criar se não existe; se existe, alternar concluído/não concluído
-    if not prog:
-        prog = Model(**filtros)
-        _set(prog, "status", "done")
-        _set(prog, "is_done", True)
-        _set(prog, "completed_at", now)
-        _set(prog, "updated_at", now)
-        db.session.add(prog)
-    else:
-        # Detecta "concluído" por prioridade: status -> completed_at -> is_done
-        if hasattr(prog, "status"):
-            concluido = (prog.status == "done")
-        elif hasattr(prog, "completed_at"):
-            concluido = (prog.completed_at is not None)
-        elif hasattr(prog, "is_done"):
-            concluido = bool(prog.is_done)
-        else:
-            # Se não há nenhum campo, não dá pra togglar com segurança
-            current_app.logger.exception("Model de progresso não possui status/completed_at/is_done.")
-            abort(500)
+    # ✅ Toggle por existência (funciona mesmo sem status/completed_at/is_done)
+    if prog:
+        # DESMARCAR: remove o registro
+        db.session.delete(prog)
+        db.session.commit()
+        return redirect(url_for("treinamento_aula", module_key=module_key, lesson_key=lesson_key))
 
-        if concluido:
-            # DESMARCAR
-            _set(prog, "status", "not_started")   # ajuste se preferir "in_progress"
-            _set(prog, "is_done", False)
-            _set(prog, "completed_at", None)
-        else:
-            # MARCAR
-            _set(prog, "status", "done")
-            _set(prog, "is_done", True)
-            _set(prog, "completed_at", now)
+    # MARCAR: cria o registro mínimo
+    prog = Model(**filtros)
 
-        _set(prog, "updated_at", now)
+    # Se existirem campos de timestamp no seu model, atualiza sem quebrar
+    _set(prog, "updated_at", now)
+    _set(prog, "created_at", now)
+    _set(prog, "atualizado_em", now)
+    _set(prog, "criado_em", now)
 
+    db.session.add(prog)
     db.session.commit()
 
-    # volta para a aula
     return redirect(url_for("treinamento_aula", module_key=module_key, lesson_key=lesson_key))
 
 @app.post("/painel/treinamento/<module_key>/<lesson_key>/quiz", endpoint="treinamento_quiz")
