@@ -83,7 +83,6 @@
       text-decoration:none;
     }
 
-    /* ✅ logo (mesmas regras do home) */
     .brand img{
       height:60px;
       width:auto;
@@ -150,7 +149,7 @@
     }
 
     /* =========================
-       HERO (mesma base do home)
+       HERO
        ========================= */
     .hero{
       max-width:var(--maxw);
@@ -176,12 +175,77 @@
     }
 
     /* =========================
-       Section (mesma do home)
+       Section
        ========================= */
     .section{
       max-width:var(--maxw);
       margin:0 auto;
       padding: 18px 18px 34px;
+    }
+
+    /* =========================
+       ✅ NOVO: Grid dos cards (Competência + Progresso)
+       ========================= */
+    .top-cards{
+      margin-top: 48px;
+      display:grid;
+      gap:16px;
+
+      /* Medidas sugeridas:
+         - esquerda (competência): ~38–42%
+         - direita (progresso): ~58–62%
+      */
+      grid-template-columns: minmax(420px, 0.95fr) minmax(640px, 1.55fr);
+      align-items: stretch;
+    }
+    @media (max-width: 1100px){
+      .top-cards{
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* =========================
+       ✅ Card Competência Observável (mesmo estilo)
+       ========================= */
+    .competency-card{
+      background:#fff;
+      border:1px solid rgba(17,24,39,0.10);
+      border-radius:24px;
+      padding:16px 16px 14px;
+      box-shadow: 0 10px 28px rgba(17,24,39,0.06);
+      overflow:hidden;
+    }
+    .competency-title{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:10px;
+    }
+    .competency-title h3{
+      margin:0;
+      font-size:18px;
+      font-weight:800;
+      letter-spacing:-0.02em;
+    }
+
+    .competency-text{
+      margin:0;
+      color:#4b5563;
+      font-size:15px;
+      line-height:1.45;
+      font-weight:500;
+    }
+    .competency-list{
+      margin: 8px 0 0 18px;
+      padding: 0;
+      color:#4b5563;
+      font-size:15px;
+      line-height:1.45;
+      font-weight:500;
+    }
+    .competency-list li{
+      margin: 6px 0;
     }
 
     /* =========================
@@ -198,7 +262,7 @@
       justify-content:space-between;
       gap:16px;
       overflow:hidden;
-      margin-top: 48px;
+      margin-top: 0; /* agora quem controla o espaçamento é o .top-cards */
     }
 
     .progress-left{
@@ -328,7 +392,7 @@
     }
 
     /* =========================
-       Aulas (mesma estética dos cards do home)
+       Aulas (não mexer)
        ========================= */
     .lessons-grid{
       display:grid;
@@ -546,14 +610,21 @@
   <section class="hero" id="o-treinamento">
     <h1>{{ module.title }}</h1>
     <p>
-      {% if module.desc %}{{ module.desc }}{% else %}
-      Acesse as aulas e materiais deste módulo.
+      {# Evita jogar lista gigante no hero quando o desc tem bullets #}
+      {% if module.desc %}
+        {% if '•' in module.desc %}
+          Veja as competências observáveis e acompanhe o progresso abaixo.
+        {% else %}
+          {{ module.desc }}
+        {% endif %}
+      {% else %}
+        Acesse as aulas e materiais deste módulo.
       {% endif %}
     </p>
   </section>
 
-  <!-- Progresso do MÓDULO -->
-  <section class="section" aria-label="Progresso do módulo">
+  <!-- ✅ Competência Observável + Progresso do MÓDULO -->
+  <section class="section" aria-label="Resumo do módulo">
     {% set lessons = (lessons if lessons is defined and lessons is not none else []) %}
     {% set percent = (percent if percent is defined and percent is not none else 0) %}
 
@@ -575,46 +646,75 @@
       {% set status_text = "Em andamento" %}
     {% endif %}
 
-    <div class="progress-card">
-      <div class="progress-left">
-        <div class="progress-title">
-          <h3>Progresso do módulo</h3>
-          <span class="progress-badge">{{ percent|int }}%</span>
+    <div class="top-cards">
+      <!-- ✅ Card Competência observável -->
+      <div class="competency-card" aria-label="Competência observável">
+        <div class="competency-title">
+          <h3>Competência observável</h3>
         </div>
 
-        <div class="progress-bar" aria-label="Barra de progresso do módulo">
-          <span style="width: {{ percent|int }}%;"></span>
-        </div>
-
-        <div class="progress-metrics" aria-label="Resumo do progresso do módulo">
-          <div class="metric">
-            <span class="num">{{ total_lessons }}</span>
-            <span class="lbl">Aulas</span>
-          </div>
-          <div class="metric">
-            <span class="num">{{ ns.inprog }}</span>
-            <span class="lbl">Em andamento</span>
-          </div>
-          <div class="metric">
-            <span class="num">{{ ns.done }}</span>
-            <span class="lbl">Concluídas</span>
-          </div>
-        </div>
+        {% set raw_desc = (module.desc if module.desc is defined and module.desc is not none else '') %}
+        {% if raw_desc %}
+          {% if '•' in raw_desc %}
+            {% set parts = raw_desc.split('•') %}
+            <ul class="competency-list">
+              {% for it in parts[1:] %}
+                {% set txt = it | replace('\n',' ') | trim %}
+                {% if txt %}
+                  <li>{{ txt }}</li>
+                {% endif %}
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="competency-text">{{ raw_desc }}</p>
+          {% endif %}
+        {% else %}
+          <p class="competency-text">Defina aqui as competências observáveis deste módulo.</p>
+        {% endif %}
       </div>
 
-      <div class="progress-right" aria-label="Status do módulo">
-        <div class="status-pill">
-          <span class="dot" aria-hidden="true"></span>
-          {{ status_text }}
+      <!-- Card Progresso do módulo -->
+      <div class="progress-card">
+        <div class="progress-left">
+          <div class="progress-title">
+            <h3>Progresso do módulo</h3>
+            <span class="progress-badge">{{ percent|int }}%</span>
+          </div>
+
+          <div class="progress-bar" aria-label="Barra de progresso do módulo">
+            <span style="width: {{ percent|int }}%;"></span>
+          </div>
+
+          <div class="progress-metrics" aria-label="Resumo do progresso do módulo">
+            <div class="metric">
+              <span class="num">{{ total_lessons }}</span>
+              <span class="lbl">Aulas</span>
+            </div>
+            <div class="metric">
+              <span class="num">{{ ns.inprog }}</span>
+              <span class="lbl">Em andamento</span>
+            </div>
+            <div class="metric">
+              <span class="num">{{ ns.done }}</span>
+              <span class="lbl">Concluídas</span>
+            </div>
+          </div>
         </div>
-        <p class="hint">
-          O progresso é registrado por aula e consolidado neste módulo.
-        </p>
+
+        <div class="progress-right" aria-label="Status do módulo">
+          <div class="status-pill">
+            <span class="dot" aria-hidden="true"></span>
+            {{ status_text }}
+          </div>
+          <p class="hint">
+            O progresso é registrado por aula e consolidado neste módulo.
+          </p>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- Aulas do módulo -->
+  <!-- Aulas do módulo (sem alterações) -->
   <section class="section" id="aulas" aria-label="Aulas do módulo">
     {% if lessons|length %}
       <div class="lessons-grid">
