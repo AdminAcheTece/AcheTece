@@ -646,6 +646,138 @@
       {% set status_text = "Em andamento" %}
     {% endif %}
 
+    {% set COMPETENCIAS = {
+      'm1': [
+        'Explica o que é sucesso no setor: segurança primeiro, depois qualidade, depois produtividade.',
+        'Conhece regras do setor (conduta, comunicação, disciplina de corredor/posto).',
+        'Sabe pedir ajuda do jeito certo: mensagem curta + dados mínimos.',
+        'Entende a trilha: o que aprende agora, o que vem depois e como será avaliado.'
+      ]
+    } %}
+    {% set comp_items = COMPETENCIAS.get(module.key) %}
+
+    {% set COMPETENCIAS = {
+      'm0': [
+        'Justifica o “porquê agora” com clareza e números do negócio.',
+        'Valida escopo e objetivos estratégicos do Programa (sem “escopo infinito”).',
+        'Aprova o método de execução e o padrão de validação por competência.',
+        'Define governança, cronograma macro e métricas de sucesso com responsáveis.'
+      ],
+      'm1': [
+        'Explica o que é sucesso no setor: segurança primeiro, depois qualidade, depois produtividade.',
+        'Conhece regras do setor (conduta, comunicação, disciplina de corredor/posto).',
+        'Sabe pedir ajuda do jeito certo: mensagem curta + dados mínimos.',
+        'Entende a trilha: o que aprende agora, o que vem depois e como será avaliado.'
+      ],
+      'm2': [
+        'Usa EPI mínimo e sabe quando exigir EPI adicional.',
+        'Reconhece zonas de risco e sabe quando parar a máquina.',
+        'Aplica conduta segura com máquina rodando (sem atalhos).',
+        'Usa ar comprimido corretamente e mantém corredor livre.',
+        'Aplica ergonomia básica (postura, transporte e manuseio).'
+      ],
+      'm3': [
+        'Explica o fluxo ponta a ponta e quem faz o quê em cada etapa.',
+        'Entende o básico de fibras/fios e impacto na malha.',
+        'Sabe onde nasce o defeito e onde ele aparece (malharia x revisão x beneficiamento).'
+      ],
+      'm4': [
+        'Identifica fio com segurança (embalagem + cone).',
+        'Bloqueia 4 erros caros: fio errado, lote misturado, elastano trocado, cone contaminado.',
+        'Conhece o essencial de tecnologia (penteado/cardado/OE/vortex/compact) e composição (algodão, PES, PA, viscose etc).',
+        'Sabe armazenar/manusear sem degradar o fio.',
+        'Sabe registrar e chamar validação quando houver dúvida (não abastece).'
+      ],
+      'm5': [
+        'Executa início de turno e alinhamento rápido com prioridade do dia.',
+        'Faz ronda no intervalo definido, cobrindo cones, abastecimento, limpeza do posto e corredor livre.',
+        'Abastece no padrão com tear rodando (como regra), evitando parada e defeito.',
+        'Registra ocorrências e pede ajuda cedo com comunicação curta.'
+      ],
+      'm6': [
+        'Roda o setor com método (ronda + priorização + registro), sem depender de improviso.',
+        'Enxerga defeito cedo e age com segurança (evita rolo crescer com defeito).',
+        'Sinaliza e registra de um jeito que revisão/qualidade entendem rápido.',
+        'Evolui por níveis (Base/Pleno/Sênior) com mínimos claros e validação prática.'
+      ],
+      'm7': [
+        'Aplica o fluxo padrão de reação: Viu → Confirmou → Ação → Registro → Escalonou.',
+        'Classifica defeito como crítico vs controlável e age de acordo.',
+        'Marca e registra com dados mínimos e rastreabilidade.',
+        'Escala com mensagem curta e completa (sem ruído).'
+      ],
+      'm8': [
+        'Executa checklists (início do turno e fim de peça) sem pular itens críticos.',
+        'Identifica pelo menos 3 sinais fracos e age cedo antes de virar parada/defeito grande.',
+        'Mantém posto e corredor no padrão (segurança + eficiência) e corrige desvios na hora.',
+        'Respeita limites de alçada: não inventa ajuste; registra e escala.'
+      ],
+      'm9': [
+        'Padroniza decisões avançadas (eficiência x qualidade) com critérios claros.',
+        'Reduz recorrências por análise de causa simples (5 porquês/pareto).',
+        'Contribui para melhoria do setup e do fluxo sem quebrar segurança.',
+        'Ajuda a formar outros colaboradores (multiplicação estruturada).'
+      ],
+      'm10': [
+        'Confere material recebido e bloqueia não conformidade antes de entrar no fluxo.',
+        'Armazena por artigo/lote com proteção contra umidade, poeira e óleo.',
+        'Garante FIFO/FEFO (quando aplicável) e rastreabilidade até o tear.',
+        'Evita “mistura” no abastecimento por organização e sinalização.'
+      ],
+      'm11': [
+        'Executa set-up com sequência padrão e sem risco.',
+        'Evita erros típicos: fio/lote errado, elastano incorreto, passamento com atrito, regulagem sem registro.',
+        'Entrega tear “estável” para rodar (checklist de liberação).'
+      ],
+      'm12': [
+        'Executa limpeza no padrão definido (fim de peça e rotinas diárias).',
+        'Sabe onde sujeira/óleo vira defeito e como prevenir.',
+        'Mantém kit mínimo disponível e corredor/posto no padrão.'
+      ],
+      'm13': [
+        'Reage a paradas automáticas com sequência segura e rastreável.',
+        'Diferencia sintoma de causa e registra recorrência.',
+        'Escala para manutenção com dados mínimos (evita “chute”).'
+      ],
+      'm14': [
+        'Define e executa rotinas TPM (limpeza, inspeção, lubrificação básica – conforme padrão interno).',
+        'Cria padrão de registro de condição e recorrências.',
+        'Integra malharia com manutenção planejada (paradas programadas, priorização, evidências).'
+      ],
+      'm15': [
+        'Calcula capacidade e produção (kg/h, m/min, rendimento) por artigo/tear.',
+        'Aponta paradas e perdas com padrão (motivo, tempo, impacto).',
+        'Lê indicadores (OEE/eficiência) e conduz rotina de ação (pareto semanal).'
+      ],
+      'm16': [
+        'Define critérios de aceitação (fio e malha) com método e rastreabilidade.',
+        'Padroniza inspeção, classificação de defeitos e tratamento (segregar, retrabalhar, liberar).',
+        'Conecta defeito a causa provável e orienta ação no processo.'
+      ],
+      'm17': [
+        'Converte briefing em ficha técnica (fio, construção, parâmetros, tolerâncias).',
+        'Planeja e executa piloto/amostra com controle de risco (lote, setup, validações).',
+        'Libera artigo com critérios (qualidade, produtividade, custo) e documentação completa.'
+      ],
+      'm18': [
+        'Entende como defeitos do cru aparecem/amplificam no beneficiamento.',
+        'Define requisitos de rolo (identificação, marcação, proteção) para reduzir retrabalho.',
+        'Alinha tolerâncias e comunicação entre áreas.'
+      ],
+      'm19': [
+        'Manuseia rolos sem amassar/vincar e sem contaminação.',
+        'Mantém identificação visível e rastreável até o destino.',
+        'Armazena em padrão (local seco, organizado, sem arrastar).'
+      ],
+      'm20': [
+        'Consegue treinar no chão (microdose) sem parar a produção.',
+        'Valida por competência (checklist), dá feedback e revalida.',
+        'Executa auditoria rápida e transforma desvio em ação (sem caça às bruxas).',
+        'Sustenta rotina: reunião diária curta + pareto semanal + follow-up.'
+      ]
+    } %}
+    {% set comp_items = COMPETENCIAS.get(module.key) %}
+
     <div class="top-cards">
       <!-- ✅ Card Competência observável -->
       <div class="competency-card" aria-label="Competência observável">
@@ -653,21 +785,12 @@
           <h3>Competência observável</h3>
         </div>
 
-        {% set raw_desc = (module.desc if module.desc is defined and module.desc is not none else '') %}
-        {% if raw_desc %}
-          {% if '•' in raw_desc %}
-            {% set parts = raw_desc.split('•') %}
-            <ul class="competency-list">
-              {% for it in parts[1:] %}
-                {% set txt = it | replace('\n',' ') | trim %}
-                {% if txt %}
-                  <li>{{ txt }}</li>
-                {% endif %}
-              {% endfor %}
-            </ul>
-          {% else %}
-            <p class="competency-text">{{ raw_desc }}</p>
-          {% endif %}
+        {% if comp_items %}
+          <ul class="competency-list">
+            {% for item in comp_items %}
+              <li>{{ item }}</li>
+            {% endfor %}
+          </ul>
         {% else %}
           <p class="competency-text">Defina aqui as competências observáveis deste módulo.</p>
         {% endif %}
