@@ -926,6 +926,45 @@ TRAINING_CATALOG: List[Dict[str, Any]] = [
             },
         ],
     },
+    {
+        "key": "m21",
+        "title": "Módulo 21 — Gestão do Programa (Matriz de Habilidades, Reciclagens e Trilha de Carreira)",
+        "desc": "Sustentar o Programa com matriz de habilidades, reciclagens por risco e trilha de carreira com critérios claros.",
+        "lessons": [
+            {
+                "key": "m21.1",
+                "title": "Aula 1 - Matriz de habilidades (desenho)",
+                "minutes": 12,
+                # arquivo protegido (fica em training_files/)
+                "file": "m21_1.pdf",
+                "summary": "Tornar lacunas visíveis e treináveis com evidências por função e setor.",
+            },
+            {
+                "key": "m21.2",
+                "title": "Aula 2 - Reciclagens e revalidações",
+                "minutes": 12,
+                # arquivo protegido (fica em training_files/)
+                "file": "m21_2.pdf",
+                "summary": "Garantir reciclagens por risco e revalidações para evitar “treino que some”.",
+            },
+            {
+                "key": "m21.3",
+                "title": "Aula 3 - Trilha de carreira (critérios e incentivos)",
+                "minutes": 12,
+                # arquivo protegido (fica em training_files/)
+                "file": "m21_3.pdf",
+                "summary": "Definir progressão técnica e incentivos para atrair, reter e formar multiplicadores.",
+            },
+            {
+                "key": "m21.4",
+                "title": "Aula 4 - Auditoria do programa (governança)",
+                "minutes": 12,
+                # arquivo protegido (fica em training_files/)
+                "file": "m21_4.pdf",
+                "summary": "Acompanhar KPIs e rodar auditorias mensais com ações corretivas.",
+            },
+        ],
+    },
 ]
 
 def get_module(module_key: str) -> Optional[Dict[str, Any]]:
