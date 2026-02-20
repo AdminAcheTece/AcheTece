@@ -2726,6 +2726,60 @@ def treinamento_home():
     )
 
 
+ALLOWED_MATERIALS = ("apostila", "apresentacao")
+
+def _lesson_files(aula: dict) -> dict:
+    """
+    Normaliza a estrutura de arquivos da aula:
+    - Novo padrão: aula["files"] = {"apostila": "...", "apresentacao": "..."}
+    - Legado: aula["file"] = "....pdf" -> vira {"apostila": "....pdf"}
+    """
+    if not aula:
+        return {}
+
+    files = aula.get("files")
+    if isinstance(files, dict) and files:
+        # filtra apenas chaves permitidas e com nome de arquivo válido
+        cleaned = {}
+        for k in ALLOWED_MATERIALS:
+            v = files.get(k)
+            if isinstance(v, str) and v.strip():
+                cleaned[k] = v.strip()
+        return cleaned
+
+    legacy = aula.get("file")
+    if isinstance(legacy, str) and legacy.strip():
+        return {"apostila": legacy.strip()}
+
+    return {}
+
+ALLOWED_MATERIALS = ("apostila", "apresentacao")
+
+def _lesson_files(aula: dict) -> dict:
+    """
+    Normaliza a estrutura de arquivos da aula:
+    - Novo padrão: aula["files"] = {"apostila": "...", "apresentacao": "..."}
+    - Legado: aula["file"] = "....pdf" -> vira {"apostila": "....pdf"}
+    """
+    if not aula:
+        return {}
+
+    files = aula.get("files")
+    if isinstance(files, dict) and files:
+        # filtra apenas chaves permitidas e com nome de arquivo válido
+        cleaned = {}
+        for k in ALLOWED_MATERIALS:
+            v = files.get(k)
+            if isinstance(v, str) and v.strip():
+                cleaned[k] = v.strip()
+        return cleaned
+
+    legacy = aula.get("file")
+    if isinstance(legacy, str) and legacy.strip():
+        return {"apostila": legacy.strip()}
+
+    return {}
+
 # -----------------------------
 # Página do Módulo (lista de aulas)
 # -----------------------------
@@ -2762,7 +2816,7 @@ def treinamento_modulo(module_key):
 
 
 # -----------------------------
-# Página da Aula (conteúdo + PDF + quiz + marcar concluída)
+# Página da Aula (portal + PDF + quiz + marcar concluída)
 # -----------------------------
 @app.get("/painel/treinamento/<module_key>/<lesson_key>", endpoint="treinamento_aula")
 def treinamento_aula(module_key, lesson_key):
@@ -2781,7 +2835,7 @@ def treinamento_aula(module_key, lesson_key):
     # Ao entrar na aula, marca como "in_progress" se ainda não iniciou
     # (exceto quando acabamos de desmarcar e voltamos via redirect)
     skip_autostart = session.pop("_skip_autostart", False)
-    
+
     if st == "not_started" and not skip_autostart:
         try:
             _training_upsert(emp.id, mod.get("key"), aula.get("key"), "in_progress")
@@ -2789,8 +2843,39 @@ def treinamento_aula(module_key, lesson_key):
         except Exception:
             pass
 
-    file_name = aula.get("file")
-    file_url = url_for("treinamento_file", filename=file_name) if file_name else None
+    # ✅ NOVO: suporte a 2 arquivos via ?material=
+    files = _lesson_files(aula)
+
+    requested = (request.args.get("material") or "apostila").strip().lower()
+    if requested not in ALLOWED_MATERIALS:
+        requested = "apostila"
+
+    # fallback: se pediu um material que não existe, cai para apostila ou para o primeiro disponível
+    if requested not in files:
+        if "apostila" in files:
+            requested = "apostila"
+        elif files:
+            requested = next(iter(files.keys()))
+        else:
+            requested = "apostila"  # não tem arquivo; mantém padrão
+
+    active_file_name = files.get(requested)
+    file_url = url_for("treinamento_file", filename=active_file_name) if active_file_name else None
+
+    # lista para o template montar botões/cards
+    materials = []
+    if files.get("apostila"):
+        materials.append({
+            "key": "apostila",
+            "label": "Apostila (PDF)",
+            "file_url": url_for("treinamento_file", filename=files["apostila"]),
+        })
+    if files.get("apresentacao"):
+        materials.append({
+            "key": "apresentacao",
+            "label": "Apresentação (PDF)",
+            "file_url": url_for("treinamento_file", filename=files["apresentacao"]),
+        })
 
     return render_template(
         "treinamento_aula.html",
@@ -2798,9 +2883,15 @@ def treinamento_aula(module_key, lesson_key):
         module=mod,
         lesson=aula,
         status=st,
-        file_url=file_url,
-    )
 
+        # ✅ mantém compatibilidade com seu HTML atual:
+        file_url=file_url,
+
+        # ✅ novos (para montar os 2 botões bem visíveis):
+        materials=materials,
+        active_material=requested,
+    )
+    
 from datetime import datetime
 from flask import current_app, abort, redirect, url_for
 
