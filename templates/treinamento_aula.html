@@ -329,8 +329,14 @@
       padding:14px 16px;
       border-bottom:1px solid rgba(17,24,39,0.08);
       display:flex;
-      align-items:center;
+      align-items:flex-start;
       justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .material-left{
+      display:flex;
+      align-items:baseline;
       gap:10px;
       flex-wrap:wrap;
     }
@@ -339,6 +345,54 @@
       font-weight:800;
       letter-spacing:-0.01em;
     }
+    .material-hint{
+      font-size:12px;
+      font-weight:800;
+      color:#6b7280;
+      letter-spacing:-0.01em;
+    }
+
+    .material-actions{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .material-tabs{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    /* Tabs de material (apostila/apresentação) */
+    .tab-btn{
+      height:38px;
+      padding:0 14px;
+      border-radius:999px;
+      border:1px solid rgba(17,24,39,0.12);
+      background:#fff;
+      color:#111;
+      font-weight:800;
+      font-size:14px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      transition: background-color .15s ease, transform .12s ease, border-color .15s ease;
+      white-space:nowrap;
+      text-decoration:none;
+    }
+    .tab-btn:hover{
+      background: rgba(182,243,77,.20);
+      transform: translateY(-1px);
+    }
+    .tab-btn.is-active{
+      background: rgba(182,243,77,.35);
+      border-color: rgba(182,243,77,.70);
+    }
+
     .material-head a{
       text-decoration:none;
     }
@@ -466,7 +520,8 @@
     /* reforço nas classes de botões (caso algum CSS externo sobrescreva) */
     .btn-open,
     .btn-primary,
-    .btn-mini{
+    .btn-mini,
+    .tab-btn{
       font-family: var(--font-ui) !important;
       letter-spacing: -0.01em;
     }
@@ -553,17 +608,46 @@
       </aside>
     </div>
 
-    <!-- Material da aula (PDF protegido) -->
+    <!-- ✅ Materiais da aula (1 ou 2 PDFs) -->
     {% if file_url %}
-      <section class="material" aria-label="Material da aula (PDF protegido)">
+      <section class="material" aria-label="Materiais da aula (PDF protegido)">
         <div class="material-head">
-          <strong>Material da Aula</strong>
-          <a href="{{ file_url }}" target="_blank" rel="noopener">
-            <span class="btn-mini">Abrir em nova guia</span>
-          </a>
+          <div class="material-left">
+            <strong>Materiais da Aula</strong>
+            {% if materials and (materials|length > 1) %}
+              <span class="material-hint">Escolha o material</span>
+            {% endif %}
+          </div>
+
+          <div class="material-actions">
+            {% if materials and (materials|length > 1) %}
+              <div class="material-tabs" role="tablist" aria-label="Selecionar material">
+                {% for m in materials %}
+                  <a
+                    class="tab-btn {% if active_material == m.key %}is-active{% endif %}"
+                    href="{{ url_for('treinamento_aula', module_key=module.key, lesson_key=lesson.key) }}?material={{ m.key }}"
+                    role="tab"
+                    aria-selected="{% if active_material == m.key %}true{% else %}false{% endif %}"
+                  >
+                    {{ m.label }}
+                  </a>
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            <a href="{{ file_url }}" target="_blank" rel="noopener">
+              <span class="btn-mini">Abrir em nova guia</span>
+            </a>
+          </div>
         </div>
+
         <div class="material-frame">
-          <iframe src="{{ file_url }}"></iframe>
+          <!-- Pequeno ajuste: toolbar ativa e navegação lateral off (mais limpo) -->
+          <iframe
+            src="{{ file_url }}#toolbar=1&navpanes=0"
+            title="Material da aula em PDF"
+            loading="lazy"
+          ></iframe>
         </div>
       </section>
     {% endif %}
