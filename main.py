@@ -97,7 +97,7 @@ app.config.update(
 
     SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_COOKIE_DOMAIN=".achetece.com.br"
+    SESSION_COOKIE_DOMAIN=(os.getenv("SESSION_COOKIE_DOMAIN") or None)
 )
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY") or ""
