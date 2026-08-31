@@ -1137,6 +1137,147 @@ class ClienteProfile(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     usuario = db.relationship('Usuario', backref=db.backref('cliente_profile', uselist=False))
 
+# --------------------------------------------------------------------
+# AcheTece 2.0 - Demanda de Produção
+# --------------------------------------------------------------------
+
+class ProductionRequest(db.Model):
+    __tablename__ = "production_request"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    # Comprador responsável pela demanda
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("usuario.id"),
+        nullable=False,
+        index=True
+    )
+
+    usuario = db.relationship(
+        "Usuario",
+        backref=db.backref(
+            "production_requests",
+            lazy=True
+        )
+    )
+
+    # Código público da demanda
+    # Ex.: ATD-000001
+    codigo = db.Column(
+        db.String(30),
+        unique=True,
+        nullable=True,
+        index=True
+    )
+
+    # --------------------------------------------------------------
+    # Produto / especificação
+    # --------------------------------------------------------------
+
+    produto = db.Column(
+        db.String(120),
+        nullable=False
+    )
+
+    estrutura_malha = db.Column(
+        db.String(120),
+        nullable=True
+    )
+
+    composicao = db.Column(
+        db.String(180),
+        nullable=True
+    )
+
+    titulo_fio = db.Column(
+        db.String(100),
+        nullable=True
+    )
+
+    gramatura = db.Column(
+        db.Integer,
+        nullable=True
+    )
+
+    # --------------------------------------------------------------
+    # Volume / prazo
+    # --------------------------------------------------------------
+
+    quantidade_kg = db.Column(
+        db.Numeric(12, 2),
+        nullable=False
+    )
+
+    data_necessidade = db.Column(
+        db.Date,
+        nullable=True
+    )
+
+    # --------------------------------------------------------------
+    # Preferência geográfica
+    # --------------------------------------------------------------
+
+    estado_preferencial = db.Column(
+        db.String(2),
+        nullable=True,
+        index=True
+    )
+
+    cidade_preferencial = db.Column(
+        db.String(100),
+        nullable=True
+    )
+
+    # --------------------------------------------------------------
+    # Escopo do serviço
+    # --------------------------------------------------------------
+
+    tipo_servico = db.Column(
+        db.String(80),
+        nullable=True
+    )
+
+    observacoes = db.Column(
+        db.Text,
+        nullable=True
+    )
+
+    # --------------------------------------------------------------
+    # Gestão da demanda
+    # --------------------------------------------------------------
+
+    status = db.Column(
+        db.String(20),
+        nullable=False,
+        default="rascunho",
+        index=True
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow
+    )
+
+    updated_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow
+    )
+
+    def __repr__(self):
+        return (
+            f"<ProductionRequest "
+            f"id={self.id} "
+            f"codigo={self.codigo} "
+            f"status={self.status}>"
+        )
+
 class OtpToken(db.Model):
     __tablename__ = "otp_token"
     id = db.Column(db.Integer, primary_key=True)
