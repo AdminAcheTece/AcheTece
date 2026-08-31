@@ -1,69 +1,719 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>Criar conta (Cliente) - AcheTece</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
-  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta charset="UTF-8">
+
+    <title>Cadastro do Comprador - AcheTece</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link
+        rel="icon"
+        type="image/png"
+        href="{{ url_for('static', filename='favicon_final.png') }}"
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <style>
+        :root{
+            --black:#111111;
+            --white:#ffffff;
+
+            --olive:#7B7424;
+            --olive-dark:#434326;
+            --olive-light:#F1F2E8;
+
+            --lime:#B6F34D;
+
+            --bg:#F1F1EF;
+            --text:#202020;
+            --muted:#6B6B6B;
+            --line:#DCDCD7;
+
+            --danger:#A91D2D;
+        }
+
+        *{
+            box-sizing:border-box;
+        }
+
+        body{
+            margin:0;
+            font-family:'Inter',Arial,sans-serif;
+            background:var(--bg);
+            color:var(--text);
+        }
+
+        .topbar{
+            background:var(--black);
+            min-height:76px;
+            display:flex;
+            align-items:center;
+        }
+
+        .topbar-inner{
+            width:100%;
+            max-width:1280px;
+            margin:0 auto;
+            padding:0 24px;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:20px;
+        }
+
+        .brand{
+            display:flex;
+            align-items:center;
+        }
+
+        .brand img{
+            display:block;
+            height:42px;
+            width:auto;
+        }
+
+        .login-link{
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            min-height:42px;
+            padding:0 18px;
+            background:#fff;
+            color:#000;
+            text-decoration:none;
+            border-radius:999px;
+            font-size:14px;
+            font-weight:800;
+        }
+
+        .login-link:hover{
+            background:var(--lime);
+        }
+
+        .page{
+            width:100%;
+            max-width:1160px;
+            margin:0 auto;
+            padding:46px 24px 70px;
+        }
+
+        .intro{
+            max-width:720px;
+            margin:0 auto 28px;
+            text-align:center;
+        }
+
+        .eyebrow{
+            font-size:12px;
+            font-weight:800;
+            text-transform:uppercase;
+            letter-spacing:.08em;
+            color:var(--olive);
+            margin-bottom:10px;
+        }
+
+        h1{
+            margin:0;
+            font-size:36px;
+            line-height:1.12;
+            letter-spacing:-.035em;
+            color:#111;
+        }
+
+        .intro p{
+            margin:13px auto 0;
+            max-width:650px;
+            color:var(--muted);
+            line-height:1.55;
+            font-size:15px;
+        }
+
+        .layout{
+            max-width:900px;
+            margin:0 auto;
+            display:grid;
+            grid-template-columns:1fr 1.5fr;
+            gap:20px;
+            align-items:start;
+        }
+
+        .side-card,
+        .form-card{
+            background:#fff;
+            border:1px solid var(--line);
+            border-radius:20px;
+        }
+
+        .side-card{
+            padding:24px;
+            background:var(--black);
+            color:#fff;
+        }
+
+        .side-card h2{
+            margin:0 0 12px;
+            font-size:21px;
+        }
+
+        .side-card p{
+            margin:0;
+            color:#D4D4D4;
+            font-size:14px;
+            line-height:1.55;
+        }
+
+        .benefits{
+            margin-top:26px;
+            display:flex;
+            flex-direction:column;
+            gap:16px;
+        }
+
+        .benefit{
+            display:flex;
+            gap:12px;
+            align-items:flex-start;
+        }
+
+        .check{
+            flex:0 0 25px;
+            width:25px;
+            height:25px;
+            border-radius:50%;
+            background:var(--lime);
+            color:#000;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:13px;
+            font-weight:900;
+        }
+
+        .benefit strong{
+            display:block;
+            font-size:13px;
+            margin-bottom:3px;
+        }
+
+        .benefit span{
+            display:block;
+            color:#BDBDBD;
+            font-size:12px;
+            line-height:1.4;
+        }
+
+        .form-card{
+            padding:28px;
+        }
+
+        .form-title{
+            margin:0 0 4px;
+            font-size:20px;
+            font-weight:800;
+        }
+
+        .form-subtitle{
+            margin:0 0 22px;
+            color:var(--muted);
+            font-size:13px;
+        }
+
+        .field{
+            margin-bottom:16px;
+        }
+
+        .field-row{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:14px;
+        }
+
+        label{
+            display:block;
+            font-size:13px;
+            font-weight:700;
+            margin-bottom:7px;
+        }
+
+        input,
+        select{
+            width:100%;
+            min-height:48px;
+            border:1px solid #CBCBC7;
+            border-radius:11px;
+            padding:0 13px;
+            font-family:inherit;
+            font-size:14px;
+            background:#fff;
+            color:#222;
+            outline:none;
+        }
+
+        input:focus,
+        select:focus{
+            border-color:var(--olive);
+            box-shadow:0 0 0 3px rgba(123,116,36,.10);
+        }
+
+        .hint{
+            margin-top:5px;
+            font-size:11px;
+            color:#777;
+        }
+
+        .flash{
+            padding:12px 14px;
+            border-radius:10px;
+            margin:0 0 18px;
+            font-size:13px;
+            font-weight:600;
+        }
+
+        .flash.error,
+        .flash.danger{
+            background:#FFF0F2;
+            border:1px solid #F1BAC1;
+            color:#851526;
+        }
+
+        .flash.warning{
+            background:#FFF8E9;
+            border:1px solid #EEDCA8;
+            color:#725516;
+        }
+
+        .flash.success{
+            background:#EEF8F0;
+            border:1px solid #BBDDC2;
+            color:#265D31;
+        }
+
+        .submit{
+            width:100%;
+            min-height:50px;
+            border:0;
+            border-radius:999px;
+            background:#000;
+            color:var(--lime);
+            font-family:inherit;
+            font-size:15px;
+            font-weight:800;
+            cursor:pointer;
+            margin-top:5px;
+        }
+
+        .submit:hover{
+            background:var(--lime);
+            color:#000;
+        }
+
+        .legal{
+            margin-top:16px;
+            text-align:center;
+            color:#777;
+            font-size:11px;
+            line-height:1.45;
+        }
+
+        .legal a{
+            color:var(--olive-dark);
+            font-weight:700;
+        }
+
+        .back{
+            text-align:center;
+            margin-top:20px;
+            font-size:13px;
+            color:#666;
+        }
+
+        .back a{
+            color:var(--olive-dark);
+            font-weight:800;
+            text-decoration:none;
+        }
+
+        @media(max-width:800px){
+            .layout{
+                grid-template-columns:1fr;
+            }
+
+            .side-card{
+                order:2;
+            }
+        }
+
+        @media(max-width:580px){
+            .page{
+                padding:30px 16px 50px;
+            }
+
+            .topbar-inner{
+                padding:0 16px;
+            }
+
+            .brand img{
+                height:35px;
+            }
+
+            h1{
+                font-size:29px;
+            }
+
+            .form-card{
+                padding:21px 17px;
+            }
+
+            .field-row{
+                grid-template-columns:1fr;
+                gap:0;
+            }
+        }
+    </style>
 </head>
-<body style="background:#f2f2f2;margin:0;">
-  <header class="navbar">
-    <div class="header-left"><div class="logo">
-      <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
-    </div></div>
-  </header>
 
-  <main style="max-width:720px;margin:24px auto;padding:0 16px;">
-    <div style="background:#fff;border-radius:16px;padding:24px;box-shadow:0 8px 24px rgba(0,0,0,.06);">
-      <h1 style="margin:0 0 6px;font-size:24px;color:#4a145e">Dados do Cliente</h1>
-      <p style="margin:0 0 16px;color:#666">Preencha seus dados para continuar usando o AcheTece como <strong>Cliente</strong>.</p>
+<body>
 
-      {% if erros %}
-        <div style="background:#ffecec;color:#b00020;border:1px solid #ffc2c2;padding:10px 12px;border-radius:8px;margin-bottom:12px;">
-          Corrija os campos destacados.
-        </div>
-      {% endif %}
+<header class="topbar">
 
-      <form method="POST" style="display:grid;gap:12px;">
-        <label>Nome*
-          <input type="text" name="nome" value="{{ nome or '' }}" required style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;">
-          {% if erros and erros.get('nome') %}<small style="color:#b00020">{{erros.get('nome')}}</small>{% endif %}
-        </label>
+    <div class="topbar-inner">
 
-        <label>Empresa (opcional)
-          <input type="text" name="empresa" value="{{ empresa or '' }}" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;">
-        </label>
+        <a
+            href="{{ url_for('index') }}"
+            class="brand"
+            aria-label="AcheTece"
+        >
+            <img
+                src="{{ url_for('static', filename='Logo_Branco_AcheTece_sem_fundo.png') }}"
+                alt="AcheTece"
+            >
+        </a>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-          <label>Estado (UF)
-            <select name="estado" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;">
-              <option value="">Selecione</option>
-              {% for uf in estados %}
-                <option value="{{uf}}" {% if estado==uf %}selected{% endif %}>{{uf}}</option>
-              {% endfor %}
-            </select>
-          </label>
-          <label>Cidade
-            <input type="text" name="cidade" value="{{ cidade or '' }}" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;">
-          </label>
-        </div>
+        <a
+            href="{{ url_for('login') }}"
+            class="login-link"
+        >
+            Já tenho uma conta
+        </a>
 
-        <label>WhatsApp (com DDD)
-          <input type="tel" name="whatsapp" value="{{ whatsapp or '' }}" placeholder="47999991234" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;">
-          {% if erros and erros.get('whatsapp') %}<small style="color:#b00020">{{erros.get('whatsapp')}}</small>{% endif %}
-        </label>
-
-        <div style="display:flex;gap:12px;align-items:center;margin-top:8px;">
-          <button type="submit" class="btn-roxo" style="background:#8A00FF;color:#fff;border:0;border-radius:14px;padding:10px 16px;font-weight:700;cursor:pointer;">Salvar</button>
-          <a href="{{ url_for('pos_login') }}" style="text-decoration:none;color:#4a145e;">Cancelar</a>
-        </div>
-      </form>
     </div>
-  </main>
 
-  <footer class="footer" style="text-align:center;color:#777;padding:24px 16px;">AcheTece © {{ (now() if false) or '' }}</footer>
+</header>
+
+
+<main class="page">
+
+    <section class="intro">
+
+        <div class="eyebrow">
+            Portal do Comprador
+        </div>
+
+        <h1>
+            Encontre capacidade produtiva para aquilo que precisa produzir.
+        </h1>
+
+        <p>
+            Crie sua conta gratuitamente e comece a estruturar sua rede de
+            malharias dentro do AcheTece.
+        </p>
+
+    </section>
+
+
+    <div class="layout">
+
+        <aside class="side-card">
+
+            <h2>
+                Um novo jeito de encontrar produção.
+            </h2>
+
+            <p>
+                O AcheTece está evoluindo de uma busca de equipamentos para uma
+                plataforma de conexão entre demanda e capacidade produtiva.
+            </p>
+
+            <div class="benefits">
+
+                <div class="benefit">
+                    <div class="check">✓</div>
+
+                    <div>
+                        <strong>Busca técnica</strong>
+                        <span>
+                            Encontre malharias por características produtivas.
+                        </span>
+                    </div>
+                </div>
+
+                <div class="benefit">
+                    <div class="check">✓</div>
+
+                    <div>
+                        <strong>Demandas estruturadas</strong>
+                        <span>
+                            Em breve, publique aquilo que precisa produzir.
+                        </span>
+                    </div>
+                </div>
+
+                <div class="benefit">
+                    <div class="check">✓</div>
+
+                    <div>
+                        <strong>Matching produtivo</strong>
+                        <span>
+                            Identifique fornecedores tecnicamente compatíveis.
+                        </span>
+                    </div>
+                </div>
+
+                <div class="benefit">
+                    <div class="check">✓</div>
+
+                    <div>
+                        <strong>Propostas centralizadas</strong>
+                        <span>
+                            Compare capacidade, prazo e condições comerciais.
+                        </span>
+                    </div>
+                </div>
+
+            </div>
+
+        </aside>
+
+
+        <section class="form-card">
+
+            <h2 class="form-title">
+                Criar conta de comprador
+            </h2>
+
+            <p class="form-subtitle">
+                Informe seus dados para acessar o Portal do Comprador.
+            </p>
+
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+
+                {% if messages %}
+
+                    {% for category, message in messages %}
+
+                        <div class="flash {{ category }}">
+                            {{ message }}
+                        </div>
+
+                    {% endfor %}
+
+                {% endif %}
+
+            {% endwith %}
+
+
+            <form
+                method="POST"
+                action="{{ url_for('cadastro_comprador') }}"
+                autocomplete="on"
+            >
+
+                <div class="field">
+
+                    <label for="nome">
+                        Seu nome
+                    </label>
+
+                    <input
+                        type="text"
+                        id="nome"
+                        name="nome"
+                        maxlength="120"
+                        required
+                        value="{{ form_data.get('nome','') if form_data else '' }}"
+                        placeholder="Ex.: João da Silva"
+                    >
+
+                </div>
+
+
+                <div class="field">
+
+                    <label for="empresa">
+                        Empresa / Marca / Confecção
+                    </label>
+
+                    <input
+                        type="text"
+                        id="empresa"
+                        name="empresa"
+                        maxlength="160"
+                        required
+                        value="{{ form_data.get('empresa','') if form_data else '' }}"
+                        placeholder="Ex.: Empresa Têxtil Ltda."
+                    >
+
+                </div>
+
+
+                <div class="field">
+
+                    <label for="whatsapp">
+                        WhatsApp
+                    </label>
+
+                    <input
+                        type="tel"
+                        id="whatsapp"
+                        name="whatsapp"
+                        maxlength="20"
+                        value="{{ form_data.get('whatsapp','') if form_data else '' }}"
+                        placeholder="(47) 99999-9999"
+                    >
+
+                </div>
+
+
+                <div class="field-row">
+
+                    <div class="field">
+
+                        <label for="estado">
+                            Estado
+                        </label>
+
+                        <select
+                            id="estado"
+                            name="estado"
+                            required
+                        >
+
+                            <option value="">
+                                Selecione
+                            </option>
+
+                            {% for uf in estados %}
+
+                                <option
+                                    value="{{ uf }}"
+                                    {% if form_data and form_data.get('estado') == uf %}selected{% endif %}
+                                >
+                                    {{ uf }}
+                                </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="field">
+
+                        <label for="cidade">
+                            Cidade
+                        </label>
+
+                        <input
+                            type="text"
+                            id="cidade"
+                            name="cidade"
+                            maxlength="100"
+                            required
+                            value="{{ form_data.get('cidade','') if form_data else '' }}"
+                            placeholder="Ex.: Jaraguá do Sul"
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <div class="field">
+
+                    <label for="email">
+                        E-mail
+                    </label>
+
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        maxlength="255"
+                        required
+                        autocomplete="email"
+                        value="{{ form_data.get('email','') if form_data else '' }}"
+                        placeholder="voce@empresa.com.br"
+                    >
+
+                </div>
+
+
+                <div class="field">
+
+                    <label for="senha">
+                        Crie uma senha
+                    </label>
+
+                    <input
+                        type="password"
+                        id="senha"
+                        name="senha"
+                        minlength="6"
+                        required
+                        autocomplete="new-password"
+                        placeholder="Mínimo de 6 caracteres"
+                    >
+
+                    <div class="hint">
+                        Utilize pelo menos 6 caracteres.
+                    </div>
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="submit"
+                >
+                    Criar minha conta
+                </button>
+
+            </form>
+
+
+            <div class="legal">
+
+                Ao criar sua conta, você concorda com os
+                <a href="{{ url_for('termos') }}">
+                    Termos e Políticas
+                </a>
+                do AcheTece.
+
+            </div>
+
+
+            <div class="back">
+
+                É proprietário de uma malharia?
+
+                <a href="{{ url_for('cadastrar_empresa') }}">
+                    Cadastrar malharia
+                </a>
+
+            </div>
+
+        </section>
+
+    </div>
+
+</main>
+
 </body>
 </html>
