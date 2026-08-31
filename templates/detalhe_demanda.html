@@ -427,6 +427,31 @@
             text-decoration:none;
         }
 
+        .match-run-btn{
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+        
+            min-height:44px;
+            padding:0 18px;
+        
+            border:0;
+            border-radius:999px;
+        
+            background:#000;
+            color:var(--lime);
+        
+            font-family:inherit;
+            font-size:13px;
+            font-weight:800;
+        
+            cursor:pointer;
+        }
+        
+        .match-run-btn:hover{
+            background:var(--lime);
+            color:#000;
+        }
 
         @media(max-width:650px){
 
@@ -962,7 +987,7 @@
         >
             ← Voltar para Minhas Demandas
         </a>
-
+    
         <a
             href="{{ url_for(
                 'configurar_matching',
@@ -972,13 +997,50 @@
         >
             Configurar Matching
         </a>
-        
+    
+    
+        {% if status == "publicada" %}
+    
+            <form
+                method="POST"
+                action="{{ url_for(
+                    'executar_matching',
+                    demanda_id=demanda.id
+                ) }}"
+                style="margin:0;"
+                onsubmit="return confirm(
+                    'Deseja executar o Matching V1 para esta demanda?'
+                );"
+            >
+    
+                <button
+                    type="submit"
+                    class="match-run-btn"
+                >
+                    Executar Matching V1
+                </button>
+    
+            </form>
+    
+    
+            <a
+                href="{{ url_for(
+                    'matches_demanda',
+                    demanda_id=demanda.id
+                ) }}"
+                class="back-btn"
+            >
+                Ver Matches
+            </a>
+    
+        {% endif %}
+    
     </div>
-
-
-</main>
-
-
-</body>
-
-</html>
+    
+    
+    </main>
+    
+    
+    </body>
+    
+    </html>
