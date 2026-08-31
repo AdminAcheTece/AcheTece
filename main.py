@@ -3556,68 +3556,112 @@ def painel_comprador():
     """
     Painel inicial do comprador.
 
-    Nesta primeira versão:
-    - exige um Usuario autenticado por user_id;
+    - exige Usuario autenticado;
     - exige role='cliente';
-    - carrega o ClienteProfile;
-    - não interfere no painel atual da malharia.
+    - carrega ClienteProfile;
+    - calcula indicadores reais de demandas;
+    - preserva separação entre comprador e malharia.
     """
+
+    # --------------------------------------------------------------
+    # Verifica sessão
+    # --------------------------------------------------------------
 
     user_id = session.get("user_id")
 
     if not user_id:
-        return redirect(url_for("login"))
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Carrega usuário
+    # --------------------------------------------------------------
 
     try:
-        usuario = db.session.get(Usuario, int(user_id))
+        usuario = db.session.get(
+            Usuario,
+            int(user_id)
+        )
     except Exception:
         usuario = None
 
-    if not usuario or not usuario.is_active:
+    if not usuario or usuario.is_active is False:
         session.clear()
-        return redirect(url_for("login"))
 
-    role = (usuario.role or "").strip().lower()
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Verifica perfil
+    # --------------------------------------------------------------
+
+    role = (
+        usuario.role or ""
+    ).strip().lower()
 
     if role != "cliente":
-        # Se for uma malharia, manda para o painel correto.
-        if getattr(usuario, "empresa", None):
-            return redirect(url_for("painel_malharia"))
 
-        return redirect(url_for("login"))
-
-        perfil = ClienteProfile.query.filter_by(
-            user_id=usuario.id
-        ).first()
-    
-        # --------------------------------------------------------------
-        # Indicadores reais do Portal do Comprador
-        # --------------------------------------------------------------
-    
-        demandas_ativas = (
-            ProductionRequest.query
-            .filter(
-                ProductionRequest.user_id == usuario.id,
-                ProductionRequest.status.in_(
-                    [
-                        "rascunho",
-                        "publicada"
-                    ]
-                )
+        # Caso seja uma malharia, leva ao painel correto
+        if getattr(
+            usuario,
+            "empresa",
+            None
+        ):
+            return redirect(
+                url_for("painel_malharia")
             )
-            .count()
-        )
-    
-        return render_template(
-            "painel_comprador.html",
-            usuario=usuario,
-            perfil=perfil,
-            demandas_ativas=demandas_ativas,
-            matches_total=0,
-            propostas_total=0,
-            pedidos_total=0,
+
+        return redirect(
+            url_for("login")
         )
 
+    # --------------------------------------------------------------
+    # Perfil do comprador
+    # --------------------------------------------------------------
+
+    perfil = ClienteProfile.query.filter_by(
+        user_id=usuario.id
+    ).first()
+
+    # --------------------------------------------------------------
+    # Indicadores reais do Portal do Comprador
+    # --------------------------------------------------------------
+
+    demandas_ativas = (
+        ProductionRequest.query
+        .filter(
+            ProductionRequest.user_id == usuario.id,
+            ProductionRequest.status.in_(
+                [
+                    "rascunho",
+                    "publicada"
+                ]
+            )
+        )
+        .count()
+    )
+
+    # Matching, propostas e pedidos ainda não foram criados
+    matches_total = 0
+    propostas_total = 0
+    pedidos_total = 0
+
+    # --------------------------------------------------------------
+    # Renderiza Portal do Comprador
+    # --------------------------------------------------------------
+
+    return render_template(
+        "painel_comprador.html",
+        usuario=usuario,
+        perfil=perfil,
+        demandas_ativas=demandas_ativas,
+        matches_total=matches_total,
+        propostas_total=propostas_total,
+        pedidos_total=pedidos_total,
+    )
+    
 # --- Rota do Painel (vencimento por plano + ajuste p/ próximo dia útil BR) ---
 @app.route('/painel_malharia', endpoint="painel_malharia")
 def painel_malharia():
