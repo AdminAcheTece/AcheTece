@@ -2093,23 +2093,154 @@ def _otp_send(to_email: str, ip: str = "", ua: str = ""):
 # Mantém seu _otp_validate como estava (com guard ou não, tanto faz)
 # ----------------------------------------------------------------------
 
+# ----------------------------------------------------------------------
+# AcheTece 2.0 - identificação e abertura de sessão por perfil
+# ----------------------------------------------------------------------
+
+def _achar_conta_login(email: str):
+    """
+    Retorna:
+        ("malharia", empresa, usuario)
+        ("cliente", None, usuario)
+        (None, None, None)
+
+    Mantém prioridade para Empresa para preservar os cadastros legados
+    das malharias.
+    """
+
+    email = (email or "").strip().lower()
+
+    if not email:
+        return None, None, None
+
+    # 1. Primeiro preserva o fluxo histórico das malharias
+    empresa = Empresa.query.filter(
+        func.lower(Empresa.email) == email
+    ).first()
+
+    if empresa:
+        usuario = getattr(empresa, "usuario", None)
+
+        return "malharia", empresa, usuario
+
+    # 2. Depois procura o novo usuário do AcheTece 2.0
+    usuario = Usuario.query.filter(
+        func.lower(Usuario.email) == email
+    ).first()
+
+    if usuario:
+        role = (usuario.role or "").strip().lower()
+
+        if role == "cliente":
+            return "cliente", None, usuario
+
+    # Admin continua utilizando seu fluxo administrativo próprio.
+    return None, None, None
+
+
+def _abrir_sessao_cliente(usuario):
+    """
+    Cria a sessão padrão do Portal do Comprador.
+    """
+
+    session.clear()
+
+    session["user_id"] = usuario.id
+    session["auth_user_id"] = usuario.id
+
+    session["login_email"] = usuario.email
+    session["auth_email"] = usuario.email
+
+    session["perfil"] = "cliente"
+
+    session.permanent = True
+
+
+def _abrir_sessao_malharia(empresa):
+    """
+    Cria a sessão atual da malharia e acrescenta,
+    quando disponível, a identidade Usuario.
+    """
+
+    session.clear()
+
+    session["empresa_id"] = empresa.id
+
+    session["empresa_apelido"] = (
+        empresa.apelido
+        or empresa.nome
+        or empresa.email.split("@")[0]
+    )
+
+    session["empresa_nome"] = empresa.nome
+
+    session["login_email"] = empresa.email
+    session["auth_email"] = empresa.email
+
+    session["perfil"] = "malharia"
+
+    # Malharias novas já podem possuir Usuario associado.
+    if getattr(empresa, "user_id", None):
+        session["user_id"] = empresa.user_id
+        session["auth_user_id"] = empresa.user_id
+
+    session.permanent = True
+
 # /login
 @app.route("/login", methods=["GET", "POST"], endpoint="login")
 def view_login():
+
     if request.method == "GET":
-        email = (request.args.get("email") or "").strip().lower()
-        return _render_try(["login.html", "AcheTece/Modelos/login.html"], email=email)
 
-    # POST (clicou Continuar)
-    email = (request.form.get("email") or request.args.get("email") or "").strip().lower()
+        email = (
+            request.args.get("email") or ""
+        ).strip().lower()
+
+        return _render_try(
+            [
+                "login.html",
+                "AcheTece/Modelos/login.html"
+            ],
+            email=email
+        )
+
+    # POST - clicou em Continuar
+    email = (
+        request.form.get("email")
+        or request.args.get("email")
+        or ""
+    ).strip().lower()
+
     if not email or "@" not in email:
-        return _render_try(["login.html", "AcheTece/Modelos/login.html"], email=email, error="Informe um e-mail válido.")
 
-    existe = Empresa.query.filter(func.lower(Empresa.email) == email).first()
-    if not existe:
-        return _render_try(["login.html", "AcheTece/Modelos/login.html"], email=email, no_account=True)
+        return _render_try(
+            [
+                "login.html",
+                "AcheTece/Modelos/login.html"
+            ],
+            email=email,
+            error="Informe um e-mail válido."
+        )
 
-    return redirect(url_for("login_method", email=email))
+    tipo, empresa, usuario = _achar_conta_login(email)
+
+    if not tipo:
+
+        return _render_try(
+            [
+                "login.html",
+                "AcheTece/Modelos/login.html"
+            ],
+            email=email,
+            no_account=True
+        )
+
+    return redirect(
+        url_for(
+            "login_method",
+            email=email
+        )
+    )
 
 @app.get("/login/")
 def view_login_trailing():
@@ -2135,22 +2266,61 @@ def view_login_method_alias_trailing():
 # Disparar envio do código (POST)
 @app.post("/login/codigo", endpoint="post_login_code")
 def post_login_code():
-    email = (request.form.get("email") or request.args.get("email") or "").strip().lower()
-    if not email:
-        flash("Informe um e-mail válido.", "warning")
-        return redirect(url_for("login"))
 
-    existe = Empresa.query.filter(func.lower(Empresa.email) == email).first()
-    if not existe:
-        return _render_try(["login.html", "AcheTece/Modelos/login.html"], email=email, no_account=True)
+    email = (
+        request.form.get("email")
+        or request.args.get("email")
+        or ""
+    ).strip().lower()
+
+    if not email:
+
+        flash(
+            "Informe um e-mail válido.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("login")
+        )
+
+    tipo, empresa, usuario = _achar_conta_login(email)
+
+    if not tipo:
+
+        return _render_try(
+            [
+                "login.html",
+                "AcheTece/Modelos/login.html"
+            ],
+            email=email,
+            no_account=True
+        )
 
     ok, msg = _otp_send(
         email,
-        ip=(request.headers.get("X-Forwarded-For") or request.remote_addr or "")[:64],
-        ua=(request.headers.get("User-Agent") or "")[:255],
+        ip=(
+            request.headers.get("X-Forwarded-For")
+            or request.remote_addr
+            or ""
+        )[:64],
+        ua=(
+            request.headers.get("User-Agent")
+            or ""
+        )[:255],
     )
-    flash(msg, "success" if ok else "error")
-    return redirect(url_for("login_code", email=email))
+
+    flash(
+        msg,
+        "success" if ok else "error"
+    )
+
+    return redirect(
+        url_for(
+            "login_code",
+            email=email
+        )
+    )
 
 # Alias com acento (POST)
 @app.post("/login/código", endpoint="post_login_code_accent")
@@ -2185,23 +2355,97 @@ def resend_login_code():
 # Validar código (POST)
 @app.post("/login/codigo/validar")
 def validate_login_code():
-    email = (request.form.get("email") or request.args.get("email") or "").strip().lower()
-    codigo = (request.form.get("codigo") or request.form.get("code") or "").strip()
 
-    ok, msg = _otp_validate(email, codigo)
+    email = (
+        request.form.get("email")
+        or request.args.get("email")
+        or ""
+    ).strip().lower()
+
+    codigo = (
+        request.form.get("codigo")
+        or request.form.get("code")
+        or ""
+    ).strip()
+
+    ok, msg = _otp_validate(
+        email,
+        codigo
+    )
+
     if not ok:
-        flash(msg, "danger")
-        return redirect(url_for("login_code", email=email))
 
-    emp = Empresa.query.filter(func.lower(Empresa.email) == email).first()
-    if emp:
-        session["empresa_id"] = emp.id
-        session["empresa_apelido"] = emp.apelido or emp.nome or emp.email.split("@")[0]
-        flash("Bem-vindo!", "success")
-        return redirect(url_for("painel_malharia"))
+        flash(
+            msg,
+            "danger"
+        )
 
-    flash("E-mail ainda não cadastrado. Conclua seu cadastro para continuar.", "info")
-    return redirect(url_for("cadastro_get", email=email))
+        return redirect(
+            url_for(
+                "login_code",
+                email=email
+            )
+        )
+
+    tipo, empresa, usuario = _achar_conta_login(email)
+
+    # --------------------------------------------------------------
+    # COMPRADOR
+    # --------------------------------------------------------------
+
+    if tipo == "cliente" and usuario:
+
+        if usuario.is_active is False:
+
+            flash(
+                "Esta conta está desativada.",
+                "warning"
+            )
+
+            return redirect(
+                url_for("login")
+            )
+
+        _abrir_sessao_cliente(
+            usuario
+        )
+
+        flash(
+            "Bem-vindo!",
+            "success"
+        )
+
+        return redirect(
+            url_for("painel_comprador")
+        )
+
+    # --------------------------------------------------------------
+    # MALHARIA
+    # --------------------------------------------------------------
+
+    if tipo == "malharia" and empresa:
+
+        _abrir_sessao_malharia(
+            empresa
+        )
+
+        flash(
+            "Bem-vindo!",
+            "success"
+        )
+
+        return redirect(
+            url_for("painel_malharia")
+        )
+
+    flash(
+        "E-mail ainda não cadastrado. Conclua seu cadastro para continuar.",
+        "info"
+    )
+
+    return redirect(
+        url_for("login")
+    )
 
 # Senha: TELA (GET)
 @app.get("/login/senha", endpoint="view_login_password")
@@ -2217,40 +2461,184 @@ def view_login_password():
 # Senha: AUTENTICAR (POST)
 @app.post("/login/senha/entrar", endpoint="post_login_password")
 def post_login_password():
-    email = (request.form.get("email") or request.args.get("email") or "").strip().lower()
-    senha = (request.form.get("senha") or "")
-    user = Empresa.query.filter(func.lower(Empresa.email) == email).first()
-    GENERIC_FAIL = "E-mail ou senha incorretos. Tente novamente."
 
-    if not user:
-        flash(GENERIC_FAIL, "error")
-        return redirect(url_for("view_login_password", email=email))
+    email = (
+        request.form.get("email")
+        or request.args.get("email")
+        or ""
+    ).strip().lower()
 
-    ok = False
-    try:
-        ok = check_password_hash(user.senha, senha)
-    except Exception as e:
-        app.logger.warning(f"[LOGIN WARN] check_password_hash: {e}")
+    senha = (
+        request.form.get("senha")
+        or ""
+    )
 
-    if not ok:
-        flash(GENERIC_FAIL, "error")
-        return redirect(url_for("view_login_password", email=email))
+    GENERIC_FAIL = (
+        "E-mail ou senha incorretos. Tente novamente."
+    )
 
-    if not DEMO_MODE and (user.status_pagamento or "").lower() not in ("aprovado", "ativo"):
-        flash("Pagamento ainda não aprovado.", "warning")
-        return redirect(url_for("login_method", email=email))
+    tipo, empresa, usuario = _achar_conta_login(email)
 
-    session["empresa_id"] = user.id
-    session["empresa_apelido"] = user.apelido or user.nome or user.email.split("@")[0]
-    return redirect(url_for(""))
+    # --------------------------------------------------------------
+    # Nenhuma conta
+    # --------------------------------------------------------------
 
-from flask import request, session, redirect, url_for, flash
+    if not tipo:
+
+        flash(
+            GENERIC_FAIL,
+            "error"
+        )
+
+        return redirect(
+            url_for(
+                "view_login_password",
+                email=email
+            )
+        )
+
+    # --------------------------------------------------------------
+    # COMPRADOR
+    # --------------------------------------------------------------
+
+    if tipo == "cliente":
+
+        if not usuario or usuario.is_active is False:
+
+            flash(
+                GENERIC_FAIL,
+                "error"
+            )
+
+            return redirect(
+                url_for(
+                    "view_login_password",
+                    email=email
+                )
+            )
+
+        ok = False
+
+        try:
+
+            if usuario.senha_hash:
+
+                ok = check_password_hash(
+                    usuario.senha_hash,
+                    senha
+                )
+
+        except Exception as e:
+
+            app.logger.warning(
+                f"[LOGIN CLIENTE WARN] check_password_hash: {e}"
+            )
+
+        if not ok:
+
+            flash(
+                GENERIC_FAIL,
+                "error"
+            )
+
+            return redirect(
+                url_for(
+                    "view_login_password",
+                    email=email
+                )
+            )
+
+        _abrir_sessao_cliente(
+            usuario
+        )
+
+        return redirect(
+            url_for("painel_comprador")
+        )
+
+    # --------------------------------------------------------------
+    # MALHARIA
+    # --------------------------------------------------------------
+
+    if tipo == "malharia":
+
+        ok = False
+
+        try:
+
+            ok = check_password_hash(
+                empresa.senha,
+                senha
+            )
+
+        except Exception as e:
+
+            app.logger.warning(
+                f"[LOGIN MALHARIA WARN] check_password_hash: {e}"
+            )
+
+        if not ok:
+
+            flash(
+                GENERIC_FAIL,
+                "error"
+            )
+
+            return redirect(
+                url_for(
+                    "view_login_password",
+                    email=email
+                )
+            )
+
+        # Preserva a regra comercial atual da malharia
+        if (
+            not DEMO_MODE
+            and
+            (empresa.status_pagamento or "").lower()
+            not in (
+                "aprovado",
+                "ativo"
+            )
+        ):
+
+            flash(
+                "Pagamento ainda não aprovado.",
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "login_method",
+                    email=email
+                )
+            )
+
+        _abrir_sessao_malharia(
+            empresa
+        )
+
+        return redirect(
+            url_for("painel_malharia")
+        )
+
+    flash(
+        GENERIC_FAIL,
+        "error"
+    )
+
+    return redirect(
+        url_for(
+            "view_login_password",
+            email=email
+        )
+    )
 
 @app.get("/oauth/google")
 def oauth_google():
     # contexto padrão "empresa" e preserva redirecionamento
     ctx = request.args.get("ctx", "empresa")
-    nxt = request.args.get("next") or url_for("")
+    nxt = request.args.get("next") or url_for("index")
 
     # guarda em sessão para usar no callback
     session["oauth_ctx"] = ctx
@@ -2294,7 +2682,7 @@ def oauth_google_callback():
     foto  = userinfo.get("picture")
 
     ctx = session.pop("oauth_ctx", "empresa")
-    nxt = session.pop("oauth_next", url_for(""))
+    nxt = session.pop("oauth_next", url_for("index"))
 
     if not email:
         flash("Não foi possível obter o e-mail do Google.", "danger")
@@ -2320,9 +2708,12 @@ def oauth_google_callback():
 
 @app.route("/logout")
 def logout():
-    session.pop("empresa_id", None)
-    session.pop("empresa_apelido", None)
-    return redirect(url_for('login'))  # <- agora vai para a tela de login
+
+    session.clear()
+
+    return redirect(
+        url_for("login")
+    )
 
 # --------------------------------------------------------------------
 # Onboarding helpers + Painel
