@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>
+        {{ demanda.codigo }} - AcheTece
+    </title>
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <style>
+
+        :root{
+            --black:#111111;
+            --white:#ffffff;
+
+            --olive:#7B7424;
+            --olive-dark:#434326;
+            --olive-light:#F1F2E8;
+
+            --lime:#B6F34D;
+
+            --bg:#F4F4F1;
+            --text:#202020;
+            --muted:#6B6B6B;
+            --line:#DFDFDA;
+
+            --green:#267540;
+            --green-bg:#EAF7ED;
+
+            --red:#8A2631;
+            --red-bg:#FFF0F2;
+        }
+
+        *{
+            box-sizing:border-box;
+        }
+
+        body{
+            margin:0;
+            background:var(--bg);
+            color:var(--text);
+            font-family:'Inter',Arial,sans-serif;
+        }
+
+
+        /* =========================================================
+           HEADER
+        ========================================================= */
+
+        .topbar{
+            min-height:72px;
+            background:var(--black);
+            display:flex;
+            align-items:center;
+        }
+
+        .topbar-inner{
+            width:100%;
+            max-width:1180px;
+            margin:auto;
+            padding:0 22px;
+
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:20px;
+        }
+
+        .brand img{
+            height:40px;
+            width:auto;
+            display:block;
+        }
+
+        .top-actions{
+            display:flex;
+            gap:10px;
+            align-items:center;
+        }
+
+        .top-link{
+            min-height:42px;
+            padding:0 17px;
+
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+
+            border-radius:999px;
+
+            color:#fff;
+
+            font-size:13px;
+            font-weight:800;
+
+            text-decoration:none;
+        }
+
+        .top-link:hover{
+            background:rgba(255,255,255,.10);
+        }
+
+
+        /* =========================================================
+           PÁGINA
+        ========================================================= */
+
+        .page{
+            width:100%;
+            max-width:1000px;
+            margin:auto;
+
+            padding:38px 22px 70px;
+        }
+
+        .eyebrow{
+            color:var(--olive);
+
+            font-size:12px;
+            font-weight:800;
+
+            text-transform:uppercase;
+            letter-spacing:.08em;
+
+            margin-bottom:8px;
+        }
+
+        .head{
+            display:flex;
+            justify-content:space-between;
+            align-items:flex-start;
+            gap:24px;
+
+            margin-bottom:26px;
+        }
+
+        h1{
+            margin:0;
+
+            font-size:34px;
+            line-height:1.12;
+
+            letter-spacing:-.035em;
+        }
+
+        .codigo{
+            color:var(--olive);
+            font-size:14px;
+            font-weight:800;
+
+            margin-top:8px;
+        }
+
+
+        /* =========================================================
+           STATUS
+        ========================================================= */
+
+        .status{
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+
+            min-height:36px;
+            padding:0 14px;
+
+            border-radius:999px;
+
+            font-size:12px;
+            font-weight:800;
+
+            white-space:nowrap;
+        }
+
+        .status-rascunho{
+            background:#ECECEA;
+            color:#555;
+        }
+
+        .status-publicada{
+            background:var(--green-bg);
+            color:var(--green);
+        }
+
+        .status-encerrada{
+            background:#ECECEA;
+            color:#555;
+        }
+
+        .status-cancelada{
+            background:var(--red-bg);
+            color:var(--red);
+        }
+
+
+        /* =========================================================
+           FLASH
+        ========================================================= */
+
+        .flash{
+            margin:0 0 20px;
+            padding:13px 16px;
+
+            border-radius:12px;
+
+            font-size:13px;
+            font-weight:700;
+        }
+
+        .flash.success{
+            background:#EDF8EF;
+            border:1px solid #B9DCBF;
+            color:#256033;
+        }
+
+        .flash.warning{
+            background:#FFF7E7;
+            border:1px solid #E8D49B;
+            color:#755614;
+        }
+
+        .flash.danger,
+        .flash.error{
+            background:#FFF0F2;
+            border:1px solid #EAB5BD;
+            color:#85202D;
+        }
+
+
+        /* =========================================================
+           CONTEÚDO
+        ========================================================= */
+
+        .card{
+            background:#fff;
+
+            border:1px solid var(--line);
+            border-radius:20px;
+
+            overflow:hidden;
+        }
+
+        .section{
+            padding:24px 26px;
+        }
+
+        .section + .section{
+            border-top:1px solid var(--line);
+        }
+
+        .section-title{
+            margin:0 0 18px;
+
+            font-size:16px;
+            font-weight:800;
+        }
+
+        .grid{
+            display:grid;
+            grid-template-columns:repeat(2,1fr);
+            gap:22px 30px;
+        }
+
+        .item-label{
+            margin-bottom:5px;
+
+            color:#858580;
+
+            font-size:10px;
+            font-weight:800;
+
+            text-transform:uppercase;
+            letter-spacing:.07em;
+        }
+
+        .item-value{
+            color:#1D1D1D;
+
+            font-size:15px;
+            font-weight:700;
+
+            line-height:1.45;
+        }
+
+        .item-value.muted{
+            color:#777;
+            font-weight:500;
+        }
+
+        .observacoes{
+            white-space:pre-line;
+
+            color:#444;
+
+            font-size:14px;
+            line-height:1.65;
+        }
+
+
+        /* =========================================================
+           AÇÃO
+        ========================================================= */
+
+        .action-card{
+            margin-top:20px;
+
+            padding:24px;
+
+            background:#111;
+
+            border-radius:20px;
+
+            color:#fff;
+
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:24px;
+        }
+
+        .action-copy{
+            max-width:620px;
+        }
+
+        .action-copy strong{
+            display:block;
+
+            margin-bottom:6px;
+
+            font-size:17px;
+        }
+
+        .action-copy p{
+            margin:0;
+
+            color:#CBCBCB;
+
+            font-size:13px;
+            line-height:1.55;
+        }
+
+        .publish-form{
+            flex:0 0 auto;
+            margin:0;
+        }
+
+        .publish-btn{
+            border:0;
+
+            min-height:48px;
+            padding:0 20px;
+
+            border-radius:999px;
+
+            cursor:pointer;
+
+            background:var(--lime);
+            color:#000;
+
+            font-family:inherit;
+            font-size:14px;
+            font-weight:800;
+        }
+
+        .published-message{
+            flex:0 0 auto;
+
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+
+            min-height:44px;
+            padding:0 16px;
+
+            border-radius:999px;
+
+            background:var(--green-bg);
+            color:var(--green);
+
+            font-size:12px;
+            font-weight:800;
+        }
+
+
+        /* =========================================================
+           FOOTER DE NAVEGAÇÃO
+        ========================================================= */
+
+        .bottom-actions{
+            margin-top:18px;
+
+            display:flex;
+            gap:12px;
+            justify-content:flex-start;
+        }
+
+        .back-btn{
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+
+            min-height:44px;
+            padding:0 17px;
+
+            border-radius:999px;
+
+            border:1px solid #CACAC5;
+
+            color:#222;
+            background:#fff;
+
+            font-size:13px;
+            font-weight:800;
+
+            text-decoration:none;
+        }
+
+
+        @media(max-width:650px){
+
+            .page{
+                padding:28px 16px 50px;
+            }
+
+            .topbar-inner{
+                padding:0 16px;
+            }
+
+            .brand img{
+                height:34px;
+            }
+
+            .head{
+                flex-direction:column;
+                gap:14px;
+            }
+
+            h1{
+                font-size:28px;
+            }
+
+            .grid{
+                grid-template-columns:1fr;
+            }
+
+            .action-card{
+                flex-direction:column;
+                align-items:stretch;
+            }
+
+            .publish-btn{
+                width:100%;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<header class="topbar">
+
+    <div class="topbar-inner">
+
+        <a
+            href="{{ url_for('painel_comprador') }}"
+            class="brand"
+        >
+
+            <img
+                src="{{ url_for(
+                    'static',
+                    filename='Logo_Branco_AcheTece_sem_fundo.png'
+                ) }}"
+                alt="AcheTece"
+            >
+
+        </a>
+
+
+        <div class="top-actions">
+
+            <a
+                href="{{ url_for('painel_comprador') }}"
+                class="top-link"
+            >
+                Portal
+            </a>
+
+            <a
+                href="{{ url_for('minhas_demandas') }}"
+                class="top-link"
+            >
+                Minhas Demandas
+            </a>
+
+        </div>
+
+    </div>
+
+</header>
+
+
+<main class="page">
+
+
+    {% set status =
+        (demanda.status or 'rascunho')
+        |lower
+    %}
+
+
+    <div class="head">
+
+        <div>
+
+            <div class="eyebrow">
+                Demanda de Produção
+            </div>
+
+            <h1>
+                {{ demanda.produto }}
+            </h1>
+
+            <div class="codigo">
+                {{ demanda.codigo }}
+            </div>
+
+        </div>
+
+
+        <span
+            class="
+                status
+                status-{{ status }}
+            "
+        >
+
+            {% if status == "rascunho" %}
+                Rascunho
+
+            {% elif status == "publicada" %}
+                Publicada
+
+            {% elif status == "encerrada" %}
+                Encerrada
+
+            {% elif status == "cancelada" %}
+                Cancelada
+
+            {% else %}
+                {{ status|capitalize }}
+            {% endif %}
+
+        </span>
+
+    </div>
+
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+
+        {% if messages %}
+
+            {% for category, message in messages %}
+
+                <div class="flash {{ category }}">
+                    {{ message }}
+                </div>
+
+            {% endfor %}
+
+        {% endif %}
+
+    {% endwith %}
+
+
+    <section class="card">
+
+
+        <div class="section">
+
+            <h2 class="section-title">
+                Produto e especificação
+            </h2>
+
+
+            <div class="grid">
+
+
+                <div>
+
+                    <div class="item-label">
+                        Produto
+                    </div>
+
+                    <div class="item-value">
+                        {{ demanda.produto }}
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="item-label">
+                        Estrutura / tipo de malha
+                    </div>
+
+                    <div class="item-value {% if not demanda.estrutura_malha %}muted{% endif %}">
+
+                        {{
+                            demanda.estrutura_malha
+                            or "Não informado"
+                        }}
+
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="item-label">
+                        Composição
+                    </div>
+
+                    <div class="item-value {% if not demanda.composicao %}muted{% endif %}">
+
+                        {{
+                            demanda.composicao
+                            or "Não informado"
+                        }}
+
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="item-label">
+                        Título do fio
+                    </div>
+
+                    <div class="item-value {% if not demanda.titulo_fio %}muted{% endif %}">
+
+                        {{
+                            demanda.titulo_fio
+                            or "Não informado"
+                        }}
+
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="item-label">
+                        Gramatura
+                    </div>
+
+                    <div class="item-value {% if not demanda.gramatura %}muted{% endif %}">
+
+                        {% if demanda.gramatura %}
+
+                            {{ demanda.gramatura }} g/m²
+
+                        {% else %}
+
+                            Não informado
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+        </div>
+
+
+        <div class="section">
+
+            <h2 class="section-title">
+                Quantidade e prazo
+            </h2>
+
+
+            <div class="grid">
+
+
+                <div>
+
+                    <div class="item-label">
+                        Quantidade
+                    </div>
+
+                    <div class="item-value">
+
+                        {{
+                            "{:,.0f}".format(
+                                demanda.quantidade_kg
+                            )
+                            |replace(",", ".")
+                        }}
+                        kg
+
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="item-label">
+                        Data necessária
+                    </div>
+
+                    <div class="item-value {% if not demanda.data_necessidade %}muted{% endif %}">
+
+                        {% if demanda.data_necessidade %}
+
+                            {{
+                                demanda.data_necessidade
+                                .strftime('%d/%m/%Y')
+                            }}
+
+                        {% else %}
+
+                            A definir
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+        </div>
+
+
+        <div class="section">
+
+            <h2 class="section-title">
+                Preferência de localização
+            </h2>
+
+
+            <div class="grid">
+
+
+                <div>
+
+                    <div class="item-label">
+                        Estado
+                    </div>
+
+                    <div class="item-value {% if not demanda.estado_preferencial %}muted{% endif %}">
+
+                        {{
+                            demanda.estado_preferencial
+                            or "Qualquer estado"
+                        }}
+
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="item-label">
+                        Cidade
+                    </div>
+
+                    <div class="item-value {% if not demanda.cidade_preferencial %}muted{% endif %}">
+
+                        {{
+                            demanda.cidade_preferencial
+                            or "Qualquer cidade"
+                        }}
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+        </div>
+
+
+        <div class="section">
+
+            <h2 class="section-title">
+                Serviço e observações
+            </h2>
+
+
+            <div class="grid">
+
+
+                <div>
+
+                    <div class="item-label">
+                        Escopo
+                    </div>
+
+                    <div class="item-value {% if not demanda.tipo_servico %}muted{% endif %}">
+
+                        {{
+                            demanda.tipo_servico
+                            or "A definir"
+                        }}
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+            <div style="margin-top:24px;">
+
+                <div class="item-label">
+                    Observações
+                </div>
+
+                <div class="observacoes">
+
+                    {{
+                        demanda.observacoes
+                        or "Nenhuma observação adicional."
+                    }}
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </section>
+
+
+    <section class="action-card">
+
+
+        {% if status == "rascunho" %}
+
+
+            <div class="action-copy">
+
+                <strong>
+                    Pronto para disponibilizar esta demanda?
+                </strong>
+
+                <p>
+                    Ao publicar, a demanda passa a estar apta
+                    para o futuro processo de matching com as
+                    malharias cadastradas no AcheTece.
+                </p>
+
+            </div>
+
+
+            <form
+                method="POST"
+                action="{{ url_for(
+                    'publicar_demanda',
+                    demanda_id=demanda.id
+                ) }}"
+                class="publish-form"
+                onsubmit="return confirm(
+                    'Deseja publicar esta demanda?'
+                );"
+            >
+
+                <button
+                    type="submit"
+                    class="publish-btn"
+                >
+                    Publicar demanda
+                </button>
+
+            </form>
+
+
+        {% elif status == "publicada" %}
+
+
+            <div class="action-copy">
+
+                <strong>
+                    Demanda publicada.
+                </strong>
+
+                <p>
+                    Esta demanda está pronta para participar
+                    do processo de matching quando ativarmos
+                    o módulo de oportunidades.
+                </p>
+
+            </div>
+
+
+            <div class="published-message">
+                ✓ Publicada
+            </div>
+
+
+        {% else %}
+
+
+            <div class="action-copy">
+
+                <strong>
+                    Demanda {{ status }}.
+                </strong>
+
+                <p>
+                    Nenhuma ação de publicação está disponível
+                    neste status.
+                </p>
+
+            </div>
+
+
+        {% endif %}
+
+
+    </section>
+
+
+    <div class="bottom-actions">
+
+        <a
+            href="{{ url_for('minhas_demandas') }}"
+            class="back-btn"
+        >
+            ← Voltar para Minhas Demandas
+        </a>
+
+    </div>
+
+
+</main>
+
+
+</body>
+
+</html>
