@@ -3549,6 +3549,291 @@ def minhas_demandas():
     )
 
 # --------------------------------------------------------------------
+# Detalhes da Demanda - AcheTece 2.0
+# --------------------------------------------------------------------
+
+@app.get(
+    "/comprador/demandas/<int:demanda_id>",
+    endpoint="detalhe_demanda"
+)
+def detalhe_demanda(demanda_id):
+
+    # --------------------------------------------------------------
+    # Verifica sessão
+    # --------------------------------------------------------------
+
+    user_id = session.get("user_id")
+
+    if not user_id:
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Carrega usuário
+    # --------------------------------------------------------------
+
+    try:
+        usuario = db.session.get(
+            Usuario,
+            int(user_id)
+        )
+    except Exception:
+        usuario = None
+
+    if not usuario or usuario.is_active is False:
+
+        session.clear()
+
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Garante que é comprador
+    # --------------------------------------------------------------
+
+    role = (
+        usuario.role or ""
+    ).strip().lower()
+
+    if role != "cliente":
+
+        if getattr(
+            usuario,
+            "empresa",
+            None
+        ):
+            return redirect(
+                url_for("painel_malharia")
+            )
+
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Busca somente uma demanda pertencente ao comprador logado
+    # --------------------------------------------------------------
+
+    demanda = (
+        ProductionRequest.query
+        .filter_by(
+            id=demanda_id,
+            user_id=usuario.id
+        )
+        .first()
+    )
+
+    if not demanda:
+
+        flash(
+            "Demanda não encontrada.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("minhas_demandas")
+        )
+
+    # --------------------------------------------------------------
+    # Perfil do comprador
+    # --------------------------------------------------------------
+
+    perfil = ClienteProfile.query.filter_by(
+        user_id=usuario.id
+    ).first()
+
+    return render_template(
+        "detalhe_demanda.html",
+        usuario=usuario,
+        perfil=perfil,
+        demanda=demanda
+    )
+
+
+# --------------------------------------------------------------------
+# Publicar Demanda - AcheTece 2.0
+# --------------------------------------------------------------------
+
+@app.post(
+    "/comprador/demandas/<int:demanda_id>/publicar",
+    endpoint="publicar_demanda"
+)
+def publicar_demanda(demanda_id):
+
+    # --------------------------------------------------------------
+    # Verifica sessão
+    # --------------------------------------------------------------
+
+    user_id = session.get("user_id")
+
+    if not user_id:
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Carrega usuário
+    # --------------------------------------------------------------
+
+    try:
+        usuario = db.session.get(
+            Usuario,
+            int(user_id)
+        )
+    except Exception:
+        usuario = None
+
+    if (
+        not usuario
+        or usuario.is_active is False
+        or (usuario.role or "").strip().lower() != "cliente"
+    ):
+
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Busca demanda garantindo propriedade
+    # --------------------------------------------------------------
+
+    demanda = (
+        ProductionRequest.query
+        .filter_by(
+            id=demanda_id,
+            user_id=usuario.id
+        )
+        .first()
+    )
+
+    if not demanda:
+
+        flash(
+            "Demanda não encontrada.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("minhas_demandas")
+        )
+
+    status_atual = (
+        demanda.status or "rascunho"
+    ).strip().lower()
+
+    # --------------------------------------------------------------
+    # Já publicada
+    # --------------------------------------------------------------
+
+    if status_atual == "publicada":
+
+        flash(
+            f"A demanda {demanda.codigo} já está publicada.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "detalhe_demanda",
+                demanda_id=demanda.id
+            )
+        )
+
+    # --------------------------------------------------------------
+    # Somente rascunho pode ser publicado nesta versão
+    # --------------------------------------------------------------
+
+    if status_atual != "rascunho":
+
+        flash(
+            "Esta demanda não pode ser publicada no status atual.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "detalhe_demanda",
+                demanda_id=demanda.id
+            )
+        )
+
+    # --------------------------------------------------------------
+    # Valida requisitos mínimos
+    # --------------------------------------------------------------
+
+    if not demanda.produto:
+
+        flash(
+            "A demanda precisa ter um produto informado antes da publicação.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "detalhe_demanda",
+                demanda_id=demanda.id
+            )
+        )
+
+    if not demanda.quantidade_kg or demanda.quantidade_kg <= 0:
+
+        flash(
+            "A demanda precisa ter uma quantidade válida antes da publicação.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "detalhe_demanda",
+                demanda_id=demanda.id
+            )
+        )
+
+    # --------------------------------------------------------------
+    # Publicação
+    # --------------------------------------------------------------
+
+    try:
+
+        demanda.status = "publicada"
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "[DEMANDA] Falha ao publicar demanda."
+        )
+
+        flash(
+            "Não foi possível publicar a demanda agora.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "detalhe_demanda",
+                demanda_id=demanda.id
+            )
+        )
+
+    flash(
+        f"Demanda {demanda.codigo} publicada com sucesso.",
+        "success"
+    )
+
+    return redirect(
+        url_for(
+            "detalhe_demanda",
+            demanda_id=demanda.id
+        )
+    )
+
+# --------------------------------------------------------------------
 # Portal do Comprador - AcheTece 2.0
 # --------------------------------------------------------------------
 @app.route('/painel_comprador', endpoint='painel_comprador')
