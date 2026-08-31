@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+
+<html lang="pt-br">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>
+        {{ demanda.codigo }} - Oportunidade - AcheTece
+    </title>
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <style>
+
+        :root{
+            --black:#111111;
+            --white:#ffffff;
+
+            --olive:#7B7424;
+            --olive-dark:#434326;
+            --olive-light:#F1F2E8;
+
+            --lime:#B6F34D;
+
+            --bg:#F4F4F1;
+            --text:#202020;
+            --muted:#6B6B6B;
+            --line:#DFDFDA;
+
+            --green:#287742;
+            --green-bg:#EAF7ED;
+
+            --red:#85202D;
+            --red-bg:#FFF0F2;
+        }
+
+
+        *{
+            box-sizing:border-box;
+        }
+
+
+        body{
+            margin:0;
+
+            background:var(--bg);
+            color:var(--text);
+
+            font-family:
+                'Inter',
+                Arial,
+                sans-serif;
+        }
+
+
+        /* =========================================================
+           HEADER
+        ========================================================= */
+
+
+        .topbar{
+            min-height:72px;
+
+            background:#111;
+
+            display:flex;
+            align-items:center;
+        }
+
+
+        .topbar-inner{
+            width:100%;
+            max-width:1050px;
+
+            margin:auto;
+            padding:0 22px;
+
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+
+            gap:20px;
+        }
+
+
+        .brand img{
+            height:40px;
+            display:block;
+        }
+
+
+        .back{
+            color:#fff;
+
+            text-decoration:none;
+
+            font-size:13px;
+            font-weight:800;
+        }
+
+
+        /* =========================================================
+           PÁGINA
+        ========================================================= */
+
+
+        .page{
+            max-width:1000px;
+
+            margin:auto;
+
+            padding:
+                38px 22px
+                70px;
+        }
+
+
+        .eyebrow{
+            margin-bottom:8px;
+
+            color:var(--olive);
+
+            text-transform:uppercase;
+
+            letter-spacing:.08em;
+
+            font-size:12px;
+            font-weight:800;
+        }
+
+
+        .head{
+            display:flex;
+
+            align-items:flex-start;
+            justify-content:space-between;
+
+            gap:24px;
+
+            margin-bottom:23px;
+        }
+
+
+        h1{
+            margin:0;
+
+            color:#111;
+
+            font-size:34px;
+
+            line-height:1.12;
+
+            letter-spacing:-.035em;
+        }
+
+
+        .code{
+            margin-top:7px;
+
+            color:var(--olive);
+
+            font-size:13px;
+            font-weight:800;
+        }
+
+
+        /* =========================================================
+           SCORE
+        ========================================================= */
+
+
+        .score-box{
+            flex:0 0 auto;
+
+            min-width:130px;
+
+            padding:17px 20px;
+
+            text-align:center;
+
+            background:var(--olive-light);
+
+            border:
+                1px solid var(--line);
+
+            border-radius:16px;
+        }
+
+
+        .score-box strong{
+            display:block;
+
+            color:#111;
+
+            font-size:30px;
+        }
+
+
+        .score-box span{
+            display:block;
+
+            margin-top:2px;
+
+            color:#70706A;
+
+            font-size:9px;
+            font-weight:800;
+
+            text-transform:uppercase;
+        }
+
+
+        /* =========================================================
+           FLASH
+        ========================================================= */
+
+
+        .flash{
+            margin-bottom:18px;
+
+            padding:13px 15px;
+
+            border-radius:11px;
+
+            font-size:13px;
+            font-weight:700;
+        }
+
+
+        .flash.success{
+            background:#EDF8EF;
+
+            border:
+                1px solid #B9DCBF;
+
+            color:#256033;
+        }
+
+
+        .flash.warning{
+            background:#FFF7E7;
+
+            border:
+                1px solid #E8D49B;
+
+            color:#755614;
+        }
+
+
+        .flash.danger,
+        .flash.error{
+            background:#FFF0F2;
+
+            border:
+                1px solid #EAB5BD;
+
+            color:#85202D;
+        }
+
+
+        /* =========================================================
+           CARD DA DEMANDA
+        ========================================================= */
+
+
+        .card{
+            background:#fff;
+
+            border:
+                1px solid var(--line);
+
+            border-radius:20px;
+
+            overflow:hidden;
+        }
+
+
+        .section{
+            padding:24px 26px;
+        }
+
+
+        .section + .section{
+            border-top:
+                1px solid var(--line);
+        }
+
+
+        .section-title{
+            margin:
+                0 0 18px;
+
+            color:#111;
+
+            font-size:17px;
+            font-weight:800;
+        }
+
+
+        .grid{
+            display:grid;
+
+            grid-template-columns:
+                repeat(2,1fr);
+
+            gap:
+                22px 30px;
+        }
+
+
+        .label{
+            margin-bottom:5px;
+
+            color:#888;
+
+            font-size:10px;
+            font-weight:800;
+
+            text-transform:uppercase;
+            letter-spacing:.06em;
+        }
+
+
+        .value{
+            color:#222;
+
+            font-size:14px;
+            font-weight:700;
+
+            line-height:1.45;
+        }
+
+
+        .value.muted{
+            color:#777;
+
+            font-weight:500;
+        }
+
+
+        .notes{
+            color:#444;
+
+            font-size:14px;
+
+            line-height:1.6;
+
+            white-space:pre-line;
+        }
+
+
+        /* =========================================================
+           TEARES COMPATÍVEIS
+        ========================================================= */
+
+
+        .matches{
+            display:flex;
+
+            flex-direction:column;
+
+            gap:11px;
+        }
+
+
+        .match{
+            display:grid;
+
+            grid-template-columns:
+                90px
+                1fr;
+
+            overflow:hidden;
+
+            border:
+                1px solid var(--line);
+
+            border-radius:15px;
+        }
+
+
+        .match-score{
+            display:flex;
+            flex-direction:column;
+
+            align-items:center;
+            justify-content:center;
+
+            padding:15px 10px;
+
+            background:var(--olive-light);
+
+            border-right:
+                1px solid var(--line);
+        }
+
+
+        .match-score strong{
+            font-size:22px;
+        }
+
+
+        .match-score span{
+            margin-top:2px;
+
+            color:#777;
+
+            font-size:9px;
+            font-weight:800;
+
+            text-transform:uppercase;
+        }
+
+
+        .match-body{
+            padding:16px 18px;
+        }
+
+
+        .machine{
+            color:#111;
+
+            font-size:15px;
+            font-weight:800;
+        }
+
+
+        .tags{
+            display:flex;
+
+            flex-wrap:wrap;
+
+            gap:6px;
+
+            margin-top:9px;
+        }
+
+
+        .tag{
+            min-height:26px;
+
+            display:inline-flex;
+
+            align-items:center;
+
+            padding:
+                0 9px;
+
+            border-radius:999px;
+
+            background:#F1F1EF;
+
+            color:#444;
+
+            font-size:10px;
+            font-weight:700;
+        }
+
+
+        /* =========================================================
+           DECISÃO
+        ========================================================= */
+
+
+        .decision{
+            margin-top:20px;
+
+            background:#111;
+            color:#fff;
+
+            border-radius:20px;
+
+            padding:24px;
+        }
+
+
+        .decision h2{
+            margin:
+                0 0 6px;
+
+            font-size:18px;
+        }
+
+
+        .decision p{
+            max-width:700px;
+
+            margin:
+                0 0 20px;
+
+            color:#CFCFCF;
+
+            font-size:13px;
+
+            line-height:1.55;
+        }
+
+
+        .decision-actions{
+            display:flex;
+
+            flex-wrap:wrap;
+
+            gap:10px;
+        }
+
+
+        .decision-actions form{
+            margin:0;
+        }
+
+
+        .interest-btn,
+        .reject-btn{
+            min-height:46px;
+
+            padding:
+                0 19px;
+
+            border-radius:999px;
+
+            font-family:inherit;
+
+            font-size:13px;
+            font-weight:800;
+
+            cursor:pointer;
+        }
+
+
+        .interest-btn{
+            border:0;
+
+            background:var(--lime);
+
+            color:#000;
+        }
+
+
+        .interest-btn:hover{
+            background:#fff;
+        }
+
+
+        .reject-btn{
+            border:
+                1px solid #666;
+
+            background:transparent;
+
+            color:#fff;
+        }
+
+
+        .reject-btn:hover{
+            background:#fff;
+            color:#000;
+        }
+
+
+        /* =========================================================
+           DECISÃO JÁ TOMADA
+        ========================================================= */
+
+
+        .decision-done{
+            display:inline-flex;
+
+            min-height:40px;
+
+            align-items:center;
+            justify-content:center;
+
+            padding:
+                0 15px;
+
+            border-radius:999px;
+
+            font-size:12px;
+            font-weight:800;
+        }
+
+
+        .decision-done.interested{
+            background:var(--green-bg);
+            color:var(--green);
+        }
+
+
+        .decision-done.rejected{
+            background:var(--red-bg);
+            color:var(--red);
+        }
+
+
+        /* =========================================================
+           MOBILE
+        ========================================================= */
+
+
+        @media(max-width:650px){
+
+            .page{
+                padding:
+                    28px 16px
+                    50px;
+            }
+
+
+            .head{
+                flex-direction:column;
+            }
+
+
+            h1{
+                font-size:28px;
+            }
+
+
+            .grid{
+                grid-template-columns:1fr;
+            }
+
+
+            .score-box{
+                width:100%;
+            }
+
+
+            .decision-actions,
+            .decision-actions form{
+                width:100%;
+            }
+
+
+            .interest-btn,
+            .reject-btn{
+                width:100%;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<header class="topbar">
+
+    <div class="topbar-inner">
+
+        <a
+            href="{{ url_for('painel_malharia') }}"
+            class="brand"
+        >
+
+            <img
+                src="{{ url_for(
+                    'static',
+                    filename='Logo_Branco_AcheTece_sem_fundo.png'
+                ) }}"
+                alt="AcheTece"
+            >
+
+        </a>
+
+
+        <a
+            href="{{ url_for('minhas_oportunidades') }}"
+            class="back"
+        >
+            ← Voltar para oportunidades
+        </a>
+
+    </div>
+
+</header>
+
+
+<main class="page">
+
+
+    {% set opportunity_status =
+        (
+            oportunidade.status
+            or 'visualizada'
+        )
+        |lower
+    %}
+
+
+    <div class="eyebrow">
+        Oportunidade de Produção
+    </div>
+
+
+    <div class="head">
+
+
+        <div>
+
+            <h1>
+                {{ demanda.produto }}
+            </h1>
+
+
+            <div class="code">
+                {{ demanda.codigo }}
+            </div>
+
+        </div>
+
+
+        <div class="score-box">
+
+            <strong>
+                {{ oportunidade.best_score }}%
+            </strong>
+
+            <span>
+                compatibilidade
+            </span>
+
+        </div>
+
+
+    </div>
+
+
+    {% with messages =
+        get_flashed_messages(
+            with_categories=true
+        )
+    %}
+
+        {% if messages %}
+
+            {% for category, message in messages %}
+
+                <div class="flash {{ category }}">
+                    {{ message }}
+                </div>
+
+            {% endfor %}
+
+        {% endif %}
+
+    {% endwith %}
+
+
+    <section class="card">
+
+
+        <div class="section">
+
+            <h2 class="section-title">
+                Especificação da demanda
+            </h2>
+
+
+            <div class="grid">
+
+
+                <div>
+
+                    <div class="label">
+                        Produto
+                    </div>
+
+                    <div class="value">
+                        {{ demanda.produto }}
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="label">
+                        Estrutura / tipo de malha
+                    </div>
+
+                    <div class="value {% if not demanda.estrutura_malha %}muted{% endif %}">
+
+                        {{
+                            demanda.estrutura_malha
+                            or "Não informado"
+                        }}
+
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="label">
+                        Composição
+                    </div>
+
+                    <div class="value {% if not demanda.composicao %}muted{% endif %}">
+
+                        {{
+                            demanda.composicao
+                            or "Não informado"
+                        }}
+
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="label">
+                        Título do fio
+                    </div>
+
+                    <div class="value {% if not demanda.titulo_fio %}muted{% endif %}">
+
+                        {{
+                            demanda.titulo_fio
+                            or "Não informado"
+                        }}
+
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="label">
+                        Gramatura
+                    </div>
+
+                    <div class="value">
+
+                        {% if demanda.gramatura %}
+
+                            {{ demanda.gramatura }}
+                            g/m²
+
+                        {% else %}
+
+                            Não informado
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="label">
+                        Quantidade
+                    </div>
+
+                    <div class="value">
+
+                        {{
+                            "{:,.0f}".format(
+                                demanda.quantidade_kg
+                            )
+                            |replace(",", ".")
+                        }}
+                        kg
+
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="label">
+                        Prazo
+                    </div>
+
+                    <div class="value">
+
+                        {% if demanda.data_necessidade %}
+
+                            {{
+                                demanda.data_necessidade
+                                .strftime('%d/%m/%Y')
+                            }}
+
+                        {% else %}
+
+                            A definir
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="label">
+                        Localização preferencial
+                    </div>
+
+                    <div class="value">
+
+                        {% if demanda.cidade_preferencial %}
+
+                            {{ demanda.cidade_preferencial }}
+
+                        {% else %}
+
+                            Qualquer cidade
+
+                        {% endif %}
+
+
+                        {% if demanda.estado_preferencial %}
+
+                            /
+                            {{ demanda.estado_preferencial }}
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="label">
+                        Serviço
+                    </div>
+
+                    <div class="value">
+
+                        {{
+                            demanda.tipo_servico
+                            or "A definir"
+                        }}
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+            {% if demanda.observacoes %}
+
+                <div style="margin-top:24px;">
+
+                    <div class="label">
+                        Observações
+                    </div>
+
+                    <div class="notes">
+                        {{ demanda.observacoes }}
+                    </div>
+
+                </div>
+
+            {% endif %}
+
+
+        </div>
+
+
+        <div class="section">
+
+            <h2 class="section-title">
+
+                Equipamentos compatíveis da sua malharia
+
+            </h2>
+
+
+            {% if matches %}
+
+
+                <div class="matches">
+
+
+                    {% for match in matches %}
+
+
+                        <div class="match">
+
+
+                            <div class="match-score">
+
+                                <strong>
+                                    {{ match.score }}%
+                                </strong>
+
+                                <span>
+                                    match
+                                </span>
+
+                            </div>
+
+
+                            <div class="match-body">
+
+
+                                <div class="machine">
+
+                                    {{ match.tear.marca or "Marca" }}
+
+                                    —
+
+                                    {{ match.tear.modelo or "Modelo" }}
+
+                                </div>
+
+
+                                <div class="tags">
+
+
+                                    <span class="tag">
+
+                                        {{
+                                            match.tear.tipo
+                                            or "Tipo não informado"
+                                        }}
+
+                                    </span>
+
+
+                                    <span class="tag">
+
+                                        Galga
+                                        {{
+                                            match.tear.finura
+                                            or "—"
+                                        }}
+
+                                    </span>
+
+
+                                    <span class="tag">
+
+                                        Ø
+                                        {{
+                                            match.tear.diametro
+                                            or "—"
+                                        }}"
+
+                                    </span>
+
+
+                                    <span class="tag">
+
+                                        {{
+                                            match.tear.alimentadores
+                                            or "—"
+                                        }}
+                                        alimentadores
+
+                                    </span>
+
+
+                                    {% set raw_elastano =
+                                        match.tear.elastano
+                                        if match.tear.elastano is not none
+                                        else match.tear.kit_elastano
+                                    %}
+
+
+                                    {% if raw_elastano is boolean %}
+
+                                        {% set tem_elastano =
+                                            raw_elastano
+                                        %}
+
+                                    {% else %}
+
+                                        {% set s =
+                                            (
+                                                raw_elastano
+                                                |string
+                                            )
+                                            .strip()
+                                            .lower()
+                                        %}
+
+                                        {% set tem_elastano =
+                                            s in [
+                                                'sim',
+                                                's',
+                                                'true',
+                                                't',
+                                                'on',
+                                                '1',
+                                                'com',
+                                                'tem',
+                                                'yes',
+                                                'y'
+                                            ]
+                                        %}
+
+                                    {% endif %}
+
+
+                                    <span class="tag">
+
+                                        Elastano:
+                                        {{
+                                            "Sim"
+                                            if tem_elastano
+                                            else "Não"
+                                        }}
+
+                                    </span>
+
+
+                                </div>
+
+
+                            </div>
+
+
+                        </div>
+
+
+                    {% endfor %}
+
+
+                </div>
+
+
+            {% else %}
+
+
+                <div class="value muted">
+
+                    Nenhum equipamento compatível ativo
+                    foi encontrado neste momento.
+
+                </div>
+
+
+            {% endif %}
+
+
+        </div>
+
+
+    </section>
+
+
+    <section class="decision">
+
+
+        {% if opportunity_status in [
+            "nova",
+            "visualizada"
+        ] %}
+
+
+            <h2>
+                Esta demanda interessa à sua malharia?
+            </h2>
+
+
+            <p>
+
+                Ao demonstrar interesse, sua empresa
+                passará a constar como interessada nesta
+                oportunidade. O comprador poderá visualizar
+                essa manifestação em uma próxima etapa.
+
+            </p>
+
+
+            <div class="decision-actions">
+
+
+                <form
+                    method="POST"
+                    action="{{ url_for(
+                        'oportunidade_interesse',
+                        oportunidade_id=oportunidade.id
+                    ) }}"
+                    onsubmit="return confirm(
+                        'Deseja registrar interesse nesta oportunidade?'
+                    );"
+                >
+
+                    <button
+                        type="submit"
+                        class="interest-btn"
+                    >
+                        Tenho interesse
+                    </button>
+
+                </form>
+
+
+                <form
+                    method="POST"
+                    action="{{ url_for(
+                        'oportunidade_recusar',
+                        oportunidade_id=oportunidade.id
+                    ) }}"
+                    onsubmit="return confirm(
+                        'Deseja informar que não possui interesse nesta oportunidade?'
+                    );"
+                >
+
+                    <button
+                        type="submit"
+                        class="reject-btn"
+                    >
+                        Não tenho interesse
+                    </button>
+
+                </form>
+
+
+            </div>
+
+
+        {% elif opportunity_status == "interessada" %}
+
+
+            <h2>
+                Interesse registrado.
+            </h2>
+
+
+            <p>
+
+                Sua malharia demonstrou interesse nesta
+                oportunidade.
+
+            </p>
+
+
+            <span class="decision-done interested">
+                ✓ Tenho interesse
+            </span>
+
+
+        {% elif opportunity_status == "recusada" %}
+
+
+            <h2>
+                Oportunidade recusada.
+            </h2>
+
+
+            <p>
+
+                Sua malharia informou que não possui
+                interesse nesta demanda.
+
+            </p>
+
+
+            <span class="decision-done rejected">
+                Sem interesse
+            </span>
+
+
+        {% endif %}
+
+
+    </section>
+
+
+</main>
+
+
+</body>
+
+</html>
