@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Nova Demanda - AcheTece</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <style>
+        :root{
+            --black:#111;
+            --white:#fff;
+            --olive:#7B7424;
+            --olive-dark:#434326;
+            --olive-light:#F1F2E8;
+            --lime:#B6F34D;
+            --bg:#F4F4F1;
+            --text:#202020;
+            --muted:#6B6B6B;
+            --line:#DFDFDA;
+        }
+
+        *{ box-sizing:border-box; }
+
+        body{
+            margin:0;
+            background:var(--bg);
+            color:var(--text);
+            font-family:'Inter',Arial,sans-serif;
+        }
+
+        .topbar{
+            height:72px;
+            background:var(--black);
+            display:flex;
+            align-items:center;
+        }
+
+        .topbar-inner{
+            width:100%;
+            max-width:1180px;
+            margin:auto;
+            padding:0 22px;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+        }
+
+        .brand img{
+            height:40px;
+            display:block;
+        }
+
+        .back{
+            background:#fff;
+            color:#000;
+            text-decoration:none;
+            padding:11px 18px;
+            border-radius:999px;
+            font-weight:800;
+            font-size:13px;
+        }
+
+        .page{
+            max-width:900px;
+            margin:auto;
+            padding:42px 20px 70px;
+        }
+
+        .eyebrow{
+            color:var(--olive);
+            font-weight:800;
+            font-size:12px;
+            letter-spacing:.08em;
+            text-transform:uppercase;
+            margin-bottom:8px;
+        }
+
+        h1{
+            margin:0;
+            font-size:36px;
+            letter-spacing:-.035em;
+        }
+
+        .intro{
+            color:var(--muted);
+            line-height:1.55;
+            max-width:700px;
+            margin:10px 0 26px;
+        }
+
+        .card{
+            background:#fff;
+            border:1px solid var(--line);
+            border-radius:20px;
+            padding:28px;
+        }
+
+        .section-title{
+            font-size:17px;
+            font-weight:800;
+            margin:6px 0 18px;
+        }
+
+        .divider{
+            height:1px;
+            background:var(--line);
+            margin:28px 0;
+        }
+
+        .grid-2{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:16px;
+        }
+
+        .field{
+            margin-bottom:17px;
+        }
+
+        label{
+            display:block;
+            font-size:13px;
+            font-weight:700;
+            margin-bottom:7px;
+        }
+
+        input,
+        select,
+        textarea{
+            width:100%;
+            border:1px solid #CCCCCA;
+            border-radius:11px;
+            background:#fff;
+            font-family:inherit;
+            font-size:14px;
+            padding:0 13px;
+            outline:none;
+        }
+
+        input,
+        select{
+            height:48px;
+        }
+
+        textarea{
+            min-height:120px;
+            padding-top:12px;
+            resize:vertical;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus{
+            border-color:var(--olive);
+            box-shadow:0 0 0 3px rgba(123,116,36,.10);
+        }
+
+        .hint{
+            color:#777;
+            font-size:11px;
+            margin-top:5px;
+        }
+
+        .flash{
+            margin-bottom:18px;
+            padding:12px 14px;
+            border-radius:10px;
+            font-size:13px;
+            font-weight:600;
+        }
+
+        .flash.warning{
+            background:#FFF8E9;
+            border:1px solid #EBD99D;
+        }
+
+        .flash.danger{
+            background:#FFF0F2;
+            border:1px solid #EAB6BE;
+        }
+
+        .submit{
+            border:0;
+            width:100%;
+            height:52px;
+            border-radius:999px;
+            cursor:pointer;
+            background:#000;
+            color:var(--lime);
+            font-size:15px;
+            font-weight:800;
+            font-family:inherit;
+            margin-top:10px;
+        }
+
+        .submit:hover{
+            background:var(--lime);
+            color:#000;
+        }
+
+        @media(max-width:650px){
+            .grid-2{
+                grid-template-columns:1fr;
+                gap:0;
+            }
+
+            h1{
+                font-size:29px;
+            }
+
+            .card{
+                padding:20px 17px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="topbar">
+    <div class="topbar-inner">
+
+        <a href="{{ url_for('painel_comprador') }}" class="brand">
+            <img
+                src="{{ url_for('static', filename='Logo_Branco_AcheTece_sem_fundo.png') }}"
+                alt="AcheTece"
+            >
+        </a>
+
+        <a href="{{ url_for('painel_comprador') }}" class="back">
+            Voltar ao portal
+        </a>
+
+    </div>
+</header>
+
+<main class="page">
+
+    <div class="eyebrow">
+        Portal do Comprador
+    </div>
+
+    <h1>
+        O que você precisa produzir?
+    </h1>
+
+    <p class="intro">
+        Estruture sua necessidade de produção. Essas informações serão utilizadas
+        pelo AcheTece para identificar, nas próximas etapas, as malharias com maior
+        compatibilidade técnica e produtiva.
+    </p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash {{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('nova_demanda') }}">
+
+        <section class="card">
+
+            <div class="section-title">
+                1. Produto
+            </div>
+
+            <div class="field">
+                <label for="produto">Produto *</label>
+
+                <input
+                    id="produto"
+                    name="produto"
+                    type="text"
+                    required
+                    maxlength="120"
+                    placeholder="Ex.: Meia-malha"
+                    value="{{ form_data.get('produto','') if form_data else '' }}"
+                >
+            </div>
+
+            <div class="field">
+                <label for="estrutura_malha">Estrutura / tipo de malha</label>
+
+                <input
+                    id="estrutura_malha"
+                    name="estrutura_malha"
+                    type="text"
+                    maxlength="120"
+                    placeholder="Ex.: Jersey, Ribana, Moletom, Piquet..."
+                    value="{{ form_data.get('estrutura_malha','') if form_data else '' }}"
+                >
+            </div>
+
+            <div class="field">
+                <label for="composicao">Composição</label>
+
+                <input
+                    id="composicao"
+                    name="composicao"
+                    type="text"
+                    maxlength="180"
+                    placeholder="Ex.: 96% algodão / 4% elastano"
+                    value="{{ form_data.get('composicao','') if form_data else '' }}"
+                >
+            </div>
+
+            <div class="grid-2">
+
+                <div class="field">
+                    <label for="titulo_fio">Título do fio</label>
+
+                    <input
+                        id="titulo_fio"
+                        name="titulo_fio"
+                        type="text"
+                        maxlength="100"
+                        placeholder="Ex.: 30/1 Ne"
+                        value="{{ form_data.get('titulo_fio','') if form_data else '' }}"
+                    >
+                </div>
+
+                <div class="field">
+                    <label for="gramatura">Gramatura (g/m²)</label>
+
+                    <input
+                        id="gramatura"
+                        name="gramatura"
+                        type="number"
+                        min="1"
+                        max="2000"
+                        placeholder="Ex.: 180"
+                        value="{{ form_data.get('gramatura','') if form_data else '' }}"
+                    >
+                </div>
+
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section-title">
+                2. Quantidade e prazo
+            </div>
+
+            <div class="grid-2">
+
+                <div class="field">
+                    <label for="quantidade_kg">Quantidade (kg) *</label>
+
+                    <input
+                        id="quantidade_kg"
+                        name="quantidade_kg"
+                        type="text"
+                        inputmode="decimal"
+                        required
+                        placeholder="Ex.: 5000"
+                        value="{{ form_data.get('quantidade_kg','') if form_data else '' }}"
+                    >
+                </div>
+
+                <div class="field">
+                    <label for="data_necessidade">Data necessária</label>
+
+                    <input
+                        id="data_necessidade"
+                        name="data_necessidade"
+                        type="date"
+                        value="{{ form_data.get('data_necessidade','') if form_data else '' }}"
+                    >
+                </div>
+
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section-title">
+                3. Preferência de localização
+            </div>
+
+            <div class="grid-2">
+
+                <div class="field">
+
+                    <label for="estado_preferencial">
+                        Estado preferencial
+                    </label>
+
+                    <select
+                        id="estado_preferencial"
+                        name="estado_preferencial"
+                    >
+                        <option value="">Qualquer estado</option>
+
+                        {% for uf in estados %}
+                            <option
+                                value="{{ uf }}"
+                                {% if form_data and form_data.get('estado_preferencial') == uf %}selected{% endif %}
+                            >
+                                {{ uf }}
+                            </option>
+                        {% endfor %}
+                    </select>
+
+                </div>
+
+                <div class="field">
+                    <label for="cidade_preferencial">Cidade preferencial</label>
+
+                    <input
+                        id="cidade_preferencial"
+                        name="cidade_preferencial"
+                        type="text"
+                        maxlength="100"
+                        placeholder="Opcional"
+                        value="{{ form_data.get('cidade_preferencial','') if form_data else '' }}"
+                    >
+                </div>
+
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section-title">
+                4. Serviço
+            </div>
+
+            <div class="field">
+                <label for="tipo_servico">Escopo desejado</label>
+
+                <select
+                    id="tipo_servico"
+                    name="tipo_servico"
+                >
+                    <option value="">Selecione</option>
+
+                    {% set servico_atual = form_data.get('tipo_servico','') if form_data else '' %}
+
+                    <option value="Somente tecimento"
+                        {% if servico_atual == 'Somente tecimento' %}selected{% endif %}>
+                        Somente tecimento
+                    </option>
+
+                    <option value="Tecimento e beneficiamento"
+                        {% if servico_atual == 'Tecimento e beneficiamento' %}selected{% endif %}>
+                        Tecimento e beneficiamento
+                    </option>
+
+                    <option value="Produto acabado"
+                        {% if servico_atual == 'Produto acabado' %}selected{% endif %}>
+                        Produto acabado
+                    </option>
+
+                    <option value="A definir"
+                        {% if servico_atual == 'A definir' %}selected{% endif %}>
+                        A definir
+                    </option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="observacoes">Observações</label>
+
+                <textarea
+                    id="observacoes"
+                    name="observacoes"
+                    maxlength="3000"
+                    placeholder="Informe requisitos adicionais, características especiais, tolerâncias, acabamento, embalagem etc."
+                >{{ form_data.get('observacoes','') if form_data else '' }}</textarea>
+            </div>
+
+            <button class="submit" type="submit">
+                Criar demanda
+            </button>
+
+        </section>
+
+    </form>
+
+</main>
+
+</body>
+</html>
