@@ -2349,6 +2349,107 @@ def _proximo_step(emp: Empresa) -> str:
 
 from flask import make_response
 
+# --------------------------------------------------------------------
+# AcheTece 2.0 - Minhas Oportunidades da Malharia
+# --------------------------------------------------------------------
+
+@app.get(
+    "/malharia/oportunidades",
+    endpoint="minhas_oportunidades"
+)
+def minhas_oportunidades():
+
+    # --------------------------------------------------------------
+    # Autenticação da malharia
+    # --------------------------------------------------------------
+
+    empresa_id = session.get(
+        "empresa_id"
+    )
+
+    if not empresa_id:
+
+        return redirect(
+            url_for("login")
+        )
+
+    try:
+
+        empresa = db.session.get(
+            Empresa,
+            int(empresa_id)
+        )
+
+    except Exception:
+
+        empresa = None
+
+    if not empresa:
+
+        session.clear()
+
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Oportunidades pertencentes SOMENTE a esta malharia
+    # --------------------------------------------------------------
+
+    oportunidades = (
+        Opportunity.query
+        .filter(
+            Opportunity.empresa_id
+            == empresa.id,
+            Opportunity.status
+            != "inativa"
+        )
+        .order_by(
+            Opportunity.created_at.desc(),
+            Opportunity.best_score.desc()
+        )
+        .all()
+    )
+
+    # --------------------------------------------------------------
+    # Indicadores
+    # --------------------------------------------------------------
+
+    total_oportunidades = len(
+        oportunidades
+    )
+
+    total_novas = sum(
+        1
+        for oportunidade
+        in oportunidades
+        if oportunidade.status == "nova"
+    )
+
+    total_interessadas = sum(
+        1
+        for oportunidade
+        in oportunidades
+        if oportunidade.status == "interessada"
+    )
+
+    total_recusadas = sum(
+        1
+        for oportunidade
+        in oportunidades
+        if oportunidade.status == "recusada"
+    )
+
+    return render_template(
+        "minhas_oportunidades.html",
+        empresa=empresa,
+        oportunidades=oportunidades,
+        total_oportunidades=total_oportunidades,
+        total_novas=total_novas,
+        total_interessadas=total_interessadas,
+        total_recusadas=total_recusadas,
+    )
+
 # --- Rota do Painel (vencimento por plano + ajuste p/ próximo dia útil BR) ---
 @app.route('/painel_malharia', endpoint="painel_malharia")
 def painel_malharia():
