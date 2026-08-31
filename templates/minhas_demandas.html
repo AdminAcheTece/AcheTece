@@ -470,6 +470,22 @@
 
         }
 
+        .demanda-link{
+            display:inline-block;
+        
+            margin-top:12px;
+        
+            color:var(--olive-dark);
+        
+            font-size:12px;
+            font-weight:800;
+        
+            text-decoration:none;
+        }
+        
+        .demanda-link:hover{
+            text-decoration:underline;
+        }    
 
         /* =========================================================
            STATUS
@@ -903,6 +919,16 @@
 
                         </div>
 
+                        <a
+                            href="{{ url_for(
+                                'detalhe_demanda',
+                                demanda_id=demanda.id
+                            ) }}"
+                            class="demanda-link"
+                        >
+                            Ver demanda →
+                        </a>
+                        
                     </div>
 
 
