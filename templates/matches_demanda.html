@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+
+<meta charset="UTF-8">
+
+<title>
+    Matches - {{ demanda.codigo }} - AcheTece
+</title>
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+>
+
+<style>
+
+:root{
+    --black:#111111;
+    --white:#ffffff;
+
+    --olive:#7B7424;
+    --olive-dark:#434326;
+    --olive-light:#F1F2E8;
+
+    --lime:#B6F34D;
+
+    --bg:#F4F4F1;
+    --muted:#6B6B6B;
+    --line:#DFDFDA;
+
+    --green:#287742;
+    --green-bg:#EAF7ED;
+}
+
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+
+    background:var(--bg);
+
+    color:#202020;
+
+    font-family:
+        'Inter',
+        Arial,
+        sans-serif;
+}
+
+
+/* HEADER */
+
+.topbar{
+    height:72px;
+
+    display:flex;
+    align-items:center;
+
+    background:#111;
+}
+
+.topbar-inner{
+    width:100%;
+    max-width:1100px;
+
+    margin:auto;
+    padding:0 22px;
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    gap:20px;
+}
+
+.brand img{
+    height:40px;
+    display:block;
+}
+
+.back{
+    color:#fff;
+
+    font-size:13px;
+    font-weight:800;
+
+    text-decoration:none;
+}
+
+
+/* PAGE */
+
+.page{
+    max-width:1100px;
+
+    margin:auto;
+
+    padding:
+        38px 22px
+        70px;
+}
+
+.eyebrow{
+    color:var(--olive);
+
+    font-size:12px;
+    font-weight:800;
+
+    text-transform:uppercase;
+    letter-spacing:.08em;
+
+    margin-bottom:7px;
+}
+
+h1{
+    margin:0;
+
+    font-size:34px;
+
+    line-height:1.15;
+
+    letter-spacing:-.035em;
+}
+
+.intro{
+    color:var(--muted);
+
+    max-width:750px;
+
+    font-size:14px;
+
+    line-height:1.55;
+
+    margin:
+        9px 0
+        24px;
+}
+
+
+/* CONTEXTO */
+
+.context{
+    background:#111;
+
+    color:#fff;
+
+    border-radius:19px;
+
+    padding:22px;
+
+    margin-bottom:20px;
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    gap:20px;
+}
+
+.context-code{
+    color:var(--lime);
+
+    font-size:12px;
+    font-weight:800;
+
+    margin-bottom:5px;
+}
+
+.context-title{
+    font-size:20px;
+    font-weight:800;
+}
+
+.context-meta{
+    color:#CBCBCB;
+
+    font-size:12px;
+
+    margin-top:5px;
+}
+
+.context-count{
+    flex:0 0 auto;
+
+    text-align:center;
+
+    min-width:100px;
+}
+
+.context-count strong{
+    display:block;
+
+    color:var(--lime);
+
+    font-size:30px;
+}
+
+.context-count span{
+    font-size:11px;
+
+    color:#CFCFCF;
+}
+
+
+/* FLASH */
+
+.flash{
+    margin-bottom:18px;
+
+    padding:
+        12px 14px;
+
+    border-radius:11px;
+
+    font-size:13px;
+    font-weight:700;
+}
+
+.flash.success{
+    background:#EDF8EF;
+
+    border:
+        1px solid #B9DCBF;
+
+    color:#256033;
+}
+
+.flash.warning{
+    background:#FFF7E7;
+
+    border:
+        1px solid #E8D49B;
+
+    color:#755614;
+}
+
+.flash.danger,
+.flash.error{
+    background:#FFF0F2;
+
+    border:
+        1px solid #EAB5BD;
+
+    color:#85202D;
+}
+
+
+/* MATCHES */
+
+.matches{
+    display:flex;
+
+    flex-direction:column;
+
+    gap:14px;
+}
+
+.match-card{
+    background:#fff;
+
+    border:
+        1px solid var(--line);
+
+    border-radius:19px;
+
+    overflow:hidden;
+
+    display:grid;
+
+    grid-template-columns:
+        110px
+        minmax(0,1.2fr)
+        minmax(0,1fr);
+
+    align-items:stretch;
+}
+
+
+/* SCORE */
+
+.score-col{
+    background:
+        var(--olive-light);
+
+    display:flex;
+    flex-direction:column;
+
+    align-items:center;
+    justify-content:center;
+
+    padding:20px 12px;
+
+    border-right:
+        1px solid var(--line);
+}
+
+.score-number{
+    font-size:30px;
+    font-weight:800;
+
+    color:#111;
+}
+
+.score-label{
+    color:#74746D;
+
+    font-size:10px;
+    font-weight:800;
+
+    text-transform:uppercase;
+
+    margin-top:3px;
+}
+
+
+/* EMPRESA */
+
+.company-col{
+    padding:21px;
+}
+
+.company-name{
+    font-size:18px;
+    font-weight:800;
+
+    color:#111;
+}
+
+.company-location{
+    color:var(--muted);
+
+    font-size:12px;
+
+    margin-top:5px;
+}
+
+.tear{
+    margin-top:14px;
+
+    padding-top:14px;
+
+    border-top:
+        1px solid #EEEEEA;
+}
+
+.tear-title{
+    font-size:13px;
+    font-weight:800;
+
+    margin-bottom:7px;
+}
+
+.tear-meta{
+    display:flex;
+
+    flex-wrap:wrap;
+
+    gap:
+        6px 13px;
+
+    color:#555;
+
+    font-size:11px;
+}
+
+.tag{
+    display:inline-flex;
+
+    align-items:center;
+
+    min-height:25px;
+
+    padding:
+        0 9px;
+
+    border-radius:999px;
+
+    background:#F1F1EF;
+
+    font-size:10px;
+    font-weight:700;
+}
+
+
+/* EXPLICAÇÃO */
+
+.details-col{
+    padding:21px;
+
+    background:#FCFCFA;
+
+    border-left:
+        1px solid var(--line);
+}
+
+.details-title{
+    margin-bottom:10px;
+
+    font-size:11px;
+    font-weight:800;
+
+    color:#777;
+
+    text-transform:uppercase;
+
+    letter-spacing:.06em;
+}
+
+.detail{
+    color:#444;
+
+    font-size:12px;
+
+    line-height:1.45;
+
+    margin-bottom:6px;
+}
+
+
+/* SEM RESULTADOS */
+
+.empty{
+    background:#fff;
+
+    border:
+        1px solid var(--line);
+
+    border-radius:19px;
+
+    padding:40px 24px;
+
+    text-align:center;
+}
+
+.empty h2{
+    margin:
+        0 0 7px;
+
+    font-size:20px;
+}
+
+.empty p{
+    margin:
+        0 auto 20px;
+
+    max-width:550px;
+
+    color:var(--muted);
+
+    line-height:1.55;
+
+    font-size:13px;
+}
+
+
+/* ACTIONS */
+
+.actions{
+    margin-top:20px;
+
+    display:flex;
+
+    gap:10px;
+
+    flex-wrap:wrap;
+}
+
+.action-btn{
+    display:inline-flex;
+
+    min-height:44px;
+
+    align-items:center;
+    justify-content:center;
+
+    padding:
+        0 17px;
+
+    border-radius:999px;
+
+    border:
+        1px solid #CCC;
+
+    background:#fff;
+
+    color:#222;
+
+    text-decoration:none;
+
+    font-size:12px;
+    font-weight:800;
+}
+
+.action-btn.primary{
+    background:#000;
+    color:var(--lime);
+
+    border-color:#000;
+}
+
+
+/* RESPONSIVO */
+
+@media(max-width:760px){
+
+    .match-card{
+        grid-template-columns:1fr;
+    }
+
+    .score-col{
+        border-right:0;
+
+        border-bottom:
+            1px solid var(--line);
+    }
+
+    .details-col{
+        border-left:0;
+
+        border-top:
+            1px solid var(--line);
+    }
+
+    .context{
+        flex-direction:column;
+
+        align-items:flex-start;
+    }
+
+    .context-count{
+        text-align:left;
+    }
+
+}
+
+
+@media(max-width:600px){
+
+    .page{
+        padding:
+            28px 16px
+            50px;
+    }
+
+    h1{
+        font-size:28px;
+    }
+
+    .topbar-inner{
+        padding:
+            0 16px;
+    }
+
+    .brand img{
+        height:34px;
+    }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<header class="topbar">
+
+<div class="topbar-inner">
+
+    <a
+        href="{{ url_for(
+            'painel_comprador'
+        ) }}"
+        class="brand"
+    >
+
+        <img
+            src="{{ url_for(
+                'static',
+                filename='Logo_Branco_AcheTece_sem_fundo.png'
+            ) }}"
+            alt="AcheTece"
+        >
+
+    </a>
+
+
+    <a
+        href="{{ url_for(
+            'detalhe_demanda',
+            demanda_id=demanda.id
+        ) }}"
+        class="back"
+    >
+        ← Voltar para demanda
+    </a>
+
+</div>
+
+</header>
+
+
+<main class="page">
+
+
+<div class="eyebrow">
+    Matching V1
+</div>
+
+
+<h1>
+    Matches encontrados
+</h1>
+
+
+<p class="intro">
+    O AcheTece comparou os requisitos técnicos desta
+    demanda com os teares cadastrados e ordenou os
+    equipamentos compatíveis pelo score calculado.
+</p>
+
+
+<div class="context">
+
+    <div>
+
+        <div class="context-code">
+            {{ demanda.codigo }}
+        </div>
+
+        <div class="context-title">
+            {{ demanda.produto }}
+        </div>
+
+        <div class="context-meta">
+
+            {{ demanda.quantidade_kg }} kg
+
+            {% if demanda.estado_preferencial %}
+                • Preferência:
+                {{ demanda.estado_preferencial }}
+            {% endif %}
+
+            {% if demanda.cidade_preferencial %}
+                /
+                {{ demanda.cidade_preferencial }}
+            {% endif %}
+
+        </div>
+
+    </div>
+
+
+    <div class="context-count">
+
+        <strong>
+            {{ total_matches }}
+        </strong>
+
+        <span>
+            matches
+        </span>
+
+    </div>
+
+</div>
+
+
+{% with messages =
+    get_flashed_messages(
+        with_categories=true
+    )
+%}
+
+    {% if messages %}
+
+        {% for category, message in messages %}
+
+            <div class="flash {{ category }}">
+                {{ message }}
+            </div>
+
+        {% endfor %}
+
+    {% endif %}
+
+{% endwith %}
+
+
+{% if matches %}
+
+
+<section class="matches">
+
+
+{% for match in matches %}
+
+
+<article class="match-card">
+
+
+    <div class="score-col">
+
+        <div class="score-number">
+            {{ match.score }}%
+        </div>
+
+        <div class="score-label">
+            compatível
+        </div>
+
+    </div>
+
+
+    <div class="company-col">
+
+        <div class="company-name">
+            {{ match.empresa.nome }}
+        </div>
+
+        <div class="company-location">
+
+            {{
+                match.empresa.cidade
+                or "Cidade não informada"
+            }}
+
+            {% if match.empresa.estado %}
+                /
+                {{ match.empresa.estado }}
+            {% endif %}
+
+        </div>
+
+
+        <div class="tear">
+
+            <div class="tear-title">
+
+                {{ match.tear.marca }}
+                —
+                {{ match.tear.modelo }}
+
+            </div>
+
+
+            <div class="tear-meta">
+
+                <span class="tag">
+                    {{ match.tear.tipo }}
+                </span>
+
+                <span class="tag">
+                    Galga
+                    {{ match.tear.finura }}
+                </span>
+
+                <span class="tag">
+                    Ø
+                    {{ match.tear.diametro }}"
+                </span>
+
+                <span class="tag">
+                    {{ match.tear.alimentadores }}
+                    alimentadores
+                </span>
+
+                <span class="tag">
+
+                    Elastano:
+                    {{
+                        "Sim"
+                        if match.tear.elastano
+                        |string
+                        |lower
+                        in [
+                            "sim",
+                            "true",
+                            "1",
+                            "s"
+                        ]
+                        else "Não"
+                    }}
+
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="details-col">
+
+        <div class="details-title">
+            Por que entrou no match
+        </div>
+
+
+        {% if match.detalhes %}
+
+            {% for detalhe
+                in match.detalhes.split(' | ')
+            %}
+
+                <div class="detail">
+                    {{ detalhe }}
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <div class="detail">
+                Compatibilidade técnica encontrada.
+            </div>
+
+        {% endif %}
+
+    </div>
+
+
+</article>
+
+
+{% endfor %}
+
+
+</section>
+
+
+{% else %}
+
+
+<section class="empty">
+
+    <h2>
+        Nenhum tear compatível encontrado.
+    </h2>
+
+    <p>
+        Revise os requisitos técnicos ou cadastre
+        novos equipamentos no ambiente de teste
+        antes de executar novamente o matching.
+    </p>
+
+</section>
+
+
+{% endif %}
+
+
+<div class="actions">
+
+    <a
+        href="{{ url_for(
+            'configurar_matching',
+            demanda_id=demanda.id
+        ) }}"
+        class="action-btn"
+    >
+        Revisar configuração
+    </a>
+
+
+    <a
+        href="{{ url_for(
+            'detalhe_demanda',
+            demanda_id=demanda.id
+        ) }}"
+        class="action-btn"
+    >
+        Ver demanda
+    </a>
+
+</div>
+
+
+</main>
+
+
+</body>
+
+</html>
