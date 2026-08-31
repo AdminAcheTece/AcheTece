@@ -1506,6 +1506,134 @@ class DemandMatch(db.Model):
     )    
 
 # --------------------------------------------------------------------
+# AcheTece 2.0 - Oportunidade para Malharia
+# --------------------------------------------------------------------
+
+class Opportunity(db.Model):
+    __tablename__ = "opportunity"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    # --------------------------------------------------------------
+    # Demanda que originou a oportunidade
+    # --------------------------------------------------------------
+
+    demand_id = db.Column(
+        db.Integer,
+        db.ForeignKey("production_request.id"),
+        nullable=False,
+        index=True
+    )
+
+    # --------------------------------------------------------------
+    # Malharia que recebeu a oportunidade
+    # --------------------------------------------------------------
+
+    empresa_id = db.Column(
+        db.Integer,
+        db.ForeignKey("empresa.id"),
+        nullable=False,
+        index=True
+    )
+
+    # --------------------------------------------------------------
+    # Relacionamentos
+    # --------------------------------------------------------------
+
+    demanda = db.relationship(
+        "ProductionRequest",
+        backref=db.backref(
+            "opportunities",
+            lazy=True,
+            cascade="all, delete-orphan"
+        )
+    )
+
+    empresa = db.relationship(
+        "Empresa",
+        backref=db.backref(
+            "opportunities",
+            lazy=True
+        )
+    )
+
+    # --------------------------------------------------------------
+    # Resumo técnico
+    # --------------------------------------------------------------
+
+    best_score = db.Column(
+        db.Integer,
+        nullable=False,
+        default=0,
+        index=True
+    )
+
+    compatible_tears = db.Column(
+        db.Integer,
+        nullable=False,
+        default=0
+    )
+
+    # --------------------------------------------------------------
+    # Status
+    #
+    # nova
+    # visualizada
+    # interessada
+    # recusada
+    # inativa
+    # --------------------------------------------------------------
+
+    status = db.Column(
+        db.String(20),
+        nullable=False,
+        default="nova",
+        index=True
+    )
+
+    # --------------------------------------------------------------
+    # Datas
+    # --------------------------------------------------------------
+
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow
+    )
+
+    updated_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow
+    )
+
+    # --------------------------------------------------------------
+    # Uma demanda gera somente uma oportunidade por empresa
+    # --------------------------------------------------------------
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            "demand_id",
+            "empresa_id",
+            name="uq_opportunity_demand_empresa"
+        ),
+    )
+
+    def __repr__(self):
+        return (
+            f"<Opportunity "
+            f"id={self.id} "
+            f"demand_id={self.demand_id} "
+            f"empresa_id={self.empresa_id} "
+            f"score={self.best_score} "
+            f"status={self.status}>"
+        )
+
+# --------------------------------------------------------------------
 # AcheTece 2.0 - Motor de Matching V1
 # --------------------------------------------------------------------
 
