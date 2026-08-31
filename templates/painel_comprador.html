@@ -428,7 +428,12 @@
 
         <div class="side-title">Operacional</div>
 
-        <span class="side-link disabled">Nova Demanda</span>
+        <a
+            class="side-link"
+            href="{{ url_for('nova_demanda') }}"
+        >
+            Nova Demanda
+        </a>
         <span class="side-link disabled">Minhas Demandas</span>
 
         <a class="side-link" href="{{ url_for('index') }}">Encontrar Malharias</a>
@@ -530,7 +535,12 @@
                     e demais requisitos técnicos.
                 </p>
 
-                <div class="coming">Em construção</div>
+                <a
+                    href="{{ url_for('nova_demanda') }}"
+                    class="card-action"
+                >
+                    Criar demanda →
+                </a>
             </article>
 
             <article class="card">
