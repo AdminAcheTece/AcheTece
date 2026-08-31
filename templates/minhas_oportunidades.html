@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+
+<html lang="pt-br">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>
+        Oportunidades - AcheTece
+    </title>
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <style>
+
+        :root{
+            --black:#111111;
+            --white:#ffffff;
+
+            --olive:#7B7424;
+            --olive-dark:#434326;
+            --olive-light:#F1F2E8;
+
+            --lime:#B6F34D;
+
+            --bg:#F4F4F1;
+            --text:#202020;
+            --muted:#6B6B6B;
+            --line:#DFDFDA;
+
+            --green:#287742;
+            --green-bg:#EAF7ED;
+
+            --red:#85202D;
+            --red-bg:#FFF0F2;
+        }
+
+
+        *{
+            box-sizing:border-box;
+        }
+
+
+        body{
+            margin:0;
+
+            background:var(--bg);
+            color:var(--text);
+
+            font-family:
+                'Inter',
+                Arial,
+                sans-serif;
+        }
+
+
+        /* =========================================================
+           HEADER
+        ========================================================= */
+
+
+        .topbar{
+            min-height:72px;
+
+            background:#111;
+
+            display:flex;
+            align-items:center;
+        }
+
+
+        .topbar-inner{
+            width:100%;
+            max-width:1180px;
+
+            margin:auto;
+            padding:0 22px;
+
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+
+            gap:20px;
+        }
+
+
+        .brand img{
+            height:40px;
+            width:auto;
+
+            display:block;
+        }
+
+
+        .top-actions{
+            display:flex;
+            align-items:center;
+
+            gap:10px;
+        }
+
+
+        .top-link{
+            display:inline-flex;
+
+            min-height:42px;
+
+            align-items:center;
+            justify-content:center;
+
+            padding:0 17px;
+
+            color:#fff;
+
+            border-radius:999px;
+
+            text-decoration:none;
+
+            font-size:13px;
+            font-weight:800;
+        }
+
+
+        .top-link:hover{
+            background:
+                rgba(255,255,255,.10);
+        }
+
+
+        /* =========================================================
+           PÁGINA
+        ========================================================= */
+
+
+        .page{
+            width:100%;
+            max-width:1180px;
+
+            margin:auto;
+
+            padding:
+                38px 22px
+                70px;
+        }
+
+
+        .eyebrow{
+            color:var(--olive);
+
+            font-size:12px;
+            font-weight:800;
+
+            letter-spacing:.08em;
+
+            text-transform:uppercase;
+
+            margin-bottom:8px;
+        }
+
+
+        h1{
+            margin:0;
+
+            font-size:34px;
+            line-height:1.12;
+
+            letter-spacing:-.035em;
+        }
+
+
+        .intro{
+            margin:
+                9px 0
+                25px;
+
+            color:var(--muted);
+
+            font-size:14px;
+            line-height:1.55;
+
+            max-width:700px;
+        }
+
+
+        /* =========================================================
+           INDICADORES
+        ========================================================= */
+
+
+        .metrics{
+            display:grid;
+
+            grid-template-columns:
+                repeat(4,1fr);
+
+            gap:13px;
+
+            margin-bottom:32px;
+        }
+
+
+        .metric{
+            background:#fff;
+
+            border:
+                1px solid var(--line);
+
+            border-radius:16px;
+
+            padding:18px;
+        }
+
+
+        .metric-value{
+            font-size:27px;
+            font-weight:800;
+
+            color:#111;
+        }
+
+
+        .metric-label{
+            margin-top:5px;
+
+            color:var(--muted);
+
+            font-size:12px;
+        }
+
+
+        /* =========================================================
+           TÍTULO
+        ========================================================= */
+
+
+        .section-title{
+            margin:
+                0 0
+                13px;
+
+            font-size:20px;
+            font-weight:800;
+        }
+
+
+        /* =========================================================
+           OPORTUNIDADES
+        ========================================================= */
+
+
+        .opportunities{
+            display:flex;
+            flex-direction:column;
+
+            gap:14px;
+        }
+
+
+        .opportunity{
+            display:grid;
+
+            grid-template-columns:
+                120px
+                minmax(0,1.5fr)
+                minmax(150px,.7fr)
+                minmax(140px,.6fr);
+
+            align-items:center;
+
+            background:#fff;
+
+            border:
+                1px solid var(--line);
+
+            border-radius:18px;
+
+            overflow:hidden;
+        }
+
+
+        /* SCORE */
+
+
+        .score{
+            height:100%;
+            min-height:165px;
+
+            background:
+                var(--olive-light);
+
+            border-right:
+                1px solid var(--line);
+
+            display:flex;
+            flex-direction:column;
+
+            align-items:center;
+            justify-content:center;
+
+            text-align:center;
+
+            padding:15px;
+        }
+
+
+        .score strong{
+            display:block;
+
+            font-size:30px;
+
+            color:#111;
+        }
+
+
+        .score span{
+            margin-top:3px;
+
+            color:#777;
+
+            font-size:9px;
+            font-weight:800;
+
+            text-transform:uppercase;
+        }
+
+
+        /* CONTEÚDO */
+
+
+        .opportunity-main{
+            padding:22px;
+        }
+
+
+        .code{
+            color:var(--olive);
+
+            font-size:12px;
+            font-weight:800;
+
+            margin-bottom:7px;
+        }
+
+
+        .product{
+            font-size:19px;
+            font-weight:800;
+
+            color:#111;
+        }
+
+
+        .meta{
+            margin-top:7px;
+
+            color:var(--muted);
+
+            font-size:12px;
+
+            line-height:1.5;
+        }
+
+
+        .technical{
+            margin-top:15px;
+
+            padding-top:14px;
+
+            border-top:
+                1px solid #EEEEEA;
+
+            color:#555;
+
+            font-size:11px;
+        }
+
+
+        /* STATUS */
+
+
+        .status-col{
+            padding:22px;
+        }
+
+
+        .info-label{
+            color:#888;
+
+            font-size:10px;
+            font-weight:800;
+
+            text-transform:uppercase;
+
+            letter-spacing:.06em;
+
+            margin-bottom:6px;
+        }
+
+
+        .info-value{
+            color:#222;
+
+            font-size:14px;
+            font-weight:800;
+        }
+
+
+        .status{
+            display:inline-flex;
+
+            min-height:30px;
+
+            align-items:center;
+            justify-content:center;
+
+            padding:
+                0 11px;
+
+            border-radius:999px;
+
+            font-size:10px;
+            font-weight:800;
+        }
+
+
+        .status-nova{
+            background:
+                var(--green-bg);
+
+            color:
+                var(--green);
+        }
+
+
+        .status-visualizada{
+            background:#F0F0EE;
+            color:#555;
+        }
+
+
+        .status-interessada{
+            background:
+                var(--green-bg);
+
+            color:
+                var(--green);
+        }
+
+
+        .status-recusada{
+            background:
+                var(--red-bg);
+
+            color:
+                var(--red);
+        }
+
+
+        /* AÇÃO */
+
+
+        .action-col{
+            padding:22px;
+
+            border-left:
+                1px solid var(--line);
+        }
+
+
+        .analyze-btn{
+            display:inline-flex;
+
+            width:100%;
+            min-height:44px;
+
+            align-items:center;
+            justify-content:center;
+
+            padding:
+                0 15px;
+
+            border-radius:999px;
+
+            background:#111;
+            color:var(--lime);
+
+            text-decoration:none;
+
+            font-size:12px;
+            font-weight:800;
+        }
+
+
+        .analyze-btn:hover{
+            background:var(--lime);
+            color:#000;
+        }
+
+
+        /* =========================================================
+           VAZIO
+        ========================================================= */
+
+
+        .empty{
+            padding:42px 24px;
+
+            text-align:center;
+
+            background:#fff;
+
+            border:
+                1px solid var(--line);
+
+            border-radius:18px;
+        }
+
+
+        .empty h2{
+            margin:
+                0 0
+                8px;
+
+            font-size:20px;
+        }
+
+
+        .empty p{
+            max-width:540px;
+
+            margin:auto;
+
+            color:var(--muted);
+
+            font-size:13px;
+            line-height:1.55;
+        }
+
+
+        /* =========================================================
+           MOBILE
+        ========================================================= */
+
+
+        @media(max-width:850px){
+
+            .metrics{
+                grid-template-columns:
+                    1fr 1fr;
+            }
+
+
+            .opportunity{
+                grid-template-columns:
+                    100px 1fr;
+            }
+
+
+            .status-col,
+            .action-col{
+                grid-column:
+                    1 / -1;
+
+                border-top:
+                    1px solid var(--line);
+            }
+
+
+            .action-col{
+                border-left:0;
+            }
+
+        }
+
+
+        @media(max-width:600px){
+
+            .page{
+                padding:
+                    28px 16px
+                    50px;
+            }
+
+
+            h1{
+                font-size:28px;
+            }
+
+
+            .metrics{
+                grid-template-columns:
+                    1fr 1fr;
+            }
+
+
+            .opportunity{
+                grid-template-columns:1fr;
+            }
+
+
+            .score{
+                min-height:auto;
+
+                border-right:0;
+
+                border-bottom:
+                    1px solid var(--line);
+
+                padding:18px;
+            }
+
+
+            .status-col,
+            .action-col{
+                grid-column:auto;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<header class="topbar">
+
+    <div class="topbar-inner">
+
+        <a
+            href="{{ url_for('painel_malharia') }}"
+            class="brand"
+        >
+
+            <img
+                src="{{ url_for(
+                    'static',
+                    filename='Logo_Branco_AcheTece_sem_fundo.png'
+                ) }}"
+                alt="AcheTece"
+            >
+
+        </a>
+
+
+        <div class="top-actions">
+
+            <a
+                href="{{ url_for('painel_malharia') }}"
+                class="top-link"
+            >
+                Painel
+            </a>
+
+        </div>
+
+    </div>
+
+</header>
+
+
+<main class="page">
+
+
+    <div class="eyebrow">
+        Portal da Malharia
+    </div>
+
+
+    <h1>
+        Minhas Oportunidades
+    </h1>
+
+
+    <p class="intro">
+        Demandas de produção que apresentam
+        compatibilidade técnica com equipamentos
+        cadastrados pela sua empresa.
+    </p>
+
+
+    <section class="metrics">
+
+
+        <div class="metric">
+
+            <div class="metric-value">
+                {{ total_oportunidades }}
+            </div>
+
+            <div class="metric-label">
+                Oportunidades
+            </div>
+
+        </div>
+
+
+        <div class="metric">
+
+            <div class="metric-value">
+                {{ total_novas }}
+            </div>
+
+            <div class="metric-label">
+                Novas
+            </div>
+
+        </div>
+
+
+        <div class="metric">
+
+            <div class="metric-value">
+                {{ total_interessadas }}
+            </div>
+
+            <div class="metric-label">
+                Tenho interesse
+            </div>
+
+        </div>
+
+
+        <div class="metric">
+
+            <div class="metric-value">
+                {{ total_recusadas }}
+            </div>
+
+            <div class="metric-label">
+                Sem interesse
+            </div>
+
+        </div>
+
+
+    </section>
+
+
+    <h2 class="section-title">
+        Demandas compatíveis
+    </h2>
+
+
+    {% if oportunidades %}
+
+
+        <section class="opportunities">
+
+
+            {% for oportunidade in oportunidades %}
+
+
+                {% set demanda =
+                    oportunidade.demanda
+                %}
+
+
+                {% set status =
+                    (
+                        oportunidade.status
+                        or 'nova'
+                    )
+                    |lower
+                %}
+
+
+                <article class="opportunity">
+
+
+                    <div class="score">
+
+                        <strong>
+                            {{ oportunidade.best_score }}%
+                        </strong>
+
+                        <span>
+                            compatibilidade
+                        </span>
+
+                    </div>
+
+
+                    <div class="opportunity-main">
+
+                        <div class="code">
+                            {{ demanda.codigo }}
+                        </div>
+
+                        <div class="product">
+                            {{ demanda.produto }}
+                        </div>
+
+
+                        <div class="meta">
+
+                            {{
+                                "{:,.0f}".format(
+                                    demanda.quantidade_kg
+                                )
+                                |replace(",", ".")
+                            }}
+                            kg
+
+
+                            {% if demanda.data_necessidade %}
+
+                                • Prazo:
+                                {{
+                                    demanda.data_necessidade
+                                    .strftime('%d/%m/%Y')
+                                }}
+
+                            {% endif %}
+
+
+                            {% if demanda.cidade_preferencial %}
+
+                                •
+                                {{ demanda.cidade_preferencial }}
+
+                            {% endif %}
+
+
+                            {% if demanda.estado_preferencial %}
+
+                                /
+                                {{ demanda.estado_preferencial }}
+
+                            {% endif %}
+
+                        </div>
+
+
+                        <div class="technical">
+
+                            {{ oportunidade.compatible_tears }}
+
+                            {% if oportunidade.compatible_tears == 1 %}
+
+                                equipamento compatível
+
+                            {% else %}
+
+                                equipamentos compatíveis
+
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="status-col">
+
+                        <div class="info-label">
+                            Status
+                        </div>
+
+
+                        <span class="status status-{{ status }}">
+
+                            {% if status == "nova" %}
+
+                                Nova
+
+                            {% elif status == "visualizada" %}
+
+                                Visualizada
+
+                            {% elif status == "interessada" %}
+
+                                Tenho interesse
+
+                            {% elif status == "recusada" %}
+
+                                Sem interesse
+
+                            {% else %}
+
+                                {{ status|capitalize }}
+
+                            {% endif %}
+
+                        </span>
+
+                    </div>
+
+
+                    <div class="action-col">
+
+                        <!--
+                            Na ETAPA 4.4 este botão será
+                            ligado à tela de análise.
+                        -->
+
+                        <span
+                            class="analyze-btn"
+                            style="opacity:.55; cursor:default;"
+                        >
+                            Analisar oportunidade
+                        </span>
+
+                    </div>
+
+
+                </article>
+
+
+            {% endfor %}
+
+
+        </section>
+
+
+    {% else %}
+
+
+        <section class="empty">
+
+            <h2>
+                Nenhuma oportunidade disponível.
+            </h2>
+
+            <p>
+                Quando uma demanda publicada apresentar
+                compatibilidade técnica com seus equipamentos,
+                ela aparecerá automaticamente nesta área.
+            </p>
+
+        </section>
+
+
+    {% endif %}
+
+
+</main>
+
+
+</body>
+
+</html>
