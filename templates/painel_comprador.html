@@ -342,6 +342,33 @@
             padding-top: 18px;
         }
 
+        .portal-flash{
+            margin:0 0 20px;
+            padding:13px 16px;
+            border-radius:12px;
+            font-size:13px;
+            font-weight:700;
+        }
+        
+        .portal-flash.success{
+            background:#EDF8EF;
+            border:1px solid #B9DCBF;
+            color:#256033;
+        }
+        
+        .portal-flash.warning{
+            background:#FFF7E7;
+            border:1px solid #E8D49B;
+            color:#755614;
+        }
+        
+        .portal-flash.danger,
+        .portal-flash.error{
+            background:#FFF0F2;
+            border:1px solid #EAB5BD;
+            color:#85202D;
+        }
+        
         /* MOBILE */
         @media (max-width: 1000px) {
             .workspace {
@@ -434,7 +461,12 @@
         >
             Nova Demanda
         </a>
-        <span class="side-link disabled">Minhas Demandas</span>
+        <a
+            class="side-link"
+            href="{{ url_for('minhas_demandas') }}"
+        >
+            Minhas Demandas
+        </a>
 
         <a class="side-link" href="{{ url_for('index') }}">Encontrar Malharias</a>
 
@@ -466,6 +498,22 @@
             às malharias tecnicamente compatíveis com aquilo que precisa produzir.
         </p>
 
+        {% with messages = get_flashed_messages(with_categories=true) %}
+
+            {% if messages %}
+        
+                {% for category, message in messages %}
+        
+                    <div class="portal-flash {{ category }}">
+                        {{ message }}
+                    </div>
+        
+                {% endfor %}
+        
+            {% endif %}
+        
+        {% endwith %}
+        
         <section class="hero">
 
             <div class="hero-copy">
@@ -489,25 +537,56 @@
         <section class="metrics">
 
             <div class="metric">
-                <div class="metric-value">0</div>
-                <div class="metric-label">Demandas abertas</div>
+        
+                <div class="metric-value">
+                    {{ demandas_ativas }}
+                </div>
+        
+                <div class="metric-label">
+                    Demandas ativas
+                </div>
+        
             </div>
-
+        
+        
             <div class="metric">
-                <div class="metric-value">0</div>
-                <div class="metric-label">Matches encontrados</div>
+        
+                <div class="metric-value">
+                    {{ matches_total }}
+                </div>
+        
+                <div class="metric-label">
+                    Matches encontrados
+                </div>
+        
             </div>
-
+        
+        
             <div class="metric">
-                <div class="metric-value">0</div>
-                <div class="metric-label">Propostas recebidas</div>
+        
+                <div class="metric-value">
+                    {{ propostas_total }}
+                </div>
+        
+                <div class="metric-label">
+                    Propostas recebidas
+                </div>
+        
             </div>
-
+        
+        
             <div class="metric">
-                <div class="metric-value">0</div>
-                <div class="metric-label">Pedidos em andamento</div>
+        
+                <div class="metric-value">
+                    {{ pedidos_total }}
+                </div>
+        
+                <div class="metric-label">
+                    Pedidos em andamento
+                </div>
+        
             </div>
-
+        
         </section>
 
         <h2 class="section-title">Comece por aqui</h2>
