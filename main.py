@@ -4830,6 +4830,239 @@ def configurar_matching(demanda_id):
     )
 
 # --------------------------------------------------------------------
+# Executar Matching V1 - AcheTece 2.0
+# --------------------------------------------------------------------
+
+@app.post(
+    "/comprador/demandas/<int:demanda_id>/matching/executar",
+    endpoint="executar_matching"
+)
+def executar_matching(demanda_id):
+
+    # --------------------------------------------------------------
+    # Autenticação
+    # --------------------------------------------------------------
+
+    user_id = session.get(
+        "user_id"
+    )
+
+    if not user_id:
+
+        return redirect(
+            url_for("login")
+        )
+
+    try:
+
+        usuario = db.session.get(
+            Usuario,
+            int(user_id)
+        )
+
+    except Exception:
+
+        usuario = None
+
+    if (
+        not usuario
+        or usuario.is_active is False
+        or (
+            usuario.role or ""
+        ).strip().lower() != "cliente"
+    ):
+
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Demanda
+    # --------------------------------------------------------------
+
+    demanda = (
+        ProductionRequest.query
+        .filter_by(
+            id=demanda_id,
+            user_id=usuario.id
+        )
+        .first()
+    )
+
+    if not demanda:
+
+        flash(
+            "Demanda não encontrada.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("minhas_demandas")
+        )
+
+    # Matching somente para demanda publicada
+    if (
+        demanda.status or ""
+    ).strip().lower() != "publicada":
+
+        flash(
+            "Publique a demanda antes de executar o matching.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "detalhe_demanda",
+                demanda_id=demanda.id
+            )
+        )
+
+    # --------------------------------------------------------------
+    # Requisitos técnicos
+    # --------------------------------------------------------------
+
+    requisito = (
+        DemandTechnicalRequirement.query
+        .filter_by(
+            demand_id=demanda.id
+        )
+        .first()
+    )
+
+    if not requisito:
+
+        flash(
+            "Configure os requisitos técnicos antes de executar o matching.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "configurar_matching",
+                demanda_id=demanda.id
+            )
+        )
+
+    # --------------------------------------------------------------
+    # Teares
+    # --------------------------------------------------------------
+
+    teares = (
+        Tear.query
+        .order_by(
+            Tear.id.asc()
+        )
+        .all()
+    )
+
+    total_analisados = len(
+        teares
+    )
+
+    total_compativeis = 0
+
+    # --------------------------------------------------------------
+    # Recalcula do zero
+    # --------------------------------------------------------------
+
+    try:
+
+        (
+            DemandMatch.query
+            .filter_by(
+                demand_id=demanda.id
+            )
+            .delete(
+                synchronize_session=False
+            )
+        )
+
+        for tear in teares:
+
+            empresa = getattr(
+                tear,
+                "empresa",
+                None
+            )
+
+            if not empresa:
+                continue
+
+            (
+                compativel,
+                score,
+                detalhes
+            ) = _calcular_match_v1(
+                demanda,
+                requisito,
+                tear,
+                empresa
+            )
+
+            if not compativel:
+                continue
+
+            novo_match = DemandMatch(
+                demand_id=demanda.id,
+                tear_id=tear.id,
+                empresa_id=empresa.id,
+                score=score,
+                detalhes=" | ".join(
+                    detalhes
+                ),
+                status="ativo"
+            )
+
+            db.session.add(
+                novo_match
+            )
+
+            total_compativeis += 1
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "[MATCHING] Falha ao executar Matching V1."
+        )
+
+        flash(
+            "Não foi possível executar o matching agora.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "detalhe_demanda",
+                demanda_id=demanda.id
+            )
+        )
+
+    # --------------------------------------------------------------
+    # Resultado
+    # --------------------------------------------------------------
+
+    flash(
+        (
+            f"Matching executado: "
+            f"{total_compativeis} compatível(is) "
+            f"entre {total_analisados} "
+            f"tear(es) analisado(s)."
+        ),
+        "success"
+    )
+
+    return redirect(
+        url_for(
+            "matches_demanda",
+            demanda_id=demanda.id
+        )
+    )
+
+# --------------------------------------------------------------------
 # Portal do Comprador - AcheTece 2.0
 # --------------------------------------------------------------------
 @app.route('/painel_comprador', endpoint='painel_comprador')
