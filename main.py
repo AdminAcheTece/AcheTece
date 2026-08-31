@@ -5267,7 +5267,23 @@ def painel_comprador():
     )
 
     # Matching, propostas e pedidos ainda não foram criados
-    matches_total = 0
+    matches_total = (
+        db.session.query(
+            DemandMatch.id
+        )
+        .join(
+            ProductionRequest,
+            DemandMatch.demand_id
+            == ProductionRequest.id
+        )
+        .filter(
+            ProductionRequest.user_id
+            == usuario.id,
+            DemandMatch.status
+            == "ativo"
+        )
+        .count()
+    )
     propostas_total = 0
     pedidos_total = 0
 
