@@ -5757,7 +5757,158 @@ def minhas_oportunidades():
         total_interessadas=total_interessadas,
         total_recusadas=total_recusadas,
     )
-    
+
+# --------------------------------------------------------------------
+# AcheTece 2.0 - Analisar Oportunidade
+# --------------------------------------------------------------------
+
+@app.get(
+    "/malharia/oportunidades/<int:oportunidade_id>",
+    endpoint="analisar_oportunidade"
+)
+def analisar_oportunidade(oportunidade_id):
+
+    # --------------------------------------------------------------
+    # Autenticação da malharia
+    # --------------------------------------------------------------
+
+    empresa_id = session.get(
+        "empresa_id"
+    )
+
+    if not empresa_id:
+
+        return redirect(
+            url_for("login")
+        )
+
+    try:
+
+        empresa = db.session.get(
+            Empresa,
+            int(empresa_id)
+        )
+
+    except Exception:
+
+        empresa = None
+
+    if not empresa:
+
+        session.clear()
+
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Busca oportunidade garantindo que pertence à empresa logada
+    # --------------------------------------------------------------
+
+    oportunidade = (
+        Opportunity.query
+        .filter_by(
+            id=oportunidade_id,
+            empresa_id=empresa.id
+        )
+        .first()
+    )
+
+    if not oportunidade:
+
+        flash(
+            "Oportunidade não encontrada.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("minhas_oportunidades")
+        )
+
+    # Oportunidade inativa não deve ser analisada
+    if (
+        oportunidade.status or ""
+    ).strip().lower() == "inativa":
+
+        flash(
+            "Esta oportunidade não está mais disponível.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("minhas_oportunidades")
+        )
+
+    # --------------------------------------------------------------
+    # Primeira visualização:
+    #
+    # nova -> visualizada
+    # --------------------------------------------------------------
+
+    if (
+        oportunidade.status or ""
+    ).strip().lower() == "nova":
+
+        try:
+
+            oportunidade.status = "visualizada"
+
+            db.session.commit()
+
+        except Exception:
+
+            db.session.rollback()
+
+            current_app.logger.exception(
+                "[OPORTUNIDADE] Falha ao marcar como visualizada."
+            )
+
+    # --------------------------------------------------------------
+    # Demanda
+    # --------------------------------------------------------------
+
+    demanda = oportunidade.demanda
+
+    if not demanda:
+
+        flash(
+            "A demanda vinculada não foi encontrada.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("minhas_oportunidades")
+        )
+
+    # --------------------------------------------------------------
+    # Matches da PRÓPRIA malharia
+    #
+    # Uma oportunidade pode possuir:
+    # 1, 2, 3... teares compatíveis.
+    # --------------------------------------------------------------
+
+    matches = (
+        DemandMatch.query
+        .filter_by(
+            demand_id=demanda.id,
+            empresa_id=empresa.id,
+            status="ativo"
+        )
+        .order_by(
+            DemandMatch.score.desc(),
+            DemandMatch.id.asc()
+        )
+        .all()
+    )
+
+    return render_template(
+        "analisar_oportunidade.html",
+        empresa=empresa,
+        oportunidade=oportunidade,
+        demanda=demanda,
+        matches=matches
+    )
+
 # --- Rota do Painel (vencimento por plano + ajuste p/ próximo dia útil BR) ---
 @app.route('/painel_malharia', endpoint="painel_malharia")
 def painel_malharia():
