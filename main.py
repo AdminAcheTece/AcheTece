@@ -4060,6 +4060,308 @@ def publicar_demanda(demanda_id):
     )
 
 # --------------------------------------------------------------------
+# Configuração Técnica do Matching - AcheTece 2.0
+# --------------------------------------------------------------------
+
+@app.route(
+    "/comprador/demandas/<int:demanda_id>/matching/configurar",
+    methods=["GET", "POST"],
+    endpoint="configurar_matching"
+)
+def configurar_matching(demanda_id):
+
+    # --------------------------------------------------------------
+    # Autenticação
+    # --------------------------------------------------------------
+
+    user_id = session.get("user_id")
+
+    if not user_id:
+        return redirect(
+            url_for("login")
+        )
+
+    try:
+        usuario = db.session.get(
+            Usuario,
+            int(user_id)
+        )
+    except Exception:
+        usuario = None
+
+    if (
+        not usuario
+        or usuario.is_active is False
+        or (usuario.role or "").strip().lower() != "cliente"
+    ):
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Demanda - somente do próprio comprador
+    # --------------------------------------------------------------
+
+    demanda = (
+        ProductionRequest.query
+        .filter_by(
+            id=demanda_id,
+            user_id=usuario.id
+        )
+        .first()
+    )
+
+    if not demanda:
+
+        flash(
+            "Demanda não encontrada.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("minhas_demandas")
+        )
+
+    # --------------------------------------------------------------
+    # Configuração existente
+    # --------------------------------------------------------------
+
+    requisito = (
+        DemandTechnicalRequirement.query
+        .filter_by(
+            demand_id=demanda.id
+        )
+        .first()
+    )
+
+    if request.method == "GET":
+
+        return render_template(
+            "configurar_matching.html",
+            demanda=demanda,
+            requisito=requisito
+        )
+
+    # --------------------------------------------------------------
+    # Helpers
+    # --------------------------------------------------------------
+
+    def _int_or_none(valor):
+
+        valor = (
+            valor or ""
+        ).strip()
+
+        if not valor:
+            return None
+
+        try:
+            return int(valor)
+        except Exception:
+            return None
+
+    # --------------------------------------------------------------
+    # Dados
+    # --------------------------------------------------------------
+
+    tipo_tear = (
+        request.form.get("tipo_tear")
+        or ""
+    ).strip().upper()
+
+    finura_min = _int_or_none(
+        request.form.get("finura_min")
+    )
+
+    finura_max = _int_or_none(
+        request.form.get("finura_max")
+    )
+
+    diametro_min = _int_or_none(
+        request.form.get("diametro_min")
+    )
+
+    diametro_max = _int_or_none(
+        request.form.get("diametro_max")
+    )
+
+    alimentadores_min = _int_or_none(
+        request.form.get("alimentadores_min")
+    )
+
+    pistas_cilindro_min = _int_or_none(
+        request.form.get("pistas_cilindro_min")
+    )
+
+    pistas_disco_min = _int_or_none(
+        request.form.get("pistas_disco_min")
+    )
+
+    elastano_raw = (
+        request.form.get("elastano_required")
+        or ""
+    ).strip().lower()
+
+    observacoes_tecnicas = (
+        request.form.get("observacoes_tecnicas")
+        or ""
+    ).strip()
+
+    # --------------------------------------------------------------
+    # Tipo
+    # --------------------------------------------------------------
+
+    if tipo_tear not in {
+        "",
+        "MONO",
+        "DUPLA"
+    }:
+
+        flash(
+            "Selecione um tipo de tear válido.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "configurar_matching",
+                demanda_id=demanda.id
+            )
+        )
+
+    # --------------------------------------------------------------
+    # Intervalos
+    # --------------------------------------------------------------
+
+    if (
+        finura_min is not None
+        and finura_max is not None
+        and finura_min > finura_max
+    ):
+
+        flash(
+            "A finura mínima não pode ser maior que a máxima.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "configurar_matching",
+                demanda_id=demanda.id
+            )
+        )
+
+    if (
+        diametro_min is not None
+        and diametro_max is not None
+        and diametro_min > diametro_max
+    ):
+
+        flash(
+            "O diâmetro mínimo não pode ser maior que o máximo.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "configurar_matching",
+                demanda_id=demanda.id
+            )
+        )
+
+    # --------------------------------------------------------------
+    # Elastano
+    # --------------------------------------------------------------
+
+    elastano_required = None
+
+    if elastano_raw == "sim":
+        elastano_required = True
+
+    elif elastano_raw == "nao":
+        elastano_required = False
+
+    # --------------------------------------------------------------
+    # UPSERT
+    # --------------------------------------------------------------
+
+    try:
+
+        if not requisito:
+
+            requisito = DemandTechnicalRequirement(
+                demand_id=demanda.id
+            )
+
+            db.session.add(
+                requisito
+            )
+
+        requisito.tipo_tear = (
+            tipo_tear or None
+        )
+
+        requisito.finura_min = finura_min
+        requisito.finura_max = finura_max
+
+        requisito.diametro_min = diametro_min
+        requisito.diametro_max = diametro_max
+
+        requisito.alimentadores_min = (
+            alimentadores_min
+        )
+
+        requisito.pistas_cilindro_min = (
+            pistas_cilindro_min
+        )
+
+        requisito.pistas_disco_min = (
+            pistas_disco_min
+        )
+
+        requisito.elastano_required = (
+            elastano_required
+        )
+
+        requisito.observacoes_tecnicas = (
+            observacoes_tecnicas or None
+        )
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "[MATCHING] Falha ao salvar requisitos técnicos."
+        )
+
+        flash(
+            "Não foi possível salvar a configuração.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "configurar_matching",
+                demanda_id=demanda.id
+            )
+        )
+
+    flash(
+        "Configuração técnica do matching salva com sucesso.",
+        "success"
+    )
+
+    return redirect(
+        url_for(
+            "configurar_matching",
+            demanda_id=demanda.id
+        )
+    )
+
+# --------------------------------------------------------------------
 # Portal do Comprador - AcheTece 2.0
 # --------------------------------------------------------------------
 @app.route('/painel_comprador', endpoint='painel_comprador')
