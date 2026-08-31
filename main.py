@@ -5028,7 +5028,10 @@ def executar_matching(demanda_id):
             url_for("minhas_demandas")
         )
 
+    # --------------------------------------------------------------
     # Matching somente para demanda publicada
+    # --------------------------------------------------------------
+
     if (
         demanda.status or ""
     ).strip().lower() != "publicada":
@@ -5090,10 +5093,30 @@ def executar_matching(demanda_id):
     total_compativeis = 0
 
     # --------------------------------------------------------------
-    # Recalcula do zero
+    # Agrupamento de matches por empresa
+    #
+    # Exemplo:
+    #
+    # empresa 10
+    #   - tear A = 100%
+    #   - tear B = 95%
+    #
+    # resultado:
+    #   best_score = 100
+    #   compatible_tears = 2
+    # --------------------------------------------------------------
+
+    resumo_empresas = {}
+
+    # --------------------------------------------------------------
+    # Recalcula Matching V1 do zero
     # --------------------------------------------------------------
 
     try:
+
+        # ----------------------------------------------------------
+        # Apaga os matches anteriores desta demanda
+        # ----------------------------------------------------------
 
         (
             DemandMatch.query
@@ -5104,6 +5127,10 @@ def executar_matching(demanda_id):
                 synchronize_session=False
             )
         )
+
+        # ----------------------------------------------------------
+        # Analisa cada tear cadastrado
+        # ----------------------------------------------------------
 
         for tear in teares:
 
@@ -5127,8 +5154,13 @@ def executar_matching(demanda_id):
                 empresa
             )
 
+            # Tear tecnicamente incompatível
             if not compativel:
                 continue
+
+            # ------------------------------------------------------
+            # Cria o Match técnico por tear
+            # ------------------------------------------------------
 
             novo_match = DemandMatch(
                 demand_id=demanda.id,
@@ -5147,6 +5179,167 @@ def executar_matching(demanda_id):
 
             total_compativeis += 1
 
+            # ------------------------------------------------------
+            # Resume os matches por empresa
+            # ------------------------------------------------------
+
+            resumo = resumo_empresas.get(
+                empresa.id
+            )
+
+            # Primeira máquina compatível dessa empresa
+            if not resumo:
+
+                resumo = {
+                    "empresa": empresa,
+                    "best_score": score,
+                    "compatible_tears": 1
+                }
+
+                resumo_empresas[
+                    empresa.id
+                ] = resumo
+
+            # Empresa já possui outro tear compatível
+            else:
+
+                resumo[
+                    "compatible_tears"
+                ] += 1
+
+                # Mantém o melhor score encontrado
+                if score > resumo[
+                    "best_score"
+                ]:
+
+                    resumo[
+                        "best_score"
+                    ] = score
+
+        # ==========================================================
+        # OPORTUNIDADES
+        #
+        # Aqui termina a análise dos teares.
+        #
+        # Agora transformamos vários matches técnicos em
+        # UMA oportunidade comercial por empresa.
+        # ==========================================================
+
+        oportunidades_existentes = (
+            Opportunity.query
+            .filter_by(
+                demand_id=demanda.id
+            )
+            .all()
+        )
+
+        # ----------------------------------------------------------
+        # Indexa oportunidades existentes pela empresa
+        # ----------------------------------------------------------
+
+        oportunidades_por_empresa = {
+            oportunidade.empresa_id:
+                oportunidade
+            for oportunidade
+            in oportunidades_existentes
+        }
+
+        # Empresas que continuam tecnicamente compatíveis
+        empresas_compativeis = set(
+            resumo_empresas.keys()
+        )
+
+        # ----------------------------------------------------------
+        # Cria ou atualiza oportunidades
+        # ----------------------------------------------------------
+
+        for (
+            empresa_id,
+            resumo
+        ) in resumo_empresas.items():
+
+            oportunidade = (
+                oportunidades_por_empresa
+                .get(
+                    empresa_id
+                )
+            )
+
+            # ------------------------------------------------------
+            # Ainda não existe oportunidade para esta empresa
+            # ------------------------------------------------------
+
+            if not oportunidade:
+
+                oportunidade = Opportunity(
+                    demand_id=demanda.id,
+                    empresa_id=empresa_id,
+                    best_score=resumo[
+                        "best_score"
+                    ],
+                    compatible_tears=resumo[
+                        "compatible_tears"
+                    ],
+                    status="nova"
+                )
+
+                db.session.add(
+                    oportunidade
+                )
+
+            # ------------------------------------------------------
+            # Oportunidade já existe
+            # Atualiza informações técnicas
+            # ------------------------------------------------------
+
+            else:
+
+                oportunidade.best_score = (
+                    resumo[
+                        "best_score"
+                    ]
+                )
+
+                oportunidade.compatible_tears = (
+                    resumo[
+                        "compatible_tears"
+                    ]
+                )
+
+                # Se anteriormente havia ficado incompatível
+                # e agora voltou a ter match, reativa.
+                if oportunidade.status == "inativa":
+
+                    oportunidade.status = "nova"
+
+        # ----------------------------------------------------------
+        # Empresas que deixaram de ser compatíveis
+        # ----------------------------------------------------------
+
+        for oportunidade in oportunidades_existentes:
+
+            if (
+                oportunidade.empresa_id
+                not in empresas_compativeis
+            ):
+
+                # Não sobrescrevemos decisões comerciais
+                # já realizadas pela malharia.
+                if oportunidade.status in {
+                    "nova",
+                    "visualizada"
+                }:
+
+                    oportunidade.status = "inativa"
+
+        # ==========================================================
+        # UM ÚNICO COMMIT
+        #
+        # Salva:
+        # - DemandMatch
+        # - Opportunity
+        # ==========================================================
+
         db.session.commit()
 
     except Exception:
@@ -5154,7 +5347,8 @@ def executar_matching(demanda_id):
         db.session.rollback()
 
         current_app.logger.exception(
-            "[MATCHING] Falha ao executar Matching V1."
+            "[MATCHING] Falha ao executar Matching V1 "
+            "e gerar oportunidades."
         )
 
         flash(
@@ -5168,6 +5362,40 @@ def executar_matching(demanda_id):
                 demanda_id=demanda.id
             )
         )
+
+    # --------------------------------------------------------------
+    # Quantas malharias receberam oportunidade
+    # --------------------------------------------------------------
+
+    total_oportunidades = len(
+        resumo_empresas
+    )
+
+    # --------------------------------------------------------------
+    # Mensagem final
+    # --------------------------------------------------------------
+
+    flash(
+        (
+            f"Matching executado: "
+            f"{total_compativeis} tear(es) compatível(is) "
+            f"entre {total_analisados} analisado(s), "
+            f"gerando {total_oportunidades} "
+            f"oportunidade(s) para malharia(s)."
+        ),
+        "success"
+    )
+
+    # --------------------------------------------------------------
+    # Resultado do Matching
+    # --------------------------------------------------------------
+
+    return redirect(
+        url_for(
+            "matches_demanda",
+            demanda_id=demanda.id
+        )
+    )
 
     # --------------------------------------------------------------
     # Resultado
