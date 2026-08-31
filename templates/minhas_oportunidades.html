@@ -905,12 +905,15 @@
                             ligado à tela de análise.
                         -->
 
-                        <span
+                        <a
+                            href="{{ url_for(
+                                'analisar_oportunidade',
+                                oportunidade_id=oportunidade.id
+                            ) }}"
                             class="analyze-btn"
-                            style="opacity:.55; cursor:default;"
                         >
                             Analisar oportunidade
-                        </span>
+                        </a>
 
                     </div>
 
