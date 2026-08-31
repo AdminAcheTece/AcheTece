@@ -5063,6 +5063,115 @@ def executar_matching(demanda_id):
     )
 
 # --------------------------------------------------------------------
+# Matches encontrados - AcheTece 2.0
+# --------------------------------------------------------------------
+
+@app.get(
+    "/comprador/demandas/<int:demanda_id>/matches",
+    endpoint="matches_demanda"
+)
+def matches_demanda(demanda_id):
+
+    # --------------------------------------------------------------
+    # Autenticação
+    # --------------------------------------------------------------
+
+    user_id = session.get(
+        "user_id"
+    )
+
+    if not user_id:
+
+        return redirect(
+            url_for("login")
+        )
+
+    try:
+
+        usuario = db.session.get(
+            Usuario,
+            int(user_id)
+        )
+
+    except Exception:
+
+        usuario = None
+
+    if (
+        not usuario
+        or usuario.is_active is False
+        or (
+            usuario.role or ""
+        ).strip().lower() != "cliente"
+    ):
+
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Demanda
+    # --------------------------------------------------------------
+
+    demanda = (
+        ProductionRequest.query
+        .filter_by(
+            id=demanda_id,
+            user_id=usuario.id
+        )
+        .first()
+    )
+
+    if not demanda:
+
+        flash(
+            "Demanda não encontrada.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("minhas_demandas")
+        )
+
+    # --------------------------------------------------------------
+    # Requisito técnico
+    # --------------------------------------------------------------
+
+    requisito = (
+        DemandTechnicalRequirement.query
+        .filter_by(
+            demand_id=demanda.id
+        )
+        .first()
+    )
+
+    # --------------------------------------------------------------
+    # Matches
+    # --------------------------------------------------------------
+
+    matches = (
+        DemandMatch.query
+        .filter_by(
+            demand_id=demanda.id,
+            status="ativo"
+        )
+        .order_by(
+            DemandMatch.score.desc(),
+            DemandMatch.id.asc()
+        )
+        .all()
+    )
+
+    return render_template(
+        "matches_demanda.html",
+        usuario=usuario,
+        demanda=demanda,
+        requisito=requisito,
+        matches=matches,
+        total_matches=len(matches)
+    )
+
+# --------------------------------------------------------------------
 # Portal do Comprador - AcheTece 2.0
 # --------------------------------------------------------------------
 @app.route('/painel_comprador', endpoint='painel_comprador')
