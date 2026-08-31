@@ -2350,6 +2350,267 @@ def _proximo_step(emp: Empresa) -> str:
 from flask import make_response
 
 # --------------------------------------------------------------------
+# Cadastro do Comprador - AcheTece 2.0
+# --------------------------------------------------------------------
+@app.route(
+    "/cadastro/comprador",
+    methods=["GET", "POST"],
+    endpoint="cadastro_comprador"
+)
+def cadastro_comprador():
+
+    estados = [
+        "AC","AL","AM","AP","BA","CE","DF","ES","GO","MA",
+        "MG","MS","MT","PA","PB","PE","PI","PR","RJ","RN",
+        "RO","RR","RS","SC","SE","SP","TO"
+    ]
+
+    form_data = {}
+
+    if request.method == "GET":
+
+        return render_template(
+            "criar_conta_cliente.html",
+            estados=estados,
+            form_data=form_data
+        )
+
+    # --------------------------------------------------------------
+    # Dados recebidos
+    # --------------------------------------------------------------
+
+    nome = (request.form.get("nome") or "").strip()
+
+    empresa_nome = (
+        request.form.get("empresa") or ""
+    ).strip()
+
+    whatsapp = (
+        request.form.get("whatsapp") or ""
+    ).strip()
+
+    cidade = (
+        request.form.get("cidade") or ""
+    ).strip()
+
+    estado = (
+        request.form.get("estado") or ""
+    ).strip().upper()
+
+    email = (
+        request.form.get("email") or ""
+    ).strip().lower()
+
+    senha = (
+        request.form.get("senha") or ""
+    ).strip()
+
+
+    form_data = {
+        "nome": nome,
+        "empresa": empresa_nome,
+        "whatsapp": whatsapp,
+        "cidade": cidade,
+        "estado": estado,
+        "email": email,
+    }
+
+
+    # --------------------------------------------------------------
+    # Validações básicas
+    # --------------------------------------------------------------
+
+    if not nome:
+
+        flash(
+            "Informe seu nome.",
+            "warning"
+        )
+
+        return render_template(
+            "criar_conta_cliente.html",
+            estados=estados,
+            form_data=form_data
+        )
+
+
+    if not empresa_nome:
+
+        flash(
+            "Informe a empresa, marca ou confecção.",
+            "warning"
+        )
+
+        return render_template(
+            "criar_conta_cliente.html",
+            estados=estados,
+            form_data=form_data
+        )
+
+
+    if estado not in estados:
+
+        flash(
+            "Selecione um estado válido.",
+            "warning"
+        )
+
+        return render_template(
+            "criar_conta_cliente.html",
+            estados=estados,
+            form_data=form_data
+        )
+
+
+    if not cidade:
+
+        flash(
+            "Informe sua cidade.",
+            "warning"
+        )
+
+        return render_template(
+            "criar_conta_cliente.html",
+            estados=estados,
+            form_data=form_data
+        )
+
+
+    if not email or "@" not in email:
+
+        flash(
+            "Informe um e-mail válido.",
+            "warning"
+        )
+
+        return render_template(
+            "criar_conta_cliente.html",
+            estados=estados,
+            form_data=form_data
+        )
+
+
+    if len(senha) < 6:
+
+        flash(
+            "A senha precisa ter pelo menos 6 caracteres.",
+            "warning"
+        )
+
+        return render_template(
+            "criar_conta_cliente.html",
+            estados=estados,
+            form_data=form_data
+        )
+
+
+    # --------------------------------------------------------------
+    # Evita conta duplicada
+    # --------------------------------------------------------------
+
+    usuario_existente = Usuario.query.filter(
+        func.lower(Usuario.email) == email
+    ).first()
+
+    empresa_existente = Empresa.query.filter(
+        func.lower(Empresa.email) == email
+    ).first()
+
+
+    if usuario_existente or empresa_existente:
+
+        flash(
+            "Este e-mail já possui uma conta no AcheTece.",
+            "warning"
+        )
+
+        return render_template(
+            "criar_conta_cliente.html",
+            estados=estados,
+            form_data=form_data
+        )
+
+
+    # --------------------------------------------------------------
+    # Cria Usuario + ClienteProfile
+    # --------------------------------------------------------------
+
+    try:
+
+        novo_usuario = Usuario(
+            email=email,
+            senha_hash=generate_password_hash(senha),
+            role="cliente",
+            is_active=True
+        )
+
+        db.session.add(novo_usuario)
+
+        db.session.flush()
+
+
+        novo_perfil = ClienteProfile(
+            user_id=novo_usuario.id,
+            nome=nome,
+            empresa=empresa_nome,
+            whatsapp=whatsapp or None,
+            cidade=cidade,
+            estado=estado
+        )
+
+        db.session.add(novo_perfil)
+
+        db.session.commit()
+
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "[COMPRADOR] Falha ao criar conta."
+        )
+
+        flash(
+            "Não foi possível criar sua conta agora. Tente novamente.",
+            "danger"
+        )
+
+        return render_template(
+            "criar_conta_cliente.html",
+            estados=estados,
+            form_data=form_data
+        )
+
+
+    # --------------------------------------------------------------
+    # Login automático
+    # --------------------------------------------------------------
+
+    session.clear()
+
+    session["user_id"] = novo_usuario.id
+    session["auth_user_id"] = novo_usuario.id
+
+    session["login_email"] = novo_usuario.email
+    session["auth_email"] = novo_usuario.email
+
+    session["perfil"] = "cliente"
+
+    session.permanent = True
+
+
+    flash(
+        "Conta criada com sucesso. Bem-vindo ao AcheTece!",
+        "success"
+    )
+
+
+    return redirect(
+        url_for("painel_comprador")
+    )
+
+# --------------------------------------------------------------------
 # Portal do Comprador - AcheTece 2.0
 # --------------------------------------------------------------------
 @app.route('/painel_comprador', endpoint='painel_comprador')
