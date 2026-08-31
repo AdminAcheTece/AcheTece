@@ -811,11 +811,24 @@
     <div class="header-right">
       <div class="hdr-actions painel-actions">
 
-        <!-- Treinamento (botão antes do Chat) -->
-        <a href="{{ url_for('treinamento_home') }}" class="hdr-text-btn" title="Treinamento Operacional">
-          Treinamento
+        <!-- Oportunidades -->
+        <a
+          href="{{ url_for('minhas_oportunidades') }}"
+          class="hdr-text-btn"
+          title="Minhas Oportunidades"
+        >
+          Oportunidades
         </a>
         
+        <!-- Treinamento -->
+        <a
+          href="{{ url_for('treinamento_home') }}"
+          class="hdr-text-btn"
+          title="Treinamento Operacional"
+        >
+          Treinamento
+        </a>
+                
         <!-- Chat -->
         <a href="{{ url_for('fale_conosco') }}" class="icon-btn badge-wrap" aria-label="Chat" title="Chat">
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -882,6 +895,26 @@
     </div>
 
     <div class="menu-body">
+      <a href="{{ url_for('minhas_oportunidades') }}">
+
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M4 4h16v16H4z"></path>
+          <path d="M8 9h8"></path>
+          <path d="M8 13h5"></path>
+        </svg>
+      
+        Oportunidades
+      
+      </a>
+      
       <a href="{{ url_for('index') }}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5Z"/>
@@ -965,6 +998,21 @@
     <a href="{{ url_for('performance_acesso') }}" class="pm-item" role="menuitem" title="Ver performance de acesso">
       <svg viewBox="0 0 24 24"><path d="M3 3v18h18"></path><path d="M7 13l3 3 7-7"></path></svg>
       <span>Performance de acesso</span>
+    </a>
+    
+    <a
+      href="{{ url_for('minhas_oportunidades') }}"
+      class="pm-item"
+      role="menuitem"
+      title="Minhas Oportunidades"
+    >
+      <svg viewBox="0 0 24 24">
+        <path d="M4 4h16v16H4z"></path>
+        <path d="M8 9h8"></path>
+        <path d="M8 13h5"></path>
+      </svg>
+    
+      <span>Minhas Oportunidades</span>
     </a>
     <a href="{{ url_for('treinamento_home') }}" class="pm-item" role="menuitem" title="Treinamento Operacional">
       <svg viewBox="0 0 24 24">
