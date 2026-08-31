@@ -3586,15 +3586,37 @@ def painel_comprador():
 
         return redirect(url_for("login"))
 
-    perfil = ClienteProfile.query.filter_by(
-        user_id=usuario.id
-    ).first()
-
-    return render_template(
-        "painel_comprador.html",
-        usuario=usuario,
-        perfil=perfil
-    )
+        perfil = ClienteProfile.query.filter_by(
+            user_id=usuario.id
+        ).first()
+    
+        # --------------------------------------------------------------
+        # Indicadores reais do Portal do Comprador
+        # --------------------------------------------------------------
+    
+        demandas_ativas = (
+            ProductionRequest.query
+            .filter(
+                ProductionRequest.user_id == usuario.id,
+                ProductionRequest.status.in_(
+                    [
+                        "rascunho",
+                        "publicada"
+                    ]
+                )
+            )
+            .count()
+        )
+    
+        return render_template(
+            "painel_comprador.html",
+            usuario=usuario,
+            perfil=perfil,
+            demandas_ativas=demandas_ativas,
+            matches_total=0,
+            propostas_total=0,
+            pedidos_total=0,
+        )
 
 # --- Rota do Painel (vencimento por plano + ajuste p/ próximo dia útil BR) ---
 @app.route('/painel_malharia', endpoint="painel_malharia")
