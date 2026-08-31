@@ -1279,6 +1279,232 @@ class ProductionRequest(db.Model):
             f"status={self.status}>"
         )
 
+# --------------------------------------------------------------------
+# AcheTece 2.0 - Requisitos Técnicos da Demanda
+# --------------------------------------------------------------------
+
+class DemandTechnicalRequirement(db.Model):
+    __tablename__ = "demand_technical_requirement"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    # Uma demanda possui, nesta V1, um conjunto de requisitos técnicos
+    demand_id = db.Column(
+        db.Integer,
+        db.ForeignKey("production_request.id"),
+        nullable=False,
+        unique=True,
+        index=True
+    )
+
+    demanda = db.relationship(
+        "ProductionRequest",
+        backref=db.backref(
+            "technical_requirement",
+            uselist=False
+        )
+    )
+
+    # --------------------------------------------------------------
+    # Tipo de equipamento
+    # --------------------------------------------------------------
+
+    tipo_tear = db.Column(
+        db.String(50),
+        nullable=True,
+        index=True
+    )
+
+    # --------------------------------------------------------------
+    # Galga / Finura
+    # Permite intervalo, por exemplo 24 até 28
+    # --------------------------------------------------------------
+
+    finura_min = db.Column(
+        db.Integer,
+        nullable=True
+    )
+
+    finura_max = db.Column(
+        db.Integer,
+        nullable=True
+    )
+
+    # --------------------------------------------------------------
+    # Diâmetro
+    # Permite intervalo
+    # --------------------------------------------------------------
+
+    diametro_min = db.Column(
+        db.Integer,
+        nullable=True
+    )
+
+    diametro_max = db.Column(
+        db.Integer,
+        nullable=True
+    )
+
+    # --------------------------------------------------------------
+    # Alimentadores
+    # --------------------------------------------------------------
+
+    alimentadores_min = db.Column(
+        db.Integer,
+        nullable=True
+    )
+
+    # --------------------------------------------------------------
+    # Pistas
+    # --------------------------------------------------------------
+
+    pistas_cilindro_min = db.Column(
+        db.Integer,
+        nullable=True
+    )
+
+    pistas_disco_min = db.Column(
+        db.Integer,
+        nullable=True
+    )
+
+    # --------------------------------------------------------------
+    # Elastano
+    #
+    # None  = indiferente
+    # True  = necessário
+    # False = não necessário
+    # --------------------------------------------------------------
+
+    elastano_required = db.Column(
+        db.Boolean,
+        nullable=True
+    )
+
+    # --------------------------------------------------------------
+    # Informação complementar
+    # --------------------------------------------------------------
+
+    observacoes_tecnicas = db.Column(
+        db.Text,
+        nullable=True
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow
+    )
+
+    updated_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow
+    )
+
+# --------------------------------------------------------------------
+# AcheTece 2.0 - Resultado de Matching
+# --------------------------------------------------------------------
+
+class DemandMatch(db.Model):
+    __tablename__ = "demand_match"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    demand_id = db.Column(
+        db.Integer,
+        db.ForeignKey("production_request.id"),
+        nullable=False,
+        index=True
+    )
+
+    tear_id = db.Column(
+        db.Integer,
+        db.ForeignKey("tear.id"),
+        nullable=False,
+        index=True
+    )
+
+    empresa_id = db.Column(
+        db.Integer,
+        db.ForeignKey("empresa.id"),
+        nullable=False,
+        index=True
+    )
+
+    demanda = db.relationship(
+        "ProductionRequest",
+        backref=db.backref(
+            "matches",
+            lazy=True,
+            cascade="all, delete-orphan"
+        )
+    )
+
+    tear = db.relationship(
+        "Tear"
+    )
+
+    empresa = db.relationship(
+        "Empresa"
+    )
+
+    # --------------------------------------------------------------
+    # Score
+    # --------------------------------------------------------------
+
+    score = db.Column(
+        db.Integer,
+        nullable=False,
+        default=0,
+        index=True
+    )
+
+    # Explicação textual do cálculo.
+    # Na V2 poderemos transformar isso em JSON.
+    detalhes = db.Column(
+        db.Text,
+        nullable=True
+    )
+
+    # ativo | descartado | selecionado
+    status = db.Column(
+        db.String(20),
+        nullable=False,
+        default="ativo",
+        index=True
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow
+    )
+
+    updated_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow
+    )
+
+    # Uma demanda não pode gerar duas vezes
+    # exatamente o mesmo tear.
+    __table_args__ = (
+        db.UniqueConstraint(
+            "demand_id",
+            "tear_id",
+            name="uq_demand_match_demand_tear"
+        ),
+    )    
+
 class OtpToken(db.Model):
     __tablename__ = "otp_token"
     id = db.Column(db.Integer, primary_key=True)
