@@ -1505,6 +1505,474 @@ class DemandMatch(db.Model):
         ),
     )    
 
+# --------------------------------------------------------------------
+# AcheTece 2.0 - Motor de Matching V1
+# --------------------------------------------------------------------
+
+def _normalizar_tipo_tear(valor):
+    """
+    Normaliza diferentes formas de cadastro para:
+    MONO | DUPLA
+    """
+
+    s = (valor or "").strip().upper()
+
+    if s.startswith("MONO"):
+        return "MONO"
+
+    if s.startswith("DUPLA"):
+        return "DUPLA"
+
+    return s
+
+
+def _tear_tem_elastano(tear):
+    """
+    Interpreta os diferentes formatos já existentes
+    no cadastro de teares.
+    """
+
+    raw = getattr(tear, "elastano", None)
+
+    if raw is None:
+        raw = getattr(
+            tear,
+            "kit_elastano",
+            None
+        )
+
+    if isinstance(raw, bool):
+        return raw
+
+    s = (
+        str(raw or "")
+        .strip()
+        .lower()
+    )
+
+    return s in {
+        "sim",
+        "s",
+        "true",
+        "t",
+        "on",
+        "1",
+        "com",
+        "tem",
+        "yes",
+        "y"
+    }
+
+
+def _valor_dentro_intervalo(
+    valor,
+    minimo=None,
+    maximo=None
+):
+    """
+    Verifica se valor está dentro dos limites configurados.
+    """
+
+    if valor is None:
+        return False
+
+    try:
+        valor = int(valor)
+    except Exception:
+        return False
+
+    if minimo is not None and valor < minimo:
+        return False
+
+    if maximo is not None and valor > maximo:
+        return False
+
+    return True
+
+
+def _texto_match(valor):
+    """
+    Normalização simples para comparação de cidade/estado.
+    """
+
+    return (
+        str(valor or "")
+        .strip()
+        .casefold()
+    )
+
+
+def _calcular_match_v1(
+    demanda,
+    requisito,
+    tear,
+    empresa
+):
+    """
+    Retorna:
+
+        compativel: bool
+        score: int 0-100
+        detalhes: list[str]
+
+    Critérios técnicos são eliminatórios.
+    Localização gera pontuação, mas não elimina.
+    """
+
+    pontos = 0
+    max_pontos = 0
+
+    detalhes = []
+
+    # ==============================================================
+    # 1. TIPO DE TEAR - 30 pontos
+    # ==============================================================
+
+    if requisito.tipo_tear:
+
+        max_pontos += 30
+
+        esperado = _normalizar_tipo_tear(
+            requisito.tipo_tear
+        )
+
+        encontrado = _normalizar_tipo_tear(
+            tear.tipo
+        )
+
+        if encontrado != esperado:
+
+            return (
+                False,
+                0,
+                [
+                    f"Tipo incompatível: "
+                    f"necessário {esperado}, "
+                    f"tear {encontrado or 'não informado'}."
+                ]
+            )
+
+        pontos += 30
+
+        detalhes.append(
+            f"✓ Tipo {encontrado}"
+        )
+
+    # ==============================================================
+    # 2. FINURA / GALGA - 20 pontos
+    # ==============================================================
+
+    if (
+        requisito.finura_min is not None
+        or requisito.finura_max is not None
+    ):
+
+        max_pontos += 20
+
+        finura_tear = getattr(
+            tear,
+            "finura",
+            None
+        )
+
+        if not _valor_dentro_intervalo(
+            finura_tear,
+            requisito.finura_min,
+            requisito.finura_max
+        ):
+
+            return (
+                False,
+                0,
+                [
+                    f"Finura incompatível: "
+                    f"tear {finura_tear or 'não informado'}."
+                ]
+            )
+
+        pontos += 20
+
+        detalhes.append(
+            f"✓ Finura {finura_tear}"
+        )
+
+    # ==============================================================
+    # 3. DIÂMETRO - 15 pontos
+    # ==============================================================
+
+    if (
+        requisito.diametro_min is not None
+        or requisito.diametro_max is not None
+    ):
+
+        max_pontos += 15
+
+        diametro_tear = getattr(
+            tear,
+            "diametro",
+            None
+        )
+
+        if not _valor_dentro_intervalo(
+            diametro_tear,
+            requisito.diametro_min,
+            requisito.diametro_max
+        ):
+
+            return (
+                False,
+                0,
+                [
+                    f"Diâmetro incompatível: "
+                    f"tear {diametro_tear or 'não informado'}."
+                ]
+            )
+
+        pontos += 15
+
+        detalhes.append(
+            f"✓ Diâmetro {diametro_tear}\""
+        )
+
+    # ==============================================================
+    # 4. ALIMENTADORES - 5 pontos
+    # ==============================================================
+
+    if requisito.alimentadores_min is not None:
+
+        max_pontos += 5
+
+        alimentadores = getattr(
+            tear,
+            "alimentadores",
+            None
+        )
+
+        try:
+            alimentadores_ok = (
+                alimentadores is not None
+                and int(alimentadores)
+                >= int(requisito.alimentadores_min)
+            )
+        except Exception:
+            alimentadores_ok = False
+
+        if not alimentadores_ok:
+
+            return (
+                False,
+                0,
+                [
+                    f"Alimentadores insuficientes: "
+                    f"tear {alimentadores or 'não informado'}."
+                ]
+            )
+
+        pontos += 5
+
+        detalhes.append(
+            f"✓ {alimentadores} alimentadores"
+        )
+
+    # ==============================================================
+    # 5. PISTAS - 5 pontos
+    # ==============================================================
+
+    usa_pistas = (
+        requisito.pistas_cilindro_min is not None
+        or requisito.pistas_disco_min is not None
+    )
+
+    if usa_pistas:
+
+        max_pontos += 5
+
+        if requisito.pistas_cilindro_min is not None:
+
+            pistas_cil = getattr(
+                tear,
+                "pistas_cilindro",
+                None
+            )
+
+            try:
+                ok = (
+                    pistas_cil is not None
+                    and int(pistas_cil)
+                    >= int(
+                        requisito.pistas_cilindro_min
+                    )
+                )
+            except Exception:
+                ok = False
+
+            if not ok:
+
+                return (
+                    False,
+                    0,
+                    [
+                        "Quantidade de pistas do cilindro "
+                        "incompatível."
+                    ]
+                )
+
+        if requisito.pistas_disco_min is not None:
+
+            pistas_disco = getattr(
+                tear,
+                "pistas_disco",
+                None
+            )
+
+            try:
+                ok = (
+                    pistas_disco is not None
+                    and int(pistas_disco)
+                    >= int(
+                        requisito.pistas_disco_min
+                    )
+                )
+            except Exception:
+                ok = False
+
+            if not ok:
+
+                return (
+                    False,
+                    0,
+                    [
+                        "Quantidade de pistas do disco "
+                        "incompatível."
+                    ]
+                )
+
+        pontos += 5
+
+        detalhes.append(
+            "✓ Pistas compatíveis"
+        )
+
+    # ==============================================================
+    # 6. ELASTANO - 10 pontos
+    #
+    # Nesta V1:
+    # True = obrigatório e eliminatório
+    # False/None = não elimina
+    # ==============================================================
+
+    if requisito.elastano_required is True:
+
+        max_pontos += 10
+
+        if not _tear_tem_elastano(
+            tear
+        ):
+
+            return (
+                False,
+                0,
+                [
+                    "Elastano obrigatório, "
+                    "mas o tear não possui o recurso."
+                ]
+            )
+
+        pontos += 10
+
+        detalhes.append(
+            "✓ Elastano disponível"
+        )
+
+    # ==============================================================
+    # 7. ESTADO PREFERENCIAL - 10 pontos
+    #
+    # Preferência: NÃO elimina.
+    # ==============================================================
+
+    if demanda.estado_preferencial:
+
+        max_pontos += 10
+
+        estado_demanda = _texto_match(
+            demanda.estado_preferencial
+        )
+
+        estado_empresa = _texto_match(
+            empresa.estado
+        )
+
+        if estado_demanda == estado_empresa:
+
+            pontos += 10
+
+            detalhes.append(
+                f"✓ Estado preferencial: "
+                f"{empresa.estado}"
+            )
+
+        else:
+
+            detalhes.append(
+                f"• Fora do estado preferencial: "
+                f"{empresa.estado or 'não informado'}"
+            )
+
+    # ==============================================================
+    # 8. CIDADE PREFERENCIAL - 5 pontos
+    #
+    # Preferência: NÃO elimina.
+    # ==============================================================
+
+    if demanda.cidade_preferencial:
+
+        max_pontos += 5
+
+        cidade_demanda = _texto_match(
+            demanda.cidade_preferencial
+        )
+
+        cidade_empresa = _texto_match(
+            empresa.cidade
+        )
+
+        if cidade_demanda == cidade_empresa:
+
+            pontos += 5
+
+            detalhes.append(
+                f"✓ Cidade preferencial: "
+                f"{empresa.cidade}"
+            )
+
+        else:
+
+            detalhes.append(
+                f"• Cidade diferente: "
+                f"{empresa.cidade or 'não informada'}"
+            )
+
+    # ==============================================================
+    # SCORE NORMALIZADO
+    # ==============================================================
+
+    if max_pontos <= 0:
+
+        score = 100
+
+    else:
+
+        score = round(
+            (pontos / max_pontos)
+            * 100
+        )
+
+    return (
+        True,
+        int(score),
+        detalhes
+    )
+
 class OtpToken(db.Model):
     __tablename__ = "otp_token"
     id = db.Column(db.Integer, primary_key=True)
