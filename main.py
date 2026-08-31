@@ -2349,6 +2349,54 @@ def _proximo_step(emp: Empresa) -> str:
 
 from flask import make_response
 
+# --------------------------------------------------------------------
+# Portal do Comprador - AcheTece 2.0
+# --------------------------------------------------------------------
+@app.route('/painel_comprador', endpoint='painel_comprador')
+def painel_comprador():
+    """
+    Painel inicial do comprador.
+
+    Nesta primeira versão:
+    - exige um Usuario autenticado por user_id;
+    - exige role='cliente';
+    - carrega o ClienteProfile;
+    - não interfere no painel atual da malharia.
+    """
+
+    user_id = session.get("user_id")
+
+    if not user_id:
+        return redirect(url_for("login"))
+
+    try:
+        usuario = db.session.get(Usuario, int(user_id))
+    except Exception:
+        usuario = None
+
+    if not usuario or not usuario.is_active:
+        session.clear()
+        return redirect(url_for("login"))
+
+    role = (usuario.role or "").strip().lower()
+
+    if role != "cliente":
+        # Se for uma malharia, manda para o painel correto.
+        if getattr(usuario, "empresa", None):
+            return redirect(url_for("painel_malharia"))
+
+        return redirect(url_for("login"))
+
+    perfil = ClienteProfile.query.filter_by(
+        user_id=usuario.id
+    ).first()
+
+    return render_template(
+        "painel_comprador.html",
+        usuario=usuario,
+        perfil=perfil
+    )
+
 # --- Rota do Painel (vencimento por plano + ajuste p/ próximo dia útil BR) ---
 @app.route('/painel_malharia', endpoint="painel_malharia")
 def painel_malharia():
