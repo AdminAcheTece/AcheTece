@@ -3439,6 +3439,116 @@ def nova_demanda():
     )
 
 # --------------------------------------------------------------------
+# Minhas Demandas - AcheTece 2.0
+# --------------------------------------------------------------------
+
+@app.get(
+    "/comprador/demandas",
+    endpoint="minhas_demandas"
+)
+def minhas_demandas():
+
+    user_id = session.get("user_id")
+
+    if not user_id:
+        return redirect(
+            url_for("login")
+        )
+
+    try:
+        usuario = db.session.get(
+            Usuario,
+            int(user_id)
+        )
+    except Exception:
+        usuario = None
+
+    if not usuario or usuario.is_active is False:
+
+        session.clear()
+
+        return redirect(
+            url_for("login")
+        )
+
+    role = (
+        usuario.role or ""
+    ).strip().lower()
+
+    if role != "cliente":
+
+        if getattr(
+            usuario,
+            "empresa",
+            None
+        ):
+            return redirect(
+                url_for("painel_malharia")
+            )
+
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Demandas do comprador
+    # --------------------------------------------------------------
+
+    demandas = (
+        ProductionRequest.query
+        .filter_by(
+            user_id=usuario.id
+        )
+        .order_by(
+            ProductionRequest.created_at.desc(),
+            ProductionRequest.id.desc()
+        )
+        .all()
+    )
+
+    # --------------------------------------------------------------
+    # Indicadores reais
+    # --------------------------------------------------------------
+
+    total_demandas = len(
+        demandas
+    )
+
+    total_rascunhos = sum(
+        1
+        for demanda in demandas
+        if (
+            demanda.status or ""
+        ).lower() == "rascunho"
+    )
+
+    total_publicadas = sum(
+        1
+        for demanda in demandas
+        if (
+            demanda.status or ""
+        ).lower() == "publicada"
+    )
+
+    total_encerradas = sum(
+        1
+        for demanda in demandas
+        if (
+            demanda.status or ""
+        ).lower() == "encerrada"
+    )
+
+    return render_template(
+        "minhas_demandas.html",
+        usuario=usuario,
+        demandas=demandas,
+        total_demandas=total_demandas,
+        total_rascunhos=total_rascunhos,
+        total_publicadas=total_publicadas,
+        total_encerradas=total_encerradas,
+    )
+
+# --------------------------------------------------------------------
 # Portal do Comprador - AcheTece 2.0
 # --------------------------------------------------------------------
 @app.route('/painel_comprador', endpoint='painel_comprador')
