@@ -38,6 +38,7 @@ from authlib.integrations.flask_client import OAuth
 from training_catalog import TRAINING_CATALOG, get_module, get_lesson
 from sqlalchemy import UniqueConstraint
 from flask import render_template, abort, send_from_directory
+from decimal import Decimal, InvalidOperation
 
 # SMTP direto (fallback)
 import smtplib, ssl
@@ -3137,6 +3138,301 @@ def cadastro_comprador():
         "success"
     )
 
+
+    return redirect(
+        url_for("painel_comprador")
+    )
+
+# --------------------------------------------------------------------
+# Nova Demanda - AcheTece 2.0
+# --------------------------------------------------------------------
+
+@app.route(
+    "/comprador/demandas/nova",
+    methods=["GET", "POST"],
+    endpoint="nova_demanda"
+)
+def nova_demanda():
+
+    user_id = session.get("user_id")
+
+    if not user_id:
+        return redirect(url_for("login"))
+
+    try:
+        usuario = db.session.get(
+            Usuario,
+            int(user_id)
+        )
+    except Exception:
+        usuario = None
+
+    if (
+        not usuario
+        or usuario.is_active is False
+        or (usuario.role or "").strip().lower() != "cliente"
+    ):
+        return redirect(
+            url_for("painel_comprador")
+        )
+
+    estados = [
+        "AC","AL","AM","AP","BA","CE","DF","ES","GO","MA",
+        "MG","MS","MT","PA","PB","PE","PI","PR","RJ","RN",
+        "RO","RR","RS","SC","SE","SP","TO"
+    ]
+
+    form_data = {}
+
+    if request.method == "GET":
+
+        return render_template(
+            "nova_demanda.html",
+            estados=estados,
+            form_data=form_data
+        )
+
+    # --------------------------------------------------------------
+    # Dados recebidos
+    # --------------------------------------------------------------
+
+    produto = (
+        request.form.get("produto")
+        or ""
+    ).strip()
+
+    estrutura_malha = (
+        request.form.get("estrutura_malha")
+        or ""
+    ).strip()
+
+    composicao = (
+        request.form.get("composicao")
+        or ""
+    ).strip()
+
+    titulo_fio = (
+        request.form.get("titulo_fio")
+        or ""
+    ).strip()
+
+    gramatura_raw = (
+        request.form.get("gramatura")
+        or ""
+    ).strip()
+
+    quantidade_raw = (
+        request.form.get("quantidade_kg")
+        or ""
+    ).strip()
+
+    data_raw = (
+        request.form.get("data_necessidade")
+        or ""
+    ).strip()
+
+    estado_preferencial = (
+        request.form.get("estado_preferencial")
+        or ""
+    ).strip().upper()
+
+    cidade_preferencial = (
+        request.form.get("cidade_preferencial")
+        or ""
+    ).strip()
+
+    tipo_servico = (
+        request.form.get("tipo_servico")
+        or ""
+    ).strip()
+
+    observacoes = (
+        request.form.get("observacoes")
+        or ""
+    ).strip()
+
+    form_data = {
+        "produto": produto,
+        "estrutura_malha": estrutura_malha,
+        "composicao": composicao,
+        "titulo_fio": titulo_fio,
+        "gramatura": gramatura_raw,
+        "quantidade_kg": quantidade_raw,
+        "data_necessidade": data_raw,
+        "estado_preferencial": estado_preferencial,
+        "cidade_preferencial": cidade_preferencial,
+        "tipo_servico": tipo_servico,
+        "observacoes": observacoes,
+    }
+
+    # --------------------------------------------------------------
+    # Validação
+    # --------------------------------------------------------------
+
+    if not produto:
+
+        flash(
+            "Informe o produto que precisa produzir.",
+            "warning"
+        )
+
+        return render_template(
+            "nova_demanda.html",
+            estados=estados,
+            form_data=form_data
+        )
+
+    try:
+
+        quantidade_normalizada = (
+            quantidade_raw
+            .replace(".", "")
+            .replace(",", ".")
+        )
+
+        quantidade_kg = Decimal(
+            quantidade_normalizada
+        )
+
+        if quantidade_kg <= 0:
+            raise InvalidOperation
+
+    except Exception:
+
+        flash(
+            "Informe uma quantidade válida em kg.",
+            "warning"
+        )
+
+        return render_template(
+            "nova_demanda.html",
+            estados=estados,
+            form_data=form_data
+        )
+
+    gramatura = None
+
+    if gramatura_raw:
+
+        try:
+            gramatura = int(
+                gramatura_raw
+            )
+
+            if gramatura <= 0:
+                raise ValueError
+
+        except Exception:
+
+            flash(
+                "Informe uma gramatura válida.",
+                "warning"
+            )
+
+            return render_template(
+                "nova_demanda.html",
+                estados=estados,
+                form_data=form_data
+            )
+
+    data_necessidade = None
+
+    if data_raw:
+
+        try:
+
+            data_necessidade = datetime.strptime(
+                data_raw,
+                "%Y-%m-%d"
+            ).date()
+
+        except Exception:
+
+            flash(
+                "Informe uma data válida.",
+                "warning"
+            )
+
+            return render_template(
+                "nova_demanda.html",
+                estados=estados,
+                form_data=form_data
+            )
+
+    if (
+        estado_preferencial
+        and estado_preferencial not in estados
+    ):
+
+        flash(
+            "Selecione um estado válido.",
+            "warning"
+        )
+
+        return render_template(
+            "nova_demanda.html",
+            estados=estados,
+            form_data=form_data
+        )
+
+    # --------------------------------------------------------------
+    # Grava a demanda
+    # --------------------------------------------------------------
+
+    try:
+
+        demanda = ProductionRequest(
+            user_id=usuario.id,
+            produto=produto,
+            estrutura_malha=estrutura_malha or None,
+            composicao=composicao or None,
+            titulo_fio=titulo_fio or None,
+            gramatura=gramatura,
+            quantidade_kg=quantidade_kg,
+            data_necessidade=data_necessidade,
+            estado_preferencial=estado_preferencial or None,
+            cidade_preferencial=cidade_preferencial or None,
+            tipo_servico=tipo_servico or None,
+            observacoes=observacoes or None,
+            status="rascunho"
+        )
+
+        db.session.add(
+            demanda
+        )
+
+        # Precisamos do ID para formar o código público.
+        db.session.flush()
+
+        demanda.codigo = (
+            f"ATD-{demanda.id:06d}"
+        )
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "[DEMANDA] Falha ao criar demanda."
+        )
+
+        flash(
+            "Não foi possível criar a demanda agora.",
+            "danger"
+        )
+
+        return render_template(
+            "nova_demanda.html",
+            estados=estados,
+            form_data=form_data
+        )
+
+    flash(
+        f"Demanda {demanda.codigo} criada com sucesso.",
+        "success"
+    )
 
     return redirect(
         url_for("painel_comprador")
