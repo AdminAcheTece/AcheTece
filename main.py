@@ -5909,6 +5909,251 @@ def analisar_oportunidade(oportunidade_id):
         matches=matches
     )
 
+# --------------------------------------------------------------------
+# AcheTece 2.0 - Malharia demonstra interesse
+# --------------------------------------------------------------------
+
+@app.post(
+    "/malharia/oportunidades/<int:oportunidade_id>/interesse",
+    endpoint="oportunidade_interesse"
+)
+def oportunidade_interesse(oportunidade_id):
+
+    # --------------------------------------------------------------
+    # Autenticação
+    # --------------------------------------------------------------
+
+    empresa_id = session.get(
+        "empresa_id"
+    )
+
+    if not empresa_id:
+
+        return redirect(
+            url_for("login")
+        )
+
+    try:
+
+        empresa = db.session.get(
+            Empresa,
+            int(empresa_id)
+        )
+
+    except Exception:
+
+        empresa = None
+
+    if not empresa:
+
+        session.clear()
+
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Oportunidade da própria empresa
+    # --------------------------------------------------------------
+
+    oportunidade = (
+        Opportunity.query
+        .filter_by(
+            id=oportunidade_id,
+            empresa_id=empresa.id
+        )
+        .first()
+    )
+
+    if not oportunidade:
+
+        flash(
+            "Oportunidade não encontrada.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("minhas_oportunidades")
+        )
+
+    status_atual = (
+        oportunidade.status or ""
+    ).strip().lower()
+
+    if status_atual == "inativa":
+
+        flash(
+            "Esta oportunidade não está mais disponível.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("minhas_oportunidades")
+        )
+
+    # --------------------------------------------------------------
+    # Atualiza decisão comercial
+    # --------------------------------------------------------------
+
+    try:
+
+        oportunidade.status = "interessada"
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "[OPORTUNIDADE] Falha ao registrar interesse."
+        )
+
+        flash(
+            "Não foi possível registrar seu interesse agora.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "analisar_oportunidade",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+    flash(
+        "Interesse registrado com sucesso.",
+        "success"
+    )
+
+    return redirect(
+        url_for(
+            "analisar_oportunidade",
+            oportunidade_id=oportunidade.id
+        )
+    )
+
+# --------------------------------------------------------------------
+# AcheTece 2.0 - Malharia recusa oportunidade
+# --------------------------------------------------------------------
+
+@app.post(
+    "/malharia/oportunidades/<int:oportunidade_id>/recusar",
+    endpoint="oportunidade_recusar"
+)
+def oportunidade_recusar(oportunidade_id):
+
+    # --------------------------------------------------------------
+    # Autenticação
+    # --------------------------------------------------------------
+
+    empresa_id = session.get(
+        "empresa_id"
+    )
+
+    if not empresa_id:
+
+        return redirect(
+            url_for("login")
+        )
+
+    try:
+
+        empresa = db.session.get(
+            Empresa,
+            int(empresa_id)
+        )
+
+    except Exception:
+
+        empresa = None
+
+    if not empresa:
+
+        session.clear()
+
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Oportunidade da própria empresa
+    # --------------------------------------------------------------
+
+    oportunidade = (
+        Opportunity.query
+        .filter_by(
+            id=oportunidade_id,
+            empresa_id=empresa.id
+        )
+        .first()
+    )
+
+    if not oportunidade:
+
+        flash(
+            "Oportunidade não encontrada.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("minhas_oportunidades")
+        )
+
+    status_atual = (
+        oportunidade.status or ""
+    ).strip().lower()
+
+    if status_atual == "inativa":
+
+        flash(
+            "Esta oportunidade não está mais disponível.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("minhas_oportunidades")
+        )
+
+    # --------------------------------------------------------------
+    # Atualiza decisão
+    # --------------------------------------------------------------
+
+    try:
+
+        oportunidade.status = "recusada"
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "[OPORTUNIDADE] Falha ao recusar oportunidade."
+        )
+
+        flash(
+            "Não foi possível registrar sua decisão agora.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "analisar_oportunidade",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+    flash(
+        "Oportunidade marcada como sem interesse.",
+        "success"
+    )
+
+    return redirect(
+        url_for("minhas_oportunidades")
+    )
+
 # --- Rota do Painel (vencimento por plano + ajuste p/ próximo dia útil BR) ---
 @app.route('/painel_malharia', endpoint="painel_malharia")
 def painel_malharia():
