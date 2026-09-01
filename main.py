@@ -2061,6 +2061,81 @@ class Order(db.Model):
         )
 
 # --------------------------------------------------------------------
+# AcheTece 2.0 - Histórico Operacional do Pedido
+# --------------------------------------------------------------------
+
+class OrderEvent(db.Model):
+    __tablename__ = "order_event"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    order_id = db.Column(
+        db.Integer,
+        db.ForeignKey("marketplace_order.id"),
+        nullable=False,
+        index=True
+    )
+
+    pedido = db.relationship(
+        "Order",
+        backref=db.backref(
+            "events",
+            lazy=True,
+            cascade="all, delete-orphan"
+        )
+    )
+
+    # malharia | comprador | sistema
+    actor_role = db.Column(
+        db.String(20),
+        nullable=False,
+        index=True
+    )
+
+    # pedido_confirmado
+    # producao_iniciada
+    # producao_concluida
+    # entrega_confirmada
+    action = db.Column(
+        db.String(40),
+        nullable=False,
+        index=True
+    )
+
+    status_anterior = db.Column(
+        db.String(30),
+        nullable=True
+    )
+
+    status_novo = db.Column(
+        db.String(30),
+        nullable=False
+    )
+
+    message = db.Column(
+        db.Text,
+        nullable=True
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow
+    )
+
+    def __repr__(self):
+
+        return (
+            f"<OrderEvent "
+            f"id={self.id} "
+            f"order_id={self.order_id} "
+            f"action={self.action}>"
+        )
+
+# --------------------------------------------------------------------
 # AcheTece 2.0 - Motor de Matching V1
 # --------------------------------------------------------------------
 
