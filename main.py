@@ -5873,6 +5873,176 @@ def retorno_demanda(demanda_id):
     )
 
 # --------------------------------------------------------------------
+# AcheTece 2.0 - Propostas Recebidas pelo Comprador
+# --------------------------------------------------------------------
+
+@app.get(
+    "/comprador/demandas/<int:demanda_id>/propostas",
+    endpoint="propostas_recebidas"
+)
+def propostas_recebidas(demanda_id):
+
+    # --------------------------------------------------------------
+    # Autenticação do comprador
+    # --------------------------------------------------------------
+
+    user_id = session.get(
+        "user_id"
+    )
+
+    if not user_id:
+
+        return redirect(
+            url_for("login")
+        )
+
+    try:
+
+        usuario = db.session.get(
+            Usuario,
+            int(user_id)
+        )
+
+    except Exception:
+
+        usuario = None
+
+    if (
+        not usuario
+        or usuario.is_active is False
+        or (
+            usuario.role or ""
+        ).strip().lower() != "cliente"
+    ):
+
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Demanda - somente do comprador logado
+    # --------------------------------------------------------------
+
+    demanda = (
+        ProductionRequest.query
+        .filter_by(
+            id=demanda_id,
+            user_id=usuario.id
+        )
+        .first()
+    )
+
+    if not demanda:
+
+        flash(
+            "Demanda não encontrada.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("minhas_demandas")
+        )
+
+    # --------------------------------------------------------------
+    # Propostas efetivamente enviadas
+    #
+    # Não mostramos:
+    # - rascunho
+    # - cancelada
+    # --------------------------------------------------------------
+
+    propostas = (
+        Proposal.query
+        .filter(
+            Proposal.demand_id == demanda.id,
+            Proposal.status.in_(
+                [
+                    "enviada",
+                    "aceita",
+                    "recusada"
+                ]
+            )
+        )
+        .order_by(
+            Proposal.preco_por_kg.asc(),
+            Proposal.sent_at.asc(),
+            Proposal.id.asc()
+        )
+        .all()
+    )
+
+    # --------------------------------------------------------------
+    # Indicadores
+    # --------------------------------------------------------------
+
+    total_propostas = len(
+        propostas
+    )
+
+    total_enviadas = sum(
+        1
+        for proposta in propostas
+        if (
+            proposta.status or ""
+        ).strip().lower() == "enviada"
+    )
+
+    total_aceitas = sum(
+        1
+        for proposta in propostas
+        if (
+            proposta.status or ""
+        ).strip().lower() == "aceita"
+    )
+
+    total_recusadas = sum(
+        1
+        for proposta in propostas
+        if (
+            proposta.status or ""
+        ).strip().lower() == "recusada"
+    )
+
+    # --------------------------------------------------------------
+    # Calcula valor total de cada proposta
+    # --------------------------------------------------------------
+
+    totais_propostas = {}
+
+    for proposta in propostas:
+
+        try:
+
+            total = (
+                proposta.quantidade_kg
+                * proposta.preco_por_kg
+            )
+
+        except Exception:
+
+            total = None
+
+        totais_propostas[
+            proposta.id
+        ] = total
+
+    # --------------------------------------------------------------
+    # Render
+    # --------------------------------------------------------------
+
+    return render_template(
+        "propostas_recebidas.html",
+        usuario=usuario,
+        demanda=demanda,
+        propostas=propostas,
+        totais_propostas=totais_propostas,
+        total_propostas=total_propostas,
+        total_enviadas=total_enviadas,
+        total_aceitas=total_aceitas,
+        total_recusadas=total_recusadas,
+    )
+
+# --------------------------------------------------------------------
 # Portal do Comprador - AcheTece 2.0
 # --------------------------------------------------------------------
 @app.route('/painel_comprador', endpoint='painel_comprador')
