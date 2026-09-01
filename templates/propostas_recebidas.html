@@ -262,7 +262,7 @@
             display:grid;
 
             grid-template-columns:
-                repeat(4,1fr);
+                repeat(5,1fr);
 
             gap:13px;
 
@@ -422,6 +422,10 @@
             color:var(--red);
         }
 
+        .status-ajuste_solicitado{
+            background:#FFF7E7;
+            color:#755614;
+        }
 
         /* =========================================================
            CONDIÇÕES
@@ -616,6 +620,162 @@
             color:#222;
         }
 
+        /* =========================================================
+           DECISÃO SOBRE PROPOSTA
+        ========================================================= */
+        
+        .proposal-actions{
+            margin-top:20px;
+            padding-top:20px;
+        
+            border-top:1px solid #ECECE8;
+        
+            display:flex;
+            align-items:flex-start;
+            flex-wrap:wrap;
+            gap:10px;
+        }
+        
+        .proposal-actions form{
+            margin:0;
+        }
+        
+        .accept-btn,
+        .reject-btn,
+        .adjust-submit{
+            min-height:44px;
+        
+            padding:0 17px;
+        
+            border-radius:999px;
+        
+            font-family:inherit;
+            font-size:12px;
+            font-weight:800;
+        
+            cursor:pointer;
+        }
+        
+        .accept-btn{
+            border:0;
+        
+            background:#111;
+            color:var(--lime);
+        }
+        
+        .accept-btn:hover{
+            background:var(--lime);
+            color:#000;
+        }
+        
+        .reject-btn{
+            border:1px solid #D1D1CC;
+        
+            background:#fff;
+            color:#555;
+        }
+        
+        .reject-btn:hover{
+            border-color:#C58B94;
+        
+            background:#FFF0F2;
+            color:#85202D;
+        }
+        
+        .adjust-box{
+            border:1px solid #D1D1CC;
+        
+            border-radius:22px;
+        
+            background:#fff;
+        }
+        
+        .adjust-box summary{
+            min-height:42px;
+        
+            padding:0 17px;
+        
+            display:flex;
+            align-items:center;
+        
+            cursor:pointer;
+        
+            list-style:none;
+        
+            font-size:12px;
+            font-weight:800;
+        }
+        
+        .adjust-box summary::-webkit-details-marker{
+            display:none;
+        }
+        
+        .adjust-form{
+            width:360px;
+            max-width:80vw;
+        
+            padding:0 14px 14px;
+        }
+        
+        .adjust-form textarea{
+            width:100%;
+        
+            min-height:90px;
+        
+            padding:10px 11px;
+        
+            border:1px solid #CBCBC8;
+            border-radius:10px;
+        
+            resize:vertical;
+        
+            font-family:inherit;
+            font-size:12px;
+        }
+        
+        .adjust-submit{
+            width:100%;
+        
+            margin-top:8px;
+        
+            border:0;
+        
+            background:#111;
+            color:var(--lime);
+        }
+        
+        .decision-info{
+            margin-top:20px;
+        
+            padding:14px 16px;
+        
+            border-radius:12px;
+        
+            font-size:12px;
+        
+            line-height:1.55;
+        }
+        
+        .decision-info.adjustment{
+            background:#FFF7E7;
+            color:#755614;
+        
+            border:1px solid #E8D49B;
+        }
+        
+        .decision-info.accepted{
+            background:#EAF7ED;
+            color:#287742;
+        
+            border:1px solid #B9DCBF;
+        }
+        
+        .decision-info.rejected{
+            background:#FFF0F2;
+            color:#85202D;
+        
+            border:1px solid #EAB5BD;
+        }
 
         /* =========================================================
            MOBILE
@@ -830,6 +990,17 @@
 
         </div>
 
+        <div class="metric">
+
+            <div class="metric-value">
+                {{ total_ajustes }}
+            </div>
+        
+            <div class="metric-label">
+                Em ajuste
+            </div>
+        
+        </div>
 
         <div class="metric">
 
@@ -959,19 +1130,23 @@
                             {% if status == "enviada" %}
 
                                 Proposta recebida
-
+                            
+                            {% elif status == "ajuste_solicitado" %}
+                            
+                                Ajuste solicitado
+                            
                             {% elif status == "aceita" %}
-
+                            
                                 Aceita
-
+                            
                             {% elif status == "recusada" %}
-
+                            
                                 Recusada
-
+                            
                             {% else %}
-
+                            
                                 {{ status|capitalize }}
-
+                            
                             {% endif %}
 
 
@@ -1177,6 +1352,159 @@
 
                         {% endif %}
 
+                        {% if status == "enviada" %}
+
+
+                            <div class="proposal-actions">
+                        
+                        
+                                <!-- ACEITAR -->
+                        
+                                <form
+                                    method="POST"
+                                    action="{{ url_for(
+                                        'aceitar_proposta',
+                                        proposta_id=proposta.id
+                                    ) }}"
+                                    onsubmit="return confirm(
+                                        'Deseja aceitar esta proposta?'
+                                    );"
+                                >
+                        
+                                    <button
+                                        type="submit"
+                                        class="accept-btn"
+                                    >
+                                        Aceitar proposta
+                                    </button>
+                        
+                                </form>
+                        
+                        
+                                <!-- SOLICITAR AJUSTE -->
+                        
+                                <details class="adjust-box">
+                        
+                                    <summary>
+                                        Solicitar ajuste
+                                    </summary>
+                        
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for(
+                                            'solicitar_ajuste_proposta',
+                                            proposta_id=proposta.id
+                                        ) }}"
+                                        class="adjust-form"
+                                    >
+                        
+                                        <textarea
+                                            name="mensagem_ajuste"
+                                            placeholder="Ex.: É possível rever o preço para R$ 7,20/kg mantendo o prazo apresentado?"
+                                            required
+                                        ></textarea>
+                        
+                                        <button
+                                            type="submit"
+                                            class="adjust-submit"
+                                        >
+                                            Enviar solicitação
+                                        </button>
+                        
+                                    </form>
+                        
+                                </details>
+                        
+                        
+                                <!-- RECUSAR -->
+                        
+                                <form
+                                    method="POST"
+                                    action="{{ url_for(
+                                        'recusar_proposta',
+                                        proposta_id=proposta.id
+                                    ) }}"
+                                    onsubmit="return confirm(
+                                        'Deseja realmente recusar esta proposta?'
+                                    );"
+                                >
+                        
+                                    <button
+                                        type="submit"
+                                        class="reject-btn"
+                                    >
+                                        Recusar proposta
+                                    </button>
+                        
+                                </form>
+                        
+                        
+                            </div>
+                        
+                        
+                        {% elif status == "ajuste_solicitado" %}
+                        
+                        
+                            {% set ajuste =
+                                ajustes_por_proposta.get(
+                                    proposta.id
+                                )
+                            %}
+                        
+                        
+                            <div class="decision-info adjustment">
+                        
+                                <strong>
+                                    Ajuste solicitado à malharia.
+                                </strong>
+                        
+                                {% if ajuste and ajuste.message %}
+                        
+                                    <br><br>
+                        
+                                    {{ ajuste.message }}
+                        
+                                {% endif %}
+                        
+                                <br><br>
+                        
+                                Aguardando uma nova versão da proposta.
+                        
+                            </div>
+                        
+                        
+                        {% elif status == "aceita" %}
+                        
+                        
+                            <div class="decision-info accepted">
+                        
+                                <strong>
+                                    ✓ Proposta aceita.
+                                </strong>
+                        
+                                <br>
+                        
+                                Esta proposta está pronta para originar
+                                o pedido na próxima etapa.
+                        
+                            </div>
+                        
+                        
+                        {% elif status == "recusada" %}
+                        
+                        
+                            <div class="decision-info rejected">
+                        
+                                <strong>
+                                    Proposta recusada.
+                                </strong>
+                        
+                                Esta proposta não seguirá para contratação.
+                        
+                            </div>
+                        
+                        
+                        {% endif %}
 
                     </div>
 
