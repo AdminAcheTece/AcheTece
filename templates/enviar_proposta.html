@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+
+<html lang="pt-br">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>
+        Proposta - {{ demanda.codigo }} - AcheTece
+    </title>
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <style>
+
+        :root{
+            --black:#111111;
+            --white:#ffffff;
+
+            --olive:#7B7424;
+            --olive-light:#F1F2E8;
+
+            --lime:#B6F34D;
+
+            --bg:#F4F4F1;
+
+            --text:#202020;
+            --muted:#6B6B6B;
+
+            --line:#DFDFDA;
+
+            --green:#287742;
+            --green-bg:#EAF7ED;
+        }
+
+
+        *{
+            box-sizing:border-box;
+        }
+
+
+        body{
+            margin:0;
+
+            background:var(--bg);
+
+            color:var(--text);
+
+            font-family:
+                'Inter',
+                Arial,
+                sans-serif;
+        }
+
+
+        /* HEADER */
+
+        .topbar{
+            min-height:72px;
+
+            background:#111;
+
+            display:flex;
+            align-items:center;
+        }
+
+
+        .topbar-inner{
+            width:100%;
+            max-width:950px;
+
+            margin:auto;
+            padding:0 22px;
+
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+        }
+
+
+        .brand img{
+            height:40px;
+            display:block;
+        }
+
+
+        .back{
+            color:#fff;
+
+            text-decoration:none;
+
+            font-size:13px;
+            font-weight:800;
+        }
+
+
+        /* PAGE */
+
+        .page{
+            max-width:900px;
+
+            margin:auto;
+
+            padding:
+                38px 22px
+                70px;
+        }
+
+
+        .eyebrow{
+            margin-bottom:8px;
+
+            color:var(--olive);
+
+            font-size:12px;
+            font-weight:800;
+
+            text-transform:uppercase;
+
+            letter-spacing:.08em;
+        }
+
+
+        h1{
+            margin:0;
+
+            color:#111;
+
+            font-size:34px;
+
+            letter-spacing:-.035em;
+        }
+
+
+        .intro{
+            margin:
+                9px 0
+                22px;
+
+            color:var(--muted);
+
+            font-size:14px;
+
+            line-height:1.55;
+        }
+
+
+        /* DEMANDA */
+
+        .context{
+            margin-bottom:18px;
+
+            padding:21px 22px;
+
+            border-radius:18px;
+
+            background:#111;
+
+            color:#fff;
+        }
+
+
+        .context-code{
+            margin-bottom:5px;
+
+            color:var(--lime);
+
+            font-size:12px;
+            font-weight:800;
+        }
+
+
+        .context-product{
+            font-size:20px;
+            font-weight:800;
+        }
+
+
+        .context-meta{
+            margin-top:7px;
+
+            color:#CFCFCF;
+
+            font-size:12px;
+        }
+
+
+        /* FLASH */
+
+        .flash{
+            margin-bottom:18px;
+
+            padding:13px 15px;
+
+            border-radius:11px;
+
+            font-size:13px;
+            font-weight:700;
+        }
+
+
+        .flash.success{
+            background:#EDF8EF;
+
+            border:
+                1px solid #B9DCBF;
+
+            color:#256033;
+        }
+
+
+        .flash.warning{
+            background:#FFF7E7;
+
+            border:
+                1px solid #E8D49B;
+
+            color:#755614;
+        }
+
+
+        .flash.danger,
+        .flash.error{
+            background:#FFF0F2;
+
+            border:
+                1px solid #EAB5BD;
+
+            color:#85202D;
+        }
+
+
+        /* FORM */
+
+        .card{
+            padding:25px;
+
+            background:#fff;
+
+            border:
+                1px solid var(--line);
+
+            border-radius:20px;
+        }
+
+
+        .section-title{
+            margin:
+                0 0
+                18px;
+
+            font-size:17px;
+            font-weight:800;
+        }
+
+
+        .grid{
+            display:grid;
+
+            grid-template-columns:
+                1fr 1fr;
+
+            gap:
+                0 17px;
+        }
+
+
+        .field{
+            margin-bottom:18px;
+        }
+
+
+        label{
+            display:block;
+
+            margin-bottom:7px;
+
+            color:#222;
+
+            font-size:12px;
+            font-weight:800;
+        }
+
+
+        input,
+        textarea{
+            width:100%;
+
+            border:
+                1px solid #CBCBC8;
+
+            border-radius:11px;
+
+            background:#fff;
+
+            color:#222;
+
+            font-family:inherit;
+            font-size:14px;
+
+            outline:none;
+        }
+
+
+        input{
+            height:48px;
+
+            padding:
+                0 13px;
+        }
+
+
+        textarea{
+            min-height:105px;
+
+            padding:
+                12px 13px;
+
+            resize:vertical;
+        }
+
+
+        input:focus,
+        textarea:focus{
+            border-color:var(--olive);
+
+            box-shadow:
+                0 0 0 3px
+                rgba(123,116,36,.10);
+        }
+
+
+        .hint{
+            margin-top:5px;
+
+            color:#777;
+
+            font-size:10px;
+
+            line-height:1.4;
+        }
+
+
+        /* TOTAL */
+
+        .total-box{
+            margin:
+                4px 0
+                20px;
+
+            padding:16px;
+
+            background:var(--olive-light);
+
+            border-radius:13px;
+        }
+
+
+        .total-box span{
+            display:block;
+
+            color:#777;
+
+            font-size:10px;
+            font-weight:800;
+
+            text-transform:uppercase;
+        }
+
+
+        .total-box strong{
+            display:block;
+
+            margin-top:4px;
+
+            color:#111;
+
+            font-size:23px;
+        }
+
+
+        /* SUBMIT */
+
+        .submit{
+            width:100%;
+
+            min-height:50px;
+
+            border:0;
+
+            border-radius:999px;
+
+            background:#000;
+            color:var(--lime);
+
+            font-family:inherit;
+
+            font-size:14px;
+            font-weight:800;
+
+            cursor:pointer;
+        }
+
+
+        .submit:hover{
+            background:var(--lime);
+            color:#000;
+        }
+
+
+        /* PROPOSTA ENVIADA */
+
+        .sent{
+            padding:25px;
+
+            background:#fff;
+
+            border:
+                1px solid var(--line);
+
+            border-radius:20px;
+        }
+
+
+        .sent-badge{
+            display:inline-flex;
+
+            min-height:32px;
+
+            align-items:center;
+
+            padding:
+                0 12px;
+
+            background:var(--green-bg);
+            color:var(--green);
+
+            border-radius:999px;
+
+            font-size:11px;
+            font-weight:800;
+        }
+
+
+        .sent-grid{
+            display:grid;
+
+            grid-template-columns:
+                1fr 1fr;
+
+            gap:18px;
+
+            margin-top:22px;
+        }
+
+
+        .sent-label{
+            margin-bottom:5px;
+
+            color:#888;
+
+            font-size:10px;
+            font-weight:800;
+
+            text-transform:uppercase;
+        }
+
+
+        .sent-value{
+            color:#222;
+
+            font-size:14px;
+            font-weight:800;
+        }
+
+
+        @media(max-width:650px){
+
+            .page{
+                padding:
+                    28px 16px
+                    50px;
+            }
+
+
+            h1{
+                font-size:28px;
+            }
+
+
+            .grid,
+            .sent-grid{
+                grid-template-columns:1fr;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<header class="topbar">
+
+    <div class="topbar-inner">
+
+        <a
+            href="{{ url_for('painel_malharia') }}"
+            class="brand"
+        >
+
+            <img
+                src="{{ url_for(
+                    'static',
+                    filename='Logo_Branco_AcheTece_sem_fundo.png'
+                ) }}"
+                alt="AcheTece"
+            >
+
+        </a>
+
+
+        <a
+            href="{{ url_for(
+                'analisar_oportunidade',
+                oportunidade_id=oportunidade.id
+            ) }}"
+            class="back"
+        >
+            ← Voltar para oportunidade
+        </a>
+
+    </div>
+
+</header>
+
+
+<main class="page">
+
+
+    <div class="eyebrow">
+        Proposta Comercial
+    </div>
+
+
+    <h1>
+        Enviar proposta
+    </h1>
+
+
+    <p class="intro">
+
+        Informe as condições comerciais que sua
+        malharia pode oferecer para atender esta demanda.
+
+    </p>
+
+
+    <section class="context">
+
+        <div class="context-code">
+            {{ demanda.codigo }}
+        </div>
+
+        <div class="context-product">
+            {{ demanda.produto }}
+        </div>
+
+        <div class="context-meta">
+
+            {{
+                "{:,.0f}".format(
+                    demanda.quantidade_kg
+                )
+                |replace(",", ".")
+            }}
+            kg
+
+            {% if demanda.data_necessidade %}
+
+                • Necessidade:
+                {{
+                    demanda.data_necessidade
+                    .strftime('%d/%m/%Y')
+                }}
+
+            {% endif %}
+
+        </div>
+
+    </section>
+
+
+    {% with messages =
+        get_flashed_messages(
+            with_categories=true
+        )
+    %}
+
+        {% if messages %}
+
+            {% for category, message in messages %}
+
+                <div class="flash {{ category }}">
+                    {{ message }}
+                </div>
+
+            {% endfor %}
+
+        {% endif %}
+
+    {% endwith %}
+
+
+    {% if proposta and proposta.status != "rascunho" %}
+
+
+        <section class="sent">
+
+
+            <span class="sent-badge">
+                ✓ Proposta enviada
+            </span>
+
+
+            <div class="sent-grid">
+
+
+                <div>
+
+                    <div class="sent-label">
+                        Quantidade proposta
+                    </div>
+
+                    <div class="sent-value">
+
+                        {{
+                            "{:,.0f}".format(
+                                proposta.quantidade_kg
+                            )
+                            |replace(",", ".")
+                        }}
+                        kg
+
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="sent-label">
+                        Preço por kg
+                    </div>
+
+                    <div class="sent-value">
+
+                        R$
+                        {{
+                            "{:,.2f}".format(
+                                proposta.preco_por_kg
+                            )
+                            |replace(",", "X")
+                            |replace(".", ",")
+                            |replace("X", ".")
+                        }}
+
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="sent-label">
+                        Prazo
+                    </div>
+
+                    <div class="sent-value">
+
+                        {{ proposta.prazo_dias }}
+                        dias
+
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="sent-label">
+                        Validade
+                    </div>
+
+                    <div class="sent-value">
+
+                        {{ proposta.validade_dias }}
+                        dias
+
+                    </div>
+
+                </div>
+
+
+                {% if proposta.condicoes_pagamento %}
+
+                    <div>
+
+                        <div class="sent-label">
+                            Condições de pagamento
+                        </div>
+
+                        <div class="sent-value">
+                            {{ proposta.condicoes_pagamento }}
+                        </div>
+
+                    </div>
+
+                {% endif %}
+
+
+            </div>
+
+
+        </section>
+
+
+    {% else %}
+
+
+        <form
+            method="POST"
+            action="{{ url_for(
+                'enviar_proposta',
+                oportunidade_id=oportunidade.id
+            ) }}"
+            onsubmit="return confirm(
+                'Deseja enviar esta proposta ao comprador?'
+            );"
+        >
+
+
+            <section class="card">
+
+
+                <h2 class="section-title">
+                    Condições da proposta
+                </h2>
+
+
+                <div class="grid">
+
+
+                    <div class="field">
+
+                        <label>
+                            Quantidade que pode atender (kg)
+                        </label>
+
+                        <input
+                            id="quantidade_kg"
+                            type="text"
+                            name="quantidade_kg"
+                            inputmode="decimal"
+                            placeholder="Ex.: 5000"
+                            required
+                        >
+
+                        <div class="hint">
+                            Pode ser igual ou menor que a quantidade solicitada.
+                        </div>
+
+                    </div>
+
+
+                    <div class="field">
+
+                        <label>
+                            Preço do serviço por kg (R$)
+                        </label>
+
+                        <input
+                            id="preco_por_kg"
+                            type="text"
+                            name="preco_por_kg"
+                            inputmode="decimal"
+                            placeholder="Ex.: 7,80"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="field">
+
+                        <label>
+                            Prazo de produção (dias)
+                        </label>
+
+                        <input
+                            type="number"
+                            name="prazo_dias"
+                            min="1"
+                            placeholder="Ex.: 15"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="field">
+
+                        <label>
+                            Validade da proposta (dias)
+                        </label>
+
+                        <input
+                            type="number"
+                            name="validade_dias"
+                            min="1"
+                            value="7"
+                            required
+                        >
+
+                    </div>
+
+
+                </div>
+
+
+                <div
+                    class="total-box"
+                    id="totalBox"
+                >
+
+                    <span>
+                        Valor estimado da proposta
+                    </span>
+
+                    <strong id="totalValue">
+                        R$ 0,00
+                    </strong>
+
+                </div>
+
+
+                <div class="field">
+
+                    <label>
+                        Condições de pagamento
+                    </label>
+
+                    <input
+                        type="text"
+                        name="condicoes_pagamento"
+                        placeholder="Ex.: 50% no pedido e 50% na entrega"
+                    >
+
+                </div>
+
+
+                <div class="field">
+
+                    <label>
+                        Observações
+                    </label>
+
+                    <textarea
+                        name="observacoes"
+                        placeholder="Informações adicionais sobre disponibilidade, produção, condições ou particularidades da proposta."
+                    ></textarea>
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="submit"
+                >
+                    Enviar proposta
+                </button>
+
+
+            </section>
+
+
+        </form>
+
+
+    {% endif %}
+
+
+</main>
+
+
+<script>
+
+(function(){
+
+    const quantidade =
+        document.getElementById(
+            "quantidade_kg"
+        );
+
+    const preco =
+        document.getElementById(
+            "preco_por_kg"
+        );
+
+    const total =
+        document.getElementById(
+            "totalValue"
+        );
+
+
+    function numeroBR(valor){
+
+        if(!valor){
+            return 0;
+        }
+
+        valor = String(valor)
+            .trim()
+            .replace(/\s/g, "");
+
+        if(valor.includes(",")){
+
+            valor = valor
+                .replace(/\./g, "")
+                .replace(",", ".");
+
+        }
+
+        const numero =
+            Number(valor);
+
+        return Number.isFinite(numero)
+            ? numero
+            : 0;
+    }
+
+
+    function atualizarTotal(){
+
+        if(
+            !quantidade
+            || !preco
+            || !total
+        ){
+            return;
+        }
+
+        const qtd =
+            numeroBR(
+                quantidade.value
+            );
+
+        const valor =
+            numeroBR(
+                preco.value
+            );
+
+        const totalCalculado =
+            qtd * valor;
+
+        total.textContent =
+            totalCalculado.toLocaleString(
+                "pt-BR",
+                {
+                    style:"currency",
+                    currency:"BRL"
+                }
+            );
+    }
+
+
+    quantidade?.addEventListener(
+        "input",
+        atualizarTotal
+    );
+
+    preco?.addEventListener(
+        "input",
+        atualizarTotal
+    );
+
+})();
+
+</script>
+
+
+</body>
+
+</html>
