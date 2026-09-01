@@ -1,459 +1,1097 @@
 <!DOCTYPE html>
+
 <html lang="pt-br">
+
 <head>
+
     <meta charset="UTF-8">
-    <title>Portal do Comprador - AcheTece</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
+    <title>
+        Portal do Comprador - AcheTece
+    </title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <link
+        rel="icon"
+        type="image/x-icon"
+        href="{{ url_for('static', filename='favicon_final.ico') }}"
+    >
+
+    <link
+        rel="icon"
+        type="image/png"
+        href="{{ url_for('static', filename='favicon_final.png') }}"
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
 
     <style>
+
         :root {
+
             --olive: #7B7424;
             --olive-dark: #434326;
             --olive-light: #F1F2E8;
+
             --lime: #B6F34D;
 
             --bg: #F4F4F1;
+
             --white: #FFFFFF;
             --black: #111111;
+
             --text: #202020;
             --muted: #6B6B6B;
+
             --line: #E2E2DE;
+
+            --green:#287742;
+            --green-bg:#EAF7ED;
 
             --maxw: 1280px;
         }
+
 
         * {
             box-sizing: border-box;
         }
 
+
         body {
+
             margin: 0;
-            font-family: 'Inter', Arial, sans-serif;
+
+            font-family:
+                'Inter',
+                Arial,
+                sans-serif;
+
             background: var(--bg);
+
             color: var(--text);
         }
+
 
         a {
             color: inherit;
         }
 
-        /* HEADER */
+
+        /* =========================================================
+           HEADER
+        ========================================================= */
+
+
         .topbar {
+
             background: var(--black);
+
             color: #fff;
+
             min-height: 72px;
+
             display: flex;
+
             align-items: center;
         }
 
+
         .topbar-inner {
+
             max-width: var(--maxw);
+
             width: 100%;
+
             margin: 0 auto;
+
             padding: 0 24px;
+
             display: flex;
+
             align-items: center;
+
             justify-content: space-between;
+
             gap: 24px;
         }
 
+
         .brand {
+
             display: flex;
+
             align-items: center;
+
             text-decoration: none;
         }
 
+
         .brand img {
+
             height: 42px;
+
             width: auto;
+
             display: block;
         }
 
+
         .top-actions {
+
             display: flex;
+
             align-items: center;
+
             gap: 10px;
         }
 
+
         .top-link {
+
             color: #fff;
+
             text-decoration: none;
+
             font-size: 14px;
+
             font-weight: 700;
+
             padding: 10px 14px;
+
             border-radius: 999px;
         }
 
+
         .top-link:hover {
-            background: rgba(255,255,255,.1);
+
+            background:
+                rgba(255,255,255,.1);
         }
 
+
         .logout {
+
             background: #fff;
+
             color: #000;
         }
 
+
         .logout:hover {
+
             background: var(--lime);
         }
 
-        /* LAYOUT */
+
+        /* =========================================================
+           LAYOUT
+        ========================================================= */
+
+
         .workspace {
+
             max-width: var(--maxw);
+
             margin: 0 auto;
-            padding: 28px 24px 60px;
+
+            padding:
+                28px 24px
+                60px;
+
             display: grid;
-            grid-template-columns: 230px minmax(0, 1fr);
+
+            grid-template-columns:
+                230px
+                minmax(0, 1fr);
+
             gap: 24px;
         }
 
-        /* SIDEBAR */
+
+        /* =========================================================
+           SIDEBAR
+        ========================================================= */
+
+
         .sidebar {
+
             background: var(--white);
-            border: 1px solid var(--line);
+
+            border:
+                1px solid var(--line);
+
             border-radius: 18px;
+
             padding: 18px;
+
             align-self: start;
+
             position: sticky;
+
             top: 18px;
         }
 
+
         .side-title {
+
             font-size: 11px;
+
             font-weight: 800;
+
             text-transform: uppercase;
+
             letter-spacing: .08em;
+
             color: #8A8A84;
-            margin: 18px 10px 8px;
+
+            margin:
+                18px 10px
+                8px;
         }
 
+
         .side-title:first-child {
+
             margin-top: 0;
         }
 
+
         .side-link {
+
             min-height: 42px;
+
             display: flex;
+
             align-items: center;
-            padding: 0 12px;
+
+            padding:
+                0 12px;
+
             border-radius: 11px;
+
             text-decoration: none;
+
             font-size: 14px;
+
             font-weight: 700;
+
             color: #353535;
+
             margin-bottom: 4px;
         }
 
+
         .side-link:hover {
-            background: var(--olive-light);
+
+            background:
+                var(--olive-light);
         }
 
+
         .side-link.active {
+
             background: var(--olive);
+
             color: #fff;
         }
 
+
         .side-link.disabled {
+
             opacity: .45;
+
             cursor: default;
         }
 
-        /* CONTENT */
+
+        /* =========================================================
+           CONTENT
+        ========================================================= */
+
+
         .main {
+
             min-width: 0;
         }
 
+
         .eyebrow {
+
             color: var(--olive);
+
             font-size: 13px;
+
             font-weight: 800;
+
             text-transform: uppercase;
+
             letter-spacing: .06em;
+
             margin-bottom: 8px;
         }
 
+
         h1 {
+
             font-size: 36px;
+
             line-height: 1.12;
+
             letter-spacing: -0.035em;
+
             margin: 0;
+
             color: var(--black);
         }
 
+
         .intro {
+
             color: var(--muted);
+
             font-size: 16px;
-            margin: 10px 0 26px;
+
+            margin:
+                10px 0
+                26px;
+
             max-width: 760px;
+
             line-height: 1.55;
         }
 
-        /* HERO */
+
+        /* =========================================================
+           FLASH
+        ========================================================= */
+
+
+        .portal-flash {
+
+            margin:
+                0 0
+                20px;
+
+            padding:
+                13px 16px;
+
+            border-radius: 12px;
+
+            font-size: 13px;
+
+            font-weight: 700;
+        }
+
+
+        .portal-flash.success {
+
+            background:#EDF8EF;
+
+            border:
+                1px solid #B9DCBF;
+
+            color:#256033;
+        }
+
+
+        .portal-flash.warning {
+
+            background:#FFF7E7;
+
+            border:
+                1px solid #E8D49B;
+
+            color:#755614;
+        }
+
+
+        .portal-flash.danger,
+        .portal-flash.error {
+
+            background:#FFF0F2;
+
+            border:
+                1px solid #EAB5BD;
+
+            color:#85202D;
+        }
+
+
+        /* =========================================================
+           HERO
+        ========================================================= */
+
+
         .hero {
+
             background: var(--black);
+
             border-radius: 22px;
-            padding: 28px;
+
+            padding: 30px;
+
             color: #fff;
+
             margin-bottom: 22px;
+
             display: flex;
+
             align-items: center;
+
             justify-content: space-between;
+
             gap: 30px;
         }
 
+
         .hero-copy {
+
             max-width: 680px;
         }
 
+
         .hero-kicker {
+
             color: var(--lime);
+
             font-weight: 800;
+
             font-size: 13px;
+
             text-transform: uppercase;
+
             letter-spacing: .05em;
         }
 
+
         .hero h2 {
-            margin: 8px 0 8px;
-            font-size: 28px;
+
+            margin:
+                8px 0;
+
+            font-size: 29px;
+
             line-height: 1.2;
         }
 
+
         .hero p {
+
             margin: 0;
+
             color: #D5D5D5;
+
             font-size: 15px;
-            line-height: 1.5;
+
+            line-height: 1.55;
         }
 
+
+        .hero-actions {
+
+            flex:
+                0 0 auto;
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 9px;
+        }
+
+
         .hero-btn {
-            flex: 0 0 auto;
+
             display: inline-flex;
+
             align-items: center;
+
             justify-content: center;
+
             min-height: 48px;
-            padding: 0 20px;
+
+            padding:
+                0 21px;
+
             border-radius: 999px;
+
             text-decoration: none;
+
             background: var(--lime);
+
             color: #000;
+
             font-weight: 800;
+
             white-space: nowrap;
         }
 
+
         .hero-btn:hover {
-            transform: translateY(-1px);
+
+            transform:
+                translateY(-1px);
         }
 
-        /* MÉTRICAS */
-        .metrics {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 14px;
-            margin-bottom: 22px;
+
+        .hero-btn.secondary {
+
+            background: transparent;
+
+            color: #fff;
+
+            border:
+                1px solid #4B4B4B;
         }
+
+
+        .hero-btn.secondary:hover {
+
+            background: #fff;
+
+            color: #000;
+        }
+
+
+        /* =========================================================
+           MÉTRICAS / NAVEGAÇÃO
+        ========================================================= */
+
+
+        .metrics {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, 1fr);
+
+            gap: 14px;
+
+            margin-bottom: 28px;
+        }
+
 
         .metric {
+
+            display: block;
+
             background: var(--white);
-            border: 1px solid var(--line);
+
+            border:
+                1px solid var(--line);
+
             border-radius: 16px;
+
             padding: 18px;
+
+            text-decoration: none;
+
+            transition:
+                transform .15s ease,
+                border-color .15s ease,
+                box-shadow .15s ease;
         }
+
+
+        .metric:hover {
+
+            transform:
+                translateY(-2px);
+
+            border-color:
+                #CACAC5;
+
+            box-shadow:
+                0 8px 20px
+                rgba(0,0,0,.04);
+        }
+
 
         .metric-value {
+
             font-size: 28px;
+
             font-weight: 800;
+
             color: var(--black);
         }
+
 
         .metric-label {
+
             margin-top: 5px;
+
             font-size: 13px;
+
             color: var(--muted);
         }
 
-        /* CARDS */
-        .section-title {
-            margin: 30px 0 12px;
-            font-size: 19px;
+
+        .metric-action {
+
+            margin-top: 13px;
+
+            font-size: 11px;
+
             font-weight: 800;
-            color: var(--black);
-        }
 
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 14px;
-        }
-
-        .card {
-            background: var(--white);
-            border: 1px solid var(--line);
-            border-radius: 18px;
-            padding: 20px;
-            min-height: 170px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .card-number {
-            font-size: 12px;
-            font-weight: 800;
-            color: var(--olive);
-            margin-bottom: 18px;
-        }
-
-        .card h3 {
-            margin: 0 0 7px;
-            font-size: 17px;
-        }
-
-        .card p {
-            margin: 0;
-            color: var(--muted);
-            font-size: 13px;
-            line-height: 1.5;
-        }
-
-        .card-action {
-            margin-top: auto;
-            padding-top: 18px;
-            font-size: 13px;
-            font-weight: 800;
-            text-decoration: none;
             color: var(--olive-dark);
         }
 
+
+        /* =========================================================
+           SECTION TITLES
+        ========================================================= */
+
+
+        .section-title {
+
+            margin:
+                30px 0
+                8px;
+
+            font-size: 19px;
+
+            font-weight: 800;
+
+            color: var(--black);
+        }
+
+
+        .section-subtitle {
+
+            margin:
+                0 0
+                14px;
+
+            color: var(--muted);
+
+            font-size: 13px;
+
+            line-height: 1.5;
+        }
+
+
+        /* =========================================================
+           MARKETPLACE FLOW
+        ========================================================= */
+
+
+        .cards {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, 1fr);
+
+            gap: 14px;
+        }
+
+
+        .card {
+
+            background: var(--white);
+
+            border:
+                1px solid var(--line);
+
+            border-radius: 18px;
+
+            padding: 20px;
+
+            min-height: 190px;
+
+            display: flex;
+
+            flex-direction: column;
+        }
+
+
+        .card-number {
+
+            font-size: 12px;
+
+            font-weight: 800;
+
+            color: var(--olive);
+
+            margin-bottom: 18px;
+        }
+
+
+        .card h3 {
+
+            margin:
+                0 0
+                7px;
+
+            font-size: 17px;
+        }
+
+
+        .card p {
+
+            margin: 0;
+
+            color: var(--muted);
+
+            font-size: 13px;
+
+            line-height: 1.5;
+        }
+
+
+        .card-action {
+
+            margin-top: auto;
+
+            padding-top: 18px;
+
+            font-size: 13px;
+
+            font-weight: 800;
+
+            text-decoration: none;
+
+            color: var(--olive-dark);
+        }
+
+
         .card-action:hover {
+
             text-decoration: underline;
         }
 
-        .coming {
-            font-size: 11px;
-            font-weight: 800;
-            text-transform: uppercase;
-            color: #8B8B86;
-            margin-top: auto;
-            padding-top: 18px;
+
+        /* =========================================================
+           FERRAMENTA TÉCNICA
+        ========================================================= */
+
+
+        .technical-tool {
+
+            margin-top: 16px;
+
+            padding: 22px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            gap: 24px;
+
+            background: var(--olive-light);
+
+            border:
+                1px solid var(--line);
+
+            border-radius: 18px;
         }
 
-        .portal-flash{
-            margin:0 0 20px;
-            padding:13px 16px;
-            border-radius:12px;
-            font-size:13px;
-            font-weight:700;
+
+        .technical-tool-copy {
+
+            max-width: 700px;
         }
-        
-        .portal-flash.success{
-            background:#EDF8EF;
-            border:1px solid #B9DCBF;
-            color:#256033;
+
+
+        .technical-tool-kicker {
+
+            color: var(--olive);
+
+            font-size: 11px;
+
+            font-weight: 800;
+
+            text-transform: uppercase;
+
+            letter-spacing: .06em;
+
+            margin-bottom: 6px;
         }
-        
-        .portal-flash.warning{
-            background:#FFF7E7;
-            border:1px solid #E8D49B;
-            color:#755614;
+
+
+        .technical-tool h3 {
+
+            margin:
+                0 0
+                6px;
+
+            font-size: 17px;
+
+            color: #111;
         }
-        
-        .portal-flash.danger,
-        .portal-flash.error{
-            background:#FFF0F2;
-            border:1px solid #EAB5BD;
-            color:#85202D;
+
+
+        .technical-tool p {
+
+            margin: 0;
+
+            color: var(--muted);
+
+            font-size: 13px;
+
+            line-height: 1.5;
         }
-        
-        /* MOBILE */
-        @media (max-width: 1000px) {
-            .workspace {
-                grid-template-columns: 1fr;
+
+
+        .technical-btn {
+
+            flex:
+                0 0 auto;
+
+            min-height: 44px;
+
+            display: inline-flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            padding:
+                0 18px;
+
+            border-radius: 999px;
+
+            background: #111;
+
+            color: var(--lime);
+
+            text-decoration: none;
+
+            font-size: 12px;
+
+            font-weight: 800;
+        }
+
+
+        .technical-btn:hover {
+
+            background: var(--lime);
+
+            color: #000;
+        }
+
+
+        /* =========================================================
+           MOBILE
+        ========================================================= */
+
+
+        @media (max-width: 1100px) {
+
+            .cards {
+
+                grid-template-columns:
+                    repeat(2, 1fr);
             }
 
+        }
+
+
+        @media (max-width: 1000px) {
+
+            .workspace {
+
+                grid-template-columns:
+                    1fr;
+            }
+
+
             .sidebar {
+
                 position: static;
             }
 
+
             .metrics {
-                grid-template-columns: repeat(2, 1fr);
+
+                grid-template-columns:
+                    repeat(2, 1fr);
             }
 
-            .cards {
-                grid-template-columns: 1fr 1fr;
-            }
         }
 
+
         @media (max-width: 650px) {
+
             .topbar-inner {
-                padding: 0 16px;
+
+                padding:
+                    0 16px;
             }
+
 
             .workspace {
-                padding: 20px 16px 40px;
+
+                padding:
+                    20px 16px
+                    40px;
             }
 
+
             .brand img {
+
                 height: 34px;
             }
 
+
             .top-link:not(.logout) {
+
                 display: none;
             }
 
+
             h1 {
+
                 font-size: 28px;
             }
 
+
             .hero {
+
                 flex-direction: column;
+
                 align-items: stretch;
             }
 
-            .hero-btn {
+
+            .hero-actions {
+
                 width: 100%;
             }
 
+
+            .hero-btn {
+
+                width: 100%;
+            }
+
+
             .metrics,
             .cards {
-                grid-template-columns: 1fr;
+
+                grid-template-columns:
+                    1fr;
             }
+
+
+            .technical-tool {
+
+                flex-direction: column;
+
+                align-items: stretch;
+            }
+
+
+            .technical-btn {
+
+                width: 100%;
+            }
+
         }
+
     </style>
+
 </head>
+
 
 <body>
 
+
+<!-- =========================================================
+     HEADER
+========================================================== -->
+
 <header class="topbar">
+
     <div class="topbar-inner">
 
-        <a href="{{ url_for('index') }}" class="brand">
+
+        <a
+            href="{{ url_for('painel_comprador') }}"
+            class="brand"
+        >
+
             <img
-                src="{{ url_for('static', filename='Logo_Branco_AcheTece_sem_fundo.png') }}"
-                alt="AcheTece">
+                src="{{ url_for(
+                    'static',
+                    filename='Logo_Branco_AcheTece_sem_fundo.png'
+                ) }}"
+                alt="AcheTece"
+            >
+
         </a>
 
+
         <div class="top-actions">
-            <a href="{{ url_for('index') }}" class="top-link">Buscar malharias</a>
-            <a href="{{ url_for('logout') }}" class="top-link logout">Sair</a>
+
+
+            <a
+                href="{{ url_for('index') }}"
+                class="top-link"
+            >
+                Buscar malharias
+            </a>
+
+
+            <a
+                href="{{ url_for('logout') }}"
+                class="top-link logout"
+            >
+                Sair
+            </a>
+
+
         </div>
 
+
     </div>
+
 </header>
+
 
 <div class="workspace">
 
+
+    <!-- =========================================================
+         SIDEBAR
+    ========================================================== -->
+
     <aside class="sidebar">
 
-        <div class="side-title">Portal do Comprador</div>
 
-        <a class="side-link active" href="#">Início</a>
+        <div class="side-title">
+            Portal do Comprador
+        </div>
 
-        <div class="side-title">Operacional</div>
+
+        <a
+            class="side-link active"
+            href="{{ url_for('painel_comprador') }}"
+        >
+            Início
+        </a>
+
+
+        <!-- =====================================================
+             OPERACIONAL
+        ====================================================== -->
+
+        <div class="side-title">
+            Operacional
+        </div>
+
 
         <a
             class="side-link"
@@ -461,6 +1099,8 @@
         >
             Nova Demanda
         </a>
+
+
         <a
             class="side-link"
             href="{{ url_for('minhas_demandas') }}"
@@ -468,11 +1108,23 @@
             Minhas Demandas
         </a>
 
-        <a class="side-link" href="{{ url_for('index') }}">Encontrar Malharias</a>
 
-        <span class="side-link disabled">Matches</span>
-        <span class="side-link disabled">Propostas</span>
-        
+        <a
+            class="side-link"
+            href="/comprador/matches"
+        >
+            Matches
+        </a>
+
+
+        <a
+            class="side-link"
+            href="/comprador/propostas"
+        >
+            Propostas
+        </a>
+
+
         <a
             class="side-link"
             href="{{ url_for('meus_pedidos_comprador') }}"
@@ -480,145 +1132,335 @@
             Pedidos
         </a>
 
-        <div class="side-title">Rede</div>
 
-        <span class="side-link disabled">Favoritos</span>
-        <span class="side-link disabled">Minha Rede</span>
+        <!-- =====================================================
+             FERRAMENTAS
+        ====================================================== -->
 
-        <div class="side-title">Gestão</div>
+        <div class="side-title">
+            Ferramentas
+        </div>
 
-        <span class="side-link disabled">Indicadores</span>
+
+        <a
+            class="side-link"
+            href="{{ url_for('index') }}"
+        >
+            Encontrar Malharias
+        </a>
+
+
+        <!-- =====================================================
+             REDE
+        ====================================================== -->
+
+        <div class="side-title">
+            Rede
+        </div>
+
+
+        <span class="side-link disabled">
+            Favoritos
+        </span>
+
+
+        <span class="side-link disabled">
+            Minha Rede
+        </span>
+
+
+        <!-- =====================================================
+             GESTÃO
+        ====================================================== -->
+
+        <div class="side-title">
+            Gestão
+        </div>
+
+
+        <span class="side-link disabled">
+            Indicadores
+        </span>
+
 
     </aside>
 
+
+    <!-- =========================================================
+         MAIN
+    ========================================================== -->
+
     <main class="main">
 
-        <div class="eyebrow">Portal do Comprador</div>
+
+        <div class="eyebrow">
+            Portal do Comprador
+        </div>
+
 
         <h1>
+
             Olá{% if perfil and perfil.nome %}, {{ perfil.nome }}{% endif %}.
+
         </h1>
 
+
         <p class="intro">
-            Encontre capacidade produtiva, organize suas demandas e conecte sua empresa
-            às malharias tecnicamente compatíveis com aquilo que precisa produzir.
+
+            Organize suas necessidades de produção,
+            encontre malharias tecnicamente compatíveis,
+            receba propostas e acompanhe seus pedidos
+            dentro do AcheTece.
+
         </p>
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
+
+        <!-- =====================================================
+             FLASH
+        ====================================================== -->
+
+        {% with messages =
+            get_flashed_messages(
+                with_categories=true
+            )
+        %}
+
 
             {% if messages %}
-        
+
+
                 {% for category, message in messages %}
-        
+
+
                     <div class="portal-flash {{ category }}">
                         {{ message }}
                     </div>
-        
+
+
                 {% endfor %}
-        
+
+
             {% endif %}
-        
+
+
         {% endwith %}
-        
+
+
+        <!-- =====================================================
+             HERO
+        ====================================================== -->
+
         <section class="hero">
 
-            <div class="hero-copy">
-                <div class="hero-kicker">Próxima evolução do AcheTece</div>
 
-                <h2>O que você precisa produzir?</h2>
+            <div class="hero-copy">
+
+
+                <div class="hero-kicker">
+                    Produção sob demanda
+                </div>
+
+
+                <h2>
+                    O que você precisa produzir?
+                </h2>
+
 
                 <p>
-                    Em breve você poderá transformar uma necessidade de produção em uma
-                    demanda estruturada e encontrar automaticamente as malharias mais
-                    compatíveis.
+
+                    Crie uma demanda estruturada e deixe
+                    o AcheTece identificar as malharias
+                    tecnicamente compatíveis com a sua
+                    necessidade.
+
                 </p>
+
+
             </div>
 
-            <a href="{{ url_for('index') }}" class="hero-btn">
-                Buscar malharias
-            </a>
+
+            <div class="hero-actions">
+
+
+                <a
+                    href="{{ url_for('nova_demanda') }}"
+                    class="hero-btn"
+                >
+                    + Criar nova demanda
+                </a>
+
+
+                <a
+                    href="{{ url_for('minhas_demandas') }}"
+                    class="hero-btn secondary"
+                >
+                    Ver minhas demandas
+                </a>
+
+
+            </div>
+
 
         </section>
+
+
+        <!-- =====================================================
+             MÉTRICAS
+        ====================================================== -->
 
         <section class="metrics">
 
-            <div class="metric">
-        
+
+            <!-- DEMANDAS -->
+
+            <a
+                href="{{ url_for('minhas_demandas') }}"
+                class="metric"
+            >
+
+
                 <div class="metric-value">
                     {{ demandas_ativas }}
                 </div>
-        
+
+
                 <div class="metric-label">
                     Demandas ativas
                 </div>
-        
-            </div>
-        
-        
-            <div class="metric">
-        
+
+
+                <div class="metric-action">
+                    Ver demandas →
+                </div>
+
+
+            </a>
+
+
+            <!-- MATCHES -->
+
+            <a
+                href="/comprador/matches"
+                class="metric"
+            >
+
+
                 <div class="metric-value">
                     {{ matches_total }}
                 </div>
-        
+
+
                 <div class="metric-label">
                     Matches encontrados
                 </div>
-        
-            </div>
-        
-        
-            <div class="metric">
-        
+
+
+                <div class="metric-action">
+                    Ver matches →
+                </div>
+
+
+            </a>
+
+
+            <!-- PROPOSTAS -->
+
+            <a
+                href="/comprador/propostas"
+                class="metric"
+            >
+
+
                 <div class="metric-value">
                     {{ propostas_total }}
                 </div>
-        
+
+
                 <div class="metric-label">
                     Propostas recebidas
                 </div>
-        
-            </div>
-        
-        
-            <div class="metric">
-        
+
+
+                <div class="metric-action">
+                    Ver propostas →
+                </div>
+
+
+            </a>
+
+
+            <!-- PEDIDOS -->
+
+            <a
+                href="{{ url_for('meus_pedidos_comprador') }}"
+                class="metric"
+            >
+
+
                 <div class="metric-value">
                     {{ pedidos_total }}
                 </div>
-        
+
+
                 <div class="metric-label">
                     Pedidos em andamento
                 </div>
-        
-            </div>
-        
+
+
+                <div class="metric-action">
+                    Ver pedidos →
+                </div>
+
+
+            </a>
+
+
         </section>
 
-        <h2 class="section-title">Comece por aqui</h2>
+
+        <!-- =====================================================
+             FLUXO DO MARKETPLACE
+        ====================================================== -->
+
+        <h2 class="section-title">
+            Sua produção no AcheTece
+        </h2>
+
+
+        <p class="section-subtitle">
+
+            Do cadastro da necessidade até o acompanhamento
+            do pedido, o processo acontece dentro da plataforma.
+
+        </p>
+
 
         <section class="cards">
 
-            <article class="card">
-                <div class="card-number">01</div>
-                <h3>Encontrar malharias</h3>
-                <p>
-                    Use a busca técnica atual do AcheTece para localizar teares
-                    e fornecedores por características produtivas e localização.
-                </p>
 
-                <a href="{{ url_for('index') }}" class="card-action">
-                    Acessar busca →
-                </a>
-            </article>
+            <!-- 01 -->
 
             <article class="card">
-                <div class="card-number">02</div>
-                <h3>Criar uma demanda</h3>
+
+
+                <div class="card-number">
+                    01
+                </div>
+
+
+                <h3>
+                    Criar uma demanda
+                </h3>
+
+
                 <p>
-                    Informe produto, composição, gramatura, quantidade, prazo
-                    e demais requisitos técnicos.
+
+                    Informe produto, composição, gramatura,
+                    quantidade, prazo e demais requisitos
+                    da produção desejada.
+
                 </p>
+
 
                 <a
                     href="{{ url_for('nova_demanda') }}"
@@ -626,24 +1468,173 @@
                 >
                     Criar demanda →
                 </a>
+
+
             </article>
+
+
+            <!-- 02 -->
 
             <article class="card">
-                <div class="card-number">03</div>
-                <h3>Receber propostas</h3>
+
+
+                <div class="card-number">
+                    02
+                </div>
+
+
+                <h3>
+                    Acompanhar matches
+                </h3>
+
+
                 <p>
-                    Compare capacidade, disponibilidade, prazo e condições das
-                    malharias compatíveis.
+
+                    Veja as compatibilidades identificadas
+                    entre suas demandas e os equipamentos
+                    cadastrados pelas malharias.
+
                 </p>
 
-                <div class="coming">Em construção</div>
+
+                <a
+                    href="/comprador/matches"
+                    class="card-action"
+                >
+                    Ver matches →
+                </a>
+
+
             </article>
+
+
+            <!-- 03 -->
+
+            <article class="card">
+
+
+                <div class="card-number">
+                    03
+                </div>
+
+
+                <h3>
+                    Comparar propostas
+                </h3>
+
+
+                <p>
+
+                    Analise quantidade, preço, prazo e
+                    condições comerciais apresentadas
+                    pelas malharias interessadas.
+
+                </p>
+
+
+                <a
+                    href="/comprador/propostas"
+                    class="card-action"
+                >
+                    Ver propostas →
+                </a>
+
+
+            </article>
+
+
+            <!-- 04 -->
+
+            <article class="card">
+
+
+                <div class="card-number">
+                    04
+                </div>
+
+
+                <h3>
+                    Acompanhar pedidos
+                </h3>
+
+
+                <p>
+
+                    Acompanhe confirmação, produção,
+                    conclusão e entrega dos pedidos
+                    contratados pelo AcheTece.
+
+                </p>
+
+
+                <a
+                    href="{{ url_for('meus_pedidos_comprador') }}"
+                    class="card-action"
+                >
+                    Ver pedidos →
+                </a>
+
+
+            </article>
+
 
         </section>
 
+
+        <!-- =====================================================
+             FERRAMENTA TÉCNICA
+        ====================================================== -->
+
+        <h2 class="section-title">
+            Ferramenta técnica
+        </h2>
+
+
+        <div class="technical-tool">
+
+
+            <div class="technical-tool-copy">
+
+
+                <div class="technical-tool-kicker">
+                    Busca tradicional AcheTece
+                </div>
+
+
+                <h3>
+                    Encontrar malharias e equipamentos
+                </h3>
+
+
+                <p>
+
+                    Continue utilizando a busca técnica
+                    para localizar teares por tipo,
+                    diâmetro, galga e localização.
+
+                </p>
+
+
+            </div>
+
+
+            <a
+                href="{{ url_for('index') }}"
+                class="technical-btn"
+            >
+                Acessar busca técnica
+            </a>
+
+
+        </div>
+
+
     </main>
+
 
 </div>
 
+
 </body>
+
 </html>
