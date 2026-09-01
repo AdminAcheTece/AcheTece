@@ -7280,6 +7280,130 @@ def painel_comprador():
     )
 
 # --------------------------------------------------------------------
+# AcheTece 2.0 - Meus Pedidos do Comprador
+# --------------------------------------------------------------------
+
+@app.get(
+    "/comprador/pedidos",
+    endpoint="meus_pedidos_comprador"
+)
+def meus_pedidos_comprador():
+
+    # --------------------------------------------------------------
+    # Autenticação do comprador
+    # --------------------------------------------------------------
+
+    user_id = session.get(
+        "user_id"
+    )
+
+    if not user_id:
+
+        return redirect(
+            url_for("login")
+        )
+
+    try:
+
+        usuario = db.session.get(
+            Usuario,
+            int(user_id)
+        )
+
+    except Exception:
+
+        usuario = None
+
+    if (
+        not usuario
+        or usuario.is_active is False
+        or (
+            usuario.role or ""
+        ).strip().lower() != "cliente"
+    ):
+
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Pedidos SOMENTE deste comprador
+    # --------------------------------------------------------------
+
+    pedidos = (
+        Order.query
+        .filter(
+            Order.buyer_user_id
+            == usuario.id,
+            Order.status
+            != "cancelado"
+        )
+        .order_by(
+            Order.created_at.desc(),
+            Order.id.desc()
+        )
+        .all()
+    )
+
+    # --------------------------------------------------------------
+    # Indicadores
+    # --------------------------------------------------------------
+
+    total_pedidos = len(
+        pedidos
+    )
+
+    total_aguardando = sum(
+        1
+        for pedido in pedidos
+        if (
+            pedido.status or ""
+        ).strip().lower()
+        == "aguardando_confirmacao"
+    )
+
+    total_confirmados = sum(
+        1
+        for pedido in pedidos
+        if (
+            pedido.status or ""
+        ).strip().lower()
+        == "confirmado"
+    )
+
+    total_em_producao = sum(
+        1
+        for pedido in pedidos
+        if (
+            pedido.status or ""
+        ).strip().lower()
+        == "em_producao"
+    )
+
+    total_concluidos = sum(
+        1
+        for pedido in pedidos
+        if (
+            pedido.status or ""
+        ).strip().lower()
+        in {
+            "concluido",
+            "entregue"
+        }
+    )
+
+    return render_template(
+        "meus_pedidos_comprador.html",
+        usuario=usuario,
+        pedidos=pedidos,
+        total_pedidos=total_pedidos,
+        total_aguardando=total_aguardando,
+        total_confirmados=total_confirmados,
+        total_em_producao=total_em_producao,
+        total_concluidos=total_concluidos,
+    )
+
+# --------------------------------------------------------------------
 # AcheTece 2.0 - Minhas Oportunidades da Malharia
 # --------------------------------------------------------------------
 
