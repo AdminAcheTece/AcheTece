@@ -6728,6 +6728,7 @@ def painel_comprador():
             Proposal.status.in_(
                 [
                     "enviada",
+                    "ajuste_solicitado",
                     "aceita",
                     "recusada"
                 ]
