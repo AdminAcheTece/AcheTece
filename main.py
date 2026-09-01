@@ -1792,6 +1792,71 @@ class Proposal(db.Model):
         )
 
 # --------------------------------------------------------------------
+# AcheTece 2.0 - Histórico de Interações da Proposta
+# --------------------------------------------------------------------
+
+class ProposalInteraction(db.Model):
+    __tablename__ = "proposal_interaction"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    proposal_id = db.Column(
+        db.Integer,
+        db.ForeignKey("proposal.id"),
+        nullable=False,
+        index=True
+    )
+
+    proposta = db.relationship(
+        "Proposal",
+        backref=db.backref(
+            "interactions",
+            lazy=True,
+            cascade="all, delete-orphan"
+        )
+    )
+
+    # comprador | malharia | sistema
+    actor_role = db.Column(
+        db.String(20),
+        nullable=False,
+        index=True
+    )
+
+    # proposta_enviada
+    # ajuste_solicitado
+    # proposta_reenviada
+    # aceita
+    # recusada
+    action = db.Column(
+        db.String(30),
+        nullable=False,
+        index=True
+    )
+
+    message = db.Column(
+        db.Text,
+        nullable=True
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow
+    )
+
+    def __repr__(self):
+        return (
+            f"<ProposalInteraction "
+            f"id={self.id} "
+            f"proposal_id={self.proposal_id} "
+            f"action={self.action}>"
+        )
+
+# --------------------------------------------------------------------
 # AcheTece 2.0 - Motor de Matching V1
 # --------------------------------------------------------------------
 
