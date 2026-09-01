@@ -40,6 +40,10 @@
 
             --green:#287742;
             --green-bg:#EAF7ED;
+
+            --warning:#755614;
+            --warning-bg:#FFF7E7;
+            --warning-line:#E8D49B;
         }
 
 
@@ -62,7 +66,9 @@
         }
 
 
-        /* HEADER */
+        /* =========================================================
+           HEADER
+        ========================================================= */
 
         .topbar{
             min-height:72px;
@@ -103,7 +109,9 @@
         }
 
 
-        /* PAGE */
+        /* =========================================================
+           PAGE
+        ========================================================= */
 
         .page{
             max-width:900px;
@@ -154,7 +162,9 @@
         }
 
 
-        /* DEMANDA */
+        /* =========================================================
+           DEMANDA
+        ========================================================= */
 
         .context{
             margin-bottom:18px;
@@ -194,7 +204,9 @@
         }
 
 
-        /* FLASH */
+        /* =========================================================
+           FLASH
+        ========================================================= */
 
         .flash{
             margin-bottom:18px;
@@ -239,7 +251,44 @@
         }
 
 
-        /* FORM */
+        /* =========================================================
+           SOLICITAÇÃO DE AJUSTE
+        ========================================================= */
+
+        .adjustment-request{
+            margin-bottom:18px;
+
+            padding:16px 18px;
+
+            border-radius:13px;
+
+            background:var(--warning-bg);
+
+            border:
+                1px solid var(--warning-line);
+
+            color:var(--warning);
+
+            font-size:13px;
+
+            line-height:1.55;
+        }
+
+
+        .adjustment-request strong{
+            display:block;
+
+            margin-bottom:7px;
+
+            color:#60450F;
+
+            font-size:13px;
+        }
+
+
+        /* =========================================================
+           FORM
+        ========================================================= */
 
         .card{
             padding:25px;
@@ -350,7 +399,9 @@
         }
 
 
-        /* TOTAL */
+        /* =========================================================
+           TOTAL
+        ========================================================= */
 
         .total-box{
             margin:
@@ -388,7 +439,9 @@
         }
 
 
-        /* SUBMIT */
+        /* =========================================================
+           SUBMIT
+        ========================================================= */
 
         .submit{
             width:100%;
@@ -417,7 +470,9 @@
         }
 
 
-        /* PROPOSTA ENVIADA */
+        /* =========================================================
+           PROPOSTA ENVIADA
+        ========================================================= */
 
         .sent{
             padding:25px;
@@ -482,6 +537,10 @@
             font-weight:800;
         }
 
+
+        /* =========================================================
+           RESPONSIVO
+        ========================================================= */
 
         @media(max-width:650px){
 
@@ -550,23 +609,60 @@
 <main class="page">
 
 
+    <!-- =========================================================
+         STATUS ATUAL DA PROPOSTA
+    ========================================================== -->
+
+    {% set status_proposta =
+        (
+            proposta.status
+            if proposta
+            else 'rascunho'
+        )
+        |lower
+    %}
+
+
     <div class="eyebrow">
         Proposta Comercial
     </div>
 
 
     <h1>
-        Enviar proposta
+
+        {% if status_proposta == "ajuste_solicitado" %}
+
+            Ajustar proposta
+
+        {% else %}
+
+            Enviar proposta
+
+        {% endif %}
+
     </h1>
 
 
     <p class="intro">
 
-        Informe as condições comerciais que sua
-        malharia pode oferecer para atender esta demanda.
+        {% if status_proposta == "ajuste_solicitado" %}
+
+            Revise as condições comerciais solicitadas
+            pelo comprador e reenvie sua proposta.
+
+        {% else %}
+
+            Informe as condições comerciais que sua
+            malharia pode oferecer para atender esta demanda.
+
+        {% endif %}
 
     </p>
 
+
+    <!-- =========================================================
+         CONTEXTO DA DEMANDA
+    ========================================================== -->
 
     <section class="context">
 
@@ -603,6 +699,10 @@
     </section>
 
 
+    <!-- =========================================================
+         FLASH
+    ========================================================== -->
+
     {% with messages =
         get_flashed_messages(
             with_categories=true
@@ -624,14 +724,41 @@
     {% endwith %}
 
 
-    {% if proposta and proposta.status != "rascunho" %}
+    <!-- =========================================================
+         PROPOSTA JÁ FINALIZADA / ENVIADA
+    ========================================================== -->
+
+    {% if proposta and status_proposta in [
+        "enviada",
+        "aceita",
+        "recusada",
+        "cancelada"
+    ] %}
 
 
         <section class="sent">
 
 
             <span class="sent-badge">
-                ✓ Proposta enviada
+
+                {% if status_proposta == "aceita" %}
+
+                    ✓ Proposta aceita
+
+                {% elif status_proposta == "recusada" %}
+
+                    Proposta recusada
+
+                {% elif status_proposta == "cancelada" %}
+
+                    Proposta cancelada
+
+                {% else %}
+
+                    ✓ Proposta enviada
+
+                {% endif %}
+
             </span>
 
 
@@ -731,6 +858,23 @@
                 {% endif %}
 
 
+                {% if proposta.observacoes %}
+
+                    <div>
+
+                        <div class="sent-label">
+                            Observações
+                        </div>
+
+                        <div class="sent-value">
+                            {{ proposta.observacoes }}
+                        </div>
+
+                    </div>
+
+                {% endif %}
+
+
             </div>
 
 
@@ -740,6 +884,30 @@
     {% else %}
 
 
+        <!-- =====================================================
+             PASSO 13
+             MOSTRA O AJUSTE SOLICITADO PELO COMPRADOR
+        ====================================================== -->
+
+        {% if ajuste_aberto %}
+
+            <div class="adjustment-request">
+
+                <strong>
+                    O comprador solicitou um ajuste:
+                </strong>
+
+                {{ ajuste_aberto.message }}
+
+            </div>
+
+        {% endif %}
+
+
+        <!-- =====================================================
+             FORMULÁRIO
+        ====================================================== -->
+
         <form
             method="POST"
             action="{{ url_for(
@@ -747,7 +915,7 @@
                 oportunidade_id=oportunidade.id
             ) }}"
             onsubmit="return confirm(
-                'Deseja enviar esta proposta ao comprador?'
+                '{% if status_proposta == "ajuste_solicitado" %}Deseja reenviar esta proposta ajustada ao comprador?{% else %}Deseja enviar esta proposta ao comprador?{% endif %}'
             );"
         >
 
@@ -756,12 +924,26 @@
 
 
                 <h2 class="section-title">
-                    Condições da proposta
+
+                    {% if status_proposta == "ajuste_solicitado" %}
+
+                        Revise as condições da proposta
+
+                    {% else %}
+
+                        Condições da proposta
+
+                    {% endif %}
+
                 </h2>
 
 
                 <div class="grid">
 
+
+                    <!-- =========================================
+                         QUANTIDADE
+                    ========================================== -->
 
                     <div class="field">
 
@@ -775,6 +957,11 @@
                             name="quantidade_kg"
                             inputmode="decimal"
                             placeholder="Ex.: 5000"
+                            value="{{
+                                proposta.quantidade_kg
+                                if proposta
+                                else ''
+                            }}"
                             required
                         >
 
@@ -784,6 +971,10 @@
 
                     </div>
 
+
+                    <!-- =========================================
+                         PREÇO
+                    ========================================== -->
 
                     <div class="field">
 
@@ -797,11 +988,26 @@
                             name="preco_por_kg"
                             inputmode="decimal"
                             placeholder="Ex.: 7,80"
+                            value="{{
+                                (
+                                    '%.2f'
+                                    |format(
+                                        proposta.preco_por_kg
+                                    )
+                                    |replace('.', ',')
+                                )
+                                if proposta
+                                else ''
+                            }}"
                             required
                         >
 
                     </div>
 
+
+                    <!-- =========================================
+                         PRAZO
+                    ========================================== -->
 
                     <div class="field">
 
@@ -814,11 +1020,20 @@
                             name="prazo_dias"
                             min="1"
                             placeholder="Ex.: 15"
+                            value="{{
+                                proposta.prazo_dias
+                                if proposta
+                                else ''
+                            }}"
                             required
                         >
 
                     </div>
 
+
+                    <!-- =========================================
+                         VALIDADE
+                    ========================================== -->
 
                     <div class="field">
 
@@ -830,7 +1045,11 @@
                             type="number"
                             name="validade_dias"
                             min="1"
-                            value="7"
+                            value="{{
+                                proposta.validade_dias
+                                if proposta
+                                else 7
+                            }}"
                             required
                         >
 
@@ -839,6 +1058,10 @@
 
                 </div>
 
+
+                <!-- =============================================
+                     VALOR ESTIMADO
+                ============================================== -->
 
                 <div
                     class="total-box"
@@ -856,6 +1079,10 @@
                 </div>
 
 
+                <!-- =============================================
+                     CONDIÇÕES DE PAGAMENTO
+                ============================================== -->
+
                 <div class="field">
 
                     <label>
@@ -866,10 +1093,20 @@
                         type="text"
                         name="condicoes_pagamento"
                         placeholder="Ex.: 50% no pedido e 50% na entrega"
+                        value="{{
+                            proposta.condicoes_pagamento
+                            if proposta
+                            and proposta.condicoes_pagamento
+                            else ''
+                        }}"
                     >
 
                 </div>
 
+
+                <!-- =============================================
+                     OBSERVAÇÕES
+                ============================================== -->
 
                 <div class="field">
 
@@ -880,16 +1117,30 @@
                     <textarea
                         name="observacoes"
                         placeholder="Informações adicionais sobre disponibilidade, produção, condições ou particularidades da proposta."
-                    ></textarea>
+                    >{{ proposta.observacoes if proposta and proposta.observacoes else '' }}</textarea>
 
                 </div>
 
+
+                <!-- =============================================
+                     BOTÃO
+                ============================================== -->
 
                 <button
                     type="submit"
                     class="submit"
                 >
-                    Enviar proposta
+
+                    {% if status_proposta == "ajuste_solicitado" %}
+
+                        Reenviar proposta ajustada
+
+                    {% else %}
+
+                        Enviar proposta
+
+                    {% endif %}
+
                 </button>
 
 
@@ -995,6 +1246,20 @@
         "input",
         atualizarTotal
     );
+
+
+    /*
+    ================================================================
+    IMPORTANTE:
+    calcula também imediatamente quando a página abre.
+
+    Assim, ao abrir uma proposta para ajuste, os campos anteriores
+    já vêm preenchidos e o valor estimado também aparece atualizado.
+    ================================================================
+    */
+
+    atualizarTotal();
+
 
 })();
 
