@@ -8843,6 +8843,239 @@ def meus_pedidos_malharia():
         total_concluidos=total_concluidos,
     )
 
+# --------------------------------------------------------------------
+# AcheTece 2.0 - Detalhes do Pedido para Malharia
+# --------------------------------------------------------------------
+
+@app.get(
+    "/malharia/pedidos/<int:pedido_id>",
+    endpoint="detalhe_pedido_malharia"
+)
+def detalhe_pedido_malharia(pedido_id):
+
+    # --------------------------------------------------------------
+    # Autenticação
+    # --------------------------------------------------------------
+
+    empresa_id = session.get(
+        "empresa_id"
+    )
+
+    if not empresa_id:
+
+        return redirect(
+            url_for("login")
+        )
+
+    try:
+
+        empresa = db.session.get(
+            Empresa,
+            int(empresa_id)
+        )
+
+    except Exception:
+
+        empresa = None
+
+    if not empresa:
+
+        session.clear()
+
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Pedido SOMENTE da própria malharia
+    # --------------------------------------------------------------
+
+    pedido = (
+        Order.query
+        .filter_by(
+            id=pedido_id,
+            empresa_id=empresa.id
+        )
+        .first()
+    )
+
+    if not pedido:
+
+        flash(
+            "Pedido não encontrado.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "meus_pedidos_malharia"
+            )
+        )
+
+    proposta = pedido.proposta
+    demanda = pedido.demanda
+
+    return render_template(
+        "detalhe_pedido_malharia.html",
+        empresa=empresa,
+        pedido=pedido,
+        proposta=proposta,
+        demanda=demanda
+    )
+
+# --------------------------------------------------------------------
+# AcheTece 2.0 - Malharia confirma Pedido
+# --------------------------------------------------------------------
+
+@app.post(
+    "/malharia/pedidos/<int:pedido_id>/confirmar",
+    endpoint="confirmar_pedido_malharia"
+)
+def confirmar_pedido_malharia(pedido_id):
+
+    # --------------------------------------------------------------
+    # Autenticação
+    # --------------------------------------------------------------
+
+    empresa_id = session.get(
+        "empresa_id"
+    )
+
+    if not empresa_id:
+
+        return redirect(
+            url_for("login")
+        )
+
+    try:
+
+        empresa = db.session.get(
+            Empresa,
+            int(empresa_id)
+        )
+
+    except Exception:
+
+        empresa = None
+
+    if not empresa:
+
+        session.clear()
+
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Pedido da própria malharia
+    # --------------------------------------------------------------
+
+    pedido = (
+        Order.query
+        .filter_by(
+            id=pedido_id,
+            empresa_id=empresa.id
+        )
+        .first()
+    )
+
+    if not pedido:
+
+        flash(
+            "Pedido não encontrado.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "meus_pedidos_malharia"
+            )
+        )
+
+    status_atual = (
+        pedido.status or ""
+    ).strip().lower()
+
+    # --------------------------------------------------------------
+    # Somente aguardando_confirmacao pode ser confirmado
+    # --------------------------------------------------------------
+
+    if status_atual == "confirmado":
+
+        flash(
+            f"O pedido {pedido.codigo} já está confirmado.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "detalhe_pedido_malharia",
+                pedido_id=pedido.id
+            )
+        )
+
+    if status_atual != "aguardando_confirmacao":
+
+        flash(
+            "Este pedido não pode ser confirmado no status atual.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "detalhe_pedido_malharia",
+                pedido_id=pedido.id
+            )
+        )
+
+    # --------------------------------------------------------------
+    # Confirmação
+    # --------------------------------------------------------------
+
+    try:
+
+        pedido.status = "confirmado"
+
+        pedido.confirmed_at = (
+            datetime.utcnow()
+        )
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "[PEDIDO] Falha ao confirmar pedido."
+        )
+
+        flash(
+            "Não foi possível confirmar o pedido agora.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "detalhe_pedido_malharia",
+                pedido_id=pedido.id
+            )
+        )
+
+    flash(
+        (
+            f"Pedido {pedido.codigo} "
+            f"confirmado com sucesso."
+        ),
+        "success"
+    )
+
+    return redirect(
+        url_for(
+            "detalhe_pedido_malharia",
+            pedido_id=pedido.id
+        )
+    )
 
 # -----------------------------
 # Arquivos do treinamento (PROTEGIDOS)
