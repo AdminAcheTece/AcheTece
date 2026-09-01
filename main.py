@@ -8074,6 +8074,125 @@ def painel_comprador():
     )
 
 # --------------------------------------------------------------------
+# AcheTece 2.0 - Visão Geral dos Matches do Comprador
+# --------------------------------------------------------------------
+
+@app.get(
+    "/comprador/matches",
+    endpoint="matches_comprador"
+)
+def matches_comprador():
+
+    # --------------------------------------------------------------
+    # Autenticação
+    # --------------------------------------------------------------
+
+    user_id = session.get(
+        "user_id"
+    )
+
+    if not user_id:
+
+        return redirect(
+            url_for("login")
+        )
+
+    try:
+
+        usuario = db.session.get(
+            Usuario,
+            int(user_id)
+        )
+
+    except Exception:
+
+        usuario = None
+
+    if (
+        not usuario
+        or usuario.is_active is False
+        or (
+            usuario.role or ""
+        ).strip().lower() != "cliente"
+    ):
+
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Todos os matches pertencentes às demandas deste comprador
+    #
+    # Aqui mostramos também o histórico.
+    # --------------------------------------------------------------
+
+    matches = (
+        DemandMatch.query
+        .join(
+            ProductionRequest,
+            DemandMatch.demand_id
+            == ProductionRequest.id
+        )
+        .filter(
+            ProductionRequest.user_id
+            == usuario.id
+        )
+        .order_by(
+            DemandMatch.id.desc()
+        )
+        .all()
+    )
+
+    # --------------------------------------------------------------
+    # Indicadores
+    # --------------------------------------------------------------
+
+    total_matches = len(
+        matches
+    )
+
+    demandas_com_matches = len(
+        {
+            match.demand_id
+            for match in matches
+            if match.demand_id
+        }
+    )
+
+    malharias_encontradas = len(
+        {
+            match.empresa_id
+            for match in matches
+            if match.empresa_id
+        }
+    )
+
+    matches_historicos = sum(
+        1
+        for match in matches
+        if (
+            match.demanda
+            and (
+                match.demanda.status or ""
+            ).strip().lower()
+            in {
+                "contratada",
+                "encerrada"
+            }
+        )
+    )
+
+    return render_template(
+        "matches_comprador.html",
+        usuario=usuario,
+        matches=matches,
+        total_matches=total_matches,
+        demandas_com_matches=demandas_com_matches,
+        malharias_encontradas=malharias_encontradas,
+        matches_historicos=matches_historicos,
+    )
+
+# --------------------------------------------------------------------
 # AcheTece 2.0 - Meus Pedidos do Comprador
 # --------------------------------------------------------------------
 
