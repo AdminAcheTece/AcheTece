@@ -1042,6 +1042,16 @@
             >
                 Retorno das Malharias
             </a>
+
+            <a
+                href="{{ url_for(
+                    'propostas_recebidas',
+                    demanda_id=demanda.id
+                ) }}"
+                class="back-btn"
+            >
+                Ver Propostas
+            </a>
         
         {% endif %}
     
