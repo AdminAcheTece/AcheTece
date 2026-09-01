@@ -4882,30 +4882,39 @@ def minhas_demandas():
 )
 def detalhe_demanda(demanda_id):
 
-    # --------------------------------------------------------------
-    # Verifica sessão
-    # --------------------------------------------------------------
+    # ==============================================================
+    # AUTENTICAÇÃO
+    # ==============================================================
 
-    user_id = session.get("user_id")
+    user_id = session.get(
+        "user_id"
+    )
 
     if not user_id:
+
         return redirect(
             url_for("login")
         )
 
     # --------------------------------------------------------------
-    # Carrega usuário
+    # Usuário
     # --------------------------------------------------------------
 
     try:
+
         usuario = db.session.get(
             Usuario,
             int(user_id)
         )
+
     except Exception:
+
         usuario = None
 
-    if not usuario or usuario.is_active is False:
+    if (
+        not usuario
+        or usuario.is_active is False
+    ):
 
         session.clear()
 
@@ -4914,11 +4923,12 @@ def detalhe_demanda(demanda_id):
         )
 
     # --------------------------------------------------------------
-    # Garante que é comprador
+    # Garante perfil comprador
     # --------------------------------------------------------------
 
     role = (
-        usuario.role or ""
+        usuario.role
+        or ""
     ).strip().lower()
 
     if role != "cliente":
@@ -4928,17 +4938,22 @@ def detalhe_demanda(demanda_id):
             "empresa",
             None
         ):
+
             return redirect(
-                url_for("painel_malharia")
+                url_for(
+                    "painel_malharia"
+                )
             )
 
         return redirect(
             url_for("login")
         )
 
-    # --------------------------------------------------------------
-    # Busca somente uma demanda pertencente ao comprador logado
-    # --------------------------------------------------------------
+    # ==============================================================
+    # DEMANDA
+    #
+    # Sempre limitada ao comprador autenticado.
+    # ==============================================================
 
     demanda = (
         ProductionRequest.query
@@ -4957,24 +4972,109 @@ def detalhe_demanda(demanda_id):
         )
 
         return redirect(
-            url_for("minhas_demandas")
+            url_for(
+                "minhas_demandas"
+            )
         )
 
+    # ==============================================================
+    # PEDIDO VINCULADO À DEMANDA
+    #
+    # A regra consolidada do marketplace permite apenas um pedido
+    # válido por demanda.
+    #
+    # O filtro buyer_user_id também impede que um comprador consiga
+    # acessar acidentalmente pedido pertencente a outro usuário.
+    # ==============================================================
+
+    pedido = (
+        Order.query
+        .filter(
+            Order.demand_id
+            == demanda.id,
+
+            Order.buyer_user_id
+            == usuario.id
+        )
+        .order_by(
+            Order.id.desc()
+        )
+        .first()
+    )
+
     # --------------------------------------------------------------
-    # Perfil do comprador
+    # Empresa / malharia contratada
     # --------------------------------------------------------------
 
-    perfil = ClienteProfile.query.filter_by(
-        user_id=usuario.id
-    ).first()
+    empresa_pedido = None
+
+    if pedido:
+
+        try:
+
+            empresa_pedido = (
+                pedido.empresa
+            )
+
+        except Exception:
+
+            empresa_pedido = (
+                Empresa.query.get(
+                    pedido.empresa_id
+                )
+            )
+
+    # --------------------------------------------------------------
+    # Proposta que originou o pedido
+    # --------------------------------------------------------------
+
+    proposta_pedido = None
+
+    if pedido:
+
+        try:
+
+            proposta_pedido = (
+                pedido.proposta
+            )
+
+        except Exception:
+
+            proposta_pedido = None
+
+    # ==============================================================
+    # PERFIL DO COMPRADOR
+    # ==============================================================
+
+    perfil = (
+        ClienteProfile.query
+        .filter_by(
+            user_id=usuario.id
+        )
+        .first()
+    )
+
+    # ==============================================================
+    # RENDER
+    # ==============================================================
 
     return render_template(
         "detalhe_demanda.html",
-        usuario=usuario,
-        perfil=perfil,
-        demanda=demanda
-    )
 
+        usuario=usuario,
+
+        perfil=perfil,
+
+        demanda=demanda,
+
+        pedido=pedido,
+
+        empresa_pedido=
+            empresa_pedido,
+
+        proposta_pedido=
+            proposta_pedido,
+    )
 
 # --------------------------------------------------------------------
 # Publicar Demanda - AcheTece 2.0
