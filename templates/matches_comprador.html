@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+
+<html lang="pt-br">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>
+        Meus Matches - AcheTece
+    </title>
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <style>
+
+        :root{
+            --olive:#7B7424;
+            --olive-light:#F1F2E8;
+            --olive-dark:#434326;
+
+            --lime:#B6F34D;
+
+            --bg:#F4F4F1;
+            --white:#FFFFFF;
+            --black:#111111;
+
+            --text:#202020;
+            --muted:#6B6B6B;
+            --line:#DFDFDA;
+
+            --green:#287742;
+            --green-bg:#EAF7ED;
+
+            --maxw:1180px;
+        }
+
+
+        *{
+            box-sizing:border-box;
+        }
+
+
+        body{
+            margin:0;
+
+            background:var(--bg);
+            color:var(--text);
+
+            font-family:
+                'Inter',
+                Arial,
+                sans-serif;
+        }
+
+
+        /* =========================================================
+           HEADER
+        ========================================================= */
+
+        .topbar{
+            min-height:72px;
+
+            background:#111;
+
+            display:flex;
+            align-items:center;
+        }
+
+
+        .topbar-inner{
+            width:100%;
+            max-width:var(--maxw);
+
+            margin:auto;
+            padding:0 22px;
+
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+
+            gap:20px;
+        }
+
+
+        .brand img{
+            height:40px;
+            display:block;
+        }
+
+
+        .top-actions{
+            display:flex;
+            align-items:center;
+            gap:8px;
+        }
+
+
+        .top-link{
+            color:#fff;
+
+            text-decoration:none;
+
+            font-size:13px;
+            font-weight:800;
+
+            padding:10px 14px;
+
+            border-radius:999px;
+        }
+
+
+        .top-link:hover{
+            background:
+                rgba(255,255,255,.10);
+        }
+
+
+        /* =========================================================
+           PAGE
+        ========================================================= */
+
+        .page{
+            max-width:var(--maxw);
+
+            margin:auto;
+
+            padding:
+                38px 22px
+                70px;
+        }
+
+
+        .eyebrow{
+            margin-bottom:8px;
+
+            color:var(--olive);
+
+            font-size:12px;
+            font-weight:800;
+
+            text-transform:uppercase;
+            letter-spacing:.08em;
+        }
+
+
+        h1{
+            margin:0;
+
+            color:#111;
+
+            font-size:34px;
+
+            letter-spacing:-.035em;
+        }
+
+
+        .intro{
+            max-width:760px;
+
+            margin:
+                9px 0
+                25px;
+
+            color:var(--muted);
+
+            font-size:14px;
+
+            line-height:1.55;
+        }
+
+
+        /* =========================================================
+           METRICS
+        ========================================================= */
+
+        .metrics{
+            display:grid;
+
+            grid-template-columns:
+                repeat(4,1fr);
+
+            gap:13px;
+
+            margin-bottom:32px;
+        }
+
+
+        .metric{
+            padding:18px;
+
+            background:#fff;
+
+            border:
+                1px solid var(--line);
+
+            border-radius:16px;
+        }
+
+
+        .metric-value{
+            color:#111;
+
+            font-size:27px;
+            font-weight:800;
+        }
+
+
+        .metric-label{
+            margin-top:5px;
+
+            color:var(--muted);
+
+            font-size:11px;
+        }
+
+
+        /* =========================================================
+           TITLE
+        ========================================================= */
+
+        .section-title{
+            margin:
+                0 0
+                7px;
+
+            font-size:20px;
+            font-weight:800;
+        }
+
+
+        .section-intro{
+            margin:
+                0 0
+                16px;
+
+            color:var(--muted);
+
+            font-size:13px;
+
+            line-height:1.5;
+        }
+
+
+        /* =========================================================
+           MATCHES
+        ========================================================= */
+
+        .matches{
+            display:flex;
+            flex-direction:column;
+
+            gap:14px;
+        }
+
+
+        .match-card{
+            display:grid;
+
+            grid-template-columns:
+                130px
+                minmax(0,1.25fr)
+                minmax(280px,.8fr);
+
+            background:#fff;
+
+            border:
+                1px solid var(--line);
+
+            border-radius:20px;
+
+            overflow:hidden;
+        }
+
+
+        .score{
+            display:flex;
+
+            flex-direction:column;
+
+            justify-content:center;
+            align-items:center;
+
+            padding:20px;
+
+            background:var(--olive-light);
+
+            border-right:
+                1px solid var(--line);
+
+            text-align:center;
+        }
+
+
+        .score strong{
+            color:#111;
+
+            font-size:31px;
+        }
+
+
+        .score span{
+            margin-top:4px;
+
+            color:#777;
+
+            font-size:9px;
+            font-weight:800;
+
+            text-transform:uppercase;
+        }
+
+
+        .match-main{
+            padding:22px;
+        }
+
+
+        .demand-code{
+            color:var(--olive);
+
+            font-size:11px;
+            font-weight:800;
+
+            margin-bottom:5px;
+        }
+
+
+        .product{
+            color:#111;
+
+            font-size:19px;
+            font-weight:800;
+        }
+
+
+        .company{
+            margin-top:13px;
+
+            color:#111;
+
+            font-size:15px;
+            font-weight:800;
+        }
+
+
+        .location{
+            margin-top:4px;
+
+            color:var(--muted);
+
+            font-size:11px;
+        }
+
+
+        .machine{
+            margin-top:15px;
+
+            padding-top:14px;
+
+            border-top:
+                1px solid #ECECE8;
+        }
+
+
+        .machine-name{
+            color:#222;
+
+            font-size:13px;
+            font-weight:800;
+        }
+
+
+        .machine-tags{
+            display:flex;
+
+            flex-wrap:wrap;
+
+            gap:6px;
+
+            margin-top:9px;
+        }
+
+
+        .tag{
+            display:inline-flex;
+
+            min-height:26px;
+
+            align-items:center;
+
+            padding:0 9px;
+
+            border-radius:999px;
+
+            background:#F3F3F0;
+
+            color:#444;
+
+            font-size:9px;
+            font-weight:700;
+        }
+
+
+        /* =========================================================
+           DETAILS
+        ========================================================= */
+
+        .match-detail{
+            padding:22px;
+
+            border-left:
+                1px solid var(--line);
+        }
+
+
+        .detail-title{
+            margin-bottom:10px;
+
+            color:#888;
+
+            font-size:9px;
+            font-weight:800;
+
+            text-transform:uppercase;
+            letter-spacing:.06em;
+        }
+
+
+        .detail-item{
+            margin-bottom:6px;
+
+            color:#444;
+
+            font-size:11px;
+
+            line-height:1.45;
+        }
+
+
+        .status-row{
+            margin-top:15px;
+
+            padding-top:14px;
+
+            border-top:
+                1px solid #ECECE8;
+        }
+
+
+        .status{
+            display:inline-flex;
+
+            min-height:28px;
+
+            align-items:center;
+
+            padding:0 10px;
+
+            border-radius:999px;
+
+            background:#F1F1EE;
+
+            color:#555;
+
+            font-size:9px;
+            font-weight:800;
+        }
+
+
+        .status.publicada{
+            background:var(--green-bg);
+            color:var(--green);
+        }
+
+
+        .status.encerrada,
+        .status.contratada{
+            background:#F1F1EE;
+            color:#555;
+        }
+
+
+        .card-link{
+            display:inline-flex;
+
+            margin-top:13px;
+
+            color:var(--olive-dark);
+
+            text-decoration:none;
+
+            font-size:11px;
+            font-weight:800;
+        }
+
+
+        .card-link:hover{
+            text-decoration:underline;
+        }
+
+
+        /* =========================================================
+           EMPTY
+        ========================================================= */
+
+        .empty{
+            padding:42px 24px;
+
+            text-align:center;
+
+            background:#fff;
+
+            border:
+                1px solid var(--line);
+
+            border-radius:18px;
+        }
+
+
+        .empty h2{
+            margin:
+                0 0
+                8px;
+
+            font-size:20px;
+        }
+
+
+        .empty p{
+            max-width:540px;
+
+            margin:auto;
+
+            color:var(--muted);
+
+            font-size:13px;
+
+            line-height:1.55;
+        }
+
+
+        /* =========================================================
+           RESPONSIVO
+        ========================================================= */
+
+        @media(max-width:850px){
+
+            .metrics{
+                grid-template-columns:
+                    1fr 1fr;
+            }
+
+
+            .match-card{
+                grid-template-columns:
+                    110px
+                    1fr;
+            }
+
+
+            .match-detail{
+                grid-column:
+                    1 / -1;
+
+                border-left:0;
+
+                border-top:
+                    1px solid var(--line);
+            }
+
+        }
+
+
+        @media(max-width:600px){
+
+            .page{
+                padding:
+                    28px 16px
+                    50px;
+            }
+
+
+            h1{
+                font-size:28px;
+            }
+
+
+            .match-card{
+                grid-template-columns:1fr;
+            }
+
+
+            .score{
+                border-right:0;
+
+                border-bottom:
+                    1px solid var(--line);
+            }
+
+
+            .metrics{
+                grid-template-columns:1fr 1fr;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<header class="topbar">
+
+    <div class="topbar-inner">
+
+
+        <a
+            href="{{ url_for('painel_comprador') }}"
+            class="brand"
+        >
+
+            <img
+                src="{{ url_for(
+                    'static',
+                    filename='Logo_Branco_AcheTece_sem_fundo.png'
+                ) }}"
+                alt="AcheTece"
+            >
+
+        </a>
+
+
+        <div class="top-actions">
+
+            <a
+                href="{{ url_for('minhas_demandas') }}"
+                class="top-link"
+            >
+                Demandas
+            </a>
+
+            <a
+                href="{{ url_for('painel_comprador') }}"
+                class="top-link"
+            >
+                Portal
+            </a>
+
+        </div>
+
+
+    </div>
+
+</header>
+
+
+<main class="page">
+
+
+    <div class="eyebrow">
+        Portal do Comprador
+    </div>
+
+
+    <h1>
+        Meus Matches
+    </h1>
+
+
+    <p class="intro">
+
+        Consulte as compatibilidades técnicas já
+        identificadas entre suas demandas e os
+        equipamentos cadastrados pelas malharias.
+
+    </p>
+
+
+    <section class="metrics">
+
+
+        <div class="metric">
+
+            <div class="metric-value">
+                {{ total_matches }}
+            </div>
+
+            <div class="metric-label">
+                Matches identificados
+            </div>
+
+        </div>
+
+
+        <div class="metric">
+
+            <div class="metric-value">
+                {{ demandas_com_matches }}
+            </div>
+
+            <div class="metric-label">
+                Demandas com matches
+            </div>
+
+        </div>
+
+
+        <div class="metric">
+
+            <div class="metric-value">
+                {{ malharias_encontradas }}
+            </div>
+
+            <div class="metric-label">
+                Malharias encontradas
+            </div>
+
+        </div>
+
+
+        <div class="metric">
+
+            <div class="metric-value">
+                {{ matches_historicos }}
+            </div>
+
+            <div class="metric-label">
+                Matches de demandas contratadas/encerradas
+            </div>
+
+        </div>
+
+
+    </section>
+
+
+    <h2 class="section-title">
+        Compatibilidades encontradas
+    </h2>
+
+
+    <p class="section-intro">
+
+        Os resultados abaixo formam o histórico de
+        matches técnicos gerados para suas demandas.
+
+    </p>
+
+
+    {% if matches %}
+
+
+        <section class="matches">
+
+
+            {% for match in matches %}
+
+
+                {% set demanda =
+                    match.demanda
+                %}
+
+
+                {% set empresa =
+                    match.empresa
+                %}
+
+
+                {% set tear =
+                    match.tear
+                %}
+
+
+                {% set status_demanda =
+                    (
+                        demanda.status
+                        if demanda
+                        else ''
+                    )
+                    |lower
+                %}
+
+
+                <article class="match-card">
+
+
+                    <div class="score">
+
+                        <strong>
+                            {{ match.score }}%
+                        </strong>
+
+                        <span>
+                            compatibilidade
+                        </span>
+
+                    </div>
+
+
+                    <div class="match-main">
+
+
+                        <div class="demand-code">
+
+                            {{
+                                demanda.codigo
+                                if demanda
+                                else "Demanda"
+                            }}
+
+                        </div>
+
+
+                        <div class="product">
+
+                            {{
+                                demanda.produto
+                                if demanda
+                                else "Produto"
+                            }}
+
+                        </div>
+
+
+                        <div class="company">
+
+                            {% if empresa %}
+
+                                {{
+                                    empresa.nome
+                                    or empresa.apelido
+                                    or "Malharia"
+                                }}
+
+                            {% else %}
+
+                                Malharia
+
+                            {% endif %}
+
+                        </div>
+
+
+                        <div class="location">
+
+                            {% if empresa %}
+
+                                {{
+                                    empresa.cidade
+                                    or "Cidade não informada"
+                                }}
+
+                                {% if empresa.estado %}
+
+                                    /
+                                    {{ empresa.estado }}
+
+                                {% endif %}
+
+                            {% endif %}
+
+                        </div>
+
+
+                        {% if tear %}
+
+                            <div class="machine">
+
+
+                                <div class="machine-name">
+
+                                    {{
+                                        tear.marca
+                                        or "Marca"
+                                    }}
+
+                                    —
+
+                                    {{
+                                        tear.modelo
+                                        or "Modelo"
+                                    }}
+
+                                </div>
+
+
+                                <div class="machine-tags">
+
+
+                                    {% if tear.tipo %}
+
+                                        <span class="tag">
+                                            {{ tear.tipo }}
+                                        </span>
+
+                                    {% endif %}
+
+
+                                    {% if tear.finura %}
+
+                                        <span class="tag">
+                                            Galga {{ tear.finura }}
+                                        </span>
+
+                                    {% endif %}
+
+
+                                    {% if tear.diametro %}
+
+                                        <span class="tag">
+                                            Ø {{ tear.diametro }}"
+                                        </span>
+
+                                    {% endif %}
+
+
+                                    {% if tear.alimentadores %}
+
+                                        <span class="tag">
+                                            {{ tear.alimentadores }} alimentadores
+                                        </span>
+
+                                    {% endif %}
+
+
+                                </div>
+
+
+                            </div>
+
+                        {% endif %}
+
+
+                    </div>
+
+
+                    <div class="match-detail">
+
+
+                        <div class="detail-title">
+                            Por que entrou no match
+                        </div>
+
+
+                        {% if match.detalhes %}
+
+
+                            {% for detalhe in
+                                match.detalhes.split(' | ')
+                            %}
+
+                                <div class="detail-item">
+                                    ✓ {{ detalhe }}
+                                </div>
+
+                            {% endfor %}
+
+
+                        {% else %}
+
+                            <div class="detail-item">
+                                Compatibilidade técnica identificada.
+                            </div>
+
+                        {% endif %}
+
+
+                        <div class="status-row">
+
+
+                            <span
+                                class="
+                                    status
+                                    {{ status_demanda }}
+                                "
+                            >
+
+                                {% if status_demanda == "rascunho" %}
+
+                                    Rascunho
+
+                                {% elif status_demanda == "publicada" %}
+
+                                    Demanda publicada
+
+                                {% elif status_demanda == "contratada" %}
+
+                                    Demanda contratada
+
+                                {% elif status_demanda == "encerrada" %}
+
+                                    Demanda encerrada
+
+                                {% elif status_demanda == "cancelada" %}
+
+                                    Demanda cancelada
+
+                                {% else %}
+
+                                    {{ status_demanda|capitalize }}
+
+                                {% endif %}
+
+                            </span>
+
+
+                            {% if demanda %}
+
+                                <br>
+
+                                <a
+                                    href="{{ url_for(
+                                        'detalhe_demanda',
+                                        demanda_id=demanda.id
+                                    ) }}"
+                                    class="card-link"
+                                >
+                                    Ver demanda →
+                                </a>
+
+                            {% endif %}
+
+
+                        </div>
+
+
+                    </div>
+
+
+                </article>
+
+
+            {% endfor %}
+
+
+        </section>
+
+
+    {% else %}
+
+
+        <section class="empty">
+
+
+            <h2>
+                Nenhum match identificado ainda.
+            </h2>
+
+
+            <p>
+
+                Publique uma demanda e configure seus
+                requisitos técnicos para que o AcheTece
+                possa identificar equipamentos compatíveis.
+
+            </p>
+
+
+        </section>
+
+
+    {% endif %}
+
+
+</main>
+
+
+</body>
+
+</html>
