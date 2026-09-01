@@ -842,30 +842,147 @@
 
 
         <section class="confirmation">
-
-
+    
+    
             <h2>
                 Pedido confirmado
             </h2>
-
-
+    
+    
             <p>
-
-                Sua malharia confirmou este pedido.
-                O próximo passo será o acompanhamento
-                da produção dentro do AcheTece.
-
+    
+                O pedido já foi confirmado pela sua
+                malharia. Quando a produção efetivamente
+                começar, registre o início abaixo.
+    
             </p>
-
-
-            <span class="confirmed">
-                ✓ Pedido confirmado
-            </span>
-
-
+    
+    
+            <form
+                method="POST"
+                action="{{ url_for(
+                    'iniciar_producao_malharia',
+                    pedido_id=pedido.id
+                ) }}"
+                onsubmit="return confirm(
+                    'Deseja registrar o início da produção deste pedido?'
+                );"
+                style="margin:0;"
+            >
+    
+                <button
+                    type="submit"
+                    class="confirm-btn"
+                >
+                    Iniciar produção
+                </button>
+    
+            </form>
+    
+    
         </section>
-
-
+    
+    
+    {% elif status == "em_producao" %}
+    
+    
+        <section class="confirmation">
+    
+    
+            <h2>
+                Produção em andamento
+            </h2>
+    
+    
+            <p>
+    
+                Este pedido está registrado como
+                em produção. Quando o processo produtivo
+                estiver concluído, utilize o botão abaixo.
+    
+            </p>
+    
+    
+            <form
+                method="POST"
+                action="{{ url_for(
+                    'concluir_producao_malharia',
+                    pedido_id=pedido.id
+                ) }}"
+                onsubmit="return confirm(
+                    'Confirma que a produção deste pedido foi concluída?'
+                );"
+                style="margin:0;"
+            >
+    
+                <button
+                    type="submit"
+                    class="confirm-btn"
+                >
+                    Concluir produção
+                </button>
+    
+            </form>
+    
+    
+        </section>
+    
+    
+    {% elif status == "concluido" %}
+    
+    
+        <section class="confirmation">
+    
+    
+            <h2>
+                Produção concluída
+            </h2>
+    
+    
+            <p>
+    
+                Sua malharia informou que a produção
+                foi concluída. Agora aguardamos a
+                confirmação de entrega pelo comprador.
+    
+            </p>
+    
+    
+            <span class="confirmed">
+                ✓ Produção concluída
+            </span>
+    
+    
+        </section>
+    
+    
+    {% elif status == "entregue" %}
+    
+    
+        <section class="confirmation">
+    
+    
+            <h2>
+                Pedido entregue
+            </h2>
+    
+    
+            <p>
+    
+                O comprador confirmou o recebimento
+                deste pedido.
+    
+            </p>
+    
+    
+            <span class="confirmed">
+                ✓ Entrega confirmada
+            </span>
+    
+    
+        </section>
+    
+    
     {% endif %}
 
 
