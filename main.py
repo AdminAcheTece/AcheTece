@@ -5856,6 +5856,26 @@ def retorno_demanda(demanda_id):
         ] = matches_empresa
 
     # --------------------------------------------------------------
+    # Propostas recebidas nesta demanda
+    # --------------------------------------------------------------
+
+    total_propostas_recebidas = (
+        Proposal.query
+        .filter(
+            Proposal.demand_id
+            == demanda.id,
+            Proposal.status.in_(
+                [
+                    "enviada",
+                    "aceita",
+                    "recusada"
+                ]
+            )
+        )
+        .count()
+    )
+
+    # --------------------------------------------------------------
     # Render
     # --------------------------------------------------------------
 
@@ -5870,6 +5890,7 @@ def retorno_demanda(demanda_id):
         total_interessadas=total_interessadas,
         total_em_analise=total_em_analise,
         total_recusadas=total_recusadas,
+        total_propostas_recebidas=total_propostas_recebidas,
     )
 
 # --------------------------------------------------------------------
