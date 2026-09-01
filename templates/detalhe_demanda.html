@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="pt-br">
 
 <head>
@@ -22,6 +23,7 @@
     <style>
 
         :root{
+
             --black:#111111;
             --white:#ffffff;
 
@@ -32,8 +34,10 @@
             --lime:#B6F34D;
 
             --bg:#F4F4F1;
+
             --text:#202020;
             --muted:#6B6B6B;
+
             --line:#DFDFDA;
 
             --green:#267540;
@@ -41,17 +45,32 @@
 
             --red:#8A2631;
             --red-bg:#FFF0F2;
+
+            --blue:#295C87;
+            --blue-bg:#EEF5FA;
+
+            --orange:#755614;
+            --orange-bg:#FFF7E7;
         }
+
 
         *{
             box-sizing:border-box;
         }
 
+
         body{
+
             margin:0;
+
             background:var(--bg);
+
             color:var(--text);
-            font-family:'Inter',Arial,sans-serif;
+
+            font-family:
+                'Inter',
+                Arial,
+                sans-serif;
         }
 
 
@@ -60,41 +79,65 @@
         ========================================================= */
 
         .topbar{
+
             min-height:72px;
+
             background:var(--black);
+
             display:flex;
+
             align-items:center;
         }
 
+
         .topbar-inner{
+
             width:100%;
+
             max-width:1180px;
+
             margin:auto;
+
             padding:0 22px;
 
             display:flex;
+
             align-items:center;
+
             justify-content:space-between;
+
             gap:20px;
         }
 
+
         .brand img{
+
             height:40px;
+
             width:auto;
+
             display:block;
         }
 
+
         .top-actions{
+
             display:flex;
+
             gap:10px;
+
             align-items:center;
         }
 
+
         .top-link{
+
             min-height:42px;
+
             padding:0 17px;
 
             display:inline-flex;
+
             align-items:center;
             justify-content:center;
 
@@ -103,13 +146,17 @@
             color:#fff;
 
             font-size:13px;
+
             font-weight:800;
 
             text-decoration:none;
         }
 
+
         .top-link:hover{
-            background:rgba(255,255,255,.10);
+
+            background:
+                rgba(255,255,255,.10);
         }
 
 
@@ -118,46 +165,67 @@
         ========================================================= */
 
         .page{
+
             width:100%;
+
             max-width:1000px;
+
             margin:auto;
 
-            padding:38px 22px 70px;
+            padding:
+                38px 22px
+                70px;
         }
 
+
         .eyebrow{
+
             color:var(--olive);
 
             font-size:12px;
+
             font-weight:800;
 
             text-transform:uppercase;
+
             letter-spacing:.08em;
 
             margin-bottom:8px;
         }
 
+
         .head{
+
             display:flex;
+
             justify-content:space-between;
+
             align-items:flex-start;
+
             gap:24px;
 
             margin-bottom:26px;
         }
 
+
         h1{
+
             margin:0;
 
             font-size:34px;
+
             line-height:1.12;
 
             letter-spacing:-.035em;
         }
 
+
         .codigo{
+
             color:var(--olive);
+
             font-size:14px;
+
             font-weight:800;
 
             margin-top:8px;
@@ -165,42 +233,66 @@
 
 
         /* =========================================================
-           STATUS
+           STATUS DA DEMANDA
         ========================================================= */
 
         .status{
+
             display:inline-flex;
+
             align-items:center;
             justify-content:center;
 
             min-height:36px;
+
             padding:0 14px;
 
             border-radius:999px;
 
             font-size:12px;
+
             font-weight:800;
 
             white-space:nowrap;
         }
 
+
         .status-rascunho{
+
             background:#ECECEA;
+
             color:#555;
         }
 
+
         .status-publicada{
+
             background:var(--green-bg);
+
             color:var(--green);
         }
 
+
+        .status-contratada{
+
+            background:var(--blue-bg);
+
+            color:var(--blue);
+        }
+
+
         .status-encerrada{
+
             background:#ECECEA;
+
             color:#555;
         }
 
+
         .status-cancelada{
+
             background:var(--red-bg);
+
             color:var(--red);
         }
 
@@ -210,31 +302,52 @@
         ========================================================= */
 
         .flash{
-            margin:0 0 20px;
-            padding:13px 16px;
+
+            margin:
+                0 0
+                20px;
+
+            padding:
+                13px 16px;
 
             border-radius:12px;
 
             font-size:13px;
+
             font-weight:700;
         }
 
+
         .flash.success{
+
             background:#EDF8EF;
-            border:1px solid #B9DCBF;
+
+            border:
+                1px solid #B9DCBF;
+
             color:#256033;
         }
 
+
         .flash.warning{
+
             background:#FFF7E7;
-            border:1px solid #E8D49B;
+
+            border:
+                1px solid #E8D49B;
+
             color:#755614;
         }
 
+
         .flash.danger,
         .flash.error{
+
             background:#FFF0F2;
-            border:1px solid #EAB5BD;
+
+            border:
+                1px solid #EAB5BD;
+
             color:#85202D;
         }
 
@@ -244,76 +357,110 @@
         ========================================================= */
 
         .card{
+
             background:#fff;
 
-            border:1px solid var(--line);
+            border:
+                1px solid var(--line);
+
             border-radius:20px;
 
             overflow:hidden;
         }
 
+
         .section{
-            padding:24px 26px;
+
+            padding:
+                24px 26px;
         }
+
 
         .section + .section{
-            border-top:1px solid var(--line);
+
+            border-top:
+                1px solid var(--line);
         }
 
+
         .section-title{
-            margin:0 0 18px;
+
+            margin:
+                0 0
+                18px;
 
             font-size:16px;
+
             font-weight:800;
         }
 
+
         .grid{
+
             display:grid;
-            grid-template-columns:repeat(2,1fr);
-            gap:22px 30px;
+
+            grid-template-columns:
+                repeat(2,1fr);
+
+            gap:
+                22px 30px;
         }
 
+
         .item-label{
+
             margin-bottom:5px;
 
             color:#858580;
 
             font-size:10px;
+
             font-weight:800;
 
             text-transform:uppercase;
+
             letter-spacing:.07em;
         }
 
+
         .item-value{
+
             color:#1D1D1D;
 
             font-size:15px;
+
             font-weight:700;
 
             line-height:1.45;
         }
 
+
         .item-value.muted{
+
             color:#777;
+
             font-weight:500;
         }
 
+
         .observacoes{
+
             white-space:pre-line;
 
             color:#444;
 
             font-size:14px;
+
             line-height:1.65;
         }
 
 
         /* =========================================================
-           AÇÃO
+           BLOCO DE ESTADO DA DEMANDA
         ========================================================= */
 
         .action-card{
+
             margin-top:20px;
 
             padding:24px;
@@ -325,16 +472,41 @@
             color:#fff;
 
             display:flex;
+
             align-items:center;
+
             justify-content:space-between;
+
             gap:24px;
         }
 
-        .action-copy{
-            max-width:620px;
+
+        .action-card.contracted{
+
+            background:#17202A;
         }
 
+
+        .action-card.closed{
+
+            background:#292929;
+        }
+
+
+        .action-card.cancelled{
+
+            background:#3A2427;
+        }
+
+
+        .action-copy{
+
+            max-width:650px;
+        }
+
+
         .action-copy strong{
+
             display:block;
 
             margin-bottom:6px;
@@ -342,24 +514,33 @@
             font-size:17px;
         }
 
+
         .action-copy p{
+
             margin:0;
 
             color:#CBCBCB;
 
             font-size:13px;
+
             line-height:1.55;
         }
 
+
         .publish-form{
+
             flex:0 0 auto;
+
             margin:0;
         }
 
+
         .publish-btn{
+
             border:0;
 
             min-height:48px;
+
             padding:0 20px;
 
             border-radius:999px;
@@ -367,126 +548,489 @@
             cursor:pointer;
 
             background:var(--lime);
+
             color:#000;
 
             font-family:inherit;
+
             font-size:14px;
+
             font-weight:800;
         }
 
+
         .published-message{
+
             flex:0 0 auto;
 
             display:inline-flex;
+
             align-items:center;
             justify-content:center;
 
             min-height:44px;
+
             padding:0 16px;
 
             border-radius:999px;
 
             background:var(--green-bg);
+
             color:var(--green);
 
             font-size:12px;
+
+            font-weight:800;
+        }
+
+
+        .history-message{
+
+            flex:0 0 auto;
+
+            display:inline-flex;
+
+            align-items:center;
+            justify-content:center;
+
+            min-height:44px;
+
+            padding:0 16px;
+
+            border-radius:999px;
+
+            background:#F1F1EE;
+
+            color:#444;
+
+            font-size:12px;
+
             font-weight:800;
         }
 
 
         /* =========================================================
-           FOOTER DE NAVEGAÇÃO
+           PEDIDO VINCULADO
+        ========================================================= */
+
+        .order-section{
+
+            margin-top:20px;
+
+            background:#fff;
+
+            border:
+                1px solid var(--line);
+
+            border-radius:20px;
+
+            overflow:hidden;
+        }
+
+
+        .order-head{
+
+            padding:
+                20px 23px;
+
+            display:flex;
+
+            align-items:flex-start;
+
+            justify-content:space-between;
+
+            gap:20px;
+
+            border-bottom:
+                1px solid var(--line);
+        }
+
+
+        .order-eyebrow{
+
+            margin-bottom:5px;
+
+            color:var(--olive);
+
+            font-size:10px;
+
+            font-weight:800;
+
+            text-transform:uppercase;
+
+            letter-spacing:.07em;
+        }
+
+
+        .order-code{
+
+            color:#111;
+
+            font-size:21px;
+
+            font-weight:800;
+        }
+
+
+        .order-company{
+
+            margin-top:5px;
+
+            color:#666;
+
+            font-size:12px;
+        }
+
+
+        .order-status{
+
+            display:inline-flex;
+
+            align-items:center;
+
+            min-height:32px;
+
+            padding:0 11px;
+
+            border-radius:999px;
+
+            white-space:nowrap;
+
+            font-size:10px;
+
+            font-weight:800;
+        }
+
+
+        .order-status-aguardando_confirmacao{
+
+            background:var(--orange-bg);
+
+            color:var(--orange);
+        }
+
+
+        .order-status-confirmado{
+
+            background:var(--green-bg);
+
+            color:var(--green);
+        }
+
+
+        .order-status-em_producao{
+
+            background:var(--blue-bg);
+
+            color:var(--blue);
+        }
+
+
+        .order-status-concluido{
+
+            background:var(--green-bg);
+
+            color:var(--green);
+        }
+
+
+        .order-status-entregue{
+
+            background:var(--lime);
+
+            color:#111;
+        }
+
+
+        .order-status-cancelado{
+
+            background:var(--red-bg);
+
+            color:var(--red);
+        }
+
+
+        .order-body{
+
+            padding:23px;
+        }
+
+
+        .order-grid{
+
+            display:grid;
+
+            grid-template-columns:
+                repeat(4,1fr);
+
+            gap:20px;
+        }
+
+
+        .order-note{
+
+            margin-top:19px;
+
+            padding:
+                14px 16px;
+
+            border-radius:13px;
+
+            background:var(--olive-light);
+
+            color:#555;
+
+            font-size:12px;
+
+            line-height:1.55;
+        }
+
+
+        .order-actions{
+
+            margin-top:18px;
+
+            padding-top:18px;
+
+            border-top:
+                1px solid #ECECE8;
+
+            display:flex;
+
+            flex-wrap:wrap;
+
+            gap:9px;
+        }
+
+
+        /* =========================================================
+           BOTÕES
         ========================================================= */
 
         .bottom-actions{
+
             margin-top:18px;
 
             display:flex;
-            gap:12px;
+
+            gap:10px;
+
+            flex-wrap:wrap;
+
             justify-content:flex-start;
         }
 
+
         .back-btn{
+
             display:inline-flex;
+
             align-items:center;
             justify-content:center;
 
             min-height:44px;
+
             padding:0 17px;
 
             border-radius:999px;
 
-            border:1px solid #CACAC5;
+            border:
+                1px solid #CACAC5;
 
             color:#222;
+
             background:#fff;
 
             font-size:13px;
+
             font-weight:800;
 
             text-decoration:none;
         }
 
-        .match-run-btn{
+
+        .back-btn:hover{
+
+            background:var(--olive-light);
+        }
+
+
+        .primary-btn{
+
             display:inline-flex;
+
             align-items:center;
             justify-content:center;
-        
+
             min-height:44px;
+
             padding:0 18px;
-        
+
             border:0;
+
             border-radius:999px;
-        
+
             background:#000;
+
             color:var(--lime);
-        
+
             font-family:inherit;
+
             font-size:13px;
+
             font-weight:800;
-        
+
             cursor:pointer;
+
+            text-decoration:none;
         }
-        
-        .match-run-btn:hover{
+
+
+        .primary-btn:hover{
+
             background:var(--lime);
+
             color:#000;
         }
+
+
+        .match-run-btn{
+
+            display:inline-flex;
+
+            align-items:center;
+            justify-content:center;
+
+            min-height:44px;
+
+            padding:0 18px;
+
+            border:0;
+
+            border-radius:999px;
+
+            background:#000;
+
+            color:var(--lime);
+
+            font-family:inherit;
+
+            font-size:13px;
+
+            font-weight:800;
+
+            cursor:pointer;
+        }
+
+
+        .match-run-btn:hover{
+
+            background:var(--lime);
+
+            color:#000;
+        }
+
+
+        /* =========================================================
+           ALERTA DE INCONSISTÊNCIA
+        ========================================================= */
+
+        .integrity-warning{
+
+            margin-top:20px;
+
+            padding:17px 18px;
+
+            background:#FFF7E7;
+
+            border:
+                1px solid #E8D49B;
+
+            border-radius:14px;
+
+            color:#755614;
+
+            font-size:12px;
+
+            line-height:1.55;
+        }
+
+
+        /* =========================================================
+           MOBILE
+        ========================================================= */
+
+        @media(max-width:750px){
+
+            .order-grid{
+
+                grid-template-columns:
+                    1fr 1fr;
+            }
+
+        }
+
 
         @media(max-width:650px){
 
             .page{
-                padding:28px 16px 50px;
+
+                padding:
+                    28px 16px
+                    50px;
             }
 
+
             .topbar-inner{
+
                 padding:0 16px;
             }
 
+
             .brand img{
+
                 height:34px;
             }
 
+
             .head{
+
                 flex-direction:column;
+
                 gap:14px;
             }
 
+
             h1{
+
                 font-size:28px;
             }
 
-            .grid{
+
+            .grid,
+            .order-grid{
+
                 grid-template-columns:1fr;
             }
 
+
             .action-card{
+
                 flex-direction:column;
+
                 align-items:stretch;
             }
 
+
             .publish-btn{
+
                 width:100%;
+            }
+
+
+            .order-head{
+
+                flex-direction:column;
             }
 
         }
@@ -499,9 +1043,36 @@
 <body>
 
 
+{% set status =
+    (
+        demanda.status
+        or 'rascunho'
+    )
+    |lower
+%}
+
+
+{% if pedido %}
+
+    {% set status_pedido =
+        (
+            pedido.status
+            or ''
+        )
+        |lower
+    %}
+
+{% else %}
+
+    {% set status_pedido = '' %}
+
+{% endif %}
+
+
 <header class="topbar">
 
     <div class="topbar-inner">
+
 
         <a
             href="{{ url_for('painel_comprador') }}"
@@ -537,6 +1108,7 @@
 
         </div>
 
+
     </div>
 
 </header>
@@ -545,27 +1117,30 @@
 <main class="page">
 
 
-    {% set status =
-        (demanda.status or 'rascunho')
-        |lower
-    %}
-
+    <!-- =========================================================
+         CABEÇALHO
+    ========================================================== -->
 
     <div class="head">
 
+
         <div>
+
 
             <div class="eyebrow">
                 Demanda de Produção
             </div>
 
+
             <h1>
                 {{ demanda.produto }}
             </h1>
 
+
             <div class="codigo">
                 {{ demanda.codigo }}
             </div>
+
 
         </div>
 
@@ -577,48 +1152,82 @@
             "
         >
 
+
             {% if status == "rascunho" %}
+
                 Rascunho
 
             {% elif status == "publicada" %}
+
                 Publicada
 
+            {% elif status == "contratada" %}
+
+                Contratada
+
             {% elif status == "encerrada" %}
+
                 Encerrada
 
             {% elif status == "cancelada" %}
+
                 Cancelada
 
             {% else %}
+
                 {{ status|capitalize }}
+
             {% endif %}
 
+
         </span>
+
 
     </div>
 
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
+    <!-- =========================================================
+         FLASH
+    ========================================================== -->
+
+    {% with messages =
+        get_flashed_messages(
+            with_categories=true
+        )
+    %}
+
 
         {% if messages %}
 
+
             {% for category, message in messages %}
+
 
                 <div class="flash {{ category }}">
                     {{ message }}
                 </div>
 
+
             {% endfor %}
 
+
         {% endif %}
+
 
     {% endwith %}
 
 
+    <!-- =========================================================
+         DADOS DA DEMANDA
+    ========================================================== -->
+
     <section class="card">
 
 
+        <!-- PRODUTO -->
+
         <div class="section">
+
 
             <h2 class="section-title">
                 Produto e especificação
@@ -647,7 +1256,14 @@
                         Estrutura / tipo de malha
                     </div>
 
-                    <div class="item-value {% if not demanda.estrutura_malha %}muted{% endif %}">
+                    <div
+                        class="
+                            item-value
+                            {% if not demanda.estrutura_malha %}
+                                muted
+                            {% endif %}
+                        "
+                    >
 
                         {{
                             demanda.estrutura_malha
@@ -665,7 +1281,14 @@
                         Composição
                     </div>
 
-                    <div class="item-value {% if not demanda.composicao %}muted{% endif %}">
+                    <div
+                        class="
+                            item-value
+                            {% if not demanda.composicao %}
+                                muted
+                            {% endif %}
+                        "
+                    >
 
                         {{
                             demanda.composicao
@@ -683,7 +1306,14 @@
                         Título do fio
                     </div>
 
-                    <div class="item-value {% if not demanda.titulo_fio %}muted{% endif %}">
+                    <div
+                        class="
+                            item-value
+                            {% if not demanda.titulo_fio %}
+                                muted
+                            {% endif %}
+                        "
+                    >
 
                         {{
                             demanda.titulo_fio
@@ -701,7 +1331,14 @@
                         Gramatura
                     </div>
 
-                    <div class="item-value {% if not demanda.gramatura %}muted{% endif %}">
+                    <div
+                        class="
+                            item-value
+                            {% if not demanda.gramatura %}
+                                muted
+                            {% endif %}
+                        "
+                    >
 
                         {% if demanda.gramatura %}
 
@@ -720,10 +1357,14 @@
 
             </div>
 
+
         </div>
 
 
+        <!-- QUANTIDADE -->
+
         <div class="section">
+
 
             <h2 class="section-title">
                 Quantidade e prazo
@@ -760,7 +1401,14 @@
                         Data necessária
                     </div>
 
-                    <div class="item-value {% if not demanda.data_necessidade %}muted{% endif %}">
+                    <div
+                        class="
+                            item-value
+                            {% if not demanda.data_necessidade %}
+                                muted
+                            {% endif %}
+                        "
+                    >
 
                         {% if demanda.data_necessidade %}
 
@@ -782,10 +1430,14 @@
 
             </div>
 
+
         </div>
 
 
+        <!-- LOCALIZAÇÃO -->
+
         <div class="section">
+
 
             <h2 class="section-title">
                 Preferência de localização
@@ -801,7 +1453,14 @@
                         Estado
                     </div>
 
-                    <div class="item-value {% if not demanda.estado_preferencial %}muted{% endif %}">
+                    <div
+                        class="
+                            item-value
+                            {% if not demanda.estado_preferencial %}
+                                muted
+                            {% endif %}
+                        "
+                    >
 
                         {{
                             demanda.estado_preferencial
@@ -819,7 +1478,14 @@
                         Cidade
                     </div>
 
-                    <div class="item-value {% if not demanda.cidade_preferencial %}muted{% endif %}">
+                    <div
+                        class="
+                            item-value
+                            {% if not demanda.cidade_preferencial %}
+                                muted
+                            {% endif %}
+                        "
+                    >
 
                         {{
                             demanda.cidade_preferencial
@@ -833,10 +1499,14 @@
 
             </div>
 
+
         </div>
 
 
+        <!-- SERVIÇO -->
+
         <div class="section">
+
 
             <h2 class="section-title">
                 Serviço e observações
@@ -852,7 +1522,14 @@
                         Escopo
                     </div>
 
-                    <div class="item-value {% if not demanda.tipo_servico %}muted{% endif %}">
+                    <div
+                        class="
+                            item-value
+                            {% if not demanda.tipo_servico %}
+                                muted
+                            {% endif %}
+                        "
+                    >
 
                         {{
                             demanda.tipo_servico
@@ -869,9 +1546,11 @@
 
             <div style="margin-top:24px;">
 
+
                 <div class="item-label">
                     Observações
                 </div>
+
 
                 <div class="observacoes">
 
@@ -882,7 +1561,9 @@
 
                 </div>
 
+
             </div>
+
 
         </div>
 
@@ -890,10 +1571,14 @@
     </section>
 
 
-    <section class="action-card">
+    <!-- =========================================================
+         ESTADO ATUAL DA DEMANDA
+    ========================================================== -->
+
+    {% if status == "rascunho" %}
 
 
-        {% if status == "rascunho" %}
+        <section class="action-card">
 
 
             <div class="action-copy">
@@ -903,9 +1588,11 @@
                 </strong>
 
                 <p>
-                    Ao publicar, a demanda passa a estar apta
-                    para o futuro processo de matching com as
-                    malharias cadastradas no AcheTece.
+
+                    Ao publicar, a demanda passa a ficar
+                    disponível para configuração e execução
+                    do matching técnico do AcheTece.
+
                 </p>
 
             </div>
@@ -933,19 +1620,28 @@
             </form>
 
 
-        {% elif status == "publicada" %}
+        </section>
+
+
+    {% elif status == "publicada" %}
+
+
+        <section class="action-card">
 
 
             <div class="action-copy">
 
                 <strong>
-                    Demanda publicada.
+                    Demanda publicada e ativa.
                 </strong>
 
                 <p>
-                    Esta demanda está pronta para participar
-                    do processo de matching quando ativarmos
-                    o módulo de oportunidades.
+
+                    Esta demanda está apta para participar
+                    do Matching V1, gerar oportunidades
+                    para malharias compatíveis e receber
+                    propostas comerciais.
+
                 </p>
 
             </div>
@@ -956,30 +1652,408 @@
             </div>
 
 
-        {% else %}
+        </section>
+
+
+    {% elif status == "contratada" %}
+
+
+        <section class="action-card contracted">
 
 
             <div class="action-copy">
 
                 <strong>
-                    Demanda {{ status }}.
+                    Demanda contratada.
                 </strong>
 
                 <p>
-                    Nenhuma ação de publicação está disponível
-                    neste status.
+
+                    Uma proposta já foi aceita e esta demanda
+                    originou um pedido. Novos matches e novas
+                    decisões comerciais estão bloqueados.
+
                 </p>
 
             </div>
 
 
-        {% endif %}
+            <div class="history-message">
+                Contratada
+            </div>
 
 
-    </section>
+        </section>
 
+
+    {% elif status == "encerrada" %}
+
+
+        <section class="action-card closed">
+
+
+            <div class="action-copy">
+
+                <strong>
+                    Demanda encerrada.
+                </strong>
+
+                <p>
+
+                    Esta demanda concluiu seu ciclo comercial
+                    e operacional no AcheTece e permanece
+                    disponível para consulta e histórico.
+
+                </p>
+
+            </div>
+
+
+            <div class="history-message">
+                ✓ Encerrada
+            </div>
+
+
+        </section>
+
+
+    {% elif status == "cancelada" %}
+
+
+        <section class="action-card cancelled">
+
+
+            <div class="action-copy">
+
+                <strong>
+                    Demanda cancelada.
+                </strong>
+
+                <p>
+
+                    Esta demanda não está mais disponível
+                    para matching, negociação ou contratação.
+                    Seus dados permanecem apenas para histórico.
+
+                </p>
+
+            </div>
+
+
+            <div class="history-message">
+                Cancelada
+            </div>
+
+
+        </section>
+
+
+    {% endif %}
+
+
+    <!-- =========================================================
+         PEDIDO VINCULADO
+    ========================================================== -->
+
+    {% if pedido %}
+
+
+        <section class="order-section">
+
+
+            <div class="order-head">
+
+
+                <div>
+
+
+                    <div class="order-eyebrow">
+                        Pedido que atendeu esta demanda
+                    </div>
+
+
+                    <div class="order-code">
+                        {{ pedido.codigo }}
+                    </div>
+
+
+                    <div class="order-company">
+
+
+                        {% if empresa_pedido %}
+
+                            {{
+                                empresa_pedido.nome
+                                or empresa_pedido.apelido
+                                or "Malharia"
+                            }}
+
+                            {% if empresa_pedido.cidade %}
+
+                                • {{ empresa_pedido.cidade }}
+
+                            {% endif %}
+
+
+                            {% if empresa_pedido.estado %}
+
+                                / {{ empresa_pedido.estado }}
+
+                            {% endif %}
+
+
+                        {% else %}
+
+                            Malharia contratada
+
+                        {% endif %}
+
+
+                    </div>
+
+
+                </div>
+
+
+                <span
+                    class="
+                        order-status
+                        order-status-{{ status_pedido }}
+                    "
+                >
+
+
+                    {% if status_pedido == "aguardando_confirmacao" %}
+
+                        Aguardando confirmação
+
+                    {% elif status_pedido == "confirmado" %}
+
+                        Confirmado
+
+                    {% elif status_pedido == "em_producao" %}
+
+                        Em produção
+
+                    {% elif status_pedido == "concluido" %}
+
+                        Produção concluída
+
+                    {% elif status_pedido == "entregue" %}
+
+                        Entregue
+
+                    {% elif status_pedido == "cancelado" %}
+
+                        Cancelado
+
+                    {% else %}
+
+                        {{ status_pedido|capitalize }}
+
+                    {% endif %}
+
+
+                </span>
+
+
+            </div>
+
+
+            <div class="order-body">
+
+
+                <div class="order-grid">
+
+
+                    <div>
+
+                        <div class="item-label">
+                            Quantidade contratada
+                        </div>
+
+                        <div class="item-value">
+
+                            {{
+                                "{:,.0f}".format(
+                                    pedido.quantidade_kg
+                                )
+                                |replace(",", ".")
+                            }}
+                            kg
+
+                        </div>
+
+                    </div>
+
+
+                    <div>
+
+                        <div class="item-label">
+                            Preço por kg
+                        </div>
+
+                        <div class="item-value">
+
+                            R$
+                            {{
+                                "{:,.2f}".format(
+                                    pedido.preco_por_kg
+                                )
+                                |replace(",", "X")
+                                |replace(".", ",")
+                                |replace("X", ".")
+                            }}
+
+                        </div>
+
+                    </div>
+
+
+                    <div>
+
+                        <div class="item-label">
+                            Valor total
+                        </div>
+
+                        <div class="item-value">
+
+                            R$
+                            {{
+                                "{:,.2f}".format(
+                                    pedido.valor_total
+                                )
+                                |replace(",", "X")
+                                |replace(".", ",")
+                                |replace("X", ".")
+                            }}
+
+                        </div>
+
+                    </div>
+
+
+                    <div>
+
+                        <div class="item-label">
+                            Prazo contratado
+                        </div>
+
+                        <div class="item-value">
+
+                            {{ pedido.prazo_dias }}
+                            dias
+
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+
+                <div class="order-note">
+
+
+                    {% if status_pedido == "aguardando_confirmacao" %}
+
+                        O pedido já foi criado e está aguardando
+                        confirmação da malharia.
+
+                    {% elif status_pedido == "confirmado" %}
+
+                        A malharia confirmou o pedido.
+                        A produção ainda não foi iniciada.
+
+                    {% elif status_pedido == "em_producao" %}
+
+                        A malharia informou que a produção
+                        deste pedido está em andamento.
+
+                    {% elif status_pedido == "concluido" %}
+
+                        A produção foi concluída e o pedido
+                        aguarda a confirmação de entrega
+                        pelo comprador.
+
+                    {% elif status_pedido == "entregue" %}
+
+                        O pedido foi concluído e a entrega
+                        já foi confirmada pelo comprador.
+
+                    {% elif status_pedido == "cancelado" %}
+
+                        O pedido vinculado a esta demanda
+                        foi cancelado.
+
+                    {% endif %}
+
+
+                </div>
+
+
+                <div class="order-actions">
+
+
+                    <a
+                        href="{{ url_for(
+                            'detalhe_pedido_comprador',
+                            pedido_id=pedido.id
+                        ) }}"
+                        class="primary-btn"
+                    >
+                        Acompanhar pedido
+                    </a>
+
+
+                    <a
+                        href="{{ url_for(
+                            'propostas_recebidas',
+                            demanda_id=demanda.id
+                        ) }}"
+                        class="back-btn"
+                    >
+                        Ver propostas
+                    </a>
+
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+
+    {% elif status in ["contratada", "encerrada"] %}
+
+
+        <div class="integrity-warning">
+
+            <strong>
+                Atenção:
+            </strong>
+
+            esta demanda está marcada como
+            <strong>{{ status }}</strong>,
+            mas nenhum pedido vinculado foi localizado.
+
+            Isso indica uma inconsistência histórica
+            que deverá ser revisada no banco de dados.
+
+        </div>
+
+
+    {% endif %}
+
+
+    <!-- =========================================================
+         NAVEGAÇÃO / AÇÕES
+    ========================================================== -->
 
     <div class="bottom-actions">
+
 
         <a
             href="{{ url_for('minhas_demandas') }}"
@@ -987,20 +2061,27 @@
         >
             ← Voltar para Minhas Demandas
         </a>
-    
-        <a
-            href="{{ url_for(
-                'configurar_matching',
-                demanda_id=demanda.id
-            ) }}"
-            class="back-btn"
-        >
-            Configurar Matching
-        </a>
-    
-    
+
+
+        <!-- =====================================================
+             DEMANDA PUBLICADA:
+             MATCHING E NEGOCIAÇÃO AINDA ATIVOS
+        ====================================================== -->
+
         {% if status == "publicada" %}
-    
+
+
+            <a
+                href="{{ url_for(
+                    'configurar_matching',
+                    demanda_id=demanda.id
+                ) }}"
+                class="back-btn"
+            >
+                Configurar Matching
+            </a>
+
+
             <form
                 method="POST"
                 action="{{ url_for(
@@ -1012,17 +2093,17 @@
                     'Deseja executar o Matching V1 para esta demanda?'
                 );"
             >
-    
+
                 <button
                     type="submit"
                     class="match-run-btn"
                 >
                     Executar Matching V1
                 </button>
-    
+
             </form>
-    
-    
+
+
             <a
                 href="{{ url_for(
                     'matches_demanda',
@@ -1032,6 +2113,7 @@
             >
                 Ver Matches
             </a>
+
 
             <a
                 href="{{ url_for(
@@ -1043,6 +2125,7 @@
                 Retorno das Malharias
             </a>
 
+
             <a
                 href="{{ url_for(
                     'propostas_recebidas',
@@ -1052,15 +2135,72 @@
             >
                 Ver Propostas
             </a>
-        
+
+
+        <!-- =====================================================
+             CONTRATADA / ENCERRADA:
+             APENAS HISTÓRICO E PEDIDO
+        ====================================================== -->
+
+        {% elif status in ["contratada", "encerrada"] %}
+
+
+            <a
+                href="{{ url_for(
+                    'propostas_recebidas',
+                    demanda_id=demanda.id
+                ) }}"
+                class="back-btn"
+            >
+                Ver Propostas
+            </a>
+
+
+            {% if pedido %}
+
+
+                <a
+                    href="{{ url_for(
+                        'detalhe_pedido_comprador',
+                        pedido_id=pedido.id
+                    ) }}"
+                    class="primary-btn"
+                >
+                    Acompanhar Pedido
+                </a>
+
+
+            {% endif %}
+
+
+        <!-- =====================================================
+             CANCELADA:
+             SOMENTE HISTÓRICO
+        ====================================================== -->
+
+        {% elif status == "cancelada" %}
+
+
+            <a
+                href="{{ url_for(
+                    'propostas_recebidas',
+                    demanda_id=demanda.id
+                ) }}"
+                class="back-btn"
+            >
+                Histórico de Propostas
+            </a>
+
+
         {% endif %}
-    
+
+
     </div>
-    
-    
-    </main>
-    
-    
-    </body>
-    
-    </html>
+
+
+</main>
+
+
+</body>
+
+</html>
