@@ -6449,32 +6449,43 @@ def aceitar_proposta(proposta_id):
     # Comprador autenticado
     # --------------------------------------------------------------
 
-    user_id = session.get("user_id")
+    user_id = session.get(
+        "user_id"
+    )
 
     if not user_id:
+
         return redirect(
             url_for("login")
         )
 
     try:
+
         usuario = db.session.get(
             Usuario,
             int(user_id)
         )
+
     except Exception:
+
         usuario = None
 
     if (
         not usuario
         or usuario.is_active is False
-        or (usuario.role or "").strip().lower() != "cliente"
+        or (
+            usuario.role or ""
+        ).strip().lower() != "cliente"
     ):
+
         return redirect(
             url_for("login")
         )
 
     # --------------------------------------------------------------
-    # Proposta + garantia de propriedade da demanda
+    # Proposta
+    #
+    # Garante que pertence a uma demanda do comprador logado.
     # --------------------------------------------------------------
 
     proposta = (
@@ -6485,8 +6496,11 @@ def aceitar_proposta(proposta_id):
             == ProductionRequest.id
         )
         .filter(
-            Proposal.id == proposta_id,
-            ProductionRequest.user_id == usuario.id
+            Proposal.id
+            == proposta_id,
+
+            ProductionRequest.user_id
+            == usuario.id
         )
         .first()
     )
@@ -6502,6 +6516,56 @@ def aceitar_proposta(proposta_id):
             url_for("minhas_demandas")
         )
 
+    # --------------------------------------------------------------
+    # Demanda
+    # --------------------------------------------------------------
+
+    demanda = proposta.demanda
+
+    if not demanda:
+
+        flash(
+            "A demanda vinculada não foi encontrada.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("minhas_demandas")
+        )
+
+    status_demanda = (
+        demanda.status or ""
+    ).strip().lower()
+
+    # --------------------------------------------------------------
+    # Uma proposta só pode ser aceita enquanto a demanda
+    # ainda estiver publicada.
+    #
+    # Depois de contratada/encerrada, nenhuma nova proposta
+    # pode avançar.
+    # --------------------------------------------------------------
+
+    if status_demanda != "publicada":
+
+        flash(
+            (
+                "Esta demanda não está mais disponível "
+                "para aceite de propostas."
+            ),
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "propostas_recebidas",
+                demanda_id=demanda.id
+            )
+        )
+
+    # --------------------------------------------------------------
+    # Status atual da proposta
+    # --------------------------------------------------------------
+
     status_atual = (
         proposta.status or ""
     ).strip().lower()
@@ -6509,26 +6573,30 @@ def aceitar_proposta(proposta_id):
     if status_atual != "enviada":
 
         flash(
-            "Esta proposta não está disponível para aceite no status atual.",
+            (
+                "Esta proposta não está disponível "
+                "para aceite no status atual."
+            ),
             "warning"
         )
 
         return redirect(
             url_for(
                 "propostas_recebidas",
-                demanda_id=proposta.demand_id
+                demanda_id=demanda.id
             )
         )
 
     # --------------------------------------------------------------
-    # V1: somente uma proposta aceita por demanda
+    # V1:
+    # somente UMA proposta aceita por demanda
     # --------------------------------------------------------------
 
     outra_aceita = (
         Proposal.query
         .filter(
             Proposal.demand_id
-            == proposta.demand_id,
+            == demanda.id,
 
             Proposal.id
             != proposta.id,
@@ -6542,14 +6610,47 @@ def aceitar_proposta(proposta_id):
     if outra_aceita:
 
         flash(
-            "Já existe uma proposta aceita para esta demanda.",
+            (
+                "Já existe uma proposta aceita "
+                "para esta demanda."
+            ),
             "warning"
         )
 
         return redirect(
             url_for(
                 "propostas_recebidas",
-                demanda_id=proposta.demand_id
+                demanda_id=demanda.id
+            )
+        )
+
+    # --------------------------------------------------------------
+    # Proteção adicional:
+    # se já houver pedido na demanda, não permite novo aceite.
+    # --------------------------------------------------------------
+
+    pedido_existente = (
+        Order.query
+        .filter_by(
+            demand_id=demanda.id
+        )
+        .first()
+    )
+
+    if pedido_existente:
+
+        flash(
+            (
+                f"A demanda já originou o pedido "
+                f"{pedido_existente.codigo}."
+            ),
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "propostas_recebidas",
+                demanda_id=demanda.id
             )
         )
 
@@ -6565,7 +6666,9 @@ def aceitar_proposta(proposta_id):
             proposal_id=proposta.id,
             actor_role="comprador",
             action="aceita",
-            message="Proposta aceita pelo comprador."
+            message=(
+                "Proposta aceita pelo comprador."
+            )
         )
 
         db.session.add(
@@ -6590,7 +6693,7 @@ def aceitar_proposta(proposta_id):
         return redirect(
             url_for(
                 "propostas_recebidas",
-                demanda_id=proposta.demand_id
+                demanda_id=demanda.id
             )
         )
 
@@ -6602,7 +6705,7 @@ def aceitar_proposta(proposta_id):
     return redirect(
         url_for(
             "propostas_recebidas",
-            demanda_id=proposta.demand_id
+            demanda_id=demanda.id
         )
     )
 
@@ -6929,8 +7032,7 @@ def gerar_pedido(proposta_id):
     # --------------------------------------------------------------
     # Proposta
     #
-    # Garantimos que a proposta pertence a uma demanda
-    # do comprador que está logado.
+    # Garante que pertence ao comprador logado.
     # --------------------------------------------------------------
 
     proposta = (
@@ -6941,7 +7043,9 @@ def gerar_pedido(proposta_id):
             == ProductionRequest.id
         )
         .filter(
-            Proposal.id == proposta_id,
+            Proposal.id
+            == proposta_id,
+
             ProductionRequest.user_id
             == usuario.id
         )
@@ -6970,7 +7074,10 @@ def gerar_pedido(proposta_id):
     if status_proposta != "aceita":
 
         flash(
-            "Somente uma proposta aceita pode gerar um pedido.",
+            (
+                "Somente uma proposta aceita "
+                "pode gerar um pedido."
+            ),
             "warning"
         )
 
@@ -7012,6 +7119,36 @@ def gerar_pedido(proposta_id):
         )
 
     # --------------------------------------------------------------
+    # Proteção adicional:
+    # uma demanda só pode gerar um pedido na V1
+    # --------------------------------------------------------------
+
+    pedido_da_demanda = (
+        Order.query
+        .filter_by(
+            demand_id=proposta.demand_id
+        )
+        .first()
+    )
+
+    if pedido_da_demanda:
+
+        flash(
+            (
+                f"A demanda já originou o pedido "
+                f"{pedido_da_demanda.codigo}."
+            ),
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "propostas_recebidas",
+                demanda_id=proposta.demand_id
+            )
+        )
+
+    # --------------------------------------------------------------
     # Demanda
     # --------------------------------------------------------------
 
@@ -7026,6 +7163,31 @@ def gerar_pedido(proposta_id):
 
         return redirect(
             url_for("minhas_demandas")
+        )
+
+    status_demanda = (
+        demanda.status or ""
+    ).strip().lower()
+
+    # --------------------------------------------------------------
+    # Para gerar o pedido, a demanda ainda precisa estar publicada.
+    # --------------------------------------------------------------
+
+    if status_demanda != "publicada":
+
+        flash(
+            (
+                "Esta demanda não está disponível "
+                "para geração de um novo pedido."
+            ),
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "propostas_recebidas",
+                demanda_id=demanda.id
+            )
         )
 
     # --------------------------------------------------------------
@@ -7044,14 +7206,12 @@ def gerar_pedido(proposta_id):
         return redirect(
             url_for(
                 "propostas_recebidas",
-                demanda_id=proposta.demand_id
+                demanda_id=demanda.id
             )
         )
 
     # --------------------------------------------------------------
     # Valor total contratado
-    #
-    # quantidade × preço/kg
     # --------------------------------------------------------------
 
     try:
@@ -7075,12 +7235,12 @@ def gerar_pedido(proposta_id):
         return redirect(
             url_for(
                 "propostas_recebidas",
-                demanda_id=proposta.demand_id
+                demanda_id=demanda.id
             )
         )
 
     # --------------------------------------------------------------
-    # Criação do pedido
+    # Criação do pedido + consolidação da demanda
     # --------------------------------------------------------------
 
     try:
@@ -7114,7 +7274,7 @@ def gerar_pedido(proposta_id):
         )
 
         # ----------------------------------------------------------
-        # Precisamos do ID para gerar o código ATP-000001
+        # Precisamos do ID para gerar ATP-000001
         # ----------------------------------------------------------
 
         db.session.flush()
@@ -7123,8 +7283,80 @@ def gerar_pedido(proposta_id):
             f"ATP-{pedido.id:06d}"
         )
 
+        # ==========================================================
+        # DEMANDA PASSA PARA CONTRATADA
+        # ==========================================================
+
+        demanda.status = "contratada"
+
+        # ==========================================================
+        # ENCERRA AS OUTRAS PROPOSTAS
+        #
+        # Elas continuam armazenadas no banco para histórico,
+        # porém não estão mais concorrendo pela demanda.
+        # ==========================================================
+
+        propostas_concorrentes = (
+            Proposal.query
+            .filter(
+                Proposal.demand_id
+                == demanda.id,
+
+                Proposal.id
+                != proposta.id,
+
+                Proposal.status.in_(
+                    [
+                        "rascunho",
+                        "enviada",
+                        "ajuste_solicitado"
+                    ]
+                )
+            )
+            .all()
+        )
+
+        for proposta_concorrente in propostas_concorrentes:
+
+            proposta_concorrente.status = (
+                "nao_selecionada"
+            )
+
+            interacao_concorrente = ProposalInteraction(
+                proposal_id=proposta_concorrente.id,
+                actor_role="sistema",
+                action="nao_selecionada",
+                message=(
+                    f"Proposta encerrada após a "
+                    f"contratação do pedido "
+                    f"{pedido.codigo}."
+                )
+            )
+
+            db.session.add(
+                interacao_concorrente
+            )
+
+        # ==========================================================
+        # ENCERRA TODAS AS OPORTUNIDADES DA DEMANDA
+        #
+        # A negociação agora migra para o módulo de Pedidos.
+        # ==========================================================
+
+        oportunidades = (
+            Opportunity.query
+            .filter_by(
+                demand_id=demanda.id
+            )
+            .all()
+        )
+
+        for oportunidade in oportunidades:
+
+            oportunidade.status = "inativa"
+
         # ----------------------------------------------------------
-        # Histórico da proposta
+        # Histórico da proposta escolhida
         # ----------------------------------------------------------
 
         interacao = ProposalInteraction(
@@ -7142,7 +7374,7 @@ def gerar_pedido(proposta_id):
         )
 
         # ----------------------------------------------------------
-        # Salva tudo
+        # Salva tudo em uma única transação
         # ----------------------------------------------------------
 
         db.session.commit()
@@ -7163,7 +7395,7 @@ def gerar_pedido(proposta_id):
         return redirect(
             url_for(
                 "propostas_recebidas",
-                demanda_id=proposta.demand_id
+                demanda_id=demanda.id
             )
         )
 
@@ -7182,7 +7414,7 @@ def gerar_pedido(proposta_id):
     return redirect(
         url_for(
             "propostas_recebidas",
-            demanda_id=proposta.demand_id
+            demanda_id=demanda.id
         )
     )
 
@@ -7268,7 +7500,10 @@ def confirmar_entrega_comprador(pedido_id):
     if status_atual != "concluido":
 
         flash(
-            "A entrega somente pode ser confirmada após a conclusão da produção.",
+            (
+                "A entrega somente pode ser confirmada "
+                "após a conclusão da produção."
+            ),
             "warning"
         )
 
@@ -7279,9 +7514,111 @@ def confirmar_entrega_comprador(pedido_id):
             )
         )
 
+    # --------------------------------------------------------------
+    # Demanda vinculada
+    # --------------------------------------------------------------
+
+    demanda = pedido.demanda
+
+    # --------------------------------------------------------------
+    # Confirma entrega + encerra ciclo
+    # --------------------------------------------------------------
+
     try:
 
+        # ==========================================================
+        # PEDIDO
+        # ==========================================================
+
         pedido.status = "entregue"
+
+        # ==========================================================
+        # DEMANDA
+        #
+        # Pedido entregue significa:
+        # demanda comercialmente encerrada.
+        # ==========================================================
+
+        if demanda:
+
+            status_demanda = (
+                demanda.status or ""
+            ).strip().lower()
+
+            if status_demanda != "cancelada":
+
+                demanda.status = "encerrada"
+
+        # ==========================================================
+        # GARANTIA:
+        # nenhuma oportunidade dessa demanda continua aberta
+        # ==========================================================
+
+        if demanda:
+
+            oportunidades = (
+                Opportunity.query
+                .filter_by(
+                    demand_id=demanda.id
+                )
+                .all()
+            )
+
+            for oportunidade in oportunidades:
+
+                oportunidade.status = "inativa"
+
+        # ==========================================================
+        # GARANTIA:
+        # nenhuma proposta concorrente permanece aberta
+        # ==========================================================
+
+        if demanda:
+
+            propostas_abertas = (
+                Proposal.query
+                .filter(
+                    Proposal.demand_id
+                    == demanda.id,
+
+                    Proposal.id
+                    != pedido.proposal_id,
+
+                    Proposal.status.in_(
+                        [
+                            "rascunho",
+                            "enviada",
+                            "ajuste_solicitado"
+                        ]
+                    )
+                )
+                .all()
+            )
+
+            for proposta_aberta in propostas_abertas:
+
+                proposta_aberta.status = (
+                    "nao_selecionada"
+                )
+
+                interacao = ProposalInteraction(
+                    proposal_id=proposta_aberta.id,
+                    actor_role="sistema",
+                    action="nao_selecionada",
+                    message=(
+                        f"Proposta encerrada após "
+                        f"a conclusão do pedido "
+                        f"{pedido.codigo}."
+                    )
+                )
+
+                db.session.add(
+                    interacao
+                )
+
+        # ==========================================================
+        # HISTÓRICO OPERACIONAL
+        # ==========================================================
 
         evento = OrderEvent(
             order_id=pedido.id,
@@ -7339,15 +7676,21 @@ def confirmar_entrega_comprador(pedido_id):
 # --------------------------------------------------------------------
 # Portal do Comprador - AcheTece 2.0
 # --------------------------------------------------------------------
-@app.route('/painel_comprador', endpoint='painel_comprador')
+
+@app.route(
+    '/painel_comprador',
+    endpoint='painel_comprador'
+)
 def painel_comprador():
+
     """
     Painel inicial do comprador.
 
     - exige Usuario autenticado;
     - exige role='cliente';
     - carrega ClienteProfile;
-    - calcula indicadores reais de demandas;
+    - calcula indicadores reais;
+    - reconcilia registros antigos do staging;
     - preserva separação entre comprador e malharia.
     """
 
@@ -7355,9 +7698,12 @@ def painel_comprador():
     # Verifica sessão
     # --------------------------------------------------------------
 
-    user_id = session.get("user_id")
+    user_id = session.get(
+        "user_id"
+    )
 
     if not user_id:
+
         return redirect(
             url_for("login")
         )
@@ -7367,14 +7713,21 @@ def painel_comprador():
     # --------------------------------------------------------------
 
     try:
+
         usuario = db.session.get(
             Usuario,
             int(user_id)
         )
+
     except Exception:
+
         usuario = None
 
-    if not usuario or usuario.is_active is False:
+    if (
+        not usuario
+        or usuario.is_active is False
+    ):
+
         session.clear()
 
         return redirect(
@@ -7391,12 +7744,14 @@ def painel_comprador():
 
     if role != "cliente":
 
-        # Caso seja uma malharia, leva ao painel correto
+        # Caso seja uma malharia,
+        # leva ao painel correto.
         if getattr(
             usuario,
             "empresa",
             None
         ):
+
             return redirect(
                 url_for("painel_malharia")
             )
@@ -7409,29 +7764,225 @@ def painel_comprador():
     # Perfil do comprador
     # --------------------------------------------------------------
 
-    perfil = ClienteProfile.query.filter_by(
-        user_id=usuario.id
-    ).first()
+    perfil = (
+        ClienteProfile.query
+        .filter_by(
+            user_id=usuario.id
+        )
+        .first()
+    )
+
+    # ==============================================================
+    # RECONCILIAÇÃO DE REGISTROS ANTIGOS
+    #
+    # Importante para o STAGING:
+    #
+    # o ATP-000001 foi criado antes da ETAPA 8.1.
+    #
+    # Portanto:
+    #
+    # pedido ativo
+    #      → demanda contratada
+    #
+    # pedido entregue
+    #      → demanda encerrada
+    #
+    # Também encerra oportunidades e propostas concorrentes
+    # que tenham permanecido abertas.
+    #
+    # É idempotente:
+    # depois de corrigido, não altera novamente.
+    # ==============================================================
+
+    try:
+
+        pedidos_reconciliacao = (
+            Order.query
+            .filter(
+                Order.buyer_user_id
+                == usuario.id,
+
+                Order.status
+                != "cancelado"
+            )
+            .all()
+        )
+
+        houve_alteracao = False
+
+        for pedido in pedidos_reconciliacao:
+
+            demanda = pedido.demanda
+
+            if not demanda:
+                continue
+
+            status_pedido = (
+                pedido.status or ""
+            ).strip().lower()
+
+            status_demanda = (
+                demanda.status or ""
+            ).strip().lower()
+
+            # ------------------------------------------------------
+            # Não sobrescreve demanda cancelada
+            # ------------------------------------------------------
+
+            if status_demanda != "cancelada":
+
+                novo_status_demanda = None
+
+                # Pedido finalizado
+                if status_pedido == "entregue":
+
+                    novo_status_demanda = (
+                        "encerrada"
+                    )
+
+                # Pedido ainda operacionalmente ativo
+                elif status_pedido in {
+                    "aguardando_confirmacao",
+                    "confirmado",
+                    "em_producao",
+                    "concluido"
+                }:
+
+                    novo_status_demanda = (
+                        "contratada"
+                    )
+
+                if (
+                    novo_status_demanda
+                    and status_demanda
+                    != novo_status_demanda
+                ):
+
+                    demanda.status = (
+                        novo_status_demanda
+                    )
+
+                    houve_alteracao = True
+
+            # ------------------------------------------------------
+            # Uma demanda com pedido não deve continuar
+            # apresentando oportunidades abertas.
+            # ------------------------------------------------------
+
+            oportunidades_abertas = (
+                Opportunity.query
+                .filter(
+                    Opportunity.demand_id
+                    == demanda.id,
+
+                    Opportunity.status
+                    != "inativa"
+                )
+                .all()
+            )
+
+            for oportunidade in oportunidades_abertas:
+
+                oportunidade.status = "inativa"
+
+                houve_alteracao = True
+
+            # ------------------------------------------------------
+            # Outras propostas ainda abertas passam para
+            # não selecionadas.
+            # ------------------------------------------------------
+
+            propostas_concorrentes = (
+                Proposal.query
+                .filter(
+                    Proposal.demand_id
+                    == demanda.id,
+
+                    Proposal.id
+                    != pedido.proposal_id,
+
+                    Proposal.status.in_(
+                        [
+                            "rascunho",
+                            "enviada",
+                            "ajuste_solicitado"
+                        ]
+                    )
+                )
+                .all()
+            )
+
+            for proposta_concorrente in propostas_concorrentes:
+
+                proposta_concorrente.status = (
+                    "nao_selecionada"
+                )
+
+                interacao = ProposalInteraction(
+                    proposal_id=proposta_concorrente.id,
+                    actor_role="sistema",
+                    action="nao_selecionada",
+                    message=(
+                        f"Proposta encerrada durante "
+                        f"a consolidação do pedido "
+                        f"{pedido.codigo}."
+                    )
+                )
+
+                db.session.add(
+                    interacao
+                )
+
+                houve_alteracao = True
+
+        if houve_alteracao:
+
+            db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "[CONSOLIDACAO] Falha ao reconciliar "
+            "status do marketplace."
+        )
+
+    # ==============================================================
+    # INDICADORES REAIS DO PORTAL
+    # ==============================================================
 
     # --------------------------------------------------------------
-    # Indicadores reais do Portal do Comprador
+    # Demandas ativas
+    #
+    # rascunho
+    # publicada
+    # contratada
+    #
+    # encerrada e cancelada ficam fora.
     # --------------------------------------------------------------
 
     demandas_ativas = (
         ProductionRequest.query
         .filter(
-            ProductionRequest.user_id == usuario.id,
+            ProductionRequest.user_id
+            == usuario.id,
+
             ProductionRequest.status.in_(
                 [
                     "rascunho",
-                    "publicada"
+                    "publicada",
+                    "contratada"
                 ]
             )
         )
         .count()
     )
 
-    # Matching, propostas e pedidos ainda não foram criados
+    # --------------------------------------------------------------
+    # Matches encontrados
+    # --------------------------------------------------------------
+
     matches_total = (
         db.session.query(
             DemandMatch.id
@@ -7444,11 +7995,20 @@ def painel_comprador():
         .filter(
             ProductionRequest.user_id
             == usuario.id,
+
             DemandMatch.status
             == "ativo"
         )
         .count()
     )
+
+    # --------------------------------------------------------------
+    # Propostas recebidas
+    #
+    # nao_selecionada continua sendo uma proposta que
+    # realmente foi recebida, portanto conta no histórico.
+    # --------------------------------------------------------------
+
     propostas_total = (
         db.session.query(
             Proposal.id
@@ -7461,17 +8021,26 @@ def painel_comprador():
         .filter(
             ProductionRequest.user_id
             == usuario.id,
+
             Proposal.status.in_(
                 [
                     "enviada",
                     "ajuste_solicitado",
                     "aceita",
-                    "recusada"
+                    "recusada",
+                    "nao_selecionada"
                 ]
             )
         )
         .count()
     )
+
+    # --------------------------------------------------------------
+    # Pedidos em andamento
+    #
+    # Entregues NÃO contam mais como em andamento.
+    # --------------------------------------------------------------
+
     pedidos_total = (
         Order.query
         .filter(
