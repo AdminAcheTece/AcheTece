@@ -6129,6 +6129,450 @@ def propostas_recebidas(demanda_id):
     )
 
 # --------------------------------------------------------------------
+# AcheTece 2.0 - Comprador aceita proposta
+# --------------------------------------------------------------------
+
+@app.post(
+    "/comprador/propostas/<int:proposta_id>/aceitar",
+    endpoint="aceitar_proposta"
+)
+def aceitar_proposta(proposta_id):
+
+    # --------------------------------------------------------------
+    # Comprador autenticado
+    # --------------------------------------------------------------
+
+    user_id = session.get("user_id")
+
+    if not user_id:
+        return redirect(
+            url_for("login")
+        )
+
+    try:
+        usuario = db.session.get(
+            Usuario,
+            int(user_id)
+        )
+    except Exception:
+        usuario = None
+
+    if (
+        not usuario
+        or usuario.is_active is False
+        or (usuario.role or "").strip().lower() != "cliente"
+    ):
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Proposta + garantia de propriedade da demanda
+    # --------------------------------------------------------------
+
+    proposta = (
+        Proposal.query
+        .join(
+            ProductionRequest,
+            Proposal.demand_id
+            == ProductionRequest.id
+        )
+        .filter(
+            Proposal.id == proposta_id,
+            ProductionRequest.user_id == usuario.id
+        )
+        .first()
+    )
+
+    if not proposta:
+
+        flash(
+            "Proposta não encontrada.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("minhas_demandas")
+        )
+
+    status_atual = (
+        proposta.status or ""
+    ).strip().lower()
+
+    if status_atual != "enviada":
+
+        flash(
+            "Esta proposta não está disponível para aceite no status atual.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "propostas_recebidas",
+                demanda_id=proposta.demand_id
+            )
+        )
+
+    # --------------------------------------------------------------
+    # V1: somente uma proposta aceita por demanda
+    # --------------------------------------------------------------
+
+    outra_aceita = (
+        Proposal.query
+        .filter(
+            Proposal.demand_id
+            == proposta.demand_id,
+
+            Proposal.id
+            != proposta.id,
+
+            Proposal.status
+            == "aceita"
+        )
+        .first()
+    )
+
+    if outra_aceita:
+
+        flash(
+            "Já existe uma proposta aceita para esta demanda.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "propostas_recebidas",
+                demanda_id=proposta.demand_id
+            )
+        )
+
+    # --------------------------------------------------------------
+    # Aceite
+    # --------------------------------------------------------------
+
+    try:
+
+        proposta.status = "aceita"
+
+        interacao = ProposalInteraction(
+            proposal_id=proposta.id,
+            actor_role="comprador",
+            action="aceita",
+            message="Proposta aceita pelo comprador."
+        )
+
+        db.session.add(
+            interacao
+        )
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "[PROPOSTA] Falha ao aceitar proposta."
+        )
+
+        flash(
+            "Não foi possível aceitar a proposta agora.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "propostas_recebidas",
+                demanda_id=proposta.demand_id
+            )
+        )
+
+    flash(
+        "Proposta aceita com sucesso.",
+        "success"
+    )
+
+    return redirect(
+        url_for(
+            "propostas_recebidas",
+            demanda_id=proposta.demand_id
+        )
+    )
+
+# --------------------------------------------------------------------
+# AcheTece 2.0 - Comprador recusa proposta
+# --------------------------------------------------------------------
+
+@app.post(
+    "/comprador/propostas/<int:proposta_id>/recusar",
+    endpoint="recusar_proposta"
+)
+def recusar_proposta(proposta_id):
+
+    user_id = session.get("user_id")
+
+    if not user_id:
+        return redirect(
+            url_for("login")
+        )
+
+    try:
+        usuario = db.session.get(
+            Usuario,
+            int(user_id)
+        )
+    except Exception:
+        usuario = None
+
+    if (
+        not usuario
+        or usuario.is_active is False
+        or (usuario.role or "").strip().lower() != "cliente"
+    ):
+        return redirect(
+            url_for("login")
+        )
+
+    proposta = (
+        Proposal.query
+        .join(
+            ProductionRequest,
+            Proposal.demand_id
+            == ProductionRequest.id
+        )
+        .filter(
+            Proposal.id == proposta_id,
+            ProductionRequest.user_id == usuario.id
+        )
+        .first()
+    )
+
+    if not proposta:
+
+        flash(
+            "Proposta não encontrada.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("minhas_demandas")
+        )
+
+    status_atual = (
+        proposta.status or ""
+    ).strip().lower()
+
+    if status_atual != "enviada":
+
+        flash(
+            "Esta proposta não pode ser recusada no status atual.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "propostas_recebidas",
+                demanda_id=proposta.demand_id
+            )
+        )
+
+    try:
+
+        proposta.status = "recusada"
+
+        interacao = ProposalInteraction(
+            proposal_id=proposta.id,
+            actor_role="comprador",
+            action="recusada",
+            message="Proposta recusada pelo comprador."
+        )
+
+        db.session.add(
+            interacao
+        )
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "[PROPOSTA] Falha ao recusar proposta."
+        )
+
+        flash(
+            "Não foi possível recusar a proposta agora.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "propostas_recebidas",
+                demanda_id=proposta.demand_id
+            )
+        )
+
+    flash(
+        "Proposta recusada.",
+        "success"
+    )
+
+    return redirect(
+        url_for(
+            "propostas_recebidas",
+            demanda_id=proposta.demand_id
+        )
+    )
+
+# --------------------------------------------------------------------
+# AcheTece 2.0 - Comprador solicita ajuste da proposta
+# --------------------------------------------------------------------
+
+@app.post(
+    "/comprador/propostas/<int:proposta_id>/solicitar-ajuste",
+    endpoint="solicitar_ajuste_proposta"
+)
+def solicitar_ajuste_proposta(proposta_id):
+
+    user_id = session.get("user_id")
+
+    if not user_id:
+        return redirect(
+            url_for("login")
+        )
+
+    try:
+        usuario = db.session.get(
+            Usuario,
+            int(user_id)
+        )
+    except Exception:
+        usuario = None
+
+    if (
+        not usuario
+        or usuario.is_active is False
+        or (usuario.role or "").strip().lower() != "cliente"
+    ):
+        return redirect(
+            url_for("login")
+        )
+
+    proposta = (
+        Proposal.query
+        .join(
+            ProductionRequest,
+            Proposal.demand_id
+            == ProductionRequest.id
+        )
+        .filter(
+            Proposal.id == proposta_id,
+            ProductionRequest.user_id == usuario.id
+        )
+        .first()
+    )
+
+    if not proposta:
+
+        flash(
+            "Proposta não encontrada.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("minhas_demandas")
+        )
+
+    if (
+        proposta.status or ""
+    ).strip().lower() != "enviada":
+
+        flash(
+            "Não é possível solicitar ajuste desta proposta no status atual.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "propostas_recebidas",
+                demanda_id=proposta.demand_id
+            )
+        )
+
+    mensagem = (
+        request.form.get(
+            "mensagem_ajuste"
+        )
+        or ""
+    ).strip()
+
+    if len(mensagem) < 5:
+
+        flash(
+            "Descreva o ajuste que deseja solicitar.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "propostas_recebidas",
+                demanda_id=proposta.demand_id
+            )
+        )
+
+    try:
+
+        proposta.status = (
+            "ajuste_solicitado"
+        )
+
+        interacao = ProposalInteraction(
+            proposal_id=proposta.id,
+            actor_role="comprador",
+            action="ajuste_solicitado",
+            message=mensagem
+        )
+
+        db.session.add(
+            interacao
+        )
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "[PROPOSTA] Falha ao solicitar ajuste."
+        )
+
+        flash(
+            "Não foi possível solicitar o ajuste agora.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "propostas_recebidas",
+                demanda_id=proposta.demand_id
+            )
+        )
+
+    flash(
+        "Solicitação de ajuste enviada à malharia.",
+        "success"
+    )
+
+    return redirect(
+        url_for(
+            "propostas_recebidas",
+            demanda_id=proposta.demand_id
+        )
+    )
+
+# --------------------------------------------------------------------
 # Portal do Comprador - AcheTece 2.0
 # --------------------------------------------------------------------
 @app.route('/painel_comprador', endpoint='painel_comprador')
