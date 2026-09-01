@@ -7187,6 +7187,156 @@ def gerar_pedido(proposta_id):
     )
 
 # --------------------------------------------------------------------
+# AcheTece 2.0 - Comprador confirma Entrega
+# --------------------------------------------------------------------
+
+@app.post(
+    "/comprador/pedidos/<int:pedido_id>/confirmar-entrega",
+    endpoint="confirmar_entrega_comprador"
+)
+def confirmar_entrega_comprador(pedido_id):
+
+    # --------------------------------------------------------------
+    # Autenticação do comprador
+    # --------------------------------------------------------------
+
+    user_id = session.get(
+        "user_id"
+    )
+
+    if not user_id:
+
+        return redirect(
+            url_for("login")
+        )
+
+    try:
+
+        usuario = db.session.get(
+            Usuario,
+            int(user_id)
+        )
+
+    except Exception:
+
+        usuario = None
+
+    if (
+        not usuario
+        or usuario.is_active is False
+        or (
+            usuario.role or ""
+        ).strip().lower() != "cliente"
+    ):
+
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Pedido somente do próprio comprador
+    # --------------------------------------------------------------
+
+    pedido = (
+        Order.query
+        .filter_by(
+            id=pedido_id,
+            buyer_user_id=usuario.id
+        )
+        .first()
+    )
+
+    if not pedido:
+
+        flash(
+            "Pedido não encontrado.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("meus_pedidos_comprador")
+        )
+
+    status_atual = (
+        pedido.status or ""
+    ).strip().lower()
+
+    # --------------------------------------------------------------
+    # Entrega só pode ser confirmada após conclusão
+    # --------------------------------------------------------------
+
+    if status_atual != "concluido":
+
+        flash(
+            "A entrega somente pode ser confirmada após a conclusão da produção.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "detalhe_pedido_comprador",
+                pedido_id=pedido.id
+            )
+        )
+
+    try:
+
+        pedido.status = "entregue"
+
+        evento = OrderEvent(
+            order_id=pedido.id,
+            actor_role="comprador",
+            action="entrega_confirmada",
+            status_anterior="concluido",
+            status_novo="entregue",
+            message=(
+                f"O comprador confirmou a entrega "
+                f"do pedido {pedido.codigo}."
+            )
+        )
+
+        db.session.add(
+            evento
+        )
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "[PEDIDO] Falha ao confirmar entrega."
+        )
+
+        flash(
+            "Não foi possível confirmar a entrega agora.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "detalhe_pedido_comprador",
+                pedido_id=pedido.id
+            )
+        )
+
+    flash(
+        (
+            f"Entrega do pedido "
+            f"{pedido.codigo} confirmada."
+        ),
+        "success"
+    )
+
+    return redirect(
+        url_for(
+            "detalhe_pedido_comprador",
+            pedido_id=pedido.id
+        )
+    )
+
+# --------------------------------------------------------------------
 # Portal do Comprador - AcheTece 2.0
 # --------------------------------------------------------------------
 @app.route('/painel_comprador', endpoint='painel_comprador')
