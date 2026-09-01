@@ -6246,12 +6246,25 @@ def analisar_oportunidade(oportunidade_id):
         .all()
     )
 
+    # --------------------------------------------------------------
+    # Proposta comercial existente
+    # --------------------------------------------------------------
+
+    proposta = (
+        Proposal.query
+        .filter_by(
+            opportunity_id=oportunidade.id
+        )
+        .first()
+    )
+
     return render_template(
         "analisar_oportunidade.html",
         empresa=empresa,
         oportunidade=oportunidade,
         demanda=demanda,
-        matches=matches
+        matches=matches,
+        proposta=proposta
     )
 
 # --------------------------------------------------------------------
