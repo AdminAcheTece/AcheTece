@@ -6499,6 +6499,469 @@ def oportunidade_recusar(oportunidade_id):
         url_for("minhas_oportunidades")
     )
 
+# --------------------------------------------------------------------
+# AcheTece 2.0 - Enviar Proposta Comercial
+# --------------------------------------------------------------------
+
+@app.route(
+    "/malharia/oportunidades/<int:oportunidade_id>/proposta",
+    methods=["GET", "POST"],
+    endpoint="enviar_proposta"
+)
+def enviar_proposta(oportunidade_id):
+
+    # --------------------------------------------------------------
+    # Autenticação da malharia
+    # --------------------------------------------------------------
+
+    empresa_id = session.get(
+        "empresa_id"
+    )
+
+    if not empresa_id:
+
+        return redirect(
+            url_for("login")
+        )
+
+    try:
+
+        empresa = db.session.get(
+            Empresa,
+            int(empresa_id)
+        )
+
+    except Exception:
+
+        empresa = None
+
+    if not empresa:
+
+        session.clear()
+
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Oportunidade - somente da malharia logada
+    # --------------------------------------------------------------
+
+    oportunidade = (
+        Opportunity.query
+        .filter_by(
+            id=oportunidade_id,
+            empresa_id=empresa.id
+        )
+        .first()
+    )
+
+    if not oportunidade:
+
+        flash(
+            "Oportunidade não encontrada.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("minhas_oportunidades")
+        )
+
+    # --------------------------------------------------------------
+    # Somente malharia interessada pode enviar proposta
+    # --------------------------------------------------------------
+
+    status_oportunidade = (
+        oportunidade.status or ""
+    ).strip().lower()
+
+    if status_oportunidade != "interessada":
+
+        flash(
+            "Demonstre interesse na oportunidade antes de enviar uma proposta.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "analisar_oportunidade",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+    demanda = oportunidade.demanda
+
+    if not demanda:
+
+        flash(
+            "A demanda vinculada não foi encontrada.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("minhas_oportunidades")
+        )
+
+    # --------------------------------------------------------------
+    # Verifica se já existe proposta
+    # --------------------------------------------------------------
+
+    proposta = (
+        Proposal.query
+        .filter_by(
+            opportunity_id=oportunidade.id
+        )
+        .first()
+    )
+
+    # --------------------------------------------------------------
+    # GET
+    # --------------------------------------------------------------
+
+    if request.method == "GET":
+
+        return render_template(
+            "enviar_proposta.html",
+            empresa=empresa,
+            oportunidade=oportunidade,
+            demanda=demanda,
+            proposta=proposta
+        )
+
+    # --------------------------------------------------------------
+    # Impede duplicação de proposta já enviada
+    # --------------------------------------------------------------
+
+    if proposta and (
+        proposta.status or ""
+    ).strip().lower() in {
+        "enviada",
+        "aceita",
+        "recusada",
+        "cancelada"
+    }:
+
+        flash(
+            "Já existe uma proposta enviada para esta oportunidade.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "enviar_proposta",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+    # --------------------------------------------------------------
+    # Helper para valores monetários/decimais
+    #
+    # Aceita:
+    # 7,80
+    # 7.80
+    # 1.250,50
+    # --------------------------------------------------------------
+
+    def _decimal_form(valor):
+
+        valor = (
+            valor or ""
+        ).strip()
+
+        if not valor:
+            return None
+
+        valor = (
+            valor
+            .replace("R$", "")
+            .replace(" ", "")
+        )
+
+        # Formato brasileiro:
+        # 1.250,50 -> 1250.50
+        if "," in valor:
+
+            valor = (
+                valor
+                .replace(".", "")
+                .replace(",", ".")
+            )
+
+        try:
+
+            return Decimal(
+                valor
+            )
+
+        except (
+            InvalidOperation,
+            ValueError,
+            TypeError
+        ):
+
+            return None
+
+    # --------------------------------------------------------------
+    # Recebe formulário
+    # --------------------------------------------------------------
+
+    quantidade_kg = _decimal_form(
+        request.form.get(
+            "quantidade_kg"
+        )
+    )
+
+    preco_por_kg = _decimal_form(
+        request.form.get(
+            "preco_por_kg"
+        )
+    )
+
+    prazo_raw = (
+        request.form.get(
+            "prazo_dias"
+        )
+        or ""
+    ).strip()
+
+    validade_raw = (
+        request.form.get(
+            "validade_dias"
+        )
+        or ""
+    ).strip()
+
+    condicoes_pagamento = (
+        request.form.get(
+            "condicoes_pagamento"
+        )
+        or ""
+    ).strip()
+
+    observacoes = (
+        request.form.get(
+            "observacoes"
+        )
+        or ""
+    ).strip()
+
+    # --------------------------------------------------------------
+    # Validação da quantidade
+    # --------------------------------------------------------------
+
+    if (
+        quantidade_kg is None
+        or quantidade_kg <= 0
+    ):
+
+        flash(
+            "Informe uma quantidade válida.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "enviar_proposta",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+    # Não permite propor mais do que a demanda solicita
+    try:
+
+        quantidade_demanda = Decimal(
+            str(
+                demanda.quantidade_kg
+            )
+        )
+
+    except Exception:
+
+        quantidade_demanda = None
+
+    if (
+        quantidade_demanda is not None
+        and quantidade_kg
+        > quantidade_demanda
+    ):
+
+        flash(
+            "A quantidade proposta não pode ser maior que a quantidade solicitada na demanda.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "enviar_proposta",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+    # --------------------------------------------------------------
+    # Validação do preço
+    # --------------------------------------------------------------
+
+    if (
+        preco_por_kg is None
+        or preco_por_kg <= 0
+    ):
+
+        flash(
+            "Informe um preço por kg válido.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "enviar_proposta",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+    # --------------------------------------------------------------
+    # Prazo
+    # --------------------------------------------------------------
+
+    try:
+
+        prazo_dias = int(
+            prazo_raw
+        )
+
+    except Exception:
+
+        prazo_dias = 0
+
+    if prazo_dias <= 0:
+
+        flash(
+            "Informe um prazo de produção válido.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "enviar_proposta",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+    # --------------------------------------------------------------
+    # Validade
+    # --------------------------------------------------------------
+
+    try:
+
+        validade_dias = int(
+            validade_raw
+        )
+
+    except Exception:
+
+        validade_dias = 0
+
+    if validade_dias <= 0:
+
+        flash(
+            "Informe a validade da proposta.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "enviar_proposta",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+    # --------------------------------------------------------------
+    # Salva e ENVIA
+    # --------------------------------------------------------------
+
+    try:
+
+        if not proposta:
+
+            proposta = Proposal(
+                opportunity_id=oportunidade.id,
+                demand_id=demanda.id,
+                empresa_id=empresa.id
+            )
+
+            db.session.add(
+                proposta
+            )
+
+        proposta.quantidade_kg = (
+            quantidade_kg
+        )
+
+        proposta.preco_por_kg = (
+            preco_por_kg
+        )
+
+        proposta.prazo_dias = (
+            prazo_dias
+        )
+
+        proposta.validade_dias = (
+            validade_dias
+        )
+
+        proposta.condicoes_pagamento = (
+            condicoes_pagamento
+            or None
+        )
+
+        proposta.observacoes = (
+            observacoes
+            or None
+        )
+
+        proposta.status = "enviada"
+
+        proposta.sent_at = (
+            datetime.utcnow()
+        )
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "[PROPOSTA] Falha ao enviar proposta."
+        )
+
+        flash(
+            "Não foi possível enviar a proposta agora.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "enviar_proposta",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+    flash(
+        (
+            f"Proposta para "
+            f"{demanda.codigo} "
+            f"enviada com sucesso."
+        ),
+        "success"
+    )
+
+    return redirect(
+        url_for(
+            "enviar_proposta",
+            oportunidade_id=oportunidade.id
+        )
+    )
+
 # --- Rota do Painel (vencimento por plano + ajuste p/ próximo dia útil BR) ---
 @app.route('/painel_malharia', endpoint="painel_malharia")
 def painel_malharia():
