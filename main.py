@@ -1634,6 +1634,164 @@ class Opportunity(db.Model):
         )
 
 # --------------------------------------------------------------------
+# AcheTece 2.0 - Proposta Comercial
+# --------------------------------------------------------------------
+
+class Proposal(db.Model):
+    __tablename__ = "proposal"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    # --------------------------------------------------------------
+    # Oportunidade que originou a proposta
+    # --------------------------------------------------------------
+
+    opportunity_id = db.Column(
+        db.Integer,
+        db.ForeignKey("opportunity.id"),
+        nullable=False,
+        unique=True,
+        index=True
+    )
+
+    # --------------------------------------------------------------
+    # Demanda
+    # --------------------------------------------------------------
+
+    demand_id = db.Column(
+        db.Integer,
+        db.ForeignKey("production_request.id"),
+        nullable=False,
+        index=True
+    )
+
+    # --------------------------------------------------------------
+    # Malharia
+    # --------------------------------------------------------------
+
+    empresa_id = db.Column(
+        db.Integer,
+        db.ForeignKey("empresa.id"),
+        nullable=False,
+        index=True
+    )
+
+    # --------------------------------------------------------------
+    # Relacionamentos
+    # --------------------------------------------------------------
+
+    oportunidade = db.relationship(
+        "Opportunity",
+        backref=db.backref(
+            "proposal",
+            uselist=False
+        )
+    )
+
+    demanda = db.relationship(
+        "ProductionRequest",
+        backref=db.backref(
+            "proposals",
+            lazy=True
+        )
+    )
+
+    empresa = db.relationship(
+        "Empresa",
+        backref=db.backref(
+            "proposals",
+            lazy=True
+        )
+    )
+
+    # --------------------------------------------------------------
+    # Condições comerciais
+    # --------------------------------------------------------------
+
+    quantidade_kg = db.Column(
+        db.Numeric(12, 2),
+        nullable=False
+    )
+
+    preco_por_kg = db.Column(
+        db.Numeric(12, 4),
+        nullable=False
+    )
+
+    prazo_dias = db.Column(
+        db.Integer,
+        nullable=False
+    )
+
+    validade_dias = db.Column(
+        db.Integer,
+        nullable=False,
+        default=7
+    )
+
+    condicoes_pagamento = db.Column(
+        db.String(255),
+        nullable=True
+    )
+
+    observacoes = db.Column(
+        db.Text,
+        nullable=True
+    )
+
+    # --------------------------------------------------------------
+    # Status
+    #
+    # rascunho
+    # enviada
+    # aceita
+    # recusada
+    # cancelada
+    # --------------------------------------------------------------
+
+    status = db.Column(
+        db.String(20),
+        nullable=False,
+        default="rascunho",
+        index=True
+    )
+
+    # --------------------------------------------------------------
+    # Datas
+    # --------------------------------------------------------------
+
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow
+    )
+
+    updated_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow
+    )
+
+    sent_at = db.Column(
+        db.DateTime,
+        nullable=True
+    )
+
+    def __repr__(self):
+        return (
+            f"<Proposal "
+            f"id={self.id} "
+            f"opportunity_id={self.opportunity_id} "
+            f"demand_id={self.demand_id} "
+            f"empresa_id={self.empresa_id} "
+            f"status={self.status}>"
+        )
+
+# --------------------------------------------------------------------
 # AcheTece 2.0 - Motor de Matching V1
 # --------------------------------------------------------------------
 
