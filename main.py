@@ -7247,7 +7247,23 @@ def painel_comprador():
         )
         .count()
     )
-    pedidos_total = 0
+    pedidos_total = (
+        Order.query
+        .filter(
+            Order.buyer_user_id
+            == usuario.id,
+
+            Order.status.in_(
+                [
+                    "aguardando_confirmacao",
+                    "confirmado",
+                    "em_producao",
+                    "concluido"
+                ]
+            )
+        )
+        .count()
+    )
 
     # --------------------------------------------------------------
     # Renderiza Portal do Comprador
