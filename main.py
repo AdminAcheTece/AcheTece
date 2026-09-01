@@ -8675,9 +8675,9 @@ def detalhe_pedido_comprador(pedido_id):
 )
 def minhas_oportunidades():
 
-    # --------------------------------------------------------------
-    # Autenticação da malharia
-    # --------------------------------------------------------------
+    # ==============================================================
+    # AUTENTICAÇÃO DA MALHARIA
+    # ==============================================================
 
     empresa_id = session.get(
         "empresa_id"
@@ -8708,17 +8708,21 @@ def minhas_oportunidades():
             url_for("login")
         )
 
-    # --------------------------------------------------------------
-    # Oportunidades pertencentes SOMENTE a esta malharia
-    # --------------------------------------------------------------
+    # ==============================================================
+    # TODAS AS OPORTUNIDADES DA MALHARIA
+    #
+    # Importante:
+    # NÃO excluímos mais "inativa".
+    #
+    # As oportunidades encerradas passam a formar
+    # o histórico comercial da empresa.
+    # ==============================================================
 
     oportunidades = (
         Opportunity.query
         .filter(
             Opportunity.empresa_id
-            == empresa.id,
-            Opportunity.status
-            != "inativa"
+            == empresa.id
         )
         .order_by(
             Opportunity.created_at.desc(),
@@ -8727,43 +8731,192 @@ def minhas_oportunidades():
         .all()
     )
 
+    # ==============================================================
+    # PROPOSTAS RELACIONADAS ÀS OPORTUNIDADES
+    # ==============================================================
+
+    oportunidade_ids = [
+        oportunidade.id
+        for oportunidade
+        in oportunidades
+    ]
+
+    propostas = []
+
+    if oportunidade_ids:
+
+        propostas = (
+            Proposal.query
+            .filter(
+                Proposal.opportunity_id.in_(
+                    oportunidade_ids
+                )
+            )
+            .all()
+        )
+
     # --------------------------------------------------------------
-    # Indicadores
+    # Uma proposta por oportunidade
     # --------------------------------------------------------------
 
-    total_oportunidades = len(
-        oportunidades
+    propostas_por_oportunidade = {
+        proposta.opportunity_id:
+            proposta
+        for proposta
+        in propostas
+    }
+
+    # ==============================================================
+    # PEDIDOS RELACIONADOS ÀS PROPOSTAS
+    # ==============================================================
+
+    proposta_ids = [
+        proposta.id
+        for proposta
+        in propostas
+    ]
+
+    pedidos = []
+
+    if proposta_ids:
+
+        pedidos = (
+            Order.query
+            .filter(
+                Order.proposal_id.in_(
+                    proposta_ids
+                )
+            )
+            .all()
+        )
+
+    pedidos_por_proposta = {
+        pedido.proposal_id:
+            pedido
+        for pedido
+        in pedidos
+    }
+
+    # ==============================================================
+    # SEPARAÇÃO:
+    # ATIVAS X HISTÓRICO
+    # ==============================================================
+
+    STATUS_ATIVOS = {
+        "nova",
+        "visualizada",
+        "interessada"
+    }
+
+    oportunidades_ativas = []
+
+    oportunidades_historico = []
+
+    for oportunidade in oportunidades:
+
+        status = (
+            oportunidade.status
+            or "nova"
+        ).strip().lower()
+
+        if status in STATUS_ATIVOS:
+
+            oportunidades_ativas.append(
+                oportunidade
+            )
+
+        else:
+
+            oportunidades_historico.append(
+                oportunidade
+            )
+
+    # ==============================================================
+    # INDICADORES
+    # ==============================================================
+
+    total_ativas = len(
+        oportunidades_ativas
     )
 
-    total_novas = sum(
-        1
-        for oportunidade
-        in oportunidades
-        if oportunidade.status == "nova"
+    total_historico = len(
+        oportunidades_historico
     )
 
-    total_interessadas = sum(
+    total_propostas_aceitas = sum(
         1
-        for oportunidade
-        in oportunidades
-        if oportunidade.status == "interessada"
+        for proposta
+        in propostas
+        if (
+            proposta.status
+            or ""
+        ).strip().lower()
+        == "aceita"
     )
 
-    total_recusadas = sum(
-        1
-        for oportunidade
-        in oportunidades
-        if oportunidade.status == "recusada"
+    total_pedidos_originados = len(
+        pedidos
     )
+
+    # ==============================================================
+    # TOTAIS FINANCEIROS DAS PROPOSTAS
+    # ==============================================================
+
+    totais_propostas = {}
+
+    for proposta in propostas:
+
+        try:
+
+            total = (
+                proposta.quantidade_kg
+                * proposta.preco_por_kg
+            )
+
+        except Exception:
+
+            total = None
+
+        totais_propostas[
+            proposta.id
+        ] = total
+
+    # ==============================================================
+    # RENDER
+    # ==============================================================
 
     return render_template(
+
         "minhas_oportunidades.html",
+
         empresa=empresa,
-        oportunidades=oportunidades,
-        total_oportunidades=total_oportunidades,
-        total_novas=total_novas,
-        total_interessadas=total_interessadas,
-        total_recusadas=total_recusadas,
+
+        oportunidades_ativas=
+            oportunidades_ativas,
+
+        oportunidades_historico=
+            oportunidades_historico,
+
+        propostas_por_oportunidade=
+            propostas_por_oportunidade,
+
+        pedidos_por_proposta=
+            pedidos_por_proposta,
+
+        totais_propostas=
+            totais_propostas,
+
+        total_ativas=
+            total_ativas,
+
+        total_historico=
+            total_historico,
+
+        total_propostas_aceitas=
+            total_propostas_aceitas,
+
+        total_pedidos_originados=
+            total_pedidos_originados,
     )
 
 # --------------------------------------------------------------------
