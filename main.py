@@ -6155,7 +6155,28 @@ def painel_comprador():
         )
         .count()
     )
-    propostas_total = 0
+    propostas_total = (
+        db.session.query(
+            Proposal.id
+        )
+        .join(
+            ProductionRequest,
+            Proposal.demand_id
+            == ProductionRequest.id
+        )
+        .filter(
+            ProductionRequest.user_id
+            == usuario.id,
+            Proposal.status.in_(
+                [
+                    "enviada",
+                    "aceita",
+                    "recusada"
+                ]
+            )
+        )
+        .count()
+    )
     pedidos_total = 0
 
     # --------------------------------------------------------------
