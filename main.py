@@ -6805,6 +6805,313 @@ def solicitar_ajuste_proposta(proposta_id):
     )
 
 # --------------------------------------------------------------------
+# AcheTece 2.0 - Gerar Pedido a partir de Proposta Aceita
+# --------------------------------------------------------------------
+
+@app.post(
+    "/comprador/propostas/<int:proposta_id>/gerar-pedido",
+    endpoint="gerar_pedido"
+)
+def gerar_pedido(proposta_id):
+
+    # --------------------------------------------------------------
+    # Autenticação do comprador
+    # --------------------------------------------------------------
+
+    user_id = session.get(
+        "user_id"
+    )
+
+    if not user_id:
+
+        return redirect(
+            url_for("login")
+        )
+
+    try:
+
+        usuario = db.session.get(
+            Usuario,
+            int(user_id)
+        )
+
+    except Exception:
+
+        usuario = None
+
+    if (
+        not usuario
+        or usuario.is_active is False
+        or (
+            usuario.role or ""
+        ).strip().lower() != "cliente"
+    ):
+
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Proposta
+    #
+    # Garantimos que a proposta pertence a uma demanda
+    # do comprador que está logado.
+    # --------------------------------------------------------------
+
+    proposta = (
+        Proposal.query
+        .join(
+            ProductionRequest,
+            Proposal.demand_id
+            == ProductionRequest.id
+        )
+        .filter(
+            Proposal.id == proposta_id,
+            ProductionRequest.user_id
+            == usuario.id
+        )
+        .first()
+    )
+
+    if not proposta:
+
+        flash(
+            "Proposta não encontrada.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("minhas_demandas")
+        )
+
+    # --------------------------------------------------------------
+    # Somente proposta ACEITA pode gerar pedido
+    # --------------------------------------------------------------
+
+    status_proposta = (
+        proposta.status or ""
+    ).strip().lower()
+
+    if status_proposta != "aceita":
+
+        flash(
+            "Somente uma proposta aceita pode gerar um pedido.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "propostas_recebidas",
+                demanda_id=proposta.demand_id
+            )
+        )
+
+    # --------------------------------------------------------------
+    # Proteção contra pedido duplicado
+    # --------------------------------------------------------------
+
+    pedido_existente = (
+        Order.query
+        .filter_by(
+            proposal_id=proposta.id
+        )
+        .first()
+    )
+
+    if pedido_existente:
+
+        flash(
+            (
+                f"O pedido "
+                f"{pedido_existente.codigo} "
+                f"já foi criado para esta proposta."
+            ),
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "propostas_recebidas",
+                demanda_id=proposta.demand_id
+            )
+        )
+
+    # --------------------------------------------------------------
+    # Demanda
+    # --------------------------------------------------------------
+
+    demanda = proposta.demanda
+
+    if not demanda:
+
+        flash(
+            "A demanda vinculada não foi encontrada.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("minhas_demandas")
+        )
+
+    # --------------------------------------------------------------
+    # Malharia
+    # --------------------------------------------------------------
+
+    empresa = proposta.empresa
+
+    if not empresa:
+
+        flash(
+            "A malharia vinculada não foi encontrada.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "propostas_recebidas",
+                demanda_id=proposta.demand_id
+            )
+        )
+
+    # --------------------------------------------------------------
+    # Valor total contratado
+    #
+    # quantidade × preço/kg
+    # --------------------------------------------------------------
+
+    try:
+
+        valor_total = (
+            proposta.quantidade_kg
+            * proposta.preco_por_kg
+        )
+
+    except Exception:
+
+        current_app.logger.exception(
+            "[PEDIDO] Falha ao calcular valor total."
+        )
+
+        flash(
+            "Não foi possível calcular o valor do pedido.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "propostas_recebidas",
+                demanda_id=proposta.demand_id
+            )
+        )
+
+    # --------------------------------------------------------------
+    # Criação do pedido
+    # --------------------------------------------------------------
+
+    try:
+
+        pedido = Order(
+            proposal_id=proposta.id,
+            demand_id=demanda.id,
+            buyer_user_id=usuario.id,
+            empresa_id=empresa.id,
+
+            quantidade_kg=proposta.quantidade_kg,
+            preco_por_kg=proposta.preco_por_kg,
+            valor_total=valor_total,
+            prazo_dias=proposta.prazo_dias,
+
+            condicoes_pagamento=(
+                proposta.condicoes_pagamento
+                or None
+            ),
+
+            observacoes=(
+                proposta.observacoes
+                or None
+            ),
+
+            status="aguardando_confirmacao"
+        )
+
+        db.session.add(
+            pedido
+        )
+
+        # ----------------------------------------------------------
+        # Precisamos do ID para gerar o código ATP-000001
+        # ----------------------------------------------------------
+
+        db.session.flush()
+
+        pedido.codigo = (
+            f"ATP-{pedido.id:06d}"
+        )
+
+        # ----------------------------------------------------------
+        # Histórico da proposta
+        # ----------------------------------------------------------
+
+        interacao = ProposalInteraction(
+            proposal_id=proposta.id,
+            actor_role="sistema",
+            action="pedido_gerado",
+            message=(
+                f"Pedido {pedido.codigo} "
+                f"gerado a partir da proposta aceita."
+            )
+        )
+
+        db.session.add(
+            interacao
+        )
+
+        # ----------------------------------------------------------
+        # Salva tudo
+        # ----------------------------------------------------------
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "[PEDIDO] Falha ao gerar pedido."
+        )
+
+        flash(
+            "Não foi possível gerar o pedido agora.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "propostas_recebidas",
+                demanda_id=proposta.demand_id
+            )
+        )
+
+    # --------------------------------------------------------------
+    # Sucesso
+    # --------------------------------------------------------------
+
+    flash(
+        (
+            f"Pedido {pedido.codigo} "
+            f"criado com sucesso."
+        ),
+        "success"
+    )
+
+    return redirect(
+        url_for(
+            "propostas_recebidas",
+            demanda_id=proposta.demand_id
+        )
+    )
+
+# --------------------------------------------------------------------
 # Portal do Comprador - AcheTece 2.0
 # --------------------------------------------------------------------
 @app.route('/painel_comprador', endpoint='painel_comprador')
