@@ -963,6 +963,40 @@
 
     {% endif %}
 
+    {% if total_propostas_recebidas > 0 %}
+
+        <div style="margin-top:20px;">
+    
+            <a
+                href="{{ url_for(
+                    'propostas_recebidas',
+                    demanda_id=demanda.id
+                ) }}"
+                style="
+                    display:inline-flex;
+                    min-height:46px;
+                    align-items:center;
+                    justify-content:center;
+                    padding:0 20px;
+                    border-radius:999px;
+                    background:#111;
+                    color:#B6F34D;
+                    text-decoration:none;
+                    font-size:13px;
+                    font-weight:800;
+                "
+            >
+                Ver {{ total_propostas_recebidas }}
+                {% if total_propostas_recebidas == 1 %}
+                    proposta recebida
+                {% else %}
+                    propostas recebidas
+                {% endif %}
+            </a>
+    
+        </div>
+    
+    {% endif %}
 
     <div class="marketplace-note">
 
