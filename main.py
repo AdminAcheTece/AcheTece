@@ -5528,6 +5528,193 @@ def matches_demanda(demanda_id):
     )
 
 # --------------------------------------------------------------------
+# AcheTece 2.0 - Retorno das Malharias para o Comprador
+# --------------------------------------------------------------------
+
+@app.get(
+    "/comprador/demandas/<int:demanda_id>/retorno",
+    endpoint="retorno_demanda"
+)
+def retorno_demanda(demanda_id):
+
+    # --------------------------------------------------------------
+    # Autenticação do comprador
+    # --------------------------------------------------------------
+
+    user_id = session.get(
+        "user_id"
+    )
+
+    if not user_id:
+
+        return redirect(
+            url_for("login")
+        )
+
+    try:
+
+        usuario = db.session.get(
+            Usuario,
+            int(user_id)
+        )
+
+    except Exception:
+
+        usuario = None
+
+    if (
+        not usuario
+        or usuario.is_active is False
+        or (
+            usuario.role or ""
+        ).strip().lower() != "cliente"
+    ):
+
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Demanda - somente do comprador logado
+    # --------------------------------------------------------------
+
+    demanda = (
+        ProductionRequest.query
+        .filter_by(
+            id=demanda_id,
+            user_id=usuario.id
+        )
+        .first()
+    )
+
+    if not demanda:
+
+        flash(
+            "Demanda não encontrada.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("minhas_demandas")
+        )
+
+    # --------------------------------------------------------------
+    # Oportunidades ativas desta demanda
+    # --------------------------------------------------------------
+
+    oportunidades = (
+        Opportunity.query
+        .filter(
+            Opportunity.demand_id
+            == demanda.id,
+
+            Opportunity.status
+            != "inativa"
+        )
+        .order_by(
+            Opportunity.best_score.desc(),
+            Opportunity.created_at.asc()
+        )
+        .all()
+    )
+
+    # --------------------------------------------------------------
+    # Indicadores
+    # --------------------------------------------------------------
+
+    total_compativeis = len(
+        oportunidades
+    )
+
+    total_interessadas = sum(
+        1
+        for oportunidade
+        in oportunidades
+        if (
+            oportunidade.status or ""
+        ).strip().lower() == "interessada"
+    )
+
+    total_em_analise = sum(
+        1
+        for oportunidade
+        in oportunidades
+        if (
+            oportunidade.status or ""
+        ).strip().lower()
+        in {
+            "nova",
+            "visualizada"
+        }
+    )
+
+    total_recusadas = sum(
+        1
+        for oportunidade
+        in oportunidades
+        if (
+            oportunidade.status or ""
+        ).strip().lower() == "recusada"
+    )
+
+    # --------------------------------------------------------------
+    # Apenas interessadas serão identificadas para o comprador
+    # nesta primeira versão.
+    # --------------------------------------------------------------
+
+    oportunidades_interessadas = [
+        oportunidade
+        for oportunidade
+        in oportunidades
+        if (
+            oportunidade.status or ""
+        ).strip().lower() == "interessada"
+    ]
+
+    # --------------------------------------------------------------
+    # Recupera os equipamentos compatíveis de cada empresa interessada
+    # --------------------------------------------------------------
+
+    matches_por_empresa = {}
+
+    for oportunidade in oportunidades_interessadas:
+
+        matches_empresa = (
+            DemandMatch.query
+            .filter_by(
+                demand_id=demanda.id,
+                empresa_id=oportunidade.empresa_id,
+                status="ativo"
+            )
+            .order_by(
+                DemandMatch.score.desc(),
+                DemandMatch.id.asc()
+            )
+            .all()
+        )
+
+        matches_por_empresa[
+            oportunidade.empresa_id
+        ] = matches_empresa
+
+    # --------------------------------------------------------------
+    # Render
+    # --------------------------------------------------------------
+
+    return render_template(
+        "retorno_demanda.html",
+        usuario=usuario,
+        demanda=demanda,
+        oportunidades=oportunidades,
+        oportunidades_interessadas=oportunidades_interessadas,
+        matches_por_empresa=matches_por_empresa,
+        total_compativeis=total_compativeis,
+        total_interessadas=total_interessadas,
+        total_em_analise=total_em_analise,
+        total_recusadas=total_recusadas,
+    )
+
+# --------------------------------------------------------------------
 # Portal do Comprador - AcheTece 2.0
 # --------------------------------------------------------------------
 @app.route('/painel_comprador', endpoint='painel_comprador')
