@@ -7286,6 +7286,14 @@ def enviar_proposta(oportunidade_id):
             url_for("login")
         )
 
+        status_anterior = (
+            (
+                proposta.status or ""
+            ).strip().lower()
+            if proposta
+            else None
+        )
+
     try:
 
         empresa = db.session.get(
@@ -7377,6 +7385,32 @@ def enviar_proposta(oportunidade_id):
     )
 
     # --------------------------------------------------------------
+    # Última solicitação de ajuste
+    # --------------------------------------------------------------
+
+    ajuste_aberto = None
+
+    if (
+        proposta
+        and (
+            proposta.status or ""
+        ).strip().lower()
+        == "ajuste_solicitado"
+    ):
+
+        ajuste_aberto = (
+            ProposalInteraction.query
+            .filter_by(
+                proposal_id=proposta.id,
+                action="ajuste_solicitado"
+            )
+            .order_by(
+                ProposalInteraction.created_at.desc()
+            )
+            .first()
+        )
+
+    # --------------------------------------------------------------
     # GET
     # --------------------------------------------------------------
 
@@ -7387,7 +7421,8 @@ def enviar_proposta(oportunidade_id):
             empresa=empresa,
             oportunidade=oportunidade,
             demanda=demanda,
-            proposta=proposta
+            proposta=proposta,
+            ajuste_aberto=ajuste_aberto
         )
 
     # --------------------------------------------------------------
@@ -7685,6 +7720,40 @@ def enviar_proposta(oportunidade_id):
         proposta.sent_at = (
             datetime.utcnow()
         )
+
+                # Garante ID da proposta antes de registrar interação
+                db.session.flush()
+        
+                if status_anterior == "ajuste_solicitado":
+        
+                    acao_interacao = (
+                        "proposta_reenviada"
+                    )
+        
+                    mensagem_interacao = (
+                        "Proposta ajustada e reenviada pela malharia."
+                    )
+        
+                else:
+        
+                    acao_interacao = (
+                        "proposta_enviada"
+                    )
+        
+                    mensagem_interacao = (
+                        "Proposta enviada pela malharia."
+                    )
+        
+                interacao = ProposalInteraction(
+                    proposal_id=proposta.id,
+                    actor_role="malharia",
+                    action=acao_interacao,
+                    message=mensagem_interacao
+                )
+        
+                db.session.add(
+                    interacao
+                )
 
         db.session.commit()
 
