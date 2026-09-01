@@ -5968,10 +5968,6 @@ def retorno_demanda(demanda_id):
 )
 def propostas_recebidas(demanda_id):
 
-    # --------------------------------------------------------------
-    # Autenticação do comprador
-    # --------------------------------------------------------------
-
     user_id = session.get(
         "user_id"
     )
@@ -6006,7 +6002,7 @@ def propostas_recebidas(demanda_id):
         )
 
     # --------------------------------------------------------------
-    # Demanda - somente do comprador logado
+    # Demanda do próprio comprador
     # --------------------------------------------------------------
 
     demanda = (
@@ -6030,20 +6026,19 @@ def propostas_recebidas(demanda_id):
         )
 
     # --------------------------------------------------------------
-    # Propostas efetivamente enviadas
-    #
-    # Não mostramos:
-    # - rascunho
-    # - cancelada
+    # Propostas visíveis
     # --------------------------------------------------------------
 
     propostas = (
         Proposal.query
         .filter(
-            Proposal.demand_id == demanda.id,
+            Proposal.demand_id
+            == demanda.id,
+
             Proposal.status.in_(
                 [
                     "enviada",
+                    "ajuste_solicitado",
                     "aceita",
                     "recusada"
                 ]
@@ -6073,6 +6068,15 @@ def propostas_recebidas(demanda_id):
         ).strip().lower() == "enviada"
     )
 
+    total_ajustes = sum(
+        1
+        for proposta in propostas
+        if (
+            proposta.status or ""
+        ).strip().lower()
+        == "ajuste_solicitado"
+    )
+
     total_aceitas = sum(
         1
         for proposta in propostas
@@ -6090,7 +6094,7 @@ def propostas_recebidas(demanda_id):
     )
 
     # --------------------------------------------------------------
-    # Calcula valor total de cada proposta
+    # Valores totais
     # --------------------------------------------------------------
 
     totais_propostas = {}
@@ -6113,8 +6117,30 @@ def propostas_recebidas(demanda_id):
         ] = total
 
     # --------------------------------------------------------------
-    # Render
+    # Última solicitação de ajuste por proposta
     # --------------------------------------------------------------
+
+    ajustes_por_proposta = {}
+
+    for proposta in propostas:
+
+        ajuste = (
+            ProposalInteraction.query
+            .filter_by(
+                proposal_id=proposta.id,
+                action="ajuste_solicitado"
+            )
+            .order_by(
+                ProposalInteraction.created_at.desc()
+            )
+            .first()
+        )
+
+        if ajuste:
+
+            ajustes_por_proposta[
+                proposta.id
+            ] = ajuste
 
     return render_template(
         "propostas_recebidas.html",
@@ -6122,8 +6148,10 @@ def propostas_recebidas(demanda_id):
         demanda=demanda,
         propostas=propostas,
         totais_propostas=totais_propostas,
+        ajustes_por_proposta=ajustes_por_proposta,
         total_propostas=total_propostas,
         total_enviadas=total_enviadas,
+        total_ajustes=total_ajustes,
         total_aceitas=total_aceitas,
         total_recusadas=total_recusadas,
     )
