@@ -602,6 +602,30 @@
             color:var(--red);
         }
 
+        .proposal-btn{
+            min-height:46px;
+        
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+        
+            padding:0 19px;
+        
+            border-radius:999px;
+        
+            background:var(--lime);
+            color:#000;
+        
+            text-decoration:none;
+        
+            font-size:13px;
+            font-weight:800;
+        }
+        
+        .proposal-btn:hover{
+            background:#fff;
+            color:#000;
+        }
 
         /* =========================================================
            MOBILE
@@ -1245,20 +1269,59 @@
             <h2>
                 Interesse registrado.
             </h2>
-
-
+        
+        
             <p>
-
+        
                 Sua malharia demonstrou interesse nesta
                 oportunidade.
-
+        
+                Agora você pode formalizar as condições
+                comerciais para o comprador.
+        
             </p>
-
-
-            <span class="decision-done interested">
-                ✓ Tenho interesse
-            </span>
-
+        
+        
+            <div class="decision-actions">
+        
+        
+                <span class="decision-done interested">
+                    ✓ Tenho interesse
+                </span>
+        
+        
+                {% if proposta and proposta.status != "rascunho" %}
+        
+        
+                    <a
+                        href="{{ url_for(
+                            'enviar_proposta',
+                            oportunidade_id=oportunidade.id
+                        ) }}"
+                        class="proposal-btn"
+                    >
+                        Ver proposta enviada
+                    </a>
+        
+        
+                {% else %}
+        
+        
+                    <a
+                        href="{{ url_for(
+                            'enviar_proposta',
+                            oportunidade_id=oportunidade.id
+                        ) }}"
+                        class="proposal-btn"
+                    >
+                        Enviar proposta
+                    </a>
+        
+        
+                {% endif %}
+        
+        
+            </div>
 
         {% elif opportunity_status == "recusada" %}
 
