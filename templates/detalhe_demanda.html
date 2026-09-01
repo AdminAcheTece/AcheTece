@@ -1032,7 +1032,17 @@
             >
                 Ver Matches
             </a>
-    
+
+            <a
+                href="{{ url_for(
+                    'retorno_demanda',
+                    demanda_id=demanda.id
+                ) }}"
+                class="back-btn"
+            >
+                Retorno das Malharias
+            </a>
+        
         {% endif %}
     
     </div>
