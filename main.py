@@ -7404,6 +7404,92 @@ def meus_pedidos_comprador():
     )
 
 # --------------------------------------------------------------------
+# AcheTece 2.0 - Detalhes do Pedido para Comprador
+# --------------------------------------------------------------------
+
+@app.get(
+    "/comprador/pedidos/<int:pedido_id>",
+    endpoint="detalhe_pedido_comprador"
+)
+def detalhe_pedido_comprador(pedido_id):
+
+    # --------------------------------------------------------------
+    # Autenticação
+    # --------------------------------------------------------------
+
+    user_id = session.get(
+        "user_id"
+    )
+
+    if not user_id:
+
+        return redirect(
+            url_for("login")
+        )
+
+    try:
+
+        usuario = db.session.get(
+            Usuario,
+            int(user_id)
+        )
+
+    except Exception:
+
+        usuario = None
+
+    if (
+        not usuario
+        or usuario.is_active is False
+        or (
+            usuario.role or ""
+        ).strip().lower() != "cliente"
+    ):
+
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Pedido SOMENTE do próprio comprador
+    # --------------------------------------------------------------
+
+    pedido = (
+        Order.query
+        .filter_by(
+            id=pedido_id,
+            buyer_user_id=usuario.id
+        )
+        .first()
+    )
+
+    if not pedido:
+
+        flash(
+            "Pedido não encontrado.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "meus_pedidos_comprador"
+            )
+        )
+
+    proposta = pedido.proposta
+    demanda = pedido.demanda
+    empresa = pedido.empresa
+
+    return render_template(
+        "detalhe_pedido_comprador.html",
+        usuario=usuario,
+        pedido=pedido,
+        proposta=proposta,
+        demanda=demanda,
+        empresa=empresa
+    )
+
+# --------------------------------------------------------------------
 # AcheTece 2.0 - Minhas Oportunidades da Malharia
 # --------------------------------------------------------------------
 
