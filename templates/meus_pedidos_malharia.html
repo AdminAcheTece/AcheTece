@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+
+<html lang="pt-br">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>
+        Meus Pedidos - AcheTece
+    </title>
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <style>
+
+        :root{
+            --black:#111111;
+            --white:#ffffff;
+
+            --olive:#7B7424;
+            --olive-light:#F1F2E8;
+
+            --lime:#B6F34D;
+
+            --bg:#F4F4F1;
+            --text:#202020;
+            --muted:#6B6B6B;
+            --line:#DFDFDA;
+
+            --green:#287742;
+            --green-bg:#EAF7ED;
+
+            --orange:#8A6318;
+            --orange-bg:#FFF7E8;
+
+            --blue:#295C87;
+            --blue-bg:#EEF5FA;
+        }
+
+
+        *{
+            box-sizing:border-box;
+        }
+
+
+        body{
+            margin:0;
+
+            background:var(--bg);
+            color:var(--text);
+
+            font-family:
+                'Inter',
+                Arial,
+                sans-serif;
+        }
+
+
+        /* =========================================================
+           HEADER
+        ========================================================= */
+
+        .topbar{
+            min-height:72px;
+
+            background:#111;
+
+            display:flex;
+            align-items:center;
+        }
+
+
+        .topbar-inner{
+            width:100%;
+            max-width:1180px;
+
+            margin:auto;
+            padding:0 22px;
+
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+
+            gap:20px;
+        }
+
+
+        .brand img{
+            height:40px;
+            display:block;
+        }
+
+
+        .top-actions{
+            display:flex;
+            align-items:center;
+            gap:10px;
+        }
+
+
+        .top-link{
+            display:inline-flex;
+
+            min-height:42px;
+
+            align-items:center;
+            justify-content:center;
+
+            padding:0 17px;
+
+            color:#fff;
+
+            text-decoration:none;
+
+            border-radius:999px;
+
+            font-size:13px;
+            font-weight:800;
+        }
+
+
+        .top-link:hover{
+            background:
+                rgba(255,255,255,.10);
+        }
+
+
+        /* =========================================================
+           PAGE
+        ========================================================= */
+
+        .page{
+            max-width:1180px;
+
+            margin:auto;
+
+            padding:
+                38px 22px
+                70px;
+        }
+
+
+        .eyebrow{
+            margin-bottom:8px;
+
+            color:var(--olive);
+
+            font-size:12px;
+            font-weight:800;
+
+            text-transform:uppercase;
+            letter-spacing:.08em;
+        }
+
+
+        h1{
+            margin:0;
+
+            color:#111;
+
+            font-size:34px;
+
+            line-height:1.12;
+
+            letter-spacing:-.035em;
+        }
+
+
+        .intro{
+            max-width:720px;
+
+            margin:
+                9px 0
+                25px;
+
+            color:var(--muted);
+
+            font-size:14px;
+
+            line-height:1.55;
+        }
+
+
+        /* =========================================================
+           METRICS
+        ========================================================= */
+
+        .metrics{
+            display:grid;
+
+            grid-template-columns:
+                repeat(5,1fr);
+
+            gap:13px;
+
+            margin-bottom:32px;
+        }
+
+
+        .metric{
+            padding:18px;
+
+            background:#fff;
+
+            border:
+                1px solid var(--line);
+
+            border-radius:16px;
+        }
+
+
+        .metric-value{
+            color:#111;
+
+            font-size:27px;
+            font-weight:800;
+        }
+
+
+        .metric-label{
+            margin-top:5px;
+
+            color:var(--muted);
+
+            font-size:11px;
+        }
+
+
+        /* =========================================================
+           PEDIDOS
+        ========================================================= */
+
+        .section-title{
+            margin:
+                0 0
+                13px;
+
+            font-size:20px;
+            font-weight:800;
+        }
+
+
+        .orders{
+            display:flex;
+            flex-direction:column;
+
+            gap:14px;
+        }
+
+
+        .order{
+            display:grid;
+
+            grid-template-columns:
+                minmax(0,1.4fr)
+                minmax(120px,.6fr)
+                minmax(140px,.7fr)
+                minmax(160px,.7fr);
+
+            align-items:center;
+
+            background:#fff;
+
+            border:
+                1px solid var(--line);
+
+            border-radius:18px;
+
+            overflow:hidden;
+        }
+
+
+        .order-main{
+            padding:22px;
+        }
+
+
+        .code{
+            margin-bottom:7px;
+
+            color:var(--olive);
+
+            font-size:12px;
+            font-weight:800;
+        }
+
+
+        .product{
+            color:#111;
+
+            font-size:19px;
+            font-weight:800;
+        }
+
+
+        .meta{
+            margin-top:7px;
+
+            color:var(--muted);
+
+            font-size:12px;
+
+            line-height:1.5;
+        }
+
+
+        .col{
+            padding:22px;
+        }
+
+
+        .label{
+            margin-bottom:5px;
+
+            color:#888;
+
+            font-size:9px;
+            font-weight:800;
+
+            text-transform:uppercase;
+            letter-spacing:.06em;
+        }
+
+
+        .value{
+            color:#222;
+
+            font-size:14px;
+            font-weight:800;
+        }
+
+
+        /* =========================================================
+           STATUS
+        ========================================================= */
+
+        .status{
+            display:inline-flex;
+
+            min-height:30px;
+
+            align-items:center;
+            justify-content:center;
+
+            padding:0 11px;
+
+            border-radius:999px;
+
+            font-size:10px;
+            font-weight:800;
+        }
+
+
+        .status-aguardando_confirmacao{
+            background:var(--orange-bg);
+            color:var(--orange);
+        }
+
+
+        .status-confirmado{
+            background:var(--green-bg);
+            color:var(--green);
+        }
+
+
+        .status-em_producao{
+            background:var(--blue-bg);
+            color:var(--blue);
+        }
+
+
+        .status-concluido,
+        .status-entregue{
+            background:var(--green-bg);
+            color:var(--green);
+        }
+
+
+        /* =========================================================
+           AÇÃO
+        ========================================================= */
+
+        .action-col{
+            padding:22px;
+
+            border-left:
+                1px solid var(--line);
+        }
+
+
+        .view-btn{
+            display:inline-flex;
+
+            width:100%;
+            min-height:44px;
+
+            align-items:center;
+            justify-content:center;
+
+            padding:0 15px;
+
+            border-radius:999px;
+
+            background:#111;
+            color:var(--lime);
+
+            text-decoration:none;
+
+            font-size:12px;
+            font-weight:800;
+        }
+
+
+        .view-btn:hover{
+            background:var(--lime);
+            color:#000;
+        }
+
+
+        /* =========================================================
+           EMPTY
+        ========================================================= */
+
+        .empty{
+            padding:42px 24px;
+
+            text-align:center;
+
+            background:#fff;
+
+            border:
+                1px solid var(--line);
+
+            border-radius:18px;
+        }
+
+
+        .empty h2{
+            margin:
+                0 0
+                8px;
+
+            font-size:20px;
+        }
+
+
+        .empty p{
+            max-width:540px;
+
+            margin:auto;
+
+            color:var(--muted);
+
+            font-size:13px;
+
+            line-height:1.55;
+        }
+
+
+        /* =========================================================
+           RESPONSIVO
+        ========================================================= */
+
+        @media(max-width:900px){
+
+            .metrics{
+                grid-template-columns:
+                    1fr 1fr;
+            }
+
+
+            .order{
+                grid-template-columns:
+                    1fr 1fr;
+            }
+
+
+            .action-col{
+                border-left:0;
+
+                border-top:
+                    1px solid var(--line);
+            }
+
+        }
+
+
+        @media(max-width:600px){
+
+            .page{
+                padding:
+                    28px 16px
+                    50px;
+            }
+
+
+            h1{
+                font-size:28px;
+            }
+
+
+            .order{
+                grid-template-columns:1fr;
+            }
+
+
+            .col,
+            .action-col{
+                border-top:
+                    1px solid var(--line);
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<header class="topbar">
+
+    <div class="topbar-inner">
+
+
+        <a
+            href="{{ url_for('painel_malharia') }}"
+            class="brand"
+        >
+
+            <img
+                src="{{ url_for(
+                    'static',
+                    filename='Logo_Branco_AcheTece_sem_fundo.png'
+                ) }}"
+                alt="AcheTece"
+            >
+
+        </a>
+
+
+        <div class="top-actions">
+
+            <a
+                href="{{ url_for('minhas_oportunidades') }}"
+                class="top-link"
+            >
+                Oportunidades
+            </a>
+
+
+            <a
+                href="{{ url_for('painel_malharia') }}"
+                class="top-link"
+            >
+                Painel
+            </a>
+
+        </div>
+
+
+    </div>
+
+</header>
+
+
+<main class="page">
+
+
+    <div class="eyebrow">
+        Portal da Malharia
+    </div>
+
+
+    <h1>
+        Meus Pedidos
+    </h1>
+
+
+    <p class="intro">
+
+        Acompanhe os pedidos originados de propostas
+        comerciais aceitas pelos compradores.
+
+    </p>
+
+
+    <section class="metrics">
+
+
+        <div class="metric">
+
+            <div class="metric-value">
+                {{ total_pedidos }}
+            </div>
+
+            <div class="metric-label">
+                Pedidos recebidos
+            </div>
+
+        </div>
+
+
+        <div class="metric">
+
+            <div class="metric-value">
+                {{ total_aguardando }}
+            </div>
+
+            <div class="metric-label">
+                Aguardando confirmação
+            </div>
+
+        </div>
+
+
+        <div class="metric">
+
+            <div class="metric-value">
+                {{ total_confirmados }}
+            </div>
+
+            <div class="metric-label">
+                Confirmados
+            </div>
+
+        </div>
+
+
+        <div class="metric">
+
+            <div class="metric-value">
+                {{ total_em_producao }}
+            </div>
+
+            <div class="metric-label">
+                Em produção
+            </div>
+
+        </div>
+
+
+        <div class="metric">
+
+            <div class="metric-value">
+                {{ total_concluidos }}
+            </div>
+
+            <div class="metric-label">
+                Concluídos
+            </div>
+
+        </div>
+
+
+    </section>
+
+
+    <h2 class="section-title">
+        Pedidos
+    </h2>
+
+
+    {% if pedidos %}
+
+
+        <section class="orders">
+
+
+            {% for pedido in pedidos %}
+
+
+                {% set demanda =
+                    pedido.demanda
+                %}
+
+
+                {% set status =
+                    (
+                        pedido.status
+                        or 'aguardando_confirmacao'
+                    )
+                    |lower
+                %}
+
+
+                <article class="order">
+
+
+                    <div class="order-main">
+
+
+                        <div class="code">
+                            {{ pedido.codigo }}
+                        </div>
+
+
+                        <div class="product">
+
+                            {{
+                                demanda.produto
+                                if demanda
+                                else "Pedido"
+                            }}
+
+                        </div>
+
+
+                        <div class="meta">
+
+                            {{
+                                "{:,.0f}".format(
+                                    pedido.quantidade_kg
+                                )
+                                |replace(",", ".")
+                            }}
+                            kg
+
+                            •
+
+                            R$
+                            {{
+                                "{:,.2f}".format(
+                                    pedido.preco_por_kg
+                                )
+                                |replace(",", "X")
+                                |replace(".", ",")
+                                |replace("X", ".")
+                            }}
+                            /kg
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="col">
+
+
+                        <div class="label">
+                            Valor estimado
+                        </div>
+
+
+                        <div class="value">
+
+                            R$
+                            {{
+                                "{:,.2f}".format(
+                                    pedido.valor_total
+                                )
+                                |replace(",", "X")
+                                |replace(".", ",")
+                                |replace("X", ".")
+                            }}
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="col">
+
+
+                        <div class="label">
+                            Status
+                        </div>
+
+
+                        <span
+                            class="
+                                status
+                                status-{{ status }}
+                            "
+                        >
+
+
+                            {% if status == "aguardando_confirmacao" %}
+
+                                Aguardando confirmação
+
+                            {% elif status == "confirmado" %}
+
+                                Confirmado
+
+                            {% elif status == "em_producao" %}
+
+                                Em produção
+
+                            {% elif status == "concluido" %}
+
+                                Concluído
+
+                            {% elif status == "entregue" %}
+
+                                Entregue
+
+                            {% else %}
+
+                                {{ status|capitalize }}
+
+                            {% endif %}
+
+
+                        </span>
+
+
+                    </div>
+
+
+                    <div class="action-col">
+
+
+                        <a
+                            href="{{ url_for(
+                                'detalhe_pedido_malharia',
+                                pedido_id=pedido.id
+                            ) }}"
+                            class="view-btn"
+                        >
+                            Ver pedido
+                        </a>
+
+
+                    </div>
+
+
+                </article>
+
+
+            {% endfor %}
+
+
+        </section>
+
+
+    {% else %}
+
+
+        <section class="empty">
+
+
+            <h2>
+                Nenhum pedido recebido.
+            </h2>
+
+
+            <p>
+
+                Quando um comprador aceitar uma proposta
+                e gerar um pedido, ele aparecerá
+                automaticamente nesta área.
+
+            </p>
+
+
+        </section>
+
+
+    {% endif %}
+
+
+</main>
+
+
+</body>
+
+</html>
