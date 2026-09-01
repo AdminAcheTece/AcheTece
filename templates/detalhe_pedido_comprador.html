@@ -41,6 +41,9 @@
 
             --blue:#295C87;
             --blue-bg:#EEF5FA;
+
+            --red:#85202D;
+            --red-bg:#FFF0F2;
         }
 
 
@@ -209,6 +212,50 @@
         .status-entregue{
             background:var(--green-bg);
             color:var(--green);
+        }
+
+
+        /* =========================================================
+           FLASH / MENSAGENS
+        ========================================================= */
+
+        .flash{
+            margin-bottom:18px;
+
+            padding:13px 15px;
+
+            border-radius:11px;
+
+            font-size:13px;
+            font-weight:700;
+        }
+
+
+        .flash.success{
+            background:#EDF8EF;
+
+            border:1px solid #B9DCBF;
+
+            color:#256033;
+        }
+
+
+        .flash.warning{
+            background:#FFF7E7;
+
+            border:1px solid #E8D49B;
+
+            color:#755614;
+        }
+
+
+        .flash.danger,
+        .flash.error{
+            background:var(--red-bg);
+
+            border:1px solid #EAB5BD;
+
+            color:var(--red);
         }
 
 
@@ -383,6 +430,104 @@
         }
 
 
+        /* =========================================================
+           CONFIRMAR ENTREGA
+        ========================================================= */
+
+        .delivery-action{
+            margin-top:20px;
+
+            padding:24px;
+
+            background:#111;
+            color:#fff;
+
+            border-radius:20px;
+        }
+
+
+        .delivery-action h2{
+            margin:
+                0 0
+                7px;
+
+            font-size:18px;
+        }
+
+
+        .delivery-action p{
+            max-width:700px;
+
+            margin:
+                0 0
+                18px;
+
+            color:#CFCFCF;
+
+            font-size:13px;
+
+            line-height:1.55;
+        }
+
+
+        .delivery-btn{
+            min-height:47px;
+
+            padding:0 20px;
+
+            border:0;
+            border-radius:999px;
+
+            background:var(--lime);
+            color:#000;
+
+            font-family:inherit;
+
+            font-size:13px;
+            font-weight:800;
+
+            cursor:pointer;
+        }
+
+
+        .delivery-btn:hover{
+            background:#fff;
+        }
+
+
+        /* =========================================================
+           ENTREGA CONCLUÍDA
+        ========================================================= */
+
+        .delivery-done{
+            margin-top:20px;
+
+            padding:24px;
+
+            background:var(--green-bg);
+
+            color:var(--green);
+
+            border:
+                1px solid #B9DCBF;
+
+            border-radius:20px;
+
+            font-size:13px;
+
+            line-height:1.55;
+        }
+
+
+        .delivery-done strong{
+            font-size:15px;
+        }
+
+
+        /* =========================================================
+           RESPONSIVO
+        ========================================================= */
+
         @media(max-width:650px){
 
             .page{
@@ -409,6 +554,11 @@
 
             .timeline{
                 grid-template-columns:1fr;
+            }
+
+
+            .delivery-btn{
+                width:100%;
             }
 
         }
@@ -538,6 +688,32 @@
 
 
     </div>
+
+
+    <!-- =========================================================
+         PASSO 6
+         MENSAGENS DE RETORNO / FLASH
+    ========================================================== -->
+
+    {% with messages =
+        get_flashed_messages(
+            with_categories=true
+        )
+    %}
+
+        {% if messages %}
+
+            {% for category, message in messages %}
+
+                <div class="flash {{ category }}">
+                    {{ message }}
+                </div>
+
+            {% endfor %}
+
+        {% endif %}
+
+    {% endwith %}
 
 
     <section class="card">
@@ -861,6 +1037,8 @@
         <div class="timeline">
 
 
+            <!-- AGUARDANDO CONFIRMAÇÃO -->
+
             <div
                 class="
                     timeline-item
@@ -874,6 +1052,8 @@
                 Aguardando confirmação
             </div>
 
+
+            <!-- CONFIRMADO -->
 
             <div
                 class="
@@ -889,6 +1069,8 @@
             </div>
 
 
+            <!-- EM PRODUÇÃO -->
+
             <div
                 class="
                     timeline-item
@@ -903,6 +1085,8 @@
             </div>
 
 
+            <!-- CONCLUÍDO -->
+
             <div
                 class="
                     timeline-item
@@ -916,6 +1100,8 @@
                 Concluído
             </div>
 
+
+            <!-- ENTREGUE -->
 
             <div
                 class="
@@ -942,6 +1128,84 @@
 
 
     </section>
+
+
+    <!-- =========================================================
+         PASSO 7
+         COMPRADOR CONFIRMA A ENTREGA
+    ========================================================== -->
+
+
+    {% if status == "concluido" %}
+
+
+        <section class="delivery-action">
+
+
+            <h2>
+                Produção concluída
+            </h2>
+
+
+            <p>
+
+                A malharia informou que a produção deste
+                pedido foi concluída.
+
+                Confirme abaixo quando o pedido tiver sido
+                efetivamente recebido.
+
+            </p>
+
+
+            <form
+                method="POST"
+                action="{{ url_for(
+                    'confirmar_entrega_comprador',
+                    pedido_id=pedido.id
+                ) }}"
+                onsubmit="return confirm(
+                    'Confirma que recebeu este pedido?'
+                );"
+                style="margin:0;"
+            >
+
+
+                <button
+                    type="submit"
+                    class="delivery-btn"
+                >
+                    Confirmar entrega
+                </button>
+
+
+            </form>
+
+
+        </section>
+
+
+    {% elif status == "entregue" %}
+
+
+        <section class="delivery-done">
+
+
+            <strong>
+                ✓ Entrega confirmada
+            </strong>
+
+
+            <br><br>
+
+
+            Este pedido foi concluído e recebido.
+
+
+        </section>
+
+
+    {% endif %}
 
 
 </main>
