@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+
+<html lang="pt-br">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>
+        Retorno das Malharias - {{ demanda.codigo }} - AcheTece
+    </title>
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <style>
+
+        :root{
+            --black:#111111;
+            --white:#ffffff;
+
+            --olive:#7B7424;
+            --olive-dark:#434326;
+            --olive-light:#F1F2E8;
+
+            --lime:#B6F34D;
+
+            --bg:#F4F4F1;
+
+            --text:#202020;
+            --muted:#6B6B6B;
+
+            --line:#DFDFDA;
+
+            --green:#287742;
+            --green-bg:#EAF7ED;
+
+            --red:#85202D;
+            --red-bg:#FFF0F2;
+
+            --orange:#8A6318;
+            --orange-bg:#FFF7E8;
+        }
+
+
+        *{
+            box-sizing:border-box;
+        }
+
+
+        body{
+            margin:0;
+
+            background:var(--bg);
+
+            color:var(--text);
+
+            font-family:
+                'Inter',
+                Arial,
+                sans-serif;
+        }
+
+
+        /* =========================================================
+           HEADER
+        ========================================================= */
+
+
+        .topbar{
+            min-height:72px;
+
+            background:#111;
+
+            display:flex;
+            align-items:center;
+        }
+
+
+        .topbar-inner{
+            width:100%;
+            max-width:1100px;
+
+            margin:auto;
+
+            padding:0 22px;
+
+            display:flex;
+
+            align-items:center;
+            justify-content:space-between;
+
+            gap:20px;
+        }
+
+
+        .brand img{
+            height:40px;
+
+            display:block;
+        }
+
+
+        .back{
+            color:#fff;
+
+            text-decoration:none;
+
+            font-size:13px;
+            font-weight:800;
+        }
+
+
+        /* =========================================================
+           PÁGINA
+        ========================================================= */
+
+
+        .page{
+            max-width:1100px;
+
+            margin:auto;
+
+            padding:
+                38px 22px
+                70px;
+        }
+
+
+        .eyebrow{
+            margin-bottom:8px;
+
+            color:var(--olive);
+
+            font-size:12px;
+            font-weight:800;
+
+            text-transform:uppercase;
+
+            letter-spacing:.08em;
+        }
+
+
+        h1{
+            margin:0;
+
+            font-size:34px;
+
+            line-height:1.12;
+
+            letter-spacing:-.035em;
+        }
+
+
+        .intro{
+            max-width:760px;
+
+            margin:
+                9px 0
+                24px;
+
+            color:var(--muted);
+
+            font-size:14px;
+
+            line-height:1.55;
+        }
+
+
+        /* =========================================================
+           DEMANDA
+        ========================================================= */
+
+
+        .demand-context{
+            margin-bottom:20px;
+
+            padding:22px 24px;
+
+            background:#111;
+
+            color:#fff;
+
+            border-radius:20px;
+        }
+
+
+        .demand-code{
+            color:var(--lime);
+
+            font-size:12px;
+            font-weight:800;
+
+            margin-bottom:5px;
+        }
+
+
+        .demand-product{
+            font-size:20px;
+            font-weight:800;
+        }
+
+
+        .demand-meta{
+            margin-top:7px;
+
+            color:#D2D2D2;
+
+            font-size:12px;
+        }
+
+
+        /* =========================================================
+           INDICADORES
+        ========================================================= */
+
+
+        .metrics{
+            display:grid;
+
+            grid-template-columns:
+                repeat(4,1fr);
+
+            gap:13px;
+
+            margin-bottom:32px;
+        }
+
+
+        .metric{
+            padding:18px;
+
+            background:#fff;
+
+            border:
+                1px solid var(--line);
+
+            border-radius:16px;
+        }
+
+
+        .metric-value{
+            color:#111;
+
+            font-size:28px;
+            font-weight:800;
+        }
+
+
+        .metric-label{
+            margin-top:5px;
+
+            color:var(--muted);
+
+            font-size:12px;
+        }
+
+
+        /* =========================================================
+           SEÇÃO
+        ========================================================= */
+
+
+        .section-title{
+            margin:
+                0 0
+                7px;
+
+            color:#111;
+
+            font-size:21px;
+            font-weight:800;
+        }
+
+
+        .section-intro{
+            margin:
+                0 0
+                16px;
+
+            max-width:700px;
+
+            color:var(--muted);
+
+            font-size:13px;
+
+            line-height:1.55;
+        }
+
+
+        /* =========================================================
+           MALHARIAS INTERESSADAS
+        ========================================================= */
+
+
+        .companies{
+            display:flex;
+
+            flex-direction:column;
+
+            gap:14px;
+        }
+
+
+        .company-card{
+            display:grid;
+
+            grid-template-columns:
+                120px
+                minmax(0,1fr);
+
+            overflow:hidden;
+
+            background:#fff;
+
+            border:
+                1px solid var(--line);
+
+            border-radius:20px;
+        }
+
+
+        .score{
+            display:flex;
+
+            flex-direction:column;
+
+            align-items:center;
+            justify-content:center;
+
+            padding:20px 15px;
+
+            background:var(--olive-light);
+
+            border-right:
+                1px solid var(--line);
+        }
+
+
+        .score strong{
+            color:#111;
+
+            font-size:30px;
+        }
+
+
+        .score span{
+            margin-top:3px;
+
+            color:#777;
+
+            font-size:9px;
+            font-weight:800;
+
+            text-transform:uppercase;
+        }
+
+
+        .company-body{
+            padding:22px;
+        }
+
+
+        .company-name{
+            color:#111;
+
+            font-size:19px;
+            font-weight:800;
+        }
+
+
+        .company-location{
+            margin-top:5px;
+
+            color:var(--muted);
+
+            font-size:12px;
+        }
+
+
+        .interest-badge{
+            display:inline-flex;
+
+            min-height:29px;
+
+            align-items:center;
+            justify-content:center;
+
+            margin-top:12px;
+
+            padding:0 11px;
+
+            background:var(--green-bg);
+
+            color:var(--green);
+
+            border-radius:999px;
+
+            font-size:10px;
+            font-weight:800;
+        }
+
+
+        /* =========================================================
+           EQUIPAMENTOS
+        ========================================================= */
+
+
+        .machines-title{
+            margin-top:18px;
+
+            padding-top:16px;
+
+            border-top:
+                1px solid #ECECE8;
+
+            color:#777;
+
+            font-size:10px;
+            font-weight:800;
+
+            text-transform:uppercase;
+
+            letter-spacing:.06em;
+        }
+
+
+        .machines{
+            display:flex;
+
+            flex-wrap:wrap;
+
+            gap:8px;
+
+            margin-top:10px;
+        }
+
+
+        .machine{
+            padding:
+                9px 11px;
+
+            background:#F5F5F2;
+
+            border-radius:10px;
+
+            color:#333;
+
+            font-size:11px;
+
+            line-height:1.45;
+        }
+
+
+        .machine strong{
+            display:block;
+
+            margin-bottom:2px;
+
+            color:#111;
+
+            font-size:11px;
+        }
+
+
+        /* =========================================================
+           SEM INTERESSE AINDA
+        ========================================================= */
+
+
+        .empty{
+            padding:38px 24px;
+
+            text-align:center;
+
+            background:#fff;
+
+            border:
+                1px solid var(--line);
+
+            border-radius:18px;
+        }
+
+
+        .empty h2{
+            margin:
+                0 0
+                8px;
+
+            font-size:19px;
+        }
+
+
+        .empty p{
+            max-width:570px;
+
+            margin:auto;
+
+            color:var(--muted);
+
+            font-size:13px;
+
+            line-height:1.55;
+        }
+
+
+        /* =========================================================
+           PRIVACIDADE / MARKETPLACE
+        ========================================================= */
+
+
+        .marketplace-note{
+            margin-top:22px;
+
+            padding:17px 19px;
+
+            background:#fff;
+
+            border:
+                1px solid var(--line);
+
+            border-radius:15px;
+
+            color:#555;
+
+            font-size:12px;
+
+            line-height:1.55;
+        }
+
+
+        .marketplace-note strong{
+            color:#222;
+        }
+
+
+        /* =========================================================
+           MOBILE
+        ========================================================= */
+
+
+        @media(max-width:760px){
+
+            .metrics{
+                grid-template-columns:
+                    1fr 1fr;
+            }
+
+        }
+
+
+        @media(max-width:600px){
+
+            .page{
+                padding:
+                    28px 16px
+                    50px;
+            }
+
+
+            h1{
+                font-size:28px;
+            }
+
+
+            .company-card{
+                grid-template-columns:1fr;
+            }
+
+
+            .score{
+                border-right:0;
+
+                border-bottom:
+                    1px solid var(--line);
+            }
+
+
+            .metrics{
+                grid-template-columns:
+                    1fr 1fr;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<header class="topbar">
+
+    <div class="topbar-inner">
+
+
+        <a
+            href="{{ url_for('painel_comprador') }}"
+            class="brand"
+        >
+
+            <img
+                src="{{ url_for(
+                    'static',
+                    filename='Logo_Branco_AcheTece_sem_fundo.png'
+                ) }}"
+                alt="AcheTece"
+            >
+
+        </a>
+
+
+        <a
+            href="{{ url_for(
+                'detalhe_demanda',
+                demanda_id=demanda.id
+            ) }}"
+            class="back"
+        >
+            ← Voltar para demanda
+        </a>
+
+
+    </div>
+
+</header>
+
+
+<main class="page">
+
+
+    <div class="eyebrow">
+        Retorno das Malharias
+    </div>
+
+
+    <h1>
+        Interesse na sua demanda
+    </h1>
+
+
+    <p class="intro">
+
+        Acompanhe como as malharias tecnicamente
+        compatíveis estão respondendo à sua
+        necessidade de produção.
+
+    </p>
+
+
+    <section class="demand-context">
+
+
+        <div class="demand-code">
+            {{ demanda.codigo }}
+        </div>
+
+
+        <div class="demand-product">
+            {{ demanda.produto }}
+        </div>
+
+
+        <div class="demand-meta">
+
+            {{
+                "{:,.0f}".format(
+                    demanda.quantidade_kg
+                )
+                |replace(",", ".")
+            }}
+            kg
+
+
+            {% if demanda.data_necessidade %}
+
+                • Prazo:
+                {{
+                    demanda.data_necessidade
+                    .strftime('%d/%m/%Y')
+                }}
+
+            {% endif %}
+
+
+            {% if demanda.cidade_preferencial %}
+
+                •
+                {{ demanda.cidade_preferencial }}
+
+            {% endif %}
+
+
+            {% if demanda.estado_preferencial %}
+
+                /
+                {{ demanda.estado_preferencial }}
+
+            {% endif %}
+
+
+        </div>
+
+
+    </section>
+
+
+    <section class="metrics">
+
+
+        <div class="metric">
+
+            <div class="metric-value">
+                {{ total_compativeis }}
+            </div>
+
+            <div class="metric-label">
+                Malharias compatíveis
+            </div>
+
+        </div>
+
+
+        <div class="metric">
+
+            <div class="metric-value">
+                {{ total_interessadas }}
+            </div>
+
+            <div class="metric-label">
+                Demonstraram interesse
+            </div>
+
+        </div>
+
+
+        <div class="metric">
+
+            <div class="metric-value">
+                {{ total_em_analise }}
+            </div>
+
+            <div class="metric-label">
+                Aguardando decisão
+            </div>
+
+        </div>
+
+
+        <div class="metric">
+
+            <div class="metric-value">
+                {{ total_recusadas }}
+            </div>
+
+            <div class="metric-label">
+                Sem interesse
+            </div>
+
+        </div>
+
+
+    </section>
+
+
+    <h2 class="section-title">
+        Malharias interessadas
+    </h2>
+
+
+    <p class="section-intro">
+
+        Abaixo aparecem somente as empresas que
+        manifestaram interesse em atender esta demanda.
+
+    </p>
+
+
+    {% if oportunidades_interessadas %}
+
+
+        <section class="companies">
+
+
+            {% for oportunidade in oportunidades_interessadas %}
+
+
+                {% set empresa =
+                    oportunidade.empresa
+                %}
+
+
+                {% set matches_empresa =
+                    matches_por_empresa.get(
+                        oportunidade.empresa_id,
+                        []
+                    )
+                %}
+
+
+                <article class="company-card">
+
+
+                    <div class="score">
+
+                        <strong>
+                            {{ oportunidade.best_score }}%
+                        </strong>
+
+                        <span>
+                            compatibilidade
+                        </span>
+
+                    </div>
+
+
+                    <div class="company-body">
+
+
+                        <div class="company-name">
+
+                            {{
+                                empresa.nome
+                                or empresa.apelido
+                                or "Malharia"
+                            }}
+
+                        </div>
+
+
+                        <div class="company-location">
+
+                            {{
+                                empresa.cidade
+                                or "Cidade não informada"
+                            }}
+
+                            {% if empresa.estado %}
+
+                                /
+                                {{ empresa.estado }}
+
+                            {% endif %}
+
+                        </div>
+
+
+                        <span class="interest-badge">
+                            ✓ Demonstrou interesse
+                        </span>
+
+
+                        <div class="machines-title">
+
+                            Equipamentos compatíveis
+
+                        </div>
+
+
+                        <div class="machines">
+
+
+                            {% for match in matches_empresa %}
+
+
+                                <div class="machine">
+
+                                    <strong>
+
+                                        {{
+                                            match.tear.marca
+                                            or "Marca"
+                                        }}
+
+                                        —
+
+                                        {{
+                                            match.tear.modelo
+                                            or "Modelo"
+                                        }}
+
+                                    </strong>
+
+
+                                    {{ match.score }}%
+
+                                    •
+
+                                    {{
+                                        match.tear.tipo
+                                        or "Tipo não informado"
+                                    }}
+
+                                    •
+
+                                    Galga
+                                    {{
+                                        match.tear.finura
+                                        or "—"
+                                    }}
+
+                                    •
+
+                                    Ø
+                                    {{
+                                        match.tear.diametro
+                                        or "—"
+                                    }}"
+
+
+                                </div>
+
+
+                            {% endfor %}
+
+
+                        </div>
+
+
+                    </div>
+
+
+                </article>
+
+
+            {% endfor %}
+
+
+        </section>
+
+
+    {% else %}
+
+
+        <section class="empty">
+
+
+            <h2>
+                Ainda não há manifestação de interesse.
+            </h2>
+
+
+            <p>
+
+                As malharias compatíveis poderão analisar
+                esta oportunidade e informar se possuem
+                interesse em atender sua demanda.
+
+            </p>
+
+
+        </section>
+
+
+    {% endif %}
+
+
+    <div class="marketplace-note">
+
+        <strong>
+            Fluxo protegido pelo AcheTece:
+        </strong>
+
+        nesta etapa são apresentadas as malharias que
+        demonstraram interesse e sua compatibilidade
+        técnica. Dados diretos de contato ainda não são
+        liberados.
+
+    </div>
+
+
+</main>
+
+
+</body>
+
+</html>
