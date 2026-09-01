@@ -8723,6 +8723,126 @@ def _training_global_percent(progress_map: dict) -> int:
         return 0
     return int(round((done / total) * 100))
 
+# --------------------------------------------------------------------
+# AcheTece 2.0 - Meus Pedidos da Malharia
+# --------------------------------------------------------------------
+
+@app.get(
+    "/malharia/pedidos",
+    endpoint="meus_pedidos_malharia"
+)
+def meus_pedidos_malharia():
+
+    # --------------------------------------------------------------
+    # Autenticação da malharia
+    # --------------------------------------------------------------
+
+    empresa_id = session.get(
+        "empresa_id"
+    )
+
+    if not empresa_id:
+
+        return redirect(
+            url_for("login")
+        )
+
+    try:
+
+        empresa = db.session.get(
+            Empresa,
+            int(empresa_id)
+        )
+
+    except Exception:
+
+        empresa = None
+
+    if not empresa:
+
+        session.clear()
+
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Pedidos SOMENTE desta malharia
+    # --------------------------------------------------------------
+
+    pedidos = (
+        Order.query
+        .filter(
+            Order.empresa_id
+            == empresa.id,
+            Order.status
+            != "cancelado"
+        )
+        .order_by(
+            Order.created_at.desc(),
+            Order.id.desc()
+        )
+        .all()
+    )
+
+    # --------------------------------------------------------------
+    # Indicadores
+    # --------------------------------------------------------------
+
+    total_pedidos = len(
+        pedidos
+    )
+
+    total_aguardando = sum(
+        1
+        for pedido in pedidos
+        if (
+            pedido.status or ""
+        ).strip().lower()
+        == "aguardando_confirmacao"
+    )
+
+    total_confirmados = sum(
+        1
+        for pedido in pedidos
+        if (
+            pedido.status or ""
+        ).strip().lower()
+        == "confirmado"
+    )
+
+    total_em_producao = sum(
+        1
+        for pedido in pedidos
+        if (
+            pedido.status or ""
+        ).strip().lower()
+        == "em_producao"
+    )
+
+    total_concluidos = sum(
+        1
+        for pedido in pedidos
+        if (
+            pedido.status or ""
+        ).strip().lower()
+        in {
+            "concluido",
+            "entregue"
+        }
+    )
+
+    return render_template(
+        "meus_pedidos_malharia.html",
+        empresa=empresa,
+        pedidos=pedidos,
+        total_pedidos=total_pedidos,
+        total_aguardando=total_aguardando,
+        total_confirmados=total_confirmados,
+        total_em_producao=total_em_producao,
+        total_concluidos=total_concluidos,
+    )
+
 
 # -----------------------------
 # Arquivos do treinamento (PROTEGIDOS)
