@@ -7266,6 +7266,10 @@ def oportunidade_recusar(oportunidade_id):
 # AcheTece 2.0 - Enviar Proposta Comercial
 # --------------------------------------------------------------------
 
+# --------------------------------------------------------------------
+# AcheTece 2.0 - Enviar / Ajustar Proposta Comercial
+# --------------------------------------------------------------------
+
 @app.route(
     "/malharia/oportunidades/<int:oportunidade_id>/proposta",
     methods=["GET", "POST"],
@@ -7285,14 +7289,6 @@ def enviar_proposta(oportunidade_id):
 
         return redirect(
             url_for("login")
-        )
-
-        status_anterior = (
-            (
-                proposta.status or ""
-            ).strip().lower()
-            if proposta
-            else None
         )
 
     try:
@@ -7360,6 +7356,10 @@ def enviar_proposta(oportunidade_id):
             )
         )
 
+    # --------------------------------------------------------------
+    # Demanda
+    # --------------------------------------------------------------
+
     demanda = oportunidade.demanda
 
     if not demanda:
@@ -7374,7 +7374,7 @@ def enviar_proposta(oportunidade_id):
         )
 
     # --------------------------------------------------------------
-    # Verifica se já existe proposta
+    # Proposta existente
     # --------------------------------------------------------------
 
     proposta = (
@@ -7427,7 +7427,13 @@ def enviar_proposta(oportunidade_id):
         )
 
     # --------------------------------------------------------------
-    # Impede duplicação de proposta já enviada
+    # POST
+    #
+    # Impede alteração de proposta que não está disponível
+    # para edição.
+    #
+    # ajuste_solicitado NÃO entra aqui, porque neste estado
+    # a malharia deve poder editar e reenviar.
     # --------------------------------------------------------------
 
     if proposta and (
@@ -7440,7 +7446,7 @@ def enviar_proposta(oportunidade_id):
     }:
 
         flash(
-            "Já existe uma proposta enviada para esta oportunidade.",
+            "Esta proposta não pode ser alterada no status atual.",
             "warning"
         )
 
@@ -7452,7 +7458,7 @@ def enviar_proposta(oportunidade_id):
         )
 
     # --------------------------------------------------------------
-    # Helper para valores monetários/decimais
+    # Helper para valores decimais
     #
     # Aceita:
     # 7,80
@@ -7564,7 +7570,10 @@ def enviar_proposta(oportunidade_id):
             )
         )
 
-    # Não permite propor mais do que a demanda solicita
+    # --------------------------------------------------------------
+    # Não permite propor mais que a quantidade da demanda
+    # --------------------------------------------------------------
+
     try:
 
         quantidade_demanda = Decimal(
@@ -7673,10 +7682,30 @@ def enviar_proposta(oportunidade_id):
         )
 
     # --------------------------------------------------------------
-    # Salva e ENVIA
+    # Guarda status anterior
+    #
+    # Precisamos saber se é:
+    # - primeiro envio
+    # - reenvio após ajuste
+    # --------------------------------------------------------------
+
+    status_anterior = (
+        (
+            proposta.status or ""
+        ).strip().lower()
+        if proposta
+        else None
+    )
+
+    # --------------------------------------------------------------
+    # Salva proposta
     # --------------------------------------------------------------
 
     try:
+
+        # ----------------------------------------------------------
+        # Primeira proposta
+        # ----------------------------------------------------------
 
         if not proposta:
 
@@ -7689,6 +7718,10 @@ def enviar_proposta(oportunidade_id):
             db.session.add(
                 proposta
             )
+
+        # ----------------------------------------------------------
+        # Atualiza condições comerciais
+        # ----------------------------------------------------------
 
         proposta.quantidade_kg = (
             quantidade_kg
@@ -7716,45 +7749,65 @@ def enviar_proposta(oportunidade_id):
             or None
         )
 
+        # ----------------------------------------------------------
+        # Após enviar/reEnviar, volta a ficar "enviada"
+        # ----------------------------------------------------------
+
         proposta.status = "enviada"
 
         proposta.sent_at = (
             datetime.utcnow()
         )
 
-                # Garante ID da proposta antes de registrar interação
-                db.session.flush()
-        
-                if status_anterior == "ajuste_solicitado":
-        
-                    acao_interacao = (
-                        "proposta_reenviada"
-                    )
-        
-                    mensagem_interacao = (
-                        "Proposta ajustada e reenviada pela malharia."
-                    )
-        
-                else:
-        
-                    acao_interacao = (
-                        "proposta_enviada"
-                    )
-        
-                    mensagem_interacao = (
-                        "Proposta enviada pela malharia."
-                    )
-        
-                interacao = ProposalInteraction(
-                    proposal_id=proposta.id,
-                    actor_role="malharia",
-                    action=acao_interacao,
-                    message=mensagem_interacao
-                )
-        
-                db.session.add(
-                    interacao
-                )
+        # ----------------------------------------------------------
+        # Garante que a proposta possui ID
+        #
+        # ATENÇÃO:
+        # db.session.flush() PRECISA estar exatamente
+        # dentro deste try, alinhado com proposta.status,
+        # proposta.sent_at e db.session.commit().
+        # ----------------------------------------------------------
+
+        db.session.flush()
+
+        # ----------------------------------------------------------
+        # Histórico da proposta
+        # ----------------------------------------------------------
+
+        if status_anterior == "ajuste_solicitado":
+
+            acao_interacao = (
+                "proposta_reenviada"
+            )
+
+            mensagem_interacao = (
+                "Proposta ajustada e reenviada pela malharia."
+            )
+
+        else:
+
+            acao_interacao = (
+                "proposta_enviada"
+            )
+
+            mensagem_interacao = (
+                "Proposta enviada pela malharia."
+            )
+
+        interacao = ProposalInteraction(
+            proposal_id=proposta.id,
+            actor_role="malharia",
+            action=acao_interacao,
+            message=mensagem_interacao
+        )
+
+        db.session.add(
+            interacao
+        )
+
+        # ----------------------------------------------------------
+        # Salva proposta + histórico
+        # ----------------------------------------------------------
 
         db.session.commit()
 
@@ -7763,11 +7816,11 @@ def enviar_proposta(oportunidade_id):
         db.session.rollback()
 
         current_app.logger.exception(
-            "[PROPOSTA] Falha ao enviar proposta."
+            "[PROPOSTA] Falha ao enviar/reEnviar proposta."
         )
 
         flash(
-            "Não foi possível enviar a proposta agora.",
+            "Não foi possível salvar a proposta agora.",
             "danger"
         )
 
@@ -7778,14 +7831,35 @@ def enviar_proposta(oportunidade_id):
             )
         )
 
-    flash(
-        (
-            f"Proposta para "
-            f"{demanda.codigo} "
-            f"enviada com sucesso."
-        ),
-        "success"
-    )
+    # --------------------------------------------------------------
+    # Mensagem final
+    # --------------------------------------------------------------
+
+    if status_anterior == "ajuste_solicitado":
+
+        flash(
+            (
+                f"Proposta ajustada para "
+                f"{demanda.codigo} "
+                f"reenviada com sucesso."
+            ),
+            "success"
+        )
+
+    else:
+
+        flash(
+            (
+                f"Proposta para "
+                f"{demanda.codigo} "
+                f"enviada com sucesso."
+            ),
+            "success"
+        )
+
+    # --------------------------------------------------------------
+    # Retorna para a proposta
+    # --------------------------------------------------------------
 
     return redirect(
         url_for(
