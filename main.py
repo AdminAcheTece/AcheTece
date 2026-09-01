@@ -8193,6 +8193,169 @@ def matches_comprador():
     )
 
 # --------------------------------------------------------------------
+# AcheTece 2.0 - Visão Geral das Propostas do Comprador
+# --------------------------------------------------------------------
+
+@app.get(
+    "/comprador/propostas",
+    endpoint="propostas_comprador"
+)
+def propostas_comprador():
+
+    # --------------------------------------------------------------
+    # Autenticação
+    # --------------------------------------------------------------
+
+    user_id = session.get(
+        "user_id"
+    )
+
+    if not user_id:
+
+        return redirect(
+            url_for("login")
+        )
+
+    try:
+
+        usuario = db.session.get(
+            Usuario,
+            int(user_id)
+        )
+
+    except Exception:
+
+        usuario = None
+
+    if (
+        not usuario
+        or usuario.is_active is False
+        or (
+            usuario.role or ""
+        ).strip().lower() != "cliente"
+    ):
+
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Histórico de propostas recebidas
+    # --------------------------------------------------------------
+
+    propostas = (
+        Proposal.query
+        .join(
+            ProductionRequest,
+            Proposal.demand_id
+            == ProductionRequest.id
+        )
+        .filter(
+            ProductionRequest.user_id
+            == usuario.id,
+
+            Proposal.status.in_(
+                [
+                    "enviada",
+                    "ajuste_solicitado",
+                    "aceita",
+                    "recusada",
+                    "nao_selecionada",
+                    "cancelada"
+                ]
+            )
+        )
+        .order_by(
+            Proposal.created_at.desc(),
+            Proposal.id.desc()
+        )
+        .all()
+    )
+
+    # --------------------------------------------------------------
+    # Indicadores
+    # --------------------------------------------------------------
+
+    total_propostas = len(
+        propostas
+    )
+
+    total_aguardando = sum(
+        1
+        for proposta in propostas
+        if (
+            proposta.status or ""
+        ).strip().lower()
+        == "enviada"
+    )
+
+    total_ajustes = sum(
+        1
+        for proposta in propostas
+        if (
+            proposta.status or ""
+        ).strip().lower()
+        == "ajuste_solicitado"
+    )
+
+    total_aceitas = sum(
+        1
+        for proposta in propostas
+        if (
+            proposta.status or ""
+        ).strip().lower()
+        == "aceita"
+    )
+
+    total_encerradas = sum(
+        1
+        for proposta in propostas
+        if (
+            proposta.status or ""
+        ).strip().lower()
+        in {
+            "recusada",
+            "nao_selecionada",
+            "cancelada"
+        }
+    )
+
+    # --------------------------------------------------------------
+    # Valores totais
+    # --------------------------------------------------------------
+
+    totais_propostas = {}
+
+    for proposta in propostas:
+
+        try:
+
+            total = (
+                proposta.quantidade_kg
+                * proposta.preco_por_kg
+            )
+
+        except Exception:
+
+            total = None
+
+        totais_propostas[
+            proposta.id
+        ] = total
+
+    return render_template(
+        "propostas_comprador.html",
+        usuario=usuario,
+        propostas=propostas,
+        totais_propostas=totais_propostas,
+        total_propostas=total_propostas,
+        total_aguardando=total_aguardando,
+        total_ajustes=total_ajustes,
+        total_aceitas=total_aceitas,
+        total_encerradas=total_encerradas,
+    )
+
+# --------------------------------------------------------------------
 # AcheTece 2.0 - Meus Pedidos do Comprador
 # --------------------------------------------------------------------
 
