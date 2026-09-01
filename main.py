@@ -9682,172 +9682,813 @@ def enviar_proposta(oportunidade_id):
     )
 
 # --- Rota do Painel (vencimento por plano + ajuste p/ próximo dia útil BR) ---
-@app.route('/painel_malharia', endpoint="painel_malharia")
+
+@app.route(
+    '/painel_malharia',
+    endpoint="painel_malharia"
+)
 def painel_malharia():
+
+    # ==============================================================
+    # AUTENTICAÇÃO
+    # ==============================================================
+
     emp, u = _get_empresa_usuario_da_sessao()
+
     if not emp or not u:
-        return redirect(url_for('login'))
 
-    # Evita objetos “velhos” ficarem presos na identity map
+        return redirect(
+            url_for('login')
+        )
+
+    # --------------------------------------------------------------
+    # Evita objetos antigos na identity map do SQLAlchemy
+    # --------------------------------------------------------------
+
     try:
+
         db.session.expire_all()
+
     except Exception:
+
         pass
 
-    # ✅ Recarrega "fresco" após expire_all (garante status/plan/data atualizados)
+    # --------------------------------------------------------------
+    # Recarrega empresa com dados atuais
+    # --------------------------------------------------------------
+
     try:
+
         emp_id = emp.id
-        emp = Empresa.query.get(emp_id)
+
+        emp = Empresa.query.get(
+            emp_id
+        )
+
         if not emp:
-            return redirect(url_for("login"))
+
+            return redirect(
+                url_for("login")
+            )
+
     except Exception:
+
         pass
 
-    step = request.args.get("step") or _proximo_step(emp)
+    # ==============================================================
+    # STEP / ONBOARDING
+    # ==============================================================
 
-    # Reconsulta FRESCA os teares e ordena (mais recente primeiro)
-    teares = (
-        Tear.query
-            .filter_by(empresa_id=emp.id)
-            .order_by(Tear.id.desc())
-            .all()
+    step = (
+        request.args.get("step")
+        or _proximo_step(emp)
     )
 
-    # ---------------------------
-    # Assinatura: status + vencimento por plano
-    # ---------------------------
-    # Status que consideramos "pago/ativo" (cobre variações comuns do MP)
-    status_raw = (getattr(emp, "status_pagamento", None) or "pendente").strip().lower()
-    STATUS_ATIVO = {"ativo", "aprovado", "approved", "paid", "active", "trial"}
-    status_ok = status_raw in STATUS_ATIVO
+    # ==============================================================
+    # TEARES
+    # ==============================================================
 
-    # Cálculo de vencimento do ciclo atual:
-    # base = data_pagamento (ou outras datas se existirem) -> + dias do plano -> próximo dia útil BR
-    vencimento_proximo, dias_restantes = (None, None)
+    teares = (
+        Tear.query
+        .filter_by(
+            empresa_id=emp.id
+        )
+        .order_by(
+            Tear.id.desc()
+        )
+        .all()
+    )
+
+    teares_total = len(
+        teares
+    )
+
+    # ==============================================================
+    # MARKETPLACE 2.0
+    #
+    # Indicadores reais da malharia
+    # ==============================================================
+
+    # --------------------------------------------------------------
+    # OPORTUNIDADES
+    #
+    # Ativas:
+    # nova
+    # interessada
+    #
+    # inativa, sem_interesse etc. permanecem apenas no histórico.
+    # --------------------------------------------------------------
+
+    oportunidades_ativas = (
+        Opportunity.query
+        .filter(
+            Opportunity.empresa_id
+            == emp.id,
+
+            Opportunity.status.in_(
+                [
+                    "nova",
+                    "interessada"
+                ]
+            )
+        )
+        .count()
+    )
+
+    oportunidades_total = (
+        Opportunity.query
+        .filter(
+            Opportunity.empresa_id
+            == emp.id
+        )
+        .count()
+    )
+
+    # --------------------------------------------------------------
+    # PROPOSTAS
+    # --------------------------------------------------------------
+
+    propostas_total = (
+        Proposal.query
+        .filter(
+            Proposal.empresa_id
+            == emp.id
+        )
+        .count()
+    )
+
+    # Propostas que ainda possuem alguma ação comercial pendente.
+    propostas_em_negociacao = (
+        Proposal.query
+        .filter(
+            Proposal.empresa_id
+            == emp.id,
+
+            Proposal.status.in_(
+                [
+                    "rascunho",
+                    "enviada",
+                    "ajuste_solicitado"
+                ]
+            )
+        )
+        .count()
+    )
+
+    propostas_aceitas = (
+        Proposal.query
+        .filter(
+            Proposal.empresa_id
+            == emp.id,
+
+            Proposal.status
+            == "aceita"
+        )
+        .count()
+    )
+
+    # --------------------------------------------------------------
+    # PEDIDOS
+    #
+    # Entregue não é mais pedido em andamento.
+    # --------------------------------------------------------------
+
+    pedidos_ativos = (
+        Order.query
+        .filter(
+            Order.empresa_id
+            == emp.id,
+
+            Order.status.in_(
+                [
+                    "aguardando_confirmacao",
+                    "confirmado",
+                    "em_producao",
+                    "concluido"
+                ]
+            )
+        )
+        .count()
+    )
+
+    pedidos_total = (
+        Order.query
+        .filter(
+            Order.empresa_id
+            == emp.id,
+
+            Order.status
+            != "cancelado"
+        )
+        .count()
+    )
+
+    pedidos_entregues = (
+        Order.query
+        .filter(
+            Order.empresa_id
+            == emp.id,
+
+            Order.status
+            == "entregue"
+        )
+        .count()
+    )
+
+    # ==============================================================
+    # ASSINATURA
+    # ==============================================================
+
+    status_raw = (
+        getattr(
+            emp,
+            "status_pagamento",
+            None
+        )
+        or "pendente"
+    ).strip().lower()
+
+    STATUS_ATIVO = {
+        "ativo",
+        "aprovado",
+        "approved",
+        "paid",
+        "active",
+        "trial"
+    }
+
+    status_ok = (
+        status_raw
+        in STATUS_ATIVO
+    )
+
+    # --------------------------------------------------------------
+    # Vencimento
+    # --------------------------------------------------------------
+
+    vencimento_proximo = None
+    dias_restantes = None
     ativa_pelo_tempo = False
 
     try:
-        # Hoje (preferindo timezone Brasil)
+
+        # ----------------------------------------------------------
+        # Hoje no Brasil
+        # ----------------------------------------------------------
+
         try:
+
             from zoneinfo import ZoneInfo
-            hoje = datetime.now(ZoneInfo("America/Sao_Paulo")).date()
+
+            hoje = datetime.now(
+                ZoneInfo(
+                    "America/Sao_Paulo"
+                )
+            ).date()
+
         except Exception:
+
             from datetime import date as _date
+
             hoje = _date.today()
 
-        # normaliza possíveis campos de data (sempre para date)
+        # ----------------------------------------------------------
+        # Normalização das datas
+        # ----------------------------------------------------------
+
         def _to_date(v):
+
             if not v:
+
                 return None
-            if isinstance(v, datetime):
+
+            if isinstance(
+                v,
+                datetime
+            ):
+
                 return v.date()
+
             try:
-                # se já vier date
+
                 return v
+
             except Exception:
+
                 return None
 
-        ult_pgto = _to_date(getattr(emp, "assin_ultimo_pagamento", None))
-        data_pag = _to_date(getattr(emp, "data_pagamento", None))
-        inicio   = _to_date(getattr(emp, "assin_data_inicio", None))
-        created  = _to_date(getattr(emp, "created_at", None))
+        ult_pgto = _to_date(
+            getattr(
+                emp,
+                "assin_ultimo_pagamento",
+                None
+            )
+        )
 
-        # ordem de prioridade: último pagamento > data_pagamento > início > criação > hoje
-        base_dt = ult_pgto or data_pag or inicio or created or hoje
+        data_pag = _to_date(
+            getattr(
+                emp,
+                "data_pagamento",
+                None
+            )
+        )
 
-        # dias do ciclo conforme o plano
-        plano = (getattr(emp, "plano", None) or "mensal").strip().lower()
+        inicio = _to_date(
+            getattr(
+                emp,
+                "assin_data_inicio",
+                None
+            )
+        )
+
+        created = _to_date(
+            getattr(
+                emp,
+                "created_at",
+                None
+            )
+        )
+
+        # ----------------------------------------------------------
+        # Data base do ciclo
+        # ----------------------------------------------------------
+
+        base_dt = (
+            ult_pgto
+            or data_pag
+            or inicio
+            or created
+            or hoje
+        )
+
+        # ----------------------------------------------------------
+        # Plano
+        # ----------------------------------------------------------
+
+        plano = (
+            getattr(
+                emp,
+                "plano",
+                None
+            )
+            or "mensal"
+        ).strip().lower()
+
         if "anual" in plano:
+
             dias_plano = 365
+
         else:
-            # ✅ mensal com folga (se você quer 35 como já vinha usando)
+
             dias_plano = 35
 
-        # vencimento nominal e ajuste para próximo dia útil BR
-        nominal = base_dt + timedelta(days=dias_plano)
-        venc = _proximo_dia_util_br(nominal)
+        # ----------------------------------------------------------
+        # Vencimento
+        # ----------------------------------------------------------
+
+        nominal = (
+            base_dt
+            + timedelta(
+                days=dias_plano
+            )
+        )
+
+        venc = _proximo_dia_util_br(
+            nominal
+        )
 
         vencimento_proximo = venc
 
-        # dias_restantes pode ficar negativo se já venceu (para você exibir "vencido")
-        dias_restantes = (venc - hoje).days
+        dias_restantes = (
+            venc
+            - hoje
+        ).days
 
-        # Ativa pelo tempo (tolerância opcional)
-        tol = int(globals().get("TOLERANCIA_DIAS", 0) or 0)
-        ativa_pelo_tempo = hoje <= (venc + timedelta(days=tol))
+        # ----------------------------------------------------------
+        # Tolerância
+        # ----------------------------------------------------------
 
-        # (Opcional recomendado) Se venceu, e ainda está como "ativo", rebaixa para "pendente"
-        # assim o admin e o painel ficam coerentes.
-        if status_ok and (not ativa_pelo_tempo) and getattr(emp, "data_pagamento", None):
+        tol = int(
+            globals().get(
+                "TOLERANCIA_DIAS",
+                0
+            )
+            or 0
+        )
+
+        ativa_pelo_tempo = (
+            hoje
+            <= (
+                venc
+                + timedelta(
+                    days=tol
+                )
+            )
+        )
+
+        # ----------------------------------------------------------
+        # Se venceu e ainda estava ativo,
+        # volta para pendente.
+        # ----------------------------------------------------------
+
+        if (
+            status_ok
+            and not ativa_pelo_tempo
+            and getattr(
+                emp,
+                "data_pagamento",
+                None
+            )
+        ):
+
             try:
-                emp.status_pagamento = "pendente"
+
+                emp.status_pagamento = (
+                    "pendente"
+                )
+
                 db.session.commit()
+
                 status_ok = False
+
             except Exception:
+
                 db.session.rollback()
 
     except Exception as e:
-        app.logger.warning(f"[painel] cálculo de vencimento falhou: {e}")
 
-    # Assinatura ativa = status OK (pagamento) E ainda dentro do prazo calculado
-    is_ativa = bool(status_ok and ativa_pelo_tempo)
+        app.logger.warning(
+            (
+                "[painel] cálculo de "
+                f"vencimento falhou: {e}"
+            )
+        )
 
-    # ✅ CTA de pagamento no painel (pendente/vencida ou vencendo em breve)
-    # Você pode usar isso no template para mostrar o banner/botões.
-    mostrar_pagamento = (not is_ativa)
-    if (is_ativa is True) and (dias_restantes is not None) and (dias_restantes <= 7):
+    # ==============================================================
+    # ASSINATURA ATIVA
+    # ==============================================================
+
+    is_ativa = bool(
+        status_ok
+        and ativa_pelo_tempo
+    )
+
+    # ==============================================================
+    # CTA PAGAMENTO
+    # ==============================================================
+
+    mostrar_pagamento = (
+        not is_ativa
+    )
+
+    if (
+        is_ativa is True
+        and dias_restantes is not None
+        and dias_restantes <= 7
+    ):
+
         mostrar_pagamento = True
 
+    # ==============================================================
+    # CHECKLIST
+    # ==============================================================
+
     checklist = {
-        "perfil_ok": all(_empresa_basica_completa(emp)),
-        "teares_ok": _conta_teares(emp.id) > 0,
-        "plano_ok": is_ativa or DEMO_MODE,  # <--- aqui é "or"
-        "step": step,
+
+        "perfil_ok":
+            all(
+                _empresa_basica_completa(
+                    emp
+                )
+            ),
+
+        "teares_ok":
+            _conta_teares(
+                emp.id
+            ) > 0,
+
+        "plano_ok":
+            is_ativa
+            or DEMO_MODE,
+
+        "step":
+            step,
     }
 
-    # Notificações / chat (mantidos)
-    notif_count, notif_lista = _get_notificacoes(emp.id)
-    chat_nao_lidos = 0  # ajuste aqui se tiver chat real
+    # ==============================================================
+    # NOTIFICAÇÕES / CHAT
+    # ==============================================================
 
-    # Foto: resolve sempre via helper (banco + arquivos)
-    foto_url = _empresa_avatar_url(emp)
+    notif_count, notif_lista = (
+        _get_notificacoes(
+            emp.id
+        )
+    )
+
+    chat_nao_lidos = 0
+
+    # ==============================================================
+    # FOTO
+    # ==============================================================
+
+    foto_url = (
+        _empresa_avatar_url(
+            emp
+        )
+    )
+
+    # ==============================================================
+    # LOG
+    # ==============================================================
 
     app.logger.info({
-        "rota": "painel_malharia",
-        "empresa_id": emp.id,
-        "status_pagamento": getattr(emp, "status_pagamento", None),
-        "plano": getattr(emp, "plano", None),
-        "vencimento_proximo": str(vencimento_proximo) if vencimento_proximo else None,
-        "dias_restantes": dias_restantes,
-        "assinatura_ativa": is_ativa,
-        "foto_url_resolvida": foto_url,
+
+        "rota":
+            "painel_malharia",
+
+        "empresa_id":
+            emp.id,
+
+        "status_pagamento":
+            getattr(
+                emp,
+                "status_pagamento",
+                None
+            ),
+
+        "plano":
+            getattr(
+                emp,
+                "plano",
+                None
+            ),
+
+        "vencimento_proximo":
+            (
+                str(
+                    vencimento_proximo
+                )
+                if vencimento_proximo
+                else None
+            ),
+
+        "dias_restantes":
+            dias_restantes,
+
+        "assinatura_ativa":
+            is_ativa,
+
+        "foto_url_resolvida":
+            foto_url,
+
+        # Marketplace
+        "oportunidades_ativas":
+            oportunidades_ativas,
+
+        "propostas_total":
+            propostas_total,
+
+        "pedidos_ativos":
+            pedidos_ativos,
+
+        "teares_total":
+            teares_total,
     })
 
-    # Render + evita cache para ver dados sempre atualizados
-    resp = make_response(render_template(
-        "painel_malharia.html",
-        empresa=emp,
-        teares=teares,
-        assinatura_ativa=is_ativa,
-        checklist=checklist,
-        step=step,
-        notificacoes=notif_count,
-        notificacoes_lista=notif_lista,
-        chat_nao_lidos=chat_nao_lidos,
-        foto_url=foto_url,
+    # ==============================================================
+    # RENDER
+    # ==============================================================
 
-        # ✅ dados de vencimento (para chip)
-        vencimento_proximo=vencimento_proximo,
-        dias_restantes=dias_restantes,
+    resp = make_response(
+        render_template(
 
-        # ✅ opcional (para banner/botões de pagar/renovar)
-        mostrar_pagamento=mostrar_pagamento,
-    ))
-    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-    resp.headers["Pragma"] = "no-cache"
-    resp.headers["Expires"] = "0"
+            "painel_malharia.html",
+
+            # ------------------------------------------------------
+            # Dados já existentes
+            # ------------------------------------------------------
+
+            empresa=emp,
+
+            teares=teares,
+
+            assinatura_ativa=is_ativa,
+
+            checklist=checklist,
+
+            step=step,
+
+            notificacoes=notif_count,
+
+            notificacoes_lista=notif_lista,
+
+            chat_nao_lidos=chat_nao_lidos,
+
+            foto_url=foto_url,
+
+            vencimento_proximo=
+                vencimento_proximo,
+
+            dias_restantes=
+                dias_restantes,
+
+            mostrar_pagamento=
+                mostrar_pagamento,
+
+            # ------------------------------------------------------
+            # Marketplace 2.0
+            # ------------------------------------------------------
+
+            oportunidades_ativas=
+                oportunidades_ativas,
+
+            oportunidades_total=
+                oportunidades_total,
+
+            propostas_total=
+                propostas_total,
+
+            propostas_em_negociacao=
+                propostas_em_negociacao,
+
+            propostas_aceitas=
+                propostas_aceitas,
+
+            pedidos_ativos=
+                pedidos_ativos,
+
+            pedidos_total=
+                pedidos_total,
+
+            pedidos_entregues=
+                pedidos_entregues,
+
+            teares_total=
+                teares_total,
+        )
+    )
+
+    # ==============================================================
+    # SEM CACHE
+    # ==============================================================
+
+    resp.headers[
+        "Cache-Control"
+    ] = (
+        "no-store, no-cache, "
+        "must-revalidate, max-age=0"
+    )
+
+    resp.headers[
+        "Pragma"
+    ] = "no-cache"
+
+    resp.headers[
+        "Expires"
+    ] = "0"
+
     return resp
 
+# --------------------------------------------------------------------
+# AcheTece 2.0 - Visão Geral das Propostas da Malharia
+# --------------------------------------------------------------------
+
+@app.get(
+    "/malharia/propostas",
+    endpoint="propostas_malharia"
+)
+def propostas_malharia():
+
+    # --------------------------------------------------------------
+    # Autenticação
+    # --------------------------------------------------------------
+
+    emp, u = (
+        _get_empresa_usuario_da_sessao()
+    )
+
+    if not emp or not u:
+
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Propostas desta malharia
+    # --------------------------------------------------------------
+
+    propostas = (
+        Proposal.query
+        .filter(
+            Proposal.empresa_id
+            == emp.id
+        )
+        .order_by(
+            Proposal.id.desc()
+        )
+        .all()
+    )
+
+    # --------------------------------------------------------------
+    # Indicadores
+    # --------------------------------------------------------------
+
+    total_propostas = len(
+        propostas
+    )
+
+    total_enviadas = sum(
+        1
+        for proposta in propostas
+        if (
+            proposta.status or ""
+        ).strip().lower()
+        == "enviada"
+    )
+
+    total_ajustes = sum(
+        1
+        for proposta in propostas
+        if (
+            proposta.status or ""
+        ).strip().lower()
+        == "ajuste_solicitado"
+    )
+
+    total_aceitas = sum(
+        1
+        for proposta in propostas
+        if (
+            proposta.status or ""
+        ).strip().lower()
+        == "aceita"
+    )
+
+    total_nao_selecionadas = sum(
+        1
+        for proposta in propostas
+        if (
+            proposta.status or ""
+        ).strip().lower()
+        in {
+            "recusada",
+            "nao_selecionada",
+            "cancelada"
+        }
+    )
+
+    # --------------------------------------------------------------
+    # Valor de cada proposta
+    # --------------------------------------------------------------
+
+    totais_propostas = {}
+
+    for proposta in propostas:
+
+        try:
+
+            total = (
+                proposta.quantidade_kg
+                * proposta.preco_por_kg
+            )
+
+        except Exception:
+
+            total = None
+
+        totais_propostas[
+            proposta.id
+        ] = total
+
+    # --------------------------------------------------------------
+    # Render
+    # --------------------------------------------------------------
+
+    return render_template(
+        "propostas_malharia.html",
+
+        empresa=emp,
+
+        propostas=propostas,
+
+        totais_propostas=
+            totais_propostas,
+
+        total_propostas=
+            total_propostas,
+
+        total_enviadas=
+            total_enviadas,
+
+        total_ajustes=
+            total_ajustes,
+
+        total_aceitas=
+            total_aceitas,
+
+        total_nao_selecionadas=
+            total_nao_selecionadas,
+    )
 
 from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
 
