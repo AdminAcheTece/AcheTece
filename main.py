@@ -9362,6 +9362,306 @@ def confirmar_pedido_malharia(pedido_id):
         )
     )
 
+# --------------------------------------------------------------------
+# AcheTece 2.0 - Malharia inicia Produção
+# --------------------------------------------------------------------
+
+@app.post(
+    "/malharia/pedidos/<int:pedido_id>/iniciar-producao",
+    endpoint="iniciar_producao_malharia"
+)
+def iniciar_producao_malharia(pedido_id):
+
+    # --------------------------------------------------------------
+    # Autenticação da malharia
+    # --------------------------------------------------------------
+
+    empresa_id = session.get(
+        "empresa_id"
+    )
+
+    if not empresa_id:
+
+        return redirect(
+            url_for("login")
+        )
+
+    try:
+
+        empresa = db.session.get(
+            Empresa,
+            int(empresa_id)
+        )
+
+    except Exception:
+
+        empresa = None
+
+    if not empresa:
+
+        session.clear()
+
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Pedido somente da própria malharia
+    # --------------------------------------------------------------
+
+    pedido = (
+        Order.query
+        .filter_by(
+            id=pedido_id,
+            empresa_id=empresa.id
+        )
+        .first()
+    )
+
+    if not pedido:
+
+        flash(
+            "Pedido não encontrado.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("meus_pedidos_malharia")
+        )
+
+    status_atual = (
+        pedido.status or ""
+    ).strip().lower()
+
+    # --------------------------------------------------------------
+    # Só pode iniciar a partir de CONFIRMADO
+    # --------------------------------------------------------------
+
+    if status_atual != "confirmado":
+
+        flash(
+            "Somente um pedido confirmado pode entrar em produção.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "detalhe_pedido_malharia",
+                pedido_id=pedido.id
+            )
+        )
+
+    # --------------------------------------------------------------
+    # Atualização
+    # --------------------------------------------------------------
+
+    try:
+
+        pedido.status = "em_producao"
+
+        evento = OrderEvent(
+            order_id=pedido.id,
+            actor_role="malharia",
+            action="producao_iniciada",
+            status_anterior="confirmado",
+            status_novo="em_producao",
+            message=(
+                f"A produção do pedido "
+                f"{pedido.codigo} foi iniciada."
+            )
+        )
+
+        db.session.add(
+            evento
+        )
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "[PEDIDO] Falha ao iniciar produção."
+        )
+
+        flash(
+            "Não foi possível iniciar a produção agora.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "detalhe_pedido_malharia",
+                pedido_id=pedido.id
+            )
+        )
+
+    flash(
+        (
+            f"Produção do pedido "
+            f"{pedido.codigo} iniciada."
+        ),
+        "success"
+    )
+
+    return redirect(
+        url_for(
+            "detalhe_pedido_malharia",
+            pedido_id=pedido.id
+        )
+    )
+
+# --------------------------------------------------------------------
+# AcheTece 2.0 - Malharia conclui Produção
+# --------------------------------------------------------------------
+
+@app.post(
+    "/malharia/pedidos/<int:pedido_id>/concluir-producao",
+    endpoint="concluir_producao_malharia"
+)
+def concluir_producao_malharia(pedido_id):
+
+    # --------------------------------------------------------------
+    # Autenticação
+    # --------------------------------------------------------------
+
+    empresa_id = session.get(
+        "empresa_id"
+    )
+
+    if not empresa_id:
+
+        return redirect(
+            url_for("login")
+        )
+
+    try:
+
+        empresa = db.session.get(
+            Empresa,
+            int(empresa_id)
+        )
+
+    except Exception:
+
+        empresa = None
+
+    if not empresa:
+
+        session.clear()
+
+        return redirect(
+            url_for("login")
+        )
+
+    # --------------------------------------------------------------
+    # Pedido da própria malharia
+    # --------------------------------------------------------------
+
+    pedido = (
+        Order.query
+        .filter_by(
+            id=pedido_id,
+            empresa_id=empresa.id
+        )
+        .first()
+    )
+
+    if not pedido:
+
+        flash(
+            "Pedido não encontrado.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("meus_pedidos_malharia")
+        )
+
+    status_atual = (
+        pedido.status or ""
+    ).strip().lower()
+
+    # --------------------------------------------------------------
+    # Só pode concluir se estiver EM PRODUÇÃO
+    # --------------------------------------------------------------
+
+    if status_atual != "em_producao":
+
+        flash(
+            "Somente um pedido em produção pode ser concluído.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "detalhe_pedido_malharia",
+                pedido_id=pedido.id
+            )
+        )
+
+    try:
+
+        pedido.status = "concluido"
+
+        pedido.completed_at = (
+            datetime.utcnow()
+        )
+
+        evento = OrderEvent(
+            order_id=pedido.id,
+            actor_role="malharia",
+            action="producao_concluida",
+            status_anterior="em_producao",
+            status_novo="concluido",
+            message=(
+                f"A produção do pedido "
+                f"{pedido.codigo} foi concluída."
+            )
+        )
+
+        db.session.add(
+            evento
+        )
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "[PEDIDO] Falha ao concluir produção."
+        )
+
+        flash(
+            "Não foi possível concluir a produção agora.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "detalhe_pedido_malharia",
+                pedido_id=pedido.id
+            )
+        )
+
+    flash(
+        (
+            f"Produção do pedido "
+            f"{pedido.codigo} concluída."
+        ),
+        "success"
+    )
+
+    return redirect(
+        url_for(
+            "detalhe_pedido_malharia",
+            pedido_id=pedido.id
+        )
+    )
+
 # -----------------------------
 # Arquivos do treinamento (PROTEGIDOS)
 # -----------------------------
