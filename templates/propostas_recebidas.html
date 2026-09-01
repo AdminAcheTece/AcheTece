@@ -47,6 +47,9 @@
 
             --blue:#295C87;
             --blue-bg:#EEF5FA;
+
+            --orange:#755614;
+            --orange-bg:#FFF7E7;
         }
 
 
@@ -72,7 +75,6 @@
         /* =========================================================
            HEADER
         ========================================================= */
-
 
         .topbar{
             min-height:72px;
@@ -119,7 +121,6 @@
         /* =========================================================
            PÁGINA
         ========================================================= */
-
 
         .page{
             max-width:1120px;
@@ -178,7 +179,6 @@
            DEMANDA
         ========================================================= */
 
-
         .context{
             margin-bottom:20px;
 
@@ -224,10 +224,19 @@
         }
 
 
-        .context-count{
+        .context-right{
             flex:0 0 auto;
 
-            min-width:100px;
+            display:flex;
+
+            align-items:center;
+
+            gap:18px;
+        }
+
+
+        .context-count{
+            min-width:90px;
 
             text-align:center;
         }
@@ -253,10 +262,29 @@
         }
 
 
+        .context-status{
+            display:inline-flex;
+
+            min-height:32px;
+
+            align-items:center;
+
+            padding:0 12px;
+
+            border-radius:999px;
+
+            background:#252525;
+
+            color:#fff;
+
+            font-size:10px;
+            font-weight:800;
+        }
+
+
         /* =========================================================
            INDICADORES
         ========================================================= */
-
 
         .metrics{
             display:grid;
@@ -303,7 +331,6 @@
            TÍTULO
         ========================================================= */
 
-
         .section-title{
             margin:
                 0 0
@@ -332,7 +359,6 @@
         /* =========================================================
            PROPOSTAS
         ========================================================= */
-
 
         .proposals{
             display:flex;
@@ -387,6 +413,10 @@
         }
 
 
+        /* =========================================================
+           STATUS DA PROPOSTA
+        ========================================================= */
+
         .status{
             display:inline-flex;
 
@@ -422,15 +452,24 @@
             color:var(--red);
         }
 
+
         .status-ajuste_solicitado{
-            background:#FFF7E7;
-            color:#755614;
+            background:var(--orange-bg);
+            color:var(--orange);
         }
+
+
+        .status-nao_selecionada,
+        .status-cancelada,
+        .status-rascunho{
+            background:#F1F1EE;
+            color:#666;
+        }
+
 
         /* =========================================================
            CONDIÇÕES
         ========================================================= */
-
 
         .proposal-body{
             padding:23px;
@@ -515,7 +554,6 @@
            SCORE
         ========================================================= */
 
-
         .technical{
             margin-top:20px;
 
@@ -551,9 +589,390 @@
 
 
         /* =========================================================
-           SEM PROPOSTAS
+           DECISÃO SOBRE PROPOSTA
         ========================================================= */
 
+        .proposal-actions{
+            margin-top:20px;
+            padding-top:20px;
+
+            border-top:1px solid #ECECE8;
+
+            display:flex;
+            align-items:flex-start;
+            flex-wrap:wrap;
+            gap:10px;
+        }
+
+
+        .proposal-actions form{
+            margin:0;
+        }
+
+
+        .accept-btn,
+        .reject-btn,
+        .adjust-submit,
+        .create-order-btn{
+            min-height:44px;
+
+            padding:0 17px;
+
+            border-radius:999px;
+
+            font-family:inherit;
+            font-size:12px;
+            font-weight:800;
+
+            cursor:pointer;
+        }
+
+
+        .accept-btn{
+            border:0;
+
+            background:#111;
+            color:var(--lime);
+        }
+
+
+        .accept-btn:hover{
+            background:var(--lime);
+            color:#000;
+        }
+
+
+        .reject-btn{
+            border:1px solid #D1D1CC;
+
+            background:#fff;
+            color:#555;
+        }
+
+
+        .reject-btn:hover{
+            border-color:#C58B94;
+
+            background:#FFF0F2;
+            color:#85202D;
+        }
+
+
+        .adjust-box{
+            border:1px solid #D1D1CC;
+
+            border-radius:22px;
+
+            background:#fff;
+        }
+
+
+        .adjust-box summary{
+            min-height:42px;
+
+            padding:0 17px;
+
+            display:flex;
+            align-items:center;
+
+            cursor:pointer;
+
+            list-style:none;
+
+            font-size:12px;
+            font-weight:800;
+        }
+
+
+        .adjust-box summary::-webkit-details-marker{
+            display:none;
+        }
+
+
+        .adjust-form{
+            width:360px;
+            max-width:80vw;
+
+            padding:0 14px 14px;
+        }
+
+
+        .adjust-form textarea{
+            width:100%;
+
+            min-height:90px;
+
+            padding:10px 11px;
+
+            border:1px solid #CBCBC8;
+            border-radius:10px;
+
+            resize:vertical;
+
+            font-family:inherit;
+            font-size:12px;
+        }
+
+
+        .adjust-submit{
+            width:100%;
+
+            margin-top:8px;
+
+            border:0;
+
+            background:#111;
+            color:var(--lime);
+        }
+
+
+        .create-order-btn{
+            border:0;
+
+            background:#111;
+            color:var(--lime);
+        }
+
+
+        .create-order-btn:hover{
+            background:var(--lime);
+            color:#000;
+        }
+
+
+        /* =========================================================
+           DECISION INFO
+        ========================================================= */
+
+        .decision-info{
+            margin-top:20px;
+
+            padding:16px 17px;
+
+            border-radius:13px;
+
+            font-size:12px;
+
+            line-height:1.55;
+        }
+
+
+        .decision-info.adjustment{
+            background:var(--orange-bg);
+            color:var(--orange);
+
+            border:1px solid #E8D49B;
+        }
+
+
+        .decision-info.accepted{
+            background:var(--green-bg);
+            color:var(--green);
+
+            border:1px solid #B9DCBF;
+        }
+
+
+        .decision-info.rejected{
+            background:var(--red-bg);
+            color:var(--red);
+
+            border:1px solid #EAB5BD;
+        }
+
+
+        .decision-info.neutral{
+            background:#F3F3F0;
+            color:#555;
+
+            border:1px solid #D8D8D2;
+        }
+
+
+        /* =========================================================
+           PEDIDO VINCULADO
+        ========================================================= */
+
+        .order-card{
+            margin-top:16px;
+
+            padding:17px;
+
+            background:#fff;
+
+            border:
+                1px solid #B9DCBF;
+
+            border-radius:14px;
+
+            color:#222;
+        }
+
+
+        .order-top{
+            display:flex;
+
+            align-items:flex-start;
+            justify-content:space-between;
+
+            gap:18px;
+        }
+
+
+        .order-code-label{
+            color:#777;
+
+            font-size:9px;
+            font-weight:800;
+
+            text-transform:uppercase;
+
+            letter-spacing:.06em;
+        }
+
+
+        .order-code{
+            margin-top:3px;
+
+            color:#111;
+
+            font-size:18px;
+            font-weight:800;
+        }
+
+
+        .order-status{
+            display:inline-flex;
+
+            min-height:30px;
+
+            align-items:center;
+
+            padding:0 11px;
+
+            border-radius:999px;
+
+            font-size:10px;
+            font-weight:800;
+
+            white-space:nowrap;
+        }
+
+
+        .order-status-aguardando_confirmacao{
+            background:var(--orange-bg);
+            color:var(--orange);
+        }
+
+
+        .order-status-confirmado{
+            background:var(--green-bg);
+            color:var(--green);
+        }
+
+
+        .order-status-em_producao{
+            background:var(--blue-bg);
+            color:var(--blue);
+        }
+
+
+        .order-status-concluido{
+            background:var(--green-bg);
+            color:var(--green);
+        }
+
+
+        .order-status-entregue{
+            background:var(--lime);
+            color:#111;
+        }
+
+
+        .order-status-cancelado{
+            background:var(--red-bg);
+            color:var(--red);
+        }
+
+
+        .order-description{
+            margin-top:12px;
+
+            color:#555;
+
+            font-size:11px;
+
+            line-height:1.5;
+        }
+
+
+        .order-actions{
+            display:flex;
+
+            gap:8px;
+
+            flex-wrap:wrap;
+
+            margin-top:15px;
+        }
+
+
+        .order-btn{
+            display:inline-flex;
+
+            min-height:40px;
+
+            align-items:center;
+            justify-content:center;
+
+            padding:0 15px;
+
+            border-radius:999px;
+
+            background:#111;
+            color:var(--lime);
+
+            text-decoration:none;
+
+            font-size:11px;
+            font-weight:800;
+        }
+
+
+        .order-btn:hover{
+            background:var(--lime);
+            color:#000;
+        }
+
+
+        .demand-btn{
+            display:inline-flex;
+
+            min-height:40px;
+
+            align-items:center;
+            justify-content:center;
+
+            padding:0 15px;
+
+            border:
+                1px solid #D0D0CB;
+
+            border-radius:999px;
+
+            background:#fff;
+            color:#333;
+
+            text-decoration:none;
+
+            font-size:11px;
+            font-weight:800;
+        }
+
+
+        /* =========================================================
+           SEM PROPOSTAS
+        ========================================================= */
 
         .empty{
             padding:42px 24px;
@@ -592,224 +1011,8 @@
 
 
         /* =========================================================
-           NOTA
-        ========================================================= */
-
-
-        .note{
-            margin-top:20px;
-
-            padding:16px 18px;
-
-            background:#fff;
-
-            border:
-                1px solid var(--line);
-
-            border-radius:14px;
-
-            color:#555;
-
-            font-size:12px;
-
-            line-height:1.55;
-        }
-
-
-        .note strong{
-            color:#222;
-        }
-
-        /* =========================================================
-           DECISÃO SOBRE PROPOSTA
-        ========================================================= */
-        
-        .proposal-actions{
-            margin-top:20px;
-            padding-top:20px;
-        
-            border-top:1px solid #ECECE8;
-        
-            display:flex;
-            align-items:flex-start;
-            flex-wrap:wrap;
-            gap:10px;
-        }
-        
-        .proposal-actions form{
-            margin:0;
-        }
-        
-        .accept-btn,
-        .reject-btn,
-        .adjust-submit{
-            min-height:44px;
-        
-            padding:0 17px;
-        
-            border-radius:999px;
-        
-            font-family:inherit;
-            font-size:12px;
-            font-weight:800;
-        
-            cursor:pointer;
-        }
-        
-        .accept-btn{
-            border:0;
-        
-            background:#111;
-            color:var(--lime);
-        }
-        
-        .accept-btn:hover{
-            background:var(--lime);
-            color:#000;
-        }
-        
-        .reject-btn{
-            border:1px solid #D1D1CC;
-        
-            background:#fff;
-            color:#555;
-        }
-        
-        .reject-btn:hover{
-            border-color:#C58B94;
-        
-            background:#FFF0F2;
-            color:#85202D;
-        }
-        
-        .adjust-box{
-            border:1px solid #D1D1CC;
-        
-            border-radius:22px;
-        
-            background:#fff;
-        }
-        
-        .adjust-box summary{
-            min-height:42px;
-        
-            padding:0 17px;
-        
-            display:flex;
-            align-items:center;
-        
-            cursor:pointer;
-        
-            list-style:none;
-        
-            font-size:12px;
-            font-weight:800;
-        }
-        
-        .adjust-box summary::-webkit-details-marker{
-            display:none;
-        }
-        
-        .adjust-form{
-            width:360px;
-            max-width:80vw;
-        
-            padding:0 14px 14px;
-        }
-        
-        .adjust-form textarea{
-            width:100%;
-        
-            min-height:90px;
-        
-            padding:10px 11px;
-        
-            border:1px solid #CBCBC8;
-            border-radius:10px;
-        
-            resize:vertical;
-        
-            font-family:inherit;
-            font-size:12px;
-        }
-        
-        .adjust-submit{
-            width:100%;
-        
-            margin-top:8px;
-        
-            border:0;
-        
-            background:#111;
-            color:var(--lime);
-        }
-        
-        .decision-info{
-            margin-top:20px;
-        
-            padding:14px 16px;
-        
-            border-radius:12px;
-        
-            font-size:12px;
-        
-            line-height:1.55;
-        }
-        
-        .decision-info.adjustment{
-            background:#FFF7E7;
-            color:#755614;
-        
-            border:1px solid #E8D49B;
-        }
-        
-        .decision-info.accepted{
-            background:#EAF7ED;
-            color:#287742;
-        
-            border:1px solid #B9DCBF;
-        }
-        
-        .decision-info.rejected{
-            background:#FFF0F2;
-            color:#85202D;
-        
-            border:1px solid #EAB5BD;
-        }
-
-        .create-order-btn{
-            display:inline-flex;
-        
-            min-height:44px;
-        
-            align-items:center;
-            justify-content:center;
-        
-            padding:0 18px;
-        
-            border:0;
-            border-radius:999px;
-        
-            background:#111;
-            color:#B6F34D;
-        
-            font-family:inherit;
-        
-            font-size:12px;
-            font-weight:800;
-        
-            cursor:pointer;
-        }
-        
-        .create-order-btn:hover{
-            background:#B6F34D;
-            color:#000;
-        }
-        
-        /* =========================================================
            MOBILE
         ========================================================= */
-
 
         @media(max-width:800px){
 
@@ -848,6 +1051,13 @@
             }
 
 
+            .context-right{
+                width:100%;
+
+                justify-content:space-between;
+            }
+
+
             .context-count{
                 text-align:left;
             }
@@ -863,6 +1073,11 @@
                 flex-direction:column;
             }
 
+
+            .order-top{
+                flex-direction:column;
+            }
+
         }
 
     </style>
@@ -871,6 +1086,15 @@
 
 
 <body>
+
+
+{% set status_demanda =
+    (
+        demanda.status
+        or ''
+    )
+    |lower
+%}
 
 
 <header class="topbar">
@@ -925,11 +1149,16 @@
 
     <p class="intro">
 
-        Compare as condições apresentadas pelas
-        malharias interessadas em atender sua demanda.
+        Consulte as condições comerciais apresentadas
+        pelas malharias e acompanhe o resultado
+        da negociação desta demanda.
 
     </p>
 
+
+    <!-- =========================================================
+         CONTEXTO DA DEMANDA
+    ========================================================== -->
 
     <section class="context">
 
@@ -975,21 +1204,62 @@
         </div>
 
 
-        <div class="context-count">
+        <div class="context-right">
 
-            <strong>
-                {{ total_propostas }}
-            </strong>
 
-            <span>
-                propostas
+            <div class="context-count">
+
+                <strong>
+                    {{ total_propostas }}
+                </strong>
+
+                <span>
+                    propostas
+                </span>
+
+            </div>
+
+
+            <span class="context-status">
+
+                {% if status_demanda == "rascunho" %}
+
+                    Demanda em rascunho
+
+                {% elif status_demanda == "publicada" %}
+
+                    Demanda publicada
+
+                {% elif status_demanda == "contratada" %}
+
+                    Demanda contratada
+
+                {% elif status_demanda == "encerrada" %}
+
+                    Demanda encerrada
+
+                {% elif status_demanda == "cancelada" %}
+
+                    Demanda cancelada
+
+                {% else %}
+
+                    {{ status_demanda|capitalize }}
+
+                {% endif %}
+
             </span>
+
 
         </div>
 
 
     </section>
 
+
+    <!-- =========================================================
+         INDICADORES
+    ========================================================== -->
 
     <section class="metrics">
 
@@ -1019,17 +1289,19 @@
 
         </div>
 
+
         <div class="metric">
 
             <div class="metric-value">
                 {{ total_ajustes }}
             </div>
-        
+
             <div class="metric-label">
                 Em ajuste
             </div>
-        
+
         </div>
+
 
         <div class="metric">
 
@@ -1067,8 +1339,9 @@
 
     <p class="section-intro">
 
-        As propostas estão organizadas inicialmente
-        pelo menor preço por kg.
+        As propostas permanecem disponíveis como histórico
+        comercial mesmo depois da contratação ou do encerramento
+        da demanda.
 
     </p>
 
@@ -1092,6 +1365,11 @@
                 %}
 
 
+                {% set pedido =
+                    proposta.order
+                %}
+
+
                 {% set status =
                     (
                         proposta.status
@@ -1110,6 +1388,10 @@
 
                 <article class="proposal">
 
+
+                    <!-- =================================================
+                         CABEÇALHO
+                    ================================================== -->
 
                     <div class="proposal-header">
 
@@ -1159,23 +1441,35 @@
                             {% if status == "enviada" %}
 
                                 Proposta recebida
-                            
+
                             {% elif status == "ajuste_solicitado" %}
-                            
+
                                 Ajuste solicitado
-                            
+
                             {% elif status == "aceita" %}
-                            
+
                                 Aceita
-                            
+
                             {% elif status == "recusada" %}
-                            
+
                                 Recusada
-                            
+
+                            {% elif status == "nao_selecionada" %}
+
+                                Não selecionada
+
+                            {% elif status == "cancelada" %}
+
+                                Cancelada
+
+                            {% elif status == "rascunho" %}
+
+                                Rascunho
+
                             {% else %}
-                            
+
                                 {{ status|capitalize }}
-                            
+
                             {% endif %}
 
 
@@ -1184,6 +1478,10 @@
 
                     </div>
 
+
+                    <!-- =================================================
+                         CONDIÇÕES COMERCIAIS
+                    ================================================== -->
 
                     <div class="proposal-body">
 
@@ -1344,6 +1642,10 @@
                         </div>
 
 
+                        <!-- =================================================
+                             COMPATIBILIDADE
+                        ================================================== -->
+
                         {% if oportunidade %}
 
 
@@ -1381,209 +1683,447 @@
 
                         {% endif %}
 
+
+                        <!-- =================================================
+                             PROPOSTA AGUARDANDO DECISÃO
+                        ================================================== -->
+
                         {% if status == "enviada" %}
 
 
-                            <div class="proposal-actions">
-                        
-                        
-                                <!-- ACEITAR -->
-                        
-                                <form
-                                    method="POST"
-                                    action="{{ url_for(
-                                        'aceitar_proposta',
-                                        proposta_id=proposta.id
-                                    ) }}"
-                                    onsubmit="return confirm(
-                                        'Deseja aceitar esta proposta?'
-                                    );"
-                                >
-                        
-                                    <button
-                                        type="submit"
-                                        class="accept-btn"
-                                    >
-                                        Aceitar proposta
-                                    </button>
-                        
-                                </form>
-                        
-                        
-                                <!-- SOLICITAR AJUSTE -->
-                        
-                                <details class="adjust-box">
-                        
-                                    <summary>
-                                        Solicitar ajuste
-                                    </summary>
-                        
+                            {% if status_demanda == "publicada" %}
+
+
+                                <div class="proposal-actions">
+
+
+                                    <!-- ACEITAR -->
+
                                     <form
                                         method="POST"
                                         action="{{ url_for(
-                                            'solicitar_ajuste_proposta',
+                                            'aceitar_proposta',
                                             proposta_id=proposta.id
                                         ) }}"
-                                        class="adjust-form"
+                                        onsubmit="return confirm(
+                                            'Deseja aceitar esta proposta?'
+                                        );"
                                     >
-                        
-                                        <textarea
-                                            name="mensagem_ajuste"
-                                            placeholder="Ex.: É possível rever o preço para R$ 7,20/kg mantendo o prazo apresentado?"
-                                            required
-                                        ></textarea>
-                        
+
                                         <button
                                             type="submit"
-                                            class="adjust-submit"
+                                            class="accept-btn"
                                         >
-                                            Enviar solicitação
+                                            Aceitar proposta
                                         </button>
-                        
+
                                     </form>
-                        
-                                </details>
-                        
-                        
-                                <!-- RECUSAR -->
-                        
-                                <form
-                                    method="POST"
-                                    action="{{ url_for(
-                                        'recusar_proposta',
-                                        proposta_id=proposta.id
-                                    ) }}"
-                                    onsubmit="return confirm(
-                                        'Deseja realmente recusar esta proposta?'
-                                    );"
-                                >
-                        
-                                    <button
-                                        type="submit"
-                                        class="reject-btn"
+
+
+                                    <!-- SOLICITAR AJUSTE -->
+
+                                    <details class="adjust-box">
+
+                                        <summary>
+                                            Solicitar ajuste
+                                        </summary>
+
+                                        <form
+                                            method="POST"
+                                            action="{{ url_for(
+                                                'solicitar_ajuste_proposta',
+                                                proposta_id=proposta.id
+                                            ) }}"
+                                            class="adjust-form"
+                                        >
+
+                                            <textarea
+                                                name="mensagem_ajuste"
+                                                placeholder="Ex.: É possível rever o preço para R$ 7,20/kg mantendo o prazo apresentado?"
+                                                required
+                                            ></textarea>
+
+                                            <button
+                                                type="submit"
+                                                class="adjust-submit"
+                                            >
+                                                Enviar solicitação
+                                            </button>
+
+                                        </form>
+
+                                    </details>
+
+
+                                    <!-- RECUSAR -->
+
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for(
+                                            'recusar_proposta',
+                                            proposta_id=proposta.id
+                                        ) }}"
+                                        onsubmit="return confirm(
+                                            'Deseja realmente recusar esta proposta?'
+                                        );"
                                     >
-                                        Recusar proposta
-                                    </button>
-                        
-                                </form>
-                        
-                        
-                            </div>
-                        
-                        
+
+                                        <button
+                                            type="submit"
+                                            class="reject-btn"
+                                        >
+                                            Recusar proposta
+                                        </button>
+
+                                    </form>
+
+
+                                </div>
+
+
+                            {% else %}
+
+
+                                <div class="decision-info neutral">
+
+                                    Esta proposta permanece disponível
+                                    para consulta, mas a demanda não está
+                                    mais aberta para novas decisões comerciais.
+
+                                </div>
+
+
+                            {% endif %}
+
+
+                        <!-- =================================================
+                             AJUSTE SOLICITADO
+                        ================================================== -->
+
                         {% elif status == "ajuste_solicitado" %}
-                        
-                        
+
+
                             {% set ajuste =
                                 ajustes_por_proposta.get(
                                     proposta.id
                                 )
                             %}
-                        
-                        
+
+
                             <div class="decision-info adjustment">
-                        
+
                                 <strong>
                                     Ajuste solicitado à malharia.
                                 </strong>
-                        
+
+
                                 {% if ajuste and ajuste.message %}
-                        
+
                                     <br><br>
-                        
+
                                     {{ ajuste.message }}
-                        
+
                                 {% endif %}
-                        
+
+
                                 <br><br>
-                        
-                                Aguardando uma nova versão da proposta.
-                        
+
+
+                                {% if status_demanda == "publicada" %}
+
+                                    Aguardando uma nova versão da proposta.
+
+                                {% else %}
+
+                                    A demanda não está mais aberta
+                                    para negociação.
+
+                                {% endif %}
+
                             </div>
-                        
-                        
+
+
+                        <!-- =================================================
+                             PROPOSTA ACEITA
+                        ================================================== -->
+
                         {% elif status == "aceita" %}
 
 
                             <div class="decision-info accepted">
-                        
+
                                 <strong>
                                     ✓ Proposta aceita.
                                 </strong>
-                        
-                                <br><br>
-                        
-                        
-                                {% if proposta.order %}
-                        
-                        
-                                    O pedido foi criado com sucesso.
-                        
-                                    <br><br>
-                        
-                                    <strong>
-                                        Pedido:
-                                        {{ proposta.order.codigo }}
-                                    </strong>
-                        
-                                    <br>
-                        
-                                    Status:
-                                    aguardando confirmação da malharia.
-                        
-                        
+
+
+                                {% if pedido %}
+
+
+                                    {% set status_pedido =
+                                        (
+                                            pedido.status
+                                            or ''
+                                        )
+                                        |lower
+                                    %}
+
+
+                                    <div class="order-card">
+
+
+                                        <div class="order-top">
+
+
+                                            <div>
+
+                                                <div class="order-code-label">
+                                                    Pedido vinculado
+                                                </div>
+
+                                                <div class="order-code">
+                                                    {{ pedido.codigo }}
+                                                </div>
+
+                                            </div>
+
+
+                                            <span
+                                                class="
+                                                    order-status
+                                                    order-status-{{ status_pedido }}
+                                                "
+                                            >
+
+
+                                                {% if status_pedido == "aguardando_confirmacao" %}
+
+                                                    Aguardando confirmação
+
+                                                {% elif status_pedido == "confirmado" %}
+
+                                                    Confirmado
+
+                                                {% elif status_pedido == "em_producao" %}
+
+                                                    Em produção
+
+                                                {% elif status_pedido == "concluido" %}
+
+                                                    Produção concluída
+
+                                                {% elif status_pedido == "entregue" %}
+
+                                                    Entregue
+
+                                                {% elif status_pedido == "cancelado" %}
+
+                                                    Cancelado
+
+                                                {% else %}
+
+                                                    {{ status_pedido|capitalize }}
+
+                                                {% endif %}
+
+
+                                            </span>
+
+
+                                        </div>
+
+
+                                        <div class="order-description">
+
+
+                                            {% if status_pedido == "aguardando_confirmacao" %}
+
+                                                O pedido foi criado e aguarda
+                                                confirmação da malharia.
+
+                                            {% elif status_pedido == "confirmado" %}
+
+                                                A malharia confirmou o pedido.
+                                                A próxima evolução ocorrerá
+                                                quando a produção for iniciada.
+
+                                            {% elif status_pedido == "em_producao" %}
+
+                                                A malharia informou que este
+                                                pedido está em produção.
+
+                                            {% elif status_pedido == "concluido" %}
+
+                                                A produção foi concluída e
+                                                aguarda a confirmação de entrega
+                                                pelo comprador.
+
+                                            {% elif status_pedido == "entregue" %}
+
+                                                O pedido foi concluído e a
+                                                entrega já foi confirmada.
+
+                                            {% elif status_pedido == "cancelado" %}
+
+                                                Este pedido foi cancelado.
+
+                                            {% endif %}
+
+
+                                        </div>
+
+
+                                        <div class="order-actions">
+
+
+                                            <a
+                                                href="{{ url_for(
+                                                    'detalhe_pedido_comprador',
+                                                    pedido_id=pedido.id
+                                                ) }}"
+                                                class="order-btn"
+                                            >
+                                                Acompanhar pedido
+                                            </a>
+
+
+                                            <a
+                                                href="{{ url_for(
+                                                    'detalhe_demanda',
+                                                    demanda_id=demanda.id
+                                                ) }}"
+                                                class="demand-btn"
+                                            >
+                                                Ver demanda
+                                            </a>
+
+
+                                        </div>
+
+
+                                    </div>
+
+
                                 {% else %}
-                        
-                        
-                                    Esta proposta está pronta para
-                                    originar o pedido.
-                        
+
+
                                     <br><br>
-                        
-                        
-                                    <form
-                                        method="POST"
-                                        action="{{ url_for(
-                                            'gerar_pedido',
-                                            proposta_id=proposta.id
-                                        ) }}"
-                                        onsubmit="return confirm(
-                                            'Deseja gerar o pedido a partir desta proposta aceita?'
-                                        );"
-                                        style="margin:0;"
-                                    >
-                        
-                                        <button
-                                            type="submit"
-                                            class="create-order-btn"
+
+
+                                    {% if status_demanda == "publicada" %}
+
+
+                                        Esta proposta está pronta para
+                                        originar o pedido.
+
+
+                                        <br><br>
+
+
+                                        <form
+                                            method="POST"
+                                            action="{{ url_for(
+                                                'gerar_pedido',
+                                                proposta_id=proposta.id
+                                            ) }}"
+                                            onsubmit="return confirm(
+                                                'Deseja gerar o pedido a partir desta proposta aceita?'
+                                            );"
+                                            style="margin:0;"
                                         >
-                                            Gerar pedido
-                                        </button>
-                        
-                                    </form>
-                        
-                        
+
+                                            <button
+                                                type="submit"
+                                                class="create-order-btn"
+                                            >
+                                                Gerar pedido
+                                            </button>
+
+                                        </form>
+
+
+                                    {% else %}
+
+
+                                        Não existe pedido vinculado a esta
+                                        proposta, mas a demanda já não está
+                                        disponível para geração de novo pedido.
+
+
+                                    {% endif %}
+
+
                                 {% endif %}
-                        
-                        
+
+
                             </div>
-                        
-                        
+
+
+                        <!-- =================================================
+                             RECUSADA
+                        ================================================== -->
+
                         {% elif status == "recusada" %}
-                        
-                        
+
+
                             <div class="decision-info rejected">
-                        
+
                                 <strong>
                                     Proposta recusada.
                                 </strong>
-                        
-                                Esta proposta não seguirá para contratação.
-                        
+
+                                <br><br>
+
+                                Esta proposta foi encerrada e permanece
+                                disponível apenas para histórico comercial.
+
                             </div>
-                        
-                        
+
+
+                        <!-- =================================================
+                             NÃO SELECIONADA
+                        ================================================== -->
+
+                        {% elif status == "nao_selecionada" %}
+
+
+                            <div class="decision-info neutral">
+
+                                <strong>
+                                    Proposta não selecionada.
+                                </strong>
+
+                                <br><br>
+
+                                Outra proposta foi escolhida para atender
+                                esta demanda. Esta proposta permanece
+                                disponível para histórico.
+
+                            </div>
+
+
+                        <!-- =================================================
+                             CANCELADA
+                        ================================================== -->
+
+                        {% elif status == "cancelada" %}
+
+
+                            <div class="decision-info neutral">
+
+                                <strong>
+                                    Proposta cancelada.
+                                </strong>
+
+                                <br><br>
+
+                                Esta proposta não está mais ativa.
+
+                            </div>
+
+
                         {% endif %}
+
 
                     </div>
 
@@ -1621,19 +2161,6 @@
 
 
     {% endif %}
-
-
-    <div class="note">
-
-        <strong>
-            Próxima etapa:
-        </strong>
-
-        o comprador poderá aceitar, recusar ou solicitar
-        ajustes em uma proposta. Esses controles ainda não
-        estão ativos nesta versão.
-
-    </div>
 
 
 </main>
