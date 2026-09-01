@@ -1857,6 +1857,210 @@ class ProposalInteraction(db.Model):
         )
 
 # --------------------------------------------------------------------
+# AcheTece 2.0 - Pedido / Order
+# --------------------------------------------------------------------
+
+class Order(db.Model):
+    __tablename__ = "marketplace_order"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    # --------------------------------------------------------------
+    # Código público do pedido
+    #
+    # Exemplo:
+    # ATP-000001
+    # --------------------------------------------------------------
+
+    codigo = db.Column(
+        db.String(30),
+        unique=True,
+        nullable=True,
+        index=True
+    )
+
+    # --------------------------------------------------------------
+    # Proposta que originou o pedido
+    #
+    # Uma proposta aceita pode gerar somente um pedido.
+    # --------------------------------------------------------------
+
+    proposal_id = db.Column(
+        db.Integer,
+        db.ForeignKey("proposal.id"),
+        nullable=False,
+        unique=True,
+        index=True
+    )
+
+    # --------------------------------------------------------------
+    # Demanda
+    # --------------------------------------------------------------
+
+    demand_id = db.Column(
+        db.Integer,
+        db.ForeignKey("production_request.id"),
+        nullable=False,
+        index=True
+    )
+
+    # --------------------------------------------------------------
+    # Comprador
+    # --------------------------------------------------------------
+
+    buyer_user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("usuario.id"),
+        nullable=False,
+        index=True
+    )
+
+    # --------------------------------------------------------------
+    # Malharia
+    # --------------------------------------------------------------
+
+    empresa_id = db.Column(
+        db.Integer,
+        db.ForeignKey("empresa.id"),
+        nullable=False,
+        index=True
+    )
+
+    # --------------------------------------------------------------
+    # Relacionamentos
+    # --------------------------------------------------------------
+
+    proposta = db.relationship(
+        "Proposal",
+        backref=db.backref(
+            "order",
+            uselist=False
+        )
+    )
+
+    demanda = db.relationship(
+        "ProductionRequest",
+        backref=db.backref(
+            "orders",
+            lazy=True
+        )
+    )
+
+    comprador = db.relationship(
+        "Usuario",
+        backref=db.backref(
+            "buyer_orders",
+            lazy=True
+        )
+    )
+
+    empresa = db.relationship(
+        "Empresa",
+        backref=db.backref(
+            "received_orders",
+            lazy=True
+        )
+    )
+
+    # --------------------------------------------------------------
+    # Snapshot das condições comerciais
+    #
+    # IMPORTANTE:
+    # Copiamos os valores da proposta para o pedido.
+    #
+    # Assim, mesmo que no futuro exista revisão de proposta,
+    # o pedido mantém as condições que foram aceitas.
+    # --------------------------------------------------------------
+
+    quantidade_kg = db.Column(
+        db.Numeric(12, 2),
+        nullable=False
+    )
+
+    preco_por_kg = db.Column(
+        db.Numeric(12, 4),
+        nullable=False
+    )
+
+    valor_total = db.Column(
+        db.Numeric(14, 2),
+        nullable=False
+    )
+
+    prazo_dias = db.Column(
+        db.Integer,
+        nullable=False
+    )
+
+    condicoes_pagamento = db.Column(
+        db.String(255),
+        nullable=True
+    )
+
+    observacoes = db.Column(
+        db.Text,
+        nullable=True
+    )
+
+    # --------------------------------------------------------------
+    # Status do pedido
+    #
+    # aguardando_confirmacao
+    # confirmado
+    # em_producao
+    # concluido
+    # entregue
+    # cancelado
+    # --------------------------------------------------------------
+
+    status = db.Column(
+        db.String(30),
+        nullable=False,
+        default="aguardando_confirmacao",
+        index=True
+    )
+
+    # --------------------------------------------------------------
+    # Datas
+    # --------------------------------------------------------------
+
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow
+    )
+
+    updated_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow
+    )
+
+    confirmed_at = db.Column(
+        db.DateTime,
+        nullable=True
+    )
+
+    completed_at = db.Column(
+        db.DateTime,
+        nullable=True
+    )
+
+    def __repr__(self):
+
+        return (
+            f"<Order "
+            f"id={self.id} "
+            f"codigo={self.codigo} "
+            f"proposal_id={self.proposal_id} "
+            f"status={self.status}>"
+        )
+
+# --------------------------------------------------------------------
 # AcheTece 2.0 - Motor de Matching V1
 # --------------------------------------------------------------------
 
