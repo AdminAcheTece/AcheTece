@@ -3092,76 +3092,6 @@ def inject_avatar_url():
 
     return {'avatar_url': url}
 
-# --------------------------------------------------------------------
-# Fallback de templates (evita 500 se faltar HTML)
-# --------------------------------------------------------------------
-def _render_or_fallback(name: str, **ctx):
-    try:
-        return render_template(name, **ctx)
-    except TemplateNotFound:
-        email = ctx.get("email", "")
-        if name == "login_method.html":
-            return render_template_string("""
-            <div style="max-width:520px;margin:32px auto;font-family:system-ui,Arial">
-              <h2>Entrar</h2>
-              <p>E-mail: <strong>{{ email }}</strong></p>
-              <form method="post" action="{{ url_for('post_login_code') }}" style="margin:16px 0">
-                <input type="hidden" name="email" value="{{ email }}">
-                <button type="submit">Receber código por e-mail</button>
-              </form>
-              <form method="get" action="{{ url_for('view_login_password') }}">
-                <input type="hidden" name="email" value="{{ email }}">
-                <button type="submit">Entrar com senha</button>
-              </form>
-              <p style="color:#888;margin-top:18px">Tela fallback simples.</p>
-            </div>
-            """, email=email)
-
-        if name == "login_code.html":
-            return render_template_string("""
-            <div style="max-width:520px;margin:32px auto;font-family:system-ui,Arial">
-              <h2>Digite o código enviado por e-mail</h2>
-              <p>E-mail: <strong>{{ email }}</strong></p>
-              <form method="post" action="{{ url_for('validate_login_code') }}" style="margin:16px 0">
-                <input type="hidden" name="email" value="{{ email }}">
-                <div style="display:flex;gap:8px;margin:12px 0">
-                  {% for i in range(1,7) %}
-                    <input name="d{{i}}" maxlength="1" inputmode="numeric" pattern="[0-9]*"
-                           style="width:40px;height:48px;text-align:center;font-size:22px">
-                  {% endfor %}
-                </div>
-                <button type="submit">Validar código</button>
-              </form>
-              <a href="{{ url_for('resend_login_code', email=email) }}">Reenviar código</a>
-              <p style="color:#888;margin-top:18px">Tela fallback simples.</p>
-            </div>
-            """, email=email)
-
-        if name == "login_password.html":
-            return render_template_string("""
-            <div style="max-width:520px;margin:32px auto;font-family:system-ui,Arial">
-              <h2>Entrar com senha</h2>
-              <p>E-mail: <strong>{{ email }}</strong></p>
-              <form method="post" action="{{ url_for('post_login_password') }}" style="margin:16px 0">
-                <input type="hidden" name="email" value="{{ email }}">
-                <input type="password" name="senha" placeholder="Sua senha" required style="width:100%;height:44px">
-                <button type="submit" style="margin-top:12px">Entrar</button>
-              </form>
-              <p style="color:#888;margin-top:18px">Tela fallback simples.</p>
-            </div>
-            """, email=email)
-
-        return render_template_string("<h2>Página</h2><p>Template '{{name}}' não encontrado.</p>", name=name, **ctx)
-
-def _render_try(candidatos: list[str], **ctx):
-    """Tenta renderizar o primeiro template existente na lista.
-       Se nenhum existir, cai num HTML mínimo para não 500."""
-    for nome in candidatos:
-        try:
-            return render_template(nome, **ctx)
-        except TemplateNotFound:
-            continue
-    return render_template_string("<h2>Página temporária</h2><p>Conteúdo indisponível.</p>")
 
 def _get_notificacoes(empresa_id):
     # Troque por consulta real quando tiver o banco
@@ -3653,53 +3583,75 @@ def _abrir_sessao_malharia(empresa):
     session.permanent = True
 
 # /login
-@app.route("/login", methods=["GET", "POST"], endpoint="login")
+@app.route(
+    "/login",
+    methods=["GET", "POST"],
+    endpoint="login"
+)
 def view_login():
+
+    # ==============================================================
+    # GET
+    # ==============================================================
 
     if request.method == "GET":
 
         email = (
-            request.args.get("email") or ""
+            request.args.get("email")
+            or ""
         ).strip().lower()
 
-        return _render_try(
-            [
-                "login.html",
-                "AcheTece/Modelos/login.html"
-            ],
+        return render_template(
+            "login.html",
             email=email
         )
 
-    # POST - clicou em Continuar
+    # ==============================================================
+    # POST — CONTINUAR
+    # ==============================================================
+
     email = (
         request.form.get("email")
         or request.args.get("email")
         or ""
     ).strip().lower()
 
-    if not email or "@" not in email:
+    # --------------------------------------------------------------
+    # Validação básica
+    # --------------------------------------------------------------
 
-        return _render_try(
-            [
-                "login.html",
-                "AcheTece/Modelos/login.html"
-            ],
+    if (
+        not email
+        or "@" not in email
+    ):
+
+        return render_template(
+            "login.html",
             email=email,
             error="Informe um e-mail válido."
         )
 
-    tipo, empresa, usuario = _achar_conta_login(email)
+    # --------------------------------------------------------------
+    # Localiza conta
+    # --------------------------------------------------------------
+
+    tipo, empresa, usuario = (
+        _achar_conta_login(
+            email
+        )
+    )
 
     if not tipo:
 
-        return _render_try(
-            [
-                "login.html",
-                "AcheTece/Modelos/login.html"
-            ],
+        return render_template(
+            "login.html",
             email=email,
             no_account=True
         )
+
+    # --------------------------------------------------------------
+    # Escolha do método de autenticação
+    # --------------------------------------------------------------
 
     return redirect(
         url_for(
@@ -3713,13 +3665,32 @@ def view_login_trailing():
     return redirect(url_for("login"), code=301)
 
 # /login/metodo (escolha)
-@app.get("/login/metodo", endpoint="login_method")
+@app.get(
+    "/login/metodo",
+    endpoint="login_method"
+)
 def view_login_method():
-    email = (request.args.get("email") or "").strip().lower()
+
+    email = (
+        request.args.get("email")
+        or ""
+    ).strip().lower()
+
     if not email:
-        flash("Informe um e-mail para continuar.", "warning")
-        return redirect(url_for("login"))
-    return _render_try(["login_method.html", "AcheTece/Modelos/login_method.html"], email=email)
+
+        flash(
+            "Informe um e-mail para continuar.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("login")
+        )
+
+    return render_template(
+        "login_method.html",
+        email=email
+    )
 
 @app.get("/login/método", endpoint="login_method_accent")
 def view_login_method_alias_accent():
@@ -3730,8 +3701,15 @@ def view_login_method_alias_trailing():
     return redirect(url_for("login_method", **request.args), code=301)
 
 # Disparar envio do código (POST)
-@app.post("/login/codigo", endpoint="post_login_code")
+@app.post(
+    "/login/codigo",
+    endpoint="post_login_code"
+)
 def post_login_code():
+
+    # ==============================================================
+    # E-MAIL
+    # ==============================================================
 
     email = (
         request.form.get("email")
@@ -3750,28 +3728,43 @@ def post_login_code():
             url_for("login")
         )
 
-    tipo, empresa, usuario = _achar_conta_login(email)
+    # ==============================================================
+    # CONFIRMA EXISTÊNCIA DA CONTA
+    # ==============================================================
+
+    tipo, empresa, usuario = (
+        _achar_conta_login(
+            email
+        )
+    )
 
     if not tipo:
 
-        return _render_try(
-            [
-                "login.html",
-                "AcheTece/Modelos/login.html"
-            ],
+        return render_template(
+            "login.html",
             email=email,
             no_account=True
         )
 
+    # ==============================================================
+    # ENVIA OTP
+    # ==============================================================
+
     ok, msg = _otp_send(
         email,
+
         ip=(
-            request.headers.get("X-Forwarded-For")
+            request.headers.get(
+                "X-Forwarded-For"
+            )
             or request.remote_addr
             or ""
         )[:64],
+
         ua=(
-            request.headers.get("User-Agent")
+            request.headers.get(
+                "User-Agent"
+            )
             or ""
         )[:255],
     )
@@ -3794,13 +3787,26 @@ def post_login_code_accent():
     return post_login_code()
 
 # Tela para digitar o código (GET)
-@app.get("/login/codigo", endpoint="login_code")
+@app.get(
+    "/login/codigo",
+    endpoint="login_code"
+)
 def get_login_code():
-    email = (request.form.get("email") or request.args.get("email") or "").strip().lower()
+
+    email = (
+        request.form.get("email")
+        or request.args.get("email")
+        or ""
+    ).strip().lower()
+
     if not email:
-        return redirect(url_for("login"))
-    return _render_try(
-        ["login_code.html", "AcheTece/Modelos/login_code.html"],
+
+        return redirect(
+            url_for("login")
+        )
+
+    return render_template(
+        "login_code.html",
         email=email
     )
 
@@ -3914,13 +3920,25 @@ def validate_login_code():
     )
 
 # Senha: TELA (GET)
-@app.get("/login/senha", endpoint="view_login_password")
+@app.get(
+    "/login/senha",
+    endpoint="view_login_password"
+)
 def view_login_password():
-    email = (request.args.get("email") or "").strip().lower()
+
+    email = (
+        request.args.get("email")
+        or ""
+    ).strip().lower()
+
     if not email:
-        return redirect(url_for("login"))
-    return _render_try(
-        ["login_senha.html", "AcheTece/Modelos/login_senha.html"],
+
+        return redirect(
+            url_for("login")
+        )
+
+    return render_template(
+        "login_senha.html",
         email=email
     )
 
@@ -12522,24 +12540,21 @@ def teares_form():
 # --------------------------------------------------------------------
 # Cadastro
 # --------------------------------------------------------------------
-@app.get("/cadastro", endpoint="cadastro_get")
+@app.get(
+    "/cadastro",
+    endpoint="cadastro_get"
+)
 def cadastro_get():
-    email = (request.args.get("email") or "").strip().lower()
-    try:
-        return render_template("cadastro.html", email=email)
-    except TemplateNotFound:
-        pass
-    try:
-        return render_template("AcheTece/Modelos/cadastro.html", email=email)
-    except TemplateNotFound:
-        return render_template(
-            "cadastrar_empresa.html",
-            estados=[
-                'AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT',
-                'PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'
-            ],
-            email=email
-        )
+
+    email = (
+        request.args.get("email")
+        or ""
+    ).strip().lower()
+
+    return render_template(
+        "cadastro.html",
+        email=email
+    )
 
 @app.post("/cadastro", endpoint="cadastro_post")
 def cadastro_post():
