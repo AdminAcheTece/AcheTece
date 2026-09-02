@@ -6610,6 +6610,10 @@ def retorno_demanda(demanda_id):
 )
 def propostas_recebidas(demanda_id):
 
+    # ==============================================================
+    # AUTENTICAÇÃO DO COMPRADOR
+    # ==============================================================
+
     user_id = session.get(
         "user_id"
     )
@@ -6635,17 +6639,19 @@ def propostas_recebidas(demanda_id):
         not usuario
         or usuario.is_active is False
         or (
-            usuario.role or ""
-        ).strip().lower() != "cliente"
+            usuario.role
+            or ""
+        ).strip().lower()
+        != "cliente"
     ):
 
         return redirect(
             url_for("login")
         )
 
-    # --------------------------------------------------------------
-    # Demanda do próprio comprador
-    # --------------------------------------------------------------
+    # ==============================================================
+    # DEMANDA DO PRÓPRIO COMPRADOR
+    # ==============================================================
 
     demanda = (
         ProductionRequest.query
@@ -6664,12 +6670,20 @@ def propostas_recebidas(demanda_id):
         )
 
         return redirect(
-            url_for("minhas_demandas")
+            url_for(
+                "minhas_demandas"
+            )
         )
 
-    # --------------------------------------------------------------
-    # Propostas visíveis
-    # --------------------------------------------------------------
+    # ==============================================================
+    # PROPOSTAS VISÍVEIS AO COMPRADOR
+    #
+    # Rascunho NÃO aparece porque ainda pertence à elaboração
+    # da malharia.
+    #
+    # Todos os estados que já tiveram participação comercial
+    # permanecem visíveis para histórico.
+    # ==============================================================
 
     propostas = (
         Proposal.query
@@ -6682,7 +6696,9 @@ def propostas_recebidas(demanda_id):
                     "enviada",
                     "ajuste_solicitado",
                     "aceita",
-                    "recusada"
+                    "recusada",
+                    "nao_selecionada",
+                    "cancelada"
                 ]
             )
         )
@@ -6694,9 +6710,9 @@ def propostas_recebidas(demanda_id):
         .all()
     )
 
-    # --------------------------------------------------------------
-    # Indicadores
-    # --------------------------------------------------------------
+    # ==============================================================
+    # INDICADORES
+    # ==============================================================
 
     total_propostas = len(
         propostas
@@ -6706,15 +6722,18 @@ def propostas_recebidas(demanda_id):
         1
         for proposta in propostas
         if (
-            proposta.status or ""
-        ).strip().lower() == "enviada"
+            proposta.status
+            or ""
+        ).strip().lower()
+        == "enviada"
     )
 
     total_ajustes = sum(
         1
         for proposta in propostas
         if (
-            proposta.status or ""
+            proposta.status
+            or ""
         ).strip().lower()
         == "ajuste_solicitado"
     )
@@ -6723,21 +6742,46 @@ def propostas_recebidas(demanda_id):
         1
         for proposta in propostas
         if (
-            proposta.status or ""
-        ).strip().lower() == "aceita"
+            proposta.status
+            or ""
+        ).strip().lower()
+        == "aceita"
     )
 
     total_recusadas = sum(
         1
         for proposta in propostas
         if (
-            proposta.status or ""
-        ).strip().lower() == "recusada"
+            proposta.status
+            or ""
+        ).strip().lower()
+        == "recusada"
     )
 
     # --------------------------------------------------------------
-    # Valores totais
+    # Encerradas por decisão/sistema
+    #
+    # Variável adicional para manter semântica clara.
+    # O template atual pode não exibi-la ainda.
     # --------------------------------------------------------------
+
+    total_encerradas = sum(
+        1
+        for proposta in propostas
+        if (
+            proposta.status
+            or ""
+        ).strip().lower()
+        in {
+            "recusada",
+            "nao_selecionada",
+            "cancelada"
+        }
+    )
+
+    # ==============================================================
+    # VALORES TOTAIS
+    # ==============================================================
 
     totais_propostas = {}
 
@@ -6758,9 +6802,9 @@ def propostas_recebidas(demanda_id):
             proposta.id
         ] = total
 
-    # --------------------------------------------------------------
-    # Última solicitação de ajuste por proposta
-    # --------------------------------------------------------------
+    # ==============================================================
+    # ÚLTIMA SOLICITAÇÃO DE AJUSTE POR PROPOSTA
+    # ==============================================================
 
     ajustes_por_proposta = {}
 
@@ -6784,18 +6828,42 @@ def propostas_recebidas(demanda_id):
                 proposta.id
             ] = ajuste
 
+    # ==============================================================
+    # RENDER
+    # ==============================================================
+
     return render_template(
         "propostas_recebidas.html",
+
         usuario=usuario,
+
         demanda=demanda,
+
         propostas=propostas,
-        totais_propostas=totais_propostas,
-        ajustes_por_proposta=ajustes_por_proposta,
-        total_propostas=total_propostas,
-        total_enviadas=total_enviadas,
-        total_ajustes=total_ajustes,
-        total_aceitas=total_aceitas,
-        total_recusadas=total_recusadas,
+
+        totais_propostas=
+            totais_propostas,
+
+        ajustes_por_proposta=
+            ajustes_por_proposta,
+
+        total_propostas=
+            total_propostas,
+
+        total_enviadas=
+            total_enviadas,
+
+        total_ajustes=
+            total_ajustes,
+
+        total_aceitas=
+            total_aceitas,
+
+        total_recusadas=
+            total_recusadas,
+
+        total_encerradas=
+            total_encerradas,
     )
 
 # --------------------------------------------------------------------
@@ -7082,29 +7150,50 @@ def aceitar_proposta(proposta_id):
 )
 def recusar_proposta(proposta_id):
 
-    user_id = session.get("user_id")
+    # ==============================================================
+    # AUTENTICAÇÃO
+    # ==============================================================
+
+    user_id = session.get(
+        "user_id"
+    )
 
     if not user_id:
+
         return redirect(
             url_for("login")
         )
 
     try:
+
         usuario = db.session.get(
             Usuario,
             int(user_id)
         )
+
     except Exception:
+
         usuario = None
 
     if (
         not usuario
         or usuario.is_active is False
-        or (usuario.role or "").strip().lower() != "cliente"
+        or (
+            usuario.role
+            or ""
+        ).strip().lower()
+        != "cliente"
     ):
+
         return redirect(
             url_for("login")
         )
+
+    # ==============================================================
+    # PROPOSTA
+    #
+    # Garante que pertence a uma demanda do comprador autenticado.
+    # ==============================================================
 
     proposta = (
         Proposal.query
@@ -7114,8 +7203,11 @@ def recusar_proposta(proposta_id):
             == ProductionRequest.id
         )
         .filter(
-            Proposal.id == proposta_id,
-            ProductionRequest.user_id == usuario.id
+            Proposal.id
+            == proposta_id,
+
+            ProductionRequest.user_id
+            == usuario.id
         )
         .first()
     )
@@ -7128,36 +7220,137 @@ def recusar_proposta(proposta_id):
         )
 
         return redirect(
-            url_for("minhas_demandas")
+            url_for(
+                "minhas_demandas"
+            )
         )
 
-    status_atual = (
-        proposta.status or ""
-    ).strip().lower()
+    # ==============================================================
+    # DEMANDA
+    # ==============================================================
 
-    if status_atual != "enviada":
+    demanda = proposta.demanda
+
+    if not demanda:
 
         flash(
-            "Esta proposta não pode ser recusada no status atual.",
+            "A demanda vinculada não foi encontrada.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "minhas_demandas"
+            )
+        )
+
+    status_demanda = (
+        demanda.status
+        or ""
+    ).strip().lower()
+
+    # ==============================================================
+    # BLINDAGEM DA DEMANDA
+    #
+    # Nenhuma decisão comercial nova pode ocorrer depois
+    # que a demanda sair de PUBLICADA.
+    # ==============================================================
+
+    if status_demanda != "publicada":
+
+        flash(
+            (
+                "Esta demanda não está mais aberta "
+                "para decisões sobre propostas."
+            ),
             "warning"
         )
 
         return redirect(
             url_for(
                 "propostas_recebidas",
-                demanda_id=proposta.demand_id
+                demanda_id=demanda.id
             )
         )
 
+    # ==============================================================
+    # STATUS DA PROPOSTA
+    #
+    # Somente uma proposta ENVIADA pode ser recusada.
+    # ==============================================================
+
+    status_atual = (
+        proposta.status
+        or ""
+    ).strip().lower()
+
+    if status_atual != "enviada":
+
+        flash(
+            (
+                "Esta proposta não pode ser recusada "
+                "no status atual."
+            ),
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "propostas_recebidas",
+                demanda_id=demanda.id
+            )
+        )
+
+    # ==============================================================
+    # PROTEÇÃO CONTRA PEDIDO EXISTENTE
+    #
+    # É redundante quando o ciclo está consistente, mas protege
+    # contra registros antigos ou alterações manuais de status.
+    # ==============================================================
+
+    pedido_existente = (
+        Order.query
+        .filter_by(
+            demand_id=demanda.id
+        )
+        .first()
+    )
+
+    if pedido_existente:
+
+        flash(
+            (
+                f"Esta demanda já originou o pedido "
+                f"{pedido_existente.codigo} "
+                "e não aceita novas decisões comerciais."
+            ),
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "propostas_recebidas",
+                demanda_id=demanda.id
+            )
+        )
+
+    # ==============================================================
+    # RECUSA
+    # ==============================================================
+
     try:
 
-        proposta.status = "recusada"
+        proposta.status = (
+            "recusada"
+        )
 
         interacao = ProposalInteraction(
             proposal_id=proposta.id,
             actor_role="comprador",
             action="recusada",
-            message="Proposta recusada pelo comprador."
+            message=(
+                "Proposta recusada pelo comprador."
+            )
         )
 
         db.session.add(
@@ -7182,7 +7375,7 @@ def recusar_proposta(proposta_id):
         return redirect(
             url_for(
                 "propostas_recebidas",
-                demanda_id=proposta.demand_id
+                demanda_id=demanda.id
             )
         )
 
@@ -7194,7 +7387,7 @@ def recusar_proposta(proposta_id):
     return redirect(
         url_for(
             "propostas_recebidas",
-            demanda_id=proposta.demand_id
+            demanda_id=demanda.id
         )
     )
 
@@ -7208,29 +7401,50 @@ def recusar_proposta(proposta_id):
 )
 def solicitar_ajuste_proposta(proposta_id):
 
-    user_id = session.get("user_id")
+    # ==============================================================
+    # AUTENTICAÇÃO
+    # ==============================================================
+
+    user_id = session.get(
+        "user_id"
+    )
 
     if not user_id:
+
         return redirect(
             url_for("login")
         )
 
     try:
+
         usuario = db.session.get(
             Usuario,
             int(user_id)
         )
+
     except Exception:
+
         usuario = None
 
     if (
         not usuario
         or usuario.is_active is False
-        or (usuario.role or "").strip().lower() != "cliente"
+        or (
+            usuario.role
+            or ""
+        ).strip().lower()
+        != "cliente"
     ):
+
         return redirect(
             url_for("login")
         )
+
+    # ==============================================================
+    # PROPOSTA
+    #
+    # Somente proposta pertencente ao comprador autenticado.
+    # ==============================================================
 
     proposta = (
         Proposal.query
@@ -7240,8 +7454,11 @@ def solicitar_ajuste_proposta(proposta_id):
             == ProductionRequest.id
         )
         .filter(
-            Proposal.id == proposta_id,
-            ProductionRequest.user_id == usuario.id
+            Proposal.id
+            == proposta_id,
+
+            ProductionRequest.user_id
+            == usuario.id
         )
         .first()
     )
@@ -7254,24 +7471,118 @@ def solicitar_ajuste_proposta(proposta_id):
         )
 
         return redirect(
-            url_for("minhas_demandas")
+            url_for(
+                "minhas_demandas"
+            )
         )
 
-    if (
-        proposta.status or ""
-    ).strip().lower() != "enviada":
+    # ==============================================================
+    # DEMANDA
+    # ==============================================================
+
+    demanda = proposta.demanda
+
+    if not demanda:
 
         flash(
-            "Não é possível solicitar ajuste desta proposta no status atual.",
+            "A demanda vinculada não foi encontrada.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "minhas_demandas"
+            )
+        )
+
+    status_demanda = (
+        demanda.status
+        or ""
+    ).strip().lower()
+
+    # ==============================================================
+    # BLINDAGEM DA DEMANDA
+    # ==============================================================
+
+    if status_demanda != "publicada":
+
+        flash(
+            (
+                "Esta demanda não está mais aberta "
+                "para negociação de propostas."
+            ),
             "warning"
         )
 
         return redirect(
             url_for(
                 "propostas_recebidas",
-                demanda_id=proposta.demand_id
+                demanda_id=demanda.id
             )
         )
+
+    # ==============================================================
+    # STATUS DA PROPOSTA
+    #
+    # Ajuste somente pode ser solicitado quando a proposta
+    # está efetivamente aguardando decisão do comprador.
+    # ==============================================================
+
+    status_proposta = (
+        proposta.status
+        or ""
+    ).strip().lower()
+
+    if status_proposta != "enviada":
+
+        flash(
+            (
+                "Não é possível solicitar ajuste desta "
+                "proposta no status atual."
+            ),
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "propostas_recebidas",
+                demanda_id=demanda.id
+            )
+        )
+
+    # ==============================================================
+    # PROTEÇÃO CONTRA PEDIDO EXISTENTE
+    # ==============================================================
+
+    pedido_existente = (
+        Order.query
+        .filter_by(
+            demand_id=demanda.id
+        )
+        .first()
+    )
+
+    if pedido_existente:
+
+        flash(
+            (
+                f"Esta demanda já originou o pedido "
+                f"{pedido_existente.codigo} "
+                "e não aceita novos ajustes comerciais."
+            ),
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "propostas_recebidas",
+                demanda_id=demanda.id
+            )
+        )
+
+    # ==============================================================
+    # MENSAGEM DO AJUSTE
+    # ==============================================================
 
     mensagem = (
         request.form.get(
@@ -7290,9 +7601,13 @@ def solicitar_ajuste_proposta(proposta_id):
         return redirect(
             url_for(
                 "propostas_recebidas",
-                demanda_id=proposta.demand_id
+                demanda_id=demanda.id
             )
         )
+
+    # ==============================================================
+    # REGISTRA SOLICITAÇÃO
+    # ==============================================================
 
     try:
 
@@ -7329,7 +7644,7 @@ def solicitar_ajuste_proposta(proposta_id):
         return redirect(
             url_for(
                 "propostas_recebidas",
-                demanda_id=proposta.demand_id
+                demanda_id=demanda.id
             )
         )
 
@@ -7341,7 +7656,7 @@ def solicitar_ajuste_proposta(proposta_id):
     return redirect(
         url_for(
             "propostas_recebidas",
-            demanda_id=proposta.demand_id
+            demanda_id=demanda.id
         )
     )
 
