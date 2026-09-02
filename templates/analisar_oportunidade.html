@@ -23,6 +23,7 @@
     <style>
 
         :root{
+
             --black:#111111;
             --white:#ffffff;
 
@@ -33,8 +34,10 @@
             --lime:#B6F34D;
 
             --bg:#F4F4F1;
+
             --text:#202020;
             --muted:#6B6B6B;
+
             --line:#DFDFDA;
 
             --green:#287742;
@@ -42,6 +45,12 @@
 
             --red:#85202D;
             --red-bg:#FFF0F2;
+
+            --blue:#295C87;
+            --blue-bg:#EEF5FA;
+
+            --orange:#755614;
+            --orange-bg:#FFF7E7;
         }
 
 
@@ -51,9 +60,11 @@
 
 
         body{
+
             margin:0;
 
             background:var(--bg);
+
             color:var(--text);
 
             font-family:
@@ -67,25 +78,30 @@
            HEADER
         ========================================================= */
 
-
         .topbar{
+
             min-height:72px;
 
             background:#111;
 
             display:flex;
+
             align-items:center;
         }
 
 
         .topbar-inner{
+
             width:100%;
+
             max-width:1050px;
 
             margin:auto;
+
             padding:0 22px;
 
             display:flex;
+
             align-items:center;
             justify-content:space-between;
 
@@ -94,17 +110,21 @@
 
 
         .brand img{
+
             height:40px;
+
             display:block;
         }
 
 
         .back{
+
             color:#fff;
 
             text-decoration:none;
 
             font-size:13px;
+
             font-weight:800;
         }
 
@@ -113,8 +133,8 @@
            PÁGINA
         ========================================================= */
 
-
         .page{
+
             max-width:1000px;
 
             margin:auto;
@@ -126,6 +146,7 @@
 
 
         .eyebrow{
+
             margin-bottom:8px;
 
             color:var(--olive);
@@ -135,14 +156,17 @@
             letter-spacing:.08em;
 
             font-size:12px;
+
             font-weight:800;
         }
 
 
         .head{
+
             display:flex;
 
             align-items:flex-start;
+
             justify-content:space-between;
 
             gap:24px;
@@ -152,6 +176,7 @@
 
 
         h1{
+
             margin:0;
 
             color:#111;
@@ -165,12 +190,26 @@
 
 
         .code{
+
             margin-top:7px;
 
             color:var(--olive);
 
             font-size:13px;
+
             font-weight:800;
+        }
+
+
+        .head-status{
+
+            display:flex;
+
+            flex-direction:column;
+
+            align-items:flex-end;
+
+            gap:8px;
         }
 
 
@@ -178,9 +217,7 @@
            SCORE
         ========================================================= */
 
-
         .score-box{
-            flex:0 0 auto;
 
             min-width:130px;
 
@@ -198,6 +235,7 @@
 
 
         .score-box strong{
+
             display:block;
 
             color:#111;
@@ -207,6 +245,7 @@
 
 
         .score-box span{
+
             display:block;
 
             margin-top:2px;
@@ -214,9 +253,53 @@
             color:#70706A;
 
             font-size:9px;
+
             font-weight:800;
 
             text-transform:uppercase;
+        }
+
+
+        .opportunity-chip{
+
+            display:inline-flex;
+
+            min-height:30px;
+
+            align-items:center;
+            justify-content:center;
+
+            padding:0 11px;
+
+            border-radius:999px;
+
+            font-size:10px;
+
+            font-weight:800;
+        }
+
+
+        .opportunity-chip.active{
+
+            background:var(--green-bg);
+
+            color:var(--green);
+        }
+
+
+        .opportunity-chip.history{
+
+            background:#ECECEA;
+
+            color:#555;
+        }
+
+
+        .opportunity-chip.rejected{
+
+            background:var(--red-bg);
+
+            color:var(--red);
         }
 
 
@@ -224,8 +307,8 @@
            FLASH
         ========================================================= */
 
-
         .flash{
+
             margin-bottom:18px;
 
             padding:13px 15px;
@@ -233,11 +316,13 @@
             border-radius:11px;
 
             font-size:13px;
+
             font-weight:700;
         }
 
 
         .flash.success{
+
             background:#EDF8EF;
 
             border:
@@ -248,6 +333,7 @@
 
 
         .flash.warning{
+
             background:#FFF7E7;
 
             border:
@@ -259,6 +345,7 @@
 
         .flash.danger,
         .flash.error{
+
             background:#FFF0F2;
 
             border:
@@ -269,11 +356,11 @@
 
 
         /* =========================================================
-           CARD DA DEMANDA
+           CARD
         ========================================================= */
 
-
         .card{
+
             background:#fff;
 
             border:
@@ -286,28 +373,34 @@
 
 
         .section{
+
             padding:24px 26px;
         }
 
 
         .section + .section{
+
             border-top:
                 1px solid var(--line);
         }
 
 
         .section-title{
+
             margin:
-                0 0 18px;
+                0 0
+                18px;
 
             color:#111;
 
             font-size:17px;
+
             font-weight:800;
         }
 
 
         .grid{
+
             display:grid;
 
             grid-template-columns:
@@ -319,22 +412,27 @@
 
 
         .label{
+
             margin-bottom:5px;
 
             color:#888;
 
             font-size:10px;
+
             font-weight:800;
 
             text-transform:uppercase;
+
             letter-spacing:.06em;
         }
 
 
         .value{
+
             color:#222;
 
             font-size:14px;
+
             font-weight:700;
 
             line-height:1.45;
@@ -342,6 +440,7 @@
 
 
         .value.muted{
+
             color:#777;
 
             font-weight:500;
@@ -349,6 +448,7 @@
 
 
         .notes{
+
             color:#444;
 
             font-size:14px;
@@ -363,8 +463,8 @@
            TEARES COMPATÍVEIS
         ========================================================= */
 
-
         .matches{
+
             display:flex;
 
             flex-direction:column;
@@ -374,11 +474,11 @@
 
 
         .match{
+
             display:grid;
 
             grid-template-columns:
-                90px
-                1fr;
+                90px 1fr;
 
             overflow:hidden;
 
@@ -390,10 +490,13 @@
 
 
         .match-score{
+
             display:flex;
+
             flex-direction:column;
 
             align-items:center;
+
             justify-content:center;
 
             padding:15px 10px;
@@ -406,16 +509,19 @@
 
 
         .match-score strong{
+
             font-size:22px;
         }
 
 
         .match-score span{
+
             margin-top:2px;
 
             color:#777;
 
             font-size:9px;
+
             font-weight:800;
 
             text-transform:uppercase;
@@ -423,19 +529,23 @@
 
 
         .match-body{
+
             padding:16px 18px;
         }
 
 
         .machine{
+
             color:#111;
 
             font-size:15px;
+
             font-weight:800;
         }
 
 
         .tags{
+
             display:flex;
 
             flex-wrap:wrap;
@@ -447,14 +557,14 @@
 
 
         .tag{
+
             min-height:26px;
 
             display:inline-flex;
 
             align-items:center;
 
-            padding:
-                0 9px;
+            padding:0 9px;
 
             border-radius:999px;
 
@@ -463,19 +573,21 @@
             color:#444;
 
             font-size:10px;
+
             font-weight:700;
         }
 
 
         /* =========================================================
-           DECISÃO
+           DECISÃO ATIVA
         ========================================================= */
 
-
         .decision{
+
             margin-top:20px;
 
             background:#111;
+
             color:#fff;
 
             border-radius:20px;
@@ -485,18 +597,22 @@
 
 
         .decision h2{
+
             margin:
-                0 0 6px;
+                0 0
+                6px;
 
             font-size:18px;
         }
 
 
         .decision p{
-            max-width:700px;
+
+            max-width:720px;
 
             margin:
-                0 0 20px;
+                0 0
+                20px;
 
             color:#CFCFCF;
 
@@ -507,6 +623,7 @@
 
 
         .decision-actions{
+
             display:flex;
 
             flex-wrap:wrap;
@@ -516,22 +633,24 @@
 
 
         .decision-actions form{
+
             margin:0;
         }
 
 
         .interest-btn,
         .reject-btn{
+
             min-height:46px;
 
-            padding:
-                0 19px;
+            padding:0 19px;
 
             border-radius:999px;
 
             font-family:inherit;
 
             font-size:13px;
+
             font-weight:800;
 
             cursor:pointer;
@@ -539,6 +658,7 @@
 
 
         .interest-btn{
+
             border:0;
 
             background:var(--lime);
@@ -548,11 +668,13 @@
 
 
         .interest-btn:hover{
+
             background:#fff;
         }
 
 
         .reject-btn{
+
             border:
                 1px solid #666;
 
@@ -563,17 +685,48 @@
 
 
         .reject-btn:hover{
+
             background:#fff;
+
             color:#000;
         }
 
 
-        /* =========================================================
-           DECISÃO JÁ TOMADA
-        ========================================================= */
+        .proposal-btn{
+
+            min-height:46px;
+
+            display:inline-flex;
+
+            align-items:center;
+            justify-content:center;
+
+            padding:0 19px;
+
+            border-radius:999px;
+
+            background:var(--lime);
+
+            color:#000;
+
+            text-decoration:none;
+
+            font-size:13px;
+
+            font-weight:800;
+        }
+
+
+        .proposal-btn:hover{
+
+            background:#fff;
+
+            color:#000;
+        }
 
 
         .decision-done{
+
             display:inline-flex;
 
             min-height:40px;
@@ -581,60 +734,464 @@
             align-items:center;
             justify-content:center;
 
-            padding:
-                0 15px;
+            padding:0 15px;
 
             border-radius:999px;
 
             font-size:12px;
+
             font-weight:800;
         }
 
 
         .decision-done.interested{
+
             background:var(--green-bg);
+
             color:var(--green);
         }
 
 
         .decision-done.rejected{
+
             background:var(--red-bg);
+
             color:var(--red);
         }
 
-        .proposal-btn{
-            min-height:46px;
-        
-            display:inline-flex;
-            align-items:center;
-            justify-content:center;
-        
-            padding:0 19px;
-        
-            border-radius:999px;
-        
-            background:var(--lime);
-            color:#000;
-        
-            text-decoration:none;
-        
-            font-size:13px;
+
+        /* =========================================================
+           HISTÓRICO
+        ========================================================= */
+
+        .history-card{
+
+            margin-top:20px;
+
+            background:#fff;
+
+            border:
+                1px solid var(--line);
+
+            border-radius:20px;
+
+            overflow:hidden;
+        }
+
+
+        .history-head{
+
+            padding:22px 24px;
+
+            background:#292929;
+
+            color:#fff;
+        }
+
+
+        .history-eyebrow{
+
+            margin-bottom:5px;
+
+            color:var(--lime);
+
+            font-size:10px;
+
+            font-weight:800;
+
+            letter-spacing:.07em;
+
+            text-transform:uppercase;
+        }
+
+
+        .history-head h2{
+
+            margin:0;
+
+            font-size:20px;
+
             font-weight:800;
         }
-        
-        .proposal-btn:hover{
+
+
+        .history-head p{
+
+            max-width:700px;
+
+            margin:
+                7px 0
+                0;
+
+            color:#CDCDCD;
+
+            font-size:12px;
+
+            line-height:1.5;
+        }
+
+
+        .history-body{
+
+            padding:23px 24px;
+        }
+
+
+        .result-box{
+
+            padding:16px 17px;
+
+            border-radius:14px;
+
+            background:#F3F3F0;
+
+            color:#555;
+
+            font-size:12px;
+
+            line-height:1.55;
+        }
+
+
+        .result-box.success{
+
+            background:var(--green-bg);
+
+            border:
+                1px solid #B9DCBF;
+
+            color:var(--green);
+        }
+
+
+        .result-box.rejected{
+
+            background:var(--red-bg);
+
+            border:
+                1px solid #EAB5BD;
+
+            color:var(--red);
+        }
+
+
+        .result-title{
+
+            display:block;
+
+            margin-bottom:5px;
+
+            color:inherit;
+
+            font-size:14px;
+
+            font-weight:800;
+        }
+
+
+        /* =========================================================
+           PROPOSTA HISTÓRICA
+        ========================================================= */
+
+        .proposal-summary{
+
+            margin-top:16px;
+
+            padding:18px;
+
+            border:
+                1px solid var(--line);
+
+            border-radius:15px;
+
             background:#fff;
+        }
+
+
+        .summary-title{
+
+            margin:
+                0 0
+                15px;
+
+            color:#111;
+
+            font-size:15px;
+
+            font-weight:800;
+        }
+
+
+        .summary-grid{
+
+            display:grid;
+
+            grid-template-columns:
+                repeat(4,1fr);
+
+            gap:18px;
+        }
+
+
+        .summary-label{
+
+            margin-bottom:4px;
+
+            color:#888;
+
+            font-size:9px;
+
+            font-weight:800;
+
+            text-transform:uppercase;
+
+            letter-spacing:.06em;
+        }
+
+
+        .summary-value{
+
+            color:#222;
+
+            font-size:13px;
+
+            font-weight:800;
+
+            line-height:1.45;
+        }
+
+
+        .summary-value.total{
+
+            color:var(--olive-dark);
+
+            font-size:17px;
+        }
+
+
+        .proposal-status{
+
+            margin-top:15px;
+
+            display:inline-flex;
+
+            min-height:29px;
+
+            align-items:center;
+
+            padding:0 10px;
+
+            border-radius:999px;
+
+            background:#ECECEA;
+
+            color:#555;
+
+            font-size:10px;
+
+            font-weight:800;
+        }
+
+
+        .proposal-status.accepted{
+
+            background:var(--green-bg);
+
+            color:var(--green);
+        }
+
+
+        /* =========================================================
+           PEDIDO HISTÓRICO
+        ========================================================= */
+
+        .order-card{
+
+            margin-top:16px;
+
+            padding:18px;
+
+            border-radius:15px;
+
+            background:var(--olive-light);
+
+            border:
+                1px solid #D5D6C9;
+        }
+
+
+        .order-top{
+
+            display:flex;
+
+            align-items:flex-start;
+
+            justify-content:space-between;
+
+            gap:20px;
+        }
+
+
+        .order-label{
+
+            margin-bottom:4px;
+
+            color:#777;
+
+            font-size:9px;
+
+            font-weight:800;
+
+            text-transform:uppercase;
+
+            letter-spacing:.06em;
+        }
+
+
+        .order-code{
+
+            color:#111;
+
+            font-size:19px;
+
+            font-weight:800;
+        }
+
+
+        .order-status{
+
+            display:inline-flex;
+
+            min-height:30px;
+
+            align-items:center;
+
+            padding:0 10px;
+
+            border-radius:999px;
+
+            background:#fff;
+
+            color:#444;
+
+            font-size:10px;
+
+            font-weight:800;
+        }
+
+
+        .order-status.entregue{
+
+            background:var(--lime);
+
+            color:#111;
+        }
+
+
+        .order-status.em_producao{
+
+            background:var(--blue-bg);
+
+            color:var(--blue);
+        }
+
+
+        .order-description{
+
+            margin-top:12px;
+
+            color:#555;
+
+            font-size:11px;
+
+            line-height:1.5;
+        }
+
+
+        .history-actions{
+
+            display:flex;
+
+            flex-wrap:wrap;
+
+            gap:9px;
+
+            margin-top:17px;
+
+            padding-top:17px;
+
+            border-top:
+                1px solid #E3E3DD;
+        }
+
+
+        .history-btn{
+
+            display:inline-flex;
+
+            min-height:42px;
+
+            align-items:center;
+            justify-content:center;
+
+            padding:0 16px;
+
+            border-radius:999px;
+
+            text-decoration:none;
+
+            font-size:11px;
+
+            font-weight:800;
+        }
+
+
+        .history-btn.primary{
+
+            background:#111;
+
+            color:var(--lime);
+        }
+
+
+        .history-btn.primary:hover{
+
+            background:var(--lime);
+
             color:#000;
         }
+
+
+        .history-btn.secondary{
+
+            background:#fff;
+
+            color:#333;
+
+            border:
+                1px solid #D0D0CB;
+        }
+
 
         /* =========================================================
            MOBILE
         ========================================================= */
 
+        @media(max-width:750px){
+
+            .summary-grid{
+
+                grid-template-columns:
+                    1fr 1fr;
+            }
+
+        }
+
 
         @media(max-width:650px){
 
             .page{
+
                 padding:
                     28px 16px
                     50px;
@@ -642,34 +1199,56 @@
 
 
             .head{
+
                 flex-direction:column;
             }
 
 
+            .head-status{
+
+                width:100%;
+
+                align-items:stretch;
+            }
+
+
             h1{
+
                 font-size:28px;
             }
 
 
-            .grid{
+            .grid,
+            .summary-grid{
+
                 grid-template-columns:1fr;
             }
 
 
             .score-box{
+
                 width:100%;
             }
 
 
             .decision-actions,
             .decision-actions form{
+
                 width:100%;
             }
 
 
             .interest-btn,
-            .reject-btn{
+            .reject-btn,
+            .proposal-btn{
+
                 width:100%;
+            }
+
+
+            .order-top{
+
+                flex-direction:column;
             }
 
         }
@@ -682,9 +1261,71 @@
 <body>
 
 
+{% set opportunity_status =
+    (
+        oportunidade_status
+        if oportunidade_status is defined
+        else (
+            oportunidade.status
+            or 'visualizada'
+        )
+    )
+    |lower
+%}
+
+
+{% set demand_status =
+    (
+        demanda_status
+        if demanda_status is defined
+        else (
+            demanda.status
+            or ''
+        )
+    )
+    |lower
+%}
+
+
+{% if proposta %}
+
+    {% set proposal_status =
+        (
+            proposta.status
+            or ''
+        )
+        |lower
+    %}
+
+{% else %}
+
+    {% set proposal_status = '' %}
+
+{% endif %}
+
+
+{% if pedido %}
+
+    {% set order_status =
+        (
+            pedido.status
+            or ''
+        )
+        |lower
+    %}
+
+{% else %}
+
+    {% set order_status = '' %}
+
+{% endif %}
+
+
 <header class="topbar">
 
+
     <div class="topbar-inner">
+
 
         <a
             href="{{ url_for('painel_malharia') }}"
@@ -709,7 +1350,9 @@
             ← Voltar para oportunidades
         </a>
 
+
     </div>
+
 
 </header>
 
@@ -717,24 +1360,30 @@
 <main class="page">
 
 
-    {% set opportunity_status =
-        (
-            oportunidade.status
-            or 'visualizada'
-        )
-        |lower
-    %}
-
-
     <div class="eyebrow">
-        Oportunidade de Produção
+
+        {% if oportunidade_encerrada %}
+
+            Histórico da Oportunidade
+
+        {% else %}
+
+            Oportunidade de Produção
+
+        {% endif %}
+
     </div>
 
+
+    <!-- =========================================================
+         CABEÇALHO
+    ========================================================== -->
 
     <div class="head">
 
 
         <div>
+
 
             <h1>
                 {{ demanda.produto }}
@@ -745,18 +1394,72 @@
                 {{ demanda.codigo }}
             </div>
 
+
         </div>
 
 
-        <div class="score-box">
+        <div class="head-status">
 
-            <strong>
-                {{ oportunidade.best_score }}%
-            </strong>
 
-            <span>
-                compatibilidade
-            </span>
+            <div class="score-box">
+
+                <strong>
+                    {{ oportunidade.best_score }}%
+                </strong>
+
+                <span>
+                    compatibilidade
+                </span>
+
+            </div>
+
+
+            {% if oportunidade_encerrada %}
+
+
+                {% if opportunity_status == "recusada" %}
+
+                    <span class="opportunity-chip rejected">
+                        Sem interesse
+                    </span>
+
+                {% else %}
+
+                    <span class="opportunity-chip history">
+                        Oportunidade encerrada
+                    </span>
+
+                {% endif %}
+
+
+            {% else %}
+
+
+                <span class="opportunity-chip active">
+
+                    {% if opportunity_status == "nova" %}
+
+                        Nova
+
+                    {% elif opportunity_status == "visualizada" %}
+
+                        Visualizada
+
+                    {% elif opportunity_status == "interessada" %}
+
+                        Tenho interesse
+
+                    {% else %}
+
+                        Ativa
+
+                    {% endif %}
+
+                </span>
+
+
+            {% endif %}
+
 
         </div>
 
@@ -764,31 +1467,46 @@
     </div>
 
 
+    <!-- =========================================================
+         FLASH
+    ========================================================== -->
+
     {% with messages =
         get_flashed_messages(
             with_categories=true
         )
     %}
 
+
         {% if messages %}
 
+
             {% for category, message in messages %}
+
 
                 <div class="flash {{ category }}">
                     {{ message }}
                 </div>
 
+
             {% endfor %}
+
 
         {% endif %}
 
+
     {% endwith %}
 
+
+    <!-- =========================================================
+         DEMANDA
+    ========================================================== -->
 
     <section class="card">
 
 
         <div class="section">
+
 
             <h2 class="section-title">
                 Especificação da demanda
@@ -913,7 +1631,7 @@
                 <div>
 
                     <div class="label">
-                        Prazo
+                        Prazo solicitado
                     </div>
 
                     <div class="value">
@@ -944,6 +1662,7 @@
 
                     <div class="value">
 
+
                         {% if demanda.cidade_preferencial %}
 
                             {{ demanda.cidade_preferencial }}
@@ -961,6 +1680,7 @@
                             {{ demanda.estado_preferencial }}
 
                         {% endif %}
+
 
                     </div>
 
@@ -990,17 +1710,22 @@
 
             {% if demanda.observacoes %}
 
+
                 <div style="margin-top:24px;">
+
 
                     <div class="label">
                         Observações
                     </div>
 
+
                     <div class="notes">
                         {{ demanda.observacoes }}
                     </div>
 
+
                 </div>
+
 
             {% endif %}
 
@@ -1008,12 +1733,15 @@
         </div>
 
 
+        <!-- =====================================================
+             EQUIPAMENTOS
+        ====================================================== -->
+
         <div class="section">
 
+
             <h2 class="section-title">
-
                 Equipamentos compatíveis da sua malharia
-
             </h2>
 
 
@@ -1031,13 +1759,16 @@
 
                             <div class="match-score">
 
+
                                 <strong>
                                     {{ match.score }}%
                                 </strong>
 
+
                                 <span>
                                     match
                                 </span>
+
 
                             </div>
 
@@ -1103,19 +1834,24 @@
 
 
                                     {% set raw_elastano =
-                                        match.tear.elastano
-                                        if match.tear.elastano is not none
-                                        else match.tear.kit_elastano
+                                        (
+                                            match.tear.elastano
+                                            if match.tear.elastano is not none
+                                            else match.tear.kit_elastano
+                                        )
                                     %}
 
 
                                     {% if raw_elastano is boolean %}
 
+
                                         {% set tem_elastano =
                                             raw_elastano
                                         %}
 
+
                                     {% else %}
+
 
                                         {% set s =
                                             (
@@ -1125,6 +1861,7 @@
                                             .strip()
                                             .lower()
                                         %}
+
 
                                         {% set tem_elastano =
                                             s in [
@@ -1141,12 +1878,14 @@
                                             ]
                                         %}
 
+
                                     {% endif %}
 
 
                                     <span class="tag">
 
                                         Elastano:
+
                                         {{
                                             "Sim"
                                             if tem_elastano
@@ -1176,8 +1915,8 @@
 
                 <div class="value muted">
 
-                    Nenhum equipamento compatível ativo
-                    foi encontrado neste momento.
+                    Nenhum equipamento compatível
+                    foi localizado para esta oportunidade.
 
                 </div>
 
@@ -1191,163 +1930,753 @@
     </section>
 
 
-    <section class="decision">
+    <!-- =========================================================
+         OPORTUNIDADE ATIVA
+    ========================================================== -->
+
+    {% if not oportunidade_encerrada %}
 
 
-        {% if opportunity_status in [
-            "nova",
-            "visualizada"
-        ] %}
+        <section class="decision">
 
 
-            <h2>
-                Esta demanda interessa à sua malharia?
-            </h2>
+            {% if opportunity_status in [
+                "nova",
+                "visualizada"
+            ] %}
 
 
-            <p>
-
-                Ao demonstrar interesse, sua empresa
-                passará a constar como interessada nesta
-                oportunidade. O comprador poderá visualizar
-                essa manifestação em uma próxima etapa.
-
-            </p>
+                <h2>
+                    Esta demanda interessa à sua malharia?
+                </h2>
 
 
-            <div class="decision-actions">
+                <p>
+
+                    Ao demonstrar interesse, sua empresa
+                    será apresentada ao comprador como uma
+                    malharia tecnicamente compatível e interessada
+                    em atender esta demanda.
+
+                </p>
 
 
-                <form
-                    method="POST"
-                    action="{{ url_for(
-                        'oportunidade_interesse',
-                        oportunidade_id=oportunidade.id
-                    ) }}"
-                    onsubmit="return confirm(
-                        'Deseja registrar interesse nesta oportunidade?'
-                    );"
-                >
-
-                    <button
-                        type="submit"
-                        class="interest-btn"
-                    >
-                        Tenho interesse
-                    </button>
-
-                </form>
+                <div class="decision-actions">
 
 
-                <form
-                    method="POST"
-                    action="{{ url_for(
-                        'oportunidade_recusar',
-                        oportunidade_id=oportunidade.id
-                    ) }}"
-                    onsubmit="return confirm(
-                        'Deseja informar que não possui interesse nesta oportunidade?'
-                    );"
-                >
-
-                    <button
-                        type="submit"
-                        class="reject-btn"
-                    >
-                        Não tenho interesse
-                    </button>
-
-                </form>
-
-
-            </div>
-
-
-        {% elif opportunity_status == "interessada" %}
-
-
-            <h2>
-                Interesse registrado.
-            </h2>
-        
-        
-            <p>
-        
-                Sua malharia demonstrou interesse nesta
-                oportunidade.
-        
-                Agora você pode formalizar as condições
-                comerciais para o comprador.
-        
-            </p>
-        
-        
-            <div class="decision-actions">
-        
-        
-                <span class="decision-done interested">
-                    ✓ Tenho interesse
-                </span>
-        
-        
-                {% if proposta and proposta.status != "rascunho" %}
-        
-        
-                    <a
-                        href="{{ url_for(
-                            'enviar_proposta',
+                    <form
+                        method="POST"
+                        action="{{ url_for(
+                            'oportunidade_interesse',
                             oportunidade_id=oportunidade.id
                         ) }}"
-                        class="proposal-btn"
+                        onsubmit="return confirm(
+                            'Deseja registrar interesse nesta oportunidade?'
+                        );"
                     >
-                        Ver proposta enviada
-                    </a>
-        
-        
+
+                        <button
+                            type="submit"
+                            class="interest-btn"
+                        >
+                            Tenho interesse
+                        </button>
+
+                    </form>
+
+
+                    <form
+                        method="POST"
+                        action="{{ url_for(
+                            'oportunidade_recusar',
+                            oportunidade_id=oportunidade.id
+                        ) }}"
+                        onsubmit="return confirm(
+                            'Deseja informar que não possui interesse nesta oportunidade?'
+                        );"
+                    >
+
+                        <button
+                            type="submit"
+                            class="reject-btn"
+                        >
+                            Não tenho interesse
+                        </button>
+
+                    </form>
+
+
+                </div>
+
+
+            {% elif opportunity_status == "interessada" %}
+
+
+                <h2>
+                    Interesse registrado.
+                </h2>
+
+
+                {% if proposta %}
+
+
+                    {% if proposal_status == "ajuste_solicitado" %}
+
+
+                        <p>
+
+                            O comprador solicitou um ajuste
+                            na sua proposta. Revise as condições
+                            e envie uma nova versão.
+
+                        </p>
+
+
+                    {% elif proposal_status == "enviada" %}
+
+
+                        <p>
+
+                            Sua proposta comercial já foi enviada.
+                            Aguarde a decisão do comprador ou
+                            acompanhe a negociação.
+
+                        </p>
+
+
+                    {% elif proposal_status == "rascunho" %}
+
+
+                        <p>
+
+                            Existe uma proposta em preparação.
+                            Conclua as condições comerciais
+                            e envie ao comprador.
+
+                        </p>
+
+
+                    {% else %}
+
+
+                        <p>
+
+                            Sua malharia já possui uma proposta
+                            vinculada a esta oportunidade.
+
+                        </p>
+
+
+                    {% endif %}
+
+
                 {% else %}
-        
-        
-                    <a
-                        href="{{ url_for(
-                            'enviar_proposta',
-                            oportunidade_id=oportunidade.id
-                        ) }}"
-                        class="proposal-btn"
-                    >
-                        Enviar proposta
-                    </a>
-        
-        
+
+
+                    <p>
+
+                        Sua malharia demonstrou interesse.
+                        Agora você pode formalizar as condições
+                        comerciais para o comprador.
+
+                    </p>
+
+
                 {% endif %}
-        
-        
+
+
+                <div class="decision-actions">
+
+
+                    <span class="decision-done interested">
+                        ✓ Tenho interesse
+                    </span>
+
+
+                    {% if proposta %}
+
+
+                        {% if proposal_status == "ajuste_solicitado" %}
+
+
+                            <a
+                                href="{{ url_for(
+                                    'enviar_proposta',
+                                    oportunidade_id=oportunidade.id
+                                ) }}"
+                                class="proposal-btn"
+                            >
+                                Ajustar proposta
+                            </a>
+
+
+                        {% else %}
+
+
+                            <a
+                                href="{{ url_for(
+                                    'enviar_proposta',
+                                    oportunidade_id=oportunidade.id
+                                ) }}"
+                                class="proposal-btn"
+                            >
+                                Ver proposta
+                            </a>
+
+
+                        {% endif %}
+
+
+                    {% else %}
+
+
+                        <a
+                            href="{{ url_for(
+                                'enviar_proposta',
+                                oportunidade_id=oportunidade.id
+                            ) }}"
+                            class="proposal-btn"
+                        >
+                            Enviar proposta
+                        </a>
+
+
+                    {% endif %}
+
+
+                </div>
+
+
+            {% endif %}
+
+
+        </section>
+
+
+    <!-- =========================================================
+         HISTÓRICO
+    ========================================================== -->
+
+    {% else %}
+
+
+        <section class="history-card">
+
+
+            <div class="history-head">
+
+
+                <div class="history-eyebrow">
+                    Resultado da oportunidade
+                </div>
+
+
+                <h2>
+                    Oportunidade encerrada
+                </h2>
+
+
+                <p>
+
+                    Esta oportunidade não aceita mais novas
+                    decisões comerciais. Os dados abaixo
+                    representam o resultado da participação
+                    da sua malharia neste processo.
+
+                </p>
+
+
             </div>
 
-        {% elif opportunity_status == "recusada" %}
+
+            <div class="history-body">
 
 
-            <h2>
-                Oportunidade recusada.
-            </h2>
+                <!-- =================================================
+                     SEM INTERESSE
+                ================================================== -->
+
+                {% if opportunity_status == "recusada" %}
 
 
-            <p>
-
-                Sua malharia informou que não possui
-                interesse nesta demanda.
-
-            </p>
+                    <div class="result-box rejected">
 
 
-            <span class="decision-done rejected">
-                Sem interesse
-            </span>
+                        <span class="result-title">
+                            Sem interesse
+                        </span>
 
 
-        {% endif %}
+                        Sua malharia optou por não participar
+                        desta oportunidade.
 
 
-    </section>
+                    </div>
+
+
+                <!-- =================================================
+                     PROPOSTA ACEITA
+                ================================================== -->
+
+                {% elif proposal_status == "aceita" %}
+
+
+                    <div class="result-box success">
+
+
+                        <span class="result-title">
+                            ✓ Proposta aceita
+                        </span>
+
+
+                        Sua proposta foi escolhida pelo comprador
+                        para atender esta demanda.
+
+
+                    </div>
+
+
+                <!-- =================================================
+                     NÃO SELECIONADA
+                ================================================== -->
+
+                {% elif proposal_status == "nao_selecionada" %}
+
+
+                    <div class="result-box">
+
+
+                        <span class="result-title">
+                            Proposta não selecionada
+                        </span>
+
+
+                        Outra malharia foi escolhida para atender
+                        esta demanda.
+
+
+                    </div>
+
+
+                <!-- =================================================
+                     PROPOSTA RECUSADA
+                ================================================== -->
+
+                {% elif proposal_status == "recusada" %}
+
+
+                    <div class="result-box rejected">
+
+
+                        <span class="result-title">
+                            Proposta recusada
+                        </span>
+
+
+                        O comprador optou por não seguir
+                        com esta proposta.
+
+
+                    </div>
+
+
+                <!-- =================================================
+                     CANCELADA
+                ================================================== -->
+
+                {% elif proposal_status == "cancelada" %}
+
+
+                    <div class="result-box">
+
+
+                        <span class="result-title">
+                            Proposta cancelada
+                        </span>
+
+
+                        A proposta deixou de participar
+                        desta negociação.
+
+
+                    </div>
+
+
+                <!-- =================================================
+                     SEM PROPOSTA
+                ================================================== -->
+
+                {% else %}
+
+
+                    <div class="result-box">
+
+
+                        <span class="result-title">
+                            Processo encerrado
+                        </span>
+
+
+                        Esta oportunidade foi encerrada sem
+                        contratação da sua malharia.
+
+
+                    </div>
+
+
+                {% endif %}
+
+
+                <!-- =================================================
+                     PROPOSTA
+                ================================================== -->
+
+                {% if proposta %}
+
+
+                    <div class="proposal-summary">
+
+
+                        <h3 class="summary-title">
+                            Proposta comercial
+                        </h3>
+
+
+                        <div class="summary-grid">
+
+
+                            <div>
+
+                                <div class="summary-label">
+                                    Quantidade
+                                </div>
+
+                                <div class="summary-value">
+
+                                    {{
+                                        "{:,.0f}".format(
+                                            proposta.quantidade_kg
+                                        )
+                                        |replace(",", ".")
+                                    }}
+                                    kg
+
+                                </div>
+
+                            </div>
+
+
+                            <div>
+
+                                <div class="summary-label">
+                                    Preço por kg
+                                </div>
+
+                                <div class="summary-value">
+
+                                    R$
+                                    {{
+                                        "{:,.2f}".format(
+                                            proposta.preco_por_kg
+                                        )
+                                        |replace(",", "X")
+                                        |replace(".", ",")
+                                        |replace("X", ".")
+                                    }}
+
+                                </div>
+
+                            </div>
+
+
+                            <div>
+
+                                <div class="summary-label">
+                                    Valor estimado
+                                </div>
+
+                                <div class="summary-value total">
+
+
+                                    {% if total_proposta is not none %}
+
+                                        R$
+                                        {{
+                                            "{:,.2f}".format(
+                                                total_proposta
+                                            )
+                                            |replace(",", "X")
+                                            |replace(".", ",")
+                                            |replace("X", ".")
+                                        }}
+
+                                    {% else %}
+
+                                        —
+
+                                    {% endif %}
+
+
+                                </div>
+
+                            </div>
+
+
+                            <div>
+
+                                <div class="summary-label">
+                                    Prazo
+                                </div>
+
+                                <div class="summary-value">
+
+                                    {{ proposta.prazo_dias }}
+                                    dias
+
+                                </div>
+
+                            </div>
+
+
+                        </div>
+
+
+                        <span
+                            class="
+                                proposal-status
+                                {% if proposal_status == 'aceita' %}
+                                    accepted
+                                {% endif %}
+                            "
+                        >
+
+
+                            {% if proposal_status == "aceita" %}
+
+                                Proposta aceita
+
+                            {% elif proposal_status == "nao_selecionada" %}
+
+                                Não selecionada
+
+                            {% elif proposal_status == "recusada" %}
+
+                                Recusada
+
+                            {% elif proposal_status == "cancelada" %}
+
+                                Cancelada
+
+                            {% elif proposal_status == "enviada" %}
+
+                                Enviada
+
+                            {% elif proposal_status == "ajuste_solicitado" %}
+
+                                Ajuste solicitado
+
+                            {% elif proposal_status == "rascunho" %}
+
+                                Rascunho
+
+                            {% else %}
+
+                                {{ proposal_status|capitalize }}
+
+                            {% endif %}
+
+
+                        </span>
+
+
+                    </div>
+
+
+                {% endif %}
+
+
+                <!-- =================================================
+                     PEDIDO
+                ================================================== -->
+
+                {% if pedido %}
+
+
+                    <div class="order-card">
+
+
+                        <div class="order-top">
+
+
+                            <div>
+
+
+                                <div class="order-label">
+                                    Pedido originado
+                                </div>
+
+
+                                <div class="order-code">
+                                    {{ pedido.codigo }}
+                                </div>
+
+
+                            </div>
+
+
+                            <span
+                                class="
+                                    order-status
+                                    {% if order_status == 'entregue' %}
+                                        entregue
+                                    {% elif order_status == 'em_producao' %}
+                                        em_producao
+                                    {% endif %}
+                                "
+                            >
+
+
+                                {% if order_status == "aguardando_confirmacao" %}
+
+                                    Aguardando confirmação
+
+                                {% elif order_status == "confirmado" %}
+
+                                    Confirmado
+
+                                {% elif order_status == "em_producao" %}
+
+                                    Em produção
+
+                                {% elif order_status == "concluido" %}
+
+                                    Produção concluída
+
+                                {% elif order_status == "entregue" %}
+
+                                    Entregue
+
+                                {% elif order_status == "cancelado" %}
+
+                                    Cancelado
+
+                                {% else %}
+
+                                    {{ order_status|capitalize }}
+
+                                {% endif %}
+
+
+                            </span>
+
+
+                        </div>
+
+
+                        <div class="order-description">
+
+
+                            {% if order_status == "aguardando_confirmacao" %}
+
+                                O pedido aguarda confirmação
+                                da sua malharia.
+
+                            {% elif order_status == "confirmado" %}
+
+                                O pedido foi confirmado e ainda
+                                aguarda o início da produção.
+
+                            {% elif order_status == "em_producao" %}
+
+                                Este pedido está atualmente
+                                em produção.
+
+                            {% elif order_status == "concluido" %}
+
+                                A produção foi concluída e aguarda
+                                confirmação de entrega pelo comprador.
+
+                            {% elif order_status == "entregue" %}
+
+                                O pedido foi concluído e a entrega
+                                já foi confirmada pelo comprador.
+
+                            {% elif order_status == "cancelado" %}
+
+                                Este pedido foi cancelado.
+
+                            {% endif %}
+
+
+                        </div>
+
+
+                    </div>
+
+
+                {% endif %}
+
+
+                <!-- =================================================
+                     NAVEGAÇÃO HISTÓRICA
+                ================================================== -->
+
+                <div class="history-actions">
+
+
+                    {% if pedido %}
+
+
+                        <a
+                            href="{{ url_for(
+                                'detalhe_pedido_malharia',
+                                pedido_id=pedido.id
+                            ) }}"
+                            class="history-btn primary"
+                        >
+                            Ver pedido
+                        </a>
+
+
+                    {% endif %}
+
+
+                    {% if proposta %}
+
+
+                        <a
+                            href="{{ url_for(
+                                'propostas_malharia'
+                            ) }}"
+                            class="history-btn secondary"
+                        >
+                            Ver proposta
+                        </a>
+
+
+                    {% endif %}
+
+
+                    <a
+                        href="{{ url_for(
+                            'minhas_oportunidades'
+                        ) }}"
+                        class="history-btn secondary"
+                    >
+                        Voltar ao histórico
+                    </a>
+
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+
+    {% endif %}
 
 
 </main>
