@@ -6293,9 +6293,9 @@ def executar_matching(demanda_id):
 )
 def matches_demanda(demanda_id):
 
-    # --------------------------------------------------------------
-    # Autenticação
-    # --------------------------------------------------------------
+    # ==============================================================
+    # AUTENTICAÇÃO
+    # ==============================================================
 
     user_id = session.get(
         "user_id"
@@ -6322,17 +6322,19 @@ def matches_demanda(demanda_id):
         not usuario
         or usuario.is_active is False
         or (
-            usuario.role or ""
-        ).strip().lower() != "cliente"
+            usuario.role
+            or ""
+        ).strip().lower()
+        != "cliente"
     ):
 
         return redirect(
             url_for("login")
         )
 
-    # --------------------------------------------------------------
-    # Demanda
-    # --------------------------------------------------------------
+    # ==============================================================
+    # DEMANDA DO COMPRADOR
+    # ==============================================================
 
     demanda = (
         ProductionRequest.query
@@ -6354,9 +6356,9 @@ def matches_demanda(demanda_id):
             url_for("minhas_demandas")
         )
 
-    # --------------------------------------------------------------
-    # Requisito técnico
-    # --------------------------------------------------------------
+    # ==============================================================
+    # REQUISITO TÉCNICO
+    # ==============================================================
 
     requisito = (
         DemandTechnicalRequirement.query
@@ -6366,9 +6368,9 @@ def matches_demanda(demanda_id):
         .first()
     )
 
-    # --------------------------------------------------------------
-    # Matches
-    # --------------------------------------------------------------
+    # ==============================================================
+    # MATCHES
+    # ==============================================================
 
     matches = (
         DemandMatch.query
@@ -6383,13 +6385,84 @@ def matches_demanda(demanda_id):
         .all()
     )
 
+    # ==============================================================
+    # IDENTIFICAÇÃO ANÔNIMA DAS MALHARIAS
+    #
+    # O comprador pode conhecer quantas malharias/equipamentos
+    # são compatíveis, mas a identidade permanece protegida até
+    # que exista manifestação comercial.
+    # ==============================================================
+
+    anonimo_por_empresa = {}
+
+    contador_malharias = 0
+
+    for match in matches:
+
+        empresa_id = (
+            match.empresa_id
+        )
+
+        if not empresa_id:
+
+            continue
+
+        if empresa_id not in anonimo_por_empresa:
+
+            contador_malharias += 1
+
+            anonimo_por_empresa[
+                empresa_id
+            ] = (
+                f"Malharia compatível "
+                f"{contador_malharias}"
+            )
+
+    total_malharias = len(
+        anonimo_por_empresa
+    )
+
+    # ==============================================================
+    # SITUAÇÃO DO MATCHING
+    #
+    # Usa a regra criada na 8.4D.5B.
+    # ==============================================================
+
+    (
+        matching_bloqueado,
+        matching_bloqueio_motivo
+    ) = _verificar_bloqueio_matching(
+        demanda
+    )
+
+    # ==============================================================
+    # RENDER
+    # ==============================================================
+
     return render_template(
         "matches_demanda.html",
+
         usuario=usuario,
+
         demanda=demanda,
+
         requisito=requisito,
+
         matches=matches,
-        total_matches=len(matches)
+
+        total_matches=len(matches),
+
+        total_malharias=
+            total_malharias,
+
+        anonimo_por_empresa=
+            anonimo_por_empresa,
+
+        matching_bloqueado=
+            matching_bloqueado,
+
+        matching_bloqueio_motivo=
+            matching_bloqueio_motivo,
     )
 
 # --------------------------------------------------------------------
