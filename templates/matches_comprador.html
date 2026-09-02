@@ -681,9 +681,12 @@
 
     <p class="intro">
 
-        Consulte as compatibilidades técnicas já
-        identificadas entre suas demandas e os
-        equipamentos cadastrados pelas malharias.
+        Consulte o histórico das compatibilidades técnicas
+        identificadas para suas demandas.
+    
+        A identidade das malharias permanece protegida
+        durante o Matching Técnico e é revelada somente
+        após manifestação comercial.
 
     </p>
 
@@ -724,7 +727,7 @@
             </div>
 
             <div class="metric-label">
-                Malharias encontradas
+                Malharias compatíveis
             </div>
 
         </div>
@@ -772,12 +775,7 @@
                     match.demanda
                 %}
 
-
-                {% set empresa =
-                    match.empresa
-                %}
-
-
+               
                 {% set tear =
                     match.tear
                 %}
@@ -836,41 +834,18 @@
 
                         <div class="company">
 
-                            {% if empresa %}
-
-                                {{
-                                    empresa.nome
-                                    or empresa.apelido
-                                    or "Malharia"
-                                }}
-
-                            {% else %}
-
-                                Malharia
-
-                            {% endif %}
-
+                            {{
+                                anonimo_por_match.get(
+                                    match.id,
+                                    "Malharia compatível"
+                                )
+                            }}
+                        
                         </div>
 
 
                         <div class="location">
-
-                            {% if empresa %}
-
-                                {{
-                                    empresa.cidade
-                                    or "Cidade não informada"
-                                }}
-
-                                {% if empresa.estado %}
-
-                                    /
-                                    {{ empresa.estado }}
-
-                                {% endif %}
-
-                            {% endif %}
-
+                            Identidade protegida no Matching Técnico.
                         </div>
 
 
@@ -880,19 +855,7 @@
 
 
                                 <div class="machine-name">
-
-                                    {{
-                                        tear.marca
-                                        or "Marca"
-                                    }}
-
-                                    —
-
-                                    {{
-                                        tear.modelo
-                                        or "Modelo"
-                                    }}
-
+                                    Equipamento compatível
                                 </div>
 
 
