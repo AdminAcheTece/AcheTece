@@ -44,6 +44,9 @@
 
             --blue:#295C87;
             --blue-bg:#EEF5FA;
+
+            --red:#85202D;
+            --red-bg:#FFF0F2;
         }
 
 
@@ -103,7 +106,8 @@
         .top-actions{
             display:flex;
             align-items:center;
-            gap:10px;
+
+            gap:8px;
         }
 
 
@@ -115,7 +119,7 @@
             align-items:center;
             justify-content:center;
 
-            padding:0 17px;
+            padding:0 15px;
 
             color:#fff;
 
@@ -191,7 +195,7 @@
 
 
         /* =========================================================
-           METRICS
+           INDICADORES
         ========================================================= */
 
         .metrics{
@@ -378,10 +382,21 @@
         }
 
 
-        .status-concluido,
-        .status-entregue{
+        .status-concluido{
             background:var(--green-bg);
             color:var(--green);
+        }
+
+
+        .status-entregue{
+            background:var(--lime);
+            color:#111;
+        }
+
+
+        .status-cancelado{
+            background:var(--red-bg);
+            color:var(--red);
         }
 
 
@@ -494,6 +509,15 @@
         }
 
 
+        @media(max-width:700px){
+
+            .top-link:not(:last-child){
+                display:none;
+            }
+
+        }
+
+
         @media(max-width:600px){
 
             .page{
@@ -552,6 +576,7 @@
 
         <div class="top-actions">
 
+
             <a
                 href="{{ url_for('minhas_oportunidades') }}"
                 class="top-link"
@@ -561,11 +586,20 @@
 
 
             <a
+                href="{{ url_for('propostas_malharia') }}"
+                class="top-link"
+            >
+                Propostas
+            </a>
+
+
+            <a
                 href="{{ url_for('painel_malharia') }}"
                 class="top-link"
             >
-                Painel
+                Portal
             </a>
+
 
         </div>
 
@@ -591,7 +625,8 @@
     <p class="intro">
 
         Acompanhe os pedidos originados de propostas
-        comerciais aceitas pelos compradores.
+        comerciais aceitas pelos compradores e sua
+        evolução operacional.
 
     </p>
 
@@ -658,7 +693,7 @@
             </div>
 
             <div class="metric-label">
-                Concluídos
+                Produção concluída
             </div>
 
         </div>
@@ -750,7 +785,7 @@
 
 
                         <div class="label">
-                            Valor estimado
+                            Valor total
                         </div>
 
 
@@ -802,11 +837,15 @@
 
                             {% elif status == "concluido" %}
 
-                                Concluído
+                                Produção concluída
 
                             {% elif status == "entregue" %}
 
                                 Entregue
+
+                            {% elif status == "cancelado" %}
+
+                                Cancelado
 
                             {% else %}
 
