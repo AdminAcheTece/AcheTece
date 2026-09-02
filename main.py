@@ -10402,10 +10402,13 @@ def painel_malharia():
     # OPORTUNIDADES
     #
     # Ativas:
-    # nova
-    # interessada
+    # - nova
+    # - visualizada
+    # - interessada
     #
-    # inativa, sem_interesse etc. permanecem apenas no histórico.
+    # Encerradas / histórico:
+    # - recusada
+    # - inativa
     # --------------------------------------------------------------
 
     oportunidades_ativas = (
@@ -10417,6 +10420,7 @@ def painel_malharia():
             Opportunity.status.in_(
                 [
                     "nova",
+                    "visualizada",
                     "interessada"
                 ]
             )
