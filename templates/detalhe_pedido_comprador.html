@@ -208,10 +208,21 @@
         }
 
 
-        .status-concluido,
-        .status-entregue{
+        .status-concluido{
             background:var(--green-bg);
             color:var(--green);
+        }
+
+
+        .status-entregue{
+            background:var(--lime);
+            color:#111;
+        }
+
+
+        .status-cancelado{
+            background:var(--red-bg);
+            color:var(--red);
         }
 
 
@@ -427,6 +438,39 @@
             font-size:11px;
 
             line-height:1.5;
+        }
+
+
+        /* =========================================================
+           PEDIDO CANCELADO
+        ========================================================= */
+
+        .cancelled-box{
+            margin-top:20px;
+
+            padding:24px;
+
+            background:var(--red-bg);
+
+            color:var(--red);
+
+            border:
+                1px solid #EAB5BD;
+
+            border-radius:20px;
+
+            font-size:13px;
+
+            line-height:1.55;
+        }
+
+
+        .cancelled-box strong{
+            display:block;
+
+            margin-bottom:7px;
+
+            font-size:15px;
         }
 
 
@@ -671,11 +715,15 @@
 
             {% elif status == "concluido" %}
 
-                Concluído
+                Produção concluída
 
             {% elif status == "entregue" %}
 
                 Entregue
+
+            {% elif status == "cancelado" %}
+
+                Cancelado
 
             {% else %}
 
@@ -691,7 +739,6 @@
 
 
     <!-- =========================================================
-         PASSO 6
          MENSAGENS DE RETORNO / FLASH
     ========================================================== -->
 
@@ -827,7 +874,7 @@
                 <div>
 
                     <div class="label">
-                        Valor estimado
+                        Valor total
                     </div>
 
                     <div class="total-value">
@@ -1001,140 +1048,161 @@
          ACOMPANHAMENTO SINCRONIZADO
     ========================================================== -->
 
-    <section class="tracking">
+    {% if status != "cancelado" %}
 
 
-        <h2>
-            Acompanhamento do pedido
-        </h2>
+        <section class="tracking">
 
 
-        <p class="tracking-intro">
-
-            O status abaixo acompanha a mesma operação
-            registrada pela malharia no AcheTece.
-
-        </p>
+            <h2>
+                Acompanhamento do pedido
+            </h2>
 
 
-        {% set niveis = {
-            "aguardando_confirmacao": 0,
-            "confirmado": 1,
-            "em_producao": 2,
-            "concluido": 3,
-            "entregue": 4
-        } %}
+            <p class="tracking-intro">
+
+                O status abaixo representa a evolução operacional
+                deste pedido e é compartilhado entre comprador
+                e malharia no AcheTece.
+
+            </p>
 
 
-        {% set nivel_atual =
-            niveis.get(
-                status,
-                0
-            )
-        %}
+            {% set niveis = {
+                "aguardando_confirmacao": 0,
+                "confirmado": 1,
+                "em_producao": 2,
+                "concluido": 3,
+                "entregue": 4
+            } %}
 
 
-        <div class="timeline">
+            {% set nivel_atual =
+                niveis.get(
+                    status,
+                    0
+                )
+            %}
 
 
-            <!-- AGUARDANDO CONFIRMAÇÃO -->
+            <div class="timeline">
 
-            <div
-                class="
-                    timeline-item
-                    {% if nivel_atual > 0 %}
-                        done
-                    {% elif nivel_atual == 0 %}
-                        current
-                    {% endif %}
-                "
-            >
-                Aguardando confirmação
+
+                <!-- AGUARDANDO CONFIRMAÇÃO -->
+
+                <div
+                    class="
+                        timeline-item
+                        {% if nivel_atual > 0 %}
+                            done
+                        {% elif nivel_atual == 0 %}
+                            current
+                        {% endif %}
+                    "
+                >
+                    Aguardando confirmação
+                </div>
+
+
+                <!-- CONFIRMADO -->
+
+                <div
+                    class="
+                        timeline-item
+                        {% if nivel_atual > 1 %}
+                            done
+                        {% elif nivel_atual == 1 %}
+                            current
+                        {% endif %}
+                    "
+                >
+                    Confirmado
+                </div>
+
+
+                <!-- EM PRODUÇÃO -->
+
+                <div
+                    class="
+                        timeline-item
+                        {% if nivel_atual > 2 %}
+                            done
+                        {% elif nivel_atual == 2 %}
+                            current
+                        {% endif %}
+                    "
+                >
+                    Em produção
+                </div>
+
+
+                <!-- PRODUÇÃO CONCLUÍDA -->
+
+                <div
+                    class="
+                        timeline-item
+                        {% if nivel_atual > 3 %}
+                            done
+                        {% elif nivel_atual == 3 %}
+                            current
+                        {% endif %}
+                    "
+                >
+                    Produção concluída
+                </div>
+
+
+                <!-- ENTREGUE -->
+
+                <div
+                    class="
+                        timeline-item
+                        {% if nivel_atual == 4 %}
+                            current
+                        {% endif %}
+                    "
+                >
+                    Entregue
+                </div>
+
+
             </div>
 
 
-            <!-- CONFIRMADO -->
+            <div class="sync-note">
 
-            <div
-                class="
-                    timeline-item
-                    {% if nivel_atual > 1 %}
-                        done
-                    {% elif nivel_atual == 1 %}
-                        current
-                    {% endif %}
-                "
-            >
-                Confirmado
+                Quando o pedido evoluir para um novo status,
+                comprador e malharia visualizarão a mesma
+                informação operacional.
+
             </div>
 
 
-            <!-- EM PRODUÇÃO -->
-
-            <div
-                class="
-                    timeline-item
-                    {% if nivel_atual > 2 %}
-                        done
-                    {% elif nivel_atual == 2 %}
-                        current
-                    {% endif %}
-                "
-            >
-                Em produção
-            </div>
+        </section>
 
 
-            <!-- CONCLUÍDO -->
-
-            <div
-                class="
-                    timeline-item
-                    {% if nivel_atual > 3 %}
-                        done
-                    {% elif nivel_atual == 3 %}
-                        current
-                    {% endif %}
-                "
-            >
-                Concluído
-            </div>
+    {% else %}
 
 
-            <!-- ENTREGUE -->
+        <section class="cancelled-box">
 
-            <div
-                class="
-                    timeline-item
-                    {% if nivel_atual == 4 %}
-                        current
-                    {% endif %}
-                "
-            >
-                Entregue
-            </div>
+            <strong>
+                Pedido cancelado
+            </strong>
 
+            Este pedido não possui mais etapas operacionais
+            em andamento e permanece disponível somente
+            para consulta e histórico.
 
-        </div>
+        </section>
 
 
-        <div class="sync-note">
-
-            Quando o status do pedido for atualizado,
-            comprador e malharia visualizarão a mesma
-            informação no AcheTece.
-
-        </div>
-
-
-    </section>
+    {% endif %}
 
 
     <!-- =========================================================
-         PASSO 7
          COMPRADOR CONFIRMA A ENTREGA
     ========================================================== -->
-
 
     {% if status == "concluido" %}
 
@@ -1152,8 +1220,8 @@
                 A malharia informou que a produção deste
                 pedido foi concluída.
 
-                Confirme abaixo quando o pedido tiver sido
-                efetivamente recebido.
+                Confirme a entrega somente quando o material
+                tiver sido efetivamente recebido.
 
             </p>
 
@@ -1199,7 +1267,8 @@
             <br><br>
 
 
-            Este pedido foi concluído e recebido.
+            O material foi recebido e o ciclo operacional
+            deste pedido foi encerrado.
 
 
         </section>
