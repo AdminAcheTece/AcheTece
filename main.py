@@ -9221,9 +9221,9 @@ def analisar_oportunidade(oportunidade_id):
 )
 def oportunidade_interesse(oportunidade_id):
 
-    # --------------------------------------------------------------
-    # Autenticação
-    # --------------------------------------------------------------
+    # ==============================================================
+    # AUTENTICAÇÃO
+    # ==============================================================
 
     empresa_id = session.get(
         "empresa_id"
@@ -9254,9 +9254,9 @@ def oportunidade_interesse(oportunidade_id):
             url_for("login")
         )
 
-    # --------------------------------------------------------------
-    # Oportunidade da própria empresa
-    # --------------------------------------------------------------
+    # ==============================================================
+    # OPORTUNIDADE DA PRÓPRIA EMPRESA
+    # ==============================================================
 
     oportunidade = (
         Opportunity.query
@@ -9278,14 +9278,16 @@ def oportunidade_interesse(oportunidade_id):
             url_for("minhas_oportunidades")
         )
 
-    status_atual = (
-        oportunidade.status or ""
-    ).strip().lower()
+    # ==============================================================
+    # DEMANDA
+    # ==============================================================
 
-    if status_atual == "inativa":
+    demanda = oportunidade.demanda
+
+    if not demanda:
 
         flash(
-            "Esta oportunidade não está mais disponível.",
+            "A demanda vinculada não foi encontrada.",
             "warning"
         )
 
@@ -9293,13 +9295,89 @@ def oportunidade_interesse(oportunidade_id):
             url_for("minhas_oportunidades")
         )
 
-    # --------------------------------------------------------------
-    # Atualiza decisão comercial
-    # --------------------------------------------------------------
+    # ==============================================================
+    # STATUS
+    # ==============================================================
+
+    status_oportunidade = (
+        oportunidade.status
+        or ""
+    ).strip().lower()
+
+    status_demanda = (
+        demanda.status
+        or ""
+    ).strip().lower()
+
+    # ==============================================================
+    # BLINDAGEM DA DEMANDA
+    #
+    # Somente demanda PUBLICADA aceita novas manifestações.
+    # ==============================================================
+
+    if status_demanda != "publicada":
+
+        flash(
+            "Esta demanda não está mais aberta para novas manifestações de interesse.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "analisar_oportunidade",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+    # ==============================================================
+    # BLINDAGEM DA OPORTUNIDADE
+    #
+    # Interesse somente pode ser registrado partindo de:
+    #
+    # - nova
+    # - visualizada
+    # ==============================================================
+
+    if status_oportunidade == "interessada":
+
+        flash(
+            "Sua malharia já registrou interesse nesta oportunidade.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "analisar_oportunidade",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+    if status_oportunidade not in {
+        "nova",
+        "visualizada"
+    }:
+
+        flash(
+            "Esta oportunidade não permite mais registrar interesse.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "analisar_oportunidade",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+    # ==============================================================
+    # REGISTRA INTERESSE
+    # ==============================================================
 
     try:
 
-        oportunidade.status = "interessada"
+        oportunidade.status = (
+            "interessada"
+        )
 
         db.session.commit()
 
@@ -9345,9 +9423,9 @@ def oportunidade_interesse(oportunidade_id):
 )
 def oportunidade_recusar(oportunidade_id):
 
-    # --------------------------------------------------------------
-    # Autenticação
-    # --------------------------------------------------------------
+    # ==============================================================
+    # AUTENTICAÇÃO
+    # ==============================================================
 
     empresa_id = session.get(
         "empresa_id"
@@ -9378,9 +9456,9 @@ def oportunidade_recusar(oportunidade_id):
             url_for("login")
         )
 
-    # --------------------------------------------------------------
-    # Oportunidade da própria empresa
-    # --------------------------------------------------------------
+    # ==============================================================
+    # OPORTUNIDADE DA PRÓPRIA EMPRESA
+    # ==============================================================
 
     oportunidade = (
         Opportunity.query
@@ -9402,14 +9480,16 @@ def oportunidade_recusar(oportunidade_id):
             url_for("minhas_oportunidades")
         )
 
-    status_atual = (
-        oportunidade.status or ""
-    ).strip().lower()
+    # ==============================================================
+    # DEMANDA
+    # ==============================================================
 
-    if status_atual == "inativa":
+    demanda = oportunidade.demanda
+
+    if not demanda:
 
         flash(
-            "Esta oportunidade não está mais disponível.",
+            "A demanda vinculada não foi encontrada.",
             "warning"
         )
 
@@ -9417,13 +9497,118 @@ def oportunidade_recusar(oportunidade_id):
             url_for("minhas_oportunidades")
         )
 
-    # --------------------------------------------------------------
-    # Atualiza decisão
-    # --------------------------------------------------------------
+    # ==============================================================
+    # STATUS
+    # ==============================================================
+
+    status_oportunidade = (
+        oportunidade.status
+        or ""
+    ).strip().lower()
+
+    status_demanda = (
+        demanda.status
+        or ""
+    ).strip().lower()
+
+    # ==============================================================
+    # BLINDAGEM DA DEMANDA
+    # ==============================================================
+
+    if status_demanda != "publicada":
+
+        flash(
+            "Esta demanda não está mais aberta para novas decisões comerciais.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "analisar_oportunidade",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+    # ==============================================================
+    # BLINDAGEM DA OPORTUNIDADE
+    #
+    # A decisão "Não tenho interesse" só pode ocorrer antes
+    # da manifestação de interesse.
+    # ==============================================================
+
+    if status_oportunidade == "recusada":
+
+        flash(
+            "Sua malharia já informou que não possui interesse nesta oportunidade.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "analisar_oportunidade",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+    if status_oportunidade not in {
+        "nova",
+        "visualizada"
+    }:
+
+        flash(
+            "Esta oportunidade não permite mais registrar a opção sem interesse.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "analisar_oportunidade",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+    # ==============================================================
+    # PROTEÇÃO ADICIONAL
+    #
+    # Se existir proposta, não permitimos transformar a
+    # oportunidade em recusada.
+    # ==============================================================
+
+    proposta_existente = (
+        Proposal.query
+        .filter(
+            Proposal.opportunity_id
+            == oportunidade.id,
+
+            Proposal.empresa_id
+            == empresa.id
+        )
+        .first()
+    )
+
+    if proposta_existente:
+
+        flash(
+            "Esta oportunidade já possui uma proposta comercial e não pode ser marcada como sem interesse.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "analisar_oportunidade",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+    # ==============================================================
+    # REGISTRA RECUSA
+    # ==============================================================
 
     try:
 
-        oportunidade.status = "recusada"
+        oportunidade.status = (
+            "recusada"
+        )
 
         db.session.commit()
 
@@ -9457,10 +9642,6 @@ def oportunidade_recusar(oportunidade_id):
     )
 
 # --------------------------------------------------------------------
-# AcheTece 2.0 - Enviar Proposta Comercial
-# --------------------------------------------------------------------
-
-# --------------------------------------------------------------------
 # AcheTece 2.0 - Enviar / Ajustar Proposta Comercial
 # --------------------------------------------------------------------
 
@@ -9471,9 +9652,9 @@ def oportunidade_recusar(oportunidade_id):
 )
 def enviar_proposta(oportunidade_id):
 
-    # --------------------------------------------------------------
-    # Autenticação da malharia
-    # --------------------------------------------------------------
+    # ==============================================================
+    # AUTENTICAÇÃO DA MALHARIA
+    # ==============================================================
 
     empresa_id = session.get(
         "empresa_id"
@@ -9504,9 +9685,9 @@ def enviar_proposta(oportunidade_id):
             url_for("login")
         )
 
-    # --------------------------------------------------------------
-    # Oportunidade - somente da malharia logada
-    # --------------------------------------------------------------
+    # ==============================================================
+    # OPORTUNIDADE - SOMENTE DA MALHARIA LOGADA
+    # ==============================================================
 
     oportunidade = (
         Opportunity.query
@@ -9528,31 +9709,9 @@ def enviar_proposta(oportunidade_id):
             url_for("minhas_oportunidades")
         )
 
-    # --------------------------------------------------------------
-    # Somente malharia interessada pode enviar proposta
-    # --------------------------------------------------------------
-
-    status_oportunidade = (
-        oportunidade.status or ""
-    ).strip().lower()
-
-    if status_oportunidade != "interessada":
-
-        flash(
-            "Demonstre interesse na oportunidade antes de enviar uma proposta.",
-            "warning"
-        )
-
-        return redirect(
-            url_for(
-                "analisar_oportunidade",
-                oportunidade_id=oportunidade.id
-            )
-        )
-
-    # --------------------------------------------------------------
-    # Demanda
-    # --------------------------------------------------------------
+    # ==============================================================
+    # DEMANDA
+    # ==============================================================
 
     demanda = oportunidade.demanda
 
@@ -9567,28 +9726,106 @@ def enviar_proposta(oportunidade_id):
             url_for("minhas_oportunidades")
         )
 
-    # --------------------------------------------------------------
-    # Proposta existente
-    # --------------------------------------------------------------
+    # ==============================================================
+    # STATUS
+    # ==============================================================
+
+    status_oportunidade = (
+        oportunidade.status
+        or ""
+    ).strip().lower()
+
+    status_demanda = (
+        demanda.status
+        or ""
+    ).strip().lower()
+
+    # ==============================================================
+    # BLINDAGEM DA DEMANDA
+    #
+    # Uma proposta comercial só pode ser criada, visualizada
+    # para negociação ou alterada enquanto a demanda está publicada.
+    #
+    # Para demandas contratadas/encerradas, o histórico deve
+    # ser consultado pelas telas de Oportunidades / Propostas.
+    # ==============================================================
+
+    if status_demanda != "publicada":
+
+        flash(
+            "Esta demanda não está mais aberta para envio ou alteração de propostas.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "analisar_oportunidade",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+    # ==============================================================
+    # BLINDAGEM DA OPORTUNIDADE
+    #
+    # Somente oportunidade INTERESSADA pode acessar
+    # o fluxo comercial de proposta.
+    # ==============================================================
+
+    if status_oportunidade != "interessada":
+
+        if status_oportunidade in {
+            "inativa",
+            "recusada"
+        }:
+
+            flash(
+                "Esta oportunidade não está mais disponível para negociação.",
+                "warning"
+            )
+
+        else:
+
+            flash(
+                "Demonstre interesse na oportunidade antes de enviar uma proposta.",
+                "warning"
+            )
+
+        return redirect(
+            url_for(
+                "analisar_oportunidade",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+    # ==============================================================
+    # PROPOSTA EXISTENTE
+    #
+    # Também validamos empresa_id.
+    # ==============================================================
 
     proposta = (
         Proposal.query
-        .filter_by(
-            opportunity_id=oportunidade.id
+        .filter(
+            Proposal.opportunity_id
+            == oportunidade.id,
+
+            Proposal.empresa_id
+            == empresa.id
         )
         .first()
     )
 
-    # --------------------------------------------------------------
-    # Última solicitação de ajuste
-    # --------------------------------------------------------------
+    # ==============================================================
+    # ÚLTIMA SOLICITAÇÃO DE AJUSTE
+    # ==============================================================
 
     ajuste_aberto = None
 
     if (
         proposta
         and (
-            proposta.status or ""
+            proposta.status
+            or ""
         ).strip().lower()
         == "ajuste_solicitado"
     ):
@@ -9605,9 +9842,12 @@ def enviar_proposta(oportunidade_id):
             .first()
         )
 
-    # --------------------------------------------------------------
+    # ==============================================================
     # GET
-    # --------------------------------------------------------------
+    #
+    # Neste momento a demanda continua publicada e a
+    # oportunidade continua interessada.
+    # ==============================================================
 
     if request.method == "GET":
 
@@ -9620,53 +9860,63 @@ def enviar_proposta(oportunidade_id):
             ajuste_aberto=ajuste_aberto
         )
 
-    # --------------------------------------------------------------
-    # POST
+    # ==============================================================
+    # POST — BLINDAGEM DO STATUS DA PROPOSTA
     #
-    # Impede alteração de proposta que não está disponível
-    # para edição.
+    # Somente podem ser gravados:
     #
-    # ajuste_solicitado NÃO entra aqui, porque neste estado
-    # a malharia deve poder editar e reenviar.
-    # --------------------------------------------------------------
+    # - nova proposta
+    # - rascunho existente
+    # - ajuste solicitado pelo comprador
+    #
+    # Qualquer outro estado fica bloqueado.
+    # ==============================================================
 
-    if proposta and (
-        proposta.status or ""
-    ).strip().lower() in {
-        "enviada",
-        "aceita",
-        "recusada",
-        "cancelada"
-    }:
+    if proposta:
 
-        flash(
-            "Esta proposta não pode ser alterada no status atual.",
-            "warning"
-        )
+        status_proposta = (
+            proposta.status
+            or ""
+        ).strip().lower()
 
-        return redirect(
-            url_for(
-                "enviar_proposta",
-                oportunidade_id=oportunidade.id
+        STATUS_EDITAVEIS = {
+            "rascunho",
+            "ajuste_solicitado"
+        }
+
+        if status_proposta not in STATUS_EDITAVEIS:
+
+            flash(
+                "Esta proposta não pode ser alterada no status atual.",
+                "warning"
             )
-        )
 
-    # --------------------------------------------------------------
-    # Helper para valores decimais
+            return redirect(
+                url_for(
+                    "enviar_proposta",
+                    oportunidade_id=oportunidade.id
+                )
+            )
+
+    # ==============================================================
+    # HELPER PARA VALORES DECIMAIS
     #
     # Aceita:
+    #
     # 7,80
     # 7.80
     # 1.250,50
-    # --------------------------------------------------------------
+    # ==============================================================
 
     def _decimal_form(valor):
 
         valor = (
-            valor or ""
+            valor
+            or ""
         ).strip()
 
         if not valor:
+
             return None
 
         valor = (
@@ -9699,9 +9949,9 @@ def enviar_proposta(oportunidade_id):
 
             return None
 
-    # --------------------------------------------------------------
-    # Recebe formulário
-    # --------------------------------------------------------------
+    # ==============================================================
+    # RECEBE FORMULÁRIO
+    # ==============================================================
 
     quantidade_kg = _decimal_form(
         request.form.get(
@@ -9743,9 +9993,9 @@ def enviar_proposta(oportunidade_id):
         or ""
     ).strip()
 
-    # --------------------------------------------------------------
-    # Validação da quantidade
-    # --------------------------------------------------------------
+    # ==============================================================
+    # VALIDAÇÃO DA QUANTIDADE
+    # ==============================================================
 
     if (
         quantidade_kg is None
@@ -9764,9 +10014,9 @@ def enviar_proposta(oportunidade_id):
             )
         )
 
-    # --------------------------------------------------------------
-    # Não permite propor mais que a quantidade da demanda
-    # --------------------------------------------------------------
+    # ==============================================================
+    # NÃO PERMITE PROPOR MAIS QUE A DEMANDA
+    # ==============================================================
 
     try:
 
@@ -9798,9 +10048,9 @@ def enviar_proposta(oportunidade_id):
             )
         )
 
-    # --------------------------------------------------------------
-    # Validação do preço
-    # --------------------------------------------------------------
+    # ==============================================================
+    # VALIDAÇÃO DO PREÇO
+    # ==============================================================
 
     if (
         preco_por_kg is None
@@ -9819,9 +10069,9 @@ def enviar_proposta(oportunidade_id):
             )
         )
 
-    # --------------------------------------------------------------
-    # Prazo
-    # --------------------------------------------------------------
+    # ==============================================================
+    # PRAZO
+    # ==============================================================
 
     try:
 
@@ -9847,9 +10097,9 @@ def enviar_proposta(oportunidade_id):
             )
         )
 
-    # --------------------------------------------------------------
-    # Validade
-    # --------------------------------------------------------------
+    # ==============================================================
+    # VALIDADE
+    # ==============================================================
 
     try:
 
@@ -9875,30 +10125,29 @@ def enviar_proposta(oportunidade_id):
             )
         )
 
-    # --------------------------------------------------------------
-    # Guarda status anterior
-    #
-    # Precisamos saber se é:
-    # - primeiro envio
-    # - reenvio após ajuste
-    # --------------------------------------------------------------
+    # ==============================================================
+    # STATUS ANTERIOR
+    # ==============================================================
 
     status_anterior = (
         (
-            proposta.status or ""
+            proposta.status
+            or ""
         ).strip().lower()
+
         if proposta
+
         else None
     )
 
-    # --------------------------------------------------------------
-    # Salva proposta
-    # --------------------------------------------------------------
+    # ==============================================================
+    # SALVA PROPOSTA
+    # ==============================================================
 
     try:
 
         # ----------------------------------------------------------
-        # Primeira proposta
+        # PRIMEIRA PROPOSTA
         # ----------------------------------------------------------
 
         if not proposta:
@@ -9914,7 +10163,7 @@ def enviar_proposta(oportunidade_id):
             )
 
         # ----------------------------------------------------------
-        # Atualiza condições comerciais
+        # CONDIÇÕES COMERCIAIS
         # ----------------------------------------------------------
 
         proposta.quantidade_kg = (
@@ -9944,31 +10193,31 @@ def enviar_proposta(oportunidade_id):
         )
 
         # ----------------------------------------------------------
-        # Após enviar/reEnviar, volta a ficar "enviada"
+        # ENVIO / REENVIO
         # ----------------------------------------------------------
 
-        proposta.status = "enviada"
+        proposta.status = (
+            "enviada"
+        )
 
         proposta.sent_at = (
             datetime.utcnow()
         )
 
         # ----------------------------------------------------------
-        # Garante que a proposta possui ID
-        #
-        # ATENÇÃO:
-        # db.session.flush() PRECISA estar exatamente
-        # dentro deste try, alinhado com proposta.status,
-        # proposta.sent_at e db.session.commit().
+        # GARANTE ID
         # ----------------------------------------------------------
 
         db.session.flush()
 
         # ----------------------------------------------------------
-        # Histórico da proposta
+        # HISTÓRICO
         # ----------------------------------------------------------
 
-        if status_anterior == "ajuste_solicitado":
+        if (
+            status_anterior
+            == "ajuste_solicitado"
+        ):
 
             acao_interacao = (
                 "proposta_reenviada"
@@ -9999,10 +10248,6 @@ def enviar_proposta(oportunidade_id):
             interacao
         )
 
-        # ----------------------------------------------------------
-        # Salva proposta + histórico
-        # ----------------------------------------------------------
-
         db.session.commit()
 
     except Exception:
@@ -10025,11 +10270,14 @@ def enviar_proposta(oportunidade_id):
             )
         )
 
-    # --------------------------------------------------------------
-    # Mensagem final
-    # --------------------------------------------------------------
+    # ==============================================================
+    # MENSAGEM FINAL
+    # ==============================================================
 
-    if status_anterior == "ajuste_solicitado":
+    if (
+        status_anterior
+        == "ajuste_solicitado"
+    ):
 
         flash(
             (
@@ -10051,9 +10299,9 @@ def enviar_proposta(oportunidade_id):
             "success"
         )
 
-    # --------------------------------------------------------------
-    # Retorna para a proposta
-    # --------------------------------------------------------------
+    # ==============================================================
+    # RETORNO
+    # ==============================================================
 
     return redirect(
         url_for(
