@@ -40,6 +40,12 @@
 
             --orange:#8A6318;
             --orange-bg:#FFF7E8;
+
+            --blue:#295C87;
+            --blue-bg:#EEF5FA;
+
+            --red:#85202D;
+            --red-bg:#FFF0F2;
         }
 
 
@@ -61,7 +67,9 @@
         }
 
 
-        /* HEADER */
+        /* =========================================================
+           HEADER
+        ========================================================= */
 
         .topbar{
             min-height:72px;
@@ -102,7 +110,9 @@
         }
 
 
-        /* PAGE */
+        /* =========================================================
+           PÁGINA
+        ========================================================= */
 
         .page{
             max-width:950px;
@@ -161,7 +171,9 @@
         }
 
 
-        /* STATUS */
+        /* =========================================================
+           STATUS
+        ========================================================= */
 
         .status{
             display:inline-flex;
@@ -192,7 +204,33 @@
         }
 
 
-        /* FLASH */
+        .status-em_producao{
+            background:var(--blue-bg);
+            color:var(--blue);
+        }
+
+
+        .status-concluido{
+            background:var(--green-bg);
+            color:var(--green);
+        }
+
+
+        .status-entregue{
+            background:var(--lime);
+            color:#111;
+        }
+
+
+        .status-cancelado{
+            background:var(--red-bg);
+            color:var(--red);
+        }
+
+
+        /* =========================================================
+           FLASH
+        ========================================================= */
 
         .flash{
             margin-bottom:18px;
@@ -226,15 +264,17 @@
 
         .flash.danger,
         .flash.error{
-            background:#FFF0F2;
+            background:var(--red-bg);
 
             border:1px solid #EAB5BD;
 
-            color:#85202D;
+            color:var(--red);
         }
 
 
-        /* CARD */
+        /* =========================================================
+           CARD
+        ========================================================= */
 
         .card{
             overflow:hidden;
@@ -311,7 +351,97 @@
         }
 
 
-        /* CONFIRMAÇÃO */
+        /* =========================================================
+           TIMELINE / ACOMPANHAMENTO
+        ========================================================= */
+
+        .tracking{
+            margin-top:20px;
+
+            padding:24px;
+
+            background:#111;
+
+            color:#fff;
+
+            border-radius:20px;
+        }
+
+
+        .tracking h2{
+            margin:
+                0 0
+                7px;
+
+            font-size:18px;
+        }
+
+
+        .tracking-intro{
+            margin:
+                0 0
+                22px;
+
+            color:#CFCFCF;
+
+            font-size:13px;
+
+            line-height:1.55;
+        }
+
+
+        .timeline{
+            display:grid;
+
+            grid-template-columns:
+                repeat(5,1fr);
+
+            gap:8px;
+        }
+
+
+        .timeline-item{
+            padding:12px 10px;
+
+            border-radius:10px;
+
+            background:#252525;
+
+            color:#8E8E8E;
+
+            text-align:center;
+
+            font-size:10px;
+            font-weight:800;
+        }
+
+
+        .timeline-item.done{
+            background:var(--green-bg);
+            color:var(--green);
+        }
+
+
+        .timeline-item.current{
+            background:var(--lime);
+            color:#000;
+        }
+
+
+        .sync-note{
+            margin-top:16px;
+
+            color:#BDBDBD;
+
+            font-size:11px;
+
+            line-height:1.5;
+        }
+
+
+        /* =========================================================
+           AÇÃO OPERACIONAL
+        ========================================================= */
 
         .confirmation{
             margin-top:20px;
@@ -393,6 +523,72 @@
         }
 
 
+        /* =========================================================
+           PEDIDO ENTREGUE
+        ========================================================= */
+
+        .delivery-done{
+            margin-top:20px;
+
+            padding:24px;
+
+            background:var(--green-bg);
+
+            color:var(--green);
+
+            border:
+                1px solid #B9DCBF;
+
+            border-radius:20px;
+
+            font-size:13px;
+
+            line-height:1.55;
+        }
+
+
+        .delivery-done strong{
+            font-size:15px;
+        }
+
+
+        /* =========================================================
+           PEDIDO CANCELADO
+        ========================================================= */
+
+        .cancelled-box{
+            margin-top:20px;
+
+            padding:24px;
+
+            background:var(--red-bg);
+
+            color:var(--red);
+
+            border:
+                1px solid #EAB5BD;
+
+            border-radius:20px;
+
+            font-size:13px;
+
+            line-height:1.55;
+        }
+
+
+        .cancelled-box strong{
+            display:block;
+
+            margin-bottom:7px;
+
+            font-size:15px;
+        }
+
+
+        /* =========================================================
+           RESPONSIVO
+        ========================================================= */
+
         @media(max-width:650px){
 
             .page{
@@ -414,6 +610,16 @@
 
             .grid{
                 grid-template-columns:1fr;
+            }
+
+
+            .timeline{
+                grid-template-columns:1fr;
+            }
+
+
+            .confirm-btn{
+                width:100%;
             }
 
         }
@@ -526,11 +732,15 @@
 
             {% elif status == "concluido" %}
 
-                Concluído
+                Produção concluída
 
             {% elif status == "entregue" %}
 
                 Entregue
+
+            {% elif status == "cancelado" %}
+
+                Cancelado
 
             {% else %}
 
@@ -544,6 +754,10 @@
 
     </div>
 
+
+    <!-- =========================================================
+         FLASH
+    ========================================================== -->
 
     {% with messages =
         get_flashed_messages(
@@ -565,6 +779,10 @@
 
     {% endwith %}
 
+
+    <!-- =========================================================
+         DADOS DO PEDIDO
+    ========================================================== -->
 
     <section class="card">
 
@@ -646,7 +864,7 @@
                 <div>
 
                     <div class="label">
-                        Valor estimado
+                        Valor total
                     </div>
 
                     <div class="total-value">
@@ -700,6 +918,30 @@
                 </div>
 
 
+                {% if pedido.confirmed_at %}
+
+
+                    <div>
+
+                        <div class="label">
+                            Pedido confirmado em
+                        </div>
+
+                        <div class="value">
+
+                            {{
+                                pedido.confirmed_at
+                                .strftime('%d/%m/%Y %H:%M')
+                            }}
+
+                        </div>
+
+                    </div>
+
+
+                {% endif %}
+
+
             </div>
 
 
@@ -727,6 +969,10 @@
 
         </div>
 
+
+        <!-- =====================================================
+             ORIGEM
+        ====================================================== -->
 
         <div class="section">
 
@@ -761,7 +1007,7 @@
                 <div>
 
                     <div class="label">
-                        Proposta
+                        Proposta aceita
                     </div>
 
                     <div class="value">
@@ -790,6 +1036,166 @@
     </section>
 
 
+    <!-- =========================================================
+         ACOMPANHAMENTO
+    ========================================================== -->
+
+    {% if status != "cancelado" %}
+
+
+        <section class="tracking">
+
+
+            <h2>
+                Acompanhamento do pedido
+            </h2>
+
+
+            <p class="tracking-intro">
+
+                O status abaixo representa a evolução operacional
+                deste pedido e é compartilhado entre sua malharia
+                e o comprador no AcheTece.
+
+            </p>
+
+
+            {% set niveis = {
+                "aguardando_confirmacao": 0,
+                "confirmado": 1,
+                "em_producao": 2,
+                "concluido": 3,
+                "entregue": 4
+            } %}
+
+
+            {% set nivel_atual =
+                niveis.get(
+                    status,
+                    0
+                )
+            %}
+
+
+            <div class="timeline">
+
+
+                <!-- AGUARDANDO CONFIRMAÇÃO -->
+
+                <div
+                    class="
+                        timeline-item
+                        {% if nivel_atual > 0 %}
+                            done
+                        {% elif nivel_atual == 0 %}
+                            current
+                        {% endif %}
+                    "
+                >
+                    Aguardando confirmação
+                </div>
+
+
+                <!-- CONFIRMADO -->
+
+                <div
+                    class="
+                        timeline-item
+                        {% if nivel_atual > 1 %}
+                            done
+                        {% elif nivel_atual == 1 %}
+                            current
+                        {% endif %}
+                    "
+                >
+                    Confirmado
+                </div>
+
+
+                <!-- EM PRODUÇÃO -->
+
+                <div
+                    class="
+                        timeline-item
+                        {% if nivel_atual > 2 %}
+                            done
+                        {% elif nivel_atual == 2 %}
+                            current
+                        {% endif %}
+                    "
+                >
+                    Em produção
+                </div>
+
+
+                <!-- PRODUÇÃO CONCLUÍDA -->
+
+                <div
+                    class="
+                        timeline-item
+                        {% if nivel_atual > 3 %}
+                            done
+                        {% elif nivel_atual == 3 %}
+                            current
+                        {% endif %}
+                    "
+                >
+                    Produção concluída
+                </div>
+
+
+                <!-- ENTREGUE -->
+
+                <div
+                    class="
+                        timeline-item
+                        {% if nivel_atual == 4 %}
+                            current
+                        {% endif %}
+                    "
+                >
+                    Entregue
+                </div>
+
+
+            </div>
+
+
+            <div class="sync-note">
+
+                Quando o status do pedido for atualizado,
+                comprador e malharia visualizarão a mesma
+                informação operacional.
+
+            </div>
+
+
+        </section>
+
+
+    {% else %}
+
+
+        <section class="cancelled-box">
+
+            <strong>
+                Pedido cancelado
+            </strong>
+
+            Este pedido não possui mais etapas operacionais
+            em andamento e permanece disponível somente
+            para consulta e histórico.
+
+        </section>
+
+
+    {% endif %}
+
+
+    <!-- =========================================================
+         AÇÕES OPERACIONAIS
+    ========================================================== -->
+
     {% if status == "aguardando_confirmacao" %}
 
 
@@ -803,10 +1209,9 @@
 
             <p>
 
-                Ao confirmar, sua malharia registra
-                oficialmente que recebeu e aceitou
-                este pedido nas condições comerciais
-                apresentadas acima.
+                Ao confirmar, sua malharia registra oficialmente
+                que recebeu e aceitou este pedido nas condições
+                comerciais apresentadas acima.
 
             </p>
 
@@ -842,22 +1247,23 @@
 
 
         <section class="confirmation">
-    
-    
+
+
             <h2>
                 Pedido confirmado
             </h2>
-    
-    
+
+
             <p>
-    
-                O pedido já foi confirmado pela sua
-                malharia. Quando a produção efetivamente
-                começar, registre o início abaixo.
-    
+
+                Sua malharia confirmou o pedido.
+
+                Quando a produção efetivamente começar,
+                registre o início da produção abaixo.
+
             </p>
-    
-    
+
+
             <form
                 method="POST"
                 action="{{ url_for(
@@ -869,40 +1275,43 @@
                 );"
                 style="margin:0;"
             >
-    
+
+
                 <button
                     type="submit"
                     class="confirm-btn"
                 >
                     Iniciar produção
                 </button>
-    
+
+
             </form>
-    
-    
+
+
         </section>
-    
-    
+
+
     {% elif status == "em_producao" %}
-    
-    
+
+
         <section class="confirmation">
-    
-    
+
+
             <h2>
                 Produção em andamento
             </h2>
-    
-    
+
+
             <p>
-    
-                Este pedido está registrado como
-                em produção. Quando o processo produtivo
-                estiver concluído, utilize o botão abaixo.
-    
+
+                Este pedido está registrado como em produção.
+
+                Quando a produção estiver efetivamente concluída,
+                registre a conclusão abaixo.
+
             </p>
-    
-    
+
+
             <form
                 method="POST"
                 action="{{ url_for(
@@ -914,75 +1323,74 @@
                 );"
                 style="margin:0;"
             >
-    
+
+
                 <button
                     type="submit"
                     class="confirm-btn"
                 >
                     Concluir produção
                 </button>
-    
+
+
             </form>
-    
-    
+
+
         </section>
-    
-    
+
+
     {% elif status == "concluido" %}
-    
-    
+
+
         <section class="confirmation">
-    
-    
+
+
             <h2>
                 Produção concluída
             </h2>
-    
-    
+
+
             <p>
-    
+
                 Sua malharia informou que a produção
-                foi concluída. Agora aguardamos a
-                confirmação de entrega pelo comprador.
-    
+                deste pedido foi concluída.
+
+                O ciclo ainda não terminou:
+                agora aguardamos a confirmação de recebimento
+                pelo comprador.
+
             </p>
-    
-    
+
+
             <span class="confirmed">
                 ✓ Produção concluída
             </span>
-    
-    
+
+
         </section>
-    
-    
+
+
     {% elif status == "entregue" %}
-    
-    
-        <section class="confirmation">
-    
-    
-            <h2>
-                Pedido entregue
-            </h2>
-    
-    
-            <p>
-    
-                O comprador confirmou o recebimento
-                deste pedido.
-    
-            </p>
-    
-    
-            <span class="confirmed">
+
+
+        <section class="delivery-done">
+
+
+            <strong>
                 ✓ Entrega confirmada
-            </span>
-    
-    
+            </strong>
+
+
+            <br><br>
+
+
+            O comprador confirmou o recebimento do material
+            e o ciclo operacional deste pedido foi encerrado.
+
+
         </section>
-    
-    
+
+
     {% endif %}
 
 
