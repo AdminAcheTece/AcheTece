@@ -8929,9 +8929,9 @@ def minhas_oportunidades():
 )
 def analisar_oportunidade(oportunidade_id):
 
-    # --------------------------------------------------------------
-    # Autenticação da malharia
-    # --------------------------------------------------------------
+    # ==============================================================
+    # AUTENTICAÇÃO DA MALHARIA
+    # ==============================================================
 
     empresa_id = session.get(
         "empresa_id"
@@ -8962,9 +8962,12 @@ def analisar_oportunidade(oportunidade_id):
             url_for("login")
         )
 
-    # --------------------------------------------------------------
-    # Busca oportunidade garantindo que pertence à empresa logada
-    # --------------------------------------------------------------
+    # ==============================================================
+    # OPORTUNIDADE
+    #
+    # A oportunidade precisa pertencer obrigatoriamente
+    # à empresa autenticada.
+    # ==============================================================
 
     oportunidade = (
         Opportunity.query
@@ -8986,47 +8989,9 @@ def analisar_oportunidade(oportunidade_id):
             url_for("minhas_oportunidades")
         )
 
-    # Oportunidade inativa não deve ser analisada
-    if (
-        oportunidade.status or ""
-    ).strip().lower() == "inativa":
-
-        flash(
-            "Esta oportunidade não está mais disponível.",
-            "warning"
-        )
-
-        return redirect(
-            url_for("minhas_oportunidades")
-        )
-
-    # --------------------------------------------------------------
-    # Primeira visualização:
-    #
-    # nova -> visualizada
-    # --------------------------------------------------------------
-
-    if (
-        oportunidade.status or ""
-    ).strip().lower() == "nova":
-
-        try:
-
-            oportunidade.status = "visualizada"
-
-            db.session.commit()
-
-        except Exception:
-
-            db.session.rollback()
-
-            current_app.logger.exception(
-                "[OPORTUNIDADE] Falha ao marcar como visualizada."
-            )
-
-    # --------------------------------------------------------------
-    # Demanda
-    # --------------------------------------------------------------
+    # ==============================================================
+    # DEMANDA
+    # ==============================================================
 
     demanda = oportunidade.demanda
 
@@ -9041,12 +9006,63 @@ def analisar_oportunidade(oportunidade_id):
             url_for("minhas_oportunidades")
         )
 
-    # --------------------------------------------------------------
-    # Matches da PRÓPRIA malharia
+    # ==============================================================
+    # STATUS ATUAIS
+    # ==============================================================
+
+    oportunidade_status = (
+        oportunidade.status
+        or "nova"
+    ).strip().lower()
+
+    demanda_status = (
+        demanda.status
+        or ""
+    ).strip().lower()
+
+    # ==============================================================
+    # PRIMEIRA VISUALIZAÇÃO
     #
-    # Uma oportunidade pode possuir:
-    # 1, 2, 3... teares compatíveis.
-    # --------------------------------------------------------------
+    # nova -> visualizada
+    #
+    # Mas somente se a demanda ainda estiver PUBLICADA.
+    #
+    # Isso evita alterar registros históricos de uma demanda
+    # que já foi contratada ou encerrada.
+    # ==============================================================
+
+    if (
+        oportunidade_status == "nova"
+        and demanda_status == "publicada"
+    ):
+
+        try:
+
+            oportunidade.status = "visualizada"
+
+            db.session.commit()
+
+            # Atualiza também a variável usada pelo template
+            oportunidade_status = "visualizada"
+
+        except Exception:
+
+            db.session.rollback()
+
+            current_app.logger.exception(
+                "[OPORTUNIDADE] Falha ao marcar como visualizada."
+            )
+
+    # ==============================================================
+    # MATCHES DA PRÓPRIA MALHARIA
+    #
+    # Preservamos exatamente a lógica que você já possuía:
+    #
+    # - mesma demanda
+    # - mesma empresa
+    # - status ativo
+    # - maior score primeiro
+    # ==============================================================
 
     matches = (
         DemandMatch.query
@@ -9062,25 +9078,137 @@ def analisar_oportunidade(oportunidade_id):
         .all()
     )
 
-    # --------------------------------------------------------------
-    # Proposta comercial existente
-    # --------------------------------------------------------------
+    # ==============================================================
+    # PROPOSTA COMERCIAL
+    #
+    # Além da opportunity_id, validamos empresa_id.
+    #
+    # É uma proteção adicional para garantir que a malharia
+    # somente receba sua própria proposta.
+    # ==============================================================
 
     proposta = (
         Proposal.query
-        .filter_by(
-            opportunity_id=oportunidade.id
+        .filter(
+            Proposal.opportunity_id
+            == oportunidade.id,
+
+            Proposal.empresa_id
+            == empresa.id
+        )
+        .order_by(
+            Proposal.id.desc()
         )
         .first()
     )
 
+    # ==============================================================
+    # PEDIDO ORIGINADO PELA PROPOSTA
+    # ==============================================================
+
+    pedido = None
+
+    if proposta:
+
+        pedido = (
+            Order.query
+            .filter(
+                Order.proposal_id
+                == proposta.id,
+
+                Order.empresa_id
+                == empresa.id
+            )
+            .order_by(
+                Order.id.desc()
+            )
+            .first()
+        )
+
+    # ==============================================================
+    # VALOR TOTAL DA PROPOSTA
+    # ==============================================================
+
+    total_proposta = None
+
+    if proposta:
+
+        try:
+
+            total_proposta = (
+                proposta.quantidade_kg
+                * proposta.preco_por_kg
+            )
+
+        except Exception:
+
+            total_proposta = None
+
+    # ==============================================================
+    # OPORTUNIDADE OPERACIONAL OU HISTÓRICA?
+    #
+    # Uma oportunidade deixa de permitir novas ações quando:
+    #
+    # 1. A própria oportunidade foi recusada/inativada;
+    #
+    # OU
+    #
+    # 2. A demanda já avançou para contratação,
+    #    encerramento ou cancelamento.
+    #
+    # Assim também nos protegemos contra registros históricos
+    # eventualmente inconsistentes.
+    # ==============================================================
+
+    STATUS_OPORTUNIDADE_ENCERRADA = {
+        "inativa",
+        "recusada"
+    }
+
+    STATUS_DEMANDA_ENCERRADA = {
+        "contratada",
+        "encerrada",
+        "cancelada"
+    }
+
+    oportunidade_encerrada = (
+        oportunidade_status
+        in STATUS_OPORTUNIDADE_ENCERRADA
+        or
+        demanda_status
+        in STATUS_DEMANDA_ENCERRADA
+    )
+
+    # ==============================================================
+    # RENDER
+    # ==============================================================
+
     return render_template(
         "analisar_oportunidade.html",
+
         empresa=empresa,
+
         oportunidade=oportunidade,
+
         demanda=demanda,
+
         matches=matches,
-        proposta=proposta
+
+        proposta=proposta,
+
+        pedido=pedido,
+
+        total_proposta=
+            total_proposta,
+
+        oportunidade_status=
+            oportunidade_status,
+
+        demanda_status=
+            demanda_status,
+
+        oportunidade_encerrada=
+            oportunidade_encerrada,
     )
 
 # --------------------------------------------------------------------
