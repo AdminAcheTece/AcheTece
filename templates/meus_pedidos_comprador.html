@@ -44,6 +44,9 @@
 
             --blue:#295C87;
             --blue-bg:#EEF5FA;
+
+            --red:#85202D;
+            --red-bg:#FFF0F2;
         }
 
 
@@ -104,7 +107,7 @@
             display:flex;
             align-items:center;
 
-            gap:10px;
+            gap:8px;
         }
 
 
@@ -116,7 +119,7 @@
             align-items:center;
             justify-content:center;
 
-            padding:0 17px;
+            padding:0 15px;
 
             color:#fff;
 
@@ -389,10 +392,21 @@
         }
 
 
-        .status-concluido,
-        .status-entregue{
+        .status-concluido{
             background:var(--green-bg);
             color:var(--green);
+        }
+
+
+        .status-entregue{
+            background:var(--lime);
+            color:#111;
+        }
+
+
+        .status-cancelado{
+            background:var(--red-bg);
+            color:var(--red);
         }
 
 
@@ -505,6 +519,15 @@
         }
 
 
+        @media(max-width:700px){
+
+            .top-link:not(:last-child){
+                display:none;
+            }
+
+        }
+
+
         @media(max-width:600px){
 
             .page{
@@ -563,11 +586,20 @@
 
         <div class="top-actions">
 
+
             <a
                 href="{{ url_for('minhas_demandas') }}"
                 class="top-link"
             >
-                Minhas Demandas
+                Demandas
+            </a>
+
+
+            <a
+                href="{{ url_for('propostas_comprador') }}"
+                class="top-link"
+            >
+                Propostas
             </a>
 
 
@@ -577,6 +609,7 @@
             >
                 Portal
             </a>
+
 
         </div>
 
@@ -630,7 +663,7 @@
             </div>
 
             <div class="metric-label">
-                Aguardando malharia
+                Aguardando confirmação
             </div>
 
         </div>
@@ -669,7 +702,7 @@
             </div>
 
             <div class="metric-label">
-                Concluídos
+                Produção concluída
             </div>
 
         </div>
@@ -735,13 +768,19 @@
 
                         <div class="company">
 
-                            {{
-                                empresa.nome
-                                or empresa.apelido
-                                or "Malharia"
-                                if empresa
-                                else "Malharia"
-                            }}
+                            {% if empresa %}
+
+                                {{
+                                    empresa.nome
+                                    or empresa.apelido
+                                    or "Malharia"
+                                }}
+
+                            {% else %}
+
+                                Malharia
+
+                            {% endif %}
 
                         </div>
 
@@ -779,7 +818,7 @@
 
 
                         <div class="label">
-                            Valor estimado
+                            Valor total
                         </div>
 
 
@@ -831,11 +870,15 @@
 
                             {% elif status == "concluido" %}
 
-                                Concluído
+                                Produção concluída
 
                             {% elif status == "entregue" %}
 
                                 Entregue
+
+                            {% elif status == "cancelado" %}
+
+                                Cancelado
 
                             {% else %}
 
