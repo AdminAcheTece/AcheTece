@@ -1145,21 +1145,36 @@
 
         <section class="empty">
 
-
-            <h2>
-                Ainda não há manifestação de interesse.
-            </h2>
-
-
-            <p>
-
-                As malharias compatíveis poderão analisar
-                esta oportunidade e informar se possuem
-                interesse em atender sua demanda.
-
-            </p>
-
-
+            {% if modo_historico %}
+        
+                <h2>
+                    Nenhuma participação comercial registrada.
+                </h2>
+        
+                <p>
+        
+                    Esta demanda foi encerrada sem registro
+                    de proposta comercial das malharias
+                    identificadas pelo matching.
+        
+                </p>
+        
+            {% else %}
+        
+                <h2>
+                    Ainda não há manifestação de interesse.
+                </h2>
+        
+                <p>
+        
+                    As malharias compatíveis poderão analisar
+                    esta oportunidade e informar se possuem
+                    interesse em atender sua demanda.
+        
+                </p>
+        
+            {% endif %}
+        
         </section>
 
 
@@ -1203,14 +1218,19 @@
     <div class="marketplace-note">
 
         <strong>
-            Fluxo protegido pelo AcheTece:
+            Privacidade comercial no AcheTece:
         </strong>
-
-        nesta etapa são apresentadas as malharias que
-        demonstraram interesse e sua compatibilidade
-        técnica. Dados diretos de contato ainda não são
-        liberados.
-
+    
+        no Matching Técnico, a identidade das malharias
+        permanece protegida.
+    
+        A empresa é identificada ao comprador somente
+        após manifestação de interesse ou participação
+        comercial registrada.
+    
+        Dados diretos de contato não são exibidos nesta
+        etapa do processo.
+    
     </div>
 
 
