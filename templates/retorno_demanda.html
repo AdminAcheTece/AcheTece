@@ -644,16 +644,35 @@
 
 
     <h1>
-        Interesse na sua demanda
+
+        {% if modo_historico %}
+    
+            Histórico do retorno das malharias
+    
+        {% else %}
+    
+            Interesse na sua demanda
+    
+        {% endif %}
+    
     </h1>
 
 
     <p class="intro">
 
-        Acompanhe como as malharias tecnicamente
-        compatíveis estão respondendo à sua
-        necessidade de produção.
-
+        {% if modo_historico %}
+    
+            Consulte as malharias que tiveram participação
+            comercial nesta demanda e o resultado do processo.
+    
+        {% else %}
+    
+            Acompanhe como as malharias tecnicamente
+            compatíveis estão respondendo à sua
+            necessidade de produção.
+    
+        {% endif %}
+    
     </p>
 
 
@@ -718,62 +737,118 @@
 
 
         <div class="metric">
-
+    
             <div class="metric-value">
                 {{ total_compativeis }}
             </div>
-
+    
             <div class="metric-label">
-                Malharias compatíveis
+    
+                {% if modo_historico %}
+                    Malharias identificadas pelo matching
+                {% else %}
+                    Malharias compatíveis
+                {% endif %}
+    
             </div>
-
+    
         </div>
-
-
+    
+    
         <div class="metric">
-
+    
             <div class="metric-value">
-                {{ total_interessadas }}
+    
+                {% if modo_historico %}
+                    {{ total_participacao_comercial }}
+                {% else %}
+                    {{ total_interessadas }}
+                {% endif %}
+    
             </div>
-
+    
             <div class="metric-label">
-                Demonstraram interesse
+    
+                {% if modo_historico %}
+                    Participaram comercialmente
+                {% else %}
+                    Demonstraram interesse
+                {% endif %}
+    
             </div>
-
+    
         </div>
-
-
+    
+    
         <div class="metric">
-
+    
             <div class="metric-value">
-                {{ total_em_analise }}
+    
+                {% if modo_historico %}
+                    {{ total_propostas_recebidas }}
+                {% else %}
+                    {{ total_em_analise }}
+                {% endif %}
+    
             </div>
-
+    
             <div class="metric-label">
-                Aguardando decisão
+    
+                {% if modo_historico %}
+                    Propostas registradas
+                {% else %}
+                    Aguardando decisão
+                {% endif %}
+    
             </div>
-
+    
         </div>
-
-
+    
+    
         <div class="metric">
-
+    
             <div class="metric-value">
-                {{ total_recusadas }}
+    
+                {% if modo_historico %}
+    
+                    {{ 1 if pedido else 0 }}
+    
+                {% else %}
+    
+                    {{ total_recusadas }}
+    
+                {% endif %}
+    
             </div>
-
+    
             <div class="metric-label">
-                Sem interesse
+    
+                {% if modo_historico %}
+                    Pedido originado
+                {% else %}
+                    Sem interesse
+                {% endif %}
+    
             </div>
-
+    
         </div>
-
-
+    
+    
     </section>
 
 
     <h2 class="section-title">
-        Malharias interessadas
+
+        {% if modo_historico %}
+    
+            Malharias com participação comercial
+    
+        {% else %}
+    
+            Malharias interessadas
+    
+        {% endif %}
+    
     </h2>
 
 
@@ -785,13 +860,13 @@
     </p>
 
 
-    {% if oportunidades_interessadas %}
+    {% if oportunidades_reveladas %}
 
 
         <section class="companies">
 
 
-            {% for oportunidade in oportunidades_interessadas %}
+            {% for oportunidade in oportunidades_reveladas %}
 
 
                 {% set empresa =
@@ -806,7 +881,12 @@
                     )
                 %}
 
-
+                {% set proposta =
+                    propostas_por_empresa.get(
+                        oportunidade.empresa_id
+                    )
+                %}
+                
                 <article class="company-card">
 
 
@@ -854,9 +934,53 @@
                         </div>
 
 
-                        <span class="interest-badge">
-                            ✓ Demonstrou interesse
-                        </span>
+                        {% if proposta %}
+
+                            {% set status_proposta =
+                                (
+                                    proposta.status
+                                    or ''
+                                )
+                                |lower
+                            %}
+                        
+                            <span class="interest-badge">
+                        
+                                {% if status_proposta == "aceita" %}
+                        
+                                    ✓ Proposta aceita
+                        
+                                {% elif status_proposta == "nao_selecionada" %}
+                        
+                                    Proposta não selecionada
+                        
+                                {% elif status_proposta == "recusada" %}
+                        
+                                    Proposta recusada
+                        
+                                {% elif status_proposta == "cancelada" %}
+                        
+                                    Proposta cancelada
+                        
+                                {% elif status_proposta == "ajuste_solicitado" %}
+                        
+                                    Ajuste solicitado
+                        
+                                {% else %}
+                        
+                                    ✓ Demonstrou interesse
+                        
+                                {% endif %}
+
+    </span>
+
+{% else %}
+
+    <span class="interest-badge">
+        ✓ Demonstrou interesse
+    </span>
+
+{% endif %}
 
 
                         <div class="machines-title">
@@ -871,65 +995,143 @@
 
                             {% for match in matches_empresa %}
 
-
                                 <div class="machine">
-
+                            
                                     <strong>
-
+                            
                                         {{
                                             match.tear.marca
                                             or "Marca"
                                         }}
-
+                            
                                         —
-
+                            
                                         {{
                                             match.tear.modelo
                                             or "Modelo"
                                         }}
-
+                            
                                     </strong>
-
-
+                            
                                     {{ match.score }}%
-
+                            
                                     •
-
+                            
                                     {{
                                         match.tear.tipo
                                         or "Tipo não informado"
                                     }}
-
+                            
                                     •
-
+                            
                                     Galga
                                     {{
                                         match.tear.finura
                                         or "—"
                                     }}
-
+                            
                                     •
-
+                            
                                     Ø
                                     {{
                                         match.tear.diametro
                                         or "—"
                                     }}"
-
-
+                            
                                 </div>
-
-
+                            
                             {% endfor %}
-
-
-                        </div>
-
-
-                    </div>
-
-
-                </article>
+                            
+                            
+                            </div>
+                            
+                            
+                            <!-- =====================================================
+                                 PEDIDO DA EMPRESA VENCEDORA
+                            ====================================================== -->
+                            
+                            {% if
+                                pedido
+                                and pedido.empresa_id
+                                == oportunidade.empresa_id
+                            %}
+                            
+                                <div
+                                    style="
+                                        margin-top:14px;
+                                        padding:12px 14px;
+                                        background:#F1F2E8;
+                                        border-radius:12px;
+                                        font-size:12px;
+                                        font-weight:700;
+                                    "
+                                >
+                            
+                                    Pedido
+                                    <strong>
+                                        {{ pedido.codigo }}
+                                    </strong>
+                            
+                                    •
+                            
+                                    {% set status_pedido =
+                                        (
+                                            pedido.status
+                                            or ''
+                                        )
+                                        |lower
+                                    %}
+                            
+                                    {% if status_pedido == "aguardando_confirmacao" %}
+                            
+                                        Aguardando confirmação
+                            
+                                    {% elif status_pedido == "confirmado" %}
+                            
+                                        Confirmado
+                            
+                                    {% elif status_pedido == "em_producao" %}
+                            
+                                        Em produção
+                            
+                                    {% elif status_pedido == "concluido" %}
+                            
+                                        Produção concluída
+                            
+                                    {% elif status_pedido == "entregue" %}
+                            
+                                        Entregue
+                            
+                                    {% elif status_pedido == "cancelado" %}
+                            
+                                        Cancelado
+                            
+                                    {% endif %}
+                            
+                                    <br><br>
+                            
+                                    <a
+                                        href="{{ url_for(
+                                            'detalhe_pedido_comprador',
+                                            pedido_id=pedido.id
+                                        ) }}"
+                                        style="
+                                            color:#111;
+                                            font-weight:800;
+                                        "
+                                    >
+                                        Ver pedido →
+                                    </a>
+                            
+                                </div>
+                            
+                            {% endif %}
+                            
+                            
+                            </div>
+                            
+                            
+                            </article>
 
 
             {% endfor %}
