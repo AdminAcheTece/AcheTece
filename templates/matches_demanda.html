@@ -625,9 +625,14 @@ h1{
 
 
 <p class="intro">
+
     O AcheTece comparou os requisitos técnicos desta
-    demanda com os teares cadastrados e ordenou os
-    equipamentos compatíveis pelo score calculado.
+    demanda com a capacidade produtiva cadastrada.
+
+    Nesta etapa, a identidade das malharias permanece
+    protegida. A empresa será identificada quando
+    demonstrar interesse em atender sua demanda.
+
 </p>
 
 
@@ -726,32 +731,27 @@ h1{
     <div class="company-col">
 
         <div class="company-name">
-            {{ match.empresa.nome }}
+
+            {{
+                anonimo_por_empresa.get(
+                    match.empresa_id,
+                    "Malharia compatível"
+                )
+            }}
+        
         </div>
 
         <div class="company-location">
 
-            {{
-                match.empresa.cidade
-                or "Cidade não informada"
-            }}
-
-            {% if match.empresa.estado %}
-                /
-                {{ match.empresa.estado }}
-            {% endif %}
-
+            Identidade protegida até manifestação de interesse.
+        
         </div>
 
 
         <div class="tear">
 
             <div class="tear-title">
-
-                {{ match.tear.marca }}
-                —
-                {{ match.tear.modelo }}
-
+                Equipamento tecnicamente compatível
             </div>
 
 
@@ -851,9 +851,17 @@ h1{
     </h2>
 
     <p>
-        Revise os requisitos técnicos ou cadastre
-        novos equipamentos no ambiente de teste
-        antes de executar novamente o matching.
+
+        Nenhuma capacidade produtiva cadastrada atende
+        atualmente aos requisitos técnicos desta demanda.
+    
+        {% if not matching_bloqueado %}
+    
+            Revise a configuração técnica caso algum
+            critério possa ser flexibilizado.
+    
+        {% endif %}
+    
     </p>
 
 </section>
@@ -864,15 +872,19 @@ h1{
 
 <div class="actions">
 
-    <a
-        href="{{ url_for(
-            'configurar_matching',
-            demanda_id=demanda.id
-        ) }}"
-        class="action-btn"
-    >
-        Revisar configuração
-    </a>
+    {% if not matching_bloqueado %}
+
+        <a
+            href="{{ url_for(
+                'configurar_matching',
+                demanda_id=demanda.id
+            ) }}"
+            class="action-btn"
+        >
+            Revisar configuração
+        </a>
+    
+    {% endif %}
 
 
     <a
