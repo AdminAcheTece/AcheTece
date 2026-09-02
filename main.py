@@ -8465,9 +8465,9 @@ def propostas_comprador():
 )
 def meus_pedidos_comprador():
 
-    # --------------------------------------------------------------
-    # Autenticação do comprador
-    # --------------------------------------------------------------
+    # ==============================================================
+    # AUTENTICAÇÃO DO COMPRADOR
+    # ==============================================================
 
     user_id = session.get(
         "user_id"
@@ -8494,23 +8494,29 @@ def meus_pedidos_comprador():
         not usuario
         or usuario.is_active is False
         or (
-            usuario.role or ""
-        ).strip().lower() != "cliente"
+            usuario.role
+            or ""
+        ).strip().lower()
+        != "cliente"
     ):
 
         return redirect(
             url_for("login")
         )
 
-    # --------------------------------------------------------------
-    # Pedidos SOMENTE deste comprador
-    # --------------------------------------------------------------
+    # ==============================================================
+    # PEDIDOS DO COMPRADOR
+    #
+    # Mantemos aqui o comportamento atual:
+    # pedidos cancelados não entram na listagem operacional.
+    # ==============================================================
 
     pedidos = (
         Order.query
         .filter(
             Order.buyer_user_id
             == usuario.id,
+
             Order.status
             != "cancelado"
         )
@@ -8521,9 +8527,17 @@ def meus_pedidos_comprador():
         .all()
     )
 
-    # --------------------------------------------------------------
-    # Indicadores
-    # --------------------------------------------------------------
+    # ==============================================================
+    # INDICADORES
+    #
+    # Cada indicador representa o STATUS ATUAL do pedido.
+    #
+    # Importante:
+    # "concluido" = produção concluída.
+    # "entregue"  = ciclo operacional encerrado.
+    #
+    # Portanto, entregue NÃO entra em total_concluidos.
+    # ==============================================================
 
     total_pedidos = len(
         pedidos
@@ -8533,7 +8547,8 @@ def meus_pedidos_comprador():
         1
         for pedido in pedidos
         if (
-            pedido.status or ""
+            pedido.status
+            or ""
         ).strip().lower()
         == "aguardando_confirmacao"
     )
@@ -8542,7 +8557,8 @@ def meus_pedidos_comprador():
         1
         for pedido in pedidos
         if (
-            pedido.status or ""
+            pedido.status
+            or ""
         ).strip().lower()
         == "confirmado"
     )
@@ -8551,7 +8567,8 @@ def meus_pedidos_comprador():
         1
         for pedido in pedidos
         if (
-            pedido.status or ""
+            pedido.status
+            or ""
         ).strip().lower()
         == "em_producao"
     )
@@ -8560,23 +8577,58 @@ def meus_pedidos_comprador():
         1
         for pedido in pedidos
         if (
-            pedido.status or ""
+            pedido.status
+            or ""
         ).strip().lower()
-        in {
-            "concluido",
-            "entregue"
-        }
+        == "concluido"
     )
+
+    # --------------------------------------------------------------
+    # Entregues
+    #
+    # Já calculamos mesmo que o template atual não possua
+    # um card específico. Isso deixa o backend preparado para
+    # a evolução dos indicadores.
+    # --------------------------------------------------------------
+
+    total_entregues = sum(
+        1
+        for pedido in pedidos
+        if (
+            pedido.status
+            or ""
+        ).strip().lower()
+        == "entregue"
+    )
+
+    # ==============================================================
+    # RENDER
+    # ==============================================================
 
     return render_template(
         "meus_pedidos_comprador.html",
+
         usuario=usuario,
+
         pedidos=pedidos,
-        total_pedidos=total_pedidos,
-        total_aguardando=total_aguardando,
-        total_confirmados=total_confirmados,
-        total_em_producao=total_em_producao,
-        total_concluidos=total_concluidos,
+
+        total_pedidos=
+            total_pedidos,
+
+        total_aguardando=
+            total_aguardando,
+
+        total_confirmados=
+            total_confirmados,
+
+        total_em_producao=
+            total_em_producao,
+
+        total_concluidos=
+            total_concluidos,
+
+        total_entregues=
+            total_entregues,
     )
 
 # --------------------------------------------------------------------
@@ -11293,9 +11345,9 @@ def _training_global_percent(progress_map: dict) -> int:
 )
 def meus_pedidos_malharia():
 
-    # --------------------------------------------------------------
-    # Autenticação da malharia
-    # --------------------------------------------------------------
+    # ==============================================================
+    # AUTENTICAÇÃO DA MALHARIA
+    # ==============================================================
 
     empresa_id = session.get(
         "empresa_id"
@@ -11326,15 +11378,19 @@ def meus_pedidos_malharia():
             url_for("login")
         )
 
-    # --------------------------------------------------------------
-    # Pedidos SOMENTE desta malharia
-    # --------------------------------------------------------------
+    # ==============================================================
+    # PEDIDOS DA MALHARIA
+    #
+    # Mantemos aqui o comportamento atual:
+    # pedidos cancelados não entram na listagem operacional.
+    # ==============================================================
 
     pedidos = (
         Order.query
         .filter(
             Order.empresa_id
             == empresa.id,
+
             Order.status
             != "cancelado"
         )
@@ -11345,9 +11401,11 @@ def meus_pedidos_malharia():
         .all()
     )
 
-    # --------------------------------------------------------------
-    # Indicadores
-    # --------------------------------------------------------------
+    # ==============================================================
+    # INDICADORES
+    #
+    # Cada indicador representa o STATUS ATUAL do pedido.
+    # ==============================================================
 
     total_pedidos = len(
         pedidos
@@ -11357,7 +11415,8 @@ def meus_pedidos_malharia():
         1
         for pedido in pedidos
         if (
-            pedido.status or ""
+            pedido.status
+            or ""
         ).strip().lower()
         == "aguardando_confirmacao"
     )
@@ -11366,7 +11425,8 @@ def meus_pedidos_malharia():
         1
         for pedido in pedidos
         if (
-            pedido.status or ""
+            pedido.status
+            or ""
         ).strip().lower()
         == "confirmado"
     )
@@ -11375,7 +11435,8 @@ def meus_pedidos_malharia():
         1
         for pedido in pedidos
         if (
-            pedido.status or ""
+            pedido.status
+            or ""
         ).strip().lower()
         == "em_producao"
     )
@@ -11384,25 +11445,56 @@ def meus_pedidos_malharia():
         1
         for pedido in pedidos
         if (
-            pedido.status or ""
+            pedido.status
+            or ""
         ).strip().lower()
-        in {
-            "concluido",
-            "entregue"
-        }
+        == "concluido"
     )
+
+    # --------------------------------------------------------------
+    # Entregues
+    # --------------------------------------------------------------
+
+    total_entregues = sum(
+        1
+        for pedido in pedidos
+        if (
+            pedido.status
+            or ""
+        ).strip().lower()
+        == "entregue"
+    )
+
+    # ==============================================================
+    # RENDER
+    # ==============================================================
 
     return render_template(
         "meus_pedidos_malharia.html",
-        empresa=empresa,
-        pedidos=pedidos,
-        total_pedidos=total_pedidos,
-        total_aguardando=total_aguardando,
-        total_confirmados=total_confirmados,
-        total_em_producao=total_em_producao,
-        total_concluidos=total_concluidos,
-    )
 
+        empresa=empresa,
+
+        pedidos=pedidos,
+
+        total_pedidos=
+            total_pedidos,
+
+        total_aguardando=
+            total_aguardando,
+
+        total_confirmados=
+            total_confirmados,
+
+        total_em_producao=
+            total_em_producao,
+
+        total_concluidos=
+            total_concluidos,
+
+        total_entregues=
+            total_entregues,
+    )
+    
 # --------------------------------------------------------------------
 # AcheTece 2.0 - Detalhes do Pedido para Malharia
 # --------------------------------------------------------------------
