@@ -4891,6 +4891,120 @@ def minhas_demandas():
     )
 
 # --------------------------------------------------------------------
+# Regra central de bloqueio do Matching - AcheTece 2.0
+# --------------------------------------------------------------------
+
+def _verificar_bloqueio_matching(demanda):
+
+    # ==============================================================
+    # SEGURANÇA BÁSICA
+    # ==============================================================
+
+    if not demanda:
+
+        return (
+            True,
+            "A demanda não foi localizada."
+        )
+
+    # ==============================================================
+    # STATUS DA DEMANDA
+    #
+    # Matching técnico só é operacional enquanto a demanda
+    # estiver publicada.
+    # ==============================================================
+
+    status_demanda = (
+        demanda.status
+        or ""
+    ).strip().lower()
+
+    if status_demanda != "publicada":
+
+        return (
+            True,
+            (
+                "O Matching Técnico somente pode ser configurado "
+                "ou executado enquanto a demanda estiver publicada."
+            )
+        )
+
+    # ==============================================================
+    # PROPOSTA COMERCIAL
+    #
+    # Qualquer proposta já criada congela definitivamente
+    # os critérios técnicos daquela demanda.
+    #
+    # Isso mantém rastreabilidade entre:
+    #
+    # requisito técnico
+    # -> matching
+    # -> oportunidade
+    # -> proposta
+    # ==============================================================
+
+    proposta_existente = (
+        Proposal.query
+        .filter(
+            Proposal.demand_id
+            == demanda.id
+        )
+        .first()
+    )
+
+    if proposta_existente:
+
+        return (
+            True,
+            (
+                "A configuração técnica desta demanda está congelada "
+                "porque já existe histórico de proposta comercial. "
+                "Para utilizar outros requisitos técnicos, crie uma "
+                "nova demanda."
+            )
+        )
+
+    # ==============================================================
+    # MANIFESTAÇÃO DE INTERESSE
+    #
+    # A primeira manifestação positiva da malharia congela
+    # o Matching, mesmo que a proposta ainda não tenha sido enviada.
+    # ==============================================================
+
+    oportunidade_interessada = (
+        Opportunity.query
+        .filter(
+            Opportunity.demand_id
+            == demanda.id,
+
+            Opportunity.status
+            == "interessada"
+        )
+        .first()
+    )
+
+    if oportunidade_interessada:
+
+        return (
+            True,
+            (
+                "A configuração técnica desta demanda está congelada "
+                "porque uma malharia já demonstrou interesse. "
+                "Os critérios não podem mais ser alterados durante "
+                "a negociação comercial."
+            )
+        )
+
+    # ==============================================================
+    # MATCHING LIBERADO
+    # ==============================================================
+
+    return (
+        False,
+        None
+    )
+
+# --------------------------------------------------------------------
 # Detalhes da Demanda - AcheTece 2.0
 # --------------------------------------------------------------------
 
@@ -4996,13 +5110,18 @@ def detalhe_demanda(demanda_id):
         )
 
     # ==============================================================
+    # SITUAÇÃO DO MATCHING
+    # ==============================================================
+
+    (
+        matching_bloqueado,
+        matching_bloqueio_motivo
+    ) = _verificar_bloqueio_matching(
+        demanda
+    )
+
+    # ==============================================================
     # PEDIDO VINCULADO À DEMANDA
-    #
-    # A regra consolidada do marketplace permite apenas um pedido
-    # válido por demanda.
-    #
-    # O filtro buyer_user_id também impede que um comprador consiga
-    # acessar acidentalmente pedido pertencente a outro usuário.
     # ==============================================================
 
     pedido = (
@@ -5092,6 +5211,12 @@ def detalhe_demanda(demanda_id):
 
         proposta_pedido=
             proposta_pedido,
+
+        matching_bloqueado=
+            matching_bloqueado,
+
+        matching_bloqueio_motivo=
+            matching_bloqueio_motivo,
     )
 
 # --------------------------------------------------------------------
@@ -5286,37 +5411,50 @@ def publicar_demanda(demanda_id):
 )
 def configurar_matching(demanda_id):
 
-    # --------------------------------------------------------------
-    # Autenticação
-    # --------------------------------------------------------------
+    # ==============================================================
+    # AUTENTICAÇÃO
+    # ==============================================================
 
-    user_id = session.get("user_id")
+    user_id = session.get(
+        "user_id"
+    )
 
     if not user_id:
+
         return redirect(
             url_for("login")
         )
 
     try:
+
         usuario = db.session.get(
             Usuario,
             int(user_id)
         )
+
     except Exception:
+
         usuario = None
 
     if (
         not usuario
         or usuario.is_active is False
-        or (usuario.role or "").strip().lower() != "cliente"
+        or (
+            usuario.role
+            or ""
+        ).strip().lower()
+        != "cliente"
     ):
+
         return redirect(
             url_for("login")
         )
 
-    # --------------------------------------------------------------
-    # Demanda - somente do próprio comprador
-    # --------------------------------------------------------------
+    # ==============================================================
+    # DEMANDA
+    #
+    # Somente demanda pertencente ao comprador autenticado.
+    # ==============================================================
 
     demanda = (
         ProductionRequest.query
@@ -5338,9 +5476,40 @@ def configurar_matching(demanda_id):
             url_for("minhas_demandas")
         )
 
-    # --------------------------------------------------------------
-    # Configuração existente
-    # --------------------------------------------------------------
+    # ==============================================================
+    # BLINDAGEM DO MATCHING
+    #
+    # Impede:
+    #
+    # - configuração de demanda não publicada
+    # - alteração após manifestação de interesse
+    # - alteração após criação de proposta
+    # ==============================================================
+
+    (
+        matching_bloqueado,
+        matching_bloqueio_motivo
+    ) = _verificar_bloqueio_matching(
+        demanda
+    )
+
+    if matching_bloqueado:
+
+        flash(
+            matching_bloqueio_motivo,
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "detalhe_demanda",
+                demanda_id=demanda.id
+            )
+        )
+
+    # ==============================================================
+    # CONFIGURAÇÃO EXISTENTE
+    # ==============================================================
 
     requisito = (
         DemandTechnicalRequirement.query
@@ -5350,6 +5519,10 @@ def configurar_matching(demanda_id):
         .first()
     )
 
+    # ==============================================================
+    # GET
+    # ==============================================================
+
     if request.method == "GET":
 
         return render_template(
@@ -5358,74 +5531,107 @@ def configurar_matching(demanda_id):
             requisito=requisito
         )
 
-    # --------------------------------------------------------------
-    # Helpers
-    # --------------------------------------------------------------
+    # ==============================================================
+    # HELPERS
+    # ==============================================================
 
     def _int_or_none(valor):
 
         valor = (
-            valor or ""
+            valor
+            or ""
         ).strip()
 
         if not valor:
+
             return None
 
         try:
-            return int(valor)
+
+            return int(
+                valor
+            )
+
         except Exception:
+
             return None
 
-    # --------------------------------------------------------------
-    # Dados
-    # --------------------------------------------------------------
+    # ==============================================================
+    # DADOS DO FORMULÁRIO
+    # ==============================================================
 
     tipo_tear = (
-        request.form.get("tipo_tear")
+        request.form.get(
+            "tipo_tear"
+        )
         or ""
     ).strip().upper()
 
     finura_min = _int_or_none(
-        request.form.get("finura_min")
+        request.form.get(
+            "finura_min"
+        )
     )
 
     finura_max = _int_or_none(
-        request.form.get("finura_max")
+        request.form.get(
+            "finura_max"
+        )
     )
 
     diametro_min = _int_or_none(
-        request.form.get("diametro_min")
+        request.form.get(
+            "diametro_min"
+        )
     )
 
     diametro_max = _int_or_none(
-        request.form.get("diametro_max")
+        request.form.get(
+            "diametro_max"
+        )
     )
 
-    alimentadores_min = _int_or_none(
-        request.form.get("alimentadores_min")
+    alimentadores_min = (
+        _int_or_none(
+            request.form.get(
+                "alimentadores_min"
+            )
+        )
     )
 
-    pistas_cilindro_min = _int_or_none(
-        request.form.get("pistas_cilindro_min")
+    pistas_cilindro_min = (
+        _int_or_none(
+            request.form.get(
+                "pistas_cilindro_min"
+            )
+        )
     )
 
-    pistas_disco_min = _int_or_none(
-        request.form.get("pistas_disco_min")
+    pistas_disco_min = (
+        _int_or_none(
+            request.form.get(
+                "pistas_disco_min"
+            )
+        )
     )
 
     elastano_raw = (
-        request.form.get("elastano_required")
+        request.form.get(
+            "elastano_required"
+        )
         or ""
     ).strip().lower()
 
     observacoes_tecnicas = (
-        request.form.get("observacoes_tecnicas")
+        request.form.get(
+            "observacoes_tecnicas"
+        )
         or ""
     ).strip()
 
-    # --------------------------------------------------------------
-    # Tipo
-    # --------------------------------------------------------------
+    # ==============================================================
+    # TIPO DE TEAR
+    # ==============================================================
 
     if tipo_tear not in {
         "",
@@ -5445,9 +5651,9 @@ def configurar_matching(demanda_id):
             )
         )
 
-    # --------------------------------------------------------------
-    # Intervalos
-    # --------------------------------------------------------------
+    # ==============================================================
+    # INTERVALOS
+    # ==============================================================
 
     if (
         finura_min is not None
@@ -5485,28 +5691,60 @@ def configurar_matching(demanda_id):
             )
         )
 
-    # --------------------------------------------------------------
-    # Elastano
-    # --------------------------------------------------------------
+    # ==============================================================
+    # ELASTANO
+    # ==============================================================
 
     elastano_required = None
 
     if elastano_raw == "sim":
+
         elastano_required = True
 
     elif elastano_raw == "nao":
+
         elastano_required = False
 
-    # --------------------------------------------------------------
+    # ==============================================================
+    # VERIFICAÇÃO NOVAMENTE ANTES DE GRAVAR
+    #
+    # Fazemos uma segunda verificação imediatamente antes
+    # da alteração do requisito técnico.
+    # ==============================================================
+
+    (
+        matching_bloqueado,
+        matching_bloqueio_motivo
+    ) = _verificar_bloqueio_matching(
+        demanda
+    )
+
+    if matching_bloqueado:
+
+        flash(
+            matching_bloqueio_motivo,
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "detalhe_demanda",
+                demanda_id=demanda.id
+            )
+        )
+
+    # ==============================================================
     # UPSERT
-    # --------------------------------------------------------------
+    # ==============================================================
 
     try:
 
         if not requisito:
 
-            requisito = DemandTechnicalRequirement(
-                demand_id=demanda.id
+            requisito = (
+                DemandTechnicalRequirement(
+                    demand_id=demanda.id
+                )
             )
 
             db.session.add(
@@ -5514,14 +5752,25 @@ def configurar_matching(demanda_id):
             )
 
         requisito.tipo_tear = (
-            tipo_tear or None
+            tipo_tear
+            or None
         )
 
-        requisito.finura_min = finura_min
-        requisito.finura_max = finura_max
+        requisito.finura_min = (
+            finura_min
+        )
 
-        requisito.diametro_min = diametro_min
-        requisito.diametro_max = diametro_max
+        requisito.finura_max = (
+            finura_max
+        )
+
+        requisito.diametro_min = (
+            diametro_min
+        )
+
+        requisito.diametro_max = (
+            diametro_max
+        )
 
         requisito.alimentadores_min = (
             alimentadores_min
@@ -5540,7 +5789,8 @@ def configurar_matching(demanda_id):
         )
 
         requisito.observacoes_tecnicas = (
-            observacoes_tecnicas or None
+            observacoes_tecnicas
+            or None
         )
 
         db.session.commit()
@@ -5587,9 +5837,9 @@ def configurar_matching(demanda_id):
 )
 def executar_matching(demanda_id):
 
-    # --------------------------------------------------------------
-    # Autenticação
-    # --------------------------------------------------------------
+    # ==============================================================
+    # AUTENTICAÇÃO
+    # ==============================================================
 
     user_id = session.get(
         "user_id"
@@ -5616,17 +5866,19 @@ def executar_matching(demanda_id):
         not usuario
         or usuario.is_active is False
         or (
-            usuario.role or ""
-        ).strip().lower() != "cliente"
+            usuario.role
+            or ""
+        ).strip().lower()
+        != "cliente"
     ):
 
         return redirect(
             url_for("login")
         )
 
-    # --------------------------------------------------------------
-    # Demanda
-    # --------------------------------------------------------------
+    # ==============================================================
+    # DEMANDA
+    # ==============================================================
 
     demanda = (
         ProductionRequest.query
@@ -5648,16 +5900,23 @@ def executar_matching(demanda_id):
             url_for("minhas_demandas")
         )
 
-    # --------------------------------------------------------------
-    # Matching somente para demanda publicada
-    # --------------------------------------------------------------
+    # ==============================================================
+    # BLINDAGEM DO MATCHING
+    #
+    # A mesma regra vale para configuração e execução.
+    # ==============================================================
 
-    if (
-        demanda.status or ""
-    ).strip().lower() != "publicada":
+    (
+        matching_bloqueado,
+        matching_bloqueio_motivo
+    ) = _verificar_bloqueio_matching(
+        demanda
+    )
+
+    if matching_bloqueado:
 
         flash(
-            "Publique a demanda antes de executar o matching.",
+            matching_bloqueio_motivo,
             "warning"
         )
 
@@ -5668,9 +5927,9 @@ def executar_matching(demanda_id):
             )
         )
 
-    # --------------------------------------------------------------
-    # Requisitos técnicos
-    # --------------------------------------------------------------
+    # ==============================================================
+    # REQUISITOS TÉCNICOS
+    # ==============================================================
 
     requisito = (
         DemandTechnicalRequirement.query
@@ -5694,9 +5953,34 @@ def executar_matching(demanda_id):
             )
         )
 
-    # --------------------------------------------------------------
-    # Teares
-    # --------------------------------------------------------------
+    # ==============================================================
+    # SEGUNDA VERIFICAÇÃO ANTES DO RECÁLCULO
+    # ==============================================================
+
+    (
+        matching_bloqueado,
+        matching_bloqueio_motivo
+    ) = _verificar_bloqueio_matching(
+        demanda
+    )
+
+    if matching_bloqueado:
+
+        flash(
+            matching_bloqueio_motivo,
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "detalhe_demanda",
+                demanda_id=demanda.id
+            )
+        )
+
+    # ==============================================================
+    # TEARES
+    # ==============================================================
 
     teares = (
         Tear.query
@@ -5712,30 +5996,20 @@ def executar_matching(demanda_id):
 
     total_compativeis = 0
 
-    # --------------------------------------------------------------
-    # Agrupamento de matches por empresa
-    #
-    # Exemplo:
-    #
-    # empresa 10
-    #   - tear A = 100%
-    #   - tear B = 95%
-    #
-    # resultado:
-    #   best_score = 100
-    #   compatible_tears = 2
-    # --------------------------------------------------------------
+    # ==============================================================
+    # RESUMO POR EMPRESA
+    # ==============================================================
 
     resumo_empresas = {}
 
-    # --------------------------------------------------------------
-    # Recalcula o Matching Técnico do zero
-    # --------------------------------------------------------------
+    # ==============================================================
+    # RECÁLCULO
+    # ==============================================================
 
     try:
 
         # ----------------------------------------------------------
-        # Apaga os matches anteriores desta demanda
+        # Remove matches técnicos anteriores
         # ----------------------------------------------------------
 
         (
@@ -5749,7 +6023,7 @@ def executar_matching(demanda_id):
         )
 
         # ----------------------------------------------------------
-        # Analisa cada tear cadastrado
+        # Analisa todos os teares
         # ----------------------------------------------------------
 
         for tear in teares:
@@ -5761,6 +6035,7 @@ def executar_matching(demanda_id):
             )
 
             if not empresa:
+
                 continue
 
             (
@@ -5774,12 +6049,12 @@ def executar_matching(demanda_id):
                 empresa
             )
 
-            # Tear tecnicamente incompatível
             if not compativel:
+
                 continue
 
             # ------------------------------------------------------
-            # Cria o Match técnico por tear
+            # Match técnico
             # ------------------------------------------------------
 
             novo_match = DemandMatch(
@@ -5800,37 +6075,45 @@ def executar_matching(demanda_id):
             total_compativeis += 1
 
             # ------------------------------------------------------
-            # Resume os matches por empresa
+            # Agrupa por empresa
             # ------------------------------------------------------
 
-            resumo = resumo_empresas.get(
-                empresa.id
+            resumo = (
+                resumo_empresas
+                .get(
+                    empresa.id
+                )
             )
 
-            # Primeira máquina compatível dessa empresa
             if not resumo:
 
                 resumo = {
-                    "empresa": empresa,
-                    "best_score": score,
-                    "compatible_tears": 1
+                    "empresa":
+                        empresa,
+
+                    "best_score":
+                        score,
+
+                    "compatible_tears":
+                        1
                 }
 
                 resumo_empresas[
                     empresa.id
                 ] = resumo
 
-            # Empresa já possui outro tear compatível
             else:
 
                 resumo[
                     "compatible_tears"
                 ] += 1
 
-                # Mantém o melhor score encontrado
-                if score > resumo[
-                    "best_score"
-                ]:
+                if (
+                    score
+                    > resumo[
+                        "best_score"
+                    ]
+                ):
 
                     resumo[
                         "best_score"
@@ -5838,12 +6121,7 @@ def executar_matching(demanda_id):
 
         # ==========================================================
         # OPORTUNIDADES
-        #
-        # Aqui termina a análise dos teares.
-        #
-        # Agora transformamos vários matches técnicos em
-        # UMA oportunidade comercial por empresa.
-        # ==========================================================
+        # ==============================================================
 
         oportunidades_existentes = (
             Opportunity.query
@@ -5853,24 +6131,21 @@ def executar_matching(demanda_id):
             .all()
         )
 
-        # ----------------------------------------------------------
-        # Indexa oportunidades existentes pela empresa
-        # ----------------------------------------------------------
-
         oportunidades_por_empresa = {
+
             oportunidade.empresa_id:
                 oportunidade
+
             for oportunidade
             in oportunidades_existentes
         }
 
-        # Empresas que continuam tecnicamente compatíveis
         empresas_compativeis = set(
             resumo_empresas.keys()
         )
 
         # ----------------------------------------------------------
-        # Cria ou atualiza oportunidades
+        # Cria ou atualiza oportunidades compatíveis
         # ----------------------------------------------------------
 
         for (
@@ -5884,10 +6159,6 @@ def executar_matching(demanda_id):
                     empresa_id
                 )
             )
-
-            # ------------------------------------------------------
-            # Ainda não existe oportunidade para esta empresa
-            # ------------------------------------------------------
 
             if not oportunidade:
 
@@ -5907,11 +6178,6 @@ def executar_matching(demanda_id):
                     oportunidade
                 )
 
-            # ------------------------------------------------------
-            # Oportunidade já existe
-            # Atualiza informações técnicas
-            # ------------------------------------------------------
-
             else:
 
                 oportunidade.best_score = (
@@ -5926,11 +6192,19 @@ def executar_matching(demanda_id):
                     ]
                 )
 
-                # Se anteriormente havia ficado incompatível
-                # e agora voltou a ter match, reativa.
-                if oportunidade.status == "inativa":
+                # --------------------------------------------------
+                # Somente oportunidades técnicas sem decisão
+                # comercial podem ser reativadas.
+                # --------------------------------------------------
 
-                    oportunidade.status = "nova"
+                if (
+                    oportunidade.status
+                    == "inativa"
+                ):
+
+                    oportunidade.status = (
+                        "nova"
+                    )
 
         # ----------------------------------------------------------
         # Empresas que deixaram de ser compatíveis
@@ -5943,22 +6217,22 @@ def executar_matching(demanda_id):
                 not in empresas_compativeis
             ):
 
-                # Não sobrescrevemos decisões comerciais
-                # já realizadas pela malharia.
+                # --------------------------------------------------
+                # Nunca sobrescreve uma decisão comercial.
+                # --------------------------------------------------
+
                 if oportunidade.status in {
                     "nova",
                     "visualizada"
                 }:
 
-                    oportunidade.status = "inativa"
+                    oportunidade.status = (
+                        "inativa"
+                    )
 
         # ==========================================================
-        # UM ÚNICO COMMIT
-        #
-        # Salva:
-        # - DemandMatch
-        # - Opportunity
-        # ==========================================================
+        # COMMIT ÚNICO
+        # ==============================================================
 
         db.session.commit()
 
@@ -5983,17 +6257,13 @@ def executar_matching(demanda_id):
             )
         )
 
-    # --------------------------------------------------------------
-    # Quantas malharias receberam oportunidade
-    # --------------------------------------------------------------
+    # ==============================================================
+    # RESULTADO
+    # ==============================================================
 
     total_oportunidades = len(
         resumo_empresas
     )
-
-    # --------------------------------------------------------------
-    # Mensagem final
-    # --------------------------------------------------------------
 
     flash(
         (
@@ -6002,31 +6272,6 @@ def executar_matching(demanda_id):
             f"entre {total_analisados} analisado(s), "
             f"gerando {total_oportunidades} "
             f"oportunidade(s) para malharia(s)."
-        ),
-        "success"
-    )
-
-    # --------------------------------------------------------------
-    # Resultado do Matching
-    # --------------------------------------------------------------
-
-    return redirect(
-        url_for(
-            "matches_demanda",
-            demanda_id=demanda.id
-        )
-    )
-
-    # --------------------------------------------------------------
-    # Resultado
-    # --------------------------------------------------------------
-
-    flash(
-        (
-            f"Matching executado: "
-            f"{total_compativeis} compatível(is) "
-            f"entre {total_analisados} "
-            f"tear(es) analisado(s)."
         ),
         "success"
     )
