@@ -1291,7 +1291,7 @@ class DemandTechnicalRequirement(db.Model):
         primary_key=True
     )
 
-    # Uma demanda possui, nesta V1, um conjunto de requisitos técnicos
+    # Uma demanda possui um conjunto de requisitos técnicos
     demand_id = db.Column(
         db.Integer,
         db.ForeignKey("production_request.id"),
@@ -1468,7 +1468,7 @@ class DemandMatch(db.Model):
     )
 
     # Explicação textual do cálculo.
-    # Na V2 poderemos transformar isso em JSON.
+    # Mantido em texto para facilitar auditoria e leitura do resultado.
     detalhes = db.Column(
         db.Text,
         nullable=True
@@ -2136,7 +2136,7 @@ class OrderEvent(db.Model):
         )
 
 # --------------------------------------------------------------------
-# AcheTece 2.0 - Motor de Matching V1
+# AcheTece 2.0 - Motor de Matching Técnico
 # --------------------------------------------------------------------
 
 def _normalizar_tipo_tear(valor):
@@ -2486,7 +2486,7 @@ def _calcular_match_v1(
     # ==============================================================
     # 6. ELASTANO - 10 pontos
     #
-    # Nesta V1:
+    # Regra atual:
     # True = obrigatório e eliminatório
     # False/None = não elimina
     # ==============================================================
@@ -5560,7 +5560,7 @@ def configurar_matching(demanda_id):
     )
 
 # --------------------------------------------------------------------
-# Executar Matching V1 - AcheTece 2.0
+# Executar Matching Técnico - AcheTece 2.0
 # --------------------------------------------------------------------
 
 @app.post(
@@ -5711,7 +5711,7 @@ def executar_matching(demanda_id):
     resumo_empresas = {}
 
     # --------------------------------------------------------------
-    # Recalcula Matching V1 do zero
+    # Recalcula o Matching Técnico do zero
     # --------------------------------------------------------------
 
     try:
@@ -5949,7 +5949,7 @@ def executar_matching(demanda_id):
         db.session.rollback()
 
         current_app.logger.exception(
-            "[MATCHING] Falha ao executar Matching V1 "
+            "[MATCHING] Falha ao executar Matching Técnico "
             "e gerar oportunidades."
         )
 
@@ -6688,7 +6688,7 @@ def aceitar_proposta(proposta_id):
         )
 
     # --------------------------------------------------------------
-    # V1:
+    # Regra atual:
     # somente UMA proposta aceita por demanda
     # --------------------------------------------------------------
 
@@ -7220,7 +7220,7 @@ def gerar_pedido(proposta_id):
 
     # --------------------------------------------------------------
     # Proteção adicional:
-    # uma demanda só pode gerar um pedido na V1
+    # uma demanda só pode gerar um pedido
     # --------------------------------------------------------------
 
     pedido_da_demanda = (
