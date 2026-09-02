@@ -4848,20 +4848,59 @@
                   <span>
                     Elastano
                   </span>
-
+                
                   <strong>
-
-                    {{
-                      'Sim'
-                      if (
+                
+                    {% set raw_elastano =
+                      (
                         tear.elastano
-                        or tear.kit_elastano
+                        if tear.elastano is not none
+                        else tear.kit_elastano
                       )
-                      else 'Não'
-                    }}
-
+                    %}
+                
+                
+                    {% if raw_elastano is boolean %}
+                
+                      {{
+                        'Sim'
+                        if raw_elastano
+                        else 'Não'
+                      }}
+                
+                    {% else %}
+                
+                      {% set elastano_texto =
+                        (
+                          raw_elastano
+                          |string
+                        )
+                        .strip()
+                        .lower()
+                      %}
+                
+                
+                      {{
+                        'Sim'
+                        if elastano_texto in [
+                          'sim',
+                          's',
+                          'true',
+                          't',
+                          'on',
+                          '1',
+                          'com',
+                          'tem',
+                          'yes',
+                          'y'
+                        ]
+                        else 'Não'
+                      }}
+                
+                    {% endif %}
+                
                   </strong>
-
+                
                 </div>
 
 
