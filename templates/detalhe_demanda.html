@@ -2071,70 +2071,130 @@
         {% if status == "publicada" %}
 
 
-            <a
-                href="{{ url_for(
-                    'configurar_matching',
-                    demanda_id=demanda.id
-                ) }}"
-                class="back-btn"
-            >
-                Configurar Matching
-            </a>
-
-
-            <form
-                method="POST"
-                action="{{ url_for(
-                    'executar_matching',
-                    demanda_id=demanda.id
-                ) }}"
-                style="margin:0;"
-                onsubmit="return confirm(
-                    'Deseja executar o Matching Técnico para esta demanda?'
-                );"
-            >
-
-                <button
-                    type="submit"
-                    class="match-run-btn"
+            {% if matching_bloqueado %}
+        
+        
+                <div
+                    class="integrity-warning"
+                    style="
+                        width:100%;
+                        flex-basis:100%;
+                        margin-top:0;
+                    "
                 >
-                    Executar Matching Técnico
-                </button>
-
-            </form>
-
-
-            <a
-                href="{{ url_for(
-                    'matches_demanda',
-                    demanda_id=demanda.id
-                ) }}"
-                class="back-btn"
-            >
-                Ver Matches
-            </a>
-
-
-            <a
-                href="{{ url_for(
-                    'retorno_demanda',
-                    demanda_id=demanda.id
-                ) }}"
-                class="back-btn"
-            >
-                Retorno das Malharias
-            </a>
-
-
-            <a
-                href="{{ url_for(
-                    'propostas_recebidas',
-                    demanda_id=demanda.id
-                ) }}"
-                class="back-btn"
-            >
-                Ver Propostas
-            </a>
+        
+                    <strong>
+                        Matching Técnico congelado.
+                    </strong>
+        
+                    {{ matching_bloqueio_motivo }}
+        
+                </div>
+        
+        
+                <a
+                    href="{{ url_for(
+                        'matches_demanda',
+                        demanda_id=demanda.id
+                    ) }}"
+                    class="back-btn"
+                >
+                    Ver Matches
+                </a>
+        
+        
+                <a
+                    href="{{ url_for(
+                        'retorno_demanda',
+                        demanda_id=demanda.id
+                    ) }}"
+                    class="back-btn"
+                >
+                    Retorno das Malharias
+                </a>
+        
+        
+                <a
+                    href="{{ url_for(
+                        'propostas_recebidas',
+                        demanda_id=demanda.id
+                    ) }}"
+                    class="back-btn"
+                >
+                    Ver Propostas
+                </a>
+        
+        
+            {% else %}
+        
+        
+                <a
+                    href="{{ url_for(
+                        'configurar_matching',
+                        demanda_id=demanda.id
+                    ) }}"
+                    class="back-btn"
+                >
+                    Configurar Matching
+                </a>
+        
+        
+                <form
+                    method="POST"
+                    action="{{ url_for(
+                        'executar_matching',
+                        demanda_id=demanda.id
+                    ) }}"
+                    style="margin:0;"
+                    onsubmit="return confirm(
+                        'Deseja executar o Matching Técnico para esta demanda?'
+                    );"
+                >
+        
+                    <button
+                        type="submit"
+                        class="match-run-btn"
+                    >
+                        Executar Matching Técnico
+                    </button>
+        
+                </form>
+        
+        
+                <a
+                    href="{{ url_for(
+                        'matches_demanda',
+                        demanda_id=demanda.id
+                    ) }}"
+                    class="back-btn"
+                >
+                    Ver Matches
+                </a>
+        
+        
+                <a
+                    href="{{ url_for(
+                        'retorno_demanda',
+                        demanda_id=demanda.id
+                    ) }}"
+                    class="back-btn"
+                >
+                    Retorno das Malharias
+                </a>
+        
+        
+                <a
+                    href="{{ url_for(
+                        'propostas_recebidas',
+                        demanda_id=demanda.id
+                    ) }}"
+                    class="back-btn"
+                >
+                    Ver Propostas
+                </a>
+        
+        
+            {% endif %}
 
 
         <!-- =====================================================
