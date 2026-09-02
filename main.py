@@ -8834,9 +8834,9 @@ def painel_comprador():
 )
 def matches_comprador():
 
-    # --------------------------------------------------------------
-    # Autenticação
-    # --------------------------------------------------------------
+    # ==============================================================
+    # AUTENTICAÇÃO
+    # ==============================================================
 
     user_id = session.get(
         "user_id"
@@ -8863,19 +8863,21 @@ def matches_comprador():
         not usuario
         or usuario.is_active is False
         or (
-            usuario.role or ""
-        ).strip().lower() != "cliente"
+            usuario.role
+            or ""
+        ).strip().lower()
+        != "cliente"
     ):
 
         return redirect(
             url_for("login")
         )
 
-    # --------------------------------------------------------------
-    # Todos os matches pertencentes às demandas deste comprador
+    # ==============================================================
+    # TODOS OS MATCHES DAS DEMANDAS DO COMPRADOR
     #
-    # Aqui mostramos também o histórico.
-    # --------------------------------------------------------------
+    # Inclui histórico.
+    # ==============================================================
 
     matches = (
         DemandMatch.query
@@ -8894,9 +8896,76 @@ def matches_comprador():
         .all()
     )
 
-    # --------------------------------------------------------------
-    # Indicadores
-    # --------------------------------------------------------------
+    # ==============================================================
+    # IDENTIFICAÇÃO ANÔNIMA
+    #
+    # O número é reiniciado para cada demanda.
+    #
+    # Exemplo:
+    #
+    # ATD-000001
+    # - Malharia compatível 1
+    # - Malharia compatível 2
+    #
+    # ATD-000002
+    # - Malharia compatível 1
+    # ==============================================================
+
+    mapa_por_demanda = {}
+
+    anonimo_por_match = {}
+
+    for match in matches:
+
+        demanda_id = (
+            match.demand_id
+        )
+
+        empresa_id = (
+            match.empresa_id
+        )
+
+        if (
+            not demanda_id
+            or not empresa_id
+        ):
+
+            anonimo_por_match[
+                match.id
+            ] = "Malharia compatível"
+
+            continue
+
+        mapa_demanda = (
+            mapa_por_demanda.setdefault(
+                demanda_id,
+                {}
+            )
+        )
+
+        if empresa_id not in mapa_demanda:
+
+            numero = (
+                len(mapa_demanda)
+                + 1
+            )
+
+            mapa_demanda[
+                empresa_id
+            ] = (
+                f"Malharia compatível "
+                f"{numero}"
+            )
+
+        anonimo_por_match[
+            match.id
+        ] = mapa_demanda[
+            empresa_id
+        ]
+
+    # ==============================================================
+    # INDICADORES
+    # ==============================================================
 
     total_matches = len(
         matches
@@ -8924,7 +8993,8 @@ def matches_comprador():
         if (
             match.demanda
             and (
-                match.demanda.status or ""
+                match.demanda.status
+                or ""
             ).strip().lower()
             in {
                 "contratada",
@@ -8933,14 +9003,31 @@ def matches_comprador():
         )
     )
 
+    # ==============================================================
+    # RENDER
+    # ==============================================================
+
     return render_template(
         "matches_comprador.html",
+
         usuario=usuario,
+
         matches=matches,
-        total_matches=total_matches,
-        demandas_com_matches=demandas_com_matches,
-        malharias_encontradas=malharias_encontradas,
-        matches_historicos=matches_historicos,
+
+        anonimo_por_match=
+            anonimo_por_match,
+
+        total_matches=
+            total_matches,
+
+        demandas_com_matches=
+            demandas_com_matches,
+
+        malharias_encontradas=
+            malharias_encontradas,
+
+        matches_historicos=
+            matches_historicos,
     )
 
 # --------------------------------------------------------------------
