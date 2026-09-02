@@ -6475,9 +6475,9 @@ def matches_demanda(demanda_id):
 )
 def retorno_demanda(demanda_id):
 
-    # --------------------------------------------------------------
-    # Autenticação do comprador
-    # --------------------------------------------------------------
+    # ==============================================================
+    # AUTENTICAÇÃO
+    # ==============================================================
 
     user_id = session.get(
         "user_id"
@@ -6504,17 +6504,19 @@ def retorno_demanda(demanda_id):
         not usuario
         or usuario.is_active is False
         or (
-            usuario.role or ""
-        ).strip().lower() != "cliente"
+            usuario.role
+            or ""
+        ).strip().lower()
+        != "cliente"
     ):
 
         return redirect(
             url_for("login")
         )
 
-    # --------------------------------------------------------------
-    # Demanda - somente do comprador logado
-    # --------------------------------------------------------------
+    # ==============================================================
+    # DEMANDA
+    # ==============================================================
 
     demanda = (
         ProductionRequest.query
@@ -6536,18 +6538,32 @@ def retorno_demanda(demanda_id):
             url_for("minhas_demandas")
         )
 
-    # --------------------------------------------------------------
-    # Oportunidades ativas desta demanda
-    # --------------------------------------------------------------
+    status_demanda = (
+        demanda.status
+        or ""
+    ).strip().lower()
 
-    oportunidades = (
+    modo_historico = (
+        status_demanda
+        in {
+            "contratada",
+            "encerrada",
+            "cancelada"
+        }
+    )
+
+    # ==============================================================
+    # TODAS AS OPORTUNIDADES
+    #
+    # Não excluímos mais "inativa", porque ela representa
+    # também o histórico após o fechamento da demanda.
+    # ==============================================================
+
+    todas_oportunidades = (
         Opportunity.query
         .filter(
             Opportunity.demand_id
-            == demanda.id,
-
-            Opportunity.status
-            != "inativa"
+            == demanda.id
         )
         .order_by(
             Opportunity.best_score.desc(),
@@ -6557,65 +6573,121 @@ def retorno_demanda(demanda_id):
     )
 
     # --------------------------------------------------------------
-    # Indicadores
+    # Enquanto a demanda está ativa, apenas oportunidades
+    # ainda válidas entram nos indicadores técnicos atuais.
+    #
+    # No histórico, usamos todas.
     # --------------------------------------------------------------
 
-    total_compativeis = len(
-        oportunidades
+    if modo_historico:
+
+        oportunidades_base = (
+            todas_oportunidades
+        )
+
+    else:
+
+        oportunidades_base = [
+            oportunidade
+            for oportunidade
+            in todas_oportunidades
+            if (
+                oportunidade.status
+                or ""
+            ).strip().lower()
+            != "inativa"
+        ]
+
+    # ==============================================================
+    # PROPOSTAS COM HISTÓRICO COMERCIAL
+    # ==============================================================
+
+    STATUS_PROPOSTAS_VISIVEIS = {
+        "enviada",
+        "ajuste_solicitado",
+        "aceita",
+        "recusada",
+        "nao_selecionada",
+        "cancelada"
+    }
+
+    propostas = (
+        Proposal.query
+        .filter(
+            Proposal.demand_id
+            == demanda.id,
+
+            Proposal.status.in_(
+                list(
+                    STATUS_PROPOSTAS_VISIVEIS
+                )
+            )
+        )
+        .order_by(
+            Proposal.id.asc()
+        )
+        .all()
     )
 
-    total_interessadas = sum(
-        1
-        for oportunidade
-        in oportunidades
-        if (
-            oportunidade.status or ""
-        ).strip().lower() == "interessada"
-    )
+    propostas_por_empresa = {}
 
-    total_em_analise = sum(
-        1
-        for oportunidade
-        in oportunidades
-        if (
-            oportunidade.status or ""
+    for proposta in propostas:
+
+        propostas_por_empresa[
+            proposta.empresa_id
+        ] = proposta
+
+    # ==============================================================
+    # QUAIS MALHARIAS PODEM SER IDENTIFICADAS?
+    #
+    # Regra:
+    #
+    # 1. oportunidade atualmente "interessada"
+    # OU
+    # 2. empresa possui histórico de proposta
+    #
+    # Nunca identificamos:
+    # - nova
+    # - visualizada
+    # - recusada sem proposta
+    # ==============================================================
+
+    empresas_reveladas = set()
+
+    for oportunidade in todas_oportunidades:
+
+        status_oportunidade = (
+            oportunidade.status
+            or ""
         ).strip().lower()
-        in {
-            "nova",
-            "visualizada"
-        }
-    )
 
-    total_recusadas = sum(
-        1
-        for oportunidade
-        in oportunidades
-        if (
-            oportunidade.status or ""
-        ).strip().lower() == "recusada"
-    )
+        if status_oportunidade == "interessada":
 
-    # --------------------------------------------------------------
-    # Apenas interessadas serão identificadas para o comprador
-    # nesta primeira versão.
-    # --------------------------------------------------------------
+            empresas_reveladas.add(
+                oportunidade.empresa_id
+            )
 
-    oportunidades_interessadas = [
+    for proposta in propostas:
+
+        empresas_reveladas.add(
+            proposta.empresa_id
+        )
+
+    oportunidades_reveladas = [
         oportunidade
         for oportunidade
-        in oportunidades
-        if (
-            oportunidade.status or ""
-        ).strip().lower() == "interessada"
+        in todas_oportunidades
+        if oportunidade.empresa_id
+        in empresas_reveladas
     ]
 
-    # --------------------------------------------------------------
-    # Recupera os equipamentos compatíveis de cada empresa interessada
-    # --------------------------------------------------------------
+    # ==============================================================
+    # MATCHES DAS EMPRESAS JÁ REVELADAS
+    # ==============================================================
 
     matches_por_empresa = {}
 
-    for oportunidade in oportunidades_interessadas:
+    for oportunidade in oportunidades_reveladas:
 
         matches_empresa = (
             DemandMatch.query
@@ -6635,42 +6707,115 @@ def retorno_demanda(demanda_id):
             oportunidade.empresa_id
         ] = matches_empresa
 
-    # --------------------------------------------------------------
-    # Propostas recebidas nesta demanda
-    # --------------------------------------------------------------
+    # ==============================================================
+    # PEDIDO
+    # ==============================================================
 
-    total_propostas_recebidas = (
-        Proposal.query
+    pedido = (
+        Order.query
         .filter(
-            Proposal.demand_id
+            Order.demand_id
             == demanda.id,
-            Proposal.status.in_(
-                [
-                    "enviada",
-                    "aceita",
-                    "recusada"
-                ]
-            )
+
+            Order.buyer_user_id
+            == usuario.id
         )
-        .count()
+        .order_by(
+            Order.id.desc()
+        )
+        .first()
     )
 
-    # --------------------------------------------------------------
-    # Render
-    # --------------------------------------------------------------
+    # ==============================================================
+    # INDICADORES
+    # ==============================================================
+
+    total_compativeis = len(
+        oportunidades_base
+    )
+
+    total_interessadas = len(
+        empresas_reveladas
+    )
+
+    total_em_analise = sum(
+        1
+        for oportunidade
+        in oportunidades_base
+        if (
+            oportunidade.status
+            or ""
+        ).strip().lower()
+        in {
+            "nova",
+            "visualizada"
+        }
+    )
+
+    total_recusadas = sum(
+        1
+        for oportunidade
+        in oportunidades_base
+        if (
+            oportunidade.status
+            or ""
+        ).strip().lower()
+        == "recusada"
+    )
+
+    total_propostas_recebidas = len(
+        propostas
+    )
+
+    total_participacao_comercial = len(
+        empresas_reveladas
+    )
+
+    # ==============================================================
+    # RENDER
+    # ==============================================================
 
     return render_template(
         "retorno_demanda.html",
+
         usuario=usuario,
+
         demanda=demanda,
-        oportunidades=oportunidades,
-        oportunidades_interessadas=oportunidades_interessadas,
-        matches_por_empresa=matches_por_empresa,
-        total_compativeis=total_compativeis,
-        total_interessadas=total_interessadas,
-        total_em_analise=total_em_analise,
-        total_recusadas=total_recusadas,
-        total_propostas_recebidas=total_propostas_recebidas,
+
+        oportunidades=
+            todas_oportunidades,
+
+        oportunidades_reveladas=
+            oportunidades_reveladas,
+
+        matches_por_empresa=
+            matches_por_empresa,
+
+        propostas_por_empresa=
+            propostas_por_empresa,
+
+        pedido=pedido,
+
+        modo_historico=
+            modo_historico,
+
+        total_compativeis=
+            total_compativeis,
+
+        total_interessadas=
+            total_interessadas,
+
+        total_em_analise=
+            total_em_analise,
+
+        total_recusadas=
+            total_recusadas,
+
+        total_propostas_recebidas=
+            total_propostas_recebidas,
+
+        total_participacao_comercial=
+            total_participacao_comercial,
     )
 
 # --------------------------------------------------------------------
