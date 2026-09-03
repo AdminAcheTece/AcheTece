@@ -3898,8 +3898,7 @@ def _to_int(s):
     except Exception:
         return None
 
-@app.post("/api/track"
-)
+@app.post("/api/track")
 @csrf.exempt
 def api_track():
     data = request.get_json(silent=True) or {}
