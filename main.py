@@ -55,9 +55,34 @@ TOLERANCIA_DIAS = int(os.getenv("ASSIN_TOLERANCIA_DIAS", "1"))
 # Configuração básica
 # --------------------------------------------------------------------
 app = Flask(__name__)
-app.logger.setLevel(logging.INFO)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-unsafe')
-app.config['PREFERRED_URL_SCHEME'] = 'https'
+
+app.logger.setLevel(
+    logging.INFO
+)
+
+# ==============================================================
+# SEGURANÇA — SECRET KEY OBRIGATÓRIA
+# ==============================================================
+
+SECRET_KEY = (
+    os.getenv("SECRET_KEY")
+    or ""
+).strip()
+
+if not SECRET_KEY:
+
+    raise RuntimeError(
+        "SECRET_KEY não configurada no ambiente."
+    )
+
+app.config["SECRET_KEY"] = (
+    SECRET_KEY
+)
+
+app.config[
+    "PREFERRED_URL_SCHEME"
+] = "https"
+
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
@@ -106,6 +131,25 @@ RESEND_DOMAIN  = os.getenv("RESEND_DOMAIN", "achetece.com.br")
 EMAIL_FROM     = os.getenv("EMAIL_FROM", f"AcheTece <no-reply@{RESEND_DOMAIN}>")
 REPLY_TO       = os.getenv("REPLY_TO", "")
 SITE_URL       = os.getenv("SITE_URL", "https://www.achetece.com.br")
+
+# ==============================================================
+# ADMINISTRAÇÃO
+# ==============================================================
+
+ADMIN_EMAIL = (
+    os.getenv("ADMIN_EMAIL")
+    or ""
+).strip().lower()
+
+ADMIN_PASSWORD = (
+    os.getenv("ADMIN_PASSWORD")
+    or ""
+)
+
+ENABLE_ADMIN_TOOLS = _env_bool(
+    "ENABLE_ADMIN_TOOLS",
+    False
+)
 
 # === Google OAuth (Authlib) — registro do provedor ===
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
@@ -532,10 +576,14 @@ sdk = mercadopago.SDK(MP_ACCESS_TOKEN)
 PLAN_MONTHLY = float(os.getenv("PLAN_MONTHLY", "2.00"))
 PLAN_YEARLY  = float(os.getenv("PLAN_YEARLY", "2.00"))
 
-# DEMO
-DEMO_MODE  = os.getenv("DEMO_MODE", "true").lower() == "true"
-DEMO_TOKEN = os.getenv("DEMO_TOKEN", "localdemo")
-SEED_TOKEN = os.getenv("SEED_TOKEN", "ACHETECE")
+# ==============================================================
+# AMBIENTE DE DEMONSTRAÇÃO
+# ==============================================================
+
+DEMO_MODE = _env_bool(
+    "DEMO_MODE",
+    False
+)
 
 # ===== CONFIG AVATAR (definir uma única vez; sem duplicar BASE_DIR) =====
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5 MB
