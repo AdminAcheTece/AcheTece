@@ -250,9 +250,19 @@ app.config.update(
     MAIL_SUPPRESS_SEND=_env_bool("MAIL_SUPPRESS_SEND", False),
     OTP_DEV_FALLBACK=_env_bool("OTP_DEV_FALLBACK", False),
 
+    # ==========================================================
+    # SESSÃO / COOKIES
+    # ==========================================================
     SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_COOKIE_DOMAIN=(os.getenv("SESSION_COOKIE_DOMAIN") or None)
+    SESSION_COOKIE_DOMAIN=(os.getenv("SESSION_COOKIE_DOMAIN") or None),
+
+    # Sessões permanentes expiram após 12 horas.
+    PERMANENT_SESSION_LIFETIME=12 * 60 * 60,
+
+    # Usuário ativo renova o prazo da sessão.
+    SESSION_REFRESH_EACH_REQUEST=True,
 )
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY") or ""
