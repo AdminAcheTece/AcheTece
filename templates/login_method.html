@@ -585,6 +585,11 @@
 
           <!-- Opção: receber código por e-mail -->
           <form action="{{ url_for('post_login_code') }}" method="POST">
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ csrf_token() }}"
+            >
             <input type="hidden" name="email" value="{{ email or request.args.get('email','') }}">
             {% if request.args.get('next') %}
               <input type="hidden" name="next" value="{{ request.args.get('next') }}">
