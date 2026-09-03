@@ -1328,6 +1328,108 @@
 
     {% endif %}
 
+    <!-- =========================================================
+         HISTÓRICO OPERACIONAL
+    ========================================================== -->
+    
+    <section class="operational-history">
+    
+    
+        <h2>
+            Histórico operacional
+        </h2>
+    
+    
+        <p class="operational-history-intro">
+    
+            Registro cronológico das movimentações deste
+            pedido no AcheTece.
+    
+        </p>
+    
+    
+        {% if historico_operacional %}
+    
+    
+            <div class="operational-history-list">
+    
+    
+                {% for evento in historico_operacional %}
+    
+    
+                    <div class="operational-history-item">
+    
+    
+                        <div class="operational-history-date">
+    
+                            {% if evento.created_at %}
+    
+                                {{
+                                    evento.created_at
+                                    .strftime(
+                                        '%d/%m/%Y %H:%M'
+                                    )
+                                }}
+    
+                            {% else %}
+    
+                                Data não registrada
+    
+                            {% endif %}
+    
+                        </div>
+    
+    
+                        <div>
+    
+    
+                            <div class="operational-history-title">
+    
+                                {{ evento.label }}
+    
+                                <span class="operational-history-actor">
+                                    {{ evento.actor_label }}
+                                </span>
+    
+                            </div>
+    
+    
+                            {% if evento.message %}
+    
+                                <div class="operational-history-message">
+                                    {{ evento.message }}
+                                </div>
+    
+                            {% endif %}
+    
+    
+                        </div>
+    
+    
+                    </div>
+    
+    
+                {% endfor %}
+    
+    
+            </div>
+    
+    
+        {% else %}
+    
+    
+            <div class="operational-history-message">
+    
+                Ainda não existem movimentações operacionais
+                registradas para este pedido.
+    
+            </div>
+    
+    
+        {% endif %}
+    
+    
+    </section>
 
     <!-- =========================================================
          COMPRADOR CONFIRMA A ENTREGA
