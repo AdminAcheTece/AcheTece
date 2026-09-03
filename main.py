@@ -811,12 +811,50 @@ def enviar_email_recuperacao(email, nome_empresa=""):
         raise RuntimeError("Falha ao enviar e-mail de recuperação.")
 
 def login_admin_requerido(f):
+
     @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if session.get('admin_email') != 'gestao.achetece@gmail.com':
-            flash('Acesso não autorizado.')
-            return redirect(url_for('admin_login'))
-        return f(*args, **kwargs)
+    def decorated_function(
+        *args,
+        **kwargs
+    ):
+
+        admin_autenticado = (
+            session.get(
+                "admin_authenticated"
+            )
+            is True
+        )
+
+        admin_email_sessao = (
+            session.get(
+                "admin_email"
+            )
+            or ""
+        ).strip().lower()
+
+        if (
+            not admin_autenticado
+            or not ADMIN_EMAIL
+            or admin_email_sessao
+            != ADMIN_EMAIL
+        ):
+
+            flash(
+                "Acesso administrativo necessário.",
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "admin_login"
+                )
+            )
+
+        return f(
+            *args,
+            **kwargs
+        )
+
     return decorated_function
 
 # --------------------------------------------------------------------
@@ -14222,24 +14260,122 @@ def performance_acesso():
 # --------------------------------------------------------------------
 # Admin: empresas
 # --------------------------------------------------------------------
-@app.route('/admin/login', methods=['GET', 'POST'])
+@app.route(
+    "/admin/login",
+    methods=[
+        "GET",
+        "POST"
+    ]
+)
 def admin_login():
-    if request.method == 'POST':
-        email = request.form.get('email'); senha = request.form.get('senha')
-        if email == 'gestao.achetece@gmail.com' and senha == '123adm@achetece':
-            session['admin_email'] = email
-            flash('Login de administrador realizado.', 'success')
-            return redirect(url_for('admin_empresas'))
-        else:
-            flash('Email ou Senha incorreta.', 'error')
-            return redirect(url_for('admin_login'))
-    return render_template('admin_login.html')
 
-@app.route('/admin/logout', methods=['POST'])
+    # ==============================================================
+    # CONFIGURAÇÃO
+    # ==============================================================
+
+    if (
+        not ADMIN_EMAIL
+        or not ADMIN_PASSWORD
+    ):
+
+        current_app.logger.error(
+            "[ADMIN] Credenciais administrativas "
+            "não configuradas."
+        )
+
+        return (
+            "Administração indisponível.",
+            503
+        )
+
+    # ==============================================================
+    # GET
+    # ==============================================================
+
+    if request.method == "GET":
+
+        return render_template(
+            "admin_login.html"
+        )
+
+    # ==============================================================
+    # POST
+    # ==============================================================
+
+    email = (
+        request.form.get(
+            "email"
+        )
+        or ""
+    ).strip().lower()
+
+    senha = (
+        request.form.get(
+            "senha"
+        )
+        or ""
+    )
+
+    if (
+        email == ADMIN_EMAIL
+        and senha == ADMIN_PASSWORD
+    ):
+
+        session.clear()
+
+        session[
+            "admin_authenticated"
+        ] = True
+
+        session[
+            "admin_email"
+        ] = ADMIN_EMAIL
+
+        session.permanent = True
+
+        flash(
+            "Login de administrador realizado.",
+            "success"
+        )
+
+        return redirect(
+            url_for(
+                "admin_empresas"
+            )
+        )
+
+    current_app.logger.warning(
+        "[ADMIN] Tentativa de login "
+        "administrativo inválida."
+    )
+
+    flash(
+        "E-mail ou senha incorretos.",
+        "error"
+    )
+
+    return redirect(
+        url_for(
+            "admin_login"
+        )
+    )
+
+@app.post(
+    "/admin/logout"
+)
+@login_admin_requerido
 def admin_logout():
-    session.pop('admin_email', None)
-    flash('Você saiu do painel administrativo.')
-    return redirect(url_for('index'))
+
+    session.clear()
+
+    flash(
+        "Você saiu do painel administrativo.",
+        "success"
+    )
+
+    return redirect(
+        url_for("index")
+    )
 
 from datetime import datetime, timedelta
 
@@ -14339,7 +14475,9 @@ def admin_empresas():
         plano=f_plano,                 # <- NOVO: devolve pro template manter seleção
     )
 
-@app.route('/admin/editar_status/<int:empresa_id>', methods=['GET', 'POST'])
+@app.post(
+    "/admin/editar_status/<int:empresa_id>"
+)
 @login_admin_requerido
 def admin_editar_status(empresa_id):
     empresa = Empresa.query.get_or_404(empresa_id)
