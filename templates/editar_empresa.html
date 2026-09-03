@@ -296,6 +296,11 @@
         {% endif %}
 
         <form method="POST" action="{{ url_for('editar_empresa') }}" class="formulario" id="formulario" autocomplete="off">
+          <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ csrf_token() }}"
+          >
           <label for="nome">Nome da Empresa:</label>
           <input type="text" id="nome" name="nome" value="{{ nome or '' }}" class="{% if erros and erros.get('nome') %}erro-campo{% endif %}">
           {% if erros and erros.get('nome') %}<div class="mensagem-campo">{{ erros.get('nome') }}</div>{% endif %}
