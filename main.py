@@ -132,9 +132,82 @@ CSRF_ENDPOINTS_FASE_1 = {
     "admin_login",
 }
 
+# ==============================================================
+# CSRF — FASE 2
+#
+# Núcleo transacional do marketplace.
+# ==============================================================
+
+CSRF_ENDPOINTS_FASE_2 = {
+
+    # ==========================================================
+    # COMPRADOR — DEMANDAS / MATCHING
+    # ==========================================================
+
+    "nova_demanda",
+
+    "publicar_demanda",
+
+    "configurar_matching",
+
+    "executar_matching",
+
+    # ==========================================================
+    # COMPRADOR — PROPOSTAS
+    # ==========================================================
+
+    "aceitar_proposta",
+
+    "recusar_proposta",
+
+    "solicitar_ajuste_proposta",
+
+    "gerar_pedido",
+
+    # ==========================================================
+    # COMPRADOR — PEDIDOS
+    # ==========================================================
+
+    "confirmar_entrega_comprador",
+
+    # ==========================================================
+    # MALHARIA — OPORTUNIDADES
+    # ==========================================================
+
+    "oportunidade_interesse",
+
+    "oportunidade_recusar",
+
+    # ==========================================================
+    # MALHARIA — PROPOSTAS
+    # ==========================================================
+
+    "enviar_proposta",
+
+    # ==========================================================
+    # MALHARIA — PEDIDOS
+    # ==========================================================
+
+    "confirmar_pedido_malharia",
+
+    "iniciar_producao_malharia",
+
+    "concluir_producao_malharia",
+}
+
+
+CSRF_ENDPOINTS_PROTEGIDOS = (
+    CSRF_ENDPOINTS_FASE_1
+    |
+    CSRF_ENDPOINTS_FASE_2
+)
 
 @app.before_request
-def proteger_csrf_fase_1():
+def proteger_csrf_progressivo():
+
+    # ==============================================================
+    # SOMENTE MÉTODOS QUE ALTERAM ESTADO
+    # ==============================================================
 
     if request.method not in {
         "POST",
@@ -145,14 +218,35 @@ def proteger_csrf_fase_1():
 
         return None
 
+    # ==============================================================
+    # ENDPOINT
+    # ==============================================================
+
     endpoint = (
         request.endpoint
         or ""
     )
 
+    # ==============================================================
+    # PROTEÇÃO PROGRESSIVA
+    #
+    # Nesta fase:
+    #
+    # - autenticação
+    # - administração inicial
+    # - marketplace comprador
+    # - marketplace malharia
+    #
+    # ainda estão fora:
+    #
+    # - webhooks externos
+    # - tracking
+    # - demais módulos que entrarem na FASE 3
+    # ==============================================================
+
     if (
         endpoint
-        not in CSRF_ENDPOINTS_FASE_1
+        not in CSRF_ENDPOINTS_PROTEGIDOS
     ):
 
         return None
@@ -170,6 +264,10 @@ def proteger_csrf_fase_1():
 )
 def tratar_erro_csrf(error):
 
+    # ==============================================================
+    # LOG DE SEGURANÇA
+    # ==============================================================
+
     current_app.logger.warning(
         (
             "[SECURITY][CSRF] "
@@ -186,6 +284,56 @@ def tratar_erro_csrf(error):
             "Atualize a página e tente novamente."
         ),
         "warning"
+    )
+
+    # ==============================================================
+    # ADMIN
+    # ==============================================================
+
+    if request.path.startswith(
+        "/admin"
+    ):
+
+        return redirect(
+            url_for(
+                "admin_login"
+            )
+        )
+
+    # ==============================================================
+    # COMPRADOR
+    # ==============================================================
+
+    if request.path.startswith(
+        "/comprador/"
+    ):
+
+        return redirect(
+            url_for(
+                "painel_comprador"
+            )
+        )
+
+    # ==============================================================
+    # MALHARIA
+    # ==============================================================
+
+    if request.path.startswith(
+        "/malharia/"
+    ):
+
+        return redirect(
+            url_for(
+                "painel_malharia"
+            )
+        )
+
+    # ==============================================================
+    # LOGIN / OUTROS
+    # ==============================================================
+
+    return redirect(
+        url_for("login")
     )
 
     # ----------------------------------------------------------
