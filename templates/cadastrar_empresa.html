@@ -354,6 +354,11 @@
         {% endif %}
 
         <form method="POST" action="{{ url_for('cadastrar_empresa') }}" class="formulario" autocomplete="off">
+          <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ csrf_token() }}"
+          >
           <label for="nome">Nome da Empresa <span style="color:#d00000">*</span></label>
           <input type="text" id="nome" name="nome" required
                  value="{{ nome or '' }}" class="{% if erros and erros.get('nome') %}erro-campo{% endif %}">
