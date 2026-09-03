@@ -612,6 +612,11 @@
                     <form
                       action="/admin/editar_status/{{ empresa.id }}?pagina={{ pagina }}{% if status %}&status={{ status }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}{% if apelido %}&apelido={{ apelido }}{% endif %}{% if cidade %}&cidade={{ cidade }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}{% if plano %}&plano={{ plano }}{% endif %}"
                       method="post">
+                      <input
+                        type="hidden"
+                        name="csrf_token"
+                        value="{{ csrf_token() }}"
+                      >
                       <input type="hidden" name="pagina" value="{{ pagina }}">
                       <input type="hidden" name="status" value="{{ status or '' }}">
                       <input type="hidden" name="data_inicio" value="{{ data_inicio or '' }}">
@@ -632,6 +637,11 @@
                       action="/admin/excluir_empresa/{{ empresa.id }}?pagina={{ pagina }}{% if status %}&status={{ status }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}{% if apelido %}&apelido={{ apelido }}{% endif %}{% if cidade %}&cidade={{ cidade }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}{% if plano %}&plano={{ plano }}{% endif %}"
                       method="post"
                       onsubmit="return confirmarExclusao('{{ empresa.razao_social or empresa.nome }}')">
+                      <input
+                        type="hidden"
+                        name="csrf_token"
+                        value="{{ csrf_token() }}"
+                      >
                       <input type="hidden" name="pagina" value="{{ pagina }}">
                       <input type="hidden" name="status" value="{{ status or '' }}">
                       <input type="hidden" name="data_inicio" value="{{ data_inicio or '' }}">
