@@ -431,6 +431,11 @@
           {% endwith %}
 
           <form action="{{ url_for('validate_login_code') }}" method="POST" id="otpForm" novalidate>
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ csrf_token() }}"
+            >
             <input type="hidden" name="email" value="{{ email }}">
             <input type="hidden" name="codigo" id="codigo">
 
