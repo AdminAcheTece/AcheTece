@@ -401,6 +401,11 @@
           {% endwith %}
 
           <form class="login" method="POST" autocomplete="on" action="">
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ csrf_token() }}"
+            >
             <label for="email">E-mail</label>
             <input
               type="email"
