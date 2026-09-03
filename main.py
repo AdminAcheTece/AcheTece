@@ -103,9 +103,7 @@ app.config[
 
 app.config[
     "WTF_CSRF_TIME_LIMIT"
-] = timedelta(
-    hours=4
-)
+] = 4 * 60 * 60
 
 csrf = CSRFProtect(
     app
