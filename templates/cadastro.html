@@ -35,6 +35,12 @@
       <h1>Crie a sua conta. É grátis!</h1>
 
       <form action="/cadastro" method="POST" autocomplete="on">
+        <input
+          type="hidden"
+          name="csrf_token"
+          value="{{ csrf_token() }}"
+        >
+
         <span class="label">Escolha o tipo da sua conta</span>
         <div class="radios">
           <label><input type="radio" name="tipo_pessoa" value="pf" checked> Pessoa Física</label>
