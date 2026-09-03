@@ -389,6 +389,11 @@
           <p class="sub">Preencha as informações do tear. Você pode editar depois quando precisar.</p>
 
           <form method="POST" class="formulario" novalidate>
+            <input
+              type="hidden"
+              name="csrf_token"
+              value="{{ csrf_token() }}"
+            >
             <div class="grid">
               <div>
                 <label for="marca">Marca</label>
