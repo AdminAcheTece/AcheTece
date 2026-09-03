@@ -267,6 +267,12 @@
 
     <form method="POST" action="{{ url_for('nova_demanda') }}">
 
+        <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ csrf_token() }}"
+        >
+        
         <section class="card">
 
             <div class="section-title">
