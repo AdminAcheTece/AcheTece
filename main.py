@@ -2095,10 +2095,12 @@ class OrderEvent(db.Model):
         index=True
     )
 
+    # pedido_criado
     # pedido_confirmado
     # producao_iniciada
     # producao_concluida
     # entrega_confirmada
+    # pedido_cancelado
     action = db.Column(
         db.String(40),
         nullable=False,
