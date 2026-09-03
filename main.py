@@ -3655,6 +3655,50 @@ def _no_cache_on_panel(resp):
         pass
     return resp
 
+# ==============================================================
+# HEADERS GLOBAIS DE SEGURANÇA
+# ==============================================================
+
+@app.after_request
+def _security_headers(resp):
+    """
+    Aplica headers HTTP de segurança de baixo risco
+    em todas as respostas do AcheTece.
+
+    HSTS e Content-Security-Policy são tratados
+    separadamente para evitar quebra de integrações.
+    """
+
+    # Impede interpretação automática de um arquivo como outro tipo MIME.
+    resp.headers.setdefault(
+        "X-Content-Type-Options",
+        "nosniff"
+    )
+
+    # Permite iframe somente dentro do próprio AcheTece.
+    # SAMEORIGIN é preferido a DENY porque o sistema pode
+    # exibir materiais/PDFs do próprio domínio.
+    resp.headers.setdefault(
+        "X-Frame-Options",
+        "SAMEORIGIN"
+    )
+
+    # Em navegação externa envia apenas a origem,
+    # evitando expor caminhos e parâmetros internos.
+    resp.headers.setdefault(
+        "Referrer-Policy",
+        "strict-origin-when-cross-origin"
+    )
+
+    # O AcheTece atualmente não necessita acessar
+    # câmera, microfone ou localização do dispositivo.
+    resp.headers.setdefault(
+        "Permissions-Policy",
+        "camera=(), microphone=(), geolocation=()"
+    )
+
+    return resp
+
 # =====================[ ANALYTICS - FIM ]=====================
 
 def parse_bool(val):
