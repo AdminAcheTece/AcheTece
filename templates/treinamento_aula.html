@@ -1,704 +1,5546 @@
 <!DOCTYPE html>
+
 <html lang="pt-br">
+
 <head>
-  <meta charset="utf-8">
-  <title>{{ lesson.title }} - Treinamento Operacional</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
-  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
+  <meta charset="UTF-8">
 
-  <!-- Fonte (mesma do treinamento_home / treinamento_modulo) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <title>Portal da Malharia - AcheTece</title>
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <!-- CSS principal -->
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='style.css') }}"
+  >
+
+  <!-- Favicons -->
+  <link
+    rel="icon"
+    type="image/x-icon"
+    href="{{ url_for('static', filename='favicon_final.ico') }}"
+  >
+
+  <link
+    rel="icon"
+    type="image/png"
+    href="{{ url_for('static', filename='favicon_final.png') }}"
+  >
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+
 
   <style>
+
     :root{
+
+      /* =========================================================
+         IDENTIDADE
+      ========================================================= */
+
       --olive:#7B7424;
       --olive-600:#5E581C;
       --olive-dark:#434326;
-      --olive-50:#F1F2E8;
 
-      --bg-150:#EAEAE8;
-      --site-bg: var(--bg-150);
+      --olive-50:#F1F2E8;
+      --olive-100:#E6E7DE;
+
+      --line-olive:#BFBFA8;
 
       --lime:#B6F34D;
       --lime-700:#A2E532;
 
-      --text:#111827;
-      --muted:#4b5563;
-      --line:#d7dbe3;
+      /* =========================================================
+         NEUTROS
+      ========================================================= */
 
-      --maxw:1600px;
-      --navH:84px;
+      --bg-150:#EAEAE8;
+      --site-bg:var(--bg-150);
+
+      --white:#FFFFFF;
+      --black:#111111;
+
+      --cinza-900:#111827;
+
+      --text:#1F1F1F;
+      --muted:#6B6B6B;
+
+      --line:#CFD3DC;
+      --line-strong:#B9BFCA;
+
+      /* =========================================================
+         STATUS
+      ========================================================= */
+
+      --success:#2E7D32;
+      --success-bg:#EAF7ED;
+
+      --warn:#B85E00;
+      --warn-bg:#FFF3E6;
+
+      --danger:#B00020;
+      --danger-bg:#FFE9EE;
+
+      --blue:#295C87;
+      --blue-bg:#EEF5FA;
+
+      /* Compatibilidade */
+      --roxo:var(--olive);
+      --roxo-hover:var(--olive-600);
+
+      --maxw:1280px;
     }
 
-    html, body { max-width:100%; overflow-x:hidden; }
-    *, *::before, *::after { box-sizing:border-box; }
+
+    html,
+    body{
+
+      max-width:100%;
+
+      overflow-x:hidden;
+    }
+
+
+    *,
+    *::before,
+    *::after{
+
+      box-sizing:border-box;
+    }
+
 
     body{
-      background: var(--site-bg);
-      color: var(--text);
+
       margin:0;
-      font-family:'Manrope', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+
+      background:var(--site-bg);
+
+      color:var(--cinza-900);
+
+      font-family:
+        'Inter',
+        system-ui,
+        -apple-system,
+        Segoe UI,
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
     }
 
-    /* =========================
-       Topbar branca arredondada (FIXA) — IGUAL ao treinamento_modulo
-       ========================= */
-    .topbar-wrap{
-      position:fixed;
-      top:14px;
-      left:0;
-      right:0;
-      z-index:9999;
-      pointer-events:none;
-    }
-    .topbar{
-      pointer-events:auto;
-      max-width:var(--maxw);
-      margin:0 auto;
-      padding:14px 18px;
-      background:#fff;
-      border:1px solid rgba(17,24,39,0.08);
-      border-radius:9999px;
-      box-shadow: 0 10px 30px rgba(17,24,39,0.08);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:18px;
-    }
 
-    .brand{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      min-width: 180px;
-    }
-    .brand a{
-      display:inline-flex;
-      align-items:center;
-      text-decoration:none;
-    }
+    .sr-only{
 
-    /* logo (mesmas regras do home/modulo) */
-    .brand img{
-      height:60px;
-      width:auto;
-      display:block;
-    }
-    @media (max-width: 680px){
-      .brand img{ height:40px; }
-    }
+      position:absolute;
 
-    .nav-links{
-      display:flex;
-      align-items:center;
-      gap:34px;
-      justify-content:center;
-      flex:1 1 auto;
-    }
-    .nav-links a{
-      text-decoration:none;
-      color:#111;
-      font-weight:700;
-      letter-spacing:-0.01em;
-      font-size:18px;
-      padding:10px 8px;
-      border-radius:14px;
-      transition: background-color .15s ease, transform .12s ease;
+      width:1px;
+      height:1px;
+
+      padding:0;
+
+      margin:-1px;
+
+      overflow:hidden;
+
+      clip:rect(0,0,0,0);
+
       white-space:nowrap;
-    }
-    .nav-links a:hover{
-      background: rgba(182,243,77,.20);
-      transform: translateY(-1px);
+
+      border:0;
     }
 
-    .home-btn{
-      width:44px;
-      height:44px;
-      border-radius:14px;
-      border:1px solid rgba(17,24,39,0.10);
-      background:#fff;
-      display:inline-flex;
+
+    /* =========================================================
+       CONTAINER
+    ========================================================= */
+
+    .faixa-cinza{
+
+      background:var(--site-bg);
+
+      padding:
+        24px 0
+        48px;
+    }
+
+
+    .page-outer{
+
+      max-width:var(--maxw);
+
+      margin:0 auto;
+
+      padding:0 16px;
+    }
+
+
+    .page-outer,
+    .container{
+
+      background:transparent !important;
+
+      border:0 !important;
+
+      box-shadow:none !important;
+
+      border-radius:0 !important;
+    }
+
+
+    .container{
+
+      max-width:1120px;
+
+      margin:0 auto;
+
+      padding:
+        0 0
+        28px;
+    }
+
+
+    /* =========================================================
+       HEADER - PAINEL
+    ========================================================= */
+
+    .hdr-actions.painel-actions{
+
+      position:relative;
+
+      display:flex;
+
       align-items:center;
-      justify-content:center;
+
+      gap:8px;
+    }
+
+
+    .hdr-actions.painel-actions .icon-btn,
+    .hdr-actions.painel-actions .profile-pill{
+
+      width:40px !important;
+      height:40px !important;
+
+      border-radius:12px !important;
+
+      border:
+        1px solid #E4E4E4 !important;
+
+      background:#FFF !important;
+
+      display:inline-flex !important;
+
+      align-items:center !important;
+      justify-content:center !important;
+
       cursor:pointer;
-      transition: background-color .15s ease, transform .12s ease;
-      flex:0 0 auto;
-      text-decoration:none;
+
+      padding:0 !important;
+
+      box-shadow:none !important;
+
+      transition:
+        background-color .15s ease,
+        transform .12s ease;
     }
-    .home-btn:hover{
-      background: rgba(182,243,77,.25);
-      transform: translateY(-1px);
+
+
+    .hdr-actions.painel-actions .icon-btn:hover,
+    .hdr-actions.painel-actions .profile-pill:hover{
+
+      background:var(--olive-50) !important;
+
+      transform:
+        translateY(-1px);
     }
-    .home-btn svg{
-      width:22px;
-      height:22px;
-      stroke:#111;
-      fill:none;
-      stroke-width:2;
+
+
+    .hdr-actions.painel-actions .icon-btn:focus-visible,
+    .hdr-actions.painel-actions .profile-pill:focus-visible{
+
+      outline:
+        2px solid var(--lime);
+
+      outline-offset:2px;
+    }
+
+
+    .hdr-actions.painel-actions .icon-btn svg{
+
+      width:20px !important;
+      height:20px !important;
+
+      stroke:#111 !important;
+
+      fill:none !important;
+
+      stroke-width:2 !important;
+
       stroke-linecap:round;
+
       stroke-linejoin:round;
     }
 
-    /* Conteúdo rola por baixo do topo fixo */
-    main{
-      padding-top: calc(var(--navH) + 22px);
+
+    .hdr-actions.painel-actions
+    .profile-pill
+    .user-ico{
+
+      width:20px !important;
+      height:20px !important;
+
+      display:block;
+
+      fill:none;
+
+      stroke:#111;
+
+      stroke-width:2;
+
+      stroke-linecap:round;
+
+      stroke-linejoin:round;
     }
 
-    /* =========================
-       HERO (mesma estética do módulo)
-       ========================= */
-    .hero{
-      max-width:var(--maxw);
-      margin:0 auto;
-      padding:26px 18px 6px; /* ajustado: reduz distância antes dos cards */
-      text-align:center;
+
+    .hdr-text-btn{
+
+      height:40px;
+
+      padding:0 13px;
+
+      border-radius:9999px;
+
+      border:
+        1px solid #E4E4E4;
+
+      background:#FFF;
+
+      color:#000;
+
+      font-weight:900;
+
+      font-size:13px;
+
+      text-decoration:none;
+
+      display:inline-flex;
+
+      align-items:center;
+      justify-content:center;
+
+      cursor:pointer;
+
+      white-space:nowrap;
+
+      transition:
+        background-color .15s ease,
+        transform .12s ease;
     }
-    .hero h1{
-      margin:0;
-      font-size: clamp(34px, 5vw, 70px);
-      line-height: 0.95;
-      letter-spacing:-0.03em;
+
+
+    .hdr-text-btn:hover{
+
+      background:var(--lime);
+
+      transform:
+        translateY(-1px);
+    }
+
+
+    .hdr-text-btn:active{
+
+      background:var(--lime-700);
+
+      transform:
+        translateY(0);
+    }
+
+
+    .hdr-text-btn:focus-visible{
+
+      outline:
+        2px solid var(--lime);
+
+      outline-offset:2px;
+    }
+
+
+    @media(max-width:1200px){
+
+      .hdr-actions.painel-actions{
+
+        gap:5px;
+      }
+
+
+      .hdr-text-btn{
+
+        padding:0 9px;
+
+        font-size:12px;
+      }
+
+    }
+
+
+    /* =========================================================
+       BADGES
+    ========================================================= */
+
+    .badge-wrap{
+
+      position:relative;
+    }
+
+
+    .badge{
+
+      position:absolute;
+
+      top:-6px;
+      right:-6px;
+
+      min-width:16px;
+
+      height:16px;
+
+      padding:0 4px;
+
+      border-radius:999px;
+
+      background:#FF6B00;
+
+      color:#FFF;
+
+      font-size:11px;
+
+      display:flex;
+
+      align-items:center;
+      justify-content:center;
+
+      line-height:1;
+
+      border:
+        2px solid #FFF;
+    }
+
+
+    /* =========================================================
+       NOTIFICAÇÕES
+    ========================================================= */
+
+    .notify-panel{
+
+      position:fixed;
+
+      right:16px;
+
+      top:
+        calc(
+          var(--nav-h,72px) + 10px
+        );
+
+      width:320px;
+
+      max-width:92vw;
+
+      background:#FFF;
+
+      border:
+        1px solid var(--line);
+
+      border-radius:14px;
+
+      opacity:0;
+
+      pointer-events:none;
+
+      transform:
+        translateY(8px)
+        scale(.98);
+
+      transition:
+        opacity .18s ease,
+        transform .18s ease;
+
+      z-index:9999;
+    }
+
+
+    .notify-panel.open{
+
+      opacity:1;
+
+      pointer-events:auto;
+
+      transform:
+        translateY(0)
+        scale(1);
+    }
+
+
+    .np-header{
+
+      padding:10px 12px;
+
+      border-bottom:
+        1px solid var(--line);
+
       font-weight:800;
+    }
+
+
+    .np-empty{
+
+      padding:14px 12px;
+
+      color:#666;
+    }
+
+
+    .np-item{
+
+      padding:10px 12px;
+
+      border-bottom:
+        1px solid #F1F2F6;
+    }
+
+
+    .np-item:last-child{
+
+      border-bottom:0;
+    }
+
+
+    .np-item small{
+
+      color:#777;
+    }
+
+
+    /* =========================================================
+       MENU DE PERFIL
+    ========================================================= */
+
+    .profile-menu{
+
+      position:fixed;
+
+      right:16px;
+
+      top:
+        calc(
+          var(--nav-h,72px) + 10px
+        );
+
+      width:290px;
+
+      max-width:92vw;
+
+      background:#FFF;
+
+      border:
+        1px solid var(--line);
+
+      border-radius:14px;
+
+      opacity:0;
+
+      pointer-events:none;
+
+      transform:
+        translateY(8px)
+        scale(.98);
+
+      transition:
+        opacity .18s ease,
+        transform .18s ease;
+
+      z-index:9999;
+    }
+
+
+    .profile-menu.open{
+
+      opacity:1;
+
+      pointer-events:auto;
+
+      transform:
+        translateY(0)
+        scale(1);
+    }
+
+
+    .pm-header{
+
+      display:flex;
+
+      flex-direction:column;
+
+      align-items:center;
+      justify-content:center;
+
+      text-align:center;
+
+      gap:10px;
+
+      padding:12px;
+
+      border-bottom:
+        1px solid var(--line);
+    }
+
+
+    .pm-header .avatar-ico{
+
+      width:36px;
+
+      height:36px;
+
+      border-radius:50%;
+
+      border:
+        1px solid var(--line);
+
+      background:#FFF;
+
+      display:grid;
+
+      place-items:center;
+
+      color:#111;
+    }
+
+
+    .pm-header .avatar-ico svg{
+
+      width:20px;
+      height:20px;
+
+      stroke:currentColor;
+
+      fill:none;
+
+      stroke-width:1.8;
+    }
+
+
+    .pm-group-title{
+
+      font-size:11px;
+
+      color:#7A7A7A;
+
+      letter-spacing:.02em;
+
+      text-transform:uppercase;
+
+      padding:
+        10px 12px
+        4px;
+    }
+
+
+    .pm-item{
+
+      display:flex;
+
+      align-items:center;
+
+      gap:10px;
+
+      padding:
+        10px 12px;
+
+      text-decoration:none;
+
       color:#222;
     }
-    .hero p{
-      margin:14px auto 0;
-      max-width: 980px;
-      font-size: clamp(16px, 2vw, 24px);
-      line-height:1.25;
-      color:#3b3b3b;
-      font-weight:500;
+
+
+    .pm-item:hover{
+
+      background:var(--olive-50);
+
+      color:var(--olive);
+
+      border-radius:8px;
     }
 
-    /* =========================
-       Section (mesma do home/modulo)
-       ========================= */
-    .section{
-      max-width:var(--maxw);
-      margin:0 auto;
-      padding: 10px 18px 34px; /* ajustado: aproxima do hero */
+
+    .pm-item svg{
+
+      width:18px;
+      height:18px;
+
+      stroke:currentColor;
+
+      fill:none;
+
+      stroke-width:1.8;
     }
 
-    /* =========================
-       Card principal (aula + ações) — no padrão dos cards do home
-       ========================= */
-    .lesson-shell{
-      display:grid;
-      grid-template-columns: 1.3fr .7fr;
-      gap:16px;
-      align-items:start;
-      margin-top: 10px; /* ajustado */
-    }
-    @media (max-width: 980px){
-      .lesson-shell{ grid-template-columns: 1fr; }
+
+    .pm-sep{
+
+      height:1px;
+
+      background:var(--line);
+
+      margin:6px 0;
     }
 
-    .lesson-card{
-      background:#fff;
-      border:1px solid rgba(17,24,39,0.10);
-      border-radius:24px;
-      padding:18px;
-      box-shadow: 0 10px 28px rgba(17,24,39,0.06);
+
+    /* =========================================================
+       PORTAL DA MALHARIA
+    ========================================================= */
+
+    .portal-head{
+
+      margin:
+        10px 0
+        22px;
     }
 
-    .kicker{
-      color:#4b5563;
+
+    .portal-eyebrow{
+
+      margin-bottom:7px;
+
+      color:var(--olive);
+
+      font-size:12px;
+
       font-weight:800;
-      font-size:14px;
-      letter-spacing:-0.01em;
+
+      letter-spacing:.07em;
+
+      text-transform:uppercase;
     }
 
-    .lesson-title{
-      margin:6px 0 12px 0; /* ajustado: sem resumo no card */
-      font-size:26px;
-      font-weight:800;
-      letter-spacing:-0.02em;
-      line-height:1.15;
-      color:#111;
-    }
 
-    .lesson-summary{
-      color:#4b5563;
-      line-height:1.45;
-      font-size:15px;
-      font-weight:500;
+    .portal-title{
+
       margin:0;
-    }
 
-    .meta-row{
-      margin-top:6px; /* ajustado */
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
-    }
-
-    .pill{
-      height:30px;
-      padding:0 12px;
-      border-radius:999px;
-      border:1px solid rgba(17,24,39,0.10);
-      background: rgba(241,242,232,0.9);
-      font-size:13px;
-      font-weight:800;
       color:#111;
-      display:inline-flex;
+
+      font-size:34px;
+
+      line-height:1.12;
+
+      font-weight:900;
+
+      letter-spacing:-.035em;
+    }
+
+
+    .portal-intro{
+
+      max-width:760px;
+
+      margin:
+        9px 0
+        0;
+
+      color:#666;
+
+      font-size:15px;
+
+      line-height:1.55;
+    }
+
+
+    /* =========================================================
+       HERO
+    ========================================================= */
+
+    .portal-hero{
+
+      margin-bottom:18px;
+
+      padding:28px;
+
+      display:flex;
+
       align-items:center;
+
+      justify-content:space-between;
+
+      gap:28px;
+
+      border-radius:22px;
+
+      background:#111;
+
+      color:#FFF;
+    }
+
+
+    .portal-hero-copy{
+
+      max-width:670px;
+    }
+
+
+    .portal-hero-kicker{
+
+      margin-bottom:7px;
+
+      color:var(--lime);
+
+      font-size:12px;
+
+      font-weight:900;
+
+      letter-spacing:.05em;
+
+      text-transform:uppercase;
+    }
+
+
+    .portal-hero h2{
+
+      margin:
+        0 0
+        8px;
+
+      color:#FFF;
+
+      font-size:26px;
+
+      line-height:1.2;
+
+      font-weight:900;
+
+      letter-spacing:-.025em;
+    }
+
+
+    .portal-hero p{
+
+      margin:0;
+
+      color:#D5D5D5;
+
+      font-size:14px;
+
+      line-height:1.55;
+    }
+
+
+    .portal-hero-actions{
+
+      display:flex;
+
+      flex-direction:column;
+
+      gap:9px;
+
+      flex:0 0 auto;
+    }
+
+
+    .portal-cta{
+
+      min-height:46px;
+
+      padding:0 19px;
+
+      display:inline-flex;
+
+      align-items:center;
+
+      justify-content:center;
+
+      border-radius:999px;
+
+      text-decoration:none;
+
+      font-size:12px;
+
+      font-weight:900;
+
       white-space:nowrap;
     }
-    .pill--done{
-      background: rgba(182,243,77,.22);
-      border-color: rgba(182,243,77,.55);
-    }
-    .pill--progress{
-      background: rgba(241,242,232,.95);
-      border-color: rgba(17,24,39,0.12);
-    }
-    .pill--todo{
-      background: rgba(234,234,232,.90);
-      border-color: rgba(17,24,39,0.10);
+
+
+    .portal-cta.primary{
+
+      background:var(--lime);
+
+      color:#000;
     }
 
-    .actions-card{
-      background:#fff;
-      border:1px solid rgba(17,24,39,0.10);
-      border-radius:24px;
-      padding:18px;
-      box-shadow: 0 10px 28px rgba(17,24,39,0.06);
-      display:flex;
-      flex-direction:column;
-      gap:10px;
+
+    .portal-cta.secondary{
+
+      color:#FFF;
+
+      border:
+        1px solid #515151;
+
+      background:transparent;
     }
 
-    .btn-open{
-      height:44px;
-      width:100%;
-      padding:0 18px;
-      border-radius:9999px;
-      border:1px solid rgba(17,24,39,0.12);
-      background:#fff;
-      color:#111;
-      font-weight:800;
-      font-size:15px;
+
+    .portal-cta:hover{
+
+      transform:
+        translateY(-1px);
+    }
+
+
+    .portal-cta.secondary:hover{
+
+      background:#FFF;
+
+      color:#000;
+    }
+
+
+    /* =========================================================
+       MÉTRICAS
+    ========================================================= */
+
+    .portal-metrics{
+
+      display:grid;
+
+      grid-template-columns:
+        repeat(4,1fr);
+
+      gap:12px;
+
+      margin-bottom:26px;
+    }
+
+
+    .portal-metric{
+
+      min-width:0;
+
+      padding:17px;
+
+      display:block;
+
+      background:#FFF;
+
+      border:
+        1px solid #D9DAD5;
+
+      border-radius:16px;
+
+      color:inherit;
+
       text-decoration:none;
+
+      transition:
+        transform .15s ease,
+        border-color .15s ease,
+        box-shadow .15s ease;
+    }
+
+
+    .portal-metric:hover{
+
+      transform:
+        translateY(-2px);
+
+      border-color:#C5C7C1;
+
+      box-shadow:
+        0 8px 20px
+        rgba(0,0,0,.05);
+    }
+
+
+    .portal-metric-value{
+
+      color:#111;
+
+      font-size:28px;
+
+      font-weight:900;
+    }
+
+
+    .portal-metric-label{
+
+      margin-top:5px;
+
+      color:#555;
+
+      font-size:12px;
+
+      font-weight:700;
+    }
+
+
+    .portal-metric-meta{
+
+      margin-top:11px;
+
+      color:#858585;
+
+      font-size:10px;
+
+      line-height:1.4;
+    }
+
+
+    .portal-metric-action{
+
+      margin-top:10px;
+
+      color:var(--olive-dark);
+
+      font-size:11px;
+
+      font-weight:900;
+    }
+
+
+    /* =========================================================
+       FLUXO COMERCIAL
+    ========================================================= */
+
+    .portal-section-title{
+
+      margin:
+        28px 0
+        6px;
+
+      color:#111;
+
+      font-size:20px;
+
+      font-weight:900;
+
+      letter-spacing:-.015em;
+    }
+
+
+    .portal-section-intro{
+
+      margin:
+        0 0
+        14px;
+
+      color:#6B6B6B;
+
+      font-size:13px;
+
+      line-height:1.5;
+    }
+
+
+    .marketplace-cards{
+
+      display:grid;
+
+      grid-template-columns:
+        repeat(3,1fr);
+
+      gap:13px;
+
+      margin-bottom:28px;
+    }
+
+
+    .marketplace-card{
+
+      min-height:190px;
+
+      padding:19px;
+
+      display:flex;
+
+      flex-direction:column;
+
+      border:
+        1px solid #D9DAD5;
+
+      border-radius:17px;
+
+      background:#FFF;
+    }
+
+
+    .marketplace-number{
+
+      margin-bottom:17px;
+
+      color:var(--olive);
+
+      font-size:11px;
+
+      font-weight:900;
+    }
+
+
+    .marketplace-card h3{
+
+      margin:
+        0 0
+        7px;
+
+      color:#111;
+
+      font-size:17px;
+
+      font-weight:900;
+    }
+
+
+    .marketplace-card p{
+
+      margin:0;
+
+      color:#656565;
+
+      font-size:12px;
+
+      line-height:1.5;
+    }
+
+
+    .marketplace-link{
+
+      margin-top:auto;
+
+      padding-top:17px;
+
+      color:var(--olive-dark);
+
+      text-decoration:none;
+
+      font-size:12px;
+
+      font-weight:900;
+    }
+
+
+    .marketplace-link:hover{
+
+      text-decoration:underline;
+    }
+
+
+    /* =========================================================
+       BOTÕES
+    ========================================================= */
+
+    .btn{
+
       display:inline-flex;
+
       align-items:center;
       justify-content:center;
-      cursor:pointer;
-      transition: background-color .15s ease, transform .12s ease;
-      white-space:nowrap;
-    }
-    .btn-open:hover{
-      background: rgba(182,243,77,.35);
-      transform: translateY(-1px);
-    }
 
-    .btn-primary{
-      height:44px;
-      width:100%;
-      padding:0 18px;
+      height:40px;
+
+      padding:0 16px;
+
       border-radius:9999px;
-      border:1px solid rgba(17,24,39,0.12);
-      background:#111;
-      color:#fff;
-      font-weight:800;
-      font-size:15px;
+
+      border:0;
+
+      background:#000;
+
+      color:var(--lime);
+
+      font-weight:900;
+
+      font-size:14px;
+
+      text-decoration:none;
+
       cursor:pointer;
-      transition: transform .12s ease, opacity .15s ease;
+
+      transition:
+        .15s background-color,
+        .15s color,
+        .12s transform;
+
+      box-shadow:none !important;
+
       white-space:nowrap;
     }
-    .btn-primary:hover{ opacity:.92; transform: translateY(-1px); }
 
-    /* =========================
-       Material (PDF) — mesmo padrão de card
-       ========================= */
-    .material{
-      margin-top:16px;
-      background:#fff;
-      border:1px solid rgba(17,24,39,0.10);
-      border-radius:24px;
-      overflow:hidden;
-      box-shadow: 0 10px 28px rgba(17,24,39,0.06);
+
+    .btn:hover{
+
+      background:var(--lime);
+
+      color:#000;
+
+      transform:
+        translateY(-2px);
     }
-    .material-head{
+
+
+    .btn:active{
+
+      background:var(--lime-700);
+
+      color:#000;
+
+      transform:
+        translateY(0);
+    }
+
+
+    .btn:focus-visible{
+
+      outline:
+        2px solid var(--lime);
+
+      outline-offset:2px;
+    }
+
+
+    .btn-roxo,
+    a.btn-roxo,
+    button.btn-roxo{
+
+      background:#000 !important;
+
+      color:var(--lime) !important;
+
+      border:0 !important;
+
+      height:40px !important;
+
+      padding:0 18px !important;
+
+      border-radius:9999px !important;
+
+      font-weight:900 !important;
+
+      text-decoration:none !important;
+
+      cursor:pointer;
+
+      transition:
+        background-color .15s ease,
+        color .15s ease,
+        transform .12s ease;
+
+      box-shadow:none !important;
+
+      white-space:nowrap;
+
+      display:inline-flex;
+
+      align-items:center;
+      justify-content:center;
+    }
+
+
+    .btn-roxo:hover{
+
+      background:var(--lime) !important;
+
+      color:#000 !important;
+
+      transform:
+        translateY(-2px);
+    }
+
+
+    .btn-roxo:active{
+
+      background:var(--lime-700) !important;
+
+      color:#000 !important;
+
+      transform:
+        translateY(0);
+    }
+
+
+    /* =========================================================
+       ASSINATURA
+    ========================================================= */
+
+    .sub-wrap{
+
+      max-width:1120px;
+
+      margin:
+        14px auto
+        0;
+    }
+
+
+    .sub-card{
+
+      overflow:hidden;
+
+      background:#FFF;
+
+      border:
+        1px solid var(--line);
+
+      border-radius:18px;
+    }
+
+
+    .sub-sum{
+
+      list-style:none;
+
+      cursor:pointer;
+
       padding:14px 16px;
-      border-bottom:1px solid rgba(17,24,39,0.08);
+
       display:flex;
+
       align-items:flex-start;
       justify-content:space-between;
+
       gap:12px;
-      flex-wrap:wrap;
-    }
-    .material-left{
-      display:flex;
-      align-items:baseline;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-    .material-head strong{
-      font-size:15px;
-      font-weight:800;
-      letter-spacing:-0.01em;
-    }
-    .material-hint{
-      font-size:12px;
-      font-weight:800;
-      color:#6b7280;
-      letter-spacing:-0.01em;
+
+      flex-wrap:nowrap;
     }
 
-    .material-actions{
-      display:flex;
-      align-items:center;
-      justify-content:flex-end;
-      gap:10px;
-      flex-wrap:wrap;
+
+    .sub-sum::-webkit-details-marker{
+
+      display:none;
     }
 
-    .material-tabs{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      flex-wrap:wrap;
+
+    .sub-left{
+
+      min-width:0;
+
+      flex:
+        1 1 auto;
     }
 
-    /* Tabs de material (apostila/apresentação) */
-    .tab-btn{
-      height:38px;
-      padding:0 14px;
-      border-radius:999px;
-      border:1px solid rgba(17,24,39,0.12);
-      background:#fff;
+
+    .sub-title{
+
+      font-weight:900;
+
       color:#111;
-      font-weight:800;
-      font-size:14px;
+    }
+
+
+    .sub-sub{
+
+      margin-top:3px;
+
+      display:flex;
+
+      flex-wrap:wrap;
+
+      gap:6px;
+
+      align-items:center;
+
+      font-size:13px;
+
+      color:#666;
+
+      line-height:1.35;
+    }
+
+
+    .sub-right{
+
+      margin-left:auto;
+
+      display:flex;
+
+      align-items:center;
+
+      gap:10px;
+
+      white-space:nowrap;
+
+      flex:
+        0 0 auto;
+    }
+
+
+    .sub-pill{
+
+      height:30px;
+
+      padding:0 12px;
+
+      border-radius:999px;
+
       display:inline-flex;
+
       align-items:center;
       justify-content:center;
-      transition: background-color .15s ease, transform .12s ease, border-color .15s ease;
+
+      font-weight:900;
+
+      font-size:13px;
+
+      border:
+        1px solid var(--line);
+
+      background:var(--olive-50);
+
+      color:#222;
+
       white-space:nowrap;
-      text-decoration:none;
-    }
-    .tab-btn:hover{
-      background: rgba(182,243,77,.20);
-      transform: translateY(-1px);
-    }
-    .tab-btn.is-active{
-      background: rgba(182,243,77,.35);
-      border-color: rgba(182,243,77,.70);
     }
 
-    .material-head a{
-      text-decoration:none;
+
+    .sub-pill.ok{
+
+      background:#E9F7EF;
+
+      border-color:#BFE7CC;
+
+      color:#135B2B;
     }
-    .btn-mini{
-      height:38px;
-      padding:0 14px;
+
+
+    .sub-pill.warn{
+
+      background:#FFF3E6;
+
+      border-color:#FFD4A8;
+
+      color:#7A3D00;
+    }
+
+
+    .sub-pill.danger{
+
+      background:#FFE9EE;
+
+      border-color:#FFC1CF;
+
+      color:#7A0013;
+    }
+
+
+    .sub-caret{
+
+      width:26px;
+
+      height:26px;
+
+      display:grid;
+
+      place-items:center;
+
       border-radius:999px;
-      border:1px solid rgba(17,24,39,0.12);
-      background: rgba(182,243,77,.28);
-      color:#111;
-      font-weight:800;
-      font-size:14px;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      transition: background-color .15s ease, transform .12s ease;
-      white-space:nowrap;
-    }
-    .btn-mini:hover{
-      background: rgba(182,243,77,.40);
-      transform: translateY(-1px);
+
+      border:
+        1px solid var(--line);
+
+      background:#FFF;
     }
 
-    .material-frame{
+
+    .sub-caret svg{
+
+      width:16px;
+
+      height:16px;
+
+      color:#444;
+    }
+
+
+    .sub-body{
+
+      border-top:
+        1px solid var(--line);
+
+      padding:
+        14px 16px
+        16px;
+
+      display:grid;
+
+      grid-template-columns:
+        1.05fr .95fr;
+
+      gap:14px;
+    }
+
+
+    .sub-note{
+
+      background:var(--olive-50);
+
+      border:
+        1px solid var(--line-olive);
+
+      border-radius:14px;
+
+      padding:12px;
+
+      color:#333;
+    }
+
+
+    .sub-note ul{
+
+      margin:
+        8px 0
+        0 18px;
+
       padding:0;
     }
-    .material-frame iframe{
+
+
+    .sub-note li{
+
+      margin:6px 0;
+    }
+
+
+    .sub-tip{
+
+      margin-top:8px;
+
+      font-size:13px;
+
+      color:#555;
+    }
+
+
+    .sub-plans{
+
+      display:grid;
+
+      grid-template-columns:
+        1fr 1fr;
+
+      gap:10px;
+    }
+
+
+    .sub-plan{
+
+      padding:12px;
+
+      border:
+        1px solid var(--line);
+
+      border-radius:16px;
+
+      background:#FFF;
+
+      text-align:left;
+
+      cursor:pointer;
+
+      transition:
+        transform .12s ease,
+        border-color .12s ease,
+        box-shadow .12s ease;
+    }
+
+
+    .sub-plan:hover{
+
+      transform:
+        translateY(-2px);
+    }
+
+
+    .sub-plan.selected{
+
+      border-color:
+        rgba(182,243,77,.85);
+
+      box-shadow:
+        0 0 0 3px
+        rgba(182,243,77,.22);
+    }
+
+
+    .sub-plan-top{
+
+      display:flex;
+
+      align-items:center;
+
+      gap:10px;
+
+      font-weight:900;
+    }
+
+
+    .sub-radio{
+
+      width:14px;
+
+      height:14px;
+
+      border-radius:50%;
+
+      border:
+        2px solid #BBB;
+
+      display:inline-block;
+    }
+
+
+    .sub-plan.selected
+    .sub-radio{
+
+      border-color:var(--lime);
+
+      background:var(--lime);
+    }
+
+
+    .sub-badge{
+
+      margin-left:auto;
+
+      background:var(--lime);
+
+      color:#000;
+
+      font-size:12px;
+
+      font-weight:900;
+
+      padding:4px 8px;
+
+      border-radius:999px;
+
+      border:
+        1px solid
+        rgba(0,0,0,.12);
+    }
+
+
+    .sub-price{
+
+      margin-top:6px;
+
+      color:#111;
+
+      font-weight:900;
+
+      font-size:20px;
+    }
+
+
+    .sub-price small{
+
+      margin-left:6px;
+
+      color:#666;
+
+      font-size:13px;
+
+      font-weight:900;
+    }
+
+
+    .sub-meta{
+
+      margin-top:4px;
+
+      color:#666;
+
+      font-size:12.5px;
+
+      line-height:1.35;
+    }
+
+
+    .sub-actions{
+
+      grid-column:
+        1 / -1;
+
+      margin-top:4px;
+
+      display:flex;
+
+      gap:10px;
+
+      flex-wrap:wrap;
+
+      align-items:center;
+      justify-content:flex-end;
+    }
+
+
+    .sub-hint{
+
+      margin-right:auto;
+
+      color:#666;
+
+      font-size:12.5px;
+    }
+
+
+    /* =========================================================
+       TEARES
+    ========================================================= */
+
+    .sec-title{
+
+      display:flex;
+
+      align-items:center;
+      justify-content:space-between;
+
+      gap:12px;
+
+      margin-top:30px;
+
+      margin-bottom:6px;
+    }
+
+
+    .sec-title h2{
+
+      color:#111;
+
+      font-size:21px;
+
+      font-weight:900;
+    }
+
+
+    .sec-actions{
+
+      display:flex;
+
+      gap:10px;
+
+      align-items:center;
+    }
+
+
+    .table-wrapper{
+
+      overflow-x:auto;
+
+      margin-top:8px;
+    }
+
+
+    table{
+
       width:100%;
-      height:75vh;
-      border:0;
+
+      border-collapse:collapse;
+
+      background:#FFF;
+
+      border:
+        1px solid var(--line);
+    }
+
+
+    th,
+    td{
+
+      padding:10px;
+
+      border:
+        1px solid var(--line);
+
+      text-align:center;
+    }
+
+
+    tbody tr:hover{
+
+      background:#FCFCFF;
+    }
+
+
+    .table-wrapper
+    table
+    thead
+    th{
+
+      background:var(--olive) !important;
+
+      color:#FFF !important;
+
+      border-color:
+        var(--olive-600) !important;
+
+      font-weight:700;
+    }
+
+
+    .table-wrapper
+    table
+    tbody
+    tr:nth-child(odd){
+
+      background:#FFF;
+    }
+
+
+    .table-wrapper
+    table
+    tbody
+    tr:nth-child(even){
+
+      background:var(--olive-50);
+    }
+
+
+    .table-wrapper
+    table
+    tbody
+    td{
+
+      border-color:
+        var(--line-olive);
+    }
+
+
+    /* =========================================================
+       AÇÕES DOS TEARES
+    ========================================================= */
+
+    .acoes-wrap{
+
+      display:flex;
+
+      justify-content:center;
+
+      gap:8px;
+
+      flex-wrap:wrap;
+    }
+
+
+    .acoes-wrap .icon-btn{
+
+      width:36px;
+
+      height:36px;
+
+      border-radius:12px;
+
+      border:
+        1px solid var(--line);
+
+      background:#FFF;
+
+      display:inline-flex;
+
+      align-items:center;
+      justify-content:center;
+
+      cursor:pointer;
+
+      transition:
+        .15s background-color,
+        .12s transform;
+
+      box-shadow:none !important;
+    }
+
+
+    .acoes-wrap .icon-btn:hover{
+
+      background:var(--olive-50);
+
+      transform:
+        translateY(-1px);
+    }
+
+
+    .acoes-wrap .icon-btn svg{
+
+      width:18px;
+
+      height:18px;
+
+      stroke:#444;
+
+      fill:none;
+
+      stroke-width:1.8;
+    }
+
+
+    .acoes-wrap
+    .icon-btn.edit:hover
+    svg{
+
+      stroke:var(--olive);
+    }
+
+
+    .acoes-wrap
+    .icon-btn.danger:hover
+    svg{
+
+      stroke:var(--danger);
+    }
+
+
+    /* =========================================================
+       TEARES MOBILE
+    ========================================================= */
+
+    .teares-cards{
+
+      display:none;
+
+      grid-template-columns:1fr;
+
+      gap:10px;
+    }
+
+
+    .tear-card{
+
+      padding:12px;
+
+      border:
+        1px solid var(--line);
+
+      border-radius:14px;
+
+      background:#FFF;
+    }
+
+
+    .tear-hd{
+
+      display:flex;
+
+      align-items:center;
+      justify-content:space-between;
+
+      gap:10px;
+
+      margin-bottom:8px;
+    }
+
+
+    .tear-title{
+
+      color:#1D1D1D;
+
+      font-weight:900;
+    }
+
+
+    .tear-actions{
+
+      display:flex;
+
+      gap:8px;
+
+      margin-left:auto;
+    }
+
+
+    .tear-actions .icon-btn{
+
+      width:36px;
+
+      height:36px;
+
+      border-radius:12px;
+
+      border:
+        1px solid var(--line);
+
+      background:#FFF;
+
+      display:inline-flex;
+
+      align-items:center;
+      justify-content:center;
+
+      cursor:pointer;
+    }
+
+
+    .tear-actions .icon-btn svg{
+
+      width:18px;
+
+      height:18px;
+
+      fill:none;
+
+      stroke:#444;
+
+      stroke-width:1.8;
+    }
+
+
+    .tear-body{
+
+      display:grid;
+
+      grid-template-columns:
+        1fr 1fr;
+
+      gap:
+        8px 12px;
+    }
+
+
+    .tear-item span{
+
+      display:block;
+
+      color:#777;
+
+      font-size:11px;
+    }
+
+
+    .tear-item strong{
+
+      color:#222;
+
+      font-size:14px;
+    }
+
+
+    .it-tipo{
+
+      grid-column:
+        1 / -1;
+    }
+
+
+    /* =========================================================
+       CTA INFERIOR
+    ========================================================= */
+
+    .cta-bar{
+
+      background:#000;
+
+      color:#FFF;
+
+      padding:
+        22px 16px;
+
+      display:flex;
+
+      align-items:center;
+
+      justify-content:center;
+
+      gap:24px;
+
+      flex-wrap:wrap;
+
+      border-top:
+        1px solid
+        rgba(255,255,255,.06);
+    }
+
+
+    .cta-text{
+
+      max-width:760px;
+    }
+
+
+    .cta-text h3{
+
+      margin:
+        0 0
+        4px;
+
+      font-size:18px;
+
+      font-weight:900;
+
+      line-height:1.2;
+    }
+
+
+    .cta-text p{
+
+      margin:0;
+
+      font-size:14px;
+
+      opacity:.9;
+    }
+
+
+    .cta-bar .cta-btn{
+
+      height:44px !important;
+
+      padding:
+        0 22px !important;
+
+      border-radius:9999px !important;
+
+      display:inline-flex !important;
+
+      align-items:center !important;
+      justify-content:center !important;
+
+      background:#FFF !important;
+
+      color:#000 !important;
+
+      border:0 !important;
+
+      font-weight:800 !important;
+
+      text-decoration:none !important;
+
+      white-space:nowrap !important;
+
+      cursor:pointer;
+
+      transition:
+        background-color .15s ease,
+        transform .15s ease;
+    }
+
+
+    .cta-bar .cta-btn:hover{
+
+      background:var(--lime) !important;
+
+      transform:
+        translateY(-1px);
+    }
+
+
+    /* =========================================================
+       FOOTER
+    ========================================================= */
+
+    .site-footer{
+
+      padding:
+        18px 16px
+        28px;
+
+      background:#FFF;
+
+      color:#211A2A;
+
+      border-top:
+        1px solid #EEE;
+    }
+
+
+    .footer-inner{
+
+      max-width:var(--maxw);
+
+      margin:0 auto;
+
+      display:grid;
+
+      grid-template-columns:
+        auto 1fr;
+
+      gap:
+        20px 28px;
+
+      align-items:start;
+    }
+
+
+    .footer-brand img{
+
+      height:44px;
+
+      width:auto;
+
       display:block;
     }
 
-    /* =========================
-       Quiz — mesmo padrão de cards
-       ========================= */
-    .quiz{
-      margin-top:16px;
-      background:#fff;
-      border:1px solid rgba(17,24,39,0.10);
-      border-radius:24px;
-      padding:18px;
-      box-shadow: 0 10px 28px rgba(17,24,39,0.06);
-    }
-    .quiz h2{
-      margin:0 0 10px 0;
-      font-size:20px;
-      font-weight:800;
-      letter-spacing:-0.02em;
-      color:#111;
-    }
-    .qbox{
-      padding:12px;
-      border:1px solid rgba(17,24,39,0.08);
-      border-radius:18px;
-      margin-bottom:10px;
-      background: rgba(241,242,232,0.55);
-    }
-    .qtitle{
-      font-weight:800;
-      margin-bottom:8px;
-      color:#111;
-    }
-    .opt{
-      display:flex;
-      align-items:flex-start;
-      gap:10px;
-      margin:8px 0;
-      cursor:pointer;
-      color:#111;
-      font-weight:600;
-    }
-    .opt input{
-      margin-top:2px;
-      transform: scale(1.05);
-      accent-color: var(--olive);
+
+    .footer-cols{
+
+      display:grid;
+
+      grid-template-columns:
+        repeat(
+          2,
+          minmax(180px,240px)
+        );
+
+      gap:
+        12px 28px;
     }
 
-    /* Responsivo do menu (igual ao home) */
-    @media (max-width: 680px){
-      .topbar{ border-radius:24px; padding:12px 14px; }
-      .nav-links{ display:none; }
-      .brand{ min-width:auto; }
+
+    .footer-col h4{
+
+      margin:
+        0 0
+        8px;
+
+      font-size:14px;
+
+      font-weight:900;
+
+      color:#251C33;
     }
 
-    /* ====== Travas finais da topbar (IGUAL ao home/modulo) ====== */
-    .topbar{
-      height: 82px;
-      padding: 0 18px;
-      align-items: center;
-    }
-    .brand{
-      height: 82px;
-      display: flex;
-      align-items: center;
-      overflow: visible;
-    }
-    .brand img{
-      height: 72px;
-      width: auto;
-      display: block;
-      transform: scale(1.8);
-      transform-origin: left center;
+
+    .footer-col ul{
+
+      list-style:none;
+
+      margin:0;
+
+      padding:0;
     }
 
-    /* =========================
-       Fonte: garantir igualdade entre títulos e botões
-       ========================= */
-    :root{
-      --font-ui: 'Manrope', system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+    .footer-col li + li{
+
+      margin-top:6px;
     }
 
-    body{
-      font-family: var(--font-ui);
+
+    .footer-col a{
+
+      color:#2A2535;
+
+      text-decoration:none;
+
+      font-size:14px;
     }
 
-    /* força controles de formulário a usar a mesma fonte do site */
-    button,
-    input,
-    select,
-    textarea{
-      font-family: var(--font-ui) !important;
+
+    .footer-col a:hover{
+
+      text-decoration:underline;
     }
 
-    /* reforço nas classes de botões (caso algum CSS externo sobrescreva) */
-    .btn-open,
-    .btn-primary,
-    .btn-mini,
-    .tab-btn{
-      font-family: var(--font-ui) !important;
-      letter-spacing: -0.01em;
+
+    /* =========================================================
+       RESPONSIVO
+    ========================================================= */
+
+    @media(max-width:900px){
+
+      .portal-metrics{
+
+        grid-template-columns:
+          1fr 1fr;
+      }
+
+
+      .marketplace-cards{
+
+        grid-template-columns:1fr;
+      }
+
+
+      .sub-body{
+
+        grid-template-columns:1fr;
+      }
+
+
+      .footer-inner{
+
+        grid-template-columns:1fr;
+      }
+
+
+      .footer-cols{
+
+        grid-template-columns:1fr;
+      }
+
     }
+
+
+    @media(max-width:700px){
+
+      .portal-hero{
+
+        flex-direction:column;
+
+        align-items:stretch;
+      }
+
+
+      .portal-hero-actions{
+
+        width:100%;
+      }
+
+
+      .portal-cta{
+
+        width:100%;
+      }
+
+    }
+
+
+    @media(max-width:640px){
+
+      .table-wrapper{
+
+        display:none;
+      }
+
+
+      .teares-cards{
+
+        display:grid;
+      }
+
+
+      .sec-title{
+
+        flex-direction:column;
+
+        align-items:stretch;
+
+        gap:10px;
+      }
+
+
+      .sec-title h2{
+
+        margin:0;
+
+        font-size:22px;
+
+        line-height:1.15;
+
+        text-align:left;
+      }
+
+
+      .sec-actions{
+
+        width:100%;
+
+        display:grid;
+
+        grid-template-columns:
+          1fr 1fr;
+
+        gap:10px;
+      }
+
+
+      .sec-actions .btn-roxo{
+
+        width:100% !important;
+
+        height:38px !important;
+
+        padding:0 10px !important;
+
+        justify-content:center !important;
+
+        font-size:13px !important;
+      }
+
+
+      .portal-title{
+
+        font-size:29px;
+      }
+
+    }
+
+
+    @media(max-width:520px){
+
+      .portal-metrics{
+
+        grid-template-columns:1fr 1fr;
+      }
+
+
+      .sub-plans{
+
+        grid-template-columns:1fr;
+      }
+
+
+      .sub-sub{
+
+        display:flex;
+
+        flex-direction:column;
+
+        align-items:flex-start;
+
+        gap:2px;
+
+        text-align:left;
+      }
+
+
+      .sub-right{
+
+        gap:8px;
+      }
+
+    }
+
+
+    @media(max-width:420px){
+
+      .portal-metrics{
+
+        grid-template-columns:1fr;
+      }
+
+
+      .sec-actions{
+
+        grid-template-columns:1fr;
+      }
+
+
+      .sec-actions .btn-roxo{
+
+        height:40px !important;
+
+        font-size:14px !important;
+      }
+
+    }
+
+
+    @media(prefers-color-scheme:dark){
+
+      html,
+      body{
+
+        background:
+          var(--site-bg) !important;
+
+        color:
+          var(--cinza-900);
+      }
+
+    }
+
   </style>
+
+
+  <!-- Header padrão deve permanecer por último -->
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='header.css') }}"
+  >
+
 </head>
 
-<body>
 
-<!-- ✅ Topbar branca fixa (IGUAL ao treinamento_home / treinamento_modulo) -->
-<div class="topbar-wrap">
-  <header class="topbar" id="topbar">
-    <div class="brand">
-      <a href="{{ url_for('treinamento_home') }}" aria-label="Treinamento - Início">
-        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
+<body class="header-v1">
+
+
+{% set nome_empresa =
+    (
+      empresa.apelido
+      if empresa and empresa.apelido
+      else
+      (
+        empresa.nome_fantasia
+        if empresa and empresa.nome_fantasia
+        else
+        (
+          empresa.razao_social
+          if empresa and empresa.razao_social
+          else 'Minha Malharia'
+        )
+      )
+    )
+%}
+
+
+{% set _assin_ativa =
+    (
+      assinatura_ativa
+      if assinatura_ativa is defined
+      else False
+    )
+%}
+
+
+{% set lista_teares =
+    (
+      teares
+      if teares is defined
+      and teares is not none
+      else
+      (
+        empresa.teares
+        if empresa
+        and empresa.teares
+        else []
+      )
+    )
+%}
+
+
+{% set plano_sel =
+    (
+      (
+        empresa.plano
+        or 'mensal'
+      )
+      |string
+      |lower
+    )
+%}
+
+
+{% set dias =
+    (
+      dias_restantes
+      if dias_restantes is defined
+      and dias_restantes is not none
+      else none
+    )
+%}
+
+
+{% set venc_fmt =
+    (
+      vencimento_proximo.strftime('%d/%m/%Y')
+      if vencimento_proximo
+      else ''
+    )
+%}
+
+
+{% set banner_full =
+    (
+      not _assin_ativa
+      or
+      (
+        dias is not none
+        and dias <= 7
+      )
+    )
+%}
+
+
+{% set is_anual =
+    (
+      'anual'
+      in plano_sel
+    )
+%}
+
+
+{% set chat_count =
+    (
+      chat_nao_lidos
+      if chat_nao_lidos is defined
+      else 0
+    )
+%}
+
+
+{% set notif_count =
+    (
+      notificacoes
+      if notificacoes is defined
+      else 0
+    )
+%}
+
+
+<!-- =========================================================
+     HEADER
+========================================================== -->
+
+<header class="navbar">
+
+
+  <div class="header-left">
+
+
+    <div class="logo">
+
+
+      <a
+        href="{{ url_for('index') }}"
+        aria-label="Página inicial"
+      >
+
+
+        <img
+          src="{{ url_for(
+            'static',
+            filename='Logo_Branco_AcheTece_sem_fundo.png'
+          ) }}"
+          alt="Logo AcheTece"
+          decoding="async"
+          fetchpriority="high"
+        >
+
+
       </a>
+
+
     </div>
 
-    <nav class="nav-links" aria-label="Menu do treinamento">
-      <a href="{{ url_for('treinamento_home') }}#o-treinamento">O Treinamento</a>
-      <a href="{{ url_for('treinamento_home') }}#modulos">Módulos</a>
-      <a href="{{ url_for('contato') }}">Fale conosco</a>
-    </nav>
 
-    <a class="home-btn" href="{{ url_for('painel_malharia') }}" aria-label="Voltar ao Painel Malharia" title="Voltar ao Painel Malharia">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M3 10.5 12 3l9 7.5"></path>
-        <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
-        <path d="M9 21V12h6v9"></path>
-      </svg>
+  </div>
+
+
+  <!-- Links institucionais -->
+
+  <nav
+    class="hdr-nav"
+    aria-label="Navegação principal"
+  >
+
+
+    <a href="{{ url_for('quem_somos') }}">
+      O AcheTece
     </a>
-  </header>
-</div>
 
-<main>
-  <!-- HERO (aula) -->
-  <section class="hero">
-    <h1>{{ lesson.title }}</h1>
-    <p>
-      {% if lesson.summary %}{{ lesson.summary }}{% else %}
-      Abra o material e conclua a aula para registrar seu progresso.
-      {% endif %}
-    </p>
-  </section>
 
-  <!-- Conteúdo da aula + ações (mantém funcionalidades) -->
-  <section class="section" aria-label="Conteúdo da aula">
-    <div class="lesson-shell">
-      <!-- Card com infos da aula -->
-      <article class="lesson-card">
-        <div class="kicker">{{ module.title }}</div>
-        <h2 class="lesson-title">{{ lesson.title }}</h2>
+    <a href="{{ url_for('malharia_info') }}">
+      Como Funciona
+    </a>
 
-        <!-- ✅ REMOVIDO: resumo dentro do card (evita repetição) -->
 
-        <div class="meta-row" aria-label="Status e duração">
-          {% if status == "done" %}
-            <span class="pill pill--done">Concluída</span>
-          {% elif status == "in_progress" %}
-            <span class="pill pill--progress">Em andamento</span>
-          {% else %}
-            <span class="pill pill--todo">Não iniciada</span>
-          {% endif %}
+    <a href="{{ url_for('contato') }}">
+      Fale Conosco
+    </a>
 
-          {% if lesson.minutes is defined and lesson.minutes is not none %}
-            <span class="pill">⏱ {{ lesson.minutes }} min</span>
-          {% endif %}
-        </div>
-      </article>
 
-      <!-- Card de ações -->
-      <aside class="actions-card" aria-label="Ações da aula">
-        <form method="post" action="{{ url_for('treinamento_concluir', module_key=module.key, lesson_key=lesson.key) }}">
-          <input
-            type="hidden"
-            name="csrf_token"
-            value="{{ csrf_token() }}"
+  </nav>
+
+
+  <div class="header-right">
+
+
+    <div class="hdr-actions painel-actions">
+
+
+      <!-- OPORTUNIDADES -->
+
+      <a
+        href="{{ url_for('minhas_oportunidades') }}"
+        class="hdr-text-btn"
+        title="Minhas Oportunidades"
+      >
+        Oportunidades
+      </a>
+
+
+      <!-- PROPOSTAS -->
+
+      <a
+        href="{{ url_for('propostas_malharia') }}"
+        class="hdr-text-btn"
+        title="Minhas Propostas"
+      >
+        Propostas
+      </a>
+
+
+      <!-- PEDIDOS -->
+
+      <a
+        href="{{ url_for('meus_pedidos_malharia') }}"
+        class="hdr-text-btn"
+        title="Meus Pedidos"
+      >
+        Pedidos
+      </a>
+
+
+      <!-- TREINAMENTO -->
+
+      <a
+        href="{{ url_for('treinamento_home') }}"
+        class="hdr-text-btn"
+        title="Treinamento Operacional"
+      >
+        Treinamento
+      </a>
+
+
+      <!-- CHAT -->
+
+      <a
+        href="{{ url_for('fale_conosco') }}"
+        class="icon-btn badge-wrap"
+        aria-label="Chat"
+        title="Chat"
+      >
+
+
+        <svg
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path>
+        </svg>
+
+
+        {% if chat_count|int > 0 %}
+
+          <span class="badge">
+            {{ chat_count }}
+          </span>
+
+        {% endif %}
+
+
+      </a>
+
+
+      <!-- NOTIFICAÇÕES -->
+
+      <button
+        id="notifToggle"
+        class="icon-btn badge-wrap"
+        aria-label="Notificações"
+        title="Notificações"
+        type="button"
+      >
+
+
+        <svg
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+
+          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
+
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+
+        </svg>
+
+
+        {% if notif_count|int > 0 %}
+
+          <span class="badge">
+            {{ notif_count }}
+          </span>
+
+        {% endif %}
+
+
+      </button>
+
+
+      <!-- PERFIL -->
+
+      <button
+        class="profile-pill"
+        id="profileToggle"
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded="false"
+        title="Abrir menu do perfil"
+      >
+
+
+        <span
+          class="avatar avatar-ico"
+          aria-hidden="true"
+          style="
+            border:0;
+            background:transparent;
+            width:auto;
+            height:auto;
+          "
+        >
+
+
+          <svg
+            class="user-ico"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
           >
-          <button type="submit" class="btn-primary">
-            {% if status == "done" %}
-              Desmarcar como concluída
-            {% else %}
-              Marcar como concluída
-            {% endif %}
-          </button>
-        </form>
 
-        <a class="btn-open" href="{{ url_for('treinamento_modulo', module_key=module.key) }}">← Voltar ao módulo</a>
-        <a class="btn-open" href="{{ url_for('painel_malharia') }}">← Voltar ao painel</a>
-      </aside>
+            <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z"></path>
+
+            <path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path>
+
+          </svg>
+
+
+        </span>
+
+
+      </button>
+
+
+      <!-- HOME -->
+
+      <a
+        href="{{ url_for('index') }}"
+        class="btn-home"
+        aria-label="Voltar ao início"
+        title="Voltar ao início"
+      >
+
+
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+
+          <path d="M3 10.5 12 3l9 7.5"></path>
+
+          <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
+
+          <path d="M9 21V12h6v9"></path>
+
+        </svg>
+
+
+      </a>
+
+
+      <!-- MENU MOBILE -->
+
+      <button
+        class="btn-menu"
+        id="openMenuBtn"
+        type="button"
+        aria-label="Abrir menu"
+        aria-controls="mobileMenu"
+        aria-expanded="false"
+      >
+
+
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          aria-hidden="true"
+        >
+
+          <path d="M4 7h16M4 12h16M4 17h16"/>
+
+        </svg>
+
+
+      </button>
+
+
     </div>
 
-    <!-- ✅ Materiais da aula (1 ou 2 PDFs) -->
-    {% if file_url %}
-      <section class="material" aria-label="Materiais da aula (PDF protegido)">
-        <div class="material-head">
-          <div class="material-left">
-            <strong>Materiais da Aula</strong>
-            {% if materials and (materials|length > 1) %}
-              <span class="material-hint">Escolha o material</span>
-            {% endif %}
-          </div>
 
-          <div class="material-actions">
-            {% if materials and (materials|length > 1) %}
-              <div class="material-tabs" role="tablist" aria-label="Selecionar material">
-                {% for m in materials %}
-                  <a
-                    class="tab-btn {% if active_material == m.key %}is-active{% endif %}"
-                    href="{{ url_for('treinamento_aula', module_key=module.key, lesson_key=lesson.key) }}?material={{ m.key }}"
-                    role="tab"
-                    aria-selected="{% if active_material == m.key %}true{% else %}false{% endif %}"
-                  >
-                    {{ m.label }}
-                  </a>
-                {% endfor %}
-              </div>
-            {% endif %}
+  </div>
 
-            <a href="{{ file_url }}" target="_blank" rel="noopener">
-              <span class="btn-mini">Abrir em nova guia</span>
-            </a>
-          </div>
+
+</header>
+
+
+<!-- =========================================================
+     MENU MOBILE
+========================================================== -->
+
+<div
+  class="mobile-menu-backdrop"
+  id="menuBackdrop"
+  aria-hidden="true"
+></div>
+
+
+<nav
+  class="mobile-menu"
+  id="mobileMenu"
+  aria-label="Menu do site"
+>
+
+
+  <div class="menu-head">
+
+
+    <a
+      href="{{ url_for('painel_malharia') }}"
+      class="menu-logo"
+      aria-label="Portal da Malharia"
+    >
+
+
+      <span class="menu-logoBox">
+
+
+        <img
+          src="{{ url_for(
+            'static',
+            filename='logo.jpg'
+          ) }}"
+          alt="AcheTece"
+          decoding="async"
+        >
+
+
+      </span>
+
+
+    </a>
+
+
+    <button
+      class="menu-close"
+      id="closeMenuBtn"
+      type="button"
+      aria-label="Fechar menu"
+    >
+
+
+      <svg
+        class="x-icon"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+
+        <path d="M6 6L18 18M18 6L6 18"></path>
+
+      </svg>
+
+
+    </button>
+
+
+  </div>
+
+
+  <div class="menu-body">
+
+
+    <!-- PORTAL -->
+
+    <a href="{{ url_for('painel_malharia') }}">
+
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M4 4h16v16H4z"></path>
+        <path d="M8 9h8"></path>
+        <path d="M8 13h5"></path>
+      </svg>
+
+      Portal da Malharia
+
+    </a>
+
+
+    <!-- OPORTUNIDADES -->
+
+    <a href="{{ url_for('minhas_oportunidades') }}">
+
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M4 4h16v16H4z"></path>
+        <path d="M8 9h8"></path>
+        <path d="M8 13h5"></path>
+      </svg>
+
+      Oportunidades
+
+    </a>
+
+
+    <!-- PROPOSTAS -->
+
+    <a href="{{ url_for('propostas_malharia') }}">
+
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+
+        <path d="M6 2h9l3 3v17H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"></path>
+
+        <path d="M9 9h6"></path>
+
+        <path d="M9 13h6"></path>
+
+      </svg>
+
+      Propostas
+
+    </a>
+
+
+    <!-- PEDIDOS -->
+
+    <a href="{{ url_for('meus_pedidos_malharia') }}">
+
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+
+        <rect
+          x="4"
+          y="4"
+          width="16"
+          height="16"
+          rx="2"
+        ></rect>
+
+        <path d="M8 9h8"></path>
+
+        <path d="M8 13h5"></path>
+
+      </svg>
+
+      Pedidos
+
+    </a>
+
+
+    <!-- TREINAMENTO -->
+
+    <a href="{{ url_for('treinamento_home') }}">
+
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+
+        <path d="M4 19.5V4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"></path>
+
+        <path d="M8 6h8"></path>
+
+        <path d="M8 10h8"></path>
+
+      </svg>
+
+      Treinamento
+
+    </a>
+
+
+    <!-- BUSCA TÉCNICA -->
+
+    <a href="{{ url_for('index') }}">
+
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+
+        <circle
+          cx="11"
+          cy="11"
+          r="7"
+        ></circle>
+
+        <path d="M20 20l-4-4"></path>
+
+      </svg>
+
+      Buscar Tear
+
+    </a>
+
+
+    <!-- EMPRESA -->
+
+    <a href="{{ url_for('editar_empresa') }}">
+
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+
+        <path d="M3 21h18"></path>
+
+        <path d="M6 21V5h12v16"></path>
+
+        <path d="M9 9h2"></path>
+
+        <path d="M13 9h2"></path>
+
+      </svg>
+
+      Minha Empresa
+
+    </a>
+
+
+    <!-- TERMOS -->
+
+    <a href="{{ url_for('termos') }}">
+
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+
+        <path d="M6 2h9l3 3v17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a1 1 0 0 1 1-1Z"></path>
+
+        <path d="M9 9h6"></path>
+
+        <path d="M9 13h6"></path>
+
+        <path d="M9 17h6"></path>
+
+      </svg>
+
+      Termos e Políticas
+
+    </a>
+
+
+  </div>
+
+
+</nav>
+
+
+<!-- =========================================================
+     NOTIFICAÇÕES
+========================================================== -->
+
+<nav
+  id="notifPanel"
+  class="notify-panel"
+  aria-label="Notificações"
+  role="dialog"
+  aria-modal="false"
+>
+
+
+  <div class="np-header">
+    Notificações
+  </div>
+
+
+  {% if
+    notificacoes_lista is defined
+    and notificacoes_lista
+  %}
+
+
+    {% for n in notificacoes_lista %}
+
+
+      <div class="np-item">
+
+        <strong>
+          {{ n.titulo }}
+        </strong>
+
+        <br>
+
+        <small>
+          {{ n.mensagem }}
+        </small>
+
+      </div>
+
+
+    {% endfor %}
+
+
+  {% else %}
+
+
+    <div class="np-empty">
+      Nenhuma notificação.
+    </div>
+
+
+  {% endif %}
+
+
+</nav>
+
+
+<!-- =========================================================
+     MENU PERFIL
+========================================================== -->
+
+<nav
+  class="profile-menu"
+  id="profileMenu"
+  role="menu"
+  aria-label="Menu de perfil"
+>
+
+
+  <div class="pm-header">
+
+
+    <span
+      class="avatar-ico"
+      aria-hidden="true"
+    >
+
+
+      <svg
+        viewBox="0 0 24 24"
+        focusable="false"
+        aria-hidden="true"
+      >
+
+        <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z"></path>
+
+        <path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path>
+
+      </svg>
+
+
+    </span>
+
+
+    <div>
+
+      <strong>
+        {{ nome_empresa }}
+      </strong>
+
+    </div>
+
+
+  </div>
+
+
+  <!-- MARKETPLACE -->
+
+  <div class="pm-group-title">
+    Marketplace
+  </div>
+
+
+  <a
+    href="{{ url_for('minhas_oportunidades') }}"
+    class="pm-item"
+    role="menuitem"
+  >
+
+    <svg viewBox="0 0 24 24">
+
+      <path d="M4 4h16v16H4z"></path>
+
+      <path d="M8 9h8"></path>
+
+      <path d="M8 13h5"></path>
+
+    </svg>
+
+    <span>
+      Oportunidades
+    </span>
+
+  </a>
+
+
+  <a
+    href="{{ url_for('propostas_malharia') }}"
+    class="pm-item"
+    role="menuitem"
+  >
+
+    <svg viewBox="0 0 24 24">
+
+      <path d="M6 2h9l3 3v17H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"></path>
+
+      <path d="M9 9h6"></path>
+
+      <path d="M9 13h6"></path>
+
+    </svg>
+
+    <span>
+      Minhas Propostas
+    </span>
+
+  </a>
+
+
+  <a
+    href="{{ url_for('meus_pedidos_malharia') }}"
+    class="pm-item"
+    role="menuitem"
+  >
+
+    <svg viewBox="0 0 24 24">
+
+      <rect
+        x="4"
+        y="4"
+        width="16"
+        height="16"
+        rx="2"
+      ></rect>
+
+      <path d="M8 9h8"></path>
+
+      <path d="M8 13h5"></path>
+
+    </svg>
+
+    <span>
+      Meus Pedidos
+    </span>
+
+  </a>
+
+
+  <!-- MINHA EMPRESA -->
+
+  <div class="pm-group-title">
+    Minha empresa
+  </div>
+
+
+  <a
+    href="{{ url_for('editar_empresa') }}"
+    class="pm-item"
+    role="menuitem"
+    title="Editar cadastro"
+  >
+
+    <svg viewBox="0 0 24 24">
+
+      <path d="M12 20h9"></path>
+
+      <path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+
+    </svg>
+
+    <span>
+      Editar cadastro
+    </span>
+
+  </a>
+
+
+  <a
+    href="{{ url_for('performance_acesso') }}"
+    class="pm-item"
+    role="menuitem"
+  >
+
+    <svg viewBox="0 0 24 24">
+
+      <path d="M3 3v18h18"></path>
+
+      <path d="M7 13l3 3 7-7"></path>
+
+    </svg>
+
+    <span>
+      Performance de acesso
+    </span>
+
+  </a>
+
+
+  <a
+    href="{{ url_for('treinamento_home') }}"
+    class="pm-item"
+    role="menuitem"
+  >
+
+    <svg viewBox="0 0 24 24">
+
+      <path d="M4 19.5V4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"></path>
+
+      <path d="M8 6h8"></path>
+
+      <path d="M8 10h8"></path>
+
+      <path d="M8 14h6"></path>
+
+    </svg>
+
+    <span>
+      Treinamento Operacional
+    </span>
+
+  </a>
+
+
+  <!-- ASSINATURA -->
+
+  <div class="pm-group-title">
+    Assinatura
+  </div>
+
+
+  <a
+    href="{{ url_for('painel_malharia') }}#assinatura"
+    class="pm-item"
+    role="menuitem"
+  >
+
+    <svg viewBox="0 0 24 24">
+
+      <rect
+        x="3"
+        y="4"
+        width="18"
+        height="14"
+        rx="2"
+      ></rect>
+
+      <path d="M3 10h18"></path>
+
+    </svg>
+
+    <span>
+
+      {% if _assin_ativa %}
+
+        Minha assinatura (ativa)
+
+      {% else %}
+
+        Assinatura pendente (pagar)
+
+      {% endif %}
+
+    </span>
+
+  </a>
+
+
+  <div class="pm-sep"></div>
+
+
+  <a
+    href="{{ url_for('fale_conosco') }}"
+    class="pm-item"
+    role="menuitem"
+  >
+
+    <svg viewBox="0 0 24 24">
+
+      <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path>
+
+    </svg>
+
+    <span>
+      Suporte AcheTece
+    </span>
+
+  </a>
+
+
+  <a
+    href="{{ url_for('logout') }}"
+    class="pm-item"
+    role="menuitem"
+  >
+
+    <svg viewBox="0 0 24 24">
+
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+
+      <path d="M16 17l5-5-5-5"></path>
+
+      <path d="M21 12H9"></path>
+
+    </svg>
+
+    <span>
+      Sair
+    </span>
+
+  </a>
+
+
+</nav>
+
+
+<!-- =========================================================
+     CONTEÚDO
+========================================================== -->
+
+<div class="faixa-cinza">
+
+
+  <div class="page-outer">
+
+
+    <div class="container">
+
+
+      <!-- =====================================================
+           PORTAL
+      ====================================================== -->
+
+      <section class="portal-head">
+
+
+        <div class="portal-eyebrow">
+          Portal da Malharia
         </div>
 
-        <div class="material-frame">
-          <!-- Pequeno ajuste: toolbar ativa e navegação lateral off (mais limpo) -->
-          <iframe
-            src="{{ file_url }}#toolbar=1&navpanes=0"
-            title="Material da aula em PDF"
-            loading="lazy"
-          ></iframe>
-        </div>
+
+        <h1 class="portal-title">
+
+          Olá, {{ nome_empresa }}.
+
+        </h1>
+
+
+        <p class="portal-intro">
+
+          Transforme sua capacidade produtiva em
+          oportunidades de negócio, acompanhe negociações,
+          gerencie pedidos e mantenha seu parque de máquinas
+          atualizado dentro do AcheTece.
+
+        </p>
+
+
       </section>
-    {% endif %}
 
-    <!-- Quiz -->
-    {% if lesson.quiz %}
-      <section class="quiz" aria-label="Mini-quiz">
-        <h2>Mini-quiz</h2>
-        <form method="post" action="{{ url_for('treinamento_quiz', module_key=module.key, lesson_key=lesson.key) }}">
-          <input
-            type="hidden"
-            name="csrf_token"
-            value="{{ csrf_token() }}"
+
+      <!-- =====================================================
+           HERO
+      ====================================================== -->
+
+      <section class="portal-hero">
+
+
+        <div class="portal-hero-copy">
+
+
+          <div class="portal-hero-kicker">
+            Capacidade produtiva conectada ao mercado
+          </div>
+
+
+          <h2>
+            Novas oportunidades começam pelo seu parque produtivo.
+          </h2>
+
+
+          <p>
+
+            O AcheTece compara as necessidades dos compradores
+            com os equipamentos cadastrados pela sua malharia.
+            Quanto mais atualizado estiver seu parque de máquinas,
+            melhor será a qualidade do matching.
+
+          </p>
+
+
+        </div>
+
+
+        <div class="portal-hero-actions">
+
+
+          <a
+            href="{{ url_for('minhas_oportunidades') }}"
+            class="portal-cta primary"
           >
-          {% for q in lesson.quiz %}
-            <div class="qbox">
-              <div class="qtitle">{{ loop.index }}. {{ q.q }}</div>
-              {% for opt in q.options %}
-                <label class="opt">
-                  <input type="radio" name="q{{ loop.parent.index0 }}" value="{{ loop.index0 }}" required>
-                  <span>{{ opt }}</span>
-                </label>
-              {% endfor %}
+            Ver oportunidades
+          </a>
+
+
+          <a
+            href="{{ url_for('teares_form') }}"
+            class="portal-cta secondary"
+          >
+            + Cadastrar tear
+          </a>
+
+
+        </div>
+
+
+      </section>
+
+
+      <!-- =====================================================
+           INDICADORES
+      ====================================================== -->
+
+      <section class="portal-metrics">
+
+
+        <!-- OPORTUNIDADES -->
+
+        <a
+          href="{{ url_for('minhas_oportunidades') }}"
+          class="portal-metric"
+        >
+
+
+          <div class="portal-metric-value">
+
+            {{ oportunidades_ativas|default(0) }}
+
+          </div>
+
+
+          <div class="portal-metric-label">
+            Oportunidades ativas
+          </div>
+
+
+          <div class="portal-metric-meta">
+
+            {{ oportunidades_total|default(0) }}
+            oportunidade(s) no histórico
+
+          </div>
+
+
+          <div class="portal-metric-action">
+            Ver oportunidades →
+          </div>
+
+
+        </a>
+
+
+        <!-- PROPOSTAS -->
+
+        <a
+          href="{{ url_for('propostas_malharia') }}"
+          class="portal-metric"
+        >
+
+
+          <div class="portal-metric-value">
+
+            {{ propostas_total|default(0) }}
+
+          </div>
+
+
+          <div class="portal-metric-label">
+            Propostas
+          </div>
+
+
+          <div class="portal-metric-meta">
+
+            {{ propostas_em_negociacao|default(0) }}
+            em negociação
+
+            •
+
+            {{ propostas_aceitas|default(0) }}
+            aceita(s)
+
+          </div>
+
+
+          <div class="portal-metric-action">
+            Ver propostas →
+          </div>
+
+
+        </a>
+
+
+        <!-- PEDIDOS -->
+
+        <a
+          href="{{ url_for('meus_pedidos_malharia') }}"
+          class="portal-metric"
+        >
+
+
+          <div class="portal-metric-value">
+
+            {{ pedidos_ativos|default(0) }}
+
+          </div>
+
+
+          <div class="portal-metric-label">
+            Pedidos ativos
+          </div>
+
+
+          <div class="portal-metric-meta">
+
+            {{ pedidos_total|default(0) }}
+            pedido(s) no histórico
+
+            •
+
+            {{ pedidos_entregues|default(0) }}
+            entregue(s)
+
+          </div>
+
+
+          <div class="portal-metric-action">
+            Ver pedidos →
+          </div>
+
+
+        </a>
+
+
+        <!-- TEARES -->
+
+        <a
+          href="#teares"
+          class="portal-metric"
+        >
+
+
+          <div class="portal-metric-value">
+
+            {{ teares_total|default(lista_teares|length) }}
+
+          </div>
+
+
+          <div class="portal-metric-label">
+            Teares cadastrados
+          </div>
+
+
+          <div class="portal-metric-meta">
+
+            Parque produtivo utilizado
+            pelo matching técnico
+
+          </div>
+
+
+          <div class="portal-metric-action">
+            Ver parque produtivo →
+          </div>
+
+
+        </a>
+
+
+      </section>
+
+
+      <!-- =====================================================
+           FLUXO DO MARKETPLACE
+      ====================================================== -->
+
+      <h2 class="portal-section-title">
+        Seu negócio no AcheTece
+      </h2>
+
+
+      <p class="portal-section-intro">
+
+        O fluxo comercial começa quando o AcheTece identifica
+        uma demanda compatível e continua até a conclusão
+        do pedido.
+
+      </p>
+
+
+      <section class="marketplace-cards">
+
+
+        <!-- 01 -->
+
+        <article class="marketplace-card">
+
+
+          <div class="marketplace-number">
+            01
+          </div>
+
+
+          <h3>
+            Analisar oportunidades
+          </h3>
+
+
+          <p>
+
+            Receba demandas compatíveis com os teares
+            cadastrados e avalie se sua malharia possui
+            interesse e capacidade para atendê-las.
+
+          </p>
+
+
+          <a
+            href="{{ url_for('minhas_oportunidades') }}"
+            class="marketplace-link"
+          >
+            Ver oportunidades →
+          </a>
+
+
+        </article>
+
+
+        <!-- 02 -->
+
+        <article class="marketplace-card">
+
+
+          <div class="marketplace-number">
+            02
+          </div>
+
+
+          <h3>
+            Gerenciar propostas
+          </h3>
+
+
+          <p>
+
+            Envie condições comerciais, responda aos
+            pedidos de ajuste e acompanhe o resultado
+            das negociações com os compradores.
+
+          </p>
+
+
+          <a
+            href="{{ url_for('propostas_malharia') }}"
+            class="marketplace-link"
+          >
+            Ver propostas →
+          </a>
+
+
+        </article>
+
+
+        <!-- 03 -->
+
+        <article class="marketplace-card">
+
+
+          <div class="marketplace-number">
+            03
+          </div>
+
+
+          <h3>
+            Acompanhar pedidos
+          </h3>
+
+
+          <p>
+
+            Confirme pedidos recebidos, registre o início
+            e a conclusão da produção e acompanhe
+            a confirmação de entrega pelo comprador.
+
+          </p>
+
+
+          <a
+            href="{{ url_for('meus_pedidos_malharia') }}"
+            class="marketplace-link"
+          >
+            Ver pedidos →
+          </a>
+
+
+        </article>
+
+
+      </section>
+
+
+      <!-- =====================================================
+           ASSINATURA
+      ====================================================== -->
+
+      <h2 class="portal-section-title">
+        Assinatura AcheTece
+      </h2>
+
+
+      <p class="portal-section-intro">
+
+        Gerencie seu plano e mantenha o acesso da malharia
+        aos recursos da plataforma.
+
+      </p>
+
+
+      <section
+        id="assinatura"
+        class="sub-wrap"
+        aria-label="Assinatura e pagamento"
+      >
+
+
+        <details
+          class="sub-card"
+          {% if banner_full %}open{% endif %}
+        >
+
+
+          <summary class="sub-sum">
+
+
+            <div class="sub-left">
+
+
+              <div class="sub-title">
+                Assinatura
+              </div>
+
+
+              <div class="sub-sub">
+
+
+                <span class="meta-plano">
+
+                  Plano:
+
+                  <strong>
+
+                    {% if is_anual %}
+                      Anual
+                    {% else %}
+                      Mensal
+                    {% endif %}
+
+                  </strong>
+
+                </span>
+
+
+                {% if venc_fmt %}
+
+
+                  <span class="meta-venc">
+
+                    • Vence em
+
+                    <strong>
+                      {{ venc_fmt }}
+                    </strong>
+
+                  </span>
+
+
+                {% endif %}
+
+
+              </div>
+
+
             </div>
+
+
+            <div class="sub-right">
+
+
+              {% if _assin_ativa %}
+
+
+                {% if
+                  dias is not none
+                  and dias <= 7
+                %}
+
+                  <span class="sub-pill warn">
+                    Vencendo
+                  </span>
+
+                {% else %}
+
+                  <span class="sub-pill ok">
+                    Ativa
+                  </span>
+
+                {% endif %}
+
+
+              {% else %}
+
+
+                <span class="sub-pill danger">
+                  Pendente
+                </span>
+
+
+              {% endif %}
+
+
+              <span
+                class="sub-caret"
+                aria-hidden="true"
+              >
+
+
+                <svg viewBox="0 0 24 24">
+
+                  <path
+                    d="M6 9l6 6 6-6"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  ></path>
+
+                </svg>
+
+
+              </span>
+
+
+            </div>
+
+
+          </summary>
+
+
+          <div class="sub-body">
+
+
+            <div class="sub-note">
+
+
+              <strong>
+                Como funciona
+              </strong>
+
+
+              <ul>
+
+                <li>
+                  Escolha o plano mensal ou anual.
+                </li>
+
+                <li>
+                  Você será redirecionado(a) ao
+                  <strong>Mercado Pago</strong>.
+                </li>
+
+                <li>
+                  Após aprovação, o AcheTece libera
+                  o acesso e envia o e-mail de confirmação.
+                </li>
+
+              </ul>
+
+
+              <div class="sub-tip">
+
+                Dica: se estiver pendente, pague por aqui
+                para evitar bloqueio do painel.
+
+              </div>
+
+
+            </div>
+
+
+            <div
+              class="sub-plans"
+              role="radiogroup"
+              aria-label="Seleção de plano"
+            >
+
+
+              <!-- MENSAL -->
+
+              <button
+                type="button"
+                class="
+                  sub-plan
+                  {% if not is_anual %}
+                    selected
+                  {% endif %}
+                "
+                data-sub-plan="mensal"
+              >
+
+
+                <div class="sub-plan-top">
+
+
+                  <span
+                    class="sub-radio"
+                    aria-hidden="true"
+                  ></span>
+
+
+                  <span class="sub-plan-name">
+                    Mensal
+                  </span>
+
+
+                </div>
+
+
+                <div class="sub-price">
+
+                  {% if preco_mensal is defined %}
+
+                    R$
+                    {{
+                      '%.2f'
+                      |format(preco_mensal)
+                      |replace('.', ',')
+                    }}
+
+                  {% else %}
+
+                    R$ 47,00
+
+                  {% endif %}
+
+
+                  <small>
+                    /mês
+                  </small>
+
+
+                </div>
+
+
+                <div class="sub-meta">
+
+                  Recorrente mensal.
+                  Cancele quando quiser.
+
+                </div>
+
+
+              </button>
+
+
+              <!-- ANUAL -->
+
+              <button
+                type="button"
+                class="
+                  sub-plan
+                  {% if is_anual %}
+                    selected
+                  {% endif %}
+                "
+                data-sub-plan="anual"
+              >
+
+
+                <div class="sub-plan-top">
+
+
+                  <span
+                    class="sub-radio"
+                    aria-hidden="true"
+                  ></span>
+
+
+                  <span class="sub-plan-name">
+                    Anual
+                  </span>
+
+
+                  <span class="sub-badge">
+                    15% OFF
+                  </span>
+
+
+                </div>
+
+
+                <div class="sub-price">
+
+                  {% if preco_anual is defined %}
+
+                    R$
+                    {{
+                      '%.2f'
+                      |format(preco_anual)
+                      |replace('.', ',')
+                    }}
+
+                  {% else %}
+
+                    R$ 479,40
+
+                  {% endif %}
+
+
+                  <small>
+                    /ano
+                  </small>
+
+
+                </div>
+
+
+                <div class="sub-meta">
+
+                  Economize no ano e mantenha
+                  acesso contínuo.
+
+                </div>
+
+
+              </button>
+
+
+              <div class="sub-actions">
+
+
+                <span class="sub-hint">
+
+                  Você será redirecionado(a)
+                  ao Mercado Pago.
+
+                </span>
+
+
+                <a
+                  id="subCta"
+                  class="btn"
+                  href="{{ url_for(
+                    'checkout',
+                    plano=(
+                      'anual'
+                      if is_anual
+                      else 'mensal'
+                    )
+                  ) }}"
+                >
+
+
+                  {% if _assin_ativa %}
+
+                    Renovar agora
+
+                  {% else %}
+
+                    Continuar para pagamento
+
+                  {% endif %}
+
+
+                </a>
+
+
+              </div>
+
+
+            </div>
+
+
+          </div>
+
+
+        </details>
+
+
+      </section>
+
+
+      <!-- =====================================================
+           PARQUE PRODUTIVO
+      ====================================================== -->
+
+      <div id="teares"></div>
+
+
+      <div class="sec-title">
+
+
+        <h2>
+          Parque Produtivo
+        </h2>
+
+
+        <div class="sec-actions">
+
+
+          <a
+            href="{{ url_for('performance_acesso') }}"
+            class="btn-roxo"
+          >
+            Visualizações
+          </a>
+
+
+          <a
+            href="{{ url_for('teares_form') }}"
+            class="btn-roxo"
+          >
+            + Cadastrar Tear
+          </a>
+
+
+        </div>
+
+
+      </div>
+
+
+      <p class="portal-section-intro">
+
+        Mantenha as características técnicas dos seus
+        equipamentos atualizadas. Esses dados são utilizados
+        pelo Matching Técnico para encontrar demandas compatíveis.
+
+      </p>
+
+
+      <!-- =====================================================
+           TABELA DESKTOP
+      ====================================================== -->
+
+      <div class="table-wrapper">
+
+
+        <table>
+
+
+          <thead>
+
+
+            <tr>
+
+              <th>Marca</th>
+
+              <th>Modelo</th>
+
+              <th>Tipo</th>
+
+              <th>Galga/Finura</th>
+
+              <th>Diâmetro</th>
+
+              <th>Alimentadores</th>
+
+              <th>Pistas (cil)</th>
+
+              <th>Pistas (disco)</th>
+
+              <th>Elastano</th>
+
+              <th>Ações</th>
+
+            </tr>
+
+
+          </thead>
+
+
+          <tbody>
+
+
+            {% set _vaz = '—' %}
+
+
+            {% if
+              lista_teares
+              and lista_teares|length
+            %}
+
+
+              {% for tear in lista_teares %}
+
+
+                <tr>
+
+
+                  <td>
+                    {{ tear.marca or _vaz }}
+                  </td>
+
+
+                  <td>
+                    {{ tear.modelo or _vaz }}
+                  </td>
+
+
+                  <td>
+                    {{ tear.tipo or _vaz }}
+                  </td>
+
+
+                  <td>
+                    {{ tear.finura or tear.galga or _vaz }}
+                  </td>
+
+
+                  <td>
+                    {{ tear.diametro or _vaz }}
+                  </td>
+
+
+                  <td>
+                    {{ tear.alimentadores or _vaz }}
+                  </td>
+
+
+                  <td>
+                    {{ tear.pistas_cilindro or _vaz }}
+                  </td>
+
+
+                  <td>
+                    {{ tear.pistas_disco or _vaz }}
+                  </td>
+
+
+                  <td>
+
+
+                    {% set raw =
+                      (
+                        tear.elastano
+                        if tear.elastano is not none
+                        else tear.kit_elastano
+                      )
+                    %}
+
+
+                    {% if raw is boolean %}
+
+
+                      {{ 'Sim' if raw else 'Não' }}
+
+
+                    {% else %}
+
+
+                      {% set s =
+                        (
+                          raw|string
+                        )
+                        .strip()
+                        .lower()
+                      %}
+
+
+                      {% if s in [
+                        'sim',
+                        's',
+                        'true',
+                        't',
+                        'on',
+                        '1',
+                        'com',
+                        'tem',
+                        'yes',
+                        'y'
+                      ] %}
+
+                        Sim
+
+                      {% elif s in [
+                        'não',
+                        'nao',
+                        'n',
+                        'false',
+                        'f',
+                        'off',
+                        '0',
+                        'sem',
+                        'no'
+                      ] %}
+
+                        Não
+
+                      {% else %}
+
+                        {{ _vaz }}
+
+                      {% endif %}
+
+
+                    {% endif %}
+
+
+                  </td>
+
+
+                  <td>
+
+
+                    <div class="acoes-wrap">
+
+
+                      <a
+                        href="{{ url_for(
+                          'editar_tear',
+                          id=tear.id
+                        ) }}"
+                        class="icon-btn edit"
+                        title="Editar tear"
+                        aria-label="Editar"
+                      >
+
+
+                        <svg viewBox="0 0 24 24">
+
+                          <path d="M12 20h9"></path>
+
+                          <path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+
+                        </svg>
+
+
+                        <span class="sr-only">
+                          Editar
+                        </span>
+
+
+                      </a>
+
+
+                      <form
+                        method="POST"
+                        action="{{ url_for(
+                          'excluir_tear',
+                          id=tear.id
+                        ) }}"
+                        onsubmit="return confirm(
+                          'Confirma excluir este tear? Essa ação é irreversível.'
+                        );"
+                        style="display:inline;"
+                      >
+                        <input
+                          type="hidden"
+                          name="csrf_token"
+                          value="{{ csrf_token() }}"
+                        >
+
+
+                        <input
+                          type="hidden"
+                          name="next"
+                          value="{{ url_for(
+                            'painel_malharia'
+                          ) }}"
+                        >
+
+
+                        <button
+                          type="submit"
+                          class="icon-btn danger"
+                          title="Excluir tear"
+                          aria-label="Excluir"
+                        >
+
+
+                          <svg viewBox="0 0 24 24">
+
+                            <polyline points="3 6 5 6 21 6"></polyline>
+
+                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+
+                            <path d="M10 11v6"></path>
+
+                            <path d="M14 11v6"></path>
+
+                            <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path>
+
+                          </svg>
+
+
+                          <span class="sr-only">
+                            Excluir
+                          </span>
+
+
+                        </button>
+
+
+                      </form>
+
+
+                    </div>
+
+
+                  </td>
+
+
+                </tr>
+
+
+              {% endfor %}
+
+
+            {% else %}
+
+
+              <tr>
+
+                <td colspan="10">
+                  Nenhum tear cadastrado ainda.
+                </td>
+
+              </tr>
+
+
+            {% endif %}
+
+
+          </tbody>
+
+
+        </table>
+
+
+      </div>
+
+
+      <!-- =====================================================
+           TEARES MOBILE
+      ====================================================== -->
+
+      <div class="teares-cards">
+
+
+        {% if lista_teares|length %}
+
+
+          {% for tear in lista_teares %}
+
+
+            <div class="tear-card">
+
+
+              <div class="tear-hd">
+
+
+                <div class="tear-title">
+
+                  {{ tear.marca or '-' }}
+
+                  —
+
+                  {{ tear.modelo or '-' }}
+
+                </div>
+
+
+                <div class="tear-actions">
+
+
+                  <a
+                    href="{{ url_for(
+                      'editar_tear',
+                      id=tear.id
+                    ) }}"
+                    class="icon-btn edit"
+                    title="Editar"
+                  >
+
+
+                    <svg viewBox="0 0 24 24">
+
+                      <path d="M12 20h9"></path>
+
+                      <path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+
+                    </svg>
+
+
+                  </a>
+
+
+                  <form
+                    method="POST"
+                    action="{{ url_for(
+                      'excluir_tear',
+                      id=tear.id
+                    ) }}"
+                    onsubmit="return confirm(
+                      'Confirma excluir este tear? Essa ação é irreversível.'
+                    );"
+                  >
+                    <input
+                      type="hidden"
+                      name="csrf_token"
+                      value="{{ csrf_token() }}"
+                    >
+
+
+                    <input
+                      type="hidden"
+                      name="next"
+                      value="{{ url_for(
+                        'painel_malharia'
+                      ) }}"
+                    >
+
+
+                    <button
+                      type="submit"
+                      class="icon-btn danger"
+                      title="Excluir"
+                    >
+
+
+                      <svg viewBox="0 0 24 24">
+
+                        <polyline points="3 6 5 6 21 6"></polyline>
+
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+
+                        <path d="M10 11v6"></path>
+
+                        <path d="M14 11v6"></path>
+
+                        <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path>
+
+                      </svg>
+
+
+                    </button>
+
+
+                  </form>
+
+
+                </div>
+
+
+              </div>
+
+
+              <div class="tear-body">
+
+
+                <div class="tear-item it-tipo">
+
+                  <span>
+                    Tipo
+                  </span>
+
+                  <strong>
+                    {{ tear.tipo or '-' }}
+                  </strong>
+
+                </div>
+
+
+                <div class="tear-item">
+
+                  <span>
+                    Diâmetro
+                  </span>
+
+                  <strong>
+
+                    {{
+                      tear.diametro
+                      if tear.diametro is not none
+                      else '-'
+                    }}
+
+                  </strong>
+
+                </div>
+
+
+                <div class="tear-item">
+
+                  <span>
+                    Finura
+                  </span>
+
+                  <strong>
+
+                    {{
+                      tear.finura
+                      if tear.finura is not none
+                      else '-'
+                    }}
+
+                  </strong>
+
+                </div>
+
+
+                <div class="tear-item">
+
+                  <span>
+                    Alimentadores
+                  </span>
+
+                  <strong>
+
+                    {{
+                      tear.alimentadores
+                      if tear.alimentadores is not none
+                      else '-'
+                    }}
+
+                  </strong>
+
+                </div>
+
+
+                <div class="tear-item">
+
+                  <span>
+                    Elastano
+                  </span>
+                
+                  <strong>
+                
+                    {% set raw_elastano =
+                      (
+                        tear.elastano
+                        if tear.elastano is not none
+                        else tear.kit_elastano
+                      )
+                    %}
+                
+                
+                    {% if raw_elastano is boolean %}
+                
+                      {{
+                        'Sim'
+                        if raw_elastano
+                        else 'Não'
+                      }}
+                
+                    {% else %}
+                
+                      {% set elastano_texto =
+                        (
+                          raw_elastano
+                          |string
+                        )
+                        .strip()
+                        .lower()
+                      %}
+                
+                
+                      {{
+                        'Sim'
+                        if elastano_texto in [
+                          'sim',
+                          's',
+                          'true',
+                          't',
+                          'on',
+                          '1',
+                          'com',
+                          'tem',
+                          'yes',
+                          'y'
+                        ]
+                        else 'Não'
+                      }}
+                
+                    {% endif %}
+                
+                  </strong>
+                
+                </div>
+
+
+              </div>
+
+
+            </div>
+
+
           {% endfor %}
 
-          <button type="submit" class="btn-primary" style="width:auto; padding:0 18px;">
-            Enviar quiz
-          </button>
-        </form>
-      </section>
-    {% endif %}
-  </section>
-</main>
+
+        {% else %}
+
+
+          <div class="tear-card">
+
+            Nenhum tear cadastrado ainda.
+
+          </div>
+
+
+        {% endif %}
+
+
+      </div>
+
+
+    </div>
+
+
+  </div>
+
+
+</div>
+
+
+<!-- =========================================================
+     CTA
+========================================================== -->
+
+<section class="cta-bar">
+
+
+  <div class="cta-text">
+
+
+    <h3>
+      Seu parque produtivo mudou?
+    </h3>
+
+
+    <p>
+
+      Mantenha os equipamentos atualizados para aumentar
+      a precisão do matching e receber oportunidades
+      mais aderentes à capacidade da sua malharia.
+
+    </p>
+
+
+  </div>
+
+
+  <a
+    href="{{ url_for('teares_form') }}"
+    class="cta-btn"
+  >
+    + Cadastrar Tear
+  </a>
+
+
+</section>
+
+
+<!-- =========================================================
+     FOOTER
+========================================================== -->
+
+<footer class="site-footer">
+
+
+  <div class="footer-inner">
+
+
+    <div class="footer-brand">
+
+
+      <img
+        src="{{ url_for(
+          'static',
+          filename='logo_simbolo.png'
+        ) }}"
+        alt="AcheTece"
+      >
+
+
+    </div>
+
+
+    <div class="footer-cols">
+
+
+      <div class="footer-col">
+
+
+        <h4>
+          Sobre nós
+        </h4>
+
+
+        <ul>
+
+
+          <li>
+
+            <a href="{{ url_for('quem_somos') }}">
+              O AcheTece
+            </a>
+
+          </li>
+
+
+          <li>
+
+            <a href="{{ url_for('malharia_info') }}">
+              Como funciona
+            </a>
+
+          </li>
+
+
+          <li>
+
+            <a href="{{ url_for('contato') }}">
+              Fale conosco
+            </a>
+
+          </li>
+
+
+          <li>
+
+            <a href="{{ url_for('termos') }}">
+              Termos e Políticas
+            </a>
+
+          </li>
+
+
+        </ul>
+
+
+      </div>
+
+
+      <div class="footer-col">
+
+
+        <h4>
+          Marketplace
+        </h4>
+
+
+        <ul>
+
+
+          <li>
+
+            <a href="{{ url_for('minhas_oportunidades') }}">
+              Oportunidades
+            </a>
+
+          </li>
+
+
+          <li>
+
+            <a href="{{ url_for('propostas_malharia') }}">
+              Propostas
+            </a>
+
+          </li>
+
+
+          <li>
+
+            <a href="{{ url_for('meus_pedidos_malharia') }}">
+              Pedidos
+            </a>
+
+          </li>
+
+
+        </ul>
+
+
+      </div>
+
+
+    </div>
+
+
+  </div>
+
+
+</footer>
+
+
+<!-- =========================================================
+     JS - ALTURA HEADER
+========================================================== -->
 
 <script>
+
   (function(){
+
     function setNavH(){
-      const bar = document.getElementById('topbar');
-      const h = bar ? bar.offsetHeight : 84;
-      document.documentElement.style.setProperty('--navH', (h + 28) + 'px');
+
+      const nav =
+        document.querySelector(
+          '.navbar'
+        );
+
+      const h =
+        nav
+        ? nav.offsetHeight
+        : 0;
+
+      document.documentElement
+        .style
+        .setProperty(
+          '--nav-h',
+          h + 'px'
+        );
     }
+
     setNavH();
-    window.addEventListener('resize', setNavH);
+
+    window.addEventListener(
+      'resize',
+      setNavH
+    );
+
   })();
+
 </script>
 
+
+<!-- =========================================================
+     JS - MENU MOBILE
+========================================================== -->
+
+<script>
+
+  (function(){
+
+    const openBtn =
+      document.getElementById(
+        'openMenuBtn'
+      );
+
+    const closeBtn =
+      document.getElementById(
+        'closeMenuBtn'
+      );
+
+    const backdrop =
+      document.getElementById(
+        'menuBackdrop'
+      );
+
+
+    function openMenu(){
+
+      document.body
+        .classList
+        .add(
+          'menu-open'
+        );
+
+      if(openBtn){
+
+        openBtn.setAttribute(
+          'aria-expanded',
+          'true'
+        );
+      }
+    }
+
+
+    function closeMenu(){
+
+      document.body
+        .classList
+        .remove(
+          'menu-open'
+        );
+
+      if(openBtn){
+
+        openBtn.setAttribute(
+          'aria-expanded',
+          'false'
+        );
+      }
+    }
+
+
+    if(openBtn){
+
+      openBtn.addEventListener(
+        'click',
+        (e)=>{
+
+          e.stopPropagation();
+
+          openMenu();
+        }
+      );
+    }
+
+
+    if(closeBtn){
+
+      closeBtn.addEventListener(
+        'click',
+        (e)=>{
+
+          e.stopPropagation();
+
+          closeMenu();
+        }
+      );
+    }
+
+
+    if(backdrop){
+
+      backdrop.addEventListener(
+        'click',
+        closeMenu
+      );
+    }
+
+
+    document.addEventListener(
+      'keydown',
+      (e)=>{
+
+        if(e.key === 'Escape'){
+
+          closeMenu();
+        }
+      }
+    );
+
+  })();
+
+</script>
+
+
+<!-- =========================================================
+     JS - PERFIL / NOTIFICAÇÕES / ASSINATURA
+========================================================== -->
+
+<script>
+
+  (function(){
+
+    /* =======================================================
+       PERFIL
+    ======================================================= */
+
+    const toggle =
+      document.getElementById(
+        'profileToggle'
+      );
+
+    const menu =
+      document.getElementById(
+        'profileMenu'
+      );
+
+
+    function closeProfile(){
+
+      menu?.classList.remove(
+        'open'
+      );
+
+      toggle?.setAttribute(
+        'aria-expanded',
+        'false'
+      );
+    }
+
+
+    function openProfile(){
+
+      menu?.classList.add(
+        'open'
+      );
+
+      toggle?.setAttribute(
+        'aria-expanded',
+        'true'
+      );
+    }
+
+
+    function toggleProfile(e){
+
+      if(e){
+
+        e.stopPropagation();
+      }
+
+      if(!menu){
+
+        return;
+      }
+
+      menu.classList.contains(
+        'open'
+      )
+        ? closeProfile()
+        : openProfile();
+    }
+
+
+    toggle?.addEventListener(
+      'click',
+      toggleProfile
+    );
+
+
+    /* =======================================================
+       NOTIFICAÇÕES
+    ======================================================= */
+
+    const nbtn =
+      document.getElementById(
+        'notifToggle'
+      );
+
+    const npanel =
+      document.getElementById(
+        'notifPanel'
+      );
+
+
+    function closeNotif(){
+
+      npanel?.classList.remove(
+        'open'
+      );
+    }
+
+
+    function toggleNotif(e){
+
+      e.stopPropagation();
+
+      npanel?.classList.toggle(
+        'open'
+      );
+    }
+
+
+    nbtn?.addEventListener(
+      'click',
+      toggleNotif
+    );
+
+
+    /* =======================================================
+       ASSINATURA
+    ======================================================= */
+
+    const subCta =
+      document.getElementById(
+        'subCta'
+      );
+
+    const subPlans =
+      Array.from(
+        document.querySelectorAll(
+          '[data-sub-plan]'
+        )
+      );
+
+
+    const hrefMensal =
+      "{{ url_for(
+        'checkout',
+        plano='mensal'
+      ) }}";
+
+
+    const hrefAnual =
+      "{{ url_for(
+        'checkout',
+        plano='anual'
+      ) }}";
+
+
+    function setSubPlan(val){
+
+      if(!val){
+
+        return;
+      }
+
+      const normalized =
+        String(val)
+          .toLowerCase()
+          .includes('anual')
+        ? 'anual'
+        : 'mensal';
+
+
+      subPlans.forEach(
+        btn =>{
+
+          const isSelected =
+            (
+              btn.dataset.subPlan
+              === normalized
+            );
+
+          btn.classList.toggle(
+            'selected',
+            isSelected
+          );
+
+          btn.setAttribute(
+            'aria-pressed',
+            isSelected
+              ? 'true'
+              : 'false'
+          );
+        }
+      );
+
+
+      if(subCta){
+
+        subCta.href =
+          normalized === 'anual'
+          ? hrefAnual
+          : hrefMensal;
+      }
+    }
+
+
+    if(subPlans.length){
+
+      subPlans.forEach(
+        btn =>{
+
+          btn.addEventListener(
+            'click',
+            (e)=>{
+
+              e.preventDefault();
+
+              e.stopPropagation();
+
+              setSubPlan(
+                btn.dataset.subPlan
+              );
+            }
+          );
+
+        }
+      );
+
+
+      setSubPlan(
+        "{{ 'anual' if is_anual else 'mensal' }}"
+      );
+    }
+
+
+    /* =======================================================
+       FECHAR AO CLICAR FORA
+    ======================================================= */
+
+    document.addEventListener(
+      'click',
+      ()=>{
+
+        closeProfile();
+
+        closeNotif();
+      }
+    );
+
+
+    document.addEventListener(
+      'keydown',
+      (e)=>{
+
+        if(e.key === 'Escape'){
+
+          closeProfile();
+
+          closeNotif();
+        }
+      }
+    );
+
+
+    menu?.addEventListener(
+      'click',
+      (e)=>e.stopPropagation()
+    );
+
+
+    npanel?.addEventListener(
+      'click',
+      (e)=>e.stopPropagation()
+    );
+
+  })();
+
+</script>
+
+
 </body>
+
 </html>
