@@ -3898,7 +3898,9 @@ def _to_int(s):
     except Exception:
         return None
 
-@app.post("/api/track")
+@app.post("/api/track"
+)
+@csrf.exempt
 def api_track():
     data = request.get_json(silent=True) or {}
     event      = data.get("event")
@@ -15735,7 +15737,11 @@ def pagamento_erro():
 def pagamento_pendente():
     return render_template('pagamento_pendente.html')
 
-@app.route("/webhook", methods=["GET", "POST"])
+@app.route(
+    "/webhook",
+    methods=["GET", "POST"]
+)
+@csrf.exempt
 def webhook():
     if request.method == "GET":
         return jsonify({"ok": True, "hint": "webhook ativo"}), 200
