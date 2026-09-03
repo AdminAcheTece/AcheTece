@@ -4579,6 +4579,11 @@
                         );"
                         style="display:inline;"
                       >
+                        <input
+                          type="hidden"
+                          name="csrf_token"
+                          value="{{ csrf_token() }}"
+                        >
 
 
                         <input
@@ -4725,6 +4730,11 @@
                       'Confirma excluir este tear? Essa ação é irreversível.'
                     );"
                   >
+                    <input
+                      type="hidden"
+                      name="csrf_token"
+                      value="{{ csrf_token() }}"
+                    >
 
 
                     <input
