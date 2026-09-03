@@ -15308,144 +15308,704 @@ def empresa_excluir_by_id(empresa_id):
     return redirect(url_for("index"))
 
 # --------------------------------------------------------------------
-# Admin: seed/impersonação
+# Admin: ferramentas de staging / desenvolvimento
 # --------------------------------------------------------------------
+
 DEMO_FILTER = or_(
     Empresa.apelido.ilike("%[DEMO]%"),
     Empresa.email.ilike("%@achetece.demo")
 )
 
-def _seed_ok():
-    return request.args.get("token") == SEED_TOKEN
 
-def _cria_teares_fake(empresa, n):
-    tipos = ["MONO", "DUPLA"]
-    marcas = ["Mayer", "Terrot", "Santoni", "Pilotelli", "Unitex"]
-    modelos = ["Relanit", "Inovit", "DEMO-01", "DEMO-02", "DEMO-03"]
-    diametros = [18, 20, 22, 24, 26, 28, 30, 32, 34, 36]
-    galgas = [14, 18, 20, 22, 24, 26, 28, 30, 32]
-    alimentadores_pool = [36, 48, 60, 72, 84, 90, 96, 108]
+def admin_tool_requerido(f):
+
+    @wraps(f)
+    def wrapper(
+        *args,
+        **kwargs
+    ):
+
+        # ==========================================================
+        # FERRAMENTAS ADMINISTRATIVAS HABILITADAS?
+        # ==========================================================
+
+        if not ENABLE_ADMIN_TOOLS:
+
+            abort(404)
+
+        # ==========================================================
+        # ADMIN AUTENTICADO?
+        # ==========================================================
+
+        admin_autenticado = (
+            session.get(
+                "admin_authenticated"
+            )
+            is True
+        )
+
+        admin_email = (
+            session.get(
+                "admin_email"
+            )
+            or ""
+        ).strip().lower()
+
+        if (
+            not admin_autenticado
+            or not ADMIN_EMAIL
+            or admin_email != ADMIN_EMAIL
+        ):
+
+            flash(
+                "Acesso administrativo necessário.",
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "admin_login"
+                )
+            )
+
+        return f(
+            *args,
+            **kwargs
+        )
+
+    return wrapper
+
+
+# --------------------------------------------------------------------
+# Helpers para geração de teares fictícios
+# --------------------------------------------------------------------
+
+def _cria_teares_fake(
+    empresa,
+    n
+):
+
+    tipos = [
+        "MONO",
+        "DUPLA"
+    ]
+
+    marcas = [
+        "Mayer",
+        "Terrot",
+        "Santoni",
+        "Pilotelli",
+        "Unitex"
+    ]
+
+    modelos = [
+        "Relanit",
+        "Inovit",
+        "DEMO-01",
+        "DEMO-02",
+        "DEMO-03"
+    ]
+
+    diametros = [
+        18,
+        20,
+        22,
+        24,
+        26,
+        28,
+        30,
+        32,
+        34,
+        36
+    ]
+
+    galgas = [
+        14,
+        18,
+        20,
+        22,
+        24,
+        26,
+        28,
+        30,
+        32
+    ]
+
+    alimentadores_pool = [
+        36,
+        48,
+        60,
+        72,
+        84,
+        90,
+        96,
+        108
+    ]
+
     novos = []
-    for _ in range(max(0, int(n or 0))):
-        t = Tear(
-            marca=random.choice(marcas),
-            modelo=random.choice(modelos),
-            tipo=random.choice(tipos),
-            finura=random.choice(galgas),
-            diametro=random.choice(diametros),
-            alimentadores=random.choice(alimentadores_pool),
-            elastano=random.choice(["Sim", "Não"]),
+
+    for _ in range(
+        max(
+            0,
+            int(
+                n
+                or 0
+            )
+        )
+    ):
+
+        tear = Tear(
+            marca=random.choice(
+                marcas
+            ),
+            modelo=random.choice(
+                modelos
+            ),
+            tipo=random.choice(
+                tipos
+            ),
+            finura=random.choice(
+                galgas
+            ),
+            diametro=random.choice(
+                diametros
+            ),
+            alimentadores=random.choice(
+                alimentadores_pool
+            ),
+            elastano=random.choice(
+                [
+                    "Sim",
+                    "Não"
+                ]
+            ),
             empresa_id=empresa.id
         )
-        novos.append(t)
+
+        novos.append(
+            tear
+        )
+
     if novos:
-        db.session.bulk_save_objects(novos); db.session.commit()
-    return len(novos)
 
-def _topup(empresa, minimo):
-    atual = Tear.query.filter_by(empresa_id=empresa.id).count()
-    if atual >= (minimo or 0): return 0
-    return _cria_teares_fake(empresa, (minimo - atual))
+        db.session.bulk_save_objects(
+            novos
+        )
 
-@app.route("/admin/seed_teares")
+        db.session.commit()
+
+    return len(
+        novos
+    )
+
+
+def _topup(
+    empresa,
+    minimo
+):
+
+    atual = (
+        Tear.query
+        .filter_by(
+            empresa_id=empresa.id
+        )
+        .count()
+    )
+
+    if atual >= (
+        minimo
+        or 0
+    ):
+
+        return 0
+
+    return _cria_teares_fake(
+        empresa,
+        minimo - atual
+    )
+
+
+# --------------------------------------------------------------------
+# ADMIN — Seed de uma empresa
+#
+# SOMENTE POST.
+# Protegido por:
+# - ENABLE_ADMIN_TOOLS
+# - sessão administrativa
+# - CSRF global na etapa seguinte
+# --------------------------------------------------------------------
+
+@app.post(
+    "/admin/seed_teares"
+)
+@admin_tool_requerido
 def admin_seed_teares():
-    if not _seed_ok(): return "Não autorizado", 403
-    empresa_id = request.args.get("empresa_id", type=int)
-    n = request.args.get("n", default=5, type=int)
-    if not empresa_id: return "Informe empresa_id", 400
-    emp = Empresa.query.get_or_404(empresa_id)
-    qtd = _cria_teares_fake(emp, n)
-    return f"OK: +{qtd} teares em {emp.apelido or emp.nome or getattr(emp, 'nome_fantasia', emp.id)} (id={emp.id})."
 
-@app.route("/admin/seed_teares_all")
+    empresa_id = request.values.get(
+        "empresa_id",
+        type=int
+    )
+
+    n = request.values.get(
+        "n",
+        default=5,
+        type=int
+    )
+
+    if not empresa_id:
+
+        return (
+            "Informe empresa_id",
+            400
+        )
+
+    empresa = (
+        Empresa.query
+        .get_or_404(
+            empresa_id
+        )
+    )
+
+    quantidade = (
+        _cria_teares_fake(
+            empresa,
+            n
+        )
+    )
+
+    nome_empresa = (
+        empresa.apelido
+        or empresa.nome
+        or getattr(
+            empresa,
+            "nome_fantasia",
+            None
+        )
+        or str(
+            empresa.id
+        )
+    )
+
+    return (
+        f"OK: +{quantidade} teares "
+        f"em {nome_empresa} "
+        f"(id={empresa.id})."
+    )
+
+
+# --------------------------------------------------------------------
+# ADMIN — Seed em múltiplas empresas
+# --------------------------------------------------------------------
+
+@app.post(
+    "/admin/seed_teares_all"
+)
+@admin_tool_requerido
 def admin_seed_teares_all():
-    if not _seed_ok(): return "Não autorizado", 403
-    escopo = (request.args.get("escopo") or "demo").lower()  # demo|pagantes|todas
-    uf = request.args.get("uf")
-    ids = request.args.get("ids")
-    n = request.args.get("n", type=int)
-    minimo = request.args.get("min", type=int)
 
-    q = Empresa.query
+    escopo = (
+        request.values.get(
+            "escopo"
+        )
+        or "demo"
+    ).strip().lower()
+
+    uf = (
+        request.values.get(
+            "uf"
+        )
+        or ""
+    ).strip()
+
+    ids = (
+        request.values.get(
+            "ids"
+        )
+        or ""
+    ).strip()
+
+    n = request.values.get(
+        "n",
+        type=int
+    )
+
+    minimo = request.values.get(
+        "min",
+        type=int
+    )
+
+    query = Empresa.query
+
+    # ==========================================================
+    # IDs ESPECÍFICOS
+    # ==========================================================
+
     if ids:
-        lista = [int(x) for x in ids.split(",") if x.strip().isdigit()]
-        q = q.filter(Empresa.id.in_(lista))
+
+        lista = [
+            int(x)
+            for x in ids.split(",")
+            if x.strip().isdigit()
+        ]
+
+        if not lista:
+
+            return (
+                "Nenhum ID válido informado.",
+                400
+            )
+
+        query = query.filter(
+            Empresa.id.in_(
+                lista
+            )
+        )
+
+    # ==========================================================
+    # ESCOPO
+    # ==========================================================
+
     else:
+
         if escopo == "demo":
-            q = q.filter(DEMO_FILTER)
+
+            query = query.filter(
+                DEMO_FILTER
+            )
+
         elif escopo == "pagantes":
-            q = q.filter(Empresa.status_pagamento == "ativo")
-        if uf:
-            q = q.filter(func.upper(Empresa.estado) == uf.upper())
 
-    empresas = q.order_by(Empresa.id.desc()).all()
-    if not empresas:
-        return "Nenhuma empresa encontrada para o filtro.", 200
+            query = query.filter(
+                Empresa.status_pagamento
+                == "ativo"
+            )
 
-    total_empresas = len(empresas)
-    total_add = 0
-    rel = []
-    for e in empresas:
-        add = _topup(e, minimo) if minimo else _cria_teares_fake(e, n or 5)
-        total_add += add
-        rel.append(f"{e.id}:{add}")
-    return f"OK: {total_add} teares adicionados em {total_empresas} empresas. Detalhe: {'; '.join(rel)}"
+        elif escopo != "todas":
 
-@app.route("/utils/empresas_json")
-def utils_empresas_json():
-    escopo = (request.args.get("escopo") or "demo").lower()
-    uf = request.args.get("uf")
-    q = Empresa.query
-    if escopo == "demo":
-        q = q.filter(DEMO_FILTER)
-    elif escopo == "pagantes":
-        q = q.filter(Empresa.status_pagamento == "ativo")
+            return (
+                "Escopo inválido.",
+                400
+            )
+
+    # ==========================================================
+    # UF
+    # ==========================================================
+
     if uf:
-        q = q.filter(func.upper(Empresa.estado) == uf.upper())
-    empresas = q.order_by(Empresa.id.desc()).all()
+
+        query = query.filter(
+            func.upper(
+                Empresa.estado
+            )
+            == uf.upper()
+        )
+
+    empresas = (
+        query
+        .order_by(
+            Empresa.id.desc()
+        )
+        .all()
+    )
+
+    if not empresas:
+
+        return (
+            "Nenhuma empresa encontrada para o filtro.",
+            200
+        )
+
+    total_empresas = len(
+        empresas
+    )
+
+    total_adicionados = 0
+
+    relatorio = []
+
+    for empresa in empresas:
+
+        if minimo:
+
+            adicionados = _topup(
+                empresa,
+                minimo
+            )
+
+        else:
+
+            adicionados = (
+                _cria_teares_fake(
+                    empresa,
+                    n or 5
+                )
+            )
+
+        total_adicionados += (
+            adicionados
+        )
+
+        relatorio.append(
+            f"{empresa.id}:{adicionados}"
+        )
+
+    return (
+        f"OK: {total_adicionados} teares "
+        f"adicionados em {total_empresas} empresas. "
+        f"Detalhe: {'; '.join(relatorio)}"
+    )
+
+
+# --------------------------------------------------------------------
+# ADMIN — Consulta auxiliar de empresas
+#
+# Esta rota NÃO altera dados, portanto continua GET.
+# --------------------------------------------------------------------
+
+@app.get(
+    "/utils/empresas_json"
+)
+@admin_tool_requerido
+def utils_empresas_json():
+
+    escopo = (
+        request.args.get(
+            "escopo"
+        )
+        or "demo"
+    ).strip().lower()
+
+    uf = (
+        request.args.get(
+            "uf"
+        )
+        or ""
+    ).strip()
+
+    query = Empresa.query
+
+    if escopo == "demo":
+
+        query = query.filter(
+            DEMO_FILTER
+        )
+
+    elif escopo == "pagantes":
+
+        query = query.filter(
+            Empresa.status_pagamento
+            == "ativo"
+        )
+
+    elif escopo != "todas":
+
+        return jsonify(
+            {
+                "erro":
+                    "Escopo inválido."
+            }
+        ), 400
+
+    if uf:
+
+        query = query.filter(
+            func.upper(
+                Empresa.estado
+            )
+            == uf.upper()
+        )
+
+    empresas = (
+        query
+        .order_by(
+            Empresa.id.desc()
+        )
+        .all()
+    )
+
     data = []
-    for e in empresas:
-        cnt = Tear.query.filter_by(empresa_id=e.id).count()
-        data.append({
-            "id": e.id,
-            "apelido": e.apelido or e.nome or getattr(e, "nome_fantasia", "") or "",
-            "estado": e.estado, "cidade": e.cidade,
-            "status_pagamento": getattr(e, "status_pagamento", None),
-            "teares": cnt
-        })
-    return jsonify(data)
 
-@app.route("/admin/impersonar/<int:empresa_id>")
-def admin_impersonar(empresa_id):
-    if not _seed_ok(): return "Não autorizado", 403
-    session["admin_impersonando"] = True
-    session["perfil"] = "malharia"
-    session["empresa_id"] = empresa_id
-    try:
-        return redirect(url_for("painel_malharia"))
-    except Exception:
-        return redirect("/")
+    for empresa in empresas:
 
-@app.route("/admin/desimpersonar")
+        quantidade_teares = (
+            Tear.query
+            .filter_by(
+                empresa_id=empresa.id
+            )
+            .count()
+        )
+
+        data.append(
+            {
+                "id":
+                    empresa.id,
+
+                "apelido":
+                    (
+                        empresa.apelido
+                        or empresa.nome
+                        or getattr(
+                            empresa,
+                            "nome_fantasia",
+                            ""
+                        )
+                        or ""
+                    ),
+
+                "estado":
+                    empresa.estado,
+
+                "cidade":
+                    empresa.cidade,
+
+                "status_pagamento":
+                    getattr(
+                        empresa,
+                        "status_pagamento",
+                        None
+                    ),
+
+                "teares":
+                    quantidade_teares
+            }
+        )
+
+    return jsonify(
+        data
+    )
+
+
+# --------------------------------------------------------------------
+# ADMIN — Impersonação
+# --------------------------------------------------------------------
+
+@app.post(
+    "/admin/impersonar/<int:empresa_id>"
+)
+@admin_tool_requerido
+def admin_impersonar(
+    empresa_id
+):
+
+    empresa = (
+        Empresa.query
+        .get_or_404(
+            empresa_id
+        )
+    )
+
+    session[
+        "admin_impersonando"
+    ] = True
+
+    session[
+        "perfil"
+    ] = "malharia"
+
+    session[
+        "empresa_id"
+    ] = empresa.id
+
+    session.modified = True
+
+    return redirect(
+        url_for(
+            "painel_malharia"
+        )
+    )
+
+
+# --------------------------------------------------------------------
+# ADMIN — Encerrar impersonação
+# --------------------------------------------------------------------
+
+@app.post(
+    "/admin/desimpersonar"
+)
+@admin_tool_requerido
 def admin_desimpersonar():
-    session.pop("admin_impersonando", None)
-    session.pop("perfil", None)
-    session.pop("empresa_id", None)
-    return redirect(url_for("index"))
+
+    session.pop(
+        "admin_impersonando",
+        None
+    )
+
+    session.pop(
+        "perfil",
+        None
+    )
+
+    session.pop(
+        "empresa_id",
+        None
+    )
+
+    session.modified = True
+
+    return redirect(
+        url_for(
+            "admin_empresas"
+        )
+    )
+
 
 # --------------------------------------------------------------------
-# Rota de teste de e-mail (manual)
+# ADMIN — Teste manual de e-mail
 # --------------------------------------------------------------------
-@app.get("/admin/test-email")
+
+@app.post(
+    "/admin/test-email"
+)
+@admin_tool_requerido
 def admin_test_email():
-    if not _seed_ok():
-        return "Não autorizado", 403
-    to_addr = (request.args.get("to") or os.getenv("CONTACT_TO") or os.getenv("EMAIL_FROM") or os.getenv("SMTP_FROM") or "").strip()
+
+    to_addr = (
+        request.values.get(
+            "to"
+        )
+        or os.getenv(
+            "CONTACT_TO"
+        )
+        or os.getenv(
+            "EMAIL_FROM"
+        )
+        or os.getenv(
+            "SMTP_FROM"
+        )
+        or ""
+    ).strip()
+
     if not to_addr:
-        return "Informe ?to=destinatario@dominio", 400
-    html = "<h3>Teste de e-mail AcheTece</h3><p>Se você recebeu isto, o envio está funcionando.</p>"
-    ok, msg = _smtp_send_direct(to_addr, "Teste AcheTece", html, "Teste AcheTece")
-    return (f"OK: {msg}", 200) if ok else (f"ERRO: {msg}", 500)
+
+        return (
+            "Informe o destinatário no campo 'to'.",
+            400
+        )
+
+    html = (
+        "<h3>Teste de e-mail AcheTece</h3>"
+        "<p>Se você recebeu isto, "
+        "o envio está funcionando.</p>"
+    )
+
+    ok, msg = _smtp_send_direct(
+        to_addr,
+        "Teste AcheTece",
+        html,
+        "Teste AcheTece"
+    )
+
+    if ok:
+
+        return (
+            f"OK: {msg}",
+            200
+        )
+
+    return (
+        f"ERRO: {msg}",
+        500
+    )
 
 # --------------------------------------------------------------------
 # Outras rotas utilitárias/compat
