@@ -1610,6 +1610,12 @@
                 );"
             >
 
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token() }}"
+                >
+                
                 <button
                     type="submit"
                     class="publish-btn"
@@ -2150,7 +2156,13 @@
                         'Deseja executar o Matching Técnico para esta demanda?'
                     );"
                 >
-        
+
+                    <input
+                        type="hidden"
+                        name="csrf_token"
+                        value="{{ csrf_token() }}"
+                    >
+                    
                     <button
                         type="submit"
                         class="match-run-btn"
