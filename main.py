@@ -3086,25 +3086,205 @@ def _pegar_empresa_do_usuario(required=True):
     return None
 
 def assinatura_ativa_requerida(f):
-    """
-    Decorator que exige empresa em sessão e assinatura ativa (ou DEMO).
-    Mantém a mesma lógica que você já vinha usando.
-    """
+
     @wraps(f)
-    def wrapper(*args, **kwargs):
-        emp, _u = _get_empresa_usuario_da_sessao()
-        if not emp:
-            flash("Faça login para continuar.", "error")
-            return redirect(url_for("login"))
-        is_demo = DEMO_MODE or (emp.apelido or emp.nome or "").startswith("[DEMO]")
-        if is_demo:
-            return f(*args, **kwargs)
-        status = (emp.status_pagamento or "pendente").lower()
-        if status not in ("ativo", "aprovado"):
-            flash("Ative seu plano para acessar esta funcionalidade.", "error")
-            return redirect(url_for("painel_malharia"))
-        return f(*args, **kwargs)
+    def wrapper(
+        *args,
+        **kwargs
+    ):
+
+        # ==========================================================
+        # EMPRESA DA SESSÃO
+        # ==========================================================
+
+        (
+            empresa,
+            usuario
+        ) = _get_empresa_usuario_da_sessao()
+
+        if not empresa:
+
+            flash(
+                "Faça login para continuar.",
+                "warning"
+            )
+
+            return redirect(
+                url_for("login")
+            )
+
+        # ==========================================================
+        # REGRA CENTRAL
+        # ==========================================================
+
+        (
+            situacao,
+            mensagem
+        ) = _avaliar_acesso_conta(
+            "malharia",
+            empresa,
+            usuario
+        )
+
+        if situacao == "ok":
+
+            return f(
+                *args,
+                **kwargs
+            )
+
+        if situacao == "assinatura_inativa":
+
+            flash(
+                mensagem,
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "planos"
+                )
+            )
+
+        session.clear()
+
+        flash(
+            mensagem
+            or "Acesso não autorizado.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("login")
+        )
+
     return wrapper
+
+# ----------------------------------------------------------------------
+# AcheTece 2.0 - Endpoints protegidos da Malharia
+# ----------------------------------------------------------------------
+
+MALHARIA_ENDPOINTS_PROTEGIDOS = {
+
+    # Portal
+    "painel_malharia",
+
+    # Marketplace
+    "minhas_oportunidades",
+    "analisar_oportunidade",
+    "oportunidade_interesse",
+    "oportunidade_recusar",
+    "enviar_proposta",
+    "propostas_malharia",
+    "meus_pedidos_malharia",
+    "detalhe_pedido_malharia",
+    "confirmar_pedido_malharia",
+    "iniciar_producao_malharia",
+    "concluir_producao_malharia",
+
+    # Parque produtivo
+    "cadastrar_teares",
+    "teares_form",
+    "editar_tear",
+    "excluir_tear",
+
+    # Perfil
+    "editar_empresa",
+    "perfil_foto_upload",
+
+    # Performance
+    "performance_acesso",
+
+    # Treinamento
+    "treinamento_file",
+    "treinamento_home",
+    "treinamento_modulo",
+    "treinamento_aula",
+    "treinamento_concluir",
+    "treinamento_quiz",
+}
+
+
+@app.before_request
+def proteger_area_malharia():
+
+    endpoint = (
+        request.endpoint
+        or ""
+    )
+
+    if (
+        endpoint
+        not in MALHARIA_ENDPOINTS_PROTEGIDOS
+    ):
+
+        return None
+
+    # ==============================================================
+    # IDENTIDADE
+    # ==============================================================
+
+    (
+        empresa,
+        usuario
+    ) = _get_empresa_usuario_da_sessao()
+
+    if not empresa:
+
+        return redirect(
+            url_for("login")
+        )
+
+    # ==============================================================
+    # REGRA CENTRAL
+    # ==============================================================
+
+    (
+        situacao,
+        mensagem
+    ) = _avaliar_acesso_conta(
+        "malharia",
+        empresa,
+        usuario
+    )
+
+    if situacao == "ok":
+
+        return None
+
+    # --------------------------------------------------------------
+    # Assinatura vencida
+    #
+    # NÃO limpamos a sessão porque ela é necessária para
+    # identificar a empresa no fluxo de renovação.
+    # --------------------------------------------------------------
+
+    if situacao == "assinatura_inativa":
+
+        flash(
+            mensagem,
+            "warning"
+        )
+
+        return redirect(
+            url_for("planos")
+        )
+
+    # --------------------------------------------------------------
+    # Conta inválida/desativada
+    # --------------------------------------------------------------
+
+    session.clear()
+
+    flash(
+        mensagem
+        or "Acesso não autorizado.",
+        "warning"
+    )
+
+    return redirect(
+        url_for("login")
+    )
 
 # Alias útil para qualquer código legado que espere esse nome
 _get_empresa_usuario = _get_empresa_usuario_da_sessao
@@ -3913,6 +4093,251 @@ def _abrir_sessao_malharia(empresa):
 
     session.permanent = True
 
+# ----------------------------------------------------------------------
+# AcheTece 2.0 - Regra central de acesso à conta
+# ----------------------------------------------------------------------
+
+def _avaliar_acesso_conta(
+    tipo,
+    empresa=None,
+    usuario=None
+):
+
+    tipo = (
+        tipo
+        or ""
+    ).strip().lower()
+
+    # ==============================================================
+    # COMPRADOR
+    # ==============================================================
+
+    if tipo == "cliente":
+
+        if not usuario:
+
+            return (
+                "conta_invalida",
+                "Conta não localizada."
+            )
+
+        if usuario.is_active is False:
+
+            return (
+                "conta_inativa",
+                "Esta conta está desativada."
+            )
+
+        return (
+            "ok",
+            None
+        )
+
+    # ==============================================================
+    # MALHARIA
+    # ==============================================================
+
+    if tipo == "malharia":
+
+        if not empresa:
+
+            return (
+                "conta_invalida",
+                "Conta da malharia não localizada."
+            )
+
+        # ----------------------------------------------------------
+        # Usuário associado, quando existir
+        # ----------------------------------------------------------
+
+        usuario_empresa = (
+            usuario
+            or getattr(
+                empresa,
+                "usuario",
+                None
+            )
+        )
+
+        if (
+            usuario_empresa
+            and usuario_empresa.is_active is False
+        ):
+
+            return (
+                "conta_inativa",
+                "Esta conta está desativada."
+            )
+
+        # ----------------------------------------------------------
+        # STAGING / DEMO
+        #
+        # Em modo DEMO, a assinatura não bloqueia a operação.
+        # ----------------------------------------------------------
+
+        if DEMO_MODE:
+
+            return (
+                "ok",
+                None
+            )
+
+        # ----------------------------------------------------------
+        # ASSINATURA
+        #
+        # Usa a propriedade Empresa.assinatura_ativa,
+        # que considera status + validade do plano.
+        # ----------------------------------------------------------
+
+        try:
+
+            assinatura_ativa = bool(
+                empresa.assinatura_ativa
+            )
+
+        except Exception:
+
+            assinatura_ativa = False
+
+        if not assinatura_ativa:
+
+            return (
+                "assinatura_inativa",
+                (
+                    "Sua assinatura não está ativa. "
+                    "Regularize seu plano para acessar "
+                    "o Portal da Malharia."
+                )
+            )
+
+        return (
+            "ok",
+            None
+        )
+
+    return (
+        "conta_invalida",
+        "Conta não localizada."
+    )
+
+
+def _finalizar_login_conta(
+    tipo,
+    empresa=None,
+    usuario=None,
+    avatar_url=None
+):
+
+    # ==============================================================
+    # REGRA CENTRAL
+    # ==============================================================
+
+    (
+        situacao,
+        mensagem
+    ) = _avaliar_acesso_conta(
+        tipo,
+        empresa,
+        usuario
+    )
+
+    # ==============================================================
+    # CONTA INVÁLIDA / DESATIVADA
+    # ==============================================================
+
+    if situacao in {
+        "conta_invalida",
+        "conta_inativa"
+    }:
+
+        session.clear()
+
+        flash(
+            mensagem
+            or "Não foi possível acessar esta conta.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("login")
+        )
+
+    # ==============================================================
+    # COMPRADOR
+    # ==============================================================
+
+    if tipo == "cliente":
+
+        _abrir_sessao_cliente(
+            usuario
+        )
+
+        if avatar_url:
+
+            session[
+                "avatar_url"
+            ] = avatar_url
+
+        flash(
+            "Bem-vindo!",
+            "success"
+        )
+
+        return redirect(
+            url_for(
+                "painel_comprador"
+            )
+        )
+
+    # ==============================================================
+    # MALHARIA
+    #
+    # Mesmo com assinatura vencida, abrimos uma sessão limitada.
+    # Isso permite que a empresa acesse /planos e regularize.
+    # ==============================================================
+
+    if tipo == "malharia":
+
+        _abrir_sessao_malharia(
+            empresa
+        )
+
+        if avatar_url:
+
+            session[
+                "avatar_url"
+            ] = avatar_url
+
+        if situacao == "assinatura_inativa":
+
+            flash(
+                mensagem,
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "planos"
+                )
+            )
+
+        flash(
+            "Bem-vindo!",
+            "success"
+        )
+
+        return redirect(
+            url_for(
+                "painel_malharia"
+            )
+        )
+
+    session.clear()
+
+    return redirect(
+        url_for("login")
+    )
+
 # /login
 @app.route(
     "/login",
@@ -4156,8 +4581,14 @@ def resend_login_code():
     return redirect(url_for("login_code", email=email))
 
 # Validar código (POST)
-@app.post("/login/codigo/validar")
+@app.post(
+    "/login/codigo/validar"
+)
 def validate_login_code():
+
+    # ==============================================================
+    # DADOS
+    # ==============================================================
 
     email = (
         request.form.get("email")
@@ -4170,6 +4601,10 @@ def validate_login_code():
         or request.form.get("code")
         or ""
     ).strip()
+
+    # ==============================================================
+    # VALIDA OTP
+    # ==============================================================
 
     ok, msg = _otp_validate(
         email,
@@ -4190,64 +4625,40 @@ def validate_login_code():
             )
         )
 
-    tipo, empresa, usuario = _achar_conta_login(email)
+    # ==============================================================
+    # LOCALIZA CONTA
+    # ==============================================================
 
-    # --------------------------------------------------------------
-    # COMPRADOR
-    # --------------------------------------------------------------
-
-    if tipo == "cliente" and usuario:
-
-        if usuario.is_active is False:
-
-            flash(
-                "Esta conta está desativada.",
-                "warning"
-            )
-
-            return redirect(
-                url_for("login")
-            )
-
-        _abrir_sessao_cliente(
-            usuario
-        )
-
-        flash(
-            "Bem-vindo!",
-            "success"
-        )
-
-        return redirect(
-            url_for("painel_comprador")
-        )
-
-    # --------------------------------------------------------------
-    # MALHARIA
-    # --------------------------------------------------------------
-
-    if tipo == "malharia" and empresa:
-
-        _abrir_sessao_malharia(
-            empresa
-        )
-
-        flash(
-            "Bem-vindo!",
-            "success"
-        )
-
-        return redirect(
-            url_for("painel_malharia")
-        )
-
-    flash(
-        "E-mail ainda não cadastrado. Conclua seu cadastro para continuar.",
-        "info"
+    (
+        tipo,
+        empresa,
+        usuario
+    ) = _achar_conta_login(
+        email
     )
 
-    return redirect(
-        url_for("login")
+    if not tipo:
+
+        flash(
+            (
+                "E-mail ainda não cadastrado. "
+                "Conclua seu cadastro para continuar."
+            ),
+            "info"
+        )
+
+        return redirect(
+            url_for("login")
+        )
+
+    # ==============================================================
+    # REGRA CENTRAL
+    # ==============================================================
+
+    return _finalizar_login_conta(
+        tipo,
+        empresa,
+        usuario
     )
 
 # Senha: TELA (GET)
@@ -4274,7 +4685,10 @@ def view_login_password():
     )
 
 # Senha: AUTENTICAR (POST)
-@app.post("/login/senha/entrar", endpoint="post_login_password")
+@app.post(
+    "/login/senha/entrar",
+    endpoint="post_login_password"
+)
 def post_login_password():
 
     email = (
@@ -4292,11 +4706,17 @@ def post_login_password():
         "E-mail ou senha incorretos. Tente novamente."
     )
 
-    tipo, empresa, usuario = _achar_conta_login(email)
+    # ==============================================================
+    # LOCALIZA CONTA
+    # ==============================================================
 
-    # --------------------------------------------------------------
-    # Nenhuma conta
-    # --------------------------------------------------------------
+    (
+        tipo,
+        empresa,
+        usuario
+    ) = _achar_conta_login(
+        email
+    )
 
     if not tipo:
 
@@ -4312,13 +4732,13 @@ def post_login_password():
             )
         )
 
-    # --------------------------------------------------------------
+    # ==============================================================
     # COMPRADOR
-    # --------------------------------------------------------------
+    # ==============================================================
 
     if tipo == "cliente":
 
-        if not usuario or usuario.is_active is False:
+        if not usuario:
 
             flash(
                 GENERIC_FAIL,
@@ -4332,24 +4752,29 @@ def post_login_password():
                 )
             )
 
-        ok = False
+        senha_ok = False
 
         try:
 
             if usuario.senha_hash:
 
-                ok = check_password_hash(
-                    usuario.senha_hash,
-                    senha
+                senha_ok = (
+                    check_password_hash(
+                        usuario.senha_hash,
+                        senha
+                    )
                 )
 
         except Exception as e:
 
             app.logger.warning(
-                f"[LOGIN CLIENTE WARN] check_password_hash: {e}"
+                (
+                    "[LOGIN CLIENTE WARN] "
+                    f"check_password_hash: {e}"
+                )
             )
 
-        if not ok:
+        if not senha_ok:
 
             flash(
                 GENERIC_FAIL,
@@ -4363,36 +4788,41 @@ def post_login_password():
                 )
             )
 
-        _abrir_sessao_cliente(
+        return _finalizar_login_conta(
+            tipo,
+            empresa,
             usuario
         )
 
-        return redirect(
-            url_for("painel_comprador")
-        )
-
-    # --------------------------------------------------------------
+    # ==============================================================
     # MALHARIA
-    # --------------------------------------------------------------
+    # ==============================================================
 
     if tipo == "malharia":
 
-        ok = False
+        senha_ok = False
 
         try:
 
-            ok = check_password_hash(
-                empresa.senha,
-                senha
-            )
+            if empresa and empresa.senha:
+
+                senha_ok = (
+                    check_password_hash(
+                        empresa.senha,
+                        senha
+                    )
+                )
 
         except Exception as e:
 
             app.logger.warning(
-                f"[LOGIN MALHARIA WARN] check_password_hash: {e}"
+                (
+                    "[LOGIN MALHARIA WARN] "
+                    f"check_password_hash: {e}"
+                )
             )
 
-        if not ok:
+        if not senha_ok:
 
             flash(
                 GENERIC_FAIL,
@@ -4406,35 +4836,10 @@ def post_login_password():
                 )
             )
 
-        # Preserva a regra comercial atual da malharia
-        if (
-            not DEMO_MODE
-            and
-            (empresa.status_pagamento or "").lower()
-            not in (
-                "aprovado",
-                "ativo"
-            )
-        ):
-
-            flash(
-                "Pagamento ainda não aprovado.",
-                "warning"
-            )
-
-            return redirect(
-                url_for(
-                    "login_method",
-                    email=email
-                )
-            )
-
-        _abrir_sessao_malharia(
-            empresa
-        )
-
-        return redirect(
-            url_for("painel_malharia")
+        return _finalizar_login_conta(
+            tipo,
+            empresa,
+            usuario
         )
 
     flash(
@@ -4481,45 +4886,127 @@ def oauth_google():
         hl="pt-BR"
     )
 
-@app.get("/oauth/google/callback")
+@app.get(
+    "/oauth/google/callback"
+)
 def oauth_google_callback():
+
+    # ==============================================================
+    # GOOGLE
+    # ==============================================================
+
     try:
-        token = oauth.google.authorize_access_token()
-        # Em vez de parsear o id_token (que exige nonce), use o /userinfo:
-        userinfo = oauth.google.get("https://openidconnect.googleapis.com/v1/userinfo").json()
+
+        oauth.google.authorize_access_token()
+
+        userinfo = (
+            oauth.google
+            .get(
+                (
+                    "https://openidconnect.googleapis.com/"
+                    "v1/userinfo"
+                )
+            )
+            .json()
+        )
+
     except Exception as e:
-        current_app.logger.exception(f"Falha no callback do Google: {e}")
-        flash("Não foi possível concluir o login com o Google.", "danger")
-        return redirect(url_for("login"))
 
-    email = (userinfo.get("email") or "").strip().lower()
-    nome  = userinfo.get("name") or ""
-    foto  = userinfo.get("picture")
+        current_app.logger.exception(
+            (
+                "Falha no callback "
+                f"do Google: {e}"
+            )
+        )
 
-    ctx = session.pop("oauth_ctx", "empresa")
-    nxt = session.pop("oauth_next", url_for("index"))
+        flash(
+            (
+                "Não foi possível concluir "
+                "o login com o Google."
+            ),
+            "danger"
+        )
+
+        return redirect(
+            url_for("login")
+        )
+
+    # ==============================================================
+    # IDENTIDADE GOOGLE
+    # ==============================================================
+
+    email = (
+        userinfo.get("email")
+        or ""
+    ).strip().lower()
+
+    foto = (
+        userinfo.get("picture")
+        or None
+    )
+
+    # Limpa informações temporárias do OAuth
+    session.pop(
+        "oauth_ctx",
+        None
+    )
+
+    session.pop(
+        "oauth_next",
+        None
+    )
 
     if not email:
-        flash("Não foi possível obter o e-mail do Google.", "danger")
-        return redirect(url_for("login"))
 
-    # ===== seu login existente (mesmo fluxo do login por e-mail) =====
-    try:
-        emp = Empresa.query.filter_by(email=email).first()
-    except Exception:
-        emp = None
+        flash(
+            (
+                "Não foi possível obter "
+                "o e-mail do Google."
+            ),
+            "danger"
+        )
 
-    if not emp:
-        flash("Não encontramos uma conta para este e-mail. Faça o cadastro para continuar.", "warning")
-        return redirect(url_for("cadastrar_empresa", email=email))
+        return redirect(
+            url_for("login")
+        )
 
-    session.clear()
-    session["empresa_id"] = emp.id
-    session["empresa_nome"] = getattr(emp, "nome", getattr(emp, "razao_social", ""))
-    if foto:
-        session["avatar_url"] = foto
+    # ==============================================================
+    # CONTA ACHETECE
+    # ==============================================================
 
-    return redirect(nxt)
+    (
+        tipo,
+        empresa,
+        usuario
+    ) = _achar_conta_login(
+        email
+    )
+
+    if not tipo:
+
+        flash(
+            (
+                "Não encontramos uma conta AcheTece "
+                "para este e-mail. "
+                "Faça seu cadastro para continuar."
+            ),
+            "warning"
+        )
+
+        return redirect(
+            url_for("login")
+        )
+
+    # ==============================================================
+    # REGRA CENTRAL
+    # ==============================================================
+
+    return _finalizar_login_conta(
+        tipo,
+        empresa,
+        usuario,
+        avatar_url=foto
+    )
 
 @app.route("/logout")
 def logout():
