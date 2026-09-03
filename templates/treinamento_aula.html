@@ -594,6 +594,11 @@
       <!-- Card de ações -->
       <aside class="actions-card" aria-label="Ações da aula">
         <form method="post" action="{{ url_for('treinamento_concluir', module_key=module.key, lesson_key=lesson.key) }}">
+          <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ csrf_token() }}"
+          >
           <button type="submit" class="btn-primary">
             {% if status == "done" %}
               Desmarcar como concluída
@@ -657,6 +662,11 @@
       <section class="quiz" aria-label="Mini-quiz">
         <h2>Mini-quiz</h2>
         <form method="post" action="{{ url_for('treinamento_quiz', module_key=module.key, lesson_key=lesson.key) }}">
+          <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ csrf_token() }}"
+          >
           {% for q in lesson.quiz %}
             <div class="qbox">
               <div class="qtitle">{{ loop.index }}. {{ q.q }}</div>
