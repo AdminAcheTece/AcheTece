@@ -373,6 +373,11 @@
           </div>
 
           <form action="{{ url_for('post_login_password') }}" method="POST" novalidate>
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ csrf_token() }}"
+            >
             <input type="hidden" name="email" value="{{ email or request.args.get('email','') }}">
             <label for="senha">Senha</label>
             <input id="senha" name="senha" type="password" autocomplete="current-password" required>
