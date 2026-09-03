@@ -5416,21 +5416,11 @@ def cadastro_comprador():
         )
 
 
-    # --------------------------------------------------------------
+    # ------------------------------------------------------------
     # Login automático
-    # --------------------------------------------------------------
-
-    session.clear()
-
-    session["user_id"] = novo_usuario.id
-    session["auth_user_id"] = novo_usuario.id
-
-    session["login_email"] = novo_usuario.email
-    session["auth_email"] = novo_usuario.email
-
-    session["perfil"] = "cliente"
-
-    session.permanent = True
+    # ------------------------------------------------------------
+    
+    _abrir_sessao_cliente(novo_usuario)
 
 
     flash(
