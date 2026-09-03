@@ -393,6 +393,11 @@
         {% set _sel_el   = (request.form.get('elastano') or ('Sim' if _el_sim else 'Não' if _el_nao else ''))|lower %}
 
         <form method="POST" class="formulario" action="{{ url_for('editar_tear', id=tear.id) }}">
+          <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ csrf_token() }}"
+          >
           <label for="marca">Marca</label>
           <input type="text" id="marca" name="marca" value="{{ request.form.get('marca', tear.marca or '') }}" required>
 
