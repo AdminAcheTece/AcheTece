@@ -2136,6 +2136,249 @@ class OrderEvent(db.Model):
         )
 
 # --------------------------------------------------------------------
+# AcheTece 2.0 - Histórico cronológico do Pedido
+# --------------------------------------------------------------------
+
+def _montar_historico_operacional_pedido(pedido):
+
+    if not pedido:
+
+        return []
+
+    # ==============================================================
+    # EVENTOS REAIS GRAVADOS NO ORDER_EVENT
+    # ==============================================================
+
+    eventos = (
+        OrderEvent.query
+        .filter_by(
+            order_id=pedido.id
+        )
+        .order_by(
+            OrderEvent.created_at.asc(),
+            OrderEvent.id.asc()
+        )
+        .all()
+    )
+
+    acoes_existentes = {
+        (
+            evento.action
+            or ""
+        ).strip().lower()
+
+        for evento in eventos
+    }
+
+    # ==============================================================
+    # NOMES AMIGÁVEIS
+    # ==============================================================
+
+    rotulos = {
+
+        "pedido_criado":
+            "Pedido criado",
+
+        "pedido_confirmado":
+            "Pedido confirmado",
+
+        "producao_iniciada":
+            "Produção iniciada",
+
+        "producao_concluida":
+            "Produção concluída",
+
+        "entrega_confirmada":
+            "Entrega confirmada",
+
+        "pedido_cancelado":
+            "Pedido cancelado",
+    }
+
+    atores = {
+
+        "sistema":
+            "AcheTece",
+
+        "malharia":
+            "Malharia",
+
+        "comprador":
+            "Comprador",
+    }
+
+    historico = []
+
+    # ==============================================================
+    # PEDIDOS LEGADOS
+    #
+    # Os primeiros pedidos foram criados antes de o OrderEvent
+    # registrar "pedido_criado" e "pedido_confirmado".
+    #
+    # Utilizamos as datas existentes no próprio Order para que
+    # o histórico visual permaneça completo.
+    # ==============================================================
+
+    if (
+        "pedido_criado"
+        not in acoes_existentes
+        and pedido.created_at
+    ):
+
+        historico.append(
+            {
+                "action":
+                    "pedido_criado",
+
+                "label":
+                    "Pedido criado",
+
+                "actor_label":
+                    "AcheTece",
+
+                "created_at":
+                    pedido.created_at,
+
+                "message":
+                    (
+                        f"O pedido {pedido.codigo} "
+                        "foi criado a partir da proposta aceita."
+                    ),
+
+                "reconstruido":
+                    True,
+            }
+        )
+
+    if (
+        "pedido_confirmado"
+        not in acoes_existentes
+        and pedido.confirmed_at
+    ):
+
+        historico.append(
+            {
+                "action":
+                    "pedido_confirmado",
+
+                "label":
+                    "Pedido confirmado",
+
+                "actor_label":
+                    "Malharia",
+
+                "created_at":
+                    pedido.confirmed_at,
+
+                "message":
+                    (
+                        f"A malharia confirmou o recebimento "
+                        f"do pedido {pedido.codigo}."
+                    ),
+
+                "reconstruido":
+                    True,
+            }
+        )
+
+    # --------------------------------------------------------------
+    # Fallback adicional para produção concluída em registros antigos
+    # --------------------------------------------------------------
+
+    if (
+        "producao_concluida"
+        not in acoes_existentes
+        and pedido.completed_at
+    ):
+
+        historico.append(
+            {
+                "action":
+                    "producao_concluida",
+
+                "label":
+                    "Produção concluída",
+
+                "actor_label":
+                    "Malharia",
+
+                "created_at":
+                    pedido.completed_at,
+
+                "message":
+                    (
+                        f"A produção do pedido "
+                        f"{pedido.codigo} foi concluída."
+                    ),
+
+                "reconstruido":
+                    True,
+            }
+        )
+
+    # ==============================================================
+    # EVENTOS REAIS
+    # ==============================================================
+
+    for evento in eventos:
+
+        acao = (
+            evento.action
+            or ""
+        ).strip().lower()
+
+        ator = (
+            evento.actor_role
+            or ""
+        ).strip().lower()
+
+        historico.append(
+            {
+                "action":
+                    acao,
+
+                "label":
+                    rotulos.get(
+                        acao,
+                        acao.replace(
+                            "_",
+                            " "
+                        ).capitalize()
+                    ),
+
+                "actor_label":
+                    atores.get(
+                        ator,
+                        ator.capitalize()
+                        if ator
+                        else "Sistema"
+                    ),
+
+                "created_at":
+                    evento.created_at,
+
+                "message":
+                    evento.message,
+
+                "reconstruido":
+                    False,
+            }
+        )
+
+    # ==============================================================
+    # ORDEM CRONOLÓGICA
+    # ==============================================================
+
+    historico.sort(
+        key=lambda item: (
+            item.get("created_at")
+            or datetime.min
+        )
+    )
+
+    return historico
+
+# --------------------------------------------------------------------
 # AcheTece 2.0 - Motor de Matching Técnico
 # --------------------------------------------------------------------
 
@@ -8180,6 +8423,26 @@ def gerar_pedido(proposta_id):
         )
 
         # ==========================================================
+        # HISTÓRICO OPERACIONAL — PEDIDO CRIADO
+        # ==========================================================
+        
+        evento_pedido_criado = OrderEvent(
+            order_id=pedido.id,
+            actor_role="sistema",
+            action="pedido_criado",
+            status_anterior=None,
+            status_novo="aguardando_confirmacao",
+            message=(
+                f"O pedido {pedido.codigo} "
+                "foi criado a partir da proposta aceita."
+            )
+        )
+        
+        db.session.add(
+            evento_pedido_criado
+        )
+
+        # ==========================================================
         # DEMANDA PASSA PARA CONTRATADA
         # ==========================================================
 
@@ -9590,14 +9853,28 @@ def detalhe_pedido_comprador(pedido_id):
     proposta = pedido.proposta
     demanda = pedido.demanda
     empresa = pedido.empresa
-
+    
+    historico_operacional = (
+        _montar_historico_operacional_pedido(
+            pedido
+        )
+    )
+    
     return render_template(
         "detalhe_pedido_comprador.html",
+    
         usuario=usuario,
+    
         pedido=pedido,
+    
         proposta=proposta,
+    
         demanda=demanda,
-        empresa=empresa
+    
+        empresa=empresa,
+    
+        historico_operacional=
+            historico_operacional,
     )
 
 # --------------------------------------------------------------------
@@ -12449,13 +12726,26 @@ def detalhe_pedido_malharia(pedido_id):
 
     proposta = pedido.proposta
     demanda = pedido.demanda
-
+    
+    historico_operacional = (
+        _montar_historico_operacional_pedido(
+            pedido
+        )
+    )
+    
     return render_template(
         "detalhe_pedido_malharia.html",
+    
         empresa=empresa,
+    
         pedido=pedido,
+    
         proposta=proposta,
-        demanda=demanda
+    
+        demanda=demanda,
+    
+        historico_operacional=
+            historico_operacional,
     )
 
 # --------------------------------------------------------------------
@@ -12570,11 +12860,31 @@ def confirmar_pedido_malharia(pedido_id):
     try:
 
         pedido.status = "confirmado"
-
+    
         pedido.confirmed_at = (
             datetime.utcnow()
         )
-
+    
+        # ==========================================================
+        # HISTÓRICO OPERACIONAL
+        # ==========================================================
+    
+        evento = OrderEvent(
+            order_id=pedido.id,
+            actor_role="malharia",
+            action="pedido_confirmado",
+            status_anterior="aguardando_confirmacao",
+            status_novo="confirmado",
+            message=(
+                f"A malharia confirmou o recebimento "
+                f"do pedido {pedido.codigo}."
+            )
+        )
+    
+        db.session.add(
+            evento
+        )
+    
         db.session.commit()
 
     except Exception:
