@@ -15272,9 +15272,7 @@ def admin_editar_status(empresa_id):
 @app.route('/admin/empresa_excluir/<int:empresa_id>', methods=['POST'])
 @login_admin_requerido
 def empresa_excluir(empresa_id):
-    if session.get('admin_email') != 'gestao.achetece@gmail.com':
-        flash('Acesso não autorizado.')
-        return redirect(url_for('login'))
+    
     empresa = Empresa.query.get_or_404(empresa_id)
     db.session.delete(empresa); db.session.commit()
     flash(f'Empresa "{empresa.nome}" excluída com sucesso!')
@@ -16084,7 +16082,11 @@ def _send_email(to_email: str, subject: str, text_body: str, html_body: str):
     mail_from = os.environ.get("MAIL_FROM") or user
     from_name = os.environ.get("MAIL_FROM_NAME", "AcheTece")
 
-    reply_to = os.environ.get("MAIL_REPLY_TO") or "gestao.achetece@gmail.com"  # ajuste se quiser
+    reply_to = (
+        os.environ.get("MAIL_REPLY_TO")
+        or ADMIN_EMAIL
+        or mail_from
+    )
 
     if not (host and user and pwd and mail_from and to_email):
         app.logger.warning("[EMAIL] Config incompleta (host/user/pass/from) ou destinatário vazio.")
