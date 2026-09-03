@@ -4,6 +4,10 @@ from flask import (
 )
 # Removido o uso de Flask-Mail; usamos Resend + SMTP com timeout
 from flask_sqlalchemy import SQLAlchemy
+from flask_wtf.csrf import (
+    CSRFProtect,
+    CSRFError
+)
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
@@ -83,6 +87,130 @@ app.config[
     "PREFERRED_URL_SCHEME"
 ] = "https"
 
+# ==============================================================
+# SEGURANÇA — CSRF
+# ==============================================================
+
+# Durante a implantação progressiva, o CSRF não será
+# aplicado automaticamente a todos os POSTs.
+#
+# As rotas protegidas serão adicionadas de forma controlada
+# antes de ativarmos a proteção global.
+
+app.config[
+    "WTF_CSRF_CHECK_DEFAULT"
+] = False
+
+app.config[
+    "WTF_CSRF_TIME_LIMIT"
+] = timedelta(
+    hours=4
+)
+
+csrf = CSRFProtect(
+    app
+)
+
+# ==============================================================
+# CSRF — FASE 1
+#
+# Autenticação e administração.
+# ==============================================================
+
+CSRF_ENDPOINTS_FASE_1 = {
+
+    # Login
+    "login",
+
+    "post_login_code",
+
+    "post_login_code_accent",
+
+    "validate_login_code",
+
+    "post_login_password",
+
+    # Administração
+    "admin_login",
+}
+
+
+@app.before_request
+def proteger_csrf_fase_1():
+
+    if request.method not in {
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE"
+    }:
+
+        return None
+
+    endpoint = (
+        request.endpoint
+        or ""
+    )
+
+    if (
+        endpoint
+        not in CSRF_ENDPOINTS_FASE_1
+    ):
+
+        return None
+
+    csrf.protect()
+
+    return None
+
+# ==============================================================
+# ERRO CSRF
+# ==============================================================
+
+@app.errorhandler(
+    CSRFError
+)
+def tratar_erro_csrf(error):
+
+    current_app.logger.warning(
+        (
+            "[SECURITY][CSRF] "
+            f"path={request.path} "
+            f"endpoint={request.endpoint} "
+            f"motivo={error.description}"
+        )
+    )
+
+    flash(
+        (
+            "Sua sessão de segurança expirou "
+            "ou a solicitação não pôde ser validada. "
+            "Atualize a página e tente novamente."
+        ),
+        "warning"
+    )
+
+    # ----------------------------------------------------------
+    # Área administrativa
+    # ----------------------------------------------------------
+
+    if request.path.startswith(
+        "/admin"
+    ):
+
+        return redirect(
+            url_for(
+                "admin_login"
+            )
+        )
+
+    # ----------------------------------------------------------
+    # Login / conta
+    # ----------------------------------------------------------
+
+    return redirect(
+        url_for("login")
+    )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
