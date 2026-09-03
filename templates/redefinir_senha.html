@@ -424,6 +424,11 @@
           {% endif %}
 
           <form class="contato" method="POST" novalidate>
+            <input
+              type="hidden"
+              name="csrf_token"
+              value="{{ csrf_token() }}"
+            >
             <label for="senha">Nova senha</label>
             <input id="senha" name="senha" type="password" placeholder="Digite a nova senha" required>
 
