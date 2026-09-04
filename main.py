@@ -3662,39 +3662,54 @@ def _no_cache_on_panel(resp):
 @app.after_request
 def _security_headers(resp):
     """
-    Aplica headers HTTP de segurança de baixo risco
-    em todas as respostas do AcheTece.
+    Aplica headers HTTP globais de segurança.
 
-    HSTS e Content-Security-Policy são tratados
-    separadamente para evitar quebra de integrações.
+    A política HSTS está inicialmente com duração curta
+    no staging para validação segura.
+
+    Content-Security-Policy será tratada separadamente.
     """
 
-    # Impede interpretação automática de um arquivo como outro tipo MIME.
+    # Impede MIME sniffing.
     resp.headers.setdefault(
         "X-Content-Type-Options",
         "nosniff"
     )
 
-    # Permite iframe somente dentro do próprio AcheTece.
-    # SAMEORIGIN é preferido a DENY porque o sistema pode
-    # exibir materiais/PDFs do próprio domínio.
+    # Proteção contra clickjacking externo.
     resp.headers.setdefault(
         "X-Frame-Options",
         "SAMEORIGIN"
     )
 
-    # Em navegação externa envia apenas a origem,
-    # evitando expor caminhos e parâmetros internos.
+    # Reduz exposição de URL/caminho ao navegar
+    # para outro domínio.
     resp.headers.setdefault(
         "Referrer-Policy",
         "strict-origin-when-cross-origin"
     )
 
-    # O AcheTece atualmente não necessita acessar
-    # câmera, microfone ou localização do dispositivo.
+    # APIs do navegador que o AcheTece atualmente
+    # não necessita utilizar.
     resp.headers.setdefault(
         "Permissions-Policy",
         "camera=(), microphone=(), geolocation=()"
+    )
+
+    # ==========================================================
+    # HSTS — FASE DE VALIDAÇÃO
+    # ==========================================================
+    # 300 segundos = 5 minutos.
+    #
+    # Não usar ainda:
+    # - includeSubDomains
+    # - preload
+    #
+    # O navegador somente aplica HSTS quando recebe
+    # este header através de uma conexão HTTPS.
+    resp.headers.setdefault(
+        "Strict-Transport-Security",
+        "max-age=300"
     )
 
     return resp
