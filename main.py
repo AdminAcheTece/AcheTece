@@ -15309,21 +15309,31 @@ def performance_acesso():
         total_contatos=total_contatos
     )
 
-# --------------------------------------------------------------------
-# Admin: empresas
-# --------------------------------------------------------------------
-@app.route(
+# ==============================================================
+# ADMIN LOGIN — GET
+# ==============================================================
+#
+# Apenas exibe a tela de autenticação administrativa.
+#
+# Esta rota NÃO recebe rate limit porque abrir ou atualizar
+# a página não representa tentativa de autenticação.
+# ==============================================================
+
+@app.get(
     "/admin/login",
-    methods=[
-        "GET",
-        "POST"
-    ]
+    endpoint="admin_login"
 )
 def admin_login():
+    """
+    Exibe a página de login administrativo.
 
-    # ==============================================================
+    A validação das credenciais acontece separadamente
+    no POST /admin/login.
+    """
+
+    # ==========================================================
     # CONFIGURAÇÃO
-    # ==============================================================
+    # ==========================================================
 
     if (
         not ADMIN_EMAIL
@@ -15340,19 +15350,69 @@ def admin_login():
             503
         )
 
-    # ==============================================================
-    # GET
-    # ==============================================================
+    return render_template(
+        "admin_login.html"
+    )
 
-    if request.method == "GET":
 
-        return render_template(
-            "admin_login.html"
+# ==============================================================
+# ADMIN LOGIN — POST
+# ==============================================================
+#
+# Apenas tentativas reais de autenticação passam por esta rota.
+#
+# Limite:
+# 5 tentativas a cada 15 minutos por cliente/IP.
+#
+# Ao exceder:
+# Flask-Limiter
+#     ↓
+# HTTP 429
+#     ↓
+# handle_rate_limit_exceeded()
+#     ↓
+# página amigável do AcheTece.
+# ==============================================================
+
+@app.post(
+    "/admin/login",
+    endpoint="post_admin_login"
+)
+@limiter.limit("5 per 15 minutes")
+def post_admin_login():
+    """
+    Processa a autenticação administrativa.
+
+    Segurança:
+    - CSRF global permanece ativo;
+    - máximo de 5 tentativas em 15 minutos por IP;
+    - sessão anterior é removida antes de criar
+      a sessão administrativa;
+    - excesso de tentativas gera HTTP 429.
+    """
+
+    # ==========================================================
+    # CONFIGURAÇÃO
+    # ==========================================================
+
+    if (
+        not ADMIN_EMAIL
+        or not ADMIN_PASSWORD
+    ):
+
+        current_app.logger.error(
+            "[ADMIN] Credenciais administrativas "
+            "não configuradas."
         )
 
-    # ==============================================================
-    # POST
-    # ==============================================================
+        return (
+            "Administração indisponível.",
+            503
+        )
+
+    # ==========================================================
+    # DADOS RECEBIDOS
+    # ==========================================================
 
     email = (
         request.form.get(
@@ -15367,6 +15427,10 @@ def admin_login():
         )
         or ""
     )
+
+    # ==========================================================
+    # CREDENCIAIS VÁLIDAS
+    # ==========================================================
 
     if (
         email == ADMIN_EMAIL
@@ -15396,9 +15460,15 @@ def admin_login():
             )
         )
 
+    # ==========================================================
+    # CREDENCIAIS INVÁLIDAS
+    # ==========================================================
+
     current_app.logger.warning(
         "[ADMIN] Tentativa de login "
-        "administrativo inválida."
+        "administrativo inválida. "
+        "ip=%s",
+        _client_ip(),
     )
 
     flash(
