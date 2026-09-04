@@ -3724,12 +3724,27 @@ def _security_headers(resp):
     # imagens, fontes, iframes e conexões antes da ativação real.
     csp_report_only = (
         "default-src 'self'; "
-        "script-src 'self'; "
-        "style-src 'self' https://fonts.googleapis.com; "
+    
+        # Temporariamente permitidos durante o inventário.
+        # O AcheTece possui scripts, estilos e eventos inline legados.
+        "script-src 'self' 'unsafe-inline'; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+    
+        # Fontes do Google Fonts.
         "font-src 'self' https://fonts.gstatic.com; "
+    
+        # Imagens permanecem restritas ao próprio AcheTece.
+        # Se houver imagem externa, queremos que o Report-Only denuncie.
         "img-src 'self'; "
+    
+        # Fetch/XHR permanece restrito ao próprio AcheTece.
+        # Qualquer conexão externa será revelada pelo Console.
         "connect-src 'self'; "
+    
+        # Conteúdo enquadrado.
         "frame-src 'self' https://www.google.com; "
+    
+        # Diretivas estruturais.
         "object-src 'none'; "
         "base-uri 'self'; "
         "form-action 'self'; "
