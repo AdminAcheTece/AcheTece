@@ -3773,6 +3773,34 @@ def _security_headers(resp):
         csp_policy
     )
 
+    # ==========================================================
+    # CSP NONCE — VALIDAÇÃO EM REPORT-ONLY
+    # ==========================================================
+    #
+    # A CSP efetiva continua compatível com o sistema legado.
+    # Esta segunda política testa como o AcheTece se comportaria
+    # sem unsafe-inline para JavaScript.
+    nonce = _get_csp_nonce()
+
+    csp_nonce_report_only = (
+        "default-src 'self'; "
+        f"script-src 'self' 'nonce-{nonce}'; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com; "
+        "img-src 'self'; "
+        "connect-src 'self'; "
+        "frame-src 'self' https://www.google.com; "
+        "object-src 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self'; "
+        "frame-ancestors 'self'; "
+    )
+
+    resp.headers.setdefault(
+        "Content-Security-Policy-Report-Only",
+        csp_nonce_report_only
+    )
+
     return resp
 
 # =====================[ ANALYTICS - FIM ]=====================
