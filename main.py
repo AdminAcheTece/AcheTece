@@ -3699,8 +3699,15 @@ def _security_headers(resp):
     Aplica headers HTTP globais de segurança.
 
     A política HSTS permanece com duração curta no staging.
-    A CSP está ativa em modo compatível, após validação
-    prévia em Report-Only.
+
+    A Content Security Policy utiliza nonce por requisição
+    para autorizar JavaScript inline legítimo do AcheTece.
+
+    JavaScript inline genérico e handlers HTML inline
+    não são permitidos.
+
+    CSS inline permanece temporariamente permitido
+    por compatibilidade com o front-end atual.
     """
 
     # ==========================================================
@@ -3738,68 +3745,103 @@ def _security_headers(resp):
     # ==========================================================
     #
     # 300 segundos = 5 minutos.
-    # Não utilizar ainda includeSubDomains ou preload.
+    #
+    # Ainda não utilizamos:
+    # - includeSubDomains
+    # - preload
+    #
+    # Esses itens serão avaliados posteriormente
+    # antes de qualquer aplicação em produção.
     resp.headers.setdefault(
         "Strict-Transport-Security",
         "max-age=300"
     )
 
     # ==========================================================
-    # CONTENT SECURITY POLICY — FASE COMPATÍVEL
+    # CONTENT SECURITY POLICY — NONCE ATIVO
     # ==========================================================
     #
-    # Esta política foi previamente validada em Report-Only
-    # no staging.
+    # Cada requisição possui um nonce aleatório próprio.
     #
-    # 'unsafe-inline' permanece temporariamente para
-    # compatibilidade com scripts, estilos e handlers legados.
-    # Em etapa posterior, script-src será endurecido com nonce.
-    csp_policy = (
-        "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline'; "
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-        "font-src 'self' https://fonts.gstatic.com; "
-        "img-src 'self'; "
-        "connect-src 'self'; "
-        "frame-src 'self' https://www.google.com; "
-        "object-src 'none'; "
-        "base-uri 'self'; "
-        "form-action 'self'; "
-        "frame-ancestors 'self'; "
-    )
-
-    resp.headers.setdefault(
-        "Content-Security-Policy",
-        csp_policy
-    )
-
-    # ==========================================================
-    # CSP NONCE — VALIDAÇÃO EM REPORT-ONLY
-    # ==========================================================
+    # JavaScript permitido:
     #
-    # A CSP efetiva continua compatível com o sistema legado.
-    # Esta segunda política testa como o AcheTece se comportaria
-    # sem unsafe-inline para JavaScript.
+    # 1. arquivos JavaScript do próprio AcheTece:
+    #       script-src 'self'
+    #
+    # 2. blocos <script> que possuam:
+    #       nonce="{{ csp_nonce }}"
+    #
+    # Atributos JavaScript inline como:
+    #
+    # onclick=""
+    # onsubmit=""
+    # onerror=""
+    #
+    # são explicitamente bloqueados.
+    #
+    # CSS inline permanece temporariamente permitido
+    # porque o projeto ainda possui vários:
+    #
+    # <style>
+    # style=""
+    #
+    # Essa parte será tratada posteriormente.
     nonce = _get_csp_nonce()
 
-    csp_nonce_report_only = (
+    csp_policy = (
         "default-src 'self'; "
+
+        # ------------------------------------------------------
+        # JAVASCRIPT
+        # ------------------------------------------------------
         f"script-src 'self' 'nonce-{nonce}'; "
+        "script-src-attr 'none'; "
+
+        # ------------------------------------------------------
+        # CSS
+        # ------------------------------------------------------
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+
+        # ------------------------------------------------------
+        # FONTES
+        # ------------------------------------------------------
         "font-src 'self' https://fonts.gstatic.com; "
+
+        # ------------------------------------------------------
+        # IMAGENS
+        # ------------------------------------------------------
         "img-src 'self'; "
+
+        # ------------------------------------------------------
+        # FETCH / XHR / API
+        # ------------------------------------------------------
         "connect-src 'self'; "
+
+        # ------------------------------------------------------
+        # IFRAMES
+        # ------------------------------------------------------
+        #
+        # 'self':
+        # materiais internos / PDFs do próprio AcheTece.
+        #
+        # www.google.com:
+        # mapa exibido no perfil da malharia.
         "frame-src 'self' https://www.google.com; "
+
+        # ------------------------------------------------------
+        # PROTEÇÕES ESTRUTURAIS
+        # ------------------------------------------------------
         "object-src 'none'; "
         "base-uri 'self'; "
         "form-action 'self'; "
         "frame-ancestors 'self'; "
     )
 
-    resp.headers.setdefault(
-        "Content-Security-Policy-Report-Only",
-        csp_nonce_report_only
-    )
+    # CSP efetiva.
+    #
+    # Não usamos mais Content-Security-Policy-Report-Only
+    # nesta fase.
+    resp.headers["Content-Security-Policy"] = csp_policy
 
     return resp
 
