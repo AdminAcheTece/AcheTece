@@ -666,8 +666,7 @@
                                 <img class="wa-icon"
                                      src="/static/icone_whatsapp.png"
                                      data-alt="/static/ícone_whatsapp.png,/estatico/icone_whatsapp.png,/estático/ícone_whatsapp.png"
-                                     alt="WhatsApp"
-                                     onerror="(function(img){var s=img.getAttribute('data-alt');if(!s){img.onerror=null;return;}var a=s.split(',');img.setAttribute('data-alt', a.slice(1).join(','));img.src=a[0];})(this);">
+                                     alt="WhatsApp"                                     
                               </a>
                             {% endif %}
                           </div>
@@ -749,8 +748,7 @@
                                 <img class="wa-icon"
                                      src="/static/icone_whatsapp.png"
                                      data-alt="/static/ícone_whatsapp.png,/estatico/icone_whatsapp.png,/estático/ícone_whatsapp.png"
-                                     alt="WhatsApp"
-                                     onerror="(function(img){var s=img.getAttribute('data-alt');if(!s){img.onerror=null;return;}var a=s.split(',');img.setAttribute('data-alt', a.slice(1).join(','));img.src=a[0];})(this);">
+                                     alt="WhatsApp"                                     
                               </a>
                             {% else %}
                               —
@@ -1025,6 +1023,57 @@
     })();
   </script>
 
+<script nonce="{{ csp_nonce }}">
+  (function () {
+
+    const whatsappIcons =
+      document.querySelectorAll(
+        '.wa-icon[data-alt]'
+      );
+
+    whatsappIcons.forEach(function (img) {
+
+      function tryNextWhatsappIcon() {
+
+        const alternatives =
+          img.getAttribute('data-alt');
+
+        if (!alternatives) {
+
+          img.removeEventListener(
+            'error',
+            tryNextWhatsappIcon
+          );
+
+          return;
+        }
+
+        const urls =
+          alternatives.split(',');
+
+        const nextUrl =
+          urls.shift();
+
+        img.setAttribute(
+          'data-alt',
+          urls.join(',')
+        );
+
+        if (nextUrl) {
+          img.src = nextUrl;
+        }
+      }
+
+      img.addEventListener(
+        'error',
+        tryNextWhatsappIcon
+      );
+
+    });
+
+  })();
+</script>
+  
 </body>
 </html>
 
