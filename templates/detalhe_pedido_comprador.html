@@ -1463,9 +1463,7 @@
                     'confirmar_entrega_comprador',
                     pedido_id=pedido.id
                 ) }}"
-                onsubmit="return confirm(
-                    'Confirma que recebeu este pedido?'
-                );"
+                data-confirm="Confirma que recebeu este pedido?"
                 style="margin:0;"
             >
 
@@ -1515,6 +1513,10 @@
 
 </main>
 
+<script
+    src="{{ url_for('static', filename='js/confirm-submit.js') }}"
+    defer
+></script>    
 
 </body>
 
