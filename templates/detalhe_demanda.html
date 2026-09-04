@@ -1605,9 +1605,7 @@
                     demanda_id=demanda.id
                 ) }}"
                 class="publish-form"
-                onsubmit="return confirm(
-                    'Deseja publicar esta demanda?'
-                );"
+                data-confirm="Deseja publicar esta demanda?"
             >
 
                 <input
@@ -2152,9 +2150,7 @@
                         demanda_id=demanda.id
                     ) }}"
                     style="margin:0;"
-                    onsubmit="return confirm(
-                        'Deseja executar o Matching Técnico para esta demanda?'
-                    );"
+                    data-confirm="Deseja executar o Matching V1 para esta demanda?"
                 >
 
                     <input
@@ -2272,6 +2268,10 @@
 
 </main>
 
+<script
+    src="{{ url_for('static', filename='js/confirm-submit.js') }}"
+    defer
+></script>    
 
 </body>
 
