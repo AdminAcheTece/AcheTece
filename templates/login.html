@@ -714,7 +714,7 @@
   </footer>
 
   <!-- JS: menu mobile padrão -->
-  <script>
+  <script nonce="{{ csp_nonce }}">
     (function(){
       const btn = document.getElementById('btnMenu');
       const backdrop = document.getElementById('menuBackdrop');
@@ -736,7 +736,7 @@
     })();
   </script>
 
-  <script>
+  <script nonce="{{ csp_nonce }}">
     (function(){
       if (!/iphone|ipad|ipod|android/i.test(navigator.userAgent)) return;
       var a = document.querySelector('.oauth a');

@@ -275,7 +275,7 @@
   </footer>
 
   <!-- ===== JS: Menu mobile (igual quem_somos) ===== -->
-  <script>
+  <script nonce="{{ csp_nonce }}">
     (function(){
       const openBtn = document.getElementById('openMenuBtn');
       const closeBtn = document.getElementById('closeMenuBtn');
@@ -301,7 +301,7 @@
   </script>
 
   <!-- ===== Script: polling do status (mantido) ===== -->
-  <script>
+  <script nonce="{{ csp_nonce }}">
     (function () {
       const urlParams = new URLSearchParams(window.location.search);
       const ext = urlParams.get('ext');

@@ -466,7 +466,7 @@
   </footer>
 
   <!-- ===== JS: Menu mobile (padrão) + altura do header ===== -->
-  <script>
+  <script nonce="{{ csp_nonce }}">
     (function(){
       const openBtn = document.getElementById('openMenuBtn');
       const closeBtn = document.getElementById('closeMenuBtn');
@@ -499,7 +499,7 @@
   </script>
 
   <!-- ===== Script: cidades dinâmicas por UF ===== -->
-  <script>
+  <script nonce="{{ csp_nonce }}">
     document.addEventListener('DOMContentLoaded', () => {
       const ufSelect = document.getElementById('estado');
       const cidadeSelect = document.getElementById('cidade');
@@ -538,7 +538,7 @@
   </script>
 
   <!-- ===== Script: máscara e validação CEP ===== -->
-  <script>
+  <script nonce="{{ csp_nonce }}">
     document.addEventListener('DOMContentLoaded', () => {
       const cep = document.getElementById('cep');
       if (!cep) return;

@@ -376,7 +376,7 @@
   </div>
 
   <!-- ===== JS: Menu mobile (igual index/quem_somos) ===== -->
-  <script>
+  <script nonce="{{ csp_nonce }}">
     (function(){
       const openBtn = document.getElementById('openMenuBtn');
       const closeBtn = document.getElementById('closeMenuBtn');
@@ -402,7 +402,7 @@
   </script>
 
   <!-- ===== Script: cidades dinâmicas por UF ===== -->
-  <script>
+  <script nonce="{{ csp_nonce }}">
     document.addEventListener('DOMContentLoaded', () => {
       const ufSelect = document.getElementById('estado');
       const cidadeSelect = document.getElementById('cidade');
@@ -444,7 +444,7 @@
   </script>
 
   <!-- Redirect opcional após ok=1 -->
-  <script>
+  <script nonce="{{ csp_nonce }}">
     (function(){
       const params = new URLSearchParams(window.location.search);
       if (params.get('ok') === '1') {

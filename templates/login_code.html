@@ -520,7 +520,7 @@
   </footer>
 
   <!-- ===== JS: MENU MOBILE (padrão) ===== -->
-  <script>
+  <script nonce="{{ csp_nonce }}">
     (function(){
       const body = document.body;
       const openBtn = document.querySelector('.btn-menu');
@@ -552,7 +552,7 @@
   </script>
 
   <!-- ===== JS: OTP (auto-avançar, backspace e colar 6 dígitos) ===== -->
-  <script>
+  <script nonce="{{ csp_nonce }}">
     (function(){
       const inputs = Array.from(document.querySelectorAll('.otp-digit'));
       const form   = document.getElementById('otpForm');
