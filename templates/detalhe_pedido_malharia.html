@@ -1453,9 +1453,7 @@
                     'confirmar_pedido_malharia',
                     pedido_id=pedido.id
                 ) }}"
-                onsubmit="return confirm(
-                    'Deseja confirmar este pedido?'
-                );"
+                data-confirm="Deseja confirmar este pedido?"
                 style="margin:0;"
             >
 
@@ -1506,9 +1504,7 @@
                     'iniciar_producao_malharia',
                     pedido_id=pedido.id
                 ) }}"
-                onsubmit="return confirm(
-                    'Deseja registrar o início da produção deste pedido?'
-                );"
+                data-confirm="Deseja registrar o início da produção deste pedido?"
                 style="margin:0;"
             >
 
@@ -1559,9 +1555,7 @@
                     'concluir_producao_malharia',
                     pedido_id=pedido.id
                 ) }}"
-                onsubmit="return confirm(
-                    'Confirma que a produção deste pedido foi concluída?'
-                );"
+                data-confirm="Confirma que a produção deste pedido foi concluída?"
                 style="margin:0;"
             >
 
@@ -1642,6 +1636,10 @@
 
 </main>
 
+<script
+    src="{{ url_for('static', filename='js/confirm-submit.js') }}"
+    defer
+></script>    
 
 </body>
 
