@@ -44,6 +44,7 @@ from sqlalchemy import UniqueConstraint
 from flask import render_template, abort, send_from_directory
 from decimal import Decimal, InvalidOperation
 import secrets
+import ipaddress
 
 # SMTP direto (fallback)
 import smtplib, ssl
@@ -3126,6 +3127,58 @@ try:
     from flask_login import current_user  # type: ignore
 except Exception:  # noqa: E722
     current_user = None  # fallback silencioso
+
+# ==============================================================
+# IDENTIFICAÇÃO SEGURA DO IP DO CLIENTE
+# ==============================================================
+
+def _client_ip():
+    """
+    Retorna o IP real do cliente para auditoria e segurança.
+
+    Em produção/staging no Render:
+    - prioriza CF-Connecting-IP, definido pela infraestrutura;
+    - não confia diretamente em X-Forwarded-For;
+    - valida o valor como IPv4 ou IPv6.
+
+    Em desenvolvimento local:
+    - usa request.remote_addr como fallback.
+
+    Retorna "unknown" quando nenhum IP válido puder ser obtido.
+    """
+
+    candidates = [
+        request.headers.get("CF-Connecting-IP"),
+        request.remote_addr,
+    ]
+
+    for raw_value in candidates:
+
+        value = (
+            raw_value
+            or ""
+        ).strip()
+
+        if not value:
+            continue
+
+        # O CF-Connecting-IP esperado deve representar
+        # apenas um endereço, não uma cadeia de proxies.
+        if "," in value:
+            continue
+
+        try:
+
+            ip = ipaddress.ip_address(
+                value
+            )
+
+            return ip.compressed
+
+        except ValueError:
+            continue
+
+    return "unknown"
 
 def _whoami():
     """
