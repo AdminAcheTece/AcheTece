@@ -45,6 +45,7 @@ from flask import render_template, abort, send_from_directory
 from decimal import Decimal, InvalidOperation
 import secrets
 import ipaddress
+from flask_limiter import Limiter
 
 # SMTP direto (fallback)
 import smtplib, ssl
@@ -3179,6 +3180,47 @@ def _client_ip():
             continue
 
     return "unknown"
+
+# ==============================================================
+# RATE LIMITING
+# ==============================================================
+#
+# O Flask-Limiter utiliza _client_ip() como chave do cliente.
+#
+# No staging utilizamos memory:// explicitamente.
+# Esse backend é adequado para validação, mas NÃO será a
+# configuração definitiva de produção.
+#
+# Não há limites globais nesta fase.
+# Cada endpoint sensível receberá seu próprio limite
+# progressivamente nas próximas etapas.
+# ==============================================================
+
+RATE_LIMIT_STORAGE_URI = (
+    os.getenv("RATELIMIT_STORAGE_URI")
+    or "memory://"
+)
+
+limiter = Limiter(
+    key_func=_client_ip,
+    app=app,
+
+    # Nenhum limite global por enquanto.
+    default_limits=[],
+
+    # Backend temporário do staging.
+    storage_uri=RATE_LIMIT_STORAGE_URI,
+
+    # Estratégia simples e previsível.
+    strategy="fixed-window",
+
+    # Faz o Flask-Limiter incluir os headers:
+    # X-RateLimit-Limit
+    # X-RateLimit-Remaining
+    # X-RateLimit-Reset
+    # Retry-After
+    headers_enabled=True,
+)
 
 def _whoami():
     """
