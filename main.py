@@ -46,6 +46,7 @@ from decimal import Decimal, InvalidOperation
 import secrets
 import ipaddress
 from flask_limiter import Limiter
+from flask_limiter.errors import RateLimitExceeded
 
 # SMTP direto (fallback)
 import smtplib, ssl
@@ -3218,6 +3219,78 @@ limiter = Limiter(
     headers_enabled=True,
 )
 
+# ==============================================================
+# TRATAMENTO GLOBAL — HTTP 429 TOO MANY REQUESTS
+# ==============================================================
+
+@app.errorhandler(RateLimitExceeded)
+def handle_rate_limit_exceeded(error):
+    """
+    Resposta centralizada quando um limite de requisições
+    do Flask-Limiter é excedido.
+
+    Para APIs, retorna JSON.
+
+    Para páginas normais, exibe uma mensagem amigável
+    e mantém o status HTTP 429.
+    """
+
+    retry_after = (
+        getattr(
+            error,
+            "retry_after",
+            None
+        )
+        or request.headers.get(
+            "Retry-After"
+        )
+        or 60
+    )
+
+    app.logger.warning(
+        "[SECURITY][RATE_LIMIT] "
+        "path=%s endpoint=%s ip=%s limite=%s",
+        request.path,
+        request.endpoint,
+        _client_ip(),
+        getattr(
+            error,
+            "description",
+            "excedido"
+        ),
+    )
+
+    wants_json = (
+        request.path.startswith("/api/")
+        or request.is_json
+        or (
+            request.accept_mimetypes.best
+            == "application/json"
+        )
+    )
+
+    if wants_json:
+
+        response = jsonify(
+            {
+                "ok": False,
+                "error": "rate_limit_exceeded",
+                "message": (
+                    "Muitas tentativas em pouco tempo. "
+                    "Aguarde antes de tentar novamente."
+                ),
+                "retry_after": retry_after,
+            }
+        )
+
+        response.status_code = 429
+
+        return response
+
+    return render_template(
+        "429.html",
+        retry_after=retry_after,
+    ), 429
 
 # ==============================================================
 # TESTE DE RATE LIMIT — SOMENTE STAGING / DEMO
