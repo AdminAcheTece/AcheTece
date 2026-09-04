@@ -3712,6 +3712,35 @@ def _security_headers(resp):
         "max-age=300"
     )
 
+    # ==========================================================
+    # CONTENT SECURITY POLICY — REPORT ONLY
+    # ==========================================================
+    #
+    # Nesta fase a política NÃO bloqueia recursos.
+    # O navegador apenas registra no Console aquilo que seria
+    # bloqueado por uma CSP efetiva.
+    #
+    # Isso permite mapear scripts inline, estilos inline,
+    # imagens, fontes, iframes e conexões antes da ativação real.
+    csp_report_only = (
+        "default-src 'self'; "
+        "script-src 'self'; "
+        "style-src 'self' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com; "
+        "img-src 'self'; "
+        "connect-src 'self'; "
+        "frame-src 'self' https://www.google.com; "
+        "object-src 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self'; "
+        "frame-ancestors 'self'; "
+    )
+
+    resp.headers.setdefault(
+        "Content-Security-Policy-Report-Only",
+        csp_report_only
+    )
+
     return resp
 
 # =====================[ ANALYTICS - FIM ]=====================
