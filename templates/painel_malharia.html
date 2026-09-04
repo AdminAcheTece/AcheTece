@@ -4574,9 +4574,7 @@
                           'excluir_tear',
                           id=tear.id
                         ) }}"
-                        onsubmit="return confirm(
-                          'Confirma excluir este tear? Essa ação é irreversível.'
-                        );"
+                        data-confirm="Confirma excluir este tear? Essa ação é irreversível."
                         style="display:inline;"
                       >
                         <input
@@ -5540,7 +5538,11 @@
 
 </script>
 
-
+<script
+    src="{{ url_for('static', filename='js/confirm-submit.js') }}"
+    defer
+></script>
+          
 </body>
 
 </html>
