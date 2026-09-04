@@ -3753,8 +3753,36 @@ def _security_headers(resp):
 
     resp.headers.setdefault(
         "Content-Security-Policy-Report-Only",
-        csp_report_only
+
+    # ==========================================================
+    # CONTENT SECURITY POLICY — FASE COMPATÍVEL
+    # ==========================================================
+    #
+    # Esta política já foi validada previamente em Report-Only
+    # no staging.
+    #
+    # 'unsafe-inline' ainda é mantido temporariamente para
+    # compatibilidade com scripts, estilos e handlers legados.
+    # A etapa seguinte fará o endurecimento do script-src
+    # com nonce CSP.
+    csp_policy = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline'; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com; "
+        "img-src 'self'; "
+        "connect-src 'self'; "
+        "frame-src 'self' https://www.google.com; "
+        "object-src 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self'; "
+        "frame-ancestors 'self'; "
     )
+
+    resp.headers.setdefault(
+        "Content-Security-Policy",
+        csp_policy
+    )    
 
     return resp
 
