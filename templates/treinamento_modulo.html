@@ -959,8 +959,8 @@
                 src="{{ cover_src }}"
                 alt="Capa da aula"
                 loading="lazy"
-                onerror="this.remove(); document.getElementById('media-{{ loop.index }}').classList.add('is-fallback');"
-              >
+                data-fallback-target="media-{{ loop.index }}"
+                >
               <div class="lesson-fallback">
                 <span class="tag">📘 Aula</span>
                 <strong>{{ a.title }}</strong>
@@ -1029,5 +1029,43 @@
   })();
 </script>
 
+<script nonce="{{ csp_nonce }}">
+  (function () {
+
+    const fallbackMedia =
+      document.querySelectorAll(
+        '[data-fallback-target]'
+      );
+
+    fallbackMedia.forEach(function (media) {
+
+      media.addEventListener(
+        'error',
+        function () {
+
+          const targetId =
+            media.dataset.fallbackTarget;
+
+          const target =
+            document.getElementById(
+              targetId
+            );
+
+          media.remove();
+
+          if (target) {
+            target.classList.add(
+              'is-fallback'
+            );
+          }
+
+        }
+      );
+
+    });
+
+  })();
+</script>
+  
 </body>
 </html>
