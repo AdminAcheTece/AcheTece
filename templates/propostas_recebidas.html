@@ -1705,9 +1705,7 @@
                                             'aceitar_proposta',
                                             proposta_id=proposta.id
                                         ) }}"
-                                        onsubmit="return confirm(
-                                            'Deseja aceitar esta proposta?'
-                                        );"
+                                        data-confirm="Deseja aceitar esta proposta?"
                                     >
 
                                         <input
@@ -1775,9 +1773,7 @@
                                             'recusar_proposta',
                                             proposta_id=proposta.id
                                         ) }}"
-                                        onsubmit="return confirm(
-                                            'Deseja realmente recusar esta proposta?'
-                                        );"
+                                        data-confirm="Deseja realmente recusar esta proposta?"
                                     >
 
                                         <input
@@ -2044,9 +2040,7 @@
                                                 'gerar_pedido',
                                                 proposta_id=proposta.id
                                             ) }}"
-                                            onsubmit="return confirm(
-                                                'Deseja gerar o pedido a partir desta proposta aceita?'
-                                            );"
+                                            data-confirm="Deseja gerar o pedido a partir desta proposta aceita?"
                                             style="margin:0;"
                                         >
 
@@ -2189,6 +2183,10 @@
 
 </main>
 
+<script
+    src="{{ url_for('static', filename='js/confirm-submit.js') }}"
+    defer
+></script>    
 
 </body>
 
