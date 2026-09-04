@@ -636,7 +636,7 @@
                     <form
                       action="/admin/excluir_empresa/{{ empresa.id }}?pagina={{ pagina }}{% if status %}&status={{ status }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}{% if apelido %}&apelido={{ apelido }}{% endif %}{% if cidade %}&cidade={{ cidade }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}{% if plano %}&plano={{ plano }}{% endif %}"
                       method="post"
-                      onsubmit="return confirmarExclusao('{{ empresa.razao_social or empresa.nome }}')">
+                      data-confirm='Tem certeza que deseja excluir a empresa "{{ (empresa.razao_social or empresa.nome)|e }}"? Esta ação não poderá ser desfeita.'
                       <input
                         type="hidden"
                         name="csrf_token"
@@ -743,10 +743,11 @@
         if(e.key === 'Escape') closeMenu();
       });
     })();
-
-    function confirmarExclusao(nomeEmpresa) {
-      return confirm(`Tem certeza que deseja excluir a empresa "${nomeEmpresa}"?\nEsta ação não poderá ser desfeita.`);
-    }
+    
   </script>
+  <script
+      src="{{ url_for('static', filename='js/confirm-submit.js') }}"
+      defer
+  ></script>
 </body>
 </html>
