@@ -3222,6 +3222,88 @@ limiter = Limiter(
     headers_enabled=True,
 )
 
+# ==============================================================
+# RATE LIMITING
+# ==============================================================
+#
+# O Flask-Limiter utiliza _client_ip() como chave do cliente.
+#
+# No staging utilizamos memory:// explicitamente.
+# Esse backend é adequado para validação, mas NÃO será a
+# configuração definitiva de produção.
+#
+# Não há limites globais nesta fase.
+# Cada endpoint sensível receberá seu próprio limite
+# progressivamente nas próximas etapas.
+# ==============================================================
+
+RATE_LIMIT_STORAGE_URI = (
+    os.getenv("RATELIMIT_STORAGE_URI")
+    or "memory://"
+)
+
+limiter = Limiter(
+    key_func=_client_ip,
+    app=app,
+
+    # Nenhum limite global por enquanto.
+    default_limits=[],
+
+    # Backend temporário do staging.
+    storage_uri=RATE_LIMIT_STORAGE_URI,
+
+    # Estratégia simples e previsível.
+    strategy="fixed-window",
+
+    # Inclui os headers de controle na resposta.
+    headers_enabled=True,
+)
+
+
+# ==============================================================
+# TESTE DE RATE LIMIT — SOMENTE STAGING / DEMO
+# ==============================================================
+#
+# Esta rota existe exclusivamente para validar a infraestrutura
+# do Flask-Limiter sem utilizar login, OTP, banco ou outras
+# funções reais do marketplace.
+#
+# Limite:
+# 3 requisições por minuto por cliente/IP.
+#
+# Com DEMO_MODE=False a rota retorna 404.
+# ==============================================================
+
+@app.get(
+    "/__security/rate-limit-test",
+    endpoint="rate_limit_test"
+)
+@limiter.limit("3 per minute")
+def rate_limit_test():
+    """
+    Endpoint temporário para validação do rate limiting.
+
+    Resultado esperado no staging:
+    1ª chamada -> 200
+    2ª chamada -> 200
+    3ª chamada -> 200
+    4ª chamada -> 429
+
+    Esta rota será removida após a conclusão dos testes
+    de segurança da etapa 9A.3C.
+    """
+
+    if not _env_bool(
+        "DEMO_MODE",
+        False
+    ):
+        abort(404)
+
+    return {
+        "ok": True,
+        "message": "Rate limit test",
+    }, 200
+
 def _whoami():
     """
     Retorna (user_id, email) do usuário autenticado.
