@@ -3664,11 +3664,14 @@ def _security_headers(resp):
     """
     Aplica headers HTTP globais de segurança.
 
-    A política HSTS está inicialmente com duração curta
-    no staging para validação segura.
-
-    Content-Security-Policy será tratada separadamente.
+    A política HSTS permanece com duração curta no staging.
+    A CSP está ativa em modo compatível, após validação
+    prévia em Report-Only.
     """
+
+    # ==========================================================
+    # HEADERS BÁSICOS DE SEGURANÇA
+    # ==========================================================
 
     # Impede MIME sniffing.
     resp.headers.setdefault(
@@ -3697,74 +3700,26 @@ def _security_headers(resp):
     )
 
     # ==========================================================
-    # HSTS — FASE DE VALIDAÇÃO
+    # HSTS — FASE DE VALIDAÇÃO NO STAGING
     # ==========================================================
+    #
     # 300 segundos = 5 minutos.
-    #
-    # Não usar ainda:
-    # - includeSubDomains
-    # - preload
-    #
-    # O navegador somente aplica HSTS quando recebe
-    # este header através de uma conexão HTTPS.
+    # Não utilizar ainda includeSubDomains ou preload.
     resp.headers.setdefault(
         "Strict-Transport-Security",
         "max-age=300"
     )
 
     # ==========================================================
-    # CONTENT SECURITY POLICY — REPORT ONLY
-    # ==========================================================
-    #
-    # Nesta fase a política NÃO bloqueia recursos.
-    # O navegador apenas registra no Console aquilo que seria
-    # bloqueado por uma CSP efetiva.
-    #
-    # Isso permite mapear scripts inline, estilos inline,
-    # imagens, fontes, iframes e conexões antes da ativação real.
-    csp_report_only = (
-        "default-src 'self'; "
-    
-        # Temporariamente permitidos durante o inventário.
-        # O AcheTece possui scripts, estilos e eventos inline legados.
-        "script-src 'self' 'unsafe-inline'; "
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-    
-        # Fontes do Google Fonts.
-        "font-src 'self' https://fonts.gstatic.com; "
-    
-        # Imagens permanecem restritas ao próprio AcheTece.
-        # Se houver imagem externa, queremos que o Report-Only denuncie.
-        "img-src 'self'; "
-    
-        # Fetch/XHR permanece restrito ao próprio AcheTece.
-        # Qualquer conexão externa será revelada pelo Console.
-        "connect-src 'self'; "
-    
-        # Conteúdo enquadrado.
-        "frame-src 'self' https://www.google.com; "
-    
-        # Diretivas estruturais.
-        "object-src 'none'; "
-        "base-uri 'self'; "
-        "form-action 'self'; "
-        "frame-ancestors 'self'; "
-    )
-
-    resp.headers.setdefault(
-        "Content-Security-Policy-Report-Only",
-
-    # ==========================================================
     # CONTENT SECURITY POLICY — FASE COMPATÍVEL
     # ==========================================================
     #
-    # Esta política já foi validada previamente em Report-Only
+    # Esta política foi previamente validada em Report-Only
     # no staging.
     #
-    # 'unsafe-inline' ainda é mantido temporariamente para
+    # 'unsafe-inline' permanece temporariamente para
     # compatibilidade com scripts, estilos e handlers legados.
-    # A etapa seguinte fará o endurecimento do script-src
-    # com nonce CSP.
+    # Em etapa posterior, script-src será endurecido com nonce.
     csp_policy = (
         "default-src 'self'; "
         "script-src 'self' 'unsafe-inline'; "
@@ -3782,7 +3737,7 @@ def _security_headers(resp):
     resp.headers.setdefault(
         "Content-Security-Policy",
         csp_policy
-    )    
+    )
 
     return resp
 
