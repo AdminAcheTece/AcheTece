@@ -4891,15 +4891,7 @@ def post_login_code():
 
     ok, msg = _otp_send(
         email,
-
-        ip=(
-            request.headers.get(
-                "X-Forwarded-For"
-            )
-            or request.remote_addr
-            or ""
-        )[:64],
-
+        ip=_client_ip()[:64],
         ua=(
             request.headers.get(
                 "User-Agent"
@@ -4950,18 +4942,47 @@ def get_login_code():
     )
 
 # Reenviar código (GET)
-@app.get("/login/codigo/reenviar", endpoint="resend_login_code")
+# OBS.: será convertido para POST + CSRF na etapa de
+# hardening específica do OTP/rate limiting.
+@app.get(
+    "/login/codigo/reenviar",
+    endpoint="resend_login_code"
+)
 def resend_login_code():
-    email = (request.args.get("email") or "").strip().lower()
+
+    email = (
+        request.args.get("email")
+        or ""
+    ).strip().lower()
+
     if not email:
-        return redirect(url_for("login"))
+
+        return redirect(
+            url_for("login")
+        )
+
     ok, msg = _otp_send(
         email,
-        ip=(request.headers.get("X-Forwarded-For") or request.remote_addr or "")[:64],
-        ua=(request.headers.get("User-Agent") or "")[:255],
+        ip=_client_ip()[:64],
+        ua=(
+            request.headers.get(
+                "User-Agent"
+            )
+            or ""
+        )[:255],
     )
-    flash(msg, "success" if ok else "error")
-    return redirect(url_for("login_code", email=email))
+
+    flash(
+        msg,
+        "success" if ok else "error"
+    )
+
+    return redirect(
+        url_for(
+            "login_code",
+            email=email
+        )
+    )
 
 # Validar código (POST)
 @app.post(
