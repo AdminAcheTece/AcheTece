@@ -1970,9 +1970,7 @@
                             'oportunidade_interesse',
                             oportunidade_id=oportunidade.id
                         ) }}"
-                        onsubmit="return confirm(
-                            'Deseja registrar interesse nesta oportunidade?'
-                        );"
+                        data-confirm="Deseja registrar interesse nesta oportunidade?"
                     >
 
                         <input
@@ -1997,9 +1995,7 @@
                             'oportunidade_recusar',
                             oportunidade_id=oportunidade.id
                         ) }}"
-                        onsubmit="return confirm(
-                            'Deseja informar que não possui interesse nesta oportunidade?'
-                        );"
+                        data-confirm="Deseja informar que não possui interesse nesta oportunidade?"
                     >
 
                         <input
@@ -2693,7 +2689,11 @@
 
 </main>
 
-
+<script
+    src="{{ url_for('static', filename='js/confirm-submit.js') }}"
+    defer
+></script>
+    
 </body>
 
 </html>
