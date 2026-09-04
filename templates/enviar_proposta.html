@@ -914,9 +914,7 @@
                 'enviar_proposta',
                 oportunidade_id=oportunidade.id
             ) }}"
-            onsubmit="return confirm(
-                '{% if status_proposta == "ajuste_solicitado" %}Deseja reenviar esta proposta ajustada ao comprador?{% else %}Deseja enviar esta proposta ao comprador?{% endif %}'
-            );"
+            data-confirm="Deseja enviar esta proposta ao comprador?"
         >
 
             <input
@@ -1270,6 +1268,10 @@
 
 </script>
 
+<script
+    src="{{ url_for('static', filename='js/confirm-submit.js') }}"
+    defer
+></script>    
 
 </body>
 
