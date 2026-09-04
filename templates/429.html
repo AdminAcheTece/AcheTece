@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Muitas tentativas | AcheTece
+    </title>
+
+    <link
+        rel="icon"
+        type="image/png"
+        href="{{ url_for('static', filename='favicon_final.png') }}"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: Inter, Arial, sans-serif;
+            background: #f3f3f1;
+            color: #111;
+        }
+
+        .rate-limit-card {
+            width: min(560px, calc(100% - 40px));
+            padding: 42px;
+            box-sizing: border-box;
+            border-radius: 24px;
+            background: #fff;
+            text-align: center;
+            box-shadow: 0 18px 50px rgba(0, 0, 0, 0.08);
+        }
+
+        .rate-limit-code {
+            margin-bottom: 14px;
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: .12em;
+            color: #8a7d12;
+        }
+
+        h1 {
+            margin: 0 0 16px;
+            font-size: clamp(30px, 5vw, 44px);
+            line-height: 1.05;
+        }
+
+        p {
+            margin: 0 auto 12px;
+            max-width: 430px;
+            font-size: 17px;
+            line-height: 1.55;
+            color: #555;
+        }
+
+        .rate-limit-wait {
+            margin-top: 24px;
+            padding: 16px;
+            border-radius: 14px;
+            background: #f5f3e7;
+            font-weight: 700;
+        }
+
+        .rate-limit-actions {
+            margin-top: 28px;
+        }
+
+        .rate-limit-actions a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 48px;
+            padding: 0 28px;
+            border-radius: 999px;
+            background: #111;
+            color: #fff;
+            text-decoration: none;
+            font-weight: 800;
+        }
+    </style>
+</head>
+
+<body>
+
+    <main class="rate-limit-card">
+
+        <div class="rate-limit-code">
+            SEGURANÇA ACHETECE
+        </div>
+
+        <h1>
+            Muitas tentativas em pouco tempo
+        </h1>
+
+        <p>
+            Para proteger sua conta e a plataforma,
+            limitamos temporariamente novas tentativas.
+        </p>
+
+        <p>
+            Aguarde um momento e tente novamente.
+        </p>
+
+        <div class="rate-limit-wait">
+            Tempo estimado:
+            aproximadamente
+            {{ retry_after or 60 }}
+            segundos.
+        </div>
+
+        <div class="rate-limit-actions">
+            <a href="{{ url_for('login') }}">
+                Voltar ao login
+            </a>
+        </div>
+
+    </main>
+
+</body>
+
+</html>
