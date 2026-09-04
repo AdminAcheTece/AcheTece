@@ -43,6 +43,7 @@ from training_catalog import TRAINING_CATALOG, get_module, get_lesson
 from sqlalchemy import UniqueConstraint
 from flask import render_template, abort, send_from_directory
 from decimal import Decimal, InvalidOperation
+import secrets
 
 # SMTP direto (fallback)
 import smtplib, ssl
@@ -3654,6 +3655,39 @@ def _no_cache_on_panel(resp):
     except Exception:
         pass
     return resp
+
+# ==============================================================
+# CSP NONCE
+# ==============================================================
+
+def _get_csp_nonce():
+    """
+    Retorna um nonce aleatório único para a requisição atual.
+
+    O mesmo valor é utilizado:
+    - nos templates Jinja;
+    - no header Content-Security-Policy.
+
+    Uma nova requisição recebe um novo nonce.
+    """
+    nonce = getattr(g, "_csp_nonce", None)
+
+    if not nonce:
+        nonce = secrets.token_urlsafe(24)
+        g._csp_nonce = nonce
+
+    return nonce
+
+
+@app.context_processor
+def _inject_csp_nonce():
+    """
+    Disponibiliza {{ csp_nonce }} automaticamente
+    em todos os templates Jinja.
+    """
+    return {
+        "csp_nonce": _get_csp_nonce()
+    }
 
 # ==============================================================
 # HEADERS GLOBAIS DE SEGURANÇA
