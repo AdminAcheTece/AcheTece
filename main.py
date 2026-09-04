@@ -5249,7 +5249,18 @@ def view_login_password():
     "/login/senha/entrar",
     endpoint="post_login_password"
 )
+@limiter.limit("10 per 15 minutes")
 def post_login_password():
+    """
+    Processa o login por senha de compradores e malharias.
+
+    Segurança:
+    - CSRF global continua ativo;
+    - máximo de 10 tentativas a cada 15 minutos
+      por cliente/IP identificado por _client_ip();
+    - ao exceder o limite, o Flask-Limiter gera HTTP 429,
+      tratado pelo handler global do AcheTece.
+    """
 
     email = (
         request.form.get("email")
@@ -5401,6 +5412,10 @@ def post_login_password():
             empresa,
             usuario
         )
+
+    # ==============================================================
+    # FALLBACK
+    # ==============================================================
 
     flash(
         GENERIC_FAIL,
