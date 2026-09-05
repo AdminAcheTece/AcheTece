@@ -3190,6 +3190,102 @@ class OtpToken(db.Model):
     ip = db.Column(db.String(64))
     user_agent = db.Column(db.String(255))
 
+# ==============================================================
+# RECUPERAÇÃO DE SENHA — TOKEN SERVER-SIDE
+# ==============================================================
+#
+# Cada solicitação de recuperação cria um token aleatório.
+#
+# O token real é enviado somente por e-mail.
+# No PostgreSQL armazenamos apenas o hash do token.
+#
+# account_type:
+#   cliente  → Usuario
+#   malharia → Empresa
+#
+# account_id identifica o registro correspondente ao tipo.
+#
+# used_at preenchido significa que o token:
+# - já foi utilizado; ou
+# - foi invalidado/substituído.
+# ==============================================================
+
+class PasswordResetToken(db.Model):
+
+    __tablename__ = "password_reset_token"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    token_hash = db.Column(
+        db.String(64),
+        unique=True,
+        nullable=False,
+        index=True
+    )
+
+    email = db.Column(
+        db.String(255),
+        nullable=False,
+        index=True
+    )
+
+    # cliente | malharia
+    account_type = db.Column(
+        db.String(20),
+        nullable=False,
+        index=True
+    )
+
+    # Usuario.id para cliente
+    # Empresa.id para malharia
+    account_id = db.Column(
+        db.Integer,
+        nullable=False,
+        index=True
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+        index=True
+    )
+
+    expires_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        index=True
+    )
+
+    used_at = db.Column(
+        db.DateTime,
+        nullable=True,
+        index=True
+    )
+
+    request_ip = db.Column(
+        db.String(64),
+        nullable=True
+    )
+
+    user_agent = db.Column(
+        db.String(255),
+        nullable=True
+    )
+
+    def __repr__(self):
+
+        return (
+            f"<PasswordResetToken "
+            f"id={self.id} "
+            f"account_type={self.account_type} "
+            f"account_id={self.account_id} "
+            f"used={self.used_at is not None}>"
+        )
+
 class TrainingProgress(db.Model):
     __tablename__ = "training_progress"
 
