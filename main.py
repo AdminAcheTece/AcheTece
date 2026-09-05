@@ -656,7 +656,6 @@ def _otp_validate(
         not email
         or not codigo
     ):
-
         return (
             False,
             "Código inválido. Solicite um novo."
@@ -684,7 +683,6 @@ def _otp_validate(
         )
 
         if not token:
-
             return (
                 False,
                 "Código não encontrado para este e-mail. "
@@ -692,7 +690,7 @@ def _otp_validate(
             )
 
         # ======================================================
-        # EXPIRAÇÃO — FAIL CLOSED
+        # EXPIRAÇÃO
         # ======================================================
 
         if (
@@ -701,7 +699,6 @@ def _otp_validate(
         ):
 
             token.used_at = now
-
             db.session.commit()
 
             return (
@@ -721,7 +718,6 @@ def _otp_validate(
         if attempts >= 5:
 
             token.used_at = now
-
             db.session.commit()
 
             return (
@@ -765,12 +761,9 @@ def _otp_validate(
                 attempts + 1
             )
 
-            # A quinta tentativa incorreta invalida
-            # definitivamente este OTP.
             if token.attempts >= 5:
 
                 token.used_at = now
-
                 db.session.commit()
 
                 return (
@@ -786,13 +779,75 @@ def _otp_validate(
                 "Código incorreto. Tente novamente."
             )
 
+        # ======================================================
+        # SUCESSO — USO ÚNICO
+        # ======================================================
+
+        token.used_at = now
+        db.session.commit()
+
+        return (
+            True,
+            "OK"
+        )
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "Falha ao validar OTP de login"
+        )
+
+        return (
+            False,
+            "Não foi possível validar o código agora. "
+            "Tente novamente."
+        )
+
+
+# ==============================================================
+# RECUPERAÇÃO DE SENHA — ENVIO DO E-MAIL
+# ==============================================================
+
 def enviar_email_recuperacao(
     email,
     nome_empresa=""
 ):
+    """
+    Envia ao usuário o link de recuperação de senha.
+
+    Neste momento ainda utiliza gerar_token(), que será
+    substituído posteriormente pelo novo fluxo server-side
+    PasswordResetToken.
+    """
+
+    email = (
+        email
+        or ""
+    ).strip().lower()
+
+    if not email:
+        raise ValueError(
+            "E-mail obrigatório para recuperação de senha."
+        )
+
+    nome_exibicao = (
+        nome_empresa
+        or email
+    ).strip()
+
+    # ==========================================================
+    # GERA TOKEN
+    # ==========================================================
+
     token = gerar_token(
         email
     )
+
+    # ==========================================================
+    # MONTA LINK
+    # ==========================================================
 
     link = url_for(
         "redefinir_senha",
@@ -800,20 +855,61 @@ def enviar_email_recuperacao(
         _external=True
     )
 
+    # ==========================================================
+    # HTML DO E-MAIL
+    # ==========================================================
+
     html = render_template_string(
         """
 <!doctype html>
 <html lang="pt-br">
-  <body style="margin:0;padding:0;background:#F7F7FA;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1e1b2b;">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F7F7FA;padding:24px 0;">
+  <body style="
+      margin:0;
+      padding:0;
+      background:#F7F7FA;
+      font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      color:#1e1b2b;
+  ">
+
+    <table
+      role="presentation"
+      width="100%"
+      cellspacing="0"
+      cellpadding="0"
+      style="background:#F7F7FA;padding:24px 0;"
+    >
       <tr>
         <td align="center">
 
-          <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;width:100%;background:#fff;border:1px solid #eee;border-radius:12px;">
+          <table
+            role="presentation"
+            width="600"
+            cellspacing="0"
+            cellpadding="0"
+            style="
+              max-width:600px;
+              width:100%;
+              background:#fff;
+              border:1px solid #eee;
+              border-radius:12px;
+            "
+          >
 
             <tr>
-              <td style="padding:22px 24px;border-bottom:1px solid #f0f0f0;">
-                <h2 style="margin:0;font-size:20px;line-height:1.25;font-weight:800;">
+              <td
+                style="
+                  padding:22px 24px;
+                  border-bottom:1px solid #f0f0f0;
+                "
+              >
+                <h2
+                  style="
+                    margin:0;
+                    font-size:20px;
+                    line-height:1.25;
+                    font-weight:800;
+                  "
+                >
                   Redefinição de Senha
                 </h2>
               </td>
@@ -822,41 +918,79 @@ def enviar_email_recuperacao(
             <tr>
               <td style="padding:22px 24px;">
 
-                <p style="margin:0 0 10px 0;line-height:1.55;">
+                <p
+                  style="
+                    margin:0 0 10px 0;
+                    line-height:1.55;
+                  "
+                >
                   Olá <strong>{{ nome }}</strong>,
                 </p>
 
-                <p style="margin:0 0 16px 0;line-height:1.55;">
+                <p
+                  style="
+                    margin:0 0 16px 0;
+                    line-height:1.55;
+                  "
+                >
                   Clique no botão abaixo para criar uma nova senha.
                   Este link é válido por <strong>1 hora</strong>.
                 </p>
 
-                <table role="presentation" cellspacing="0" cellpadding="0" style="margin:18px 0 10px 0;">
+                <table
+                  role="presentation"
+                  cellspacing="0"
+                  cellpadding="0"
+                  style="margin:18px 0 10px 0;"
+                >
                   <tr>
                     <td
                       align="center"
                       bgcolor="#8A00FF"
                       style="border-radius:9999px;"
                     >
+
                       <a
                         href="{{ link }}"
                         target="_blank"
-                        style="display:inline-block;padding:12px 24px;border-radius:9999px;background:#8A00FF;color:#fff;text-decoration:none;font-weight:800;font-size:16px;line-height:1;"
+                        style="
+                          display:inline-block;
+                          padding:12px 24px;
+                          border-radius:9999px;
+                          background:#8A00FF;
+                          color:#fff;
+                          text-decoration:none;
+                          font-weight:800;
+                          font-size:16px;
+                          line-height:1;
+                        "
                       >
                         Redefinir senha
                       </a>
+
                     </td>
                   </tr>
                 </table>
 
-                <p style="margin:14px 0 0 0;font-size:13px;color:#6b6b6b;line-height:1.5;">
-                  Se o botão não funcionar, copie e cole este link no navegador:
+                <p
+                  style="
+                    margin:14px 0 0 0;
+                    font-size:13px;
+                    color:#6b6b6b;
+                    line-height:1.5;
+                  "
+                >
+                  Se o botão não funcionar, copie e cole este link
+                  no navegador:
                   <br>
 
                   <a
                     href="{{ link }}"
                     target="_blank"
-                    style="color:#5b2fff;word-break:break-all;"
+                    style="
+                      color:#5b2fff;
+                      word-break:break-all;
+                    "
                   >
                     {{ link }}
                   </a>
@@ -866,8 +1000,17 @@ def enviar_email_recuperacao(
             </tr>
 
             <tr>
-              <td style="padding:16px 24px;border-top:1px solid #f0f0f0;color:#6b6b6b;font-size:12px;">
-                Você recebeu este e-mail porque solicitou redefinição de senha no AcheTece.
+              <td
+                style="
+                  padding:16px 24px;
+                  border-top:1px solid #f0f0f0;
+                  color:#6b6b6b;
+                  font-size:12px;
+                "
+              >
+                Você recebeu este e-mail porque solicitou
+                redefinição de senha no AcheTece.
+
                 Se não foi você, ignore esta mensagem.
               </td>
             </tr>
@@ -877,33 +1020,56 @@ def enviar_email_recuperacao(
         </td>
       </tr>
     </table>
+
   </body>
 </html>
         """,
-        nome=(
-            nome_empresa
-            or email
-        ),
+        nome=nome_exibicao,
         link=link
     )
 
-    ok, _ = _smtp_send_direct(
+    # ==========================================================
+    # TEXTO PURO
+    # ==========================================================
+
+    text = (
+        f"Olá, {nome_exibicao}!\n\n"
+        "Você solicitou a redefinição da sua senha no AcheTece.\n\n"
+        "Acesse o endereço abaixo para criar uma nova senha:\n"
+        f"{link}\n\n"
+        "Este link é válido por 1 hora.\n\n"
+        "Se você não solicitou esta alteração, ignore este e-mail."
+    )
+
+    # ==========================================================
+    # ENVIO
+    #
+    # Usa o helper central send_email(), que já tenta:
+    # Flask-Mail → Resend → Mailgun → SendGrid → SMTP.
+    # ==========================================================
+
+    ok = send_email(
         to=email,
-        subject=(
-            "Redefinição de Senha - AcheTece"
-        ),
+        subject="Redefinição de Senha - AcheTece",
         html=html,
-        text=(
-            "Para redefinir sua senha "
-            f"(válido por 1h), acesse: {link}"
-        ),
+        text=text,
     )
 
     if not ok:
 
+        current_app.logger.error(
+            "[SECURITY][PASSWORD_RESET] "
+            "Falha ao enviar e-mail de recuperação."
+        )
+
         raise RuntimeError(
             "Falha ao enviar e-mail de recuperação."
         )
+
+    return True
+
+
+# Mercado Pago (mantido para compat)
 
 # Mercado Pago (mantido para compat)
 MP_ACCESS_TOKEN = os.getenv("MP_ACCESS_TOKEN") or os.getenv("MERCADO_PAGO_TOKEN", "")
