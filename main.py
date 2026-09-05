@@ -786,7 +786,7 @@ def _otp_validate(
                 "Código incorreto. Tente novamente."
             )
 
-        # ======================================================
+      def enviar_email_recuperacao  # ======================================================
         # SUCESSO — USO ÚNICO
         # ======================================================
 
@@ -1002,7 +1002,7 @@ def _norm(s: str) -> str:
 def gerar_token(email):
     return URLSafeTimedSerializer(app.config['SECRET_KEY']).dumps(email, salt='recupera-senha')
 
-def enviar_email_recuperacao(email, nome_empresa=""):
+(email, nome_empresa=""):
     token = gerar_token(email)
     link = url_for('redefinir_senha', token=token, _external=True)
     html = render_template_string("""
