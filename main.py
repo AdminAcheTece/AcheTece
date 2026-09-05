@@ -1068,9 +1068,6 @@ def enviar_email_recuperacao(
 
     return True
 
-
-# Mercado Pago (mantido para compat)
-
 # Mercado Pago (mantido para compat)
 MP_ACCESS_TOKEN = os.getenv("MP_ACCESS_TOKEN") or os.getenv("MERCADO_PAGO_TOKEN", "")
 sdk = mercadopago.SDK(MP_ACCESS_TOKEN)
