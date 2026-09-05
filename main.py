@@ -3220,6 +3220,28 @@ limiter = Limiter(
 )
 
 # ==============================================================
+# LIMITES COMPARTILHADOS — AUTENTICAÇÃO
+# ==============================================================
+#
+# Solicitação inicial de OTP.
+#
+# As duas URLs:
+#
+#   POST /login/codigo
+#   POST /login/código
+#
+# compartilham exatamente o mesmo contador.
+#
+# Limite:
+# 5 solicitações a cada 15 minutos por cliente/IP.
+# ==============================================================
+
+otp_send_limit = limiter.shared_limit(
+    "5 per 15 minutes",
+    scope="otp-send"
+)
+
+# ==============================================================
 # TRATAMENTO GLOBAL — HTTP 429 TOO MANY REQUESTS
 # ==============================================================
 
@@ -4995,16 +5017,23 @@ def view_login_method_alias_accent():
 def view_login_method_alias_trailing():
     return redirect(url_for("login_method", **request.args), code=301)
 
-# Disparar envio do código (POST)
-@app.post(
-    "/login/codigo",
-    endpoint="post_login_code"
-)
-def post_login_code():
+# ==============================================================
+# LOGIN POR CÓDIGO — PROCESSAMENTO INTERNO
+# ==============================================================
+#
+# Esta função concentra a lógica real de solicitação de OTP.
+#
+# Ela não possui rota própria.
+#
+# As duas rotas POST abaixo chamam esta mesma implementação
+# e compartilham o mesmo rate limit.
+# ==============================================================
 
-    # ==============================================================
+def _process_login_code_request():
+
+    # ==========================================================
     # E-MAIL
-    # ==============================================================
+    # ==========================================================
 
     email = (
         request.form.get("email")
@@ -5023,14 +5052,16 @@ def post_login_code():
             url_for("login")
         )
 
-    # ==============================================================
+    # ==========================================================
     # CONFIRMA EXISTÊNCIA DA CONTA
-    # ==============================================================
+    # ==========================================================
 
-    tipo, empresa, usuario = (
-        _achar_conta_login(
-            email
-        )
+    (
+        tipo,
+        empresa,
+        usuario
+    ) = _achar_conta_login(
+        email
     )
 
     if not tipo:
@@ -5041,9 +5072,9 @@ def post_login_code():
             no_account=True
         )
 
-    # ==============================================================
+    # ==========================================================
     # ENVIA OTP
-    # ==============================================================
+    # ==========================================================
 
     ok, msg = _otp_send(
         email,
@@ -5068,12 +5099,60 @@ def post_login_code():
         )
     )
 
-# Alias com acento (POST)
-@app.post("/login/código", endpoint="post_login_code_accent")
-def post_login_code_accent():
-    return post_login_code()
 
-# Tela para digitar o código (GET)
+# ==============================================================
+# SOLICITAR OTP — POST CANÔNICO
+# ==============================================================
+#
+# Limite compartilhado:
+# 5 solicitações / 15 minutos / IP.
+# ==============================================================
+
+@app.post(
+    "/login/codigo",
+    endpoint="post_login_code"
+)
+@otp_send_limit
+def post_login_code():
+    """
+    Solicita o envio do código OTP pela URL canônica.
+    """
+
+    return _process_login_code_request()
+
+
+# ==============================================================
+# SOLICITAR OTP — POST COM ACENTO
+# ==============================================================
+#
+# Mantido como alias de compatibilidade.
+#
+# Utiliza o MESMO contador da rota canônica.
+# Assim, alternar entre /codigo e /código não permite
+# contornar o rate limit.
+# ==============================================================
+
+@app.post(
+    "/login/código",
+    endpoint="post_login_code_accent"
+)
+@otp_send_limit
+def post_login_code_accent():
+    """
+    Alias da solicitação de OTP com acento na URL.
+    """
+
+    return _process_login_code_request()
+
+
+# ==============================================================
+# TELA PARA DIGITAR O CÓDIGO — GET
+# ==============================================================
+#
+# Apenas exibe a tela.
+# Não dispara e-mail e não consome o rate limit de envio.
+# ==============================================================
+
 @app.get(
     "/login/codigo",
     endpoint="login_code"
