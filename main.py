@@ -1184,6 +1184,104 @@ def _criar_password_reset_token(
         raise
 
 # ==============================================================
+# RECUPERAÇÃO DE SENHA — RESOLUÇÃO DA CONTA
+# ==============================================================
+
+def _resolver_conta_recuperacao(email: str):
+    """
+    Localiza a conta associada ao e-mail informado.
+
+    Retorna um dicionário padronizado para:
+    - comprador/cliente -> Usuario
+    - malharia          -> Empresa
+
+    Retorna None quando nenhuma conta é encontrada.
+
+    Importante:
+    esta função não deve gerar mensagens diferentes para o
+    usuário final. A proteção contra enumeração será feita
+    posteriormente na rota /esqueci_senha.
+    """
+
+    email = (
+        email
+        or ""
+    ).strip().lower()
+
+    if not email:
+        return None
+
+    # Usa a mesma resolução central já utilizada no login.
+    tipo, empresa, usuario = _achar_conta_login(
+        email
+    )
+
+    # ==========================================================
+    # COMPRADOR
+    # ==============================================================
+
+    if (
+        tipo == "cliente"
+        and usuario is not None
+    ):
+
+        email_conta = (
+            getattr(
+                usuario,
+                "email",
+                ""
+            )
+            or email
+        ).strip().lower()
+
+        return {
+            "account_type": "cliente",
+            "account_id": usuario.id,
+            "email": email_conta,
+            "nome": email_conta,
+            "usuario": usuario,
+            "empresa": None,
+        }
+
+    # ==========================================================
+    # MALHARIA
+    # ==============================================================
+
+    if (
+        tipo == "malharia"
+        and empresa is not None
+    ):
+
+        email_conta = (
+            getattr(
+                empresa,
+                "email",
+                ""
+            )
+            or email
+        ).strip().lower()
+
+        nome_empresa = (
+            getattr(
+                empresa,
+                "nome",
+                ""
+            )
+            or email_conta
+        ).strip()
+
+        return {
+            "account_type": "malharia",
+            "account_id": empresa.id,
+            "email": email_conta,
+            "nome": nome_empresa,
+            "usuario": usuario,
+            "empresa": empresa,
+        }
+
+    return None
+
+# ==============================================================
 # RECUPERAÇÃO DE SENHA — TOKEN LEGADO
 # ==============================================================
 #
