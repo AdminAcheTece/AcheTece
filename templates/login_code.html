@@ -450,9 +450,49 @@
 
             <button class="btn" type="submit">Confirmar</button>
 
+            </form>
+            
             <div class="links-row">
-              <a href="{{ url_for('resend_login_code', email=email) }}">Reenviar código</a>
-              <a href="{{ url_for('login_method', email=email) }}">Voltar</a>
+            
+              <form
+                  action="{{ url_for('resend_login_code') }}"
+                  method="POST"
+                  style="display: inline; margin: 0;"
+              >
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token() }}"
+                >
+            
+                <input
+                    type="hidden"
+                    name="email"
+                    value="{{ email }}"
+                >
+            
+                <button
+                    type="submit"
+                    style="
+                      background: none;
+                      border: 0;
+                      padding: 0;
+                      margin: 0;
+                      font: inherit;
+                      color: inherit;
+                      text-decoration: underline;
+                      cursor: pointer;
+                    "
+                >
+                  Reenviar código
+                </button>
+            
+              </form>
+            
+              <a href="{{ url_for('login_method', email=email) }}">
+                Voltar
+              </a>
+            
             </div>
           </form>
 
