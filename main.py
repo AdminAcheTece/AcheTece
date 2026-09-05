@@ -5219,15 +5219,49 @@ def resend_login_code():
         )
     )
 
-# Validar código (POST)
-@app.post(
-    "/login/codigo/validar"
-)
-def validate_login_code():
+# ==============================================================
+# VALIDAR CÓDIGO OTP — POST
+# ==============================================================
+#
+# Esta rota valida o código informado pelo usuário.
+#
+# Limite:
+# 10 tentativas a cada 15 minutos por cliente/IP.
+#
+# O GET /login/codigo, que apenas exibe a tela,
+# permanece sem rate limit.
+#
+# Ao exceder o limite:
+#
+# Flask-Limiter
+#     ↓
+# HTTP 429
+#     ↓
+# handle_rate_limit_exceeded()
+#     ↓
+# página amigável do AcheTece.
+# ==============================================================
 
-    # ==============================================================
+@app.post(
+    "/login/codigo/validar",
+    endpoint="validate_login_code"
+)
+@limiter.limit("10 per 15 minutes")
+def validate_login_code():
+    """
+    Valida o código OTP informado pelo usuário.
+
+    Segurança:
+    - POST protegido pelo CSRF global;
+    - máximo de 10 tentativas em 15 minutos por IP;
+    - excesso de tentativas gera HTTP 429;
+    - nenhuma informação sobre o código informado
+      é registrada nos logs.
+    """
+
+    # ==========================================================
     # DADOS
-    # ==============================================================
+    # ==========================================================
 
     email = (
         request.form.get("email")
@@ -5241,9 +5275,38 @@ def validate_login_code():
         or ""
     ).strip()
 
-    # ==============================================================
+    # ==========================================================
+    # VALIDAÇÕES BÁSICAS
+    # ==========================================================
+
+    if not email:
+
+        flash(
+            "Informe um e-mail válido.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("login")
+        )
+
+    if not codigo:
+
+        flash(
+            "Informe o código recebido.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "login_code",
+                email=email
+            )
+        )
+
+    # ==========================================================
     # VALIDA OTP
-    # ==============================================================
+    # ==========================================================
 
     ok, msg = _otp_validate(
         email,
@@ -5251,6 +5314,12 @@ def validate_login_code():
     )
 
     if not ok:
+
+        current_app.logger.warning(
+            "[SECURITY][OTP_INVALID] "
+            "ip=%s",
+            _client_ip(),
+        )
 
         flash(
             msg,
@@ -5264,9 +5333,9 @@ def validate_login_code():
             )
         )
 
-    # ==============================================================
+    # ==========================================================
     # LOCALIZA CONTA
-    # ==============================================================
+    # ==========================================================
 
     (
         tipo,
@@ -5290,9 +5359,9 @@ def validate_login_code():
             url_for("login")
         )
 
-    # ==============================================================
-    # REGRA CENTRAL
-    # ==============================================================
+    # ==========================================================
+    # REGRA CENTRAL DE ACESSO
+    # ==========================================================
 
     return _finalizar_login_conta(
         tipo,
