@@ -4735,7 +4735,8 @@ def _otp_send(
     - OTP expira em 30 minutos;
     - contador de tentativas começa em zero;
     - remove implementações antigas armazenadas na session;
-    - se o envio de e-mail falhar, o novo OTP é invalidado.
+    - se o envio de e-mail falhar ou gerar exceção,
+      o novo OTP é invalidado.
     """
 
     # ==========================================================
@@ -4755,14 +4756,16 @@ def _otp_send(
             "Tente novamente."
         )
 
-    # Remove eventual OTP legado armazenado no cookie/sessão.
+    # Remove eventual OTP legado do cookie/sessão.
     _otp_clear_legacy_session()
 
-    # ==========================================================
-    # GERAÇÃO SEGURA
-    # ==========================================================
+    token = None
 
     try:
+
+        # ======================================================
+        # GERAÇÃO SEGURA
+        # ======================================================
 
         code = (
             f"{secrets.randbelow(1_000_000):06d}"
@@ -4827,7 +4830,6 @@ def _otp_send(
             token
         )
 
-        # O token precisa existir no servidor antes do envio.
         db.session.commit()
 
         # ======================================================
@@ -4850,15 +4852,29 @@ def _otp_send(
         )
 
         # ======================================================
-        # ENVIA
+        # ENVIA E-MAIL
         # ======================================================
 
-        sent = _email_send_html_first(
-            to_email,
-            subject,
-            text,
-            html
-        )
+        try:
+
+            sent = _email_send_html_first(
+                to_email,
+                subject,
+                text,
+                html
+            )
+
+        except Exception:
+
+            current_app.logger.exception(
+                "[OTP] Exceção durante envio do e-mail."
+            )
+
+            sent = False
+
+        # ======================================================
+        # ENVIO COM SUCESSO
+        # ======================================================
 
         if sent:
 
@@ -4893,6 +4909,44 @@ def _otp_send(
     except Exception:
 
         db.session.rollback()
+
+        # Se o token chegou a ser persistido antes de alguma
+        # falha posterior, tenta invalidá-lo de forma defensiva.
+        if (
+            token is not None
+            and getattr(
+                token,
+                "id",
+                None
+            )
+        ):
+
+            try:
+
+                persisted_token = db.session.get(
+                    OtpToken,
+                    token.id
+                )
+
+                if (
+                    persisted_token
+                    and persisted_token.used_at is None
+                ):
+
+                    persisted_token.used_at = (
+                        datetime.utcnow()
+                    )
+
+                    db.session.commit()
+
+            except Exception:
+
+                db.session.rollback()
+
+                current_app.logger.exception(
+                    "[OTP] Falha ao invalidar token "
+                    "após exceção."
+                )
 
         current_app.logger.exception(
             "Falha ao enviar OTP de login"
