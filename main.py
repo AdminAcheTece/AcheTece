@@ -999,6 +999,197 @@ def _fmt_cep(s):
 def _norm(s: str) -> str:
     return normalize('NFKD', s).encode('ASCII', 'ignore').decode('ASCII').strip().lower()
 
+# ==============================================================
+# RECUPERAÇÃO DE SENHA — HELPERS SERVER-SIDE
+# ==============================================================
+
+def _password_reset_token_hash(raw_token: str) -> str:
+    """
+    Gera SHA-256 do token de recuperação.
+
+    O token real possui alta entropia e nunca é armazenado
+    no PostgreSQL. Somente seu hash é persistido.
+    """
+
+    raw_token = (
+        raw_token
+        or ""
+    ).strip()
+
+    if not raw_token:
+
+        raise ValueError(
+            "Token de recuperação vazio."
+        )
+
+    return hashlib.sha256(
+        raw_token.encode("utf-8")
+    ).hexdigest()
+
+
+def _criar_password_reset_token(
+    email: str,
+    account_type: str,
+    account_id: int,
+    request_ip: str = "",
+    user_agent: str = ""
+):
+    """
+    Cria um token de recuperação de senha server-side.
+
+    Retorna:
+        (raw_token, token_record)
+
+    raw_token:
+        enviado ao usuário por e-mail.
+
+    token_record:
+        registro PasswordResetToken persistido no PostgreSQL.
+
+    Segurança:
+    - usa secrets.token_urlsafe(32);
+    - somente SHA-256 do token é armazenado;
+    - expiração de 1 hora;
+    - invalida tokens anteriores ainda ativos da mesma conta;
+    - registra IP e User-Agent da solicitação.
+    """
+
+    # ==========================================================
+    # NORMALIZAÇÃO
+    # ==========================================================
+
+    email = (
+        email
+        or ""
+    ).strip().lower()
+
+    account_type = (
+        account_type
+        or ""
+    ).strip().lower()
+
+    if not email:
+
+        raise ValueError(
+            "E-mail obrigatório para recuperação."
+        )
+
+    if account_type not in {
+        "cliente",
+        "malharia",
+    }:
+
+        raise ValueError(
+            "Tipo de conta inválido para recuperação."
+        )
+
+    try:
+
+        account_id = int(
+            account_id
+        )
+
+    except Exception as exc:
+
+        raise ValueError(
+            "ID da conta inválido para recuperação."
+        ) from exc
+
+    if account_id <= 0:
+
+        raise ValueError(
+            "ID da conta inválido para recuperação."
+        )
+
+    # ==========================================================
+    # GERA TOKEN DE ALTA ENTROPIA
+    # ==========================================================
+
+    raw_token = secrets.token_urlsafe(
+        32
+    )
+
+    token_hash = _password_reset_token_hash(
+        raw_token
+    )
+
+    now = datetime.utcnow()
+
+    expires_at = (
+        now
+        + timedelta(
+            hours=1
+        )
+    )
+
+    try:
+
+        # ======================================================
+        # INVALIDA TOKENS ANTERIORES DA MESMA CONTA
+        # ======================================================
+
+        previous_tokens = (
+            PasswordResetToken.query
+            .filter(
+                PasswordResetToken.account_type
+                == account_type,
+
+                PasswordResetToken.account_id
+                == account_id,
+
+                PasswordResetToken.used_at.is_(None),
+            )
+            .all()
+        )
+
+        for previous_token in previous_tokens:
+
+            previous_token.used_at = now
+
+        # ======================================================
+        # CRIA NOVO TOKEN
+        # ======================================================
+
+        token_record = PasswordResetToken(
+            token_hash=token_hash,
+            email=email,
+            account_type=account_type,
+            account_id=account_id,
+            created_at=now,
+            expires_at=expires_at,
+            used_at=None,
+            request_ip=(
+                request_ip
+                or ""
+            )[:64],
+            user_agent=(
+                user_agent
+                or ""
+            )[:255],
+        )
+
+        db.session.add(
+            token_record
+        )
+
+        db.session.commit()
+
+        return (
+            raw_token,
+            token_record
+        )
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "[SECURITY][PASSWORD_RESET] "
+            "Falha ao criar token de recuperação."
+        )
+
+        raise
+
 def gerar_token(email):
     return URLSafeTimedSerializer(app.config['SECRET_KEY']).dumps(email, salt='recupera-senha')
 
