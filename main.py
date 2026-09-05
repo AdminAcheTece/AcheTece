@@ -44,6 +44,8 @@ from sqlalchemy import UniqueConstraint
 from flask import render_template, abort, send_from_directory
 from decimal import Decimal, InvalidOperation
 import secrets
+import hmac
+import hashlib
 import ipaddress
 from flask_limiter import Limiter
 from flask_limiter.errors import RateLimitExceeded
@@ -614,104 +616,202 @@ Se precisar de suporte, responda este e-mail.
 
     return send_email(to_email, subject, html_body, text_body)
 
-def _otp_validate(email: str, codigo: str):
+def _otp_validate(
+    email: str,
+    codigo: str
+):
     """
-    Valida o OTP de login considerando os dois formatos possíveis:
-      A) session['otp_login'] = { '<email>': { code, exp(timestamp), attempts, ... } }
-      B) session['otp']       = { 'email':..., 'code':..., 'expires': iso, 'attempts': ... }
-    Retorna (ok: bool, msg: str).
+    Valida um OTP de login utilizando exclusivamente
+    o registro server-side OtpToken/PostgreSQL.
+
+    Segurança:
+    - nenhum OTP é lido da session;
+    - código comparado por HMAC-SHA256;
+    - comparação com hmac.compare_digest;
+    - expiração obrigatória;
+    - máximo de 5 tentativas incorretas por token;
+    - sucesso invalida imediatamente o token;
+    - token utilizado não pode ser reutilizado.
     """
-    email = (email or "").strip().lower()
-    codigo = (codigo or "").strip()
 
-    # --- Formato A: otp_login por e-mail ------------------------------------
-    otp_login = session.get("otp_login")
-    if isinstance(otp_login, dict) and email in otp_login and isinstance(otp_login[email], dict):
-        rec = otp_login[email]
+    # ==========================================================
+    # NORMALIZAÇÃO
+    # ==========================================================
 
-        # Tentativas
-        rec["attempts"] = int(rec.get("attempts", 0)) + 1
-        # Persistir contador
-        otp_login[email] = rec
-        session["otp_login"] = otp_login
-        session.modified = True
+    email = (
+        email
+        or ""
+    ).strip().lower()
 
-        # Expiração (timestamp UTC)
-        try:
-            exp_ts = float(rec.get("exp", 0))
-        except Exception:
-            exp_ts = 0.0
-        if exp_ts and datetime.utcnow().timestamp() > exp_ts:
-            # Limpa apenas este e-mail
-            try:
-                del otp_login[email]
-            except Exception:
-                pass
-            session["otp_login"] = otp_login
-            session.modified = True
-            return False, "Código expirado. Solicite um novo."
+    codigo = (
+        codigo
+        or ""
+    ).strip()
 
-        # Comparação
-        if str(rec.get("code", "")).strip() != str(codigo):
-            if rec["attempts"] > 5:
-                # Muitas tentativas -> invalida este OTP
-                try:
-                    del otp_login[email]
-                except Exception:
-                    pass
-                session["otp_login"] = otp_login
-                session.modified = True
-                return False, "Muitas tentativas. Solicite um novo código."
-            return False, "Código incorreto. Tente novamente."
+    # Remove qualquer OTP legado que ainda possa estar
+    # presente em um cookie antigo do navegador.
+    _otp_clear_legacy_session()
 
-        # Sucesso -> limpar OTP deste e-mail
-        try:
-            del otp_login[email]
-        except Exception:
-            pass
-        session["otp_login"] = otp_login
-        session.modified = True
-        return True, "OK"
+    if (
+        not email
+        or not codigo
+    ):
 
-    # --- Formato B: otp único com 'email'/'expires' ISO ---------------------
-    otp_blob = session.get("otp") or {}
-    if isinstance(otp_blob, dict):
-        rec = None
-        if otp_blob.get("email") == email:
-            rec = otp_blob
-        elif email in otp_blob and isinstance(otp_blob[email], dict):
-            rec = otp_blob[email]
+        return (
+            False,
+            "Código inválido. Solicite um novo."
+        )
 
-        if rec:
-            rec["attempts"] = int(rec.get("attempts", 0)) + 1
-            session["otp"] = otp_blob
-            session.modified = True
+    try:
 
-            expires_iso = rec.get("expires")
-            if expires_iso:
-                try:
-                    exp_dt = datetime.fromisoformat(expires_iso)
-                    if datetime.utcnow() > exp_dt:
-                        session.pop("otp", None)
-                        session.modified = True
-                        return False, "Código expirado. Solicite um novo."
-                except Exception:
-                    session.pop("otp", None)
-                    session.modified = True
-                    return False, "Código inválido. Solicite um novo."
+        now = datetime.utcnow()
 
-            if str(rec.get("code", "")).strip() != str(codigo):
-                if rec["attempts"] > 5:
-                    session.pop("otp", None)
-                    session.modified = True
-                    return False, "Muitas tentativas. Solicite um novo código."
-                return False, "Código incorreto. Tente novamente."
+        # ======================================================
+        # LOCALIZA O ÚLTIMO TOKEN NÃO UTILIZADO
+        # ======================================================
 
-            session.pop("otp", None)
-            session.modified = True
-            return True, "OK"
+        token = (
+            OtpToken.query
+            .filter(
+                OtpToken.email == email,
+                OtpToken.used_at.is_(None),
+            )
+            .order_by(
+                OtpToken.created_at.desc(),
+                OtpToken.id.desc(),
+            )
+            .first()
+        )
 
-    return False, "Código não encontrado para este e-mail. Reenvie o código."
+        if not token:
+
+            return (
+                False,
+                "Código não encontrado para este e-mail. "
+                "Solicite um novo código."
+            )
+
+        # ======================================================
+        # EXPIRAÇÃO — FAIL CLOSED
+        # ======================================================
+
+        if (
+            not token.expires_at
+            or now >= token.expires_at
+        ):
+
+            token.used_at = now
+
+            db.session.commit()
+
+            return (
+                False,
+                "Código expirado. Solicite um novo."
+            )
+
+        # ======================================================
+        # LIMITE INTERNO DE TENTATIVAS
+        # ======================================================
+
+        attempts = int(
+            token.attempts
+            or 0
+        )
+
+        if attempts >= 5:
+
+            token.used_at = now
+
+            db.session.commit()
+
+            return (
+                False,
+                "Muitas tentativas. Solicite um novo código."
+            )
+
+        # ======================================================
+        # HASH DO CÓDIGO INFORMADO
+        # ======================================================
+
+        provided_hash = _otp_code_hash(
+            email,
+            codigo
+        )
+
+        stored_hash = (
+            token.code_hash
+            or ""
+        ).strip()
+
+        # ======================================================
+        # COMPARAÇÃO SEGURA
+        # ======================================================
+
+        codigo_ok = (
+            bool(stored_hash)
+            and hmac.compare_digest(
+                stored_hash,
+                provided_hash
+            )
+        )
+
+        # ======================================================
+        # CÓDIGO INCORRETO
+        # ======================================================
+
+        if not codigo_ok:
+
+            token.attempts = (
+                attempts + 1
+            )
+
+            # A quinta tentativa incorreta invalida
+            # definitivamente este OTP.
+            if token.attempts >= 5:
+
+                token.used_at = now
+
+                db.session.commit()
+
+                return (
+                    False,
+                    "Muitas tentativas. "
+                    "Solicite um novo código."
+                )
+
+            db.session.commit()
+
+            return (
+                False,
+                "Código incorreto. Tente novamente."
+            )
+
+        # ======================================================
+        # SUCESSO — USO ÚNICO
+        # ======================================================
+
+        token.used_at = now
+
+        db.session.commit()
+
+        return (
+            True,
+            "OK"
+        )
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "Falha ao validar OTP de login"
+        )
+
+        return (
+            False,
+            "Não foi possível validar o código agora. "
+            "Tente novamente."
+        )
 
 # Mercado Pago (mantido para compat)
 MP_ACCESS_TOKEN = os.getenv("MP_ACCESS_TOKEN") or os.getenv("MERCADO_PAGO_TOKEN", "")
@@ -4528,35 +4628,281 @@ def _otp_email_html(dest_email: str, code: str, minutes: int = 30) -> str:
 </body>
 </html>"""
 
-def _otp_send(to_email: str, ip: str = "", ua: str = ""):
-    """Gera OTP, salva expiração e envia e-mail HTML (30 min)."""
+# ==============================================================
+# OTP — HELPERS DE SEGURANÇA
+# ==============================================================
+
+def _otp_code_hash(email: str, codigo: str) -> str:
+    """
+    Gera um HMAC-SHA256 do código OTP.
+
+    O código OTP nunca é salvo em texto puro no banco.
+
+    O e-mail faz parte da mensagem assinada para que o mesmo
+    código utilizado para contas diferentes produza hashes
+    diferentes.
+
+    A SECRET_KEY permanece somente no servidor.
+    """
+
+    email = (
+        email
+        or ""
+    ).strip().lower()
+
+    codigo = (
+        codigo
+        or ""
+    ).strip()
+
+    secret_key = current_app.config.get(
+        "SECRET_KEY"
+    )
+
+    if not secret_key:
+
+        raise RuntimeError(
+            "SECRET_KEY não configurada para geração do OTP."
+        )
+
+    if isinstance(
+        secret_key,
+        bytes
+    ):
+        secret_bytes = secret_key
+    else:
+        secret_bytes = str(
+            secret_key
+        ).encode(
+            "utf-8"
+        )
+
+    payload = (
+        f"{email}:{codigo}"
+    ).encode(
+        "utf-8"
+    )
+
+    return hmac.new(
+        secret_bytes,
+        payload,
+        hashlib.sha256
+    ).hexdigest()
+
+
+def _otp_clear_legacy_session():
+    """
+    Remove implementações antigas de OTP que eram armazenadas
+    na sessão/cookie do Flask.
+
+    Após a migração para OtpToken/PostgreSQL, nenhum código OTP
+    deve permanecer dentro da sessão do navegador.
+    """
+
+    changed = False
+
+    for key in (
+        "otp_login",
+        "otp",
+    ):
+
+        if key in session:
+
+            session.pop(
+                key,
+                None
+            )
+
+            changed = True
+
+    if changed:
+
+        session.modified = True
+
+def _otp_send(
+    to_email: str,
+    ip: str = "",
+    ua: str = ""
+):
+    """
+    Gera e envia um OTP de login.
+
+    Segurança:
+    - usa secrets para geração criptograficamente segura;
+    - não armazena o código em texto puro;
+    - armazena somente HMAC-SHA256 no PostgreSQL;
+    - invalida OTPs anteriores do mesmo e-mail;
+    - OTP expira em 30 minutos;
+    - contador de tentativas começa em zero;
+    - remove implementações antigas armazenadas na session;
+    - se o envio de e-mail falhar, o novo OTP é invalidado.
+    """
+
+    # ==========================================================
+    # NORMALIZAÇÃO
+    # ==========================================================
+
+    to_email = (
+        to_email
+        or ""
+    ).strip().lower()
+
+    if not to_email:
+
+        return (
+            False,
+            "Não foi possível enviar o código agora. "
+            "Tente novamente."
+        )
+
+    # Remove eventual OTP legado armazenado no cookie/sessão.
+    _otp_clear_legacy_session()
+
+    # ==========================================================
+    # GERAÇÃO SEGURA
+    # ==========================================================
+
     try:
-        code = f"{random.randint(0, 999999):06d}"
+
+        code = (
+            f"{secrets.randbelow(1_000_000):06d}"
+        )
+
         minutes = 30
 
-        data = session.get("otp_login", {})
-        data[to_email] = {
-            "code": code,
-            "exp": (datetime.utcnow() + timedelta(minutes=minutes)).timestamp(),
-            "ip": ip[:64],
-            "ua": ua[:255],
-            "attempts": 0,
-        }
-        session["otp_login"] = data
+        now = datetime.utcnow()
 
-        subject = "Seu código de acesso – AcheTece"
-        text    = f"Seu código é {code}. Ele expira em {minutes} minutos."
-        html    = _otp_email_html(to_email, code, minutes)
+        expires_at = (
+            now
+            + timedelta(
+                minutes=minutes
+            )
+        )
 
-        if _email_send_html_first(to_email, subject, text, html):
-            current_app.logger.info("[OTP] HTML enviado com sucesso")
-            return True, "Enviamos um código para o seu e-mail."
-        else:
-            current_app.logger.error("[OTP] Falha ao enviar HTML (nenhum backend aceitou)")
-            return False, "Não foi possível enviar o código agora. Tente novamente."
+        code_hash = _otp_code_hash(
+            to_email,
+            code
+        )
+
+        # ======================================================
+        # INVALIDA TOKENS ANTERIORES
+        # ======================================================
+
+        previous_tokens = (
+            OtpToken.query
+            .filter(
+                OtpToken.email == to_email,
+                OtpToken.used_at.is_(None),
+            )
+            .all()
+        )
+
+        for previous_token in previous_tokens:
+
+            previous_token.used_at = now
+
+        # ======================================================
+        # CRIA NOVO TOKEN SERVER-SIDE
+        # ======================================================
+
+        token = OtpToken(
+            email=to_email,
+            code_hash=code_hash,
+            created_at=now,
+            expires_at=expires_at,
+            used_at=None,
+            attempts=0,
+            last_sent_at=now,
+            ip=(
+                ip
+                or ""
+            )[:64],
+            user_agent=(
+                ua
+                or ""
+            )[:255],
+        )
+
+        db.session.add(
+            token
+        )
+
+        # O token precisa existir no servidor antes do envio.
+        db.session.commit()
+
+        # ======================================================
+        # PREPARA E-MAIL
+        # ======================================================
+
+        subject = (
+            "Seu código de acesso – AcheTece"
+        )
+
+        text = (
+            f"Seu código é {code}. "
+            f"Ele expira em {minutes} minutos."
+        )
+
+        html = _otp_email_html(
+            to_email,
+            code,
+            minutes
+        )
+
+        # ======================================================
+        # ENVIA
+        # ======================================================
+
+        sent = _email_send_html_first(
+            to_email,
+            subject,
+            text,
+            html
+        )
+
+        if sent:
+
+            current_app.logger.info(
+                "[OTP] HTML enviado com sucesso"
+            )
+
+            return (
+                True,
+                "Enviamos um código para o seu e-mail."
+            )
+
+        # ======================================================
+        # ENVIO FALHOU → INVALIDA TOKEN
+        # ======================================================
+
+        token.used_at = datetime.utcnow()
+
+        db.session.commit()
+
+        current_app.logger.error(
+            "[OTP] Falha ao enviar HTML "
+            "(nenhum backend aceitou)"
+        )
+
+        return (
+            False,
+            "Não foi possível enviar o código agora. "
+            "Tente novamente."
+        )
+
     except Exception:
-        current_app.logger.exception("Falha ao enviar OTP de login")
-        return False, "Não foi possível enviar o código agora. Tente novamente."
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "Falha ao enviar OTP de login"
+        )
+
+        return (
+            False,
+            "Não foi possível enviar o código agora. "
+            "Tente novamente."
+        )
 
 # Mantém seu _otp_validate como estava (com guard ou não, tanto faz)
 # ----------------------------------------------------------------------
