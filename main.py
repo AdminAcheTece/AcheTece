@@ -5576,48 +5576,34 @@ def get_login_code():
         email=email
     )
 
-# Reenviar código (GET)
-# OBS.: será convertido para POST + CSRF na etapa de
-# hardening específica do OTP/rate limiting.
-@app.get(
+# ==============================================================
+# REENVIAR CÓDIGO OTP — POST
+# ==============================================================
+#
+# Segurança:
+# - não utiliza mais GET para gerar/enviar OTP;
+# - protegido pelo CSRF global;
+# - compartilha o MESMO rate limit da solicitação inicial;
+# - 5 envios/reenvios a cada 15 minutos por IP.
+# ==============================================================
+
+@app.post(
     "/login/codigo/reenviar",
     endpoint="resend_login_code"
 )
+@otp_send_limit
 def resend_login_code():
+    """
+    Reenvia o código OTP utilizando a mesma lógica segura
+    da solicitação inicial.
 
-    email = (
-        request.args.get("email")
-        or ""
-    ).strip().lower()
+    O contador é compartilhado entre:
+    - POST /login/codigo
+    - POST /login/código
+    - POST /login/codigo/reenviar
+    """
 
-    if not email:
-
-        return redirect(
-            url_for("login")
-        )
-
-    ok, msg = _otp_send(
-        email,
-        ip=_client_ip()[:64],
-        ua=(
-            request.headers.get(
-                "User-Agent"
-            )
-            or ""
-        )[:255],
-    )
-
-    flash(
-        msg,
-        "success" if ok else "error"
-    )
-
-    return redirect(
-        url_for(
-            "login_code",
-            email=email
-        )
-    )
+    return _process_login_code_request()
 
 # ==============================================================
 # VALIDAR CÓDIGO OTP — POST
