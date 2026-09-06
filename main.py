@@ -1491,7 +1491,7 @@ def gerar_token(email):
 
 
 # ==============================================================
-# RECUPERAÇÃO DE SENHA — ENVIO DO E-MAIL
+# RECUPERAÇÃO DE SENHA — ENVIO DO E-MAIL SERVER-SIDE
 # ==============================================================
 
 def enviar_email_recuperacao(
@@ -1499,11 +1499,21 @@ def enviar_email_recuperacao(
     nome_empresa=""
 ):
     """
-    Envia o e-mail contendo o link para redefinição de senha.
+    Gera e envia um link seguro de redefinição de senha.
 
-    Neste momento ainda utiliza gerar_token().
-    Posteriormente será conectado ao PasswordResetToken
-    server-side de uso único.
+    Fluxo:
+    1. resolve a conta pelo e-mail;
+    2. cria PasswordResetToken server-side;
+    3. envia somente o token real no link;
+    4. mantém somente SHA-256 do token no PostgreSQL;
+    5. invalida o token criado se o envio do e-mail falhar.
+
+    Retorna:
+        True  -> e-mail enviado com sucesso.
+        False -> conta não encontrada ou falha de envio.
+
+    A rota pública deve utilizar resposta genérica para evitar
+    enumeração de contas.
     """
 
     # ==========================================================
@@ -1516,39 +1526,90 @@ def enviar_email_recuperacao(
     ).strip().lower()
 
     if not email:
-        raise ValueError(
-            "E-mail obrigatório para recuperação de senha."
-        )
 
-    nome_exibicao = (
-        nome_empresa
-        or email
-    ).strip()
+        return False
 
     # ==========================================================
-    # GERA TOKEN
+    # RESOLVE A CONTA
     # ==========================================================
 
-    token = gerar_token(
+    conta = _resolver_conta_recuperacao(
         email
     )
 
-    # ==========================================================
-    # MONTA LINK DE REDEFINIÇÃO
-    # ==========================================================
+    if conta is None:
 
-    link = url_for(
-        "redefinir_senha",
-        token=token,
-        _external=True
+        current_app.logger.info(
+            (
+                "[SECURITY][PASSWORD_RESET] "
+                "Solicitação para e-mail sem conta cadastrada. "
+                f"ip={_client_ip()}"
+            )
+        )
+
+        return False
+
+    email_conta = (
+        conta.get("email")
+        or email
+    ).strip().lower()
+
+    account_type = (
+        conta.get("account_type")
+        or ""
+    ).strip().lower()
+
+    account_id = conta.get(
+        "account_id"
     )
 
+    nome_exibicao = (
+        conta.get("nome")
+        or nome_empresa
+        or email_conta
+    ).strip()
+
     # ==========================================================
-    # HTML DO E-MAIL
+    # CRIA TOKEN SERVER-SIDE
     # ==========================================================
 
-    html = render_template_string(
-        """
+    raw_token = None
+    token_record = None
+
+    try:
+
+        raw_token, token_record = (
+            _criar_password_reset_token(
+                email=email_conta,
+                account_type=account_type,
+                account_id=account_id,
+                request_ip=_client_ip(),
+                user_agent=(
+                    request.headers.get(
+                        "User-Agent",
+                        ""
+                    )
+                    or ""
+                ),
+            )
+        )
+
+        # ======================================================
+        # MONTA LINK
+        # ======================================================
+
+        link = url_for(
+            "redefinir_senha",
+            token=raw_token,
+            _external=True
+        )
+
+        # ======================================================
+        # HTML DO E-MAIL
+        # ======================================================
+
+        html = render_template_string(
+            """
 <!doctype html>
 <html lang="pt-br">
 
@@ -1638,8 +1699,19 @@ def enviar_email_recuperacao(
                   line-height:1.55;
                 "
               >
+                Recebemos uma solicitação para redefinir
+                a senha da sua conta AcheTece.
+              </p>
+
+              <p
+                style="
+                  margin:0 0 16px 0;
+                  line-height:1.55;
+                "
+              >
                 Clique no botão abaixo para criar uma nova senha.
-                Este link é válido por <strong>1 hora</strong>.
+                Este link é válido por <strong>1 hora</strong>
+                e poderá ser utilizado apenas uma vez.
               </p>
 
               <table
@@ -1720,10 +1792,11 @@ def enviar_email_recuperacao(
               "
             >
 
-              Você recebeu este e-mail porque solicitou
-              redefinição de senha no AcheTece.
+              Se você não solicitou esta redefinição,
+              ignore este e-mail.
 
-              Se não foi você, ignore esta mensagem.
+              Nenhuma alteração será realizada sem a utilização
+              do link acima.
 
             </td>
           </tr>
@@ -1738,51 +1811,147 @@ def enviar_email_recuperacao(
 </body>
 
 </html>
-        """,
-        nome=nome_exibicao,
-        link=link
-    )
-
-    # ==========================================================
-    # VERSÃO TEXTO PURO
-    # ==========================================================
-
-    text = (
-        f"Olá, {nome_exibicao}!\n\n"
-        "Você solicitou a redefinição da sua senha no AcheTece.\n\n"
-        "Para criar uma nova senha, acesse o endereço abaixo:\n"
-        f"{link}\n\n"
-        "Este link é válido por 1 hora.\n\n"
-        "Se você não solicitou esta alteração, "
-        "ignore este e-mail."
-    )
-
-    # ==========================================================
-    # ENVIO
-    #
-    # send_email() já possui os fallbacks:
-    # Flask-Mail → Resend → Mailgun → SendGrid → SMTP
-    # ==========================================================
-
-    ok = send_email(
-        to=email,
-        subject="Redefinição de Senha - AcheTece",
-        html=html,
-        text=text,
-    )
-
-    if not ok:
-
-        current_app.logger.error(
-            "[SECURITY][PASSWORD_RESET] "
-            "Falha ao enviar e-mail de recuperação."
+            """,
+            nome=nome_exibicao,
+            link=link
         )
 
-        raise RuntimeError(
-            "Falha ao enviar e-mail de recuperação."
+        # ======================================================
+        # VERSÃO TEXTO PURO
+        # ======================================================
+
+        text = (
+            f"Olá, {nome_exibicao}!\n\n"
+            "Recebemos uma solicitação para redefinir "
+            "a senha da sua conta AcheTece.\n\n"
+            "Para criar uma nova senha, acesse:\n"
+            f"{link}\n\n"
+            "Este link é válido por 1 hora e poderá "
+            "ser utilizado apenas uma vez.\n\n"
+            "Se você não solicitou esta redefinição, "
+            "ignore este e-mail."
         )
 
-    return True
+        # ======================================================
+        # ENVIO
+        # ======================================================
+
+        ok = send_email(
+            to=email_conta,
+            subject=(
+                "Redefinição de Senha - AcheTece"
+            ),
+            html=html,
+            text=text,
+        )
+
+        if not ok:
+
+            # ==================================================
+            # ENVIO FALHOU
+            #
+            # O token já foi persistido. Portanto precisamos
+            # invalidá-lo para não deixar um token ativo que
+            # nunca chegou ao usuário.
+            # ==================================================
+
+            if token_record is not None:
+
+                try:
+
+                    token_record.used_at = (
+                        datetime.utcnow()
+                    )
+
+                    db.session.commit()
+
+                except Exception:
+
+                    db.session.rollback()
+
+                    current_app.logger.exception(
+                        (
+                            "[SECURITY][PASSWORD_RESET] "
+                            "Falha ao invalidar token após "
+                            "erro no envio do e-mail."
+                        )
+                    )
+
+            current_app.logger.error(
+                (
+                    "[SECURITY][PASSWORD_RESET] "
+                    "Falha ao enviar e-mail de recuperação. "
+                    f"account_type={account_type} "
+                    f"account_id={account_id}"
+                )
+            )
+
+            return False
+
+        # ======================================================
+        # SUCESSO
+        # ======================================================
+
+        current_app.logger.info(
+            (
+                "[SECURITY][PASSWORD_RESET_REQUEST] "
+                f"account_type={account_type} "
+                f"account_id={account_id} "
+                f"ip={_client_ip()}"
+            )
+        )
+
+        return True
+
+    except Exception:
+
+        db.session.rollback()
+
+        # ======================================================
+        # SE O TOKEN JÁ TIVER SIDO PERSISTIDO, TENTA INVALIDÁ-LO
+        # ======================================================
+
+        if token_record is not None:
+
+            try:
+
+                persisted_token = db.session.get(
+                    PasswordResetToken,
+                    token_record.id
+                )
+
+                if (
+                    persisted_token is not None
+                    and persisted_token.used_at is None
+                ):
+
+                    persisted_token.used_at = (
+                        datetime.utcnow()
+                    )
+
+                    db.session.commit()
+
+            except Exception:
+
+                db.session.rollback()
+
+                current_app.logger.exception(
+                    (
+                        "[SECURITY][PASSWORD_RESET] "
+                        "Falha ao invalidar token após "
+                        "exceção no fluxo de recuperação."
+                    )
+                )
+
+        current_app.logger.exception(
+            (
+                "[SECURITY][PASSWORD_RESET] "
+                "Falha inesperada ao gerar/enviar "
+                "recuperação de senha."
+            )
+        )
+
+        return False
 
 
 def login_admin_requerido(f):
