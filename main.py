@@ -18184,27 +18184,421 @@ def esqueci_senha():
         return render_template('esqueci_senha.html', erro='E-mail não encontrado.')
     return render_template('esqueci_senha.html')
 
-@app.route('/redefinir_senha/<token>', methods=['GET', 'POST'])
+# ==============================================================
+# RECUPERAÇÃO DE SENHA — REDEFINIÇÃO
+# ==============================================================
+
+@app.get(
+    "/redefinir_senha/<token>",
+    endpoint="redefinir_senha"
+)
 def redefinir_senha(token):
-    serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+    """
+    Exibe o formulário de redefinição somente quando o
+    PasswordResetToken é válido, não utilizado e não expirado.
+    """
+
+    token_record, motivo = _buscar_password_reset_token(
+        token
+    )
+
+    if token_record is None:
+
+        if motivo == "expired":
+
+            flash(
+                "O link de redefinição expirou. "
+                "Solicite um novo link.",
+                "warning"
+            )
+
+        else:
+
+            flash(
+                "Este link de redefinição não é válido "
+                "ou já foi utilizado.",
+                "warning"
+            )
+
+        return render_template(
+            "erro_token.html"
+        )
+
+    return render_template(
+        "redefinir_senha.html",
+        token_valido=True
+    )
+
+
+@app.post(
+    "/redefinir_senha/<token>",
+    endpoint="post_redefinir_senha"
+)
+@limiter.limit(
+    "10 per 15 minutes"
+)
+def post_redefinir_senha(token):
+    """
+    Salva uma nova senha utilizando PasswordResetToken
+    server-side.
+
+    Segurança:
+    - valida novamente o token no POST;
+    - mínimo de 6 caracteres;
+    - exige confirmação da senha;
+    - limita tamanho máximo;
+    - identifica comprador ou malharia pelo token;
+    - verifica se o e-mail da conta ainda corresponde ao token;
+    - token e senha são atualizados na mesma transação;
+    - token é consumido definitivamente após sucesso.
+    """
+
+    # ==========================================================
+    # VALIDA TOKEN NOVAMENTE
+    # ==========================================================
+
+    token_record, motivo = _buscar_password_reset_token(
+        token
+    )
+
+    if token_record is None:
+
+        if motivo == "expired":
+
+            flash(
+                "O link de redefinição expirou. "
+                "Solicite um novo link.",
+                "warning"
+            )
+
+        else:
+
+            flash(
+                "Este link de redefinição não é válido "
+                "ou já foi utilizado.",
+                "warning"
+            )
+
+        return render_template(
+            "erro_token.html"
+        )
+
+    # ==========================================================
+    # RECEBE SENHAS
+    # ==========================================================
+
+    nova_senha = (
+        request.form.get("senha")
+        or ""
+    )
+
+    confirmar_senha = (
+        request.form.get("confirmar_senha")
+        or ""
+    )
+
+    # ==========================================================
+    # VALIDAÇÃO SERVER-SIDE
+    # ==========================================================
+
+    if len(nova_senha) < 6:
+
+        return render_template(
+            "redefinir_senha.html",
+            token_valido=True,
+            mensagem=(
+                "A nova senha deve possuir "
+                "pelo menos 6 caracteres."
+            )
+        )
+
+    if len(nova_senha) > 128:
+
+        return render_template(
+            "redefinir_senha.html",
+            token_valido=True,
+            mensagem=(
+                "A senha informada é muito longa. "
+                "Utilize no máximo 128 caracteres."
+            )
+        )
+
+    if nova_senha != confirmar_senha:
+
+        return render_template(
+            "redefinir_senha.html",
+            token_valido=True,
+            mensagem=(
+                "A confirmação da senha não corresponde "
+                "à nova senha."
+            )
+        )
+
+    # ==========================================================
+    # IDENTIFICA TIPO DA CONTA
+    # ==========================================================
+
+    account_type = (
+        token_record.account_type
+        or ""
+    ).strip().lower()
+
     try:
-        email = serializer.loads(token, salt='recupera-senha', max_age=3600)
-    except SignatureExpired:
-        flash("⏰ O link expirou. Solicite um novo.")
-        return render_template("erro_token.html")
-    except BadSignature:
-        flash("⚠️ O link é inválido ou já foi utilizado.")
-        return render_template("erro_token.html")
-    empresa = Empresa.query.filter_by(email=email).first()
-    if not empresa:
-        return "❌ Usuário não encontrado.", 404
-    if request.method == 'POST':
-        nova_senha = request.form['senha']
-        empresa.senha = generate_password_hash(nova_senha)
+
+        account_id = int(
+            token_record.account_id
+        )
+
+    except Exception:
+
+        account_id = 0
+
+    now = datetime.utcnow()
+
+    try:
+
+        # ======================================================
+        # COMPRADOR
+        # ======================================================
+
+        if account_type == "cliente":
+
+            usuario = db.session.get(
+                Usuario,
+                account_id
+            )
+
+            if usuario is None:
+
+                token_record.used_at = now
+
+                db.session.commit()
+
+                flash(
+                    "Não foi possível validar este link "
+                    "de redefinição.",
+                    "warning"
+                )
+
+                return render_template(
+                    "erro_token.html"
+                )
+
+            email_atual = (
+                getattr(
+                    usuario,
+                    "email",
+                    ""
+                )
+                or ""
+            ).strip().lower()
+
+            email_token = (
+                token_record.email
+                or ""
+            ).strip().lower()
+
+            if (
+                not email_atual
+                or email_atual != email_token
+            ):
+
+                token_record.used_at = now
+
+                db.session.commit()
+
+                current_app.logger.warning(
+                    (
+                        "[SECURITY][PASSWORD_RESET] "
+                        "E-mail da conta cliente não corresponde "
+                        f"ao token. token_id={token_record.id}"
+                    )
+                )
+
+                flash(
+                    "Não foi possível validar este link "
+                    "de redefinição.",
+                    "warning"
+                )
+
+                return render_template(
+                    "erro_token.html"
+                )
+
+            novo_hash = generate_password_hash(
+                nova_senha
+            )
+
+            usuario.senha_hash = novo_hash
+
+        # ======================================================
+        # MALHARIA
+        # ======================================================
+
+        elif account_type == "malharia":
+
+            empresa = db.session.get(
+                Empresa,
+                account_id
+            )
+
+            if empresa is None:
+
+                token_record.used_at = now
+
+                db.session.commit()
+
+                flash(
+                    "Não foi possível validar este link "
+                    "de redefinição.",
+                    "warning"
+                )
+
+                return render_template(
+                    "erro_token.html"
+                )
+
+            email_atual = (
+                getattr(
+                    empresa,
+                    "email",
+                    ""
+                )
+                or ""
+            ).strip().lower()
+
+            email_token = (
+                token_record.email
+                or ""
+            ).strip().lower()
+
+            if (
+                not email_atual
+                or email_atual != email_token
+            ):
+
+                token_record.used_at = now
+
+                db.session.commit()
+
+                current_app.logger.warning(
+                    (
+                        "[SECURITY][PASSWORD_RESET] "
+                        "E-mail da malharia não corresponde "
+                        f"ao token. token_id={token_record.id}"
+                    )
+                )
+
+                flash(
+                    "Não foi possível validar este link "
+                    "de redefinição.",
+                    "warning"
+                )
+
+                return render_template(
+                    "erro_token.html"
+                )
+
+            novo_hash = generate_password_hash(
+                nova_senha
+            )
+
+            empresa.senha = novo_hash
+
+            # --------------------------------------------------
+            # Mantém Usuario vinculado sincronizado,
+            # quando a malharia possuir usuário associado.
+            # --------------------------------------------------
+
+            usuario_vinculado = getattr(
+                empresa,
+                "usuario",
+                None
+            )
+
+            if usuario_vinculado is not None:
+
+                usuario_vinculado.senha_hash = (
+                    novo_hash
+                )
+
+        # ======================================================
+        # TIPO DESCONHECIDO — FAIL CLOSED
+        # ======================================================
+
+        else:
+
+            token_record.used_at = now
+
+            db.session.commit()
+
+            current_app.logger.warning(
+                (
+                    "[SECURITY][PASSWORD_RESET] "
+                    "account_type inesperado durante reset. "
+                    f"token_id={token_record.id}"
+                )
+            )
+
+            flash(
+                "Não foi possível validar este link "
+                "de redefinição.",
+                "warning"
+            )
+
+            return render_template(
+                "erro_token.html"
+            )
+
+        # ======================================================
+        # CONSOME TOKEN
+        #
+        # Senha e token são confirmados na mesma transação.
+        # ======================================================
+
+        token_record.used_at = now
+
         db.session.commit()
-        flash('✅ Senha redefinida com sucesso! Faça login com a nova senha.')
-        return redirect(url_for('login'))
-    return render_template('redefinir_senha.html', token_valido=True)
+
+        current_app.logger.info(
+            (
+                "[SECURITY][PASSWORD_RESET_SUCCESS] "
+                f"account_type={account_type} "
+                f"account_id={account_id}"
+            )
+        )
+
+        flash(
+            (
+                "Senha redefinida com sucesso. "
+                "Faça login com sua nova senha."
+            ),
+            "success"
+        )
+
+        return redirect(
+            url_for(
+                "login"
+            )
+        )
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "[SECURITY][PASSWORD_RESET] "
+            "Falha ao concluir redefinição de senha."
+        )
+
+        return render_template(
+            "redefinir_senha.html",
+            token_valido=True,
+            mensagem=(
+                "Não foi possível redefinir sua senha agora. "
+                "Tente novamente."
+            )
+        )
 
 # --------------------------------------------------------------------
 # Páginas estáticas simples / compat
