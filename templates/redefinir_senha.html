@@ -414,7 +414,7 @@
 
       <div class="page-wrap">
         <h1 class="titulo">Redefinir Senha</h1>
-        <p class="sub">Defina sua nova senha para acessar sua Conta Malharia.</p>
+        <p class="sub">Defina sua nova senha para acessar sua conta AcheTece.</p>
 
         <section class="box-form">
           <h3>Nova senha</h3>
@@ -423,19 +423,77 @@
             <div class="msg-erro" role="status">{{ mensagem }}</div>
           {% endif %}
 
-          <form class="contato" method="POST" novalidate>
+          <form
+            class="contato"
+            method="POST"
+            autocomplete="off"
+          >
+          
             <input
               type="hidden"
               name="csrf_token"
               value="{{ csrf_token() }}"
             >
-            <label for="senha">Nova senha</label>
-            <input id="senha" name="senha" type="password" placeholder="Digite a nova senha" required>
-
-            <div class="acoes">
-              <button class="btn-enviar" type="submit">Salvar nova senha</button>
-              <a class="voltar" href="{{ url_for('login') }}">Voltar ao login</a>
+          
+            <label for="senha">
+              Nova senha
+            </label>
+          
+            <input
+              id="senha"
+              name="senha"
+              type="password"
+              placeholder="Digite a nova senha"
+              minlength="6"
+              maxlength="128"
+              autocomplete="new-password"
+              required
+            >
+          
+            <label for="confirmar_senha">
+              Confirmar nova senha
+            </label>
+          
+            <input
+              id="confirmar_senha"
+              name="confirmar_senha"
+              type="password"
+              placeholder="Digite novamente a nova senha"
+              minlength="6"
+              maxlength="128"
+              autocomplete="new-password"
+              required
+            >
+          
+            <div
+              style="
+                margin-top:8px;
+                font-size:13px;
+                color:#666;
+                line-height:1.4;
+              "
+            >
+              Utilize pelo menos 6 caracteres.
             </div>
+          
+            <div class="acoes">
+          
+              <button
+                class="btn-enviar"
+                type="submit"
+              >
+                Salvar nova senha
+              </button>
+          
+              <a
+                class="voltar"
+                href="{{ url_for('login') }}"
+              >
+                Voltar ao login
+              </a>
+          
+            </div>
+          
           </form>
         </section>
       </div>
