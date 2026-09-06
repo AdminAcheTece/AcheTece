@@ -1183,6 +1183,180 @@ def _criar_password_reset_token(
 
         raise
 
+# ==============================================================
+# RECUPERAÇÃO DE SENHA — VALIDAÇÃO DO TOKEN SERVER-SIDE
+# ==============================================================
+
+def _buscar_password_reset_token(
+    raw_token: str
+):
+    """
+    Localiza e valida um token de recuperação de senha.
+
+    Retorna:
+        (token_record, None)
+        quando o token é válido.
+
+    Retorna:
+        (None, motivo)
+        quando o token é inválido.
+
+    Regras:
+    - token real nunca é armazenado no banco;
+    - consulta feita pelo SHA-256;
+    - token precisa existir;
+    - token não pode ter sido utilizado;
+    - token precisa estar dentro da validade;
+    - token expirado é invalidado imediatamente.
+    """
+
+    raw_token = (
+        raw_token
+        or ""
+    ).strip()
+
+    if not raw_token:
+
+        return (
+            None,
+            "invalid"
+        )
+
+    try:
+
+        token_hash = _password_reset_token_hash(
+            raw_token
+        )
+
+        token_record = (
+            PasswordResetToken.query
+            .filter(
+                PasswordResetToken.token_hash
+                == token_hash
+            )
+            .first()
+        )
+
+        # ======================================================
+        # TOKEN NÃO EXISTE
+        # ======================================================
+
+        if not token_record:
+
+            return (
+                None,
+                "invalid"
+            )
+
+        # ======================================================
+        # TOKEN JÁ UTILIZADO / INVALIDADO
+        # ======================================================
+
+        if token_record.used_at is not None:
+
+            return (
+                None,
+                "used"
+            )
+
+        now = datetime.utcnow()
+
+        # ======================================================
+        # TOKEN EXPIRADO
+        # ======================================================
+
+        if (
+            not token_record.expires_at
+            or now >= token_record.expires_at
+        ):
+
+            token_record.used_at = now
+
+            db.session.commit()
+
+            return (
+                None,
+                "expired"
+            )
+
+        # ======================================================
+        # TIPO DE CONTA VÁLIDO
+        # ======================================================
+
+        account_type = (
+            token_record.account_type
+            or ""
+        ).strip().lower()
+
+        if account_type not in {
+            "cliente",
+            "malharia",
+        }:
+
+            token_record.used_at = now
+
+            db.session.commit()
+
+            current_app.logger.warning(
+                (
+                    "[SECURITY][PASSWORD_RESET] "
+                    f"Token com account_type inválido. "
+                    f"id={token_record.id}"
+                )
+            )
+
+            return (
+                None,
+                "invalid"
+            )
+
+        # ======================================================
+        # ID DE CONTA VÁLIDO
+        # ======================================================
+
+        try:
+
+            account_id = int(
+                token_record.account_id
+            )
+
+        except Exception:
+
+            account_id = 0
+
+        if account_id <= 0:
+
+            token_record.used_at = now
+
+            db.session.commit()
+
+            return (
+                None,
+                "invalid"
+            )
+
+        # ======================================================
+        # TOKEN VÁLIDO
+        # ======================================================
+
+        return (
+            token_record,
+            None
+        )
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "[SECURITY][PASSWORD_RESET] "
+            "Falha ao validar token de recuperação."
+        )
+
+        return (
+            None,
+            "error"
+        )
 
 # ==============================================================
 # RECUPERAÇÃO DE SENHA — RESOLUÇÃO DA CONTA
@@ -1609,6 +1783,7 @@ def enviar_email_recuperacao(
         )
 
     return True
+
 
 def login_admin_requerido(f):
 
