@@ -4952,6 +4952,50 @@ def _no_cache_on_panel(resp):
     return resp
 
 # ==============================================================
+# ACCESS LOG SEGURO
+# ==============================================================
+#
+# Evita registrar URLs completas ou parâmetros sensíveis.
+#
+# Exemplo seguro:
+#
+# [ACCESS]
+# method=GET
+# endpoint=redefinir_senha
+# status=200
+# ip=...
+#
+# O token presente na URL nunca é escrito por este logger.
+# ==============================================================
+
+@app.after_request
+def _safe_access_log(response):
+
+    try:
+
+        endpoint = (
+            request.endpoint
+            or "unknown"
+        )
+
+        current_app.logger.info(
+            (
+                "[ACCESS] "
+                f"method={request.method} "
+                f"endpoint={endpoint} "
+                f"status={response.status_code} "
+                f"ip={_client_ip()}"
+            )
+        )
+
+    except Exception:
+
+        # Log nunca deve impedir a resposta ao usuário.
+        pass
+
+    return response
+
+# ==============================================================
 # CSP NONCE
 # ==============================================================
 
@@ -4983,6 +5027,47 @@ def _inject_csp_nonce():
     return {
         "csp_nonce": _get_csp_nonce()
     }
+
+
+# ==============================================================
+# PASSWORD RESET — HEADERS DE PRIVACIDADE
+# ==============================================================
+
+@app.after_request
+def _password_reset_privacy_headers(response):
+
+    sensitive_endpoints = {
+        "redefinir_senha",
+        "post_redefinir_senha",
+    }
+
+    if request.endpoint in sensitive_endpoints:
+
+        # O token da URL não deve ser enviado como Referer
+        # para recursos, páginas ou serviços subsequentes.
+        response.headers[
+            "Referrer-Policy"
+        ] = "no-referrer"
+
+        # Páginas que contêm token de recuperação não devem
+        # permanecer armazenadas em caches intermediários.
+        response.headers[
+            "Cache-Control"
+        ] = (
+            "no-store, no-cache, "
+            "must-revalidate, max-age=0"
+        )
+
+        response.headers[
+            "Pragma"
+        ] = "no-cache"
+
+        response.headers[
+            "Expires"
+        ] = "0"
+
+    return response
+    
 
 # ==============================================================
 # HEADERS GLOBAIS DE SEGURANÇA
