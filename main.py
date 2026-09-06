@@ -1456,39 +1456,6 @@ def _resolver_conta_recuperacao(email: str):
 
     return None
 
-# ==============================================================
-# RECUPERAÇÃO DE SENHA — TOKEN LEGADO
-# ==============================================================
-#
-# Mantido temporariamente enquanto concluímos a migração
-# para PasswordResetToken server-side.
-# ==============================================================
-
-def gerar_token(email):
-    """
-    Gera o token temporário de recuperação de senha.
-
-    Este mecanismo será substituído posteriormente pelo fluxo
-    server-side PasswordResetToken.
-    """
-
-    email = (
-        email
-        or ""
-    ).strip().lower()
-
-    if not email:
-        raise ValueError(
-            "E-mail obrigatório para geração do token."
-        )
-
-    return URLSafeTimedSerializer(
-        app.config["SECRET_KEY"]
-    ).dumps(
-        email,
-        salt="recupera-senha"
-    )
-
 
 # ==============================================================
 # RECUPERAÇÃO DE SENHA — ENVIO DO E-MAIL SERVER-SIDE
