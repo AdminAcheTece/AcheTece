@@ -18335,23 +18335,165 @@ def api_cidades():
     uf = request.args.get("uf", "")
     return jsonify(_get_cidades_por_uf(uf))
 
-# --------------------------------------------------------------------
-# Recuperação de senha
-# --------------------------------------------------------------------
-@app.route('/esqueci_senha', methods=['GET', 'POST'])
+
+# ==============================================================
+# RECUPERAÇÃO DE SENHA — CHAVE DE RATE LIMIT POR E-MAIL
+# ==============================================================
+
+def _password_reset_email_rate_key():
+    """
+    Cria a chave utilizada pelo rate limit por endereço de e-mail.
+
+    A regra é aplicada independentemente de o e-mail possuir
+    ou não uma conta, evitando que o próprio rate limit revele
+    a existência de usuários.
+    """
+
+    email = (
+        request.form.get("email")
+        or ""
+    ).strip().lower()
+
+    if email:
+        return (
+            f"password-reset-email:{email[:255]}"
+        )
+
+    return (
+        f"password-reset-ip:{_client_ip()}"
+    )
+
+
+# ==============================================================
+# RECUPERAÇÃO DE SENHA — SOLICITAÇÃO
+# ==============================================================
+
+@app.get(
+    "/esqueci_senha",
+    endpoint="esqueci_senha"
+)
 def esqueci_senha():
-    if request.method == 'POST':
-        email = (request.form.get('email') or '').strip().lower()
-        empresa = Empresa.query.filter_by(email=email).first()
-        if empresa:
-            try:
-                enviar_email_recuperacao(email, empresa.nome)
-                return render_template('esqueci_senha.html', mensagem='📧 Instruções enviadas para seu e-mail.')
-            except Exception as e:
-                app.logger.exception(f"Erro ao enviar e-mail: {e}")
-                return render_template('esqueci_senha.html', erro='Erro ao enviar e-mail.')
-        return render_template('esqueci_senha.html', erro='E-mail não encontrado.')
-    return render_template('esqueci_senha.html')
+    """
+    Exibe o formulário público de recuperação de senha.
+
+    Nenhuma consulta de conta é realizada no GET.
+    """
+
+    return render_template(
+        "esqueci_senha.html"
+    )
+
+
+@app.post(
+    "/esqueci_senha",
+    endpoint="post_esqueci_senha"
+)
+@limiter.limit(
+    "5 per 30 minutes"
+)
+@limiter.limit(
+    "5 per 30 minutes",
+    key_func=_password_reset_email_rate_key
+)
+def post_esqueci_senha():
+    """
+    Processa uma solicitação de recuperação de senha.
+
+    Segurança:
+    - CSRF global;
+    - limite por IP;
+    - limite adicional por e-mail;
+    - comprador e malharia utilizam o mesmo fluxo;
+    - resposta pública não revela se a conta existe;
+    - falha de envio também não altera a resposta pública.
+    """
+
+    # ==========================================================
+    # NORMALIZAÇÃO
+    # ==========================================================
+
+    email = (
+        request.form.get("email")
+        or ""
+    ).strip().lower()
+
+    # ==========================================================
+    # VALIDAÇÃO BÁSICA DO FORMATO
+    #
+    # Isto não revela existência de conta.
+    # Apenas rejeita entrada evidentemente inválida.
+    # ==========================================================
+
+    email_valido = (
+        bool(email)
+        and len(email) <= 255
+        and re.fullmatch(
+            r"[^@\s]+@[^@\s]+\.[^@\s]+",
+            email
+        )
+        is not None
+    )
+
+    if not email_valido:
+
+        return render_template(
+            "esqueci_senha.html",
+            erro=(
+                "Informe um endereço de e-mail válido."
+            )
+        )
+
+    # ==========================================================
+    # TENTA GERAR E ENVIAR A RECUPERAÇÃO
+    #
+    # IMPORTANTE:
+    # O resultado não é revelado ao usuário.
+    # ==========================================================
+
+    try:
+
+        enviado = enviar_email_recuperacao(
+            email
+        )
+
+        if not enviado:
+
+            current_app.logger.info(
+                (
+                    "[SECURITY][PASSWORD_RESET_REQUEST] "
+                    "Solicitação concluída sem envio público. "
+                    f"ip={_client_ip()}"
+                )
+            )
+
+    except Exception:
+
+        # ------------------------------------------------------
+        # Mesmo uma falha interna de envio não pode revelar
+        # ao navegador se a conta existe.
+        # ------------------------------------------------------
+
+        current_app.logger.exception(
+            (
+                "[SECURITY][PASSWORD_RESET_REQUEST] "
+                "Falha interna durante solicitação. "
+                f"ip={_client_ip()}"
+            )
+        )
+
+    # ==========================================================
+    # RESPOSTA GENÉRICA — ANTI-ENUMERAÇÃO
+    # ==========================================================
+
+    return render_template(
+        "esqueci_senha.html",
+        mensagem=(
+            "Se houver uma conta associada a este e-mail, "
+            "você receberá as instruções para redefinir "
+            "sua senha."
+        )
+    )
+    
 
 # ==============================================================
 # RECUPERAÇÃO DE SENHA — REDEFINIÇÃO
