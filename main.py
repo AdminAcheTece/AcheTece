@@ -19347,8 +19347,7 @@ def checkout():
     success_url = f"{base}/pagamento_aprovado?plano={plano}"
     failure_url = f"{base}/pagamento_erro?plano={plano}"
     pending_url = f"{base}/pagamento_pendente?plano={plano}"
-    notify_url  = f"{base}/webhook"  # se sua rota for /webhook/mercadopago, troque aqui
-
+    
     ext_ref = f"achetece:{empresa.id}:{uuid.uuid4().hex}"
 
     preference_data = {
@@ -19365,7 +19364,6 @@ def checkout():
             "pending": pending_url
         },
         "auto_return": "approved",
-        "notification_url": notify_url,
         "external_reference": ext_ref,
         "statement_descriptor": "AcheTece"
     }
