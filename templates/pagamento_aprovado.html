@@ -242,10 +242,27 @@
 
         <h1>Pagamento aprovado</h1>
 
-        <p>
-          Seu pagamento foi confirmado com sucesso!<br>
-          Estamos validando seu acesso. Isso leva só alguns segundos.
-        </p>
+        {% if acesso_liberado %}
+
+          <p>
+            <strong>Seu pagamento foi confirmado com sucesso!</strong>
+          </p>
+        
+          <p>
+            Seu acesso ao AcheTece já está liberado.
+          </p>
+        
+        {% else %}
+        
+          <p>
+            <strong>Seu pagamento foi confirmado.</strong>
+          </p>
+        
+          <p>
+            Estamos concluindo a liberação do seu acesso.
+          </p>
+        
+        {% endif %}
 
         <a href="{{ url_for('login') }}" class="botao-acao" id="cta-login">Ir para o login</a>
 
@@ -307,37 +324,34 @@
     })();
   </script>
 
-  <!-- ===== JS: Polling do status (mantido do seu código) ===== -->
+  <!-- ===== JS: redirecionamento pós-pagamento ===== -->
   <script nonce="{{ csp_nonce }}">
     (function () {
-      const urlParams = new URLSearchParams(window.location.search);
-      const ext = urlParams.get('ext');
-      const maxTries = 40; // ~ 2-3 minutos
-      let tries = 0;
-
-      async function checarStatus() {
-        try {
-          const qs = ext ? ("?ext=" + encodeURIComponent(ext)) : "";
-          const res = await fetch("/api/pagamento_status" + qs, { cache: "no-store" });
-          if (res.ok) {
-            const js = await res.json();
-            if (js && js.status === "ativo") {
-              window.location.href = "/login";
-              return;
-            }
-          }
-        } catch (e) {}
-
-        tries++;
-        if (tries < maxTries) {
-          setTimeout(checarStatus, 4000);
-        } else {
-          const hint = document.getElementById("hint");
-          if (hint) hint.textContent = "Se não redirecionar, clique em “Ir para o login”.";
+  
+      const acessoLiberado = {{ acesso_liberado | tojson }};
+      const loginUrl = {{ url_for('login') | tojson }};
+  
+      const hint = document.getElementById("hint");
+  
+      if (acessoLiberado) {
+  
+        if (hint) {
+          hint.textContent =
+            "Seu acesso está liberado. Você será direcionado para o login.";
         }
+  
+        setTimeout(function () {
+          window.location.replace(loginUrl);
+        }, 3500);
+  
+        return;
       }
-
-      setTimeout(checarStatus, 2000);
+  
+      if (hint) {
+        hint.textContent =
+          "Seu pagamento foi confirmado. Se o acesso ainda não estiver disponível, aguarde alguns instantes e entre novamente.";
+      }
+  
     })();
   </script>
 
