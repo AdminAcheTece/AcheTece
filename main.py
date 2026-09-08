@@ -18504,33 +18504,31 @@ def _mp_sdk():
 
 def _validar_assinatura_webhook_mp(req):
     """
-    Valida a autenticidade de uma notificação Webhook
-    do Mercado Pago utilizando HMAC-SHA256.
+    Valida a assinatura HMAC-SHA256 enviada pelo Mercado Pago.
 
-    Compatível com a versão atual do projeto:
-    mercadopago==2.3.0
+    Para Webhooks de pagamento do AcheTece exigimos:
+    - MP_WEBHOOK_SECRET configurado;
+    - x-signature;
+    - x-request-id;
+    - data.id na query string;
+    - ts e v1 dentro de x-signature.
 
-    Segurança:
-    - utiliza MP_WEBHOOK_SECRET somente pelo Environment;
-    - valida x-signature;
-    - utiliza x-request-id;
-    - utiliza data.id da query string quando presente;
-    - comparação em tempo constante com hmac.compare_digest;
-    - nunca registra a chave secreta ou a assinatura completa.
+    Manifest:
+        id:<data.id>;
+        request-id:<x-request-id>;
+        ts:<ts>;
 
-    Retorna:
-        (True, None)
-        (False, motivo)
+    O segredo e a assinatura nunca são escritos nos logs.
     """
+
+    # ==========================================================
+    # SEGREDO
+    # ==========================================================
 
     secret = (
         os.getenv("MP_WEBHOOK_SECRET")
         or ""
     ).strip()
-
-    # ==========================================================
-    # FAIL CLOSED — SEGREDO NÃO CONFIGURADO
-    # ==========================================================
 
     if not secret:
 
@@ -18558,6 +18556,20 @@ def _validar_assinatura_webhook_mp(req):
         or ""
     ).strip()
 
+    # ==========================================================
+    # DATA.ID ASSINADO
+    #
+    # Para nosso Webhook de pagamentos, o ID utilizado na
+    # assinatura deve ser obrigatoriamente o recebido na query:
+    #
+    # ?data.id=123456&type=payment
+    # ==========================================================
+
+    data_id = (
+        req.args.get("data.id")
+        or ""
+    ).strip()
+
     if not x_signature:
 
         return (
@@ -18565,15 +18577,29 @@ def _validar_assinatura_webhook_mp(req):
             "signature_missing"
         )
 
+    if not x_request_id:
+
+        return (
+            False,
+            "request_id_missing"
+        )
+
+    if not data_id:
+
+        return (
+            False,
+            "data_id_missing"
+        )
+
     # ==========================================================
-    # EXTRAI ts E v1 DO x-signature
+    # EXTRAI ts E v1
     #
     # Exemplo:
-    # ts=1704908010,v1=abc123...
+    # ts=1742505638683,v1=abcdef...
     # ==========================================================
 
-    ts = None
-    v1 = None
+    ts = ""
+    v1 = ""
 
     for part in x_signature.split(","):
 
@@ -18585,8 +18611,16 @@ def _validar_assinatura_webhook_mp(req):
         if len(key_value) != 2:
             continue
 
-        key = key_value[0].strip().lower()
-        value = key_value[1].strip()
+        key = (
+            key_value[0]
+            .strip()
+            .lower()
+        )
+
+        value = (
+            key_value[1]
+            .strip()
+        )
 
         if key == "ts":
             ts = value
@@ -18601,60 +18635,26 @@ def _validar_assinatura_webhook_mp(req):
             "signature_invalid"
         )
 
-    # ==========================================================
-    # data.id
-    #
-    # Para a assinatura, o Mercado Pago utiliza o data.id
-    # recebido pela URL/query string.
-    # ==========================================================
-
-    data_id = (
-        req.args.get("data.id")
-        or ""
-    ).strip()
-
-    # Documentação do Mercado Pago determina lowercase
-    # quando data.id for alfanumérico.
-    if data_id:
-
-        data_id = data_id.lower()
-
-    # ==========================================================
-    # MONTA O MANIFEST
-    #
-    # Campos ausentes são omitidos, conforme especificação MP.
-    # ==============================================================
-
-    manifest_parts = []
-
-    if data_id:
-
-        manifest_parts.append(
-            f"id:{data_id};"
-        )
-
-    if x_request_id:
-
-        manifest_parts.append(
-            f"request-id:{x_request_id};"
-        )
-
-    if ts:
-
-        manifest_parts.append(
-            f"ts:{ts};"
-        )
-
-    manifest = "".join(
-        manifest_parts
-    )
-
-    if not manifest:
+    # Timestamp deve ser numérico.
+    if not ts.isdigit():
 
         return (
             False,
-            "manifest_invalid"
+            "timestamp_invalid"
         )
+
+    # Normalização recomendada para identificadores.
+    data_id = data_id.lower()
+
+    # ==========================================================
+    # MANIFEST
+    # ==========================================================
+
+    manifest = (
+        f"id:{data_id};"
+        f"request-id:{x_request_id};"
+        f"ts:{ts};"
+    )
 
     # ==========================================================
     # HMAC-SHA256
@@ -18670,12 +18670,12 @@ def _validar_assinatura_webhook_mp(req):
     # COMPARAÇÃO EM TEMPO CONSTANTE
     # ==========================================================
 
-    signature_ok = hmac.compare_digest(
+    assinatura_valida = hmac.compare_digest(
         expected_signature,
         v1
     )
 
-    if not signature_ok:
+    if not assinatura_valida:
 
         return (
             False,
@@ -18689,26 +18689,87 @@ def _validar_assinatura_webhook_mp(req):
 
 def _extract_payment_id(req):
     """
-    MP pode mandar o payment_id no JSON OU na querystring.
-    A tua tela mostra action=payment.created, mas o id pode vir em args.
+    Extrai o payment_id de forma vinculada ao valor utilizado
+    na assinatura do Mercado Pago.
+
+    Segurança:
+    - prioriza obrigatoriamente request.args["data.id"];
+    - compara com payload["data"]["id"], quando presente;
+    - rejeita divergência entre query e body;
+    - nunca processa um ID diferente daquele coberto pela
+      assinatura HMAC.
     """
-    payload = req.get_json(silent=True) or {}
 
-    # JSON: {"data":{"id":...}}
-    if isinstance(payload, dict):
-        data = payload.get("data") or {}
-        if isinstance(data, dict) and data.get("id"):
-            return str(data["id"]), payload
+    payload = (
+        req.get_json(
+            silent=True
+        )
+        or {}
+    )
 
-    # Querystring: ?type=payment&data.id=123
-    if req.args.get("type") == "payment" and req.args.get("data.id"):
-        return str(req.args.get("data.id")), payload
+    # ==========================================================
+    # ID ASSINADO — QUERY STRING
+    # ==========================================================
 
-    # Querystring: ?topic=payment&id=123
-    if req.args.get("topic") == "payment" and req.args.get("id"):
-        return str(req.args.get("id")), payload
+    query_payment_id = (
+        req.args.get("data.id")
+        or ""
+    ).strip()
 
-    return None, payload
+    if not query_payment_id:
+
+        return (
+            None,
+            payload
+        )
+
+    # ==========================================================
+    # ID PRESENTE NO BODY — CONFERÊNCIA
+    # ==========================================================
+
+    body_payment_id = ""
+
+    if isinstance(
+        payload,
+        dict
+    ):
+
+        data = (
+            payload.get("data")
+            or {}
+        )
+
+        if isinstance(
+            data,
+            dict
+        ):
+
+            body_payment_id = str(
+                data.get("id")
+                or ""
+            ).strip()
+
+    # Se o body também informar ID, ele deve ser exatamente
+    # o mesmo da query assinada.
+    if (
+        body_payment_id
+        and body_payment_id != query_payment_id
+    ):
+
+        current_app.logger.warning(
+            "[SECURITY][MP_WEBHOOK] "
+            "Divergência entre data.id da query e do body."
+        )
+
+        return (
+            None,
+            payload
+        )
+
+    return (
+        query_payment_id,
+        payload
+    )
 
 def _mp_get_payment(payment_id: str) -> dict:
     sdk = _mp_sdk()
@@ -18718,17 +18779,90 @@ def _mp_get_payment(payment_id: str) -> dict:
         raise RuntimeError(f"Não consegui obter payment.response. Resp={resp}")
     return payment
 
-def _parse_empresa_id_from_external_reference(ext_ref: str):
-    # teu ext_ref = "achetece:{empresa.id}:{uuid}"
+def _parse_empresa_id_from_external_reference(
+    ext_ref: str
+):
+    """
+    Extrai Empresa.id de um external_reference criado
+    exclusivamente pelo AcheTece.
+
+    Formato obrigatório:
+
+        achetece:<empresa_id>:<uuid_hex>
+
+    Exemplo:
+
+        achetece:4:d73f2b88132e4aecba8ca6f74589ef19
+    """
+
+    ext_ref = (
+        ext_ref
+        or ""
+    ).strip()
+
     if not ext_ref:
+
         return None
-    parts = str(ext_ref).split(":")
-    if len(parts) >= 2 and parts[0] == "achetece":
-        try:
-            return int(parts[1])
-        except:
-            return None
-    return None
+
+    parts = ext_ref.split(":")
+
+    # Formato exato:
+    # achetece : empresa_id : uuid_hex
+    if len(parts) != 3:
+
+        return None
+
+    if parts[0] != "achetece":
+
+        return None
+
+    # ==========================================================
+    # EMPRESA.ID
+    # ==========================================================
+
+    try:
+
+        empresa_id = int(
+            parts[1]
+        )
+
+    except Exception:
+
+        return None
+
+    if empresa_id <= 0:
+
+        return None
+
+    # ==========================================================
+    # NONCE UUID HEX
+    #
+    # uuid.uuid4().hex gera exatamente 32 caracteres hex.
+    # ==========================================================
+
+    nonce = (
+        parts[2]
+        or ""
+    ).strip()
+
+    if len(nonce) != 32:
+
+        return None
+
+    caracteres_hex = (
+        "0123456789"
+        "abcdef"
+        "ABCDEF"
+    )
+
+    if any(
+        caractere not in caracteres_hex
+        for caractere in nonce
+    ):
+
+        return None
+
+    return empresa_id
 
 def _send_email(to_email: str, subject: str, text_body: str, html_body: str):
     # Aceita tanto MAIL_* quanto SMTP_*
@@ -18813,56 +18947,228 @@ def _make_magic_link(empresa_id: int) -> str:
     base = _public_base_url()  # você já usa essa função
     return f"{base}/magic/{token}"
 
-def _processar_pagamento(payment_id: str):
+def _processar_pagamento(
+    payment_id: str
+):
     """
-    Consulta no MP e atualiza Empresa.status_pagamento / data_pagamento.
-    Envia e-mail quando virar aprovado.
+    Consulta o pagamento diretamente no Mercado Pago e atualiza
+    a malharia vinculada pelo external_reference do AcheTece.
+
+    Segurança:
+    - nunca confia no status recebido pelo webhook;
+    - consulta novamente a API do Mercado Pago;
+    - exige external_reference válido;
+    - não associa pagamentos por e-mail do pagador;
+    - processamento de aprovação é idempotente;
+    - webhook repetido não altera novamente data_pagamento;
+    - webhook repetido não dispara novo e-mail.
     """
-    payment = _mp_get_payment(payment_id)
 
-    status = (payment.get("status") or "").lower()          # approved, pending, in_process...
-    detail = (payment.get("status_detail") or "").lower()
-    ext_ref = payment.get("external_reference") or ""
-    payer_email = (payment.get("payer") or {}).get("email")
+    # ==========================================================
+    # PAYMENT ID
+    # ==========================================================
 
-    app.logger.info(f"[MP] payment_id={payment_id} status={status} detail={detail} ext_ref={ext_ref}")
+    payment_id = (
+        str(
+            payment_id
+            or ""
+        )
+        .strip()
+    )
 
-    empresa_id = _parse_empresa_id_from_external_reference(ext_ref)
+    if (
+        not payment_id
+        or not payment_id.isdigit()
+    ):
 
-    # fallback por e-mail do pagador
-    empresa = None
-    if empresa_id:
-        empresa = Empresa.query.get(empresa_id)
-    if not empresa and payer_email:
-        empresa = Empresa.query.filter(Empresa.email.ilike(payer_email)).first()
+        raise ValueError(
+            "payment_id inválido."
+        )
 
-    if not empresa:
-        raise RuntimeError("Não encontrei a Empresa para este pagamento (sem external_reference e sem match por email).")
+    # ==========================================================
+    # CONSULTA O MERCADO PAGO
+    #
+    # Não confia no status recebido no webhook.
+    # ==========================================================
 
-    # Só envia e-mail quando houver transição para ativo
-    status_atual = (empresa.status_pagamento or "").strip().lower()
+    payment = _mp_get_payment(
+        payment_id
+    )
+
+    if not isinstance(
+        payment,
+        dict
+    ):
+
+        raise RuntimeError(
+            "Resposta inválida do Mercado Pago."
+        )
+
+    status = (
+        payment.get("status")
+        or ""
+    ).strip().lower()
+
+    detail = (
+        payment.get("status_detail")
+        or ""
+    ).strip().lower()
+
+    ext_ref = (
+        payment.get(
+            "external_reference"
+        )
+        or ""
+    ).strip()
+
+    current_app.logger.info(
+        (
+            "[MP] "
+            f"payment_id={payment_id} "
+            f"status={status} "
+            f"detail={detail}"
+        )
+    )
+
+    # ==========================================================
+    # EXTERNAL REFERENCE
+    # ==========================================================
+
+    empresa_id = (
+        _parse_empresa_id_from_external_reference(
+            ext_ref
+        )
+    )
+
+    if not empresa_id:
+
+        raise RuntimeError(
+            "Pagamento sem external_reference válido do AcheTece."
+        )
+
+    empresa = db.session.get(
+        Empresa,
+        empresa_id
+    )
+
+    if empresa is None:
+
+        raise RuntimeError(
+            "Empresa vinculada ao pagamento não encontrada."
+        )
+
+    # ==========================================================
+    # STATUS ATUAL
+    # ==========================================================
+
+    status_atual = (
+        empresa.status_pagamento
+        or ""
+    ).strip().lower()
+
+    # ==========================================================
+    # PAGAMENTO APROVADO
+    # ==========================================================
 
     if status == "approved":
-        status_atual = (empresa.status_pagamento or "").strip().lower()
-    
-        empresa.status_pagamento = "ativo"
-        empresa.data_pagamento = datetime.utcnow()
-        db.session.commit()
-    
-        # envia e-mail só na transição (evita spam por webhooks repetidos)
-        if status_atual != "ativo":
-            link = _make_magic_link(empresa.id)
-            html = _email_ativacao_html(empresa, link)
-            _send_email(empresa.email, "Pagamento aprovado - AcheTece", html)
-    
-        return {"ok": True, "empresa_id": empresa.id, "ativou": True}
 
-    # outros status: mantém como pendente (mas atualiza se quiser)
+        # ------------------------------------------------------
+        # JÁ ESTAVA ATIVO
+        #
+        # Webhooks podem ser repetidos.
+        # Não atualizamos data_pagamento nem reenviamos e-mail.
+        # ------------------------------------------------------
+
+        if status_atual == "ativo":
+
+            return {
+                "ok": True,
+                "empresa_id": empresa.id,
+                "ativou": False,
+                "status": "approved",
+                "idempotente": True,
+            }
+
+        # ------------------------------------------------------
+        # TRANSIÇÃO PARA ATIVO
+        # ------------------------------------------------------
+
+        empresa.status_pagamento = (
+            "ativo"
+        )
+
+        empresa.data_pagamento = (
+            datetime.utcnow()
+        )
+
+        db.session.commit()
+
+        # ------------------------------------------------------
+        # E-MAIL
+        #
+        # A ativação já foi confirmada no banco.
+        # Falha no e-mail não deve desfazer o pagamento.
+        # ------------------------------------------------------
+
+        try:
+
+            link = _make_magic_link(
+                empresa.id
+            )
+
+            html = _email_ativacao_html(
+                empresa,
+                link
+            )
+
+            _send_email(
+                empresa.email,
+                "Pagamento aprovado - AcheTece",
+                html
+            )
+
+        except Exception:
+
+            current_app.logger.exception(
+                (
+                    "[MP] Pagamento aprovado, "
+                    "mas falhou o envio do e-mail "
+                    f"para empresa_id={empresa.id}."
+                )
+            )
+
+        return {
+            "ok": True,
+            "empresa_id": empresa.id,
+            "ativou": True,
+            "status": "approved",
+            "idempotente": False,
+        }
+
+    # ==========================================================
+    # DEMAIS STATUS
+    #
+    # Uma empresa já ativa nunca é rebaixada para pendente por
+    # webhook posterior.
+    # ==========================================================
+
     if status_atual != "ativo":
-        empresa.status_pagamento = "pendente"
-        db.session.commit()
 
-    return {"ok": True, "empresa_id": empresa.id, "ativou": False, "status": status}
+        if status_atual != "pendente":
+
+            empresa.status_pagamento = (
+                "pendente"
+            )
+
+            db.session.commit()
+
+    return {
+        "ok": True,
+        "empresa_id": empresa.id,
+        "ativou": False,
+        "status": status,
+        "idempotente": True,
+    }
 
 @app.route('/checkout')
 def checkout():
@@ -18957,32 +19263,177 @@ def pagamento_erro():
 def pagamento_pendente():
     return render_template('pagamento_pendente.html')
 
+# ==============================================================
+# MERCADO PAGO — WEBHOOK
+# ==============================================================
+
 @app.route(
     "/webhook",
-    methods=["GET", "POST"]
+    methods=[
+        "GET",
+        "POST",
+    ]
 )
 @csrf.exempt
+@limiter.exempt
 def webhook():
+    """
+    Webhook do Mercado Pago.
+
+    GET:
+        health check simples.
+
+    POST:
+        1. valida assinatura;
+        2. aceita somente tópico payment;
+        3. extrai o payment_id vinculado à assinatura;
+        4. consulta o pagamento novamente no Mercado Pago;
+        5. processa a empresa pelo external_reference.
+
+    Não registra payload, assinatura ou query string completa.
+    """
+
+    # ==========================================================
+    # HEALTH CHECK
+    # ==========================================================
+
     if request.method == "GET":
-        return jsonify({"ok": True, "hint": "webhook ativo"}), 200
 
-    payment_id, payload = _extract_payment_id(request)
+        return jsonify({
+            "ok": True,
+            "webhook": "ativo"
+        }), 200
 
-    # loga args + payload (isso é essencial!)
-    app.logger.info(f"[WEBHOOK] args={dict(request.args)} payload={payload}")
+    # ==========================================================
+    # ASSINATURA
+    # ==========================================================
+
+    assinatura_ok, motivo = (
+        _validar_assinatura_webhook_mp(
+            request
+        )
+    )
+
+    if not assinatura_ok:
+
+        current_app.logger.warning(
+            (
+                "[SECURITY][MP_WEBHOOK] "
+                "Notificação rejeitada. "
+                f"motivo={motivo} "
+                f"ip={_client_ip()}"
+            )
+        )
+
+        return jsonify({
+            "ok": False
+        }), 401
+
+    # ==========================================================
+    # PAYLOAD
+    # ==========================================================
+
+    payload = (
+        request.get_json(
+            silent=True
+        )
+        or {}
+    )
+
+    if not isinstance(
+        payload,
+        dict
+    ):
+
+        payload = {}
+
+    # ==========================================================
+    # TIPO DA NOTIFICAÇÃO
+    # ==========================================================
+
+    topic = (
+        request.args.get("type")
+        or payload.get("type")
+        or ""
+    ).strip().lower()
+
+    # Este endpoint do AcheTece processa somente pagamentos.
+    if topic != "payment":
+
+        current_app.logger.info(
+            (
+                "[MP_WEBHOOK] "
+                f"Tópico ignorado: {topic or 'unknown'}"
+            )
+        )
+
+        return jsonify({
+            "ok": True,
+            "ignored": True
+        }), 200
+
+    # ==========================================================
+    # PAYMENT ID
+    # ==========================================================
+
+    payment_id, _ = (
+        _extract_payment_id(
+            request
+        )
+    )
 
     if not payment_id:
-        app.logger.warning("[WEBHOOK] payment_id ausente. Vou responder 200 mesmo assim.")
-        return jsonify({"ok": True, "ignored": True}), 200
+
+        current_app.logger.warning(
+            "[SECURITY][MP_WEBHOOK] "
+            "payment_id ausente ou inconsistente."
+        )
+
+        return jsonify({
+            "ok": False
+        }), 400
+
+    # ==========================================================
+    # PROCESSAMENTO
+    # ==========================================================
 
     try:
-        result = _processar_pagamento(payment_id)
-        app.logger.info(f"[WEBHOOK] processado: {result}")
-        return jsonify(result), 200
-    except Exception as e:
-        app.logger.exception(f"[WEBHOOK] erro payment_id={payment_id}: {e}")
-        # 200 evita loop de reenvio agressivo
-        return jsonify({"ok": True, "error": str(e)}), 200
+
+        result = _processar_pagamento(
+            payment_id
+        )
+
+        current_app.logger.info(
+            (
+                "[MP_WEBHOOK] "
+                f"payment_id={payment_id} "
+                f"empresa_id={result.get('empresa_id')} "
+                f"ativou={result.get('ativou')} "
+                f"status={result.get('status')}"
+            )
+        )
+
+        return jsonify({
+            "ok": True
+        }), 200
+
+    except Exception:
+
+        current_app.logger.exception(
+            (
+                "[MP_WEBHOOK] "
+                "Falha ao processar pagamento "
+                f"payment_id={payment_id}."
+            )
+        )
+
+        # Não retornamos detalhes internos.
+        #
+        # O erro 500 permite que o Mercado Pago tente novamente
+        # em caso de falha temporária de API ou banco.
+        return jsonify({
+            "ok": False
+        }), 500
 
 @app.route("/magic/<token>")
 def magic_login(token):
