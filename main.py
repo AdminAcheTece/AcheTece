@@ -18498,6 +18498,195 @@ def _mp_sdk():
         raise RuntimeError("MP_ACCESS_TOKEN não definido.")
     return mercadopago.SDK(token)
 
+# ==============================================================
+# MERCADO PAGO — VALIDAÇÃO DA ASSINATURA DO WEBHOOK
+# ==============================================================
+
+def _validar_assinatura_webhook_mp(req):
+    """
+    Valida a autenticidade de uma notificação Webhook
+    do Mercado Pago utilizando HMAC-SHA256.
+
+    Compatível com a versão atual do projeto:
+    mercadopago==2.3.0
+
+    Segurança:
+    - utiliza MP_WEBHOOK_SECRET somente pelo Environment;
+    - valida x-signature;
+    - utiliza x-request-id;
+    - utiliza data.id da query string quando presente;
+    - comparação em tempo constante com hmac.compare_digest;
+    - nunca registra a chave secreta ou a assinatura completa.
+
+    Retorna:
+        (True, None)
+        (False, motivo)
+    """
+
+    secret = (
+        os.getenv("MP_WEBHOOK_SECRET")
+        or ""
+    ).strip()
+
+    # ==========================================================
+    # FAIL CLOSED — SEGREDO NÃO CONFIGURADO
+    # ==========================================================
+
+    if not secret:
+
+        current_app.logger.error(
+            "[SECURITY][MP_WEBHOOK] "
+            "MP_WEBHOOK_SECRET não configurado."
+        )
+
+        return (
+            False,
+            "secret_missing"
+        )
+
+    # ==========================================================
+    # HEADERS
+    # ==========================================================
+
+    x_signature = (
+        req.headers.get("x-signature")
+        or ""
+    ).strip()
+
+    x_request_id = (
+        req.headers.get("x-request-id")
+        or ""
+    ).strip()
+
+    if not x_signature:
+
+        return (
+            False,
+            "signature_missing"
+        )
+
+    # ==========================================================
+    # EXTRAI ts E v1 DO x-signature
+    #
+    # Exemplo:
+    # ts=1704908010,v1=abc123...
+    # ==========================================================
+
+    ts = None
+    v1 = None
+
+    for part in x_signature.split(","):
+
+        key_value = part.split(
+            "=",
+            1
+        )
+
+        if len(key_value) != 2:
+            continue
+
+        key = key_value[0].strip().lower()
+        value = key_value[1].strip()
+
+        if key == "ts":
+            ts = value
+
+        elif key == "v1":
+            v1 = value
+
+    if not ts or not v1:
+
+        return (
+            False,
+            "signature_invalid"
+        )
+
+    # ==========================================================
+    # data.id
+    #
+    # Para a assinatura, o Mercado Pago utiliza o data.id
+    # recebido pela URL/query string.
+    # ==========================================================
+
+    data_id = (
+        req.args.get("data.id")
+        or ""
+    ).strip()
+
+    # Documentação do Mercado Pago determina lowercase
+    # quando data.id for alfanumérico.
+    if data_id:
+
+        data_id = data_id.lower()
+
+    # ==========================================================
+    # MONTA O MANIFEST
+    #
+    # Campos ausentes são omitidos, conforme especificação MP.
+    # ==============================================================
+
+    manifest_parts = []
+
+    if data_id:
+
+        manifest_parts.append(
+            f"id:{data_id};"
+        )
+
+    if x_request_id:
+
+        manifest_parts.append(
+            f"request-id:{x_request_id};"
+        )
+
+    if ts:
+
+        manifest_parts.append(
+            f"ts:{ts};"
+        )
+
+    manifest = "".join(
+        manifest_parts
+    )
+
+    if not manifest:
+
+        return (
+            False,
+            "manifest_invalid"
+        )
+
+    # ==========================================================
+    # HMAC-SHA256
+    # ==========================================================
+
+    expected_signature = hmac.new(
+        secret.encode("utf-8"),
+        manifest.encode("utf-8"),
+        hashlib.sha256
+    ).hexdigest()
+
+    # ==========================================================
+    # COMPARAÇÃO EM TEMPO CONSTANTE
+    # ==========================================================
+
+    signature_ok = hmac.compare_digest(
+        expected_signature,
+        v1
+    )
+
+    if not signature_ok:
+
+        return (
+            False,
+            "signature_mismatch"
+        )
+
+    return (
+        True,
+        None
+    )
+
 def _extract_payment_id(req):
     """
     MP pode mandar o payment_id no JSON OU na querystring.
