@@ -4306,6 +4306,31 @@ otp_send_limit = limiter.shared_limit(
 )
 
 # ==============================================================
+# RATE LIMIT — COMPRADOR AUTENTICADO
+# ==============================================================
+
+def _cliente_rate_limit_key():
+    """
+    Usa o ID do comprador autenticado como chave de rate limit.
+
+    Se não houver sessão válida, utiliza o IP como fallback.
+    """
+
+    user_id = session.get(
+        "user_id"
+    )
+
+    if user_id:
+
+        return (
+            f"cliente:{user_id}"
+        )
+
+    return (
+        f"ip:{_client_ip()}"
+    )
+
+# ==============================================================
 # TRATAMENTO GLOBAL — HTTP 429 TOO MANY REQUESTS
 # ==============================================================
 
@@ -5333,38 +5358,346 @@ def _to_int(s):
     except Exception:
         return None
 
+# ==============================================================
+# ANALYTICS — IDENTIFICADOR DE SESSÃO INDEPENDENTE
+# ==============================================================
+
+def _analytics_session_id():
+    """
+    Retorna um identificador anônimo destinado exclusivamente
+    aos eventos analíticos do AcheTece.
+
+    Segurança:
+    - nunca utiliza o cookie Flask de autenticação;
+    - nunca grava request.cookies["session"] no banco;
+    - identificador aleatório armazenado dentro da sessão Flask;
+    - tamanho limitado.
+    """
+
+    analytics_sid = (
+        session.get("_analytics_sid")
+        or ""
+    ).strip()
+
+    if analytics_sid:
+        return analytics_sid[:64]
+
+    analytics_sid = secrets.token_urlsafe(
+        18
+    )
+
+    session["_analytics_sid"] = (
+        analytics_sid
+    )
+
+    session.modified = True
+
+    return analytics_sid[:64]
+
+
+# ==============================================================
+# ANALYTICS — REGISTRO DE EVENTOS
+# ==============================================================
+
 @app.post("/api/track")
 @csrf.exempt
+@limiter.limit(
+    "300 per minute"
+)
+@limiter.limit(
+    "10000 per day"
+)
 def api_track():
-    data = request.get_json(silent=True) or {}
-    event      = data.get("event")
-    company_id = data.get("company_id")
-    tear_id    = data.get("tear_id")
-    session_id = data.get("session_id") or (session.get("_sid") or request.cookies.get("session") or "")
-    meta       = data.get("meta") or {}
+    """
+    Registra eventos analíticos públicos do AcheTece.
 
-    if event not in ALLOWED_EVENTS or not company_id:
-        return jsonify({"ok": False, "error": "bad event/company"}), 400
+    Proteções:
+    - CSRF exempt somente porque é endpoint técnico de analytics;
+    - rate limit por IP;
+    - payload máximo específico;
+    - somente JSON;
+    - evento precisa pertencer a ALLOWED_EVENTS;
+    - empresa precisa existir;
+    - tear, quando informado, precisa existir e pertencer à empresa;
+    - meta precisa ser objeto JSON e ter tamanho limitado;
+    - nunca persiste cookie de autenticação.
+    """
+
+    # ==========================================================
+    # LIMITE ESPECÍFICO DO PAYLOAD
+    # ==========================================================
+
+    max_payload_bytes = (
+        16 * 1024
+    )
+
+    content_length = (
+        request.content_length
+        or 0
+    )
+
+    if content_length > max_payload_bytes:
+
+        return jsonify({
+            "ok": False,
+            "error": "payload too large"
+        }), 413
+
+    # ==========================================================
+    # EXIGE JSON
+    # ==========================================================
+
+    if not request.is_json:
+
+        return jsonify({
+            "ok": False,
+            "error": "json required"
+        }), 415
+
+    data = request.get_json(
+        silent=True
+    )
+
+    if not isinstance(
+        data,
+        dict
+    ):
+
+        return jsonify({
+            "ok": False,
+            "error": "invalid json"
+        }), 400
+
+    # ==========================================================
+    # EVENTO
+    # ==========================================================
+
+    event = (
+        data.get("event")
+        or ""
+    ).strip()
+
+    if event not in ALLOWED_EVENTS:
+
+        return jsonify({
+            "ok": False,
+            "error": "invalid event"
+        }), 400
+
+    # ==========================================================
+    # EMPRESA
+    # ==========================================================
+
+    company_id_raw = data.get(
+        "company_id"
+    )
 
     try:
+
+        company_id = int(
+            company_id_raw
+        )
+
+    except Exception:
+
+        company_id = 0
+
+    if company_id <= 0:
+
+        return jsonify({
+            "ok": False,
+            "error": "invalid company"
+        }), 400
+
+    empresa = db.session.get(
+        Empresa,
+        company_id
+    )
+
+    if empresa is None:
+
+        return jsonify({
+            "ok": False,
+            "error": "invalid company"
+        }), 400
+
+    # ==========================================================
+    # TEAR — OPCIONAL
+    # ==========================================================
+
+    tear_id_raw = data.get(
+        "tear_id"
+    )
+
+    tear_id = None
+
+    if tear_id_raw not in {
+        None,
+        "",
+    }:
+
+        try:
+
+            tear_id = int(
+                tear_id_raw
+            )
+
+        except Exception:
+
+            tear_id = 0
+
+        if tear_id <= 0:
+
+            return jsonify({
+                "ok": False,
+                "error": "invalid tear"
+            }), 400
+
+        tear = db.session.get(
+            Tear,
+            tear_id
+        )
+
+        if tear is None:
+
+            return jsonify({
+                "ok": False,
+                "error": "invalid tear"
+            }), 400
+
+        tear_empresa_id = getattr(
+            tear,
+            "empresa_id",
+            None
+        )
+
+        if tear_empresa_id != company_id:
+
+            return jsonify({
+                "ok": False,
+                "error": "tear/company mismatch"
+            }), 400
+
+    # ==========================================================
+    # META
+    # ==========================================================
+
+    meta = data.get(
+        "meta"
+    )
+
+    if meta is None:
+        meta = {}
+
+    if not isinstance(
+        meta,
+        dict
+    ):
+
+        return jsonify({
+            "ok": False,
+            "error": "invalid meta"
+        }), 400
+
+    # Evita objetos excessivamente grandes.
+    if len(meta) > 30:
+
+        return jsonify({
+            "ok": False,
+            "error": "meta too large"
+        }), 400
+
+    try:
+
+        meta_json = json.dumps(
+            meta,
+            ensure_ascii=False,
+            separators=(
+                ",",
+                ":"
+            ),
+        )
+
+    except Exception:
+
+        return jsonify({
+            "ok": False,
+            "error": "invalid meta"
+        }), 400
+
+    # Máximo de aproximadamente 4 KB para metadados.
+    if len(
+        meta_json.encode("utf-8")
+    ) > 4096:
+
+        return jsonify({
+            "ok": False,
+            "error": "meta too large"
+        }), 400
+
+    # ==========================================================
+    # SESSION ID ANALÍTICO
+    #
+    # NÃO utiliza request.cookies["session"].
+    # ==========================================================
+
+    analytics_session_id = (
+        _analytics_session_id()
+    )
+
+    # ==========================================================
+    # GRAVA EVENTO
+    # ==========================================================
+
+    try:
+
         with db.engine.begin() as conn:
+
             conn.execute(
-                text("""
-                    INSERT INTO analytics_events (company_id, tear_id, event, session_id, meta)
-                    VALUES (:cid, :tid, :evt, :sid, :meta)
-                """),
+                text(
+                    """
+                    INSERT INTO analytics_events
+                        (
+                            company_id,
+                            tear_id,
+                            event,
+                            session_id,
+                            meta
+                        )
+                    VALUES
+                        (
+                            :cid,
+                            :tid,
+                            :evt,
+                            :sid,
+                            :meta
+                        )
+                    """
+                ),
                 {
-                    "cid": int(company_id),
-                    "tid": int(tear_id) if tear_id else None,
+                    "cid": company_id,
+                    "tid": tear_id,
                     "evt": event,
-                    "sid": session_id,
-                    "meta": json.dumps(meta),
+                    "sid": (
+                        analytics_session_id
+                    ),
+                    "meta": meta_json,
                 },
             )
-        return jsonify({"ok": True})
-    except Exception as e:
-        app.logger.exception("[analytics] falha ao registrar evento: %s", e)
-        return jsonify({"ok": False}), 500
+
+        return jsonify({
+            "ok": True
+        }), 200
+
+    except Exception:
+
+        current_app.logger.exception(
+            "[ANALYTICS] Falha ao registrar evento."
+        )
+
+        return jsonify({
+            "ok": False
+        }), 500
 
 # ================================================================
 
@@ -7208,6 +7541,14 @@ from flask import make_response
     methods=["GET", "POST"],
     endpoint="cadastro_comprador"
 )
+@limiter.limit(
+    "5 per hour",
+    methods=["POST"]
+)
+@limiter.limit(
+    "20 per day",
+    methods=["POST"]
+)
 def cadastro_comprador():
 
     estados = [
@@ -7459,6 +7800,16 @@ def cadastro_comprador():
     "/comprador/demandas/nova",
     methods=["GET", "POST"],
     endpoint="nova_demanda"
+)
+@limiter.limit(
+    "10 per hour",
+    key_func=_cliente_rate_limit_key,
+    methods=["POST"]
+)
+@limiter.limit(
+    "30 per day",
+    key_func=_cliente_rate_limit_key,
+    methods=["POST"]
 )
 def nova_demanda():
 
@@ -16661,7 +17012,18 @@ def exportar():
 # --------------------------------------------------------------------
 # Cadastro/edição de empresa (essencial)
 # --------------------------------------------------------------------
-@app.route('/cadastrar_empresa', methods=['GET', 'POST'])
+@app.route(
+    "/cadastrar_empresa",
+    methods=["GET", "POST"]
+)
+@limiter.limit(
+    "5 per hour",
+    methods=["POST"]
+)
+@limiter.limit(
+    "20 per day",
+    methods=["POST"]
+)
 def cadastrar_empresa():
     estados = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO']
     if request.method == 'POST':
@@ -18288,7 +18650,18 @@ def magic_login(token):
     session["empresa_id"] = empresa.id
     return redirect(url_for("painel_malharia"))
 
-@app.route("/contato", methods=["GET", "POST"])
+@app.route(
+    "/contato",
+    methods=["GET", "POST"]
+)
+@limiter.limit(
+    "5 per 15 minutes",
+    methods=["POST"]
+)
+@limiter.limit(
+    "20 per day",
+    methods=["POST"]
+)
 def contato():
     enviado = False; erro = None
     if request.method == "POST":
@@ -18320,8 +18693,16 @@ def contato():
                 enviado = ok
                 if not ok:
                     erro = "Falha ao enviar. Tente novamente."
-            except Exception as e:
-                erro = f"Falha ao enviar: {e}"
+            except Exception:
+
+                current_app.logger.exception(
+                    "[CONTATO] Falha ao enviar formulário."
+                )
+            
+                erro = (
+                    "Não foi possível enviar sua mensagem agora. "
+                    "Tente novamente mais tarde."
+                )
     return render_template("fale_conosco.html", enviado=enviado, erro=erro)
 
 @app.route("/quem_somos", endpoint="quem_somos")
