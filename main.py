@@ -20804,67 +20804,457 @@ def _processar_pagamento(
         "idempotente": True,
     }
 
-@app.route('/checkout')
+# ==============================================================
+# MERCADO PAGO — INICIAR CHECKOUT
+# ==============================================================
+
+@app.get(
+    "/checkout",
+    endpoint="checkout"
+)
+@limiter.limit(
+    "10 per 15 minutes",
+    key_func=_malharia_rate_limit_key
+)
+@limiter.limit(
+    "40 per day",
+    key_func=_malharia_rate_limit_key
+)
 def checkout():
-    # exige sessão da empresa
-    if 'empresa_id' not in session:
-        return redirect(url_for('login'))
+    """
+    Cria uma preferência de pagamento no Mercado Pago.
 
-    empresa = Empresa.query.get(session['empresa_id'])
+    Segurança:
+    - exige uma malharia autenticada;
+    - utiliza a identidade centralizada da sessão;
+    - aceita conta ativa ou conta aguardando regularização;
+    - bloqueia conta desativada/inválida;
+    - Rate Limit por malharia autenticada;
+    - plano validado server-side;
+    - utiliza MP_ACCESS_TOKEN somente no servidor;
+    - external_reference contém empresa_id + nonce UUID;
+    - callbacks utilizam PUBLIC_BASE_URL do ambiente;
+    - não registra resposta completa do Mercado Pago nos logs.
+    """
+
+    # ==========================================================
+    # IDENTIDADE DA MALHARIA
+    # ==========================================================
+
+    empresa, usuario = (
+        _get_empresa_usuario_da_sessao()
+    )
+
     if not empresa:
+
         session.clear()
-        return redirect(url_for('login'))
 
-    base = _public_base_url()
+        flash(
+            "Faça login para continuar.",
+            "warning"
+        )
 
-    # plano
-    plano = (request.args.get('plano') or 'mensal').strip().lower()
-    if plano not in ('mensal', 'anual'):
-        plano = 'mensal'
+        return redirect(
+            url_for("login")
+        )
 
-    titulo_plano = "Assinatura anual AcheTece" if plano == 'anual' else "Assinatura mensal AcheTece"
-    preco = float(PLAN_YEARLY if plano == 'anual' else PLAN_MONTHLY)
+    # ==========================================================
+    # SITUAÇÃO DA CONTA
+    #
+    # Uma assinatura inativa NÃO impede checkout,
+    # pois justamente precisamos permitir a regularização.
+    # ==============================================================
 
-    # URLs de retorno + webhook
-    success_url = f"{base}/pagamento_aprovado?plano={plano}"
-    failure_url = f"{base}/pagamento_erro?plano={plano}"
-    pending_url = f"{base}/pagamento_pendente?plano={plano}"
-    
-    ext_ref = f"achetece:{empresa.id}:{uuid.uuid4().hex}"
+    situacao, mensagem = (
+        _avaliar_acesso_conta(
+            "malharia",
+            empresa,
+            usuario
+        )
+    )
+
+    if situacao in {
+        "conta_invalida",
+        "conta_inativa",
+    }:
+
+        session.clear()
+
+        flash(
+            mensagem
+            or "A conta não está disponível.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("login")
+        )
+
+    # São situações permitidas:
+    #
+    # ok
+    # assinatura_inativa
+
+    if situacao not in {
+        "ok",
+        "assinatura_inativa",
+    }:
+
+        current_app.logger.warning(
+            (
+                "[SECURITY][CHECKOUT] "
+                f"Checkout bloqueado. "
+                f"empresa_id={empresa.id} "
+                f"situacao={situacao}"
+            )
+        )
+
+        flash(
+            "Não foi possível iniciar o pagamento.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("planos")
+        )
+
+    # ==========================================================
+    # PLANO
+    # ==============================================================
+
+    plano = (
+        request.args.get("plano")
+        or "mensal"
+    ).strip().lower()
+
+    if plano not in {
+        "mensal",
+        "anual",
+    }:
+
+        current_app.logger.warning(
+            (
+                "[SECURITY][CHECKOUT] "
+                f"Plano inválido. "
+                f"empresa_id={empresa.id}"
+            )
+        )
+
+        flash(
+            "Selecione um plano válido.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("planos")
+        )
+
+    # ==========================================================
+    # VALORES
+    # ==============================================================
+
+    if plano == "anual":
+
+        titulo_plano = (
+            "Assinatura anual AcheTece"
+        )
+
+        preco = float(
+            PLAN_YEARLY
+        )
+
+    else:
+
+        titulo_plano = (
+            "Assinatura mensal AcheTece"
+        )
+
+        preco = float(
+            PLAN_MONTHLY
+        )
+
+    if preco <= 0:
+
+        current_app.logger.error(
+            (
+                "[CHECKOUT] Valor de plano inválido. "
+                f"empresa_id={empresa.id} "
+                f"plano={plano}"
+            )
+        )
+
+        flash(
+            "O pagamento não pôde ser iniciado.",
+            "danger"
+        )
+
+        return redirect(
+            url_for("planos")
+        )
+
+    # ==========================================================
+    # BASE PÚBLICA DO AMBIENTE
+    # ==============================================================
+
+    try:
+
+        base = _public_base_url()
+
+    except Exception:
+
+        current_app.logger.exception(
+            (
+                "[CHECKOUT] Falha ao resolver "
+                "PUBLIC_BASE_URL."
+            )
+        )
+
+        flash(
+            "O pagamento não pôde ser iniciado agora.",
+            "danger"
+        )
+
+        return redirect(
+            url_for("planos")
+        )
+
+    # ==========================================================
+    # URLs DE RETORNO
+    # ==============================================================
+
+    success_url = (
+        f"{base}/pagamento_aprovado"
+        f"?plano={plano}"
+    )
+
+    failure_url = (
+        f"{base}/pagamento_erro"
+        f"?plano={plano}"
+    )
+
+    pending_url = (
+        f"{base}/pagamento_pendente"
+        f"?plano={plano}"
+    )
+
+    # ==========================================================
+    # REFERÊNCIA INTERNA
+    #
+    # Formato validado posteriormente por:
+    # _parse_empresa_id_from_external_reference()
+    # ==============================================================
+
+    ext_ref = (
+        f"achetece:"
+        f"{empresa.id}:"
+        f"{uuid.uuid4().hex}"
+    )
+
+    # ==========================================================
+    # PREFERÊNCIA
+    # ==============================================================
 
     preference_data = {
-        "items": [{
-            "title": titulo_plano,
-            "quantity": 1,
-            "currency_id": "BRL",
-            "unit_price": preco
-        }],
-        "payer": {"email": getattr(empresa, "email", "")} if getattr(empresa, "email", "") else {},
+        "items": [
+            {
+                "title": titulo_plano,
+                "quantity": 1,
+                "currency_id": "BRL",
+                "unit_price": preco,
+            }
+        ],
+
+        "payer": (
+            {
+                "email": empresa.email
+            }
+            if getattr(
+                empresa,
+                "email",
+                None
+            )
+            else {}
+        ),
+
         "back_urls": {
             "success": success_url,
             "failure": failure_url,
-            "pending": pending_url
+            "pending": pending_url,
         },
+
         "auto_return": "approved",
-        "external_reference": ext_ref,
-        "statement_descriptor": "AcheTece"
+
+        "external_reference": (
+            ext_ref
+        ),
+
+        "statement_descriptor": (
+            "AcheTece"
+        ),
     }
 
+    # ==========================================================
+    # CRIAÇÃO NO MERCADO PAGO
+    # ==============================================================
+
     try:
-        sdk = mercadopago.SDK(os.environ.get("MP_ACCESS_TOKEN", ""))
-        preference_response = sdk.preference().create(preference_data)
-        preference = preference_response.get("response", {}) if isinstance(preference_response, dict) else {}
-        init_point = preference.get("init_point") or preference.get("sandbox_init_point")
+
+        sdk = _mp_sdk()
+
+        preference_response = (
+            sdk.preference()
+            .create(
+                preference_data
+            )
+        )
+
+        if not isinstance(
+            preference_response,
+            dict
+        ):
+
+            raise RuntimeError(
+                "Resposta inválida ao criar preferência."
+            )
+
+        # ------------------------------------------------------
+        # HTTP STATUS DO ENVELOPE DO SDK
+        # ------------------------------------------------------
+
+        http_status_raw = (
+            preference_response.get(
+                "status"
+            )
+        )
+
+        try:
+
+            http_status = int(
+                http_status_raw
+            )
+
+        except Exception:
+
+            http_status = 0
+
+        if (
+            http_status < 200
+            or http_status >= 300
+        ):
+
+            current_app.logger.warning(
+                (
+                    "[CHECKOUT] Mercado Pago recusou "
+                    "a criação da preferência. "
+                    f"empresa_id={empresa.id} "
+                    f"plano={plano} "
+                    f"http_status={http_status}"
+                )
+            )
+
+            flash(
+                (
+                    "Não foi possível iniciar "
+                    "o pagamento agora. "
+                    "Tente novamente."
+                ),
+                "danger"
+            )
+
+            return redirect(
+                url_for("planos")
+            )
+
+        # ------------------------------------------------------
+        # RESPONSE REAL
+        # ------------------------------------------------------
+
+        preference = (
+            preference_response.get(
+                "response"
+            )
+            or {}
+        )
+
+        if not isinstance(
+            preference,
+            dict
+        ):
+
+            raise RuntimeError(
+                "Objeto de preferência inválido."
+            )
+
+        init_point = (
+            preference.get(
+                "init_point"
+            )
+            or preference.get(
+                "sandbox_init_point"
+            )
+            or ""
+        ).strip()
 
         if not init_point:
-            app.logger.error(f"[CHECKOUT] init_point ausente. Resposta MP: {preference_response}")
-            return "<h2>Erro ao iniciar pagamento (init_point ausente).</h2>", 500
 
-        return redirect(init_point)
+            current_app.logger.error(
+                (
+                    "[CHECKOUT] init_point ausente. "
+                    f"empresa_id={empresa.id} "
+                    f"plano={plano}"
+                )
+            )
 
-    except Exception as e:
-        app.logger.exception(f"[CHECKOUT] Erro: {e}")
-        return "<h2>Erro ao iniciar pagamento.</h2>", 500
+            flash(
+                (
+                    "Não foi possível abrir "
+                    "o Mercado Pago agora."
+                ),
+                "danger"
+            )
+
+            return redirect(
+                url_for("planos")
+            )
+
+        # ======================================================
+        # LOG SEGURO
+        # ======================================================
+
+        current_app.logger.info(
+            (
+                "[CHECKOUT] Preferência criada. "
+                f"empresa_id={empresa.id} "
+                f"plano={plano}"
+            )
+        )
+
+        return redirect(
+            init_point
+        )
+
+    except Exception:
+
+        current_app.logger.exception(
+            (
+                "[CHECKOUT] Falha ao iniciar pagamento. "
+                f"empresa_id={empresa.id} "
+                f"plano={plano}"
+            )
+        )
+
+        flash(
+            (
+                "Não foi possível iniciar "
+                "o pagamento agora. "
+                "Tente novamente."
+            ),
+            "danger"
+        )
+
+        return redirect(
+            url_for("planos")
+        )
 
 @app.route('/pagamento_aprovado')
 def pagamento_aprovado():
