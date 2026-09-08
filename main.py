@@ -17527,6 +17527,10 @@ def exportar():
 # --------------------------------------------------------------------
 # Cadastro/edição de empresa (essencial)
 # --------------------------------------------------------------------
+# ==============================================================
+# CADASTRO COMPLETO DE MALHARIA
+# ==============================================================
+
 @app.route(
     "/cadastrar_empresa",
     methods=["GET", "POST"]
@@ -17540,100 +17544,471 @@ def exportar():
     methods=["POST"]
 )
 def cadastrar_empresa():
-    estados = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO']
-    if request.method == 'POST':
-        nome  = (request.form['nome'] or '').strip()
-        apelido = (request.form.get('apelido') or '').strip()
-        email = (request.form['email'] or '').lower().strip()
-        senha = (request.form['senha'] or '').strip()
-        cidade = (request.form['cidade'] or '').strip()
-        estado = (request.form['estado'] or '').strip()
-        telefone = _only_digits(request.form.get('telefone',''))
-        responsavel_nome = (request.form.get('responsavel_nome') or '').strip()
-        responsavel_sobrenome = (request.form.get('responsavel_sobrenome') or '').strip()
+    """
+    Cadastro completo de uma nova malharia.
 
-        # NOVOS CAMPOS
-        endereco_full = (request.form.get('endereco') or '').strip()
-        cep_raw = (request.form.get('cep') or '').strip()
+    Segurança:
+    - GET apenas exibe o formulário;
+    - POST protegido pelo CSRF global;
+    - limite de 5 cadastros por hora por IP;
+    - limite de 20 cadastros por dia por IP;
+    - valida dados novamente no servidor;
+    - exige senha entre 6 e 128 caracteres;
+    - impede colisão de e-mail com Empresa e Usuario;
+    - cria Usuario + Empresa na mesma transação;
+    - utiliza rollback em caso de falha;
+    - abre sessão pelo helper central da malharia.
+    """
 
-        # Normaliza CEP para somente dígitos (ex.: '00000-000' -> '00000000')
-        import re
-        cep_digits = re.sub(r'\D', '', cep_raw)
+    # ==========================================================
+    # ESTADOS
+    # ==========================================================
 
-        erros = {}
+    estados = [
+        "AC", "AL", "AM", "AP", "BA", "CE", "DF",
+        "ES", "GO", "MA", "MG", "MS", "MT", "PA",
+        "PB", "PE", "PI", "PR", "RJ", "RN", "RO",
+        "RR", "RS", "SC", "SE", "SP", "TO"
+    ]
 
-        # Telefone
-        if len(telefone) < 10 or len(telefone) > 13:
-            erros['telefone'] = 'Telefone inválido.'
+    # ==========================================================
+    # GET
+    # ==========================================================
 
-        # Nome (duplicidade)
-        if Empresa.query.filter_by(nome=nome).first():
-            erros['nome'] = 'Nome já existe.'
+    if request.method == "GET":
 
-        # Apelido (opcional, mas único se informado)
-        if apelido and Empresa.query.filter_by(apelido=apelido).first():
-            erros['apelido'] = 'Apelido em uso.'
+        email_inicial = (
+            request.args.get("email")
+            or ""
+        ).strip().lower()
 
-        # E-mail (duplicidade)
-        if Empresa.query.filter_by(email=email).first():
-            erros['email'] = 'E-mail já cadastrado.'
+        return render_template(
+            "cadastrar_empresa.html",
+            estados=estados,
+            email=email_inicial
+        )
 
-        # UF válida
-        if estado not in estados:
-            erros['estado'] = 'Estado inválido.'
+    # ==========================================================
+    # POST — DADOS RECEBIDOS
+    # ==========================================================
 
-        # Cidade obrigatória
-        if not cidade:
-            erros['cidade'] = 'Selecione a cidade.'
+    nome = (
+        request.form.get("nome")
+        or ""
+    ).strip()
 
-        # Nome responsável (mínimo 2 letras, desconsiderando acentos e espaços)
-        if not responsavel_nome or len(re.sub(r'[^A-Za-zÀ-ÿ]', '', responsavel_nome)) < 2:
-            erros['responsavel_nome'] = 'Informe o nome do responsável.'
+    apelido = (
+        request.form.get("apelido")
+        or ""
+    ).strip()
 
-        # Endereço completo obrigatório
-        if not endereco_full:
-            erros['endereco'] = 'Informe o endereço completo.'
+    email = (
+        request.form.get("email")
+        or ""
+    ).strip().lower()
 
-        # CEP: precisa ter 8 dígitos após normalização
-        if not re.fullmatch(r'\d{8}', cep_digits or ''):
-            erros['cep'] = 'Informe um CEP válido (00000-000 ou 00000000).'
+    # Não usamos .strip() na senha.
+    # A senha deve ser tratada exatamente como foi digitada.
+    senha = (
+        request.form.get("senha")
+        or ""
+    )
 
-        if erros:
-            return render_template(
-                'cadastrar_empresa.html',
-                erro='Corrija os campos.', erros=erros, estados=estados,
-                nome=nome, apelido=apelido, email=email,
-                cidade=cidade, estado=estado, telefone=telefone,
-                responsavel_nome=responsavel_nome, responsavel_sobrenome=responsavel_sobrenome,
-                endereco=endereco_full, cep=cep_raw
+    cidade = (
+        request.form.get("cidade")
+        or ""
+    ).strip()
+
+    estado = (
+        request.form.get("estado")
+        or ""
+    ).strip().upper()
+
+    telefone = _only_digits(
+        request.form.get(
+            "telefone",
+            ""
+        )
+    )
+
+    responsavel_nome = (
+        request.form.get(
+            "responsavel_nome"
+        )
+        or ""
+    ).strip()
+
+    responsavel_sobrenome = (
+        request.form.get(
+            "responsavel_sobrenome"
+        )
+        or ""
+    ).strip()
+
+    endereco_full = (
+        request.form.get("endereco")
+        or ""
+    ).strip()
+
+    cep_raw = (
+        request.form.get("cep")
+        or ""
+    ).strip()
+
+    cep_digits = re.sub(
+        r"\D",
+        "",
+        cep_raw
+    )
+
+    # ==========================================================
+    # VALIDAÇÕES
+    # ==========================================================
+
+    erros = {}
+
+    # ----------------------------------------------------------
+    # Nome
+    # ----------------------------------------------------------
+
+    if len(nome) < 2:
+
+        erros["nome"] = (
+            "Informe o nome da empresa."
+        )
+
+    elif (
+        Empresa.query
+        .filter(
+            func.lower(Empresa.nome)
+            == nome.lower()
+        )
+        .first()
+    ):
+
+        erros["nome"] = (
+            "Já existe uma empresa cadastrada com este nome."
+        )
+
+    # ----------------------------------------------------------
+    # Apelido
+    # ----------------------------------------------------------
+
+    if apelido:
+
+        apelido_existente = (
+            Empresa.query
+            .filter(
+                func.lower(Empresa.apelido)
+                == apelido.lower()
+            )
+            .first()
+        )
+
+        if apelido_existente:
+
+            erros["apelido"] = (
+                "Este nome de exibição já está em uso."
             )
 
-        nova_empresa = Empresa(
+    # ----------------------------------------------------------
+    # E-mail
+    # ----------------------------------------------------------
+
+    email_valido = (
+        bool(email)
+        and len(email) <= 255
+        and re.fullmatch(
+            r"[^@\s]+@[^@\s]+\.[^@\s]+",
+            email
+        )
+        is not None
+    )
+
+    if not email_valido:
+
+        erros["email"] = (
+            "Informe um e-mail válido."
+        )
+
+    else:
+
+        empresa_email_existente = (
+            Empresa.query
+            .filter(
+                func.lower(Empresa.email)
+                == email
+            )
+            .first()
+        )
+
+        usuario_email_existente = (
+            Usuario.query
+            .filter(
+                func.lower(Usuario.email)
+                == email
+            )
+            .first()
+        )
+
+        if (
+            empresa_email_existente
+            or usuario_email_existente
+        ):
+
+            erros["email"] = (
+                "Este e-mail já possui uma conta no AcheTece."
+            )
+
+    # ----------------------------------------------------------
+    # Senha
+    # ----------------------------------------------------------
+
+    if len(senha) < 6:
+
+        erros["senha"] = (
+            "A senha precisa ter pelo menos 6 caracteres."
+        )
+
+    elif len(senha) > 128:
+
+        erros["senha"] = (
+            "A senha deve possuir no máximo 128 caracteres."
+        )
+
+    # ----------------------------------------------------------
+    # Telefone
+    # ----------------------------------------------------------
+
+    if (
+        len(telefone) < 10
+        or len(telefone) > 13
+    ):
+
+        erros["telefone"] = (
+            "Telefone inválido."
+        )
+
+    # ----------------------------------------------------------
+    # Estado
+    # ----------------------------------------------------------
+
+    if estado not in estados:
+
+        erros["estado"] = (
+            "Estado inválido."
+        )
+
+    # ----------------------------------------------------------
+    # Cidade
+    # ----------------------------------------------------------
+
+    if not cidade:
+
+        erros["cidade"] = (
+            "Selecione a cidade."
+        )
+
+    # ----------------------------------------------------------
+    # Responsável
+    # ----------------------------------------------------------
+
+    if (
+        not responsavel_nome
+        or len(
+            re.sub(
+                r"[^A-Za-zÀ-ÿ]",
+                "",
+                responsavel_nome
+            )
+        ) < 2
+    ):
+
+        erros["responsavel_nome"] = (
+            "Informe o nome do responsável."
+        )
+
+    # ----------------------------------------------------------
+    # Endereço
+    # ----------------------------------------------------------
+
+    if not endereco_full:
+
+        erros["endereco"] = (
+            "Informe o endereço completo."
+        )
+
+    # ----------------------------------------------------------
+    # CEP
+    # ----------------------------------------------------------
+
+    if not re.fullmatch(
+        r"\d{8}",
+        cep_digits or ""
+    ):
+
+        erros["cep"] = (
+            "Informe um CEP válido "
+            "(00000-000 ou 00000000)."
+        )
+
+    # ==========================================================
+    # ERROS DE VALIDAÇÃO
+    # ==========================================================
+
+    if erros:
+
+        return render_template(
+            "cadastrar_empresa.html",
+            erro="Corrija os campos.",
+            erros=erros,
+            estados=estados,
             nome=nome,
-            apelido=apelido or None,
+            apelido=apelido,
             email=email,
-            senha=generate_password_hash(senha),
             cidade=cidade,
             estado=estado,
             telefone=telefone,
-            status_pagamento='pendente',
             responsavel_nome=responsavel_nome,
-            responsavel_sobrenome=responsavel_sobrenome or None
+            responsavel_sobrenome=responsavel_sobrenome,
+            endereco=endereco_full,
+            cep=cep_raw
         )
 
-        # Grava Endereço completo e CEP (armazenando CEP apenas com dígitos)
-        _set_if_has(nova_empresa, ["endereco","logradouro","endereco_completo"], endereco_full)
-        _set_if_has(nova_empresa, ["cep","CEP"], cep_digits)
+    # ==========================================================
+    # CRIAÇÃO
+    #
+    # Usuario e Empresa são criados na mesma transação.
+    # ==============================================================
 
-        db.session.add(nova_empresa)
+    try:
+
+        senha_hash = (
+            generate_password_hash(
+                senha
+            )
+        )
+
+        # ------------------------------------------------------
+        # USUARIO
+        # ------------------------------------------------------
+
+        novo_usuario = Usuario(
+            email=email,
+            senha_hash=senha_hash,
+            role="malharia",
+            is_active=True
+        )
+
+        db.session.add(
+            novo_usuario
+        )
+
+        db.session.flush()
+
+        # ------------------------------------------------------
+        # EMPRESA
+        # ------------------------------------------------------
+
+        nova_empresa = Empresa(
+            user_id=novo_usuario.id,
+            nome=nome,
+            apelido=apelido or None,
+            email=email,
+            senha=senha_hash,
+            cidade=cidade,
+            estado=estado,
+            telefone=telefone,
+            status_pagamento="pendente",
+            responsavel_nome=responsavel_nome,
+            responsavel_sobrenome=(
+                responsavel_sobrenome
+                or None
+            )
+        )
+
+        # ------------------------------------------------------
+        # ENDEREÇO / CEP
+        # ------------------------------------------------------
+
+        _set_if_has(
+            nova_empresa,
+            [
+                "endereco",
+                "logradouro",
+                "endereco_completo"
+            ],
+            endereco_full
+        )
+
+        _set_if_has(
+            nova_empresa,
+            [
+                "cep",
+                "CEP"
+            ],
+            cep_digits
+        )
+
+        db.session.add(
+            nova_empresa
+        )
+
         db.session.commit()
 
-        session['empresa_id'] = nova_empresa.id
-        session['empresa_apelido'] = nova_empresa.apelido or nova_empresa.nome or nova_empresa.email.split('@')[0]
-        flash("Cadastro concluído!", "success")
-        return redirect(url_for('painel_malharia'))
+    except Exception:
 
-    return render_template('cadastrar_empresa.html', estados=estados)
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "[MALHARIA] Falha ao concluir cadastro completo."
+        )
+
+        flash(
+            (
+                "Não foi possível concluir o cadastro agora. "
+                "Tente novamente."
+            ),
+            "danger"
+        )
+
+        return render_template(
+            "cadastrar_empresa.html",
+            erro=(
+                "Não foi possível concluir o cadastro."
+            ),
+            erros={},
+            estados=estados,
+            nome=nome,
+            apelido=apelido,
+            email=email,
+            cidade=cidade,
+            estado=estado,
+            telefone=telefone,
+            responsavel_nome=responsavel_nome,
+            responsavel_sobrenome=responsavel_sobrenome,
+            endereco=endereco_full,
+            cep=cep_raw
+        )
+
+    # ==========================================================
+    # SESSÃO
+    # ==============================================================
+
+    _abrir_sessao_malharia(
+        nova_empresa
+    )
+
+    flash(
+        "Cadastro concluído!",
+        "success"
+    )
+
+    return redirect(
+        url_for(
+            "painel_malharia"
+        )
+    )
 
 @app.route('/editar_empresa', methods=['GET', 'POST'])
 def editar_empresa():
