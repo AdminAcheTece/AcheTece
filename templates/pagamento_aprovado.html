@@ -282,7 +282,7 @@
 
         <noscript>
           <p class="muted">
-            Ative o JavaScript para redireciono automático. Você pode clicar em “Ir para o login”.
+            Ative o JavaScript para o redirecionamento automático. Você também pode clicar em “Ir para o login”.
           </p>
         </noscript>
       </div>
@@ -339,6 +339,7 @@
     (function () {
   
       const acessoLiberado = {{ acesso_liberado | tojson }};
+      const processamentoOk = {{ processamento_ok | tojson }};
       const loginUrl = {{ url_for('login') | tojson }};
   
       const hint = document.getElementById("hint");
@@ -357,9 +358,19 @@
         return;
       }
   
+      if (processamentoOk) {
+  
+        if (hint) {
+          hint.textContent =
+            "A confirmação foi recebida. Se o acesso ainda não estiver disponível, aguarde alguns instantes e entre novamente.";
+        }
+  
+        return;
+      }
+  
       if (hint) {
         hint.textContent =
-          "Seu pagamento foi confirmado. Se o acesso ainda não estiver disponível, aguarde alguns instantes e entre novamente.";
+          "Ainda não conseguimos confirmar o pagamento. Aguarde alguns instantes e tente acessar sua conta novamente.";
       }
   
     })();
