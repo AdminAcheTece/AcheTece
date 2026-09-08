@@ -4559,6 +4559,36 @@ def _cliente_rate_limit_key():
     )
 
 # ==============================================================
+# RATE LIMIT — MALHARIA AUTENTICADA
+# ==============================================================
+
+def _malharia_rate_limit_key():
+    """
+    Usa o ID da malharia autenticada como chave de Rate Limit.
+
+    Assim:
+    - uma empresa não compartilha o contador com outra;
+    - diferentes dispositivos da mesma conta compartilham
+      o mesmo limite;
+    - se não existir sessão válida, o IP é utilizado
+      como fallback seguro.
+    """
+
+    empresa_id = session.get(
+        "empresa_id"
+    )
+
+    if empresa_id:
+
+        return (
+            f"malharia:{empresa_id}"
+        )
+
+    return (
+        f"ip:{_client_ip()}"
+    )
+
+# ==============================================================
 # TRATAMENTO GLOBAL — HTTP 429 TOO MANY REQUESTS
 # ==============================================================
 
@@ -18010,121 +18040,876 @@ def cadastrar_empresa():
         )
     )
 
-@app.route('/editar_empresa', methods=['GET', 'POST'])
+# ==============================================================
+# EDIÇÃO DO PERFIL DA MALHARIA
+# ==============================================================
+
+@app.route(
+    "/editar_empresa",
+    methods=["GET", "POST"],
+    endpoint="editar_empresa"
+)
+@limiter.limit(
+    "10 per hour",
+    key_func=_malharia_rate_limit_key,
+    methods=["POST"]
+)
+@limiter.limit(
+    "30 per day",
+    key_func=_malharia_rate_limit_key,
+    methods=["POST"]
+)
 def editar_empresa():
-    if 'empresa_id' not in session:
-        return redirect(url_for('login'))
-    empresa = Empresa.query.get(session['empresa_id'])
+    """
+    Edita os dados cadastrais da malharia autenticada.
+
+    Segurança:
+    - utiliza identidade centralizada da malharia;
+    - POST protegido pelo CSRF global;
+    - Rate Limit por empresa autenticada;
+    - impede colisão de nome, apelido e e-mail;
+    - verifica e-mail também na tabela Usuario;
+    - mantém Empresa e Usuario sincronizados;
+    - senha nova é gravada nos dois registros;
+    - alterações são feitas em uma única transação;
+    - rollback em qualquer falha de banco;
+    - atualiza os dados correspondentes da sessão.
+    """
+
+    # ==========================================================
+    # IDENTIDADE DA MALHARIA
+    # ==========================================================
+
+    empresa, usuario = (
+        _get_empresa_usuario_da_sessao()
+    )
+
     if not empresa:
+
         session.clear()
-        return redirect(url_for('login'))
 
-    estados = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO']
+        return redirect(
+            url_for("login")
+        )
 
-    if request.method == 'GET':
-        # tenta montar valores atuais de endereço/CEP, independente do nome da coluna
-        endereco_atual = getattr(empresa, 'endereco', None) or getattr(empresa, 'logradouro', None) or getattr(empresa, 'endereco_completo', '')
-        cep_atual = getattr(empresa, 'cep', None) or getattr(empresa, 'CEP', '')
+    # ==========================================================
+    # ESTADOS
+    # ==========================================================
 
-        # lista de cidades (se você tiver helper; se não, deixamos vazio e o JS carrega)
+    estados = [
+        "AC", "AL", "AM", "AP", "BA", "CE", "DF",
+        "ES", "GO", "MA", "MG", "MS", "MT", "PA",
+        "PB", "PE", "PI", "PR", "RJ", "RN", "RO",
+        "RR", "RS", "SC", "SE", "SP", "TO"
+    ]
+
+    # ==========================================================
+    # GET
+    # ==========================================================
+
+    if request.method == "GET":
+
+        endereco_atual = (
+            getattr(
+                empresa,
+                "endereco",
+                None
+            )
+            or getattr(
+                empresa,
+                "logradouro",
+                None
+            )
+            or getattr(
+                empresa,
+                "endereco_completo",
+                ""
+            )
+        )
+
+        cep_atual = (
+            getattr(
+                empresa,
+                "cep",
+                None
+            )
+            or getattr(
+                empresa,
+                "CEP",
+                ""
+            )
+        )
+
         try:
-            cidades = lista_cidades_por_uf(empresa.estado) if getattr(empresa, "estado", None) else []
+
+            cidades = (
+                lista_cidades_por_uf(
+                    empresa.estado
+                )
+                if getattr(
+                    empresa,
+                    "estado",
+                    None
+                )
+                else []
+            )
+
         except Exception:
+
             cidades = []
 
         return render_template(
-            'editar_empresa.html',
+            "editar_empresa.html",
             estados=estados,
-            nome=empresa.nome or '',
-            apelido=empresa.apelido or '',
-            email=empresa.email or '',
-            cidade=empresa.cidade or '',
-            estado=empresa.estado or '',
-            telefone=empresa.telefone or '',
-            responsavel_nome=(empresa.responsavel_nome or ''),
-            responsavel_sobrenome=(empresa.responsavel_sobrenome or ''),
-            endereco=endereco_atual or '',
-            cep=cep_atual or '',
+            erros={},
+            nome=empresa.nome or "",
+            apelido=empresa.apelido or "",
+            email=empresa.email or "",
+            cidade=empresa.cidade or "",
+            estado=empresa.estado or "",
+            telefone=empresa.telefone or "",
+            responsavel_nome=(
+                empresa.responsavel_nome
+                or ""
+            ),
+            responsavel_sobrenome=(
+                empresa.responsavel_sobrenome
+                or ""
+            ),
+            endereco=endereco_atual or "",
+            cep=cep_atual or "",
             cidades=cidades
         )
 
-    # POST
-    nome  = (request.form.get('nome','') or '').strip()
-    apelido = (request.form.get('apelido','') or '').strip()
-    email = (request.form.get('email','') or '').strip().lower()
-    senha = (request.form.get('senha','') or '').strip()
-    cidade = (request.form.get('cidade','') or '').strip()
-    estado = (request.form.get('estado','') or '').strip()
-    telefone = _only_digits(request.form.get('telefone',''))
-    responsavel_nome = (request.form.get('responsavel_nome') or '').strip()
-    responsavel_sobrenome = (request.form.get('responsavel_sobrenome') or '').strip()
+    # ==========================================================
+    # POST — DADOS
+    # ==========================================================
 
-    # NOVOS CAMPOS
-    endereco_full = (request.form.get('endereco') or '').strip()
-    cep_raw = (request.form.get('cep') or '').strip()
+    nome = (
+        request.form.get("nome")
+        or ""
+    ).strip()
 
-    # Normaliza CEP para apenas dígitos (ex.: '00000-000' -> '00000000')
-    import re
-    cep_digits = re.sub(r'\D', '', cep_raw)
+    apelido = (
+        request.form.get("apelido")
+        or ""
+    ).strip()
+
+    email = (
+        request.form.get("email")
+        or ""
+    ).strip().lower()
+
+    # Nova senha é opcional.
+    # Não aplicamos .strip() para não alterar silenciosamente
+    # uma senha digitada pelo usuário.
+    senha = (
+        request.form.get("senha")
+        or ""
+    )
+
+    cidade = (
+        request.form.get("cidade")
+        or ""
+    ).strip()
+
+    estado = (
+        request.form.get("estado")
+        or ""
+    ).strip().upper()
+
+    telefone = _only_digits(
+        request.form.get(
+            "telefone",
+            ""
+        )
+    )
+
+    responsavel_nome = (
+        request.form.get(
+            "responsavel_nome"
+        )
+        or ""
+    ).strip()
+
+    responsavel_sobrenome = (
+        request.form.get(
+            "responsavel_sobrenome"
+        )
+        or ""
+    ).strip()
+
+    endereco_full = (
+        request.form.get("endereco")
+        or ""
+    ).strip()
+
+    cep_raw = (
+        request.form.get("cep")
+        or ""
+    ).strip()
+
+    cep_digits = re.sub(
+        r"\D",
+        "",
+        cep_raw
+    )
+
+    # ==========================================================
+    # VALIDAÇÕES
+    # ==========================================================
 
     erros = {}
-    if telefone and (len(telefone) < 10 or len(telefone) > 13):
-        erros['telefone'] = 'Telefone inválido.'
-    if nome and nome != (empresa.nome or '') and Empresa.query.filter_by(nome=nome).first():
-        erros['nome'] = 'Nome já existe.'
-    if apelido and apelido != (empresa.apelido or '') and Empresa.query.filter_by(apelido=apelido).first():
-        erros['apelido'] = 'Apelido já em uso.'
-    if email and email != (empresa.email or '') and Empresa.query.filter_by(email=email).first():
-        erros['email'] = 'E-mail já cadastrado.'
-    if estado and estado not in estados:
-        erros['estado'] = 'Estado inválido.'
-    if not responsavel_nome or len(re.sub(r'[^A-Za-zÀ-ÿ]', '', responsavel_nome)) < 2:
-        erros['responsavel_nome'] = 'Informe o primeiro nome do responsável.'
-    # endereço/CEP obrigatórios na edição
+
+    # ----------------------------------------------------------
+    # Nome da empresa
+    # ----------------------------------------------------------
+
+    if len(nome) < 2:
+
+        erros["nome"] = (
+            "Informe o nome da empresa."
+        )
+
+    elif len(nome) > 100:
+
+        erros["nome"] = (
+            "O nome da empresa deve possuir "
+            "no máximo 100 caracteres."
+        )
+
+    else:
+
+        empresa_mesmo_nome = (
+            Empresa.query
+            .filter(
+                func.lower(
+                    Empresa.nome
+                )
+                == nome.lower(),
+
+                Empresa.id
+                != empresa.id
+            )
+            .first()
+        )
+
+        if empresa_mesmo_nome:
+
+            erros["nome"] = (
+                "Já existe uma empresa cadastrada "
+                "com este nome."
+            )
+
+    # ----------------------------------------------------------
+    # Apelido
+    # ----------------------------------------------------------
+
+    if len(apelido) > 50:
+
+        erros["apelido"] = (
+            "O nome de exibição deve possuir "
+            "no máximo 50 caracteres."
+        )
+
+    elif apelido:
+
+        empresa_mesmo_apelido = (
+            Empresa.query
+            .filter(
+                func.lower(
+                    Empresa.apelido
+                )
+                == apelido.lower(),
+
+                Empresa.id
+                != empresa.id
+            )
+            .first()
+        )
+
+        if empresa_mesmo_apelido:
+
+            erros["apelido"] = (
+                "Este nome de exibição já está em uso."
+            )
+
+    # ----------------------------------------------------------
+    # E-mail
+    # ----------------------------------------------------------
+
+    email_valido = (
+        bool(email)
+        and len(email) <= 100
+        and re.fullmatch(
+            r"[^@\s]+@[^@\s]+\.[^@\s]+",
+            email
+        )
+        is not None
+    )
+
+    if not email_valido:
+
+        erros["email"] = (
+            "Informe um e-mail válido."
+        )
+
+    else:
+
+        # ------------------------------------------------------
+        # Conflito com outra Empresa
+        # ------------------------------------------------------
+
+        outra_empresa_email = (
+            Empresa.query
+            .filter(
+                func.lower(
+                    Empresa.email
+                )
+                == email,
+
+                Empresa.id
+                != empresa.id
+            )
+            .first()
+        )
+
+        if outra_empresa_email:
+
+            erros["email"] = (
+                "Este e-mail já possui uma conta no AcheTece."
+            )
+
+        # ------------------------------------------------------
+        # Conflito com outro Usuario
+        # ------------------------------------------------------
+
+        query_usuario_email = (
+            Usuario.query
+            .filter(
+                func.lower(
+                    Usuario.email
+                )
+                == email
+            )
+        )
+
+        if (
+            usuario is not None
+            and getattr(
+                usuario,
+                "id",
+                None
+            )
+        ):
+
+            query_usuario_email = (
+                query_usuario_email
+                .filter(
+                    Usuario.id
+                    != usuario.id
+                )
+            )
+
+        outro_usuario_email = (
+            query_usuario_email
+            .first()
+        )
+
+        if outro_usuario_email:
+
+            erros["email"] = (
+                "Este e-mail já possui uma conta no AcheTece."
+            )
+
+    # ----------------------------------------------------------
+    # Nova senha — opcional
+    # ----------------------------------------------------------
+
+    if senha:
+
+        if len(senha) < 6:
+
+            erros["senha"] = (
+                "A nova senha precisa ter "
+                "pelo menos 6 caracteres."
+            )
+
+        elif len(senha) > 128:
+
+            erros["senha"] = (
+                "A nova senha deve possuir "
+                "no máximo 128 caracteres."
+            )
+
+    # ----------------------------------------------------------
+    # Telefone
+    # ----------------------------------------------------------
+
+    if telefone and (
+        len(telefone) < 10
+        or len(telefone) > 13
+    ):
+
+        erros["telefone"] = (
+            "Telefone inválido."
+        )
+
+    # ----------------------------------------------------------
+    # Estado
+    # ----------------------------------------------------------
+
+    if estado not in estados:
+
+        erros["estado"] = (
+            "Selecione um estado válido."
+        )
+
+    # ----------------------------------------------------------
+    # Cidade
+    # ----------------------------------------------------------
+
+    if not cidade:
+
+        erros["cidade"] = (
+            "Selecione a cidade."
+        )
+
+    elif len(cidade) > 100:
+
+        erros["cidade"] = (
+            "A cidade informada é inválida."
+        )
+
+    # ----------------------------------------------------------
+    # Responsável
+    # ----------------------------------------------------------
+
+    if (
+        not responsavel_nome
+        or len(
+            re.sub(
+                r"[^A-Za-zÀ-ÿ]",
+                "",
+                responsavel_nome
+            )
+        ) < 2
+    ):
+
+        erros["responsavel_nome"] = (
+            "Informe o primeiro nome do responsável."
+        )
+
+    elif len(responsavel_nome) > 120:
+
+        erros["responsavel_nome"] = (
+            "O nome do responsável é muito longo."
+        )
+
+    if len(responsavel_sobrenome) > 120:
+
+        erros["responsavel_sobrenome"] = (
+            "O sobrenome do responsável é muito longo."
+        )
+
+    # ----------------------------------------------------------
+    # Endereço
+    # ----------------------------------------------------------
+
     if not endereco_full:
-        erros['endereco'] = 'Informe o endereço completo.'
-    if not re.fullmatch(r'\d{8}', cep_digits or ''):
-        erros['cep'] = 'Informe um CEP válido (00000-000 ou 00000000).'
+
+        erros["endereco"] = (
+            "Informe o endereço completo."
+        )
+
+    elif len(endereco_full) > 240:
+
+        erros["endereco"] = (
+            "O endereço informado é muito longo."
+        )
+
+    # ----------------------------------------------------------
+    # CEP
+    # ----------------------------------------------------------
+
+    if not re.fullmatch(
+        r"\d{8}",
+        cep_digits or ""
+    ):
+
+        erros["cep"] = (
+            "Informe um CEP válido "
+            "(00000-000 ou 00000000)."
+        )
+
+    # ==========================================================
+    # RETORNO COM ERROS
+    # ==========================================================
 
     if erros:
+
         try:
-            cidades = lista_cidades_por_uf(estado) if estado else []
+
+            cidades = (
+                lista_cidades_por_uf(
+                    estado
+                )
+                if estado
+                else []
+            )
+
         except Exception:
+
             cidades = []
+
         return render_template(
-            'editar_empresa.html',
-            erro='Corrija os campos.', erros=erros, estados=estados,
-            nome=nome or empresa.nome, apelido=apelido or empresa.apelido,
-            email=email or empresa.email, cidade=cidade or empresa.cidade,
-            estado=estado or empresa.estado, telefone=telefone or empresa.telefone,
-            responsavel_nome=responsavel_nome or (empresa.responsavel_nome or ''),
-            responsavel_sobrenome=responsavel_sobrenome or (empresa.responsavel_sobrenome or ''),
-            endereco=endereco_full or (getattr(empresa,'endereco', None) or getattr(empresa,'logradouro', None) or getattr(empresa,'endereco_completo','')),
-            cep=cep_raw or (getattr(empresa,'cep', None) or getattr(empresa,'CEP', '')),
+            "editar_empresa.html",
+            erro="Corrija os campos.",
+            erros=erros,
+            estados=estados,
+            nome=nome,
+            apelido=apelido,
+            email=email,
+            cidade=cidade,
+            estado=estado,
+            telefone=telefone,
+            responsavel_nome=responsavel_nome,
+            responsavel_sobrenome=responsavel_sobrenome,
+            endereco=endereco_full,
+            cep=cep_raw,
             cidades=cidades
         )
 
-    # aplica alterações
-    empresa.nome = nome or empresa.nome
-    empresa.apelido = apelido or empresa.apelido
-    empresa.email = email or empresa.email
-    empresa.cidade = cidade or empresa.cidade
-    empresa.estado = estado or empresa.estado
-    empresa.telefone = telefone or empresa.telefone
-    empresa.responsavel_nome = responsavel_nome or empresa.responsavel_nome
-    empresa.responsavel_sobrenome = responsavel_sobrenome or None
+    # ==========================================================
+    # ALTERAÇÕES SENSÍVEIS
+    # ==========================================================
 
-    # grava Endereço completo e CEP (com nomes alternativos de coluna)
-    _set_if_has(empresa, ["endereco","logradouro","endereco_completo"], endereco_full)
-    # Armazena CEP somente com dígitos (padrão unificado no banco)
-    _set_if_has(empresa, ["cep","CEP"], cep_digits)
+    email_anterior = (
+        empresa.email
+        or ""
+    ).strip().lower()
 
-    if senha:
-        empresa.senha = generate_password_hash(senha)
+    email_alterado = (
+        email != email_anterior
+    )
 
-    db.session.commit()
-    session['empresa_apelido'] = empresa.apelido or empresa.nome or empresa.email.split('@')[0]
-    return redirect(url_for('editar_empresa', ok=1))
+    senha_alterada = bool(
+        senha
+    )
+
+    # ==========================================================
+    # TRANSAÇÃO
+    # ==========================================================
+
+    try:
+
+        # ------------------------------------------------------
+        # Garante Usuario vinculado
+        # ------------------------------------------------------
+
+        if usuario is None:
+
+            if getattr(
+                empresa,
+                "user_id",
+                None
+            ):
+
+                usuario = db.session.get(
+                    Usuario,
+                    empresa.user_id
+                )
+
+        if usuario is None:
+
+            # Conta legada sem Usuario relacionado.
+            #
+            # Como os conflitos de e-mail já foram verificados
+            # acima, podemos criar o espelho de autenticação.
+            usuario = Usuario(
+                email=email,
+                senha_hash=empresa.senha,
+                role="malharia",
+                is_active=True
+            )
+
+            db.session.add(
+                usuario
+            )
+
+            db.session.flush()
+
+            empresa.user_id = (
+                usuario.id
+            )
+
+        # ------------------------------------------------------
+        # Integridade do perfil
+        # ------------------------------------------------------
+
+        role_usuario = (
+            usuario.role
+            or ""
+        ).strip().lower()
+
+        if role_usuario not in {
+            "",
+            "malharia"
+        }:
+
+            raise RuntimeError(
+                "Usuário vinculado possui perfil incompatível."
+            )
+
+        usuario.role = (
+            "malharia"
+        )
+
+        # ------------------------------------------------------
+        # Empresa
+        # ------------------------------------------------------
+
+        empresa.nome = nome
+
+        empresa.apelido = (
+            apelido
+            or None
+        )
+
+        empresa.email = email
+
+        empresa.cidade = cidade
+
+        empresa.estado = estado
+
+        empresa.telefone = (
+            telefone
+            or None
+        )
+
+        empresa.responsavel_nome = (
+            responsavel_nome
+        )
+
+        empresa.responsavel_sobrenome = (
+            responsavel_sobrenome
+            or None
+        )
+
+        _set_if_has(
+            empresa,
+            [
+                "endereco",
+                "logradouro",
+                "endereco_completo"
+            ],
+            endereco_full
+        )
+
+        _set_if_has(
+            empresa,
+            [
+                "cep",
+                "CEP"
+            ],
+            cep_digits
+        )
+
+        # ------------------------------------------------------
+        # Usuario
+        # ------------------------------------------------------
+
+        usuario.email = email
+
+        # ------------------------------------------------------
+        # Nova senha
+        #
+        # O MESMO hash é gravado na Empresa e no Usuario.
+        # ------------------------------------------------------
+
+        if senha:
+
+            novo_hash = (
+                generate_password_hash(
+                    senha
+                )
+            )
+
+            empresa.senha = (
+                novo_hash
+            )
+
+            usuario.senha_hash = (
+                novo_hash
+            )
+
+        # ------------------------------------------------------
+        # Caso legado:
+        # Usuario ainda não possui senha mas Empresa possui.
+        # ------------------------------------------------------
+
+        elif (
+            not usuario.senha_hash
+            and empresa.senha
+        ):
+
+            usuario.senha_hash = (
+                empresa.senha
+            )
+
+        # ------------------------------------------------------
+        # Se o e-mail foi alterado, invalida tokens antigos
+        # de recuperação da malharia.
+        # ------------------------------------------------------
+
+        if email_alterado:
+
+            now = datetime.utcnow()
+
+            tokens_ativos = (
+                PasswordResetToken.query
+                .filter(
+                    PasswordResetToken.account_type
+                    == "malharia",
+
+                    PasswordResetToken.account_id
+                    == empresa.id,
+
+                    PasswordResetToken.used_at.is_(None),
+                )
+                .all()
+            )
+
+            for token in tokens_ativos:
+
+                token.used_at = now
+
+        # ------------------------------------------------------
+        # Commit único
+        # ------------------------------------------------------
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            (
+                "[SECURITY][EMPRESA_PROFILE] "
+                "Falha ao atualizar perfil da malharia. "
+                f"empresa_id={empresa.id}"
+            )
+        )
+
+        flash(
+            (
+                "Não foi possível salvar as alterações agora. "
+                "Tente novamente."
+            ),
+            "danger"
+        )
+
+        try:
+
+            cidades = (
+                lista_cidades_por_uf(
+                    estado
+                )
+                if estado
+                else []
+            )
+
+        except Exception:
+
+            cidades = []
+
+        return render_template(
+            "editar_empresa.html",
+            erro=(
+                "Não foi possível salvar as alterações."
+            ),
+            erros={},
+            estados=estados,
+            nome=nome,
+            apelido=apelido,
+            email=email,
+            cidade=cidade,
+            estado=estado,
+            telefone=telefone,
+            responsavel_nome=responsavel_nome,
+            responsavel_sobrenome=responsavel_sobrenome,
+            endereco=endereco_full,
+            cep=cep_raw,
+            cidades=cidades
+        )
+
+    # ==========================================================
+    # ATUALIZA SESSÃO
+    # ==========================================================
+
+    session["empresa_id"] = (
+        empresa.id
+    )
+
+    session["empresa_apelido"] = (
+        empresa.apelido
+        or empresa.nome
+        or empresa.email.split("@")[0]
+    )
+
+    session["empresa_nome"] = (
+        empresa.nome
+    )
+
+    session["login_email"] = (
+        empresa.email
+    )
+
+    session["auth_email"] = (
+        empresa.email
+    )
+
+    if getattr(
+        empresa,
+        "user_id",
+        None
+    ):
+
+        session["user_id"] = (
+            empresa.user_id
+        )
+
+        session["auth_user_id"] = (
+            empresa.user_id
+        )
+
+    session.modified = True
+
+    # ==========================================================
+    # LOG SEGURO
+    # ==============================================================
+
+    current_app.logger.info(
+        (
+            "[SECURITY][EMPRESA_PROFILE] "
+            f"empresa_id={empresa.id} "
+            f"email_changed={email_alterado} "
+            f"password_changed={senha_alterada}"
+        )
+    )
+
+    flash(
+        "Dados da empresa atualizados com sucesso.",
+        "success"
+    )
+
+    return redirect(
+        url_for(
+            "editar_empresa",
+            ok=1
+        )
+    )
 
 # --- ROTA DA PERFORMANCE (substituir este bloco) ---
 @app.route('/performance', methods=['GET'], endpoint='performance_acesso')
