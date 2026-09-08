@@ -2087,33 +2087,233 @@ def _offline_guard():
     return _render_offline()
 
 # =====================[ ANALYTICS - INÍCIO ]=====================
+
 ALLOWED_EVENTS = {
-    'CARD_IMPRESSION',
-    'COMPANY_PROFILE_VIEW',
-    'CONTACT_CLICK_WHATSAPP',
-    'TEAR_DETAIL_VIEW',
+    "CARD_IMPRESSION",
+    "COMPANY_PROFILE_VIEW",
+    "CONTACT_CLICK_WHATSAPP",
+    "TEAR_DETAIL_VIEW",
 }
 
-def track_event(event: str, company_id: int, tear_id: int | None = None, meta: dict | None = None):
+
+# ==============================================================
+# ANALYTICS — IDENTIFICADOR DE SESSÃO INDEPENDENTE
+# ==============================================================
+
+def _analytics_session_id():
+    """
+    Retorna um identificador anônimo destinado exclusivamente
+    aos eventos analíticos do AcheTece.
+
+    Segurança:
+    - nunca utiliza o cookie Flask de autenticação;
+    - nunca grava request.cookies["session"] no banco;
+    - não reutiliza identificadores internos de autenticação;
+    - usa identificador aleatório próprio para analytics;
+    - tamanho limitado.
+    """
+
+    analytics_sid = (
+        session.get("_analytics_sid")
+        or ""
+    ).strip()
+
+    if analytics_sid:
+
+        return analytics_sid[:64]
+
+    analytics_sid = secrets.token_urlsafe(
+        18
+    )
+
+    session["_analytics_sid"] = (
+        analytics_sid
+    )
+
+    session.modified = True
+
+    return analytics_sid[:64]
+
+
+# ==============================================================
+# ANALYTICS — REGISTRO INTERNO DE EVENTOS
+# ==============================================================
+
+def track_event(
+    event: str,
+    company_id: int,
+    tear_id: int | None = None,
+    meta: dict | None = None
+):
+    """
+    Registra internamente um evento analítico.
+
+    Segurança:
+    - aceita somente eventos autorizados;
+    - utiliza session ID exclusivo de analytics;
+    - nunca utiliza o cookie Flask de autenticação;
+    - valida IDs básicos antes da gravação;
+    - limita os metadados persistidos.
+    """
+
+    # ==========================================================
+    # EVENTO
+    # ==========================================================
+
+    event = (
+        event
+        or ""
+    ).strip()
+
     if event not in ALLOWED_EVENTS:
+
         return
+
+    # ==========================================================
+    # EMPRESA
+    # ==========================================================
+
     try:
+
+        company_id = int(
+            company_id
+        )
+
+    except Exception:
+
+        return
+
+    if company_id <= 0:
+
+        return
+
+    # ==========================================================
+    # TEAR — OPCIONAL
+    # ==========================================================
+
+    if tear_id is not None:
+
+        try:
+
+            tear_id = int(
+                tear_id
+            )
+
+        except Exception:
+
+            return
+
+        if tear_id <= 0:
+
+            return
+
+    # ==========================================================
+    # META
+    # ==========================================================
+
+    if meta is None:
+
+        meta = {}
+
+    if not isinstance(
+        meta,
+        dict
+    ):
+
+        meta = {}
+
+    if len(meta) > 30:
+
+        current_app.logger.warning(
+            "[ANALYTICS] meta interno excedeu o limite."
+        )
+
+        return
+
+    try:
+
+        meta_json = json.dumps(
+            meta,
+            ensure_ascii=False,
+            separators=(
+                ",",
+                ":"
+            ),
+        )
+
+    except Exception:
+
+        current_app.logger.warning(
+            "[ANALYTICS] meta interno inválido."
+        )
+
+        return
+
+    if len(
+        meta_json.encode("utf-8")
+    ) > 4096:
+
+        current_app.logger.warning(
+            "[ANALYTICS] meta interno muito grande."
+        )
+
+        return
+
+    # ==========================================================
+    # IDENTIFICADOR EXCLUSIVO DE ANALYTICS
+    #
+    # Nunca utiliza:
+    # - request.cookies.get("session")
+    # - session.get("_sid")
+    # ==========================================================
+
+    analytics_sid = (
+        _analytics_session_id()
+    )
+
+    # ==========================================================
+    # GRAVAÇÃO
+    # ==========================================================
+
+    try:
+
         with db.engine.begin() as conn:
+
             conn.execute(
-                text("""
-                    INSERT INTO analytics_events (company_id, tear_id, event, session_id, meta)
-                    VALUES (:cid, :tid, :evt, :sid, :meta)
-                """),
+                text(
+                    """
+                    INSERT INTO analytics_events
+                        (
+                            company_id,
+                            tear_id,
+                            event,
+                            session_id,
+                            meta
+                        )
+                    VALUES
+                        (
+                            :cid,
+                            :tid,
+                            :evt,
+                            :sid,
+                            :meta
+                        )
+                    """
+                ),
                 {
                     "cid": company_id,
                     "tid": tear_id,
                     "evt": event,
-                    "sid": session.get("_sid") or request.cookies.get("session") or "",
-                    "meta": json.dumps(meta or {}),
+                    "sid": analytics_sid,
+                    "meta": meta_json,
                 },
             )
+
     except Exception:
-        app.logger.exception("[analytics] falha ao registrar evento")
+
+        current_app.logger.exception(
+            "[ANALYTICS] Falha ao registrar evento interno."
+        )
 
 def _init_analytics_table():
     dialect = db.engine.url.get_backend_name()
@@ -5358,41 +5558,6 @@ def _to_int(s):
     except Exception:
         return None
 
-# ==============================================================
-# ANALYTICS — IDENTIFICADOR DE SESSÃO INDEPENDENTE
-# ==============================================================
-
-def _analytics_session_id():
-    """
-    Retorna um identificador anônimo destinado exclusivamente
-    aos eventos analíticos do AcheTece.
-
-    Segurança:
-    - nunca utiliza o cookie Flask de autenticação;
-    - nunca grava request.cookies["session"] no banco;
-    - identificador aleatório armazenado dentro da sessão Flask;
-    - tamanho limitado.
-    """
-
-    analytics_sid = (
-        session.get("_analytics_sid")
-        or ""
-    ).strip()
-
-    if analytics_sid:
-        return analytics_sid[:64]
-
-    analytics_sid = secrets.token_urlsafe(
-        18
-    )
-
-    session["_analytics_sid"] = (
-        analytics_sid
-    )
-
-    session.modified = True
-
-    return analytics_sid[:64]
 
 
 # ==============================================================
