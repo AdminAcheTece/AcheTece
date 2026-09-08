@@ -252,14 +252,24 @@
             Seu acesso ao AcheTece já está liberado.
           </p>
         
-        {% else %}
+        {% elif processamento_ok %}
         
           <p>
-            <strong>Seu pagamento foi confirmado.</strong>
+            <strong>Recebemos o retorno do seu pagamento.</strong>
           </p>
         
           <p>
             Estamos concluindo a liberação do seu acesso.
+          </p>
+        
+        {% else %}
+        
+          <p>
+            <strong>Recebemos o retorno do Mercado Pago.</strong>
+          </p>
+        
+          <p>
+            Ainda não foi possível confirmar o pagamento. Aguarde alguns instantes e tente acessar sua conta novamente.
           </p>
         
         {% endif %}
