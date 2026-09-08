@@ -21256,134 +21256,295 @@ def checkout():
             url_for("planos")
         )
 
-@app.route('/pagamento_aprovado')
+# ==============================================================
+# MERCADO PAGO — RETORNO DE PAGAMENTO APROVADO
+# ==============================================================
+
+@app.get(
+    "/pagamento_aprovado",
+    endpoint="pagamento_aprovado"
+)
+@limiter.limit(
+    "20 per 15 minutes",
+    key_func=_malharia_rate_limit_key
+)
+@limiter.limit(
+    "100 per day",
+    key_func=_malharia_rate_limit_key
+)
 def pagamento_aprovado():
     """
     Retorno de sucesso do Checkout Pro.
 
-    O payment_id recebido pela URL nunca é considerado prova
-    suficiente do pagamento.
-
-    O pagamento é consultado novamente diretamente na API
-    do Mercado Pago por meio de _processar_pagamento().
-
-    A página somente faz redirecionamento automático para o
-    login quando conseguimos confirmar que a empresa relacionada
-    ao pagamento está realmente ativa.
+    Segurança:
+    - nunca confia somente na URL de retorno;
+    - valida o formato do payment_id;
+    - consulta o pagamento diretamente no Mercado Pago;
+    - empresa é resolvida pelo external_reference validado;
+    - Rate Limit reduz abuso da consulta à API externa;
+    - acesso_liberado somente ocorre quando a sessão atual
+      pertence à mesma empresa do pagamento;
+    - resposta não é armazenada em cache;
+    - payment_id da URL não é propagado via Referer.
     """
 
-    payment_id = (
-        request.args.get("payment_id")
-        or request.args.get("collection_id")
-        or request.args.get("paymentId")
-    )
+    # ==========================================================
+    # ESTADO INICIAL
+    # ==========================================================
 
     acesso_liberado = False
     processamento_ok = False
 
-    if payment_id:
+    # ==========================================================
+    # PAYMENT ID
+    # ==========================================================
 
-        try:
-            result = _processar_pagamento(
-                str(payment_id)
+    payment_id_raw = (
+        request.args.get("payment_id")
+        or request.args.get("collection_id")
+        or request.args.get("paymentId")
+        or ""
+    )
+
+    payment_id = (
+        str(payment_id_raw)
+        .strip()
+    )
+
+    # ==========================================================
+    # VALIDAÇÃO BÁSICA
+    #
+    # IDs de pagamento do Mercado Pago são numéricos.
+    # Um valor malformado nem chega à API externa.
+    # ==========================================================
+
+    payment_id_valido = (
+        bool(payment_id)
+        and payment_id.isdigit()
+        and len(payment_id) <= 32
+    )
+
+    if not payment_id_valido:
+
+        current_app.logger.warning(
+            (
+                "[SECURITY][BACK_URL] "
+                "Retorno de pagamento sem "
+                "payment_id válido."
             )
-
-            app.logger.info(
-                f"[BACK_URL] processado: {result}"
-            )
-
-            if isinstance(result, dict):
-
-                processamento_ok = (
-                    result.get("ok") is True
-                )
-
-                empresa_id_resultado = result.get(
-                    "empresa_id"
-                )
-
-                if empresa_id_resultado:
-
-                    try:
-                        empresa_id_resultado = int(
-                            empresa_id_resultado
-                        )
-                    except (TypeError, ValueError):
-                        empresa_id_resultado = None
-
-                # ------------------------------------------------
-                # Confirma no banco que a empresa está realmente
-                # com pagamento ativo.
-                # ------------------------------------------------
-
-                if empresa_id_resultado:
-
-                    empresa = db.session.get(
-                        Empresa,
-                        empresa_id_resultado
-                    )
-
-                    if empresa:
-
-                        status_pagamento = (
-                            getattr(
-                                empresa,
-                                "status_pagamento",
-                                ""
-                            )
-                            or ""
-                        ).strip().lower()
-
-                        # ----------------------------------------
-                        # Se ainda existe a sessão da malharia,
-                        # somente libera o redirecionamento
-                        # automático se o pagamento pertencer
-                        # à mesma empresa logada.
-                        # ----------------------------------------
-
-                        empresa_sessao = session.get(
-                            "empresa_id"
-                        )
-
-                        mesma_empresa = True
-
-                        if empresa_sessao is not None:
-
-                            try:
-                                mesma_empresa = (
-                                    int(empresa_sessao)
-                                    == empresa_id_resultado
-                                )
-                            except (
-                                TypeError,
-                                ValueError
-                            ):
-                                mesma_empresa = False
-
-                        acesso_liberado = (
-                            status_pagamento == "ativo"
-                            and mesma_empresa
-                        )
-
-        except Exception:
-
-            app.logger.exception(
-                "[BACK_URL] Falha ao processar retorno "
-                f"payment_id={payment_id}."
-            )
+        )
 
     else:
 
-        app.logger.warning(
-            "[BACK_URL] Retorno de pagamento aprovado "
-            "sem payment_id."
-        )
+        try:
 
-    return render_template(
-        "pagamento_aprovado.html",
-        acesso_liberado=acesso_liberado,
-        processamento_ok=processamento_ok
+            # ==================================================
+            # FONTE DE VERDADE
+            #
+            # _processar_pagamento consulta o Mercado Pago
+            # server-side e valida external_reference.
+            # ==================================================
+
+            result = (
+                _processar_pagamento(
+                    payment_id
+                )
+            )
+
+            if isinstance(
+                result,
+                dict
+            ):
+
+                processamento_ok = (
+                    result.get("ok")
+                    is True
+                )
+
+                empresa_id_resultado = (
+                    result.get(
+                        "empresa_id"
+                    )
+                )
+
+                # ==============================================
+                # EMPRESA DO PAGAMENTO
+                # ==============================================
+
+                try:
+
+                    empresa_id_resultado = int(
+                        empresa_id_resultado
+                    )
+
+                except (
+                    TypeError,
+                    ValueError
+                ):
+
+                    empresa_id_resultado = None
+
+                empresa_pagamento = None
+
+                if empresa_id_resultado:
+
+                    empresa_pagamento = (
+                        db.session.get(
+                            Empresa,
+                            empresa_id_resultado
+                        )
+                    )
+
+                # ==============================================
+                # SESSÃO
+                #
+                # Por segurança, ausência de sessão NÃO é
+                # considerada correspondência.
+                # ==============================================
+
+                empresa_id_sessao = (
+                    session.get(
+                        "empresa_id"
+                    )
+                )
+
+                mesma_empresa = False
+
+                if (
+                    empresa_id_sessao
+                    is not None
+                    and empresa_id_resultado
+                    is not None
+                ):
+
+                    try:
+
+                        mesma_empresa = (
+                            int(
+                                empresa_id_sessao
+                            )
+                            == empresa_id_resultado
+                        )
+
+                    except (
+                        TypeError,
+                        ValueError
+                    ):
+
+                        mesma_empresa = False
+
+                # ==============================================
+                # PAGAMENTO ATIVO
+                # ==============================================
+
+                pagamento_ativo = False
+
+                if empresa_pagamento:
+
+                    status_pagamento = (
+                        getattr(
+                            empresa_pagamento,
+                            "status_pagamento",
+                            ""
+                        )
+                        or ""
+                    ).strip().lower()
+
+                    pagamento_ativo = (
+                        status_pagamento
+                        == "ativo"
+                    )
+
+                # ==============================================
+                # ACESSO LIBERADO NA TELA
+                #
+                # Exige simultaneamente:
+                #
+                # - pagamento confirmado server-side;
+                # - empresa ativa;
+                # - sessão da mesma empresa.
+                # ==============================================
+
+                acesso_liberado = (
+                    processamento_ok
+                    and pagamento_ativo
+                    and mesma_empresa
+                )
+
+                # ==============================================
+                # LOG SEGURO
+                # ==============================================
+
+                current_app.logger.info(
+                    (
+                        "[BACK_URL] "
+                        f"payment_id={payment_id} "
+                        f"empresa_id={empresa_id_resultado} "
+                        f"status={result.get('status')} "
+                        f"idempotente={result.get('idempotente')} "
+                        f"same_session={mesma_empresa}"
+                    )
+                )
+
+            else:
+
+                current_app.logger.warning(
+                    (
+                        "[BACK_URL] "
+                        "Resposta interna inesperada "
+                        "ao processar pagamento."
+                    )
+                )
+
+        except Exception:
+
+            current_app.logger.exception(
+                (
+                    "[BACK_URL] "
+                    "Falha ao validar retorno "
+                    f"payment_id={payment_id}."
+                )
+            )
+
+    # ==========================================================
+    # RENDER
+    # ==========================================================
+
+    response = make_response(
+        render_template(
+            "pagamento_aprovado.html",
+            acesso_liberado=acesso_liberado,
+            processamento_ok=processamento_ok
+        )
     )
+
+    # ==========================================================
+    # PRIVACIDADE
+    #
+    # A URL pode conter payment_id.
+    # Não armazenamos esta página e não propagamos Referer.
+    # ==========================================================
+
+    response.headers[
+        "Cache-Control"
+    ] = (
+        "no-store, no-cache, "
+        "must-revalidate, max-age=0"
+    )
+
+    response.headers[
+        "Pragma"
+    ] = "no-cache"
+
+    response.headers[
+        "Expires"
+    ] = "0"
+
+    response.headers[
+        "Referrer-Policy"
+    ] = "no-referrer"
+
+    return response
 
 @app.route('/pagamento_sucesso')
 def pagamento_sucesso():
