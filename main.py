@@ -943,17 +943,45 @@ def calc_vencimento_mensal_br(empresa, last_paid_at: datetime | date | None = No
 
 def _public_base_url() -> str:
     """
-    Retorna a base pública do site para construir callbacks do Mercado Pago.
-    Prioriza config/variável de ambiente e, por fim, força www.achetece.com.br.
+    Retorna a URL pública base utilizada para callbacks
+    e retornos do Mercado Pago.
+
+    Segurança:
+    - prioriza PUBLIC_BASE_URL;
+    - aceita SITE_URL como fallback configurado;
+    - nunca força automaticamente o domínio de produção;
+    - falha de forma segura se nenhuma URL estiver configurada.
     """
-    forced = (
+
+    base = (
         current_app.config.get("PUBLIC_BASE_URL")
         or os.getenv("PUBLIC_BASE_URL")
-    )
-    if forced:
-        return forced.rstrip("/")
-    # último recurso: força o host oficial em HTTPS
-    return "https://www.achetece.com.br"
+        or os.getenv("SITE_URL")
+        or ""
+    ).strip()
+
+    if not base:
+
+        current_app.logger.error(
+            "[CONFIG] PUBLIC_BASE_URL/SITE_URL não configurada."
+        )
+
+        raise RuntimeError(
+            "URL pública do ambiente não configurada."
+        )
+
+    base = base.rstrip("/")
+
+    if not (
+        base.startswith("https://")
+        or base.startswith("http://")
+    ):
+
+        raise RuntimeError(
+            "PUBLIC_BASE_URL possui formato inválido."
+        )
+
+    return base
     
 from sqlalchemy import inspect, text
 
