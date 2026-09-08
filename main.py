@@ -18771,12 +18771,136 @@ def _extract_payment_id(req):
         payload
     )
 
-def _mp_get_payment(payment_id: str) -> dict:
+# ==============================================================
+# MERCADO PAGO — CONSULTA DE PAGAMENTO
+# ==============================================================
+
+def _mp_get_payment(
+    payment_id: str
+):
+    """
+    Consulta um pagamento diretamente na API do Mercado Pago.
+
+    O SDK mercadopago==2.3.0 retorna um envelope semelhante a:
+
+        {
+            "status": 200,
+            "response": {
+                "id": ...,
+                "status": "approved",
+                ...
+            }
+        }
+
+    Esta função:
+    - valida o payment_id;
+    - consulta o SDK;
+    - verifica o status HTTP retornado pelo SDK;
+    - devolve somente o objeto real do pagamento;
+    - nunca entrega o envelope HTTP para _processar_pagamento().
+    """
+
+    # ==========================================================
+    # PAYMENT ID
+    # ==========================================================
+
+    payment_id = (
+        str(
+            payment_id
+            or ""
+        )
+        .strip()
+    )
+
+    if (
+        not payment_id
+        or not payment_id.isdigit()
+    ):
+
+        raise ValueError(
+            "payment_id inválido."
+        )
+
+    # ==========================================================
+    # SDK
+    # ==========================================================
+
     sdk = _mp_sdk()
-    resp = sdk.payment().get(payment_id)
-    payment = (resp or {}).get("response") or {}
-    if not payment:
-        raise RuntimeError(f"Não consegui obter payment.response. Resp={resp}")
+
+    resultado = sdk.payment().get(
+        payment_id
+    )
+
+    # ==========================================================
+    # ESTRUTURA DA RESPOSTA
+    # ==========================================================
+
+    if not isinstance(
+        resultado,
+        dict
+    ):
+
+        raise RuntimeError(
+            "Resposta inválida do SDK Mercado Pago."
+        )
+
+    # O campo status do envelope é o HTTP status:
+    # 200, 400, 404 etc.
+    http_status = resultado.get(
+        "status"
+    )
+
+    try:
+
+        http_status = int(
+            http_status
+        )
+
+    except Exception:
+
+        http_status = 0
+
+    # ==========================================================
+    # ERRO DA API
+    # ==========================================================
+
+    if (
+        http_status < 200
+        or http_status >= 300
+    ):
+
+        current_app.logger.warning(
+            (
+                "[MP] Consulta de pagamento recusada "
+                f"payment_id={payment_id} "
+                f"http_status={http_status}"
+            )
+        )
+
+        raise RuntimeError(
+            (
+                "Mercado Pago não retornou "
+                "um pagamento válido."
+            )
+        )
+
+    # ==========================================================
+    # OBJETO REAL DO PAGAMENTO
+    # ==========================================================
+
+    payment = resultado.get(
+        "response"
+    )
+
+    if not isinstance(
+        payment,
+        dict
+    ):
+
+        raise RuntimeError(
+            "Objeto de pagamento ausente na resposta do Mercado Pago."
+        )
+
     return payment
 
 def _parse_empresa_id_from_external_reference(
