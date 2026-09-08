@@ -16998,70 +16998,392 @@ def cadastro_get():
         email=email
     )
 
-@app.post("/cadastro", endpoint="cadastro_post")
+# ==============================================================
+# CADASTRO DE MALHARIA — POST
+# ==============================================================
+
+@app.post(
+    "/cadastro",
+    endpoint="cadastro_post"
+)
+@limiter.limit(
+    "5 per hour"
+)
+@limiter.limit(
+    "20 per day"
+)
 def cadastro_post():
-    tipo = (request.form.get("tipo_pessoa") or "pf").lower()
-    cpf_cnpj = (request.form.get("cpf_cnpj") or "").strip()
-    nome_completo = (request.form.get("nome") or "").strip()
-    apelido = (request.form.get("apelido") or "").strip()
-    nascimento = (request.form.get("nascimento") or "").strip()
-    telefone = re.sub(r"\D+", "", request.form.get("telefone", "") or "")
-    email = (request.form.get("email") or "").strip().lower()
-    senha = (request.form.get("senha") or "")
+    """
+    Cria uma nova conta de malharia.
+
+    Segurança:
+    - CSRF global;
+    - máximo de 5 cadastros/hora por IP;
+    - máximo de 20 cadastros/dia por IP;
+    - valida e-mail e senha server-side;
+    - impede colisão com Empresa e Usuario;
+    - cria Empresa + Usuario na mesma transação;
+    - utiliza rollback em caso de falha;
+    - abre a sessão pelo helper central da malharia.
+    """
+
+    # ==========================================================
+    # DADOS DO FORMULÁRIO
+    # ==========================================================
+
+    tipo = (
+        request.form.get("tipo_pessoa")
+        or "pf"
+    ).strip().lower()
+
+    cpf_cnpj = (
+        request.form.get("cpf_cnpj")
+        or ""
+    ).strip()
+
+    nome_completo = (
+        request.form.get("nome")
+        or ""
+    ).strip()
+
+    apelido = (
+        request.form.get("apelido")
+        or ""
+    ).strip()
+
+    nascimento = (
+        request.form.get("nascimento")
+        or ""
+    ).strip()
+
+    telefone = re.sub(
+        r"\D+",
+        "",
+        request.form.get("telefone", "")
+        or ""
+    )
+
+    email = (
+        request.form.get("email")
+        or ""
+    ).strip().lower()
+
+    senha = (
+        request.form.get("senha")
+        or ""
+    )
+
+    # ==========================================================
+    # VALIDAÇÕES
+    # ==========================================================
 
     erros = {}
-    if not email:
-        erros["email"] = "Informe um e-mail válido."
-    elif Empresa.query.filter(func.lower(Empresa.email) == email).first():
-        erros["email"] = "Este e-mail já está cadastrado."
+
+    # ----------------------------------------------------------
+    # E-mail
+    # ----------------------------------------------------------
+
+    email_valido = (
+        bool(email)
+        and len(email) <= 255
+        and re.fullmatch(
+            r"[^@\s]+@[^@\s]+\.[^@\s]+",
+            email
+        )
+        is not None
+    )
+
+    if not email_valido:
+
+        erros["email"] = (
+            "Informe um e-mail válido."
+        )
+
+    # ----------------------------------------------------------
+    # Nome
+    # ----------------------------------------------------------
+
     if len(nome_completo) < 2:
-        erros["nome"] = "Informe seu nome completo."
+
+        erros["nome"] = (
+            "Informe seu nome completo."
+        )
+
+    # ----------------------------------------------------------
+    # Senha
+    # ----------------------------------------------------------
+
     if len(senha) < 6:
-        erros["senha"] = "Crie uma senha com pelo menos 6 caracteres."
+
+        erros["senha"] = (
+            "Crie uma senha com pelo menos 6 caracteres."
+        )
+
+    elif len(senha) > 128:
+
+        erros["senha"] = (
+            "A senha deve possuir no máximo 128 caracteres."
+        )
+
+    # ==========================================================
+    # COLISÃO DE CONTA
+    #
+    # Um e-mail não pode existir simultaneamente como:
+    #
+    # comprador
+    # +
+    # nova malharia
+    #
+    # sem um fluxo específico de conversão de conta.
+    # ==========================================================
+
+    if email_valido:
+
+        empresa_existente = (
+            Empresa.query
+            .filter(
+                func.lower(
+                    Empresa.email
+                )
+                == email
+            )
+            .first()
+        )
+
+        usuario_existente = (
+            Usuario.query
+            .filter(
+                func.lower(
+                    Usuario.email
+                )
+                == email
+            )
+            .first()
+        )
+
+        if (
+            empresa_existente
+            or usuario_existente
+        ):
+
+            erros["email"] = (
+                "Este e-mail já possui uma conta no AcheTece."
+            )
+
+    # ==========================================================
+    # NOME DA EMPRESA
+    # ==============================================================
+
+    nome_empresa = (
+        apelido
+        or nome_completo
+    )
+
+    if nome_empresa:
+
+        empresa_nome_existente = (
+            Empresa.query
+            .filter(
+                func.lower(
+                    Empresa.nome
+                )
+                == nome_empresa.lower()
+            )
+            .first()
+        )
+
+        if empresa_nome_existente:
+
+            erros["nome"] = (
+                "Já existe uma empresa cadastrada com este nome."
+            )
+
+    # ==========================================================
+    # APELIDO
+    # ==============================================================
+
+    if apelido:
+
+        apelido_existente = (
+            Empresa.query
+            .filter(
+                func.lower(
+                    Empresa.apelido
+                )
+                == apelido.lower()
+            )
+            .first()
+        )
+
+        if apelido_existente:
+
+            erros["apelido"] = (
+                "Este nome de exibição já está em uso."
+            )
+
+    # ==========================================================
+    # RETORNA O FORMULÁRIO EM CASO DE ERRO
+    # ==============================================================
 
     if erros:
+
         try:
+
             return render_template(
                 "cadastro.html",
-                erros=erros, email=email, nome=nome_completo, apelido=apelido,
-                telefone=telefone, cpf_cnpj=cpf_cnpj, tipo_pessoa=tipo,
+                erros=erros,
+                email=email,
+                nome=nome_completo,
+                apelido=apelido,
+                telefone=telefone,
+                cpf_cnpj=cpf_cnpj,
+                tipo_pessoa=tipo,
                 nascimento=nascimento
             )
+
         except TemplateNotFound:
-            flash(next(iter(erros.values())), "error")
-            return redirect(url_for("cadastro_get", email=email))
 
-    partes = nome_completo.split()
-    responsavel_nome = partes[0]
-    responsavel_sobrenome = " ".join(partes[1:]) if len(partes) > 1 else None
+            flash(
+                next(
+                    iter(
+                        erros.values()
+                    )
+                ),
+                "error"
+            )
 
-    nova = Empresa(
-        nome=apelido or nome_completo,
-        apelido=apelido or None,
-        email=email,
-        senha=generate_password_hash(senha),
-        cidade=None,
-        estado=None,
-        telefone=telefone or None,
-        status_pagamento="pendente",
-        responsavel_nome=responsavel_nome,
-        responsavel_sobrenome=responsavel_sobrenome
+            return redirect(
+                url_for(
+                    "cadastro_get",
+                    email=email
+                )
+            )
+
+    # ==========================================================
+    # RESPONSÁVEL
+    # ==============================================================
+
+    partes = (
+        nome_completo
+        .split()
     )
-    db.session.add(nova)
-    db.session.flush()
 
-    u = Usuario.query.filter_by(email=email).first()
-    if not u:
-        u = Usuario(email=email, senha_hash=nova.senha, role=None, is_active=True)
-        db.session.add(u)
+    responsavel_nome = (
+        partes[0]
+    )
+
+    responsavel_sobrenome = (
+        " ".join(
+            partes[1:]
+        )
+        if len(partes) > 1
+        else None
+    )
+
+    # ==========================================================
+    # CRIAÇÃO DA CONTA
+    #
+    # Usuario + Empresa são criados na mesma transação.
+    # ==============================================================
+
+    try:
+
+        senha_hash = (
+            generate_password_hash(
+                senha
+            )
+        )
+
+        # ------------------------------------------------------
+        # USUÁRIO
+        # ------------------------------------------------------
+
+        novo_usuario = Usuario(
+            email=email,
+            senha_hash=senha_hash,
+            role="malharia",
+            is_active=True
+        )
+
+        db.session.add(
+            novo_usuario
+        )
+
         db.session.flush()
-    nova.user_id = u.id
-    db.session.commit()
 
-    session["empresa_id"] = nova.id
-    session["empresa_apelido"] = nova.apelido or nova.nome or email.split("@")[0]
-    flash("Conta criada! Complete os dados da sua empresa para continuar.", "success")
-    return redirect(url_for("editar_empresa"))
+        # ------------------------------------------------------
+        # EMPRESA
+        # ------------------------------------------------------
+
+        nova_empresa = Empresa(
+            user_id=novo_usuario.id,
+            nome=nome_empresa,
+            apelido=apelido or None,
+            email=email,
+            senha=senha_hash,
+            cidade=None,
+            estado=None,
+            telefone=telefone or None,
+            status_pagamento="pendente",
+            responsavel_nome=responsavel_nome,
+            responsavel_sobrenome=responsavel_sobrenome
+        )
+
+        db.session.add(
+            nova_empresa
+        )
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            "[MALHARIA] Falha ao criar conta."
+        )
+
+        flash(
+            (
+                "Não foi possível criar sua conta agora. "
+                "Tente novamente."
+            ),
+            "danger"
+        )
+
+        return render_template(
+            "cadastro.html",
+            erros={},
+            email=email,
+            nome=nome_completo,
+            apelido=apelido,
+            telefone=telefone,
+            cpf_cnpj=cpf_cnpj,
+            tipo_pessoa=tipo,
+            nascimento=nascimento
+        )
+
+    # ==========================================================
+    # SESSÃO CENTRALIZADA
+    # ==============================================================
+
+    _abrir_sessao_malharia(
+        nova_empresa
+    )
+
+    flash(
+        (
+            "Conta criada! "
+            "Complete os dados da sua empresa para continuar."
+        ),
+        "success"
+    )
+
+    return redirect(
+        url_for(
+            "editar_empresa"
+        )
+    )
 
 @app.route("/editar_tear/<int:id>", methods=["GET", "POST"])
 def editar_tear(id):
