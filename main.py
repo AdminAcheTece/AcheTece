@@ -19748,28 +19748,181 @@ def editar_tear(id):
         )
     )
 
-@app.post("/tear/<int:id>/excluir")
+# ==============================================================
+# PARQUE PRODUTIVO — EXCLUIR TEAR
+# ==============================================================
+
+@app.post(
+    "/tear/<int:id>/excluir",
+    endpoint="excluir_tear"
+)
+@limiter.limit(
+    "10 per hour",
+    key_func=_malharia_rate_limit_key
+)
+@limiter.limit(
+    "30 per day",
+    key_func=_malharia_rate_limit_key
+)
 def excluir_tear(id):
-    empresa = _pegar_empresa_do_usuario(required=True)
-    if not isinstance(empresa, Empresa):
+    """
+    Exclui um tear da malharia autenticada.
+
+    Segurança:
+    - somente POST;
+    - CSRF global;
+    - Rate Limit por malharia;
+    - verifica propriedade do tear;
+    - bloqueia exclusão quando houver histórico de matching;
+    - transação com rollback;
+    - não aceita empresa_id enviado pelo navegador.
+    """
+
+    # ==========================================================
+    # IDENTIDADE
+    # ==========================================================
+
+    empresa = (
+        _pegar_empresa_do_usuario(
+            required=True
+        )
+    )
+
+    if not isinstance(
+        empresa,
+        Empresa
+    ):
         return empresa
-    tear = Tear.query.get_or_404(id)
+
+    # ==========================================================
+    # TEAR
+    # ==========================================================
+
+    tear = db.session.get(
+        Tear,
+        id
+    )
+
+    if tear is None:
+        abort(404)
+
+    # ==========================================================
+    # PROPRIEDADE
+    # ==========================================================
+
     if tear.empresa_id != empresa.id:
+
+        current_app.logger.warning(
+            (
+                "[SECURITY][TEAR_DELETE_FORBIDDEN] "
+                f"empresa_id={empresa.id} "
+                f"tear_id={id}"
+            )
+        )
+
         abort(403)
 
-    db.session.delete(tear)
-    db.session.commit()
-    flash("Tear excluído com sucesso!", "success")
+    # ==========================================================
+    # HISTÓRICO DE MATCHING
+    # ==========================================================
 
-    next_url = request.args.get("next") or request.form.get("next")
-    if next_url:
-        try:
-            # evita open redirect
-            if urlparse(next_url).netloc in ("", request.host):
-                return redirect(next_url)
-        except Exception:
-            pass
-    return redirect(url_for("painel_malharia"))
+    total_matches = (
+        DemandMatch.query
+        .filter(
+            DemandMatch.tear_id
+            == tear.id
+        )
+        .count()
+    )
+
+    if total_matches > 0:
+
+        current_app.logger.warning(
+            (
+                "[SECURITY][TEAR_DELETE_BLOCKED] "
+                f"empresa_id={empresa.id} "
+                f"tear_id={tear.id} "
+                f"matches={total_matches}"
+            )
+        )
+
+        flash(
+            (
+                "Este tear já participou de processos de matching "
+                "e não pode ser excluído definitivamente. "
+                "O histórico técnico precisa ser preservado."
+            ),
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "painel_malharia"
+            )
+        )
+
+    # ==========================================================
+    # EXCLUSÃO
+    # ==========================================================
+
+    try:
+
+        db.session.delete(
+            tear
+        )
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            (
+                "[SECURITY][TEAR_DELETE] "
+                "Falha ao excluir tear. "
+                f"empresa_id={empresa.id} "
+                f"tear_id={id}"
+            )
+        )
+
+        flash(
+            (
+                "Não foi possível excluir o tear agora. "
+                "Tente novamente."
+            ),
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "painel_malharia"
+            )
+        )
+
+    # ==========================================================
+    # LOG
+    # ==========================================================
+
+    current_app.logger.info(
+        (
+            "[SECURITY][TEAR_DELETE] "
+            f"empresa_id={empresa.id} "
+            f"tear_id={id} "
+            "resultado=excluido"
+        )
+    )
+
+    flash(
+        "Tear excluído com sucesso!",
+        "success"
+    )
+
+    return redirect(
+        url_for(
+            "painel_malharia"
+        )
+    )
 
 # --------------------------------------------------------------------
 # Exportação CSV (usa filtros da home)
