@@ -19997,9 +19997,45 @@ def planos():
     empresa = Empresa.query.get(session['empresa_id']) if 'empresa_id' in session else None
     return render_template('planos.html', empresa=empresa)
 
-@app.route('/pagar', methods=['GET'])
+# ==============================================================
+# MERCADO PAGO — ALIAS LEGADO /pagar
+# ==============================================================
+
+@app.get(
+    "/pagar",
+    endpoint="pagar"
+)
 def pagar():
-    return redirect(url_for('checkout'))
+    """
+    Alias legado do início do pagamento.
+
+    Não cria preferência diretamente.
+    Redireciona para a rota canônica /checkout,
+    preservando somente o plano reconhecido.
+
+    A autenticação, validação e Rate Limiting são
+    executados posteriormente pela própria /checkout.
+    """
+
+    plano = (
+        request.args.get("plano")
+        or "mensal"
+    ).strip().lower()
+
+    if plano not in {
+        "mensal",
+        "anual",
+    }:
+
+        plano = "mensal"
+
+    return redirect(
+        url_for(
+            "checkout",
+            plano=plano
+        ),
+        code=302
+    )
 
 # --- Checkout Mercado Pago ---------------------------------------------------
 def _mp_sdk():
@@ -21546,17 +21582,149 @@ def pagamento_aprovado():
 
     return response
 
-@app.route('/pagamento_sucesso')
+# ==============================================================
+# MERCADO PAGO — ALIAS LEGADO DE SUCESSO
+# ==============================================================
+
+@app.get(
+    "/pagamento_sucesso",
+    endpoint="pagamento_sucesso"
+)
 def pagamento_sucesso():
-    return render_template('pagamento_aprovado.html')
+    """
+    Alias legado de compatibilidade.
 
-@app.route('/pagamento_erro')
+    Nunca exibe diretamente uma mensagem de pagamento aprovado.
+
+    Encaminha os parâmetros reconhecidos para a rota canônica
+    /pagamento_aprovado, onde o payment_id é validado novamente
+    diretamente no Mercado Pago.
+    """
+
+    payment_id = (
+        request.args.get("payment_id")
+        or request.args.get("collection_id")
+        or request.args.get("paymentId")
+        or ""
+    )
+
+    plano = (
+        request.args.get("plano")
+        or ""
+    ).strip().lower()
+
+    params = {}
+
+    if payment_id:
+
+        params["payment_id"] = (
+            str(payment_id).strip()
+        )
+
+    if plano in {
+        "mensal",
+        "anual",
+    }:
+
+        params["plano"] = plano
+
+    return redirect(
+        url_for(
+            "pagamento_aprovado",
+            **params
+        ),
+        code=302
+    )
+
+# ==============================================================
+# MERCADO PAGO — RETORNO DE ERRO
+# ==============================================================
+
+@app.get(
+    "/pagamento_erro",
+    endpoint="pagamento_erro"
+)
 def pagamento_erro():
-    return render_template('pagamento_erro.html')
+    """
+    Página de retorno quando o Checkout Pro não é concluído.
 
-@app.route('/pagamento_pendente')
+    Esta página não altera status de assinatura e não considera
+    qualquer parâmetro da URL como prova de pagamento.
+    """
+
+    response = make_response(
+        render_template(
+            "pagamento_erro.html"
+        )
+    )
+
+    response.headers[
+        "Cache-Control"
+    ] = (
+        "no-store, no-cache, "
+        "must-revalidate, max-age=0"
+    )
+
+    response.headers[
+        "Pragma"
+    ] = "no-cache"
+
+    response.headers[
+        "Expires"
+    ] = "0"
+
+    response.headers[
+        "Referrer-Policy"
+    ] = "no-referrer"
+
+    return response
+
+
+# ==============================================================
+# MERCADO PAGO — RETORNO PENDENTE
+# ==============================================================
+
+@app.get(
+    "/pagamento_pendente",
+    endpoint="pagamento_pendente"
+)
 def pagamento_pendente():
-    return render_template('pagamento_pendente.html')
+    """
+    Página informativa para pagamentos ainda pendentes.
+
+    Não ativa assinatura e não utiliza parâmetros da URL
+    como confirmação de pagamento.
+
+    A ativação real continua sendo responsabilidade do
+    processamento server-side do Mercado Pago.
+    """
+
+    response = make_response(
+        render_template(
+            "pagamento_pendente.html"
+        )
+    )
+
+    response.headers[
+        "Cache-Control"
+    ] = (
+        "no-store, no-cache, "
+        "must-revalidate, max-age=0"
+    )
+
+    response.headers[
+        "Pragma"
+    ] = "no-cache"
+
+    response.headers[
+        "Expires"
+    ] = "0"
+
+    response.headers[
+        "Referrer-Policy"
+    ] = "no-referrer"
+
+    return response
 
 # ==============================================================
 # MERCADO PAGO — WEBHOOK
