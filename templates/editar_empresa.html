@@ -188,6 +188,201 @@
     @media (prefers-color-scheme: dark){
       html, body{ background:#fff !important; color:#111; }
     }
+
+    /* =========================================================
+       FOTO DE PERFIL DA MALHARIA
+    ========================================================= */
+    
+    .perfil-foto-card{
+      display:flex;
+      align-items:center;
+      gap:24px;
+    
+      margin:0 0 28px 0;
+      padding:22px;
+    
+      border:1px solid #dedede;
+      border-radius:16px;
+    
+      background:#f8f8f8;
+    }
+    
+    
+    .perfil-foto-preview{
+      flex:0 0 auto;
+    
+      width:112px;
+      height:112px;
+    }
+    
+    
+    .perfil-foto-img,
+    .perfil-foto-placeholder{
+      width:112px;
+      height:112px;
+    
+      border-radius:50%;
+    
+      border:1px solid #d7d7d7;
+    
+      background:#ffffff;
+    
+      object-fit:cover;
+    }
+    
+    
+    .perfil-foto-placeholder{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    
+      background:#111;
+      color:#b6f34d;
+    
+      font-size:42px;
+      font-weight:900;
+    }
+    
+    
+    .perfil-foto-content{
+      flex:1;
+      min-width:0;
+    }
+    
+    
+    .perfil-foto-content h2{
+      margin:0 0 6px 0;
+    
+      color:#111;
+    
+      font-size:20px;
+      font-weight:800;
+    }
+    
+    
+    .perfil-foto-content p{
+      margin:0 0 5px 0;
+    
+      color:#555;
+    
+      font-size:14px;
+      line-height:1.45;
+    }
+    
+    
+    .perfil-foto-content .perfil-foto-hint{
+      margin-top:5px;
+    
+      color:#777;
+    
+      font-size:12px;
+    }
+    
+    
+    .perfil-foto-form{
+      display:flex;
+      align-items:center;
+      flex-wrap:wrap;
+    
+      gap:10px;
+    
+      margin-top:14px;
+    }
+    
+    
+    .perfil-foto-input{
+      position:absolute;
+    
+      width:1px;
+      height:1px;
+    
+      opacity:0;
+      overflow:hidden;
+    }
+    
+    
+    .perfil-foto-escolher,
+    .perfil-foto-salvar{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+    
+      min-height:42px;
+    
+      padding:0 18px;
+    
+      border-radius:9999px;
+    
+      font-size:13px;
+      font-weight:800;
+    
+      cursor:pointer;
+    }
+    
+    
+    .perfil-foto-escolher{
+      border:1px solid #d0d0d0;
+    
+      background:#fff;
+      color:#111;
+    }
+    
+    
+    .perfil-foto-escolher:hover{
+      border-color:#111;
+    
+      background:#f2f2f2;
+    }
+    
+    
+    .perfil-foto-salvar{
+      border:0;
+    
+      background:#111;
+      color:#b6f34d;
+    }
+    
+    
+    .perfil-foto-salvar:hover{
+      background:#b6f34d;
+      color:#111;
+    }
+    
+    
+    @media(max-width:640px){
+    
+      .perfil-foto-card{
+        flex-direction:column;
+    
+        align-items:flex-start;
+      }
+    
+    
+      .perfil-foto-preview{
+        width:96px;
+        height:96px;
+      }
+    
+    
+      .perfil-foto-img,
+      .perfil-foto-placeholder{
+        width:96px;
+        height:96px;
+      }
+    
+    
+      .perfil-foto-form{
+        width:100%;
+      }
+    
+    
+      .perfil-foto-escolher,
+      .perfil-foto-salvar{
+        width:100%;
+      }
+    
+    }
+    
   </style>
 
   <!-- ✅ Header padrão deve ser o ÚLTIMO do head -->
@@ -294,6 +489,99 @@
             <a href="#formulario" class="botao-voltar">← Corrigir dados</a>
           </div>
         {% endif %}
+
+
+        <!-- =========================================================
+             FOTO / LOGO DA MALHARIA
+        ========================================================= -->
+        
+        <section class="perfil-foto-card">
+        
+          <div class="perfil-foto-preview">
+        
+            {% if avatar_url %}
+        
+              <img
+                src="{{ avatar_url }}"
+                alt="Foto de perfil da malharia"
+                class="perfil-foto-img"
+              >
+        
+            {% else %}
+        
+              <div
+                class="perfil-foto-placeholder"
+                aria-label="Malharia sem foto de perfil"
+              >
+                {{ (apelido or nome or 'M')[:1] | upper }}
+              </div>
+        
+            {% endif %}
+        
+          </div>
+        
+        
+          <div class="perfil-foto-content">
+        
+            <h2>
+              Foto da malharia
+            </h2>
+        
+            <p>
+              Adicione uma imagem para identificar sua empresa
+              no AcheTece.
+            </p>
+        
+            <p class="perfil-foto-hint">
+              JPG, PNG, WEBP ou GIF. Máximo de 5 MB.
+              A imagem será ajustada automaticamente para o perfil.
+            </p>
+        
+        
+            <form
+              method="POST"
+              action="{{ url_for('perfil_foto_upload') }}"
+              enctype="multipart/form-data"
+              class="perfil-foto-form"
+            >
+        
+              <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ csrf_token() }}"
+              >
+        
+        
+              <label
+                for="foto"
+                class="perfil-foto-escolher"
+              >
+                Escolher imagem
+              </label>
+        
+        
+              <input
+                type="file"
+                id="foto"
+                name="foto"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                class="perfil-foto-input"
+                required
+              >
+        
+        
+              <button
+                type="submit"
+                class="perfil-foto-salvar"
+              >
+                Atualizar foto
+              </button>
+        
+            </form>
+        
+          </div>
+        
+        </section>
 
         <form method="POST" action="{{ url_for('editar_empresa') }}" class="formulario" id="formulario" autocomplete="off">
           <input
