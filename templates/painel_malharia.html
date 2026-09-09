@@ -310,7 +310,27 @@
       stroke-linejoin:round;
     }
 
-
+    /* ==========================================================
+       FOTO NO BOTÃO DE PERFIL
+    ========================================================== */
+    
+    .hdr-actions.painel-actions
+    .profile-pill
+    .profile-avatar-img{
+      width:32px !important;
+      height:32px !important;
+    
+      display:block;
+    
+      border-radius:50%;
+    
+      object-fit:cover;
+    
+      border:1px solid #d7d7d7;
+    
+      background:#fff;
+    }
+    
     .hdr-text-btn{
 
       height:40px;
@@ -623,6 +643,24 @@
       color:#111;
     }
 
+    /* ==========================================================
+       FOTO NO MENU DE PERFIL
+    ========================================================== */
+    
+    .pm-header .pm-avatar-img{
+      width:52px;
+      height:52px;
+    
+      display:block;
+    
+      border-radius:50%;
+    
+      object-fit:cover;
+    
+      border:1px solid var(--line);
+    
+      background:#fff;
+    }
 
     .pm-header .avatar-ico svg{
 
@@ -2759,46 +2797,42 @@
       </button>
 
 
-      <!-- PERFIL -->
-
+      <!-- =========================================================
+           PERFIL / AVATAR
+      ========================================================= -->
+      
       <button
         class="profile-pill"
         id="profileToggle"
         type="button"
         aria-haspopup="menu"
         aria-expanded="false"
+        aria-label="Abrir menu do perfil"
         title="Abrir menu do perfil"
       >
-
-
-        <span
-          class="avatar avatar-ico"
-          aria-hidden="true"
-          style="
-            border:0;
-            background:transparent;
-            width:auto;
-            height:auto;
-          "
-        >
-
-
+      
+        {% if avatar_url %}
+      
+          <img
+            src="{{ avatar_url }}"
+            alt=""
+            class="profile-avatar-img"
+            aria-hidden="true"
+          >
+      
+        {% else %}
+      
           <svg
             class="user-ico"
             viewBox="0 0 24 24"
             aria-hidden="true"
           >
-
             <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z"></path>
-
             <path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path>
-
           </svg>
-
-
-        </span>
-
-
+      
+        {% endif %}
+      
       </button>
 
 
@@ -3245,38 +3279,36 @@
 
   <div class="pm-header">
 
-
-    <span
-      class="avatar-ico"
-      aria-hidden="true"
-    >
-
-
-      <svg
-        viewBox="0 0 24 24"
-        focusable="false"
+    {% if avatar_url %}
+  
+      <img
+        src="{{ avatar_url }}"
+        alt="Foto da {{ nome_empresa }}"
+        class="pm-avatar-img"
+      >
+  
+    {% else %}
+  
+      <span
+        class="avatar-ico"
         aria-hidden="true"
       >
-
-        <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z"></path>
-
-        <path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path>
-
-      </svg>
-
-
-    </span>
-
-
+        <svg
+          viewBox="0 0 24 24"
+          focusable="false"
+          aria-hidden="true"
+        >
+          <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z"></path>
+          <path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path>
+        </svg>
+      </span>
+  
+    {% endif %}
+  
     <div>
-
-      <strong>
-        {{ nome_empresa }}
-      </strong>
-
+      <strong>{{ nome_empresa }}</strong>
     </div>
-
-
+  
   </div>
 
 
