@@ -4987,6 +4987,46 @@ def _malharia_rate_limit_key():
     )
 
 # ==============================================================
+# RATE LIMIT — ADMINISTRADOR AUTENTICADO
+# ==============================================================
+
+def _admin_rate_limit_key():
+    """
+    Usa a identidade do administrador autenticado
+    como chave do Rate Limit.
+
+    Se não existir sessão administrativa válida,
+    utiliza o IP como fallback.
+    """
+
+    admin_autenticado = (
+        session.get(
+            "admin_authenticated"
+        )
+        is True
+    )
+
+    admin_email = (
+        session.get(
+            "admin_email"
+        )
+        or ""
+    ).strip().lower()
+
+    if (
+        admin_autenticado
+        and admin_email
+    ):
+
+        return (
+            f"admin:{admin_email}"
+        )
+
+    return (
+        f"ip:{_client_ip()}"
+    )
+
+# ==============================================================
 # TRATAMENTO GLOBAL — HTTP 429 TOO MANY REQUESTS
 # ==============================================================
 
@@ -20011,36 +20051,252 @@ def admin_empresas():
         plano=f_plano,                 # <- NOVO: devolve pro template manter seleção
     )
 
+# ==============================================================
+# ADMIN — ALTERAR STATUS DA MALHARIA
+# ==============================================================
+
 @app.post(
-    "/admin/editar_status/<int:empresa_id>"
+    "/admin/editar_status/<int:empresa_id>",
+    endpoint="admin_editar_status"
 )
 @login_admin_requerido
-def admin_editar_status(empresa_id):
-    empresa = Empresa.query.get_or_404(empresa_id)
+@limiter.limit(
+    "30 per hour",
+    key_func=_admin_rate_limit_key
+)
+@limiter.limit(
+    "100 per day",
+    key_func=_admin_rate_limit_key
+)
+def admin_editar_status(
+    empresa_id
+):
+    """
+    Alterna o status de pagamento da malharia.
 
-    STATUS_VALIDOS = {"ativo", "pendente"}
+    Segurança:
+    - somente POST;
+    - CSRF global;
+    - exige sessão administrativa;
+    - Rate Limit por administrador;
+    - o novo status não é confiado ao navegador;
+    - alteração feita server-side;
+    - transação com rollback;
+    - log administrativo sem dados sensíveis.
+    """
 
-    status_req = (request.values.get('status') or '').strip().lower()
+    # ==========================================================
+    # EMPRESA
+    # ==========================================================
 
-    if status_req in STATUS_VALIDOS:
-        novo_status = status_req
+    empresa = db.session.get(
+        Empresa,
+        empresa_id
+    )
+
+    if empresa is None:
+
+        abort(
+            404
+        )
+
+    # ==========================================================
+    # STATUS ATUAL
+    # ==========================================================
+
+    status_anterior = (
+        empresa.status_pagamento
+        or ""
+    ).strip().lower()
+
+    # Considera os equivalentes já utilizados pelo AcheTece.
+    status_ativo_atual = (
+        status_anterior
+        in STATUS_ATIVO_EQUIV
+    )
+
+    # ==========================================================
+    # NOVO STATUS
+    #
+    # Não utilizamos request.form["status"] para decidir
+    # o novo status da empresa.
+    #
+    # O campo "status" existente no painel administrativo
+    # também é utilizado como filtro da listagem.
+    # ==============================================================
+
+    if status_ativo_atual:
+
+        novo_status = (
+            "pendente"
+        )
+
+        nova_data_pagamento = (
+            None
+        )
+
     else:
-        # toggle seguro
-        novo_status = 'ativo' if (empresa.status_pagamento or '').strip().lower() != 'ativo' else 'pendente'
 
-    status_anterior = (empresa.status_pagamento or '').strip().lower()
+        novo_status = (
+            "ativo"
+        )
 
-    empresa.status_pagamento = novo_status
-    empresa.data_pagamento = datetime.utcnow() if novo_status == 'ativo' else None
-    db.session.commit()
+        nova_data_pagamento = (
+            datetime.utcnow()
+        )
 
-    flash(f'Status de "{empresa.apelido or empresa.nome}" atualizado para {novo_status}.', 'success')
+    # ==========================================================
+    # TRANSAÇÃO
+    # ==============================================================
 
-    return redirect(url_for('admin_empresas',
-                            pagina=request.args.get('pagina', 1),
-                            status=request.args.get('status', ''),
-                            data_inicio=request.args.get('data_inicio', ''),
-                            data_fim=request.args.get('data_fim', '')))
+    try:
+
+        empresa.status_pagamento = (
+            novo_status
+        )
+
+        empresa.data_pagamento = (
+            nova_data_pagamento
+        )
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            (
+                "[SECURITY][ADMIN_STATUS] "
+                "Falha ao alterar status. "
+                f"empresa_id={empresa_id}"
+            )
+        )
+
+        flash(
+            (
+                "Não foi possível alterar o status "
+                "da empresa agora."
+            ),
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "admin_empresas"
+            )
+        )
+
+    # ==========================================================
+    # LOG SEGURO
+    # ==============================================================
+
+    current_app.logger.info(
+        (
+            "[SECURITY][ADMIN_STATUS] "
+            f"empresa_id={empresa.id} "
+            f"status_anterior={status_anterior or 'vazio'} "
+            f"status_novo={novo_status}"
+        )
+    )
+
+    # ==========================================================
+    # MENSAGEM
+    # ==============================================================
+
+    nome_exibicao = (
+        empresa.apelido
+        or empresa.nome
+        or f"Empresa {empresa.id}"
+    )
+
+    flash(
+        (
+            f'Status de "{nome_exibicao}" '
+            f"atualizado para {novo_status}."
+        ),
+        "success"
+    )
+
+    # ==========================================================
+    # PRESERVA OS FILTROS DA TELA ADMINISTRATIVA
+    # ==============================================================
+
+    params = {
+        "pagina": (
+            request.args.get(
+                "pagina",
+                1
+            )
+        ),
+
+        "status": (
+            request.args.get(
+                "status",
+                ""
+            )
+        ),
+
+        "data_inicio": (
+            request.args.get(
+                "data_inicio",
+                ""
+            )
+        ),
+
+        "data_fim": (
+            request.args.get(
+                "data_fim",
+                ""
+            )
+        ),
+
+        "plano": (
+            request.args.get(
+                "plano",
+                ""
+            )
+        ),
+
+        "apelido": (
+            request.args.get(
+                "apelido",
+                ""
+            )
+        ),
+
+        "cidade": (
+            request.args.get(
+                "cidade",
+                ""
+            )
+        ),
+
+        "estado": (
+            request.args.get(
+                "estado",
+                ""
+            )
+        ),
+    }
+
+    # Remove parâmetros vazios.
+    params = {
+        chave: valor
+        for chave, valor
+        in params.items()
+        if valor not in {
+            None,
+            ""
+        }
+    }
+
+    return redirect(
+        url_for(
+            "admin_empresas",
+            **params
+        )
+    )
 
 @app.route('/admin/empresa_excluir/<int:empresa_id>', methods=['POST'])
 @login_admin_requerido
