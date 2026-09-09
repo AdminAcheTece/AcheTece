@@ -382,6 +382,52 @@
       }
     
     }
+
+    /* =========================================================
+       MENSAGENS FLASH
+    ========================================================= */
+    
+    .flash-area{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      margin:0 0 18px 0;
+    }
+    
+    .flash-message{
+      padding:13px 15px;
+      border-radius:10px;
+      border:1px solid transparent;
+    
+      font-size:14px;
+      font-weight:700;
+      line-height:1.45;
+    }
+    
+    .flash-success{
+      background:#e8f5e9;
+      border-color:#81c784;
+      color:#1b5e20;
+    }
+    
+    .flash-warning{
+      background:#fff8e1;
+      border-color:#e4c85e;
+      color:#665500;
+    }
+    
+    .flash-danger,
+    .flash-error{
+      background:#ffe6e6;
+      border-color:#ff8a8a;
+      color:#a00000;
+    }
+    
+    .flash-info{
+      background:#eef4ff;
+      border-color:#a7bde8;
+      color:#254478;
+    }
     
   </style>
 
@@ -478,6 +524,33 @@
       <div class="container">
         <h1 class="titulo">Editar Dados da Malharia</h1>
 
+        <!-- =========================================================
+             MENSAGENS FLASH
+        ========================================================= -->
+        
+        {% with mensagens = get_flashed_messages(with_categories=true) %}
+        
+          {% if mensagens %}
+        
+            <div class="flash-area">
+        
+              {% for categoria, mensagem in mensagens %}
+        
+                <div
+                  class="flash-message flash-{{ categoria }}"
+                  role="status"
+                >
+                  {{ mensagem }}
+                </div>
+        
+              {% endfor %}
+        
+            </div>
+        
+          {% endif %}
+        
+        {% endwith %}
+        
         {% if request.args.get('ok') == '1' %}
           <div class="mensagem-sucesso">Alterações salvas com sucesso! Redirecionando…</div>
         {% endif %}
