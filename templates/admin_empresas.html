@@ -348,6 +348,53 @@
     @media (prefers-color-scheme: dark){
       html, body{ background:#fff !important; color:var(--text); }
     }
+
+    /* =========================================================
+       MENSAGENS DO ADMIN
+    ========================================================= */
+    
+    .admin-flashes{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      margin:0 0 14px;
+    }
+    
+    .admin-flash{
+      padding:13px 15px;
+      border:1px solid transparent;
+      border-radius:12px;
+    
+      font-size:13px;
+      font-weight:700;
+      line-height:1.45;
+    }
+    
+    .admin-flash-success{
+      background:#e8f5e9;
+      border-color:#81c784;
+      color:#1b5e20;
+    }
+    
+    .admin-flash-warning{
+      background:#fff8e1;
+      border-color:#e4c85e;
+      color:#665500;
+    }
+    
+    .admin-flash-danger,
+    .admin-flash-error{
+      background:#ffe6e6;
+      border-color:#ff8a8a;
+      color:#a00000;
+    }
+    
+    .admin-flash-info{
+      background:#eef4ff;
+      border-color:#a7bde8;
+      color:#254478;
+    }
+    
   </style>
 
   <!-- ✅ Header padrão (SEMPRE o último do head) -->
@@ -491,6 +538,29 @@
           </div>
         </div>
 
+        {% with messages = get_flashed_messages(with_categories=true) %}
+
+          {% if messages %}
+        
+            <div class="admin-flashes">
+        
+              {% for category, message in messages %}
+        
+                <div
+                  class="admin-flash admin-flash-{{ category }}"
+                  role="status"
+                >
+                  {{ message }}
+                </div>
+        
+              {% endfor %}
+        
+            </div>
+        
+          {% endif %}
+        
+        {% endwith %}
+        
         {% set src = empresas_all if empresas_all is defined and empresas_all else empresas %}
         {% set ns = namespace(cidades=[], estados=[]) %}
         {% for e in src %}
@@ -634,30 +704,47 @@
                     </form>
 
                     <form
-                      action="/admin/excluir_empresa/{{ empresa.id }}?pagina={{ pagina }}{% if status %}&status={{ status }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}{% if apelido %}&apelido={{ apelido }}{% endif %}{% if cidade %}&cidade={{ cidade }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}{% if plano %}&plano={{ plano }}{% endif %}"
+                      action="{{
+                        url_for(
+                          'admin_excluir_empresa',
+                          empresa_id=empresa.id,
+                          pagina=pagina,
+                          status=status or '',
+                          data_inicio=data_inicio or '',
+                          data_fim=data_fim or '',
+                          apelido=apelido or '',
+                          cidade=cidade or '',
+                          estado=estado or '',
+                          plano=plano or ''
+                        )
+                      }}"
                       method="post"
-                      data-confirm='Tem certeza que deseja excluir a empresa "{{ (empresa.razao_social or empresa.nome)|e }}"? Esta ação não poderá ser desfeita.'
+                      data-confirm='Tem certeza que deseja excluir definitivamente a empresa "{{ (empresa.apelido or empresa.nome)|e }}"? Esta ação não poderá ser desfeita quando a empresa não possuir histórico no marketplace.'
+                    >
+                    
                       <input
                         type="hidden"
                         name="csrf_token"
                         value="{{ csrf_token() }}"
                       >
-                      <input type="hidden" name="pagina" value="{{ pagina }}">
-                      <input type="hidden" name="status" value="{{ status or '' }}">
-                      <input type="hidden" name="data_inicio" value="{{ data_inicio or '' }}">
-                      <input type="hidden" name="data_fim" value="{{ data_fim or '' }}">
-                      <input type="hidden" name="apelido" value="{{ apelido or '' }}">
-                      <input type="hidden" name="cidade" value="{{ cidade or '' }}">
-                      <input type="hidden" name="estado" value="{{ estado or '' }}">
-                      <input type="hidden" name="plano"  value="{{ plano or '' }}">
-                      <button class="icon-action icon-del" type="submit" title="Excluir" aria-label="Excluir">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                    
+                      <button
+                        class="icon-action icon-del"
+                        type="submit"
+                        title="Excluir empresa"
+                        aria-label="Excluir empresa"
+                      >
+                        <svg
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
                           <polyline points="3 6 5 6 21 6"></polyline>
                           <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
                           <path d="M10 11v6M14 11v6"></path>
                           <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
                         </svg>
                       </button>
+                    
                     </form>
                   </div>
                 </td>
