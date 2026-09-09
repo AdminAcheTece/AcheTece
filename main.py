@@ -31,7 +31,7 @@ from urllib.parse import urlparse
 from werkzeug.utils import secure_filename
 import time
 import resend  # biblioteca do Resend
-from PIL import Image
+from PIL import Image, ImageOps, UnidentifiedImageError
 import shutil
 from datetime import datetime, timedelta
 from flask import current_app, request
@@ -821,39 +821,437 @@ DEMO_MODE = _env_bool(
     False
 )
 
-# ===== CONFIG AVATAR (definir uma única vez; sem duplicar BASE_DIR) =====
-app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5 MB
+# ==============================================================
+# AVATAR / FOTO DE PERFIL — CONFIGURAÇÃO SEGURA
+# ==============================================================
 
-# Pastas (usar app.root_path para padronizar)
-UPLOAD_DIR  = os.path.join(app.root_path, "static", "uploads", "perfil")   # legado (emp_{id}.ext)
-AVATAR_DIR  = os.path.join(app.root_path, "static", "uploads", "avatars")  # novo fluxo (uid_timestamp.webp)
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-os.makedirs(AVATAR_DIR, exist_ok=True)
+# Limite máximo da requisição.
+#
+# Um upload acima de 5 MB é rejeitado pelo Flask antes
+# mesmo de ser processado pelo Pillow.
+app.config[
+    "MAX_CONTENT_LENGTH"
+] = 5 * 1024 * 1024
 
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
 
-def _allowed_file(filename: str) -> bool:
-    return ('.' in filename) and (filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS)
+# ==============================================================
+# DIRETÓRIOS
+# ==============================================================
 
-def _save_square_webp(file_storage, dest_path: str, side: int = 400, quality: int = 85):
-    """Recorta para quadrado central, redimensiona e salva em WEBP."""
-    img = Image.open(file_storage.stream)
-    # converte p/ RGB (remove alpha) antes do WEBP
-    if img.mode not in ('RGB', 'L'):
-        img = img.convert('RGB')
+UPLOAD_DIR = os.path.join(
+    app.root_path,
+    "static",
+    "uploads",
+    "perfil"
+)
 
-    # Compat de filtro (Pillow 10+ usa Image.Resampling)
+AVATAR_DIR = os.path.join(
+    app.root_path,
+    "static",
+    "uploads",
+    "avatars"
+)
+
+os.makedirs(
+    UPLOAD_DIR,
+    exist_ok=True
+)
+
+os.makedirs(
+    AVATAR_DIR,
+    exist_ok=True
+)
+
+
+# ==============================================================
+# FORMATOS ACEITOS
+# ==============================================================
+#
+# IMPORTANTE:
+#
+# Não confiamos apenas:
+# - no nome do arquivo;
+# - na extensão;
+# - no Content-Type enviado pelo navegador.
+#
+# O Pillow abrirá o conteúdo real do arquivo e identificará
+# o formato verdadeiro.
+# ==============================================================
+
+ALLOWED_EXTENSIONS = {
+    "png",
+    "jpg",
+    "jpeg",
+    "webp",
+    "gif",
+}
+
+ALLOWED_IMAGE_FORMATS = {
+    "JPEG",
+    "PNG",
+    "WEBP",
+    "GIF",
+}
+
+
+# ==============================================================
+# LIMITE DE DIMENSÕES
+# ==============================================================
+#
+# Mesmo um arquivo pequeno em MB pode representar uma imagem
+# gigantesca quando descompactada.
+#
+# 20 milhões de pixels é mais que suficiente para uma foto
+# destinada a um avatar de 400 x 400.
+# ==============================================================
+
+AVATAR_MAX_PIXELS = (
+    20_000_000
+)
+
+
+def _allowed_file(
+    filename: str
+) -> bool:
+    """
+    Validação auxiliar da extensão.
+
+    Não é utilizada como única prova de que o arquivo
+    realmente é uma imagem.
+    """
+
+    filename = (
+        filename
+        or ""
+    ).strip()
+
+    if "." not in filename:
+
+        return False
+
+    extension = (
+        filename
+        .rsplit(
+            ".",
+            1
+        )[1]
+        .lower()
+    )
+
+    return (
+        extension
+        in ALLOWED_EXTENSIONS
+    )
+
+
+# ==============================================================
+# AVATAR — VALIDAÇÃO E NORMALIZAÇÃO
+# ==============================================================
+
+def _save_square_webp(
+    file_storage,
+    dest_path: str,
+    side: int = 400,
+    quality: int = 85
+):
+    """
+    Valida uma imagem enviada pelo usuário e cria um novo
+    arquivo WEBP seguro.
+
+    Retorna:
+        {
+            "format": "...",
+            "width": ...,
+            "height": ...
+        }
+
+    Segurança:
+    - não confia na extensão;
+    - não confia no MIME informado;
+    - verifica o conteúdo utilizando Pillow;
+    - rejeita formatos não autorizados;
+    - rejeita imagens excessivamente grandes;
+    - corrige orientação EXIF;
+    - converte para RGB;
+    - elimina metadados da imagem original;
+    - elimina animações;
+    - gera um arquivo WEBP completamente novo.
+    """
+
+    if file_storage is None:
+
+        raise ValueError(
+            "Arquivo de imagem ausente."
+        )
+
+    stream = getattr(
+        file_storage,
+        "stream",
+        None
+    )
+
+    if stream is None:
+
+        raise ValueError(
+            "Fluxo da imagem inválido."
+        )
+
+    # ==========================================================
+    # PRIMEIRA LEITURA — IDENTIFICA E VERIFICA
+    # ==========================================================
+
     try:
-        _LANCZOS = Image.Resampling.LANCZOS  # type: ignore[attr-defined]
-    except Exception:
-        _LANCZOS = Image.LANCZOS
 
-    w, h = img.size
-    m = min(w, h)
-    left = (w - m) // 2
-    top = (h - m) // 2
-    img = img.crop((left, top, left + m, top + m)).resize((side, side), _LANCZOS)
-    img.save(dest_path, 'WEBP', quality=quality, method=6)
+        stream.seek(0)
+
+        img_check = Image.open(
+            stream
+        )
+
+        detected_format = (
+            img_check.format
+            or ""
+        ).upper()
+
+        width, height = (
+            img_check.size
+        )
+
+        # ------------------------------------------------------
+        # FORMATO REAL
+        # ------------------------------------------------------
+
+        if (
+            detected_format
+            not in ALLOWED_IMAGE_FORMATS
+        ):
+
+            raise ValueError(
+                "Formato de imagem não permitido."
+            )
+
+        # ------------------------------------------------------
+        # DIMENSÕES
+        # ------------------------------------------------------
+
+        if (
+            width <= 0
+            or height <= 0
+        ):
+
+            raise ValueError(
+                "Dimensões de imagem inválidas."
+            )
+
+        total_pixels = (
+            int(width)
+            * int(height)
+        )
+
+        if (
+            total_pixels
+            > AVATAR_MAX_PIXELS
+        ):
+
+            raise ValueError(
+                "Imagem possui dimensões excessivas."
+            )
+
+        # ------------------------------------------------------
+        # VERIFICA INTEGRIDADE
+        # ------------------------------------------------------
+
+        img_check.verify()
+
+    except (
+        UnidentifiedImageError,
+        OSError
+    ) as exc:
+
+        raise ValueError(
+            "O arquivo enviado não é uma imagem válida."
+        ) from exc
+
+    # ==========================================================
+    # SEGUNDA LEITURA
+    #
+    # verify() invalida o objeto anterior, então abrimos
+    # novamente o stream.
+    # ==========================================================
+
+    try:
+
+        stream.seek(0)
+
+        img = Image.open(
+            stream
+        )
+
+        # Se for GIF animado, utiliza somente o primeiro quadro.
+        try:
+
+            img.seek(
+                0
+            )
+
+        except Exception:
+
+            pass
+
+        # ======================================================
+        # ORIENTAÇÃO EXIF
+        #
+        # Evita fotos de celular aparecerem giradas.
+        # ======================================================
+
+        img = ImageOps.exif_transpose(
+            img
+        )
+
+        # ======================================================
+        # CONVERSÃO SEGURA PARA RGB
+        # ======================================================
+
+        possui_transparencia = (
+            img.mode in {
+                "RGBA",
+                "LA",
+            }
+            or "transparency"
+            in img.info
+        )
+
+        if possui_transparencia:
+
+            rgba = img.convert(
+                "RGBA"
+            )
+
+            background = Image.new(
+                "RGB",
+                rgba.size,
+                (
+                    255,
+                    255,
+                    255
+                )
+            )
+
+            background.paste(
+                rgba,
+                mask=rgba.getchannel(
+                    "A"
+                )
+            )
+
+            img = background
+
+        else:
+
+            img = img.convert(
+                "RGB"
+            )
+
+        # ======================================================
+        # CROP QUADRADO CENTRAL
+        # ======================================================
+
+        width_current, height_current = (
+            img.size
+        )
+
+        menor_lado = min(
+            width_current,
+            height_current
+        )
+
+        left = (
+            width_current
+            - menor_lado
+        ) // 2
+
+        top = (
+            height_current
+            - menor_lado
+        ) // 2
+
+        img = img.crop(
+            (
+                left,
+                top,
+                left + menor_lado,
+                top + menor_lado
+            )
+        )
+
+        # ======================================================
+        # REDIMENSIONAMENTO
+        # ======================================================
+
+        try:
+
+            lanczos = (
+                Image.Resampling.LANCZOS
+            )
+
+        except AttributeError:
+
+            lanczos = (
+                Image.LANCZOS
+            )
+
+        img = img.resize(
+            (
+                side,
+                side
+            ),
+            lanczos
+        )
+
+        # ======================================================
+        # SALVA NOVO ARQUIVO
+        #
+        # Nenhum EXIF ou metadado original é copiado.
+        # ==============================================================
+
+        img.save(
+            dest_path,
+            format="WEBP",
+            quality=quality,
+            method=6
+        )
+
+        return {
+            "format": detected_format,
+            "width": width,
+            "height": height,
+        }
+
+    except ValueError:
+
+        raise
+
+    except (
+        UnidentifiedImageError,
+        OSError,
+        Image.DecompressionBombError
+    ) as exc:
+
+        raise ValueError(
+            "A imagem não pôde ser processada com segurança."
+        ) from exc
+
+    finally:
+
+        try:
+
+            stream.seek(
+                0
+            )
+
+        except Exception:
+
+            pass
 
 # --------------------------------------------------------------------
 # Helpers
@@ -16808,99 +17206,451 @@ def treinamento_quiz(module_key, lesson_key):
     flash(f"Quiz registrado: {score}% ✅", "success")
     return redirect(url_for("treinamento_aula", module_key=mod.get("key"), lesson_key=aula.get("key")))
 
-@app.route("/perfil/foto_upload", methods=["POST"], endpoint="perfil_foto_upload")
+# ==============================================================
+# FOTO DE PERFIL DA MALHARIA — UPLOAD SEGURO
+# ==============================================================
+
+@app.post(
+    "/perfil/foto_upload",
+    endpoint="perfil_foto_upload"
+)
+@limiter.limit(
+    "10 per hour",
+    key_func=_malharia_rate_limit_key
+)
+@limiter.limit(
+    "30 per day",
+    key_func=_malharia_rate_limit_key
+)
 def perfil_foto_upload():
-    emp, u = _get_empresa_usuario_da_sessao()
-    if not emp or not u:
-        return redirect(url_for("login"))
+    """
+    Recebe e processa a foto da malharia autenticada.
 
-    # Existem até 3 inputs <input type="file" name="foto"> (lib, cam, file).
-    # Precisamos pegar o primeiro que REALMENTE tenha arquivo.
-    file = None
+    Segurança:
+    - autenticação central da malharia;
+    - protegido pelo CSRF global;
+    - Rate Limit por empresa;
+    - limite global de 5 MB;
+    - não confia em extensão/MIME;
+    - conteúdo validado pelo Pillow;
+    - imagem reprocessada completamente;
+    - dimensões limitadas;
+    - EXIF removido;
+    - saída sempre WEBP;
+    - nome do arquivo é gerado pelo servidor;
+    - arquivo temporário é utilizado antes da substituição.
+    """
+
+    # ==========================================================
+    # IDENTIDADE
+    # ==========================================================
+
+    emp, usuario = (
+        _get_empresa_usuario_da_sessao()
+    )
+
+    if (
+        not emp
+        or not usuario
+    ):
+
+        session.clear()
+
+        return redirect(
+            url_for("login")
+        )
+
+    # ==========================================================
+    # LOCALIZA O ARQUIVO
+    #
+    # O painel pode possuir mais de um input name="foto".
+    # Pegamos o primeiro que realmente contém um arquivo.
+    # ==========================================================
+
     try:
-        candidatos = request.files.getlist("foto")
-    except Exception:
-        candidatos = [request.files.get("foto")]
 
-    for f in candidatos:
-        if f and getattr(f, "filename", "").strip():
-            file = f
+        candidatos = (
+            request.files.getlist(
+                "foto"
+            )
+        )
+
+    except Exception:
+
+        candidatos = [
+            request.files.get(
+                "foto"
+            )
+        ]
+
+    arquivo = None
+
+    for candidato in candidatos:
+
+        if (
+            candidato
+            and (
+                getattr(
+                    candidato,
+                    "filename",
+                    ""
+                )
+                or ""
+            ).strip()
+        ):
+
+            arquivo = candidato
             break
 
-    if not file or not file.filename.strip():
-        flash("Nenhuma foto selecionada.", "erro")
-        app.logger.info({
-            "rota": "perfil_foto_upload",
-            "empresa_id": emp.id,
-            "motivo": "sem_arquivo",
-            "candidatos": [getattr(f, "filename", None) for f in candidatos],
-        })
-        return _back_to_panel(int(datetime.utcnow().timestamp()))
+    # ==========================================================
+    # NENHUM ARQUIVO
+    # ==========================================================
 
-    # extensão do arquivo original
-    filename_orig = secure_filename(file.filename)
-    _, ext = os.path.splitext(filename_orig)
-    ext = (ext or "").lower()
+    if arquivo is None:
 
-    # se quiser ser bem permissivo, aceita tudo como .jpg
-    if ext not in (".jpg", ".jpeg", ".png", ".webp"):
-        # fallback: trata como .jpg mesmo assim
-        ext = ".jpg"
+        flash(
+            "Nenhuma foto selecionada.",
+            "warning"
+        )
 
-    # Pasta alvo: static/avatars
-    avatars_dir = os.path.join(app.static_folder, "avatars")
+        current_app.logger.info(
+            (
+                "[AVATAR] Upload sem arquivo. "
+                f"empresa_id={emp.id}"
+            )
+        )
+
+        return _back_to_panel(
+            int(
+                datetime.utcnow()
+                .timestamp()
+            )
+        )
+
+    # ==========================================================
+    # NOME ORIGINAL
+    #
+    # Não utilizamos este nome para salvar o arquivo.
+    # Apenas fazemos normalização defensiva.
+    # ==========================================================
+
+    original_filename = (
+        secure_filename(
+            arquivo.filename
+            or ""
+        )
+    )
+
+    if not original_filename:
+
+        flash(
+            "O arquivo selecionado é inválido.",
+            "warning"
+        )
+
+        return _back_to_panel(
+            int(
+                datetime.utcnow()
+                .timestamp()
+            )
+        )
+
+    # ==========================================================
+    # DIRETÓRIO
+    # ==========================================================
+
+    avatars_dir = os.path.join(
+        app.static_folder,
+        "avatars"
+    )
+
     try:
-        os.makedirs(avatars_dir, exist_ok=True)
-    except Exception as e:
-        app.logger.error(f"[avatar] erro ao criar pasta avatars: {e}")
-        flash("Erro ao preparar pasta de imagens.", "erro")
-        return _back_to_panel(int(datetime.utcnow().timestamp()))
 
-    # Nome fixo por empresa (sobrescreve qualquer anterior)
-    base_name = f"empresa_{emp.id}"
-    filename = base_name + ext
-    filepath = os.path.join(avatars_dir, filename)
+        os.makedirs(
+            avatars_dir,
+            exist_ok=True
+        )
 
-    # Remove versões antigas com outras extensões
-    for old_ext in (".jpg", ".jpeg", ".png", ".webp"):
-        old_path = os.path.join(avatars_dir, base_name + old_ext)
-        if old_path != filepath and os.path.exists(old_path):
+    except Exception:
+
+        current_app.logger.exception(
+            (
+                "[AVATAR] Falha ao preparar "
+                f"diretório. empresa_id={emp.id}"
+            )
+        )
+
+        flash(
+            "Não foi possível preparar o envio da foto.",
+            "danger"
+        )
+
+        return _back_to_panel(
+            int(
+                datetime.utcnow()
+                .timestamp()
+            )
+        )
+
+    # ==========================================================
+    # NOMES CONTROLADOS PELO SERVIDOR
+    #
+    # A saída é SEMPRE .webp.
+    # ==========================================================
+
+    base_name = (
+        f"empresa_{emp.id}"
+    )
+
+    final_filename = (
+        f"{base_name}.webp"
+    )
+
+    final_path = os.path.join(
+        avatars_dir,
+        final_filename
+    )
+
+    temporary_filename = (
+        f".{base_name}."
+        f"{uuid.uuid4().hex}."
+        "tmp.webp"
+    )
+
+    temporary_path = os.path.join(
+        avatars_dir,
+        temporary_filename
+    )
+
+    image_info = None
+
+    # ==========================================================
+    # VALIDAÇÃO + REPROCESSAMENTO
+    # ==========================================================
+
+    try:
+
+        image_info = (
+            _save_square_webp(
+                arquivo,
+                temporary_path,
+                side=400,
+                quality=85
+            )
+        )
+
+        # ------------------------------------------------------
+        # SUBSTITUIÇÃO ATÔMICA
+        #
+        # Somente depois de gerar uma imagem WEBP válida,
+        # substituímos a foto oficial.
+        # ------------------------------------------------------
+
+        os.replace(
+            temporary_path,
+            final_path
+        )
+
+    except ValueError as exc:
+
+        try:
+
+            if os.path.exists(
+                temporary_path
+            ):
+
+                os.remove(
+                    temporary_path
+                )
+
+        except OSError:
+
+            pass
+
+        current_app.logger.warning(
+            (
+                "[SECURITY][AVATAR_REJECTED] "
+                f"empresa_id={emp.id} "
+                f"motivo={str(exc)[:120]}"
+            )
+        )
+
+        flash(
+            (
+                "O arquivo enviado não é uma imagem "
+                "válida ou não possui um formato permitido."
+            ),
+            "warning"
+        )
+
+        return _back_to_panel(
+            int(
+                datetime.utcnow()
+                .timestamp()
+            )
+        )
+
+    except Exception:
+
+        try:
+
+            if os.path.exists(
+                temporary_path
+            ):
+
+                os.remove(
+                    temporary_path
+                )
+
+        except OSError:
+
+            pass
+
+        current_app.logger.exception(
+            (
+                "[AVATAR] Falha ao processar imagem. "
+                f"empresa_id={emp.id}"
+            )
+        )
+
+        flash(
+            "Não foi possível processar a foto enviada.",
+            "danger"
+        )
+
+        return _back_to_panel(
+            int(
+                datetime.utcnow()
+                .timestamp()
+            )
+        )
+
+    # ==========================================================
+    # REMOVE FORMATOS ANTIGOS
+    #
+    # O novo arquivo .webp só é criado depois da validação.
+    # ==============================================================
+
+    for old_ext in (
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".gif",
+    ):
+
+        old_path = os.path.join(
+            avatars_dir,
+            base_name + old_ext
+        )
+
+        if os.path.exists(
+            old_path
+        ):
+
             try:
-                os.remove(old_path)
+
+                os.remove(
+                    old_path
+                )
+
             except OSError:
-                pass
+
+                current_app.logger.warning(
+                    (
+                        "[AVATAR] Não foi possível remover "
+                        f"arquivo legado. empresa_id={emp.id}"
+                    )
+                )
+
+    # ==========================================================
+    # URL PÚBLICA
+    # ==========================================================
+
+    rel_path = (
+        f"avatars/{final_filename}"
+    )
+
+    novo_url = url_for(
+        "static",
+        filename=rel_path
+    )
+
+    # ==========================================================
+    # BANCO
+    # ==========================================================
 
     try:
-        file.save(filepath)
-    except Exception as e:
-        app.logger.error(f"[avatar] erro ao salvar arquivo: {e}")
-        flash("Erro ao salvar a imagem enviada.", "erro")
-        return _back_to_panel(int(datetime.utcnow().timestamp()))
 
-    # Monta URL pública
-    rel_path = f"avatars/{filename}"
-    novo_url = url_for("static", filename=rel_path)
+        emp.foto_url = (
+            novo_url
+        )
 
-    # Atualiza empresa + sessão
-    emp.foto_url = novo_url
-    try:
         db.session.commit()
-    except Exception as e:
+
+    except Exception:
+
         db.session.rollback()
-        app.logger.error(f"[avatar] erro ao gravar foto_url no banco: {e}")
-        flash("Erro ao salvar a imagem no cadastro.", "erro")
-        return _back_to_panel(int(datetime.utcnow().timestamp()))
 
-    session["avatar_url"] = novo_url
+        current_app.logger.exception(
+            (
+                "[AVATAR] Falha ao gravar foto_url. "
+                f"empresa_id={emp.id}"
+            )
+        )
 
-    app.logger.info({
-        "rota": "perfil_foto_upload",
-        "empresa_id": emp.id,
-        "foto_url_salva": novo_url,
-    })
+        flash(
+            "A imagem foi processada, mas não pôde ser salva no cadastro.",
+            "danger"
+        )
 
-    ts = int(datetime.utcnow().timestamp())
-    return _back_to_panel(ts)
+        return _back_to_panel(
+            int(
+                datetime.utcnow()
+                .timestamp()
+            )
+        )
+
+    # ==========================================================
+    # SESSÃO + CACHE BUSTER
+    # ==========================================================
+
+    timestamp = int(
+        datetime.utcnow()
+        .timestamp()
+    )
+
+    session[
+        "avatar_url"
+    ] = (
+        f"{novo_url}?v={timestamp}"
+    )
+
+    session.modified = True
+
+    # ==========================================================
+    # LOG SEGURO
+    #
+    # Não registramos o nome original do arquivo.
+    # ==========================================================
+
+    current_app.logger.info(
+        (
+            "[AVATAR] Upload concluído. "
+            f"empresa_id={emp.id} "
+            f"source_format={image_info.get('format')} "
+            f"source_width={image_info.get('width')} "
+            f"source_height={image_info.get('height')}"
+        )
+    )
+
+    flash(
+        "Foto atualizada com sucesso.",
+        "success"
+    )
+
+    return _back_to_panel(
+        timestamp
+    )
 
 @app.context_processor
 def inject_avatar_url():
