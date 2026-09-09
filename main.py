@@ -18310,72 +18310,521 @@ def inject_avatar_url():
         session['avatar_url'] = url
     return {'avatar_url': url}
 
-# --- CADASTRAR / LISTAR / SALVAR TEARES (SEM GATE DE ASSINATURA) ---
-@app.route("/teares/cadastrar", methods=["GET", "POST"], endpoint="cadastrar_teares")
+# ==============================================================
+# PARQUE PRODUTIVO — CADASTRAR / LISTAR TEARES
+# ==============================================================
+
+@app.route(
+    "/teares/cadastrar",
+    methods=["GET", "POST"],
+    endpoint="cadastrar_teares"
+)
+@limiter.limit(
+    "20 per hour",
+    key_func=_malharia_rate_limit_key,
+    methods=["POST"]
+)
+@limiter.limit(
+    "60 per day",
+    key_func=_malharia_rate_limit_key,
+    methods=["POST"]
+)
 def cadastrar_teares():
     """
-    SEM checagem de assinatura. Se o usuário está no painel (tem empresa na sessão),
-    pode cadastrar/editar teares à vontade.
-    """
-    emp, _user = _get_empresa_usuario_da_sessao()
-    if not emp:
-        flash("Faça login para continuar.", "warning")
-        return redirect(url_for("login"))
+    Cadastro de equipamentos da malharia autenticada.
 
-    if request.method == "POST":
-        def _to_int(val):
-            try:
-                return int(float(str(val).replace(",", ".").strip()))
-            except Exception:
+    Segurança:
+    - autenticação central da malharia;
+    - CSRF global;
+    - Rate Limit por malharia;
+    - validação server-side dos campos obrigatórios;
+    - limites básicos dos valores técnicos;
+    - transação com rollback;
+    - empresa_id sempre obtido da sessão;
+    - nenhum empresa_id é aceito do navegador.
+    """
+
+    # ==========================================================
+    # IDENTIDADE
+    # ==========================================================
+
+    emp, _user = (
+        _get_empresa_usuario_da_sessao()
+    )
+
+    if not emp:
+
+        flash(
+            "Faça login para continuar.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("login")
+        )
+
+    # ==========================================================
+    # CONVERSÃO NUMÉRICA
+    # ==========================================================
+
+    def _to_int(
+        valor
+    ):
+
+        try:
+
+            if valor is None:
+
                 return None
 
-        # O form manda 'Sim'/'Não'; garantimos um valor consistente em string
-        elas_raw = (request.form.get("elastano") or "").strip().lower()
-        if elas_raw in {"sim", "s", "1", "true", "on"}:
-            elastano_str = "Sim"
-        elif elas_raw in {"não", "nao", "n", "0", "false", "off"}:
-            elastano_str = "Não"
-        else:
-            # se vier "Sim"/"Não" já normal, mantém
-            elastano_str = request.form.get("elastano") or None
+            texto = (
+                str(valor)
+                .strip()
+                .replace(",", ".")
+            )
 
-        t = Tear(
-            empresa_id=emp.id,
-            marca=(request.form.get("marca") or None),
-            modelo=(request.form.get("modelo") or None),
-            tipo=(request.form.get("tipo") or None),
-            finura=_to_int(request.form.get("finura")),
-            diametro=_to_int(request.form.get("diametro")),
-            alimentadores=_to_int(request.form.get("alimentadores")),
-            elastano=elastano_str,
+            if not texto:
+
+                return None
+
+            return int(
+                float(texto)
+            )
+
+        except (
+            TypeError,
+            ValueError
+        ):
+
+            return None
+
+    # ==========================================================
+    # GET
+    # ==========================================================
+
+    if request.method == "GET":
+
+        teares = (
+            Tear.query
+            .filter_by(
+                empresa_id=emp.id
+            )
+            .order_by(
+                Tear.id.desc()
+            )
+            .all()
         )
-        db.session.add(t)
 
-        # Campos extras que podem existir no seu banco (se não existirem no modelo, ignora sem quebrar)
-        try:
-            v = _to_int(request.form.get("pistas_cilindro"))
-            if v is not None: setattr(t, "pistas_cilindro", v)
-        except Exception:
-            pass
-        try:
-            v = _to_int(request.form.get("pistas_disco"))
-            if v is not None: setattr(t, "pistas_disco", v)
-        except Exception:
-            pass
+        return render_template(
+            "cadastrar_teares.html",
+            empresa=emp,
+            teares=teares,
+            tear=None,
+            assinatura_ativa=(
+                (
+                    emp.status_pagamento
+                    or "pendente"
+                )
+                in (
+                    "ativo",
+                    "aprovado"
+                )
+            ),
+            erros={}
+        )
+
+    # ==========================================================
+    # POST — DADOS
+    # ==========================================================
+
+    marca = (
+        request.form.get("marca")
+        or ""
+    ).strip()
+
+    modelo = (
+        request.form.get("modelo")
+        or ""
+    ).strip()
+
+    tipo = (
+        request.form.get("tipo")
+        or ""
+    ).strip().upper()
+
+    finura = _to_int(
+        request.form.get(
+            "finura"
+        )
+    )
+
+    diametro = _to_int(
+        request.form.get(
+            "diametro"
+        )
+    )
+
+    alimentadores = _to_int(
+        request.form.get(
+            "alimentadores"
+        )
+    )
+
+    pistas_cilindro = _to_int(
+        request.form.get(
+            "pistas_cilindro"
+        )
+    )
+
+    pistas_disco = _to_int(
+        request.form.get(
+            "pistas_disco"
+        )
+    )
+
+    elastano_raw = (
+        request.form.get(
+            "elastano"
+        )
+        or ""
+    ).strip().lower()
+
+    # ==========================================================
+    # ELASTANO
+    # ==========================================================
+
+    if elastano_raw in {
+        "sim",
+        "s",
+        "1",
+        "true",
+        "on",
+        "yes",
+        "y",
+        "com",
+        "tem",
+    }:
+
+        elastano = "Sim"
+
+    elif elastano_raw in {
+        "não",
+        "nao",
+        "n",
+        "0",
+        "false",
+        "off",
+        "no",
+        "sem",
+    }:
+
+        elastano = "Não"
+
+    else:
+
+        elastano = None
+
+    # ==========================================================
+    # VALIDAÇÕES
+    # ==========================================================
+
+    erros = {}
+
+    # ----------------------------------------------------------
+    # Marca
+    # ----------------------------------------------------------
+
+    if not marca:
+
+        erros["marca"] = (
+            "Informe a marca do tear."
+        )
+
+    elif len(marca) > 100:
+
+        erros["marca"] = (
+            "A marca deve possuir no máximo 100 caracteres."
+        )
+
+    # ----------------------------------------------------------
+    # Modelo
+    # ----------------------------------------------------------
+
+    if not modelo:
+
+        erros["modelo"] = (
+            "Informe o modelo do tear."
+        )
+
+    elif len(modelo) > 100:
+
+        erros["modelo"] = (
+            "O modelo deve possuir no máximo 100 caracteres."
+        )
+
+    # ----------------------------------------------------------
+    # Tipo
+    # ----------------------------------------------------------
+
+    if tipo not in {
+        "MONO",
+        "DUPLA",
+    }:
+
+        erros["tipo"] = (
+            "Selecione um tipo de tear válido."
+        )
+
+    # ----------------------------------------------------------
+    # Finura
+    # ----------------------------------------------------------
+
+    if (
+        finura is None
+        or finura <= 0
+        or finura > 100
+    ):
+
+        erros["finura"] = (
+            "Informe uma finura válida."
+        )
+
+    # ----------------------------------------------------------
+    # Diâmetro
+    # ----------------------------------------------------------
+
+    if (
+        diametro is None
+        or diametro <= 0
+        or diametro > 200
+    ):
+
+        erros["diametro"] = (
+            "Informe um diâmetro válido."
+        )
+
+    # ----------------------------------------------------------
+    # Alimentadores
+    # ----------------------------------------------------------
+
+    if (
+        alimentadores is None
+        or alimentadores <= 0
+        or alimentadores > 1000
+    ):
+
+        erros["alimentadores"] = (
+            "Informe uma quantidade válida de alimentadores."
+        )
+
+    # ----------------------------------------------------------
+    # Pistas opcionais
+    # ----------------------------------------------------------
+
+    if (
+        pistas_cilindro is not None
+        and (
+            pistas_cilindro < 0
+            or pistas_cilindro > 100
+        )
+    ):
+
+        erros["pistas_cilindro"] = (
+            "Informe uma quantidade válida de pistas do cilindro."
+        )
+
+    if (
+        pistas_disco is not None
+        and (
+            pistas_disco < 0
+            or pistas_disco > 100
+        )
+    ):
+
+        erros["pistas_disco"] = (
+            "Informe uma quantidade válida de pistas do disco."
+        )
+
+    # ----------------------------------------------------------
+    # Elastano
+    # ----------------------------------------------------------
+
+    if elastano is None:
+
+        erros["elastano"] = (
+            "Informe se o tear possui recurso para elastano."
+        )
+
+    # ==========================================================
+    # ERROS
+    # ==========================================================
+
+    if erros:
+
+        teares = (
+            Tear.query
+            .filter_by(
+                empresa_id=emp.id
+            )
+            .order_by(
+                Tear.id.desc()
+            )
+            .all()
+        )
+
+        return render_template(
+            "cadastrar_teares.html",
+            empresa=emp,
+            teares=teares,
+            tear=None,
+            assinatura_ativa=(
+                (
+                    emp.status_pagamento
+                    or "pendente"
+                )
+                in (
+                    "ativo",
+                    "aprovado"
+                )
+            ),
+            erros=erros,
+            marca=marca,
+            modelo=modelo,
+            tipo=tipo,
+            finura=finura,
+            diametro=diametro,
+            alimentadores=alimentadores,
+            pistas_cilindro=pistas_cilindro,
+            pistas_disco=pistas_disco,
+            elastano=elastano
+        )
+
+    # ==========================================================
+    # CRIAÇÃO
+    # ==========================================================
+
+    try:
+
+        tear = Tear(
+            empresa_id=emp.id,
+            marca=marca,
+            modelo=modelo,
+            tipo=tipo,
+            finura=finura,
+            diametro=diametro,
+            alimentadores=alimentadores,
+            elastano=elastano,
+        )
+
+        # ------------------------------------------------------
+        # Campos adicionais existentes no modelo atual
+        # ------------------------------------------------------
+
+        if hasattr(
+            tear,
+            "pistas_cilindro"
+        ):
+
+            tear.pistas_cilindro = (
+                pistas_cilindro
+            )
+
+        if hasattr(
+            tear,
+            "pistas_disco"
+        ):
+
+            tear.pistas_disco = (
+                pistas_disco
+            )
+
+        db.session.add(
+            tear
+        )
 
         db.session.commit()
-        flash("Tear cadastrado com sucesso!")
-        # volta para o próprio formulário para permitir múltiplos cadastros em sequência
-        return redirect(url_for("teares_form"))
 
-    # GET: lista para apoiar edição/novos cadastros em série
-    teares = Tear.query.filter_by(empresa_id=emp.id).order_by(Tear.id.desc()).all()
-    return render_template(
-        "cadastrar_teares.html",
-        empresa=emp,
-        teares=teares,
-        tear=None,
-        assinatura_ativa=(emp.status_pagamento or "pendente") in ("ativo", "aprovado"),
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            (
+                "[SECURITY][TEAR_CREATE] "
+                "Falha ao cadastrar tear. "
+                f"empresa_id={emp.id}"
+            )
+        )
+
+        flash(
+            (
+                "Não foi possível cadastrar o tear agora. "
+                "Tente novamente."
+            ),
+            "danger"
+        )
+
+        teares = (
+            Tear.query
+            .filter_by(
+                empresa_id=emp.id
+            )
+            .order_by(
+                Tear.id.desc()
+            )
+            .all()
+        )
+
+        return render_template(
+            "cadastrar_teares.html",
+            empresa=emp,
+            teares=teares,
+            tear=None,
+            assinatura_ativa=(
+                (
+                    emp.status_pagamento
+                    or "pendente"
+                )
+                in (
+                    "ativo",
+                    "aprovado"
+                )
+            ),
+            erros={},
+            marca=marca,
+            modelo=modelo,
+            tipo=tipo,
+            finura=finura,
+            diametro=diametro,
+            alimentadores=alimentadores,
+            pistas_cilindro=pistas_cilindro,
+            pistas_disco=pistas_disco,
+            elastano=elastano
+        )
+
+    # ==========================================================
+    # LOG
+    # ==========================================================
+
+    current_app.logger.info(
+        (
+            "[SECURITY][TEAR_CREATE] "
+            f"empresa_id={emp.id} "
+            f"tear_id={tear.id}"
+        )
+    )
+
+    flash(
+        "Tear cadastrado com sucesso!",
+        "success"
+    )
+
+    # Mantém o comportamento atual:
+    # permite cadastrar vários teares em sequência.
+    return redirect(
+        url_for(
+            "teares_form"
+        )
     )
 
 # Alias amigável do painel: /painel/teares
