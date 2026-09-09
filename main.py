@@ -6165,6 +6165,231 @@ def _run_bootstrap_once():
     except Exception as e:
         app.logger.warning(f"[BOOT] create training_progress failed: {e}")
 
+# ==============================================================
+# TEMPORÁRIO — LIMPEZA DAS TABELAS LEGADAS DE TREINAMENTO
+#
+# ETAPA 9A.3C.5F.7B.5
+#
+# IMPORTANTE:
+# - funciona somente com autorização explícita por variável;
+# - funciona somente no staging oficial do AcheTece;
+# - exige DEMO_MODE ativo;
+# - modo "inspect" apenas consulta;
+# - modo "drop" remove as tabelas.
+#
+# ESTE BLOCO SERÁ REMOVIDO AO FINAL DA ETAPA 7B.5.
+# ==============================================================
+
+_training_cleanup_mode = (
+    os.getenv(
+        "TRAINING_DB_CLEANUP_MODE"
+    )
+    or ""
+).strip().lower()
+
+_training_cleanup_base_url = (
+    os.getenv(
+        "PUBLIC_BASE_URL"
+    )
+    or ""
+).strip().rstrip("/")
+
+_training_cleanup_demo_mode = (
+    (
+        os.getenv(
+            "DEMO_MODE"
+        )
+        or ""
+    )
+    .strip()
+    .lower()
+    in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+)
+
+_training_cleanup_is_staging = (
+    _training_cleanup_base_url
+    == "https://achetece-2-staging.onrender.com"
+    and _training_cleanup_demo_mode
+)
+
+
+if _training_cleanup_mode in {
+    "inspect",
+    "drop",
+}:
+
+    # ==========================================================
+    # BARREIRA CONTRA EXECUÇÃO FORA DO STAGING
+    # ==========================================================
+
+    if not _training_cleanup_is_staging:
+
+        app.logger.error(
+            (
+                "[DB_CLEANUP][TRAINING] BLOQUEADO. "
+                "A limpeza só pode executar no staging."
+            )
+        )
+
+    else:
+
+        with app.app_context():
+
+            try:
+
+                tabelas_legadas = (
+                    "training_progress",
+                    "progresso_aula",
+                )
+
+                # ==================================================
+                # INSPEÇÃO ANTES DE QUALQUER ALTERAÇÃO
+                # ==================================================
+
+                inspector = inspect(
+                    db.engine
+                )
+
+                for tabela in tabelas_legadas:
+
+                    existe = (
+                        inspector.has_table(
+                            tabela
+                        )
+                    )
+
+                    total = None
+
+                    if existe:
+
+                        total = (
+                            db.session.execute(
+                                text(
+                                    f'''
+                                    SELECT COUNT(*)
+                                    FROM "{tabela}"
+                                    '''
+                                )
+                            )
+                            .scalar()
+                        )
+
+                    app.logger.warning(
+                        (
+                            "[DB_CLEANUP][TRAINING] "
+                            f"mode={_training_cleanup_mode} "
+                            f"table={tabela} "
+                            f"exists={existe} "
+                            f"rows={total if total is not None else 'n/a'}"
+                        )
+                    )
+
+                # ==================================================
+                # MODO INSPECT
+                #
+                # Para aqui. Não modifica o banco.
+                # ==================================================
+
+                if (
+                    _training_cleanup_mode
+                    == "inspect"
+                ):
+
+                    app.logger.info(
+                        (
+                            "[DB_CLEANUP][TRAINING] "
+                            "Inspeção concluída. "
+                            "Nenhuma tabela foi alterada."
+                        )
+                    )
+
+                # ==================================================
+                # MODO DROP
+                # ==================================================
+
+                elif (
+                    _training_cleanup_mode
+                    == "drop"
+                ):
+
+                    app.logger.warning(
+                        (
+                            "[DB_CLEANUP][TRAINING] "
+                            "INICIANDO remoção das tabelas "
+                            "legadas de treinamento no staging."
+                        )
+                    )
+
+                    db.session.execute(
+                        text(
+                            '''
+                            DROP TABLE IF EXISTS
+                            "training_progress"
+                            CASCADE
+                            '''
+                        )
+                    )
+
+                    db.session.execute(
+                        text(
+                            '''
+                            DROP TABLE IF EXISTS
+                            "progresso_aula"
+                            CASCADE
+                            '''
+                        )
+                    )
+
+                    db.session.commit()
+
+                    # ==============================================
+                    # VERIFICAÇÃO DEPOIS DO DROP
+                    # ==============================================
+
+                    inspector_after = inspect(
+                        db.engine
+                    )
+
+                    training_progress_existe = (
+                        inspector_after.has_table(
+                            "training_progress"
+                        )
+                    )
+
+                    progresso_aula_existe = (
+                        inspector_after.has_table(
+                            "progresso_aula"
+                        )
+                    )
+
+                    app.logger.warning(
+                        (
+                            "[DB_CLEANUP][TRAINING] "
+                            "DROP concluído. "
+                            f"training_progress_exists="
+                            f"{training_progress_existe} "
+                            f"progresso_aula_exists="
+                            f"{progresso_aula_existe}"
+                        )
+                    )
+
+            except Exception:
+
+                db.session.rollback()
+
+                app.logger.exception(
+                    (
+                        "[DB_CLEANUP][TRAINING] "
+                        "Falha durante a limpeza "
+                        "das tabelas legadas."
+                    )
+                )
+
 @app.before_request
 def _bootstrap_and_analytics_lazy():
     global _ANALYTICS_READY
