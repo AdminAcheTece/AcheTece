@@ -5027,6 +5027,546 @@ def _admin_rate_limit_key():
     )
 
 # ==============================================================
+# EXCLUSÃO DE MALHARIA — HELPERS DE SEGURANÇA
+# ==============================================================
+
+def _empresa_historico_marketplace(
+    empresa_id: int
+):
+    """
+    Verifica se a malharia possui histórico dentro
+    do marketplace AcheTece 2.0.
+
+    Enquanto existir qualquer um destes registros,
+    a Empresa não poderá ser apagada definitivamente:
+
+    - DemandMatch
+    - Opportunity
+    - Proposal
+    - Order
+
+    Retorna:
+        {
+            "matches": int,
+            "oportunidades": int,
+            "propostas": int,
+            "pedidos": int,
+            "bloqueia_exclusao": bool
+        }
+    """
+
+    try:
+
+        empresa_id = int(
+            empresa_id
+        )
+
+    except Exception:
+
+        empresa_id = 0
+
+    if empresa_id <= 0:
+
+        return {
+            "matches": 0,
+            "oportunidades": 0,
+            "propostas": 0,
+            "pedidos": 0,
+            "bloqueia_exclusao": True,
+        }
+
+    matches = (
+        DemandMatch.query
+        .filter(
+            DemandMatch.empresa_id
+            == empresa_id
+        )
+        .count()
+    )
+
+    oportunidades = (
+        Opportunity.query
+        .filter(
+            Opportunity.empresa_id
+            == empresa_id
+        )
+        .count()
+    )
+
+    propostas = (
+        Proposal.query
+        .filter(
+            Proposal.empresa_id
+            == empresa_id
+        )
+        .count()
+    )
+
+    pedidos = (
+        Order.query
+        .filter(
+            Order.empresa_id
+            == empresa_id
+        )
+        .count()
+    )
+
+    bloqueia = any(
+        (
+            matches,
+            oportunidades,
+            propostas,
+            pedidos,
+        )
+    )
+
+    return {
+        "matches": matches,
+        "oportunidades": oportunidades,
+        "propostas": propostas,
+        "pedidos": pedidos,
+        "bloqueia_exclusao": bloqueia,
+    }
+
+
+def _usuario_tem_historico_comprador(
+    usuario_id: int
+) -> bool:
+    """
+    Evita apagar um Usuario vinculado à malharia
+    caso esse mesmo registro possua histórico de comprador.
+
+    Protegemos:
+    - ClienteProfile
+    - ProductionRequest
+    - pedidos em que seja buyer_user_id
+    """
+
+    try:
+
+        usuario_id = int(
+            usuario_id
+        )
+
+    except Exception:
+
+        return True
+
+    if usuario_id <= 0:
+
+        return True
+
+    perfil = (
+        ClienteProfile.query
+        .filter(
+            ClienteProfile.user_id
+            == usuario_id
+        )
+        .first()
+    )
+
+    if perfil:
+
+        return True
+
+    demanda = (
+        ProductionRequest.query
+        .filter(
+            ProductionRequest.user_id
+            == usuario_id
+        )
+        .first()
+    )
+
+    if demanda:
+
+        return True
+
+    pedido_comprador = (
+        Order.query
+        .filter(
+            Order.buyer_user_id
+            == usuario_id
+        )
+        .first()
+    )
+
+    if pedido_comprador:
+
+        return True
+
+    return False
+
+
+def _remover_arquivos_avatar_empresa(
+    empresa_id: int
+):
+    """
+    Remove arquivos conhecidos de avatar após a Empresa
+    já ter sido excluída com sucesso do banco.
+
+    Falha na remoção do arquivo não desfaz a transação
+    do banco.
+    """
+
+    try:
+
+        empresa_id = int(
+            empresa_id
+        )
+
+    except Exception:
+
+        return
+
+    if empresa_id <= 0:
+
+        return
+
+    diretorios = [
+        Path(
+            current_app.static_folder
+        ) / "avatars",
+
+        Path(
+            current_app.static_folder
+        ) / "uploads" / "avatars",
+
+        Path(
+            current_app.static_folder
+        ) / "uploads" / "perfil",
+    ]
+
+    padroes = [
+        f"empresa_{empresa_id}.*",
+        f"emp_{empresa_id}.*",
+        f".empresa_{empresa_id}.*.tmp.webp",
+    ]
+
+    for diretorio in diretorios:
+
+        try:
+
+            if not diretorio.exists():
+
+                continue
+
+            for padrao in padroes:
+
+                for arquivo in diretorio.glob(
+                    padrao
+                ):
+
+                    try:
+
+                        if arquivo.is_file():
+
+                            arquivo.unlink()
+
+                    except OSError:
+
+                        current_app.logger.warning(
+                            (
+                                "[ADMIN_DELETE] "
+                                "Não foi possível remover "
+                                "arquivo de avatar. "
+                                f"empresa_id={empresa_id}"
+                            )
+                        )
+
+        except Exception:
+
+            current_app.logger.exception(
+                (
+                    "[ADMIN_DELETE] "
+                    "Falha ao limpar arquivos da empresa. "
+                    f"empresa_id={empresa_id}"
+                )
+            )
+
+
+def _excluir_empresa_sem_historico(
+    empresa
+):
+    """
+    Executa a exclusão definitiva de uma Empresa
+    SOMENTE depois de a ausência de histórico comercial
+    ter sido validada.
+
+    Remove:
+    - progresso de treinamento;
+    - analytics;
+    - tokens de recuperação da malharia;
+    - teares;
+    - Empresa;
+    - Usuario vinculado, somente quando ele não possui
+      histórico como comprador.
+
+    Toda a parte de banco é executada em uma única transação.
+    """
+
+    if not isinstance(
+        empresa,
+        Empresa
+    ):
+
+        raise ValueError(
+            "Empresa inválida para exclusão."
+        )
+
+    empresa_id = int(
+        empresa.id
+    )
+
+    email_empresa = (
+        empresa.email
+        or ""
+    ).strip().lower()
+
+    usuario = None
+
+    if getattr(
+        empresa,
+        "user_id",
+        None
+    ):
+
+        usuario = db.session.get(
+            Usuario,
+            empresa.user_id
+        )
+
+    usuario_removido = False
+    usuario_preservado = False
+
+    try:
+
+        # ======================================================
+        # CONFIRMA NOVAMENTE O HISTÓRICO
+        #
+        # Fazemos a verificação também aqui para que nenhum
+        # chamador consiga pular a proteção.
+        # ======================================================
+
+        historico = (
+            _empresa_historico_marketplace(
+                empresa_id
+            )
+        )
+
+        if historico[
+            "bloqueia_exclusao"
+        ]:
+
+            raise RuntimeError(
+                "EMPRESA_POSSUI_HISTORICO"
+            )
+
+        # ======================================================
+        # TREINAMENTO
+        # ======================================================
+
+        TrainingProgress.query.filter(
+            TrainingProgress.company_id
+            == empresa_id
+        ).delete(
+            synchronize_session=False
+        )
+
+        ProgressoAula.query.filter(
+            ProgressoAula.empresa_id
+            == empresa_id
+        ).delete(
+            synchronize_session=False
+        )
+
+        # ======================================================
+        # ANALYTICS
+        #
+        # analytics_events é tabela auxiliar e não possui FK ORM.
+        # ======================================================
+
+        try:
+
+            if inspect(
+                db.engine
+            ).has_table(
+                "analytics_events"
+            ):
+
+                db.session.execute(
+                    text(
+                        """
+                        DELETE FROM analytics_events
+                        WHERE company_id = :empresa_id
+                        """
+                    ),
+                    {
+                        "empresa_id":
+                            empresa_id
+                    }
+                )
+
+        except Exception:
+
+            current_app.logger.exception(
+                (
+                    "[ADMIN_DELETE] "
+                    "Falha ao limpar analytics. "
+                    f"empresa_id={empresa_id}"
+                )
+            )
+
+            raise
+
+        # ======================================================
+        # TOKENS DA MALHARIA
+        # ======================================================
+
+        PasswordResetToken.query.filter(
+            PasswordResetToken.account_type
+            == "malharia",
+
+            PasswordResetToken.account_id
+            == empresa_id
+        ).delete(
+            synchronize_session=False
+        )
+
+        # ======================================================
+        # TEARES
+        #
+        # Sem DemandMatch, não há referência histórica aos teares.
+        # ======================================================
+
+        Tear.query.filter(
+            Tear.empresa_id
+            == empresa_id
+        ).delete(
+            synchronize_session=False
+        )
+
+        # ======================================================
+        # USUARIO VINCULADO
+        # ======================================================
+
+        if usuario is not None:
+
+            historico_comprador = (
+                _usuario_tem_historico_comprador(
+                    usuario.id
+                )
+            )
+
+            if historico_comprador:
+
+                # ----------------------------------------------
+                # Preserva o usuário porque ele também possui
+                # identidade/histórico de comprador.
+                # ----------------------------------------------
+
+                usuario.role = (
+                    "cliente"
+                )
+
+                empresa.user_id = (
+                    None
+                )
+
+                usuario_preservado = True
+
+            else:
+
+                # ----------------------------------------------
+                # Tokens que somente fariam sentido para este
+                # usuário também podem ser removidos.
+                # ----------------------------------------------
+
+                PasswordResetToken.query.filter(
+                    PasswordResetToken.account_type
+                    == "cliente",
+
+                    PasswordResetToken.account_id
+                    == usuario.id
+                ).delete(
+                    synchronize_session=False
+                )
+
+                if email_empresa:
+
+                    OtpToken.query.filter(
+                        func.lower(
+                            OtpToken.email
+                        )
+                        == email_empresa
+                    ).delete(
+                        synchronize_session=False
+                    )
+
+                empresa.user_id = (
+                    None
+                )
+
+                db.session.flush()
+
+        # ======================================================
+        # EMPRESA
+        # ======================================================
+
+        db.session.delete(
+            empresa
+        )
+
+        db.session.flush()
+
+        # ======================================================
+        # USUARIO
+        #
+        # Apagamos somente depois de remover Empresa porque
+        # Empresa.user_id referencia Usuario.id.
+        # ======================================================
+
+        if (
+            usuario is not None
+            and not usuario_preservado
+        ):
+
+            db.session.delete(
+                usuario
+            )
+
+            usuario_removido = True
+
+        # ======================================================
+        # COMMIT ÚNICO
+        # ======================================================
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        raise
+
+    # ==========================================================
+    # ARQUIVOS
+    #
+    # Somente depois do commit do banco.
+    # ==========================================================
+
+    _remover_arquivos_avatar_empresa(
+        empresa_id
+    )
+
+    return {
+        "ok": True,
+        "empresa_id": empresa_id,
+        "usuario_removido": usuario_removido,
+        "usuario_preservado": usuario_preservado,
+    }
+
+# ==============================================================
 # TRATAMENTO GLOBAL — HTTP 429 TOO MANY REQUESTS
 # ==============================================================
 
@@ -20298,41 +20838,408 @@ def admin_editar_status(
         )
     )
 
-@app.route('/admin/empresa_excluir/<int:empresa_id>', methods=['POST'])
-@login_admin_requerido
-def empresa_excluir(empresa_id):
-    
-    empresa = Empresa.query.get_or_404(empresa_id)
-    db.session.delete(empresa); db.session.commit()
-    flash(f'Empresa "{empresa.nome}" excluída com sucesso!')
-    return redirect(url_for('admin_empresas'))
+# ==============================================================
+# ADMIN — EXCLUSÃO DEFINITIVA DE MALHARIA
+# ==============================================================
 
-# --- EXCLUIR EMPRESA (usuário logado; com parâmetro) ---
-@app.post("/empresa/<int:empresa_id>/excluir")
-def empresa_excluir_by_id(empresa_id):
-    empresa = _pegar_empresa_do_usuario(required=True)
-    if not isinstance(empresa, Empresa):
+@app.post(
+    "/admin/empresas/<int:empresa_id>/excluir",
+    endpoint="admin_excluir_empresa"
+)
+@app.post(
+    "/admin/empresa_excluir/<int:empresa_id>",
+    endpoint="empresa_excluir"
+)
+@login_admin_requerido
+@limiter.limit(
+    "5 per 15 minutes",
+    key_func=_admin_rate_limit_key
+)
+@limiter.limit(
+    "20 per day",
+    key_func=_admin_rate_limit_key
+)
+def admin_excluir_empresa(
+    empresa_id
+):
+    """
+    Exclusão administrativa definitiva.
+
+    Regras:
+    - somente POST;
+    - CSRF global;
+    - administrador autenticado;
+    - Rate Limit;
+    - bloqueia empresas com histórico no marketplace;
+    - exclusão transacional;
+    - preserva Usuario quando possuir histórico como comprador;
+    - remove arquivos somente após commit.
+    """
+
+    empresa = db.session.get(
+        Empresa,
+        empresa_id
+    )
+
+    if empresa is None:
+
+        abort(
+            404
+        )
+
+    nome_empresa = (
+        empresa.apelido
+        or empresa.nome
+        or f"Empresa {empresa.id}"
+    )
+
+    # ==========================================================
+    # FILTROS PARA RETORNO AO PAINEL
+    # ==========================================================
+
+    params = {
+        "pagina":
+            request.args.get(
+                "pagina",
+                1
+            ),
+
+        "status":
+            request.args.get(
+                "status",
+                ""
+            ),
+
+        "data_inicio":
+            request.args.get(
+                "data_inicio",
+                ""
+            ),
+
+        "data_fim":
+            request.args.get(
+                "data_fim",
+                ""
+            ),
+
+        "plano":
+            request.args.get(
+                "plano",
+                ""
+            ),
+
+        "apelido":
+            request.args.get(
+                "apelido",
+                ""
+            ),
+
+        "cidade":
+            request.args.get(
+                "cidade",
+                ""
+            ),
+
+        "estado":
+            request.args.get(
+                "estado",
+                ""
+            ),
+    }
+
+    params = {
+        chave: valor
+
+        for chave, valor
+        in params.items()
+
+        if valor not in {
+            None,
+            ""
+        }
+    }
+
+    # ==========================================================
+    # HISTÓRICO
+    # ==========================================================
+
+    historico = (
+        _empresa_historico_marketplace(
+            empresa.id
+        )
+    )
+
+    if historico[
+        "bloqueia_exclusao"
+    ]:
+
+        current_app.logger.warning(
+            (
+                "[SECURITY][ADMIN_DELETE_BLOCKED] "
+                f"empresa_id={empresa.id} "
+                f"matches={historico['matches']} "
+                f"oportunidades={historico['oportunidades']} "
+                f"propostas={historico['propostas']} "
+                f"pedidos={historico['pedidos']}"
+            )
+        )
+
+        flash(
+            (
+                f'A malharia "{nome_empresa}" possui histórico '
+                "no marketplace e não pode ser excluída "
+                "definitivamente. "
+                "Utilize a alteração de status para impedir "
+                "novas operações."
+            ),
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "admin_empresas",
+                **params
+            )
+        )
+
+    # ==========================================================
+    # EXCLUSÃO
+    # ==========================================================
+
+    try:
+
+        resultado = (
+            _excluir_empresa_sem_historico(
+                empresa
+            )
+        )
+
+    except RuntimeError as exc:
+
+        if str(
+            exc
+        ) == "EMPRESA_POSSUI_HISTORICO":
+
+            flash(
+                (
+                    "A empresa passou a possuir histórico "
+                    "e a exclusão foi cancelada."
+                ),
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "admin_empresas",
+                    **params
+                )
+            )
+
+        current_app.logger.exception(
+            (
+                "[SECURITY][ADMIN_DELETE] "
+                "Falha na exclusão. "
+                f"empresa_id={empresa_id}"
+            )
+        )
+
+        flash(
+            "Não foi possível excluir a empresa.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "admin_empresas",
+                **params
+            )
+        )
+
+    except Exception:
+
+        current_app.logger.exception(
+            (
+                "[SECURITY][ADMIN_DELETE] "
+                "Falha na exclusão. "
+                f"empresa_id={empresa_id}"
+            )
+        )
+
+        flash(
+            (
+                "Não foi possível excluir a empresa agora. "
+                "Nenhuma exclusão parcial foi mantida."
+            ),
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "admin_empresas",
+                **params
+            )
+        )
+
+    # ==========================================================
+    # LOG
+    # ==========================================================
+
+    current_app.logger.info(
+        (
+            "[SECURITY][ADMIN_DELETE] "
+            f"empresa_id={empresa_id} "
+            "resultado=excluida "
+            f"usuario_removido="
+            f"{resultado.get('usuario_removido')} "
+            f"usuario_preservado="
+            f"{resultado.get('usuario_preservado')}"
+        )
+    )
+
+    flash(
+        (
+            f'Empresa "{nome_empresa}" '
+            "excluída definitivamente com sucesso."
+        ),
+        "success"
+    )
+
+    return redirect(
+        url_for(
+            "admin_empresas",
+            **params
+        )
+    )
+
+# ==============================================================
+# MALHARIA — EXCLUIR A PRÓPRIA CONTA
+# ==============================================================
+
+@app.post(
+    "/empresa/<int:empresa_id>/excluir",
+    endpoint="empresa_excluir_by_id"
+)
+@limiter.limit(
+    "3 per day",
+    key_func=_malharia_rate_limit_key
+)
+def empresa_excluir_by_id(
+    empresa_id
+):
+    """
+    Exclusão solicitada pela própria malharia.
+
+    A empresa somente pode apagar definitivamente sua conta
+    quando ainda não possui histórico dentro do marketplace.
+
+    Contas com histórico precisam utilizar posteriormente
+    um fluxo de encerramento/desativação, preservando os
+    registros comerciais.
+    """
+
+    empresa = (
+        _pegar_empresa_do_usuario(
+            required=True
+        )
+    )
+
+    if not isinstance(
+        empresa,
+        Empresa
+    ):
+
         return empresa
 
     if empresa.id != empresa_id:
-        from flask import abort
-        abort(403)
 
-    # Se não tiver cascade no relacionamento, elimine os teares antes:
+        abort(
+            403
+        )
+
+    # ==========================================================
+    # HISTÓRICO
+    # ==========================================================
+
+    historico = (
+        _empresa_historico_marketplace(
+            empresa.id
+        )
+    )
+
+    if historico[
+        "bloqueia_exclusao"
+    ]:
+
+        current_app.logger.warning(
+            (
+                "[SECURITY][SELF_DELETE_BLOCKED] "
+                f"empresa_id={empresa.id}"
+            )
+        )
+
+        flash(
+            (
+                "Sua conta possui histórico de operações "
+                "no AcheTece e não pode ser apagada "
+                "definitivamente por este fluxo. "
+                "Entre em contato com o suporte para "
+                "encerramento da conta."
+            ),
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "painel_malharia"
+            )
+        )
+
+    # ==========================================================
+    # EXCLUSÃO
+    # ==========================================================
+
     try:
-        Tear.query.filter_by(empresa_id=empresa.id).delete()
+
+        _excluir_empresa_sem_historico(
+            empresa
+        )
+
     except Exception:
-        pass
 
-    db.session.delete(empresa)
-    db.session.commit()
+        current_app.logger.exception(
+            (
+                "[SECURITY][SELF_DELETE] "
+                "Falha ao excluir conta. "
+                f"empresa_id={empresa_id}"
+            )
+        )
 
-    # limpar sessão básica
-    for k in ("auth_user_id", "user_id", "login_email", "auth_email"):
-        session.pop(k, None)
+        flash(
+            (
+                "Não foi possível excluir sua conta agora. "
+                "Tente novamente."
+            ),
+            "danger"
+        )
 
-    flash("Conta da malharia excluída.")
-    return redirect(url_for("index"))
+        return redirect(
+            url_for(
+                "painel_malharia"
+            )
+        )
+
+    session.clear()
+
+    flash(
+        "Conta da malharia excluída com sucesso.",
+        "success"
+    )
+
+    return redirect(
+        url_for(
+            "index"
+        )
+    )
 
 # --------------------------------------------------------------------
 # Admin: ferramentas de staging / desenvolvimento
