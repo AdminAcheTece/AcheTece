@@ -39,9 +39,6 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.utils import make_msgid, formataddr
 from authlib.integrations.flask_client import OAuth
-from training_catalog import TRAINING_CATALOG, get_module, get_lesson
-from sqlalchemy import UniqueConstraint
-from flask import render_template, abort, send_from_directory
 from decimal import Decimal, InvalidOperation
 import secrets
 import hmac
@@ -4780,38 +4777,6 @@ class PasswordResetToken(db.Model):
             f"used={self.used_at is not None}>"
         )
 
-class TrainingProgress(db.Model):
-    __tablename__ = "training_progress"
-
-    id = db.Column(db.Integer, primary_key=True)
-    company_id = db.Column(db.Integer, db.ForeignKey("empresa.id"), index=True, nullable=False)
-
-    module_key = db.Column(db.String(32), index=True, nullable=False)
-    lesson_key = db.Column(db.String(32), index=True, nullable=False)
-
-    status = db.Column(db.String(16), default="not_started", nullable=False)  # not_started | in_progress | done
-    score = db.Column(db.Integer, nullable=True)
-
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    completed_at = db.Column(db.DateTime, nullable=True)
-
-    __table_args__ = (
-        UniqueConstraint("company_id", "module_key", "lesson_key", name="uq_training_progress"),
-    )
-
-class ProgressoAula(db.Model):
-    __tablename__ = "progresso_aula"
-    id = db.Column(db.Integer, primary_key=True)
-
-    empresa_id = db.Column(db.Integer, db.ForeignKey("empresa.id"), nullable=False, index=True)
-    modulo = db.Column(db.String(20), nullable=False, index=True)  # ex: "m0"
-    aula = db.Column(db.String(20), nullable=False, index=True)    # ex: "a1"
-
-    concluido_em = db.Column(db.DateTime, nullable=True)
-
-    __table_args__ = (
-        db.UniqueConstraint("empresa_id", "modulo", "aula", name="uq_prog_aula_empresa_modulo_aula"),
-    )
 
 # === Helpers de autenticação/empresa =========================================
 # flask_login é opcional no projeto; faça import seguro
@@ -5363,22 +5328,53 @@ def _excluir_empresa_sem_historico(
             )
 
         # ======================================================
-        # TREINAMENTO
+        # TABELAS LEGADAS DO TREINAMENTO
+        #
+        # O módulo de treinamento foi removido da aplicação,
+        # porém estas tabelas ainda existirão temporariamente
+        # no banco até a etapa 9A.3C.5F.7B.5.
+        #
+        # Limpamos os registros antigos por SQL para preservar
+        # a exclusão segura de Empresa sem depender dos antigos
+        # modelos ORM TrainingProgress e ProgressoAula.
         # ======================================================
-
-        TrainingProgress.query.filter(
-            TrainingProgress.company_id
-            == empresa_id
-        ).delete(
-            synchronize_session=False
-        )
-
-        ProgressoAula.query.filter(
-            ProgressoAula.empresa_id
-            == empresa_id
-        ).delete(
-            synchronize_session=False
-        )
+        
+        if inspect(
+            db.engine
+        ).has_table(
+            "training_progress"
+        ):
+        
+            db.session.execute(
+                text(
+                    """
+                    DELETE FROM training_progress
+                    WHERE company_id = :empresa_id
+                    """
+                ),
+                {
+                    "empresa_id": empresa_id
+                }
+            )
+        
+        
+        if inspect(
+            db.engine
+        ).has_table(
+            "progresso_aula"
+        ):
+        
+            db.session.execute(
+                text(
+                    """
+                    DELETE FROM progresso_aula
+                    WHERE empresa_id = :empresa_id
+                    """
+                ),
+                {
+                    "empresa_id": empresa_id
+                }
+            )
 
         # ======================================================
         # ANALYTICS
@@ -16720,92 +16716,6 @@ def _empresa_avatar_url(emp) -> str | None:
 
     return None
 
-from flask import send_from_directory
-
-TRAINING_FILES_DIR = os.path.join(app.root_path, "training_files")
-
-
-def _training_progress_map(company_id: int) -> dict:
-    """
-    Retorna dict:
-      {(module_key, lesson_key): {"status":..., "score":..., "completed_at":...}}
-    """
-    mp = {}
-    try:
-        rows = TrainingProgress.query.filter_by(company_id=company_id).all()
-        for r in rows:
-            mp[(r.module_key, r.lesson_key)] = {
-                "status": r.status,
-                "score": r.score,
-                "completed_at": r.completed_at,
-                "updated_at": r.updated_at,
-            }
-    except Exception:
-        pass
-    return mp
-
-
-def _training_upsert(company_id: int, module_key: str, lesson_key: str, status: str, score: int | None = None):
-    module_key = (module_key or "").strip().lower()
-    lesson_key = (lesson_key or "").strip().lower()
-    status = (status or "not_started").strip().lower()
-
-    if status not in ("not_started", "in_progress", "done"):
-        status = "in_progress"
-
-    row = TrainingProgress.query.filter_by(
-        company_id=company_id, module_key=module_key, lesson_key=lesson_key
-    ).first()
-
-    now = datetime.utcnow()
-
-    if not row:
-        row = TrainingProgress(
-            company_id=company_id,
-            module_key=module_key,
-            lesson_key=lesson_key,
-            status=status,
-            score=score,
-            updated_at=now,
-            completed_at=(now if status == "done" else None),
-        )
-        db.session.add(row)
-    else:
-        row.status = status
-        if score is not None:
-            row.score = score
-        row.updated_at = now
-        if status == "done" and not row.completed_at:
-            row.completed_at = now
-
-    db.session.commit()
-
-
-def _training_percent_for_module(module: dict, progress_map: dict) -> int:
-    lessons = module.get("lessons") or []
-    if not lessons:
-        return 0
-    done = 0
-    for a in lessons:
-        k = (module.get("key"), a.get("key"))
-        st = (progress_map.get(k) or {}).get("status")
-        if st == "done":
-            done += 1
-    return int(round((done / max(1, len(lessons))) * 100))
-
-
-def _training_global_percent(progress_map: dict) -> int:
-    total = 0
-    done = 0
-    for m in TRAINING_CATALOG:
-        for a in (m.get("lessons") or []):
-            total += 1
-            st = (progress_map.get((m.get("key"), a.get("key"))) or {}).get("status")
-            if st == "done":
-                done += 1
-    if total == 0:
-        return 0
-    return int(round((done / total) * 100))
 
 # --------------------------------------------------------------------
 # AcheTece 2.0 - Meus Pedidos da Malharia
@@ -17535,63 +17445,8 @@ def concluir_producao_malharia(pedido_id):
     )
 
 
-ALLOWED_MATERIALS = ("apostila", "apresentacao")
-
-def _lesson_files(aula: dict) -> dict:
-    """
-    Normaliza a estrutura de arquivos da aula:
-    - Novo padrão: aula["files"] = {"apostila": "...", "apresentacao": "..."}
-    - Legado: aula["file"] = "....pdf" -> vira {"apostila": "....pdf"}
-    """
-    if not aula:
-        return {}
-
-    files = aula.get("files")
-    if isinstance(files, dict) and files:
-        # filtra apenas chaves permitidas e com nome de arquivo válido
-        cleaned = {}
-        for k in ALLOWED_MATERIALS:
-            v = files.get(k)
-            if isinstance(v, str) and v.strip():
-                cleaned[k] = v.strip()
-        return cleaned
-
-    legacy = aula.get("file")
-    if isinstance(legacy, str) and legacy.strip():
-        return {"apostila": legacy.strip()}
-
-    return {}
-
-ALLOWED_MATERIALS = ("apostila", "apresentacao")
-
-def _lesson_files(aula: dict) -> dict:
-    """
-    Normaliza a estrutura de arquivos da aula:
-    - Novo padrão: aula["files"] = {"apostila": "...", "apresentacao": "..."}
-    - Legado: aula["file"] = "....pdf" -> vira {"apostila": "....pdf"}
-    """
-    if not aula:
-        return {}
-
-    files = aula.get("files")
-    if isinstance(files, dict) and files:
-        # filtra apenas chaves permitidas e com nome de arquivo válido
-        cleaned = {}
-        for k in ALLOWED_MATERIALS:
-            v = files.get(k)
-            if isinstance(v, str) and v.strip():
-                cleaned[k] = v.strip()
-        return cleaned
-
-    legacy = aula.get("file")
-    if isinstance(legacy, str) and legacy.strip():
-        return {"apostila": legacy.strip()}
-
-    return {}
-
  
 from datetime import datetime
-from flask import current_app, abort, redirect, url_for
 
 
 # ==============================================================
