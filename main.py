@@ -16043,17 +16043,61 @@ def _with_cb(u: str, ts: int) -> str:
         return u  # em último caso, segue sem mudar
 
 def _back_to_panel(ts: int):
-    """Escolhe uma URL de retorno ao painel com cache-buster."""
-    ref = request.referrer or ""
+    """
+    Escolhe uma URL segura de retorno após atualização
+    da foto da malharia.
+
+    Permite retorno somente para páginas internas conhecidas
+    do próprio AcheTece.
+    """
+
+    ref = (
+        request.referrer
+        or ""
+    )
+
     if ref:
+
         try:
-            rp = urlparse(ref)
+
+            rp = urlparse(
+                ref
+            )
+
+            # Somente o próprio domínio.
             if rp.netloc == request.host:
-                if "painel" in rp.path or "malharia" in rp.path:
-                    return redirect(_with_cb(ref, ts))
+
+                path = (
+                    rp.path
+                    or ""
+                )
+
+                retorno_permitido = (
+                    "painel" in path
+                    or "malharia" in path
+                    or path.rstrip("/")
+                    == "/editar_empresa"
+                )
+
+                if retorno_permitido:
+
+                    return redirect(
+                        _with_cb(
+                            ref,
+                            ts
+                        )
+                    )
+
         except Exception:
+
             pass
-    return redirect(url_for('painel_malharia', _cb=ts))
+
+    return redirect(
+        url_for(
+            "painel_malharia",
+            _cb=ts
+        )
+    )
 
 def _empresa_avatar_url(emp) -> str | None:
     """
