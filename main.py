@@ -19238,68 +19238,515 @@ def cadastro_post():
         )
     )
 
-@app.route("/editar_tear/<int:id>", methods=["GET", "POST"])
-def editar_tear(id):
-    emp, _user = _get_empresa_usuario_da_sessao()
-    if not emp:
-        flash("Faça login para continuar.", "warning")
-        return redirect(url_for("login"))
+# ==============================================================
+# PARQUE PRODUTIVO — EDITAR TEAR
+# ==============================================================
 
-    tear = Tear.query.get_or_404(id)
+@app.route(
+    "/editar_tear/<int:id>",
+    methods=["GET", "POST"],
+    endpoint="editar_tear"
+)
+@limiter.limit(
+    "20 per hour",
+    key_func=_malharia_rate_limit_key,
+    methods=["POST"]
+)
+@limiter.limit(
+    "60 per day",
+    key_func=_malharia_rate_limit_key,
+    methods=["POST"]
+)
+def editar_tear(id):
+    """
+    Edita um tear pertencente à malharia autenticada.
+
+    Segurança:
+    - autenticação central da malharia;
+    - CSRF global;
+    - Rate Limit por malharia;
+    - verifica propriedade do tear;
+    - valida os dados antes de alterar o objeto;
+    - não aceita empresa_id vindo do navegador;
+    - transação com rollback;
+    - log seguro da alteração.
+    """
+
+    # ==========================================================
+    # IDENTIDADE
+    # ==========================================================
+
+    emp, _user = (
+        _get_empresa_usuario_da_sessao()
+    )
+
+    if not emp:
+
+        flash(
+            "Faça login para continuar.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("login")
+        )
+
+    # ==========================================================
+    # TEAR
+    # ==========================================================
+
+    tear = db.session.get(
+        Tear,
+        id
+    )
+
+    if tear is None:
+
+        abort(404)
+
+    # ==========================================================
+    # PROPRIEDADE
+    #
+    # Uma malharia nunca pode editar tear de outra empresa.
+    # ==========================================================
+
     if tear.empresa_id != emp.id:
+
+        current_app.logger.warning(
+            (
+                "[SECURITY][TEAR_EDIT_FORBIDDEN] "
+                f"empresa_id={emp.id} "
+                f"tear_id={id}"
+            )
+        )
+
         abort(403)
 
-    if request.method == "POST":
-        def _to_int(val):
-            try:
-                if val is None:
-                    return None
-                s = str(val).strip().replace(",", ".")
-                return int(float(s))
-            except Exception:
+    # ==========================================================
+    # GET
+    # ==========================================================
+
+    if request.method == "GET":
+
+        return render_template(
+            "editar_tear.html",
+            empresa=emp,
+            tear=tear
+        )
+
+    # ==========================================================
+    # CONVERSÃO NUMÉRICA
+    # ==========================================================
+
+    def _to_int(
+        valor
+    ):
+
+        try:
+
+            if valor is None:
+
                 return None
 
-        # Texto
-        tear.marca  = (request.form.get("marca")  or "").strip() or None
-        tear.modelo = (request.form.get("modelo") or "").strip() or None
+            texto = (
+                str(valor)
+                .strip()
+                .replace(",", ".")
+            )
 
-        # Tipo normalizado
-        tipo = (request.form.get("tipo") or "").strip().upper()
-        tear.tipo = tipo if tipo in {"MONO","DUPLA"} else (tipo or None)
+            if not texto:
 
-        # Numéricos
-        finura        = _to_int(request.form.get("finura"))
-        diametro      = _to_int(request.form.get("diametro"))
-        alimentadores = _to_int(request.form.get("alimentadores"))
-        pistas_cil    = _to_int(request.form.get("pistas_cilindro"))
-        pistas_dis    = _to_int(request.form.get("pistas_disco"))
+                return None
 
-        if hasattr(tear, "finura"):           tear.finura = finura
-        if hasattr(tear, "galga"):            tear.galga  = finura         # espelho
-        if hasattr(tear, "diametro"):         tear.diametro = diametro
-        if hasattr(tear, "alimentadores"):    tear.alimentadores = alimentadores
-        if hasattr(tear, "pistas_cilindro"):  tear.pistas_cilindro = pistas_cil
-        if hasattr(tear, "pistas_disco"):     tear.pistas_disco    = pistas_dis
+            return int(
+                float(texto)
+            )
 
-        # Elastano (compatível com bool e "Sim/Não")
-        elas_raw = (request.form.get("elastano") or "").strip().lower()
-        el_bool = True  if elas_raw in {"sim","s","1","true","on","yes","y","com","tem"} else \
-                  False if elas_raw in {"não","nao","n","0","false","off","no","sem"} else None
+        except (
+            TypeError,
+            ValueError
+        ):
 
-        if el_bool is not None:
-            if hasattr(tear, "elastano"):
-                cur = getattr(tear, "elastano")
-                tear.elastano = (el_bool if isinstance(cur, bool) else ("Sim" if el_bool else "Não"))
-            if hasattr(tear, "kit_elastano"):
-                tear.kit_elastano = "Sim" if el_bool else "Não"
+            return None
 
-        db.session.add(tear)
+    # ==========================================================
+    # POST — DADOS
+    # ==========================================================
+
+    marca = (
+        request.form.get("marca")
+        or ""
+    ).strip()
+
+    modelo = (
+        request.form.get("modelo")
+        or ""
+    ).strip()
+
+    tipo = (
+        request.form.get("tipo")
+        or ""
+    ).strip().upper()
+
+    finura = _to_int(
+        request.form.get(
+            "finura"
+        )
+    )
+
+    diametro = _to_int(
+        request.form.get(
+            "diametro"
+        )
+    )
+
+    alimentadores = _to_int(
+        request.form.get(
+            "alimentadores"
+        )
+    )
+
+    pistas_cilindro = _to_int(
+        request.form.get(
+            "pistas_cilindro"
+        )
+    )
+
+    pistas_disco = _to_int(
+        request.form.get(
+            "pistas_disco"
+        )
+    )
+
+    elastano_raw = (
+        request.form.get(
+            "elastano"
+        )
+        or ""
+    ).strip().lower()
+
+    # ==========================================================
+    # ELASTANO
+    # ==========================================================
+
+    if elastano_raw in {
+        "sim",
+        "s",
+        "1",
+        "true",
+        "on",
+        "yes",
+        "y",
+        "com",
+        "tem",
+    }:
+
+        elastano = "Sim"
+
+    elif elastano_raw in {
+        "não",
+        "nao",
+        "n",
+        "0",
+        "false",
+        "off",
+        "no",
+        "sem",
+    }:
+
+        elastano = "Não"
+
+    else:
+
+        elastano = None
+
+    # ==========================================================
+    # VALIDAÇÕES
+    #
+    # Validamos tudo ANTES de alterar o objeto Tear.
+    # ==========================================================
+
+    erros = []
+
+    # ----------------------------------------------------------
+    # Marca
+    # ----------------------------------------------------------
+
+    if not marca:
+
+        erros.append(
+            "Informe a marca do tear."
+        )
+
+    elif len(marca) > 100:
+
+        erros.append(
+            "A marca deve possuir no máximo 100 caracteres."
+        )
+
+    # ----------------------------------------------------------
+    # Modelo
+    # ----------------------------------------------------------
+
+    if not modelo:
+
+        erros.append(
+            "Informe o modelo do tear."
+        )
+
+    elif len(modelo) > 100:
+
+        erros.append(
+            "O modelo deve possuir no máximo 100 caracteres."
+        )
+
+    # ----------------------------------------------------------
+    # Tipo
+    # ----------------------------------------------------------
+
+    if tipo not in {
+        "MONO",
+        "DUPLA",
+    }:
+
+        erros.append(
+            "Selecione um tipo de tear válido."
+        )
+
+    # ----------------------------------------------------------
+    # Finura
+    # ----------------------------------------------------------
+
+    if (
+        finura is None
+        or finura <= 0
+        or finura > 100
+    ):
+
+        erros.append(
+            "Informe uma finura válida."
+        )
+
+    # ----------------------------------------------------------
+    # Diâmetro
+    # ----------------------------------------------------------
+
+    if (
+        diametro is None
+        or diametro <= 0
+        or diametro > 200
+    ):
+
+        erros.append(
+            "Informe um diâmetro válido."
+        )
+
+    # ----------------------------------------------------------
+    # Alimentadores
+    # ----------------------------------------------------------
+
+    if (
+        alimentadores is None
+        or alimentadores <= 0
+        or alimentadores > 1000
+    ):
+
+        erros.append(
+            "Informe uma quantidade válida de alimentadores."
+        )
+
+    # ----------------------------------------------------------
+    # Pistas do cilindro
+    # ----------------------------------------------------------
+
+    if (
+        pistas_cilindro is not None
+        and (
+            pistas_cilindro < 0
+            or pistas_cilindro > 100
+        )
+    ):
+
+        erros.append(
+            "Informe uma quantidade válida de pistas do cilindro."
+        )
+
+    # ----------------------------------------------------------
+    # Pistas do disco
+    # ----------------------------------------------------------
+
+    if (
+        pistas_disco is not None
+        and (
+            pistas_disco < 0
+            or pistas_disco > 100
+        )
+    ):
+
+        erros.append(
+            "Informe uma quantidade válida de pistas do disco."
+        )
+
+    # ----------------------------------------------------------
+    # Elastano
+    # ----------------------------------------------------------
+
+    if elastano is None:
+
+        erros.append(
+            "Informe se o tear possui recurso para elastano."
+        )
+
+    # ==========================================================
+    # DADOS INVÁLIDOS
+    # ==========================================================
+
+    if erros:
+
+        for mensagem in erros:
+
+            flash(
+                mensagem,
+                "warning"
+            )
+
+        current_app.logger.warning(
+            (
+                "[SECURITY][TEAR_EDIT_REJECTED] "
+                f"empresa_id={emp.id} "
+                f"tear_id={tear.id} "
+                f"errors={len(erros)}"
+            )
+        )
+
+        return redirect(
+            url_for(
+                "editar_tear",
+                id=tear.id
+            )
+        )
+
+    # ==========================================================
+    # ALTERAÇÃO
+    #
+    # Somente agora modificamos o objeto.
+    # ==========================================================
+
+    try:
+
+        tear.marca = marca
+
+        tear.modelo = modelo
+
+        tear.tipo = tipo
+
+        tear.finura = finura
+
+        tear.diametro = diametro
+
+        tear.alimentadores = (
+            alimentadores
+        )
+
+        tear.elastano = (
+            elastano
+        )
+
+        # ------------------------------------------------------
+        # Campos opcionais / compatibilidade
+        # ------------------------------------------------------
+
+        if hasattr(
+            tear,
+            "pistas_cilindro"
+        ):
+
+            tear.pistas_cilindro = (
+                pistas_cilindro
+            )
+
+        if hasattr(
+            tear,
+            "pistas_disco"
+        ):
+
+            tear.pistas_disco = (
+                pistas_disco
+            )
+
+        # Alguns códigos antigos podem possuir "galga"
+        # como espelho da finura.
+        if hasattr(
+            tear,
+            "galga"
+        ):
+
+            tear.galga = (
+                finura
+            )
+
+        # Alguns bancos antigos podem possuir kit_elastano.
+        if hasattr(
+            tear,
+            "kit_elastano"
+        ):
+
+            tear.kit_elastano = (
+                elastano
+            )
+
         db.session.commit()
-        flash("Tear atualizado com sucesso!", "success")
-        return redirect(url_for("painel_malharia"))
 
-    # GET
-    return render_template("editar_tear.html", empresa=emp, tear=tear)
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            (
+                "[SECURITY][TEAR_EDIT] "
+                "Falha ao atualizar tear. "
+                f"empresa_id={emp.id} "
+                f"tear_id={tear.id}"
+            )
+        )
+
+        flash(
+            (
+                "Não foi possível atualizar o tear agora. "
+                "Tente novamente."
+            ),
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "editar_tear",
+                id=tear.id
+            )
+        )
+
+    # ==========================================================
+    # LOG
+    # ==========================================================
+
+    current_app.logger.info(
+        (
+            "[SECURITY][TEAR_EDIT] "
+            f"empresa_id={emp.id} "
+            f"tear_id={tear.id}"
+        )
+    )
+
+    flash(
+        "Tear atualizado com sucesso!",
+        "success"
+    )
+
+    return redirect(
+        url_for(
+            "painel_malharia"
+        )
+    )
 
 @app.post("/tear/<int:id>/excluir")
 def excluir_tear(id):
