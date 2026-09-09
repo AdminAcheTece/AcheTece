@@ -16144,8 +16144,17 @@ def painel_malharia():
         )
 
         # ----------------------------------------------------------
-        # Se venceu e ainda estava ativo,
-        # volta para pendente.
+        # ASSINATURA VENCIDA — SOMENTE ESTADO DE APRESENTAÇÃO
+        #
+        # IMPORTANTE:
+        # esta é uma rota GET. Consultar o painel não deve
+        # alterar o banco de dados.
+        #
+        # A validade real da assinatura já é verificada pela
+        # regra central de acesso e por Empresa.assinatura_ativa.
+        #
+        # Aqui apenas ajustamos a variável local utilizada para
+        # montar o painel.
         # ----------------------------------------------------------
 
         if (
@@ -16158,19 +16167,7 @@ def painel_malharia():
             )
         ):
 
-            try:
-
-                emp.status_pagamento = (
-                    "pendente"
-                )
-
-                db.session.commit()
-
-                status_ok = False
-
-            except Exception:
-
-                db.session.rollback()
+            status_ok = False
 
     except Exception as e:
 
