@@ -914,7 +914,9 @@
                 'enviar_proposta',
                 oportunidade_id=oportunidade.id
             ) }}"
-            data-confirm="Deseja enviar esta proposta ao comprador?"
+            onsubmit="return confirm(
+                'Deseja enviar esta proposta ao comprador?'
+            );"
         >
 
             <input
