@@ -286,6 +286,11 @@
         }
 
 
+        .adjustment-request-message{
+            white-space:pre-line;
+        }
+
+
         /* =========================================================
            FORM
         ========================================================= */
@@ -619,6 +624,7 @@
             if proposta
             else 'rascunho'
         )
+        |trim
         |lower
     %}
 
@@ -889,7 +895,7 @@
              MOSTRA O AJUSTE SOLICITADO PELO COMPRADOR
         ====================================================== -->
 
-        {% if ajuste_aberto %}
+        {% if status_proposta == "ajuste_solicitado" %}
 
             <div class="adjustment-request">
 
@@ -897,7 +903,20 @@
                     O comprador solicitou um ajuste:
                 </strong>
 
-                {{ ajuste_aberto.message }}
+                <div class="adjustment-request-message">
+
+                    {% if ajuste_aberto and ajuste_aberto.message %}
+
+                        {{ ajuste_aberto.message }}
+
+                    {% else %}
+
+                        Revise as condições comerciais desta proposta
+                        e reenvie uma nova versão ao comprador.
+
+                    {% endif %}
+
+                </div>
 
             </div>
 
@@ -915,7 +934,11 @@
                 oportunidade_id=oportunidade.id
             ) }}"
             onsubmit="return confirm(
-                'Deseja enviar esta proposta ao comprador?'
+                {% if status_proposta == 'ajuste_solicitado' %}
+                    'Deseja reenviar esta proposta ajustada ao comprador?'
+                {% else %}
+                    'Deseja enviar esta proposta ao comprador?'
+                {% endif %}
             );"
         >
 
