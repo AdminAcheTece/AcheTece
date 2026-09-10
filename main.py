@@ -15827,6 +15827,12 @@ def enviar_proposta(oportunidade_id):
     # 7,80
     # 7.80
     # 1.250,50
+    #
+    # Não aceita:
+    #
+    # NaN
+    # Infinity
+    # notação científica
     # ==============================================================
 
     def _decimal_form(valor):
@@ -15846,8 +15852,24 @@ def enviar_proposta(oportunidade_id):
             .replace(" ", "")
         )
 
-        # Formato brasileiro:
+        # ----------------------------------------------------------
+        # Não aceita notação científica
+        #
+        # Exemplos bloqueados:
+        # 1e3
+        # 2E5
+        # ----------------------------------------------------------
+
+        if "e" in valor.lower():
+
+            return None
+
+        # ----------------------------------------------------------
+        # Formato brasileiro
+        #
         # 1.250,50 -> 1250.50
+        # ----------------------------------------------------------
+
         if "," in valor:
 
             valor = (
@@ -15858,7 +15880,7 @@ def enviar_proposta(oportunidade_id):
 
         try:
 
-            return Decimal(
+            numero = Decimal(
                 valor
             )
 
@@ -15869,6 +15891,43 @@ def enviar_proposta(oportunidade_id):
         ):
 
             return None
+
+        # ----------------------------------------------------------
+        # Bloqueia valores especiais do Decimal:
+        #
+        # NaN
+        # Infinity
+        # -Infinity
+        # ----------------------------------------------------------
+
+        if not numero.is_finite():
+
+            return None
+
+        return numero
+
+
+    # ==============================================================
+    # HELPER — CASAS DECIMAIS REAIS
+    # ==============================================================
+
+    def _casas_decimais(numero):
+
+        numero_normalizado = (
+            numero.normalize()
+        )
+
+        expoente = (
+            numero_normalizado
+            .as_tuple()
+            .exponent
+        )
+
+        return max(
+            0,
+            -expoente
+        )
+
 
     # ==============================================================
     # RECEBE FORMULÁRIO
@@ -15914,6 +15973,43 @@ def enviar_proposta(oportunidade_id):
         or ""
     ).strip()
 
+
+    # ==============================================================
+    # LIMITES COMPATÍVEIS COM O MODELO / BANCO
+    #
+    # Proposal.quantidade_kg = Numeric(12, 2)
+    #
+    # Máximo:
+    # 9.999.999.999,99
+    #
+    # Proposal.preco_por_kg = Numeric(12, 4)
+    #
+    # Máximo:
+    # 99.999.999,9999
+    #
+    # PostgreSQL INTEGER:
+    # máximo 2.147.483.647
+    #
+    # condicoes_pagamento = String(255)
+    # ==============================================================
+
+    MAX_QUANTIDADE_KG = Decimal(
+        "9999999999.99"
+    )
+
+    MAX_PRECO_POR_KG = Decimal(
+        "99999999.9999"
+    )
+
+    MAX_INTEIRO_DB = (
+        2147483647
+    )
+
+    MAX_CONDICOES_PAGAMENTO = (
+        255
+    )
+
+
     # ==============================================================
     # VALIDAÇÃO DA QUANTIDADE
     # ==============================================================
@@ -15935,8 +16031,59 @@ def enviar_proposta(oportunidade_id):
             )
         )
 
+
     # ==============================================================
-    # NÃO PERMITE PROPOR MAIS QUE A DEMANDA
+    # QUANTIDADE — CASAS DECIMAIS
+    #
+    # O banco permite no máximo 2 casas decimais.
+    # ==============================================================
+
+    if (
+        _casas_decimais(
+            quantidade_kg
+        )
+        > 2
+    ):
+
+        flash(
+            "A quantidade pode possuir no máximo 2 casas decimais.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "enviar_proposta",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+
+    # ==============================================================
+    # QUANTIDADE — LIMITE DO CAMPO NO BANCO
+    # ==============================================================
+
+    if (
+        quantidade_kg
+        > MAX_QUANTIDADE_KG
+    ):
+
+        flash(
+            "A quantidade informada ultrapassa o limite permitido.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "enviar_proposta",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+
+    # ==============================================================
+    # QUANTIDADE DA DEMANDA
+    #
+    # A proposta nunca pode ultrapassar a quantidade solicitada.
     # ==============================================================
 
     try:
@@ -15947,13 +16094,56 @@ def enviar_proposta(oportunidade_id):
             )
         )
 
-    except Exception:
+    except (
+        InvalidOperation,
+        ValueError,
+        TypeError
+    ):
 
         quantidade_demanda = None
 
+
+    # ==============================================================
+    # INTEGRIDADE DA QUANTIDADE DA DEMANDA
+    #
+    # Se a própria demanda estiver inconsistente,
+    # não seguimos com a gravação da proposta.
+    # ==============================================================
+
     if (
-        quantidade_demanda is not None
-        and quantidade_kg
+        quantidade_demanda is None
+        or not quantidade_demanda.is_finite()
+        or quantidade_demanda <= 0
+    ):
+
+        current_app.logger.error(
+            (
+                "[PROPOSTA] Quantidade inválida na demanda "
+                "demand_id=%s quantidade=%r"
+            ),
+            demanda.id,
+            demanda.quantidade_kg
+        )
+
+        flash(
+            "Não foi possível validar a quantidade desta demanda.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "enviar_proposta",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+
+    # ==============================================================
+    # NÃO PERMITE PROPOR MAIS QUE A DEMANDA
+    # ==============================================================
+
+    if (
+        quantidade_kg
         > quantidade_demanda
     ):
 
@@ -15968,6 +16158,7 @@ def enviar_proposta(oportunidade_id):
                 oportunidade_id=oportunidade.id
             )
         )
+
 
     # ==============================================================
     # VALIDAÇÃO DO PREÇO
@@ -15990,6 +16181,55 @@ def enviar_proposta(oportunidade_id):
             )
         )
 
+
+    # ==============================================================
+    # PREÇO — CASAS DECIMAIS
+    #
+    # O banco permite no máximo 4 casas decimais.
+    # ==============================================================
+
+    if (
+        _casas_decimais(
+            preco_por_kg
+        )
+        > 4
+    ):
+
+        flash(
+            "O preço por kg pode possuir no máximo 4 casas decimais.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "enviar_proposta",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+
+    # ==============================================================
+    # PREÇO — LIMITE DO CAMPO NO BANCO
+    # ==============================================================
+
+    if (
+        preco_por_kg
+        > MAX_PRECO_POR_KG
+    ):
+
+        flash(
+            "O preço por kg informado ultrapassa o limite permitido.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "enviar_proposta",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+
     # ==============================================================
     # PRAZO
     # ==============================================================
@@ -16000,11 +16240,19 @@ def enviar_proposta(oportunidade_id):
             prazo_raw
         )
 
-    except Exception:
+    except (
+        ValueError,
+        TypeError,
+        OverflowError
+    ):
 
         prazo_dias = 0
 
-    if prazo_dias <= 0:
+
+    if (
+        prazo_dias <= 0
+        or prazo_dias > MAX_INTEIRO_DB
+    ):
 
         flash(
             "Informe um prazo de produção válido.",
@@ -16018,6 +16266,7 @@ def enviar_proposta(oportunidade_id):
             )
         )
 
+
     # ==============================================================
     # VALIDADE
     # ==============================================================
@@ -16028,14 +16277,48 @@ def enviar_proposta(oportunidade_id):
             validade_raw
         )
 
-    except Exception:
+    except (
+        ValueError,
+        TypeError,
+        OverflowError
+    ):
 
         validade_dias = 0
 
-    if validade_dias <= 0:
+
+    if (
+        validade_dias <= 0
+        or validade_dias > MAX_INTEIRO_DB
+    ):
 
         flash(
-            "Informe a validade da proposta.",
+            "Informe uma validade válida para a proposta.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "enviar_proposta",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+
+    # ==============================================================
+    # CONDIÇÕES DE PAGAMENTO
+    #
+    # O modelo utiliza String(255).
+    # ==============================================================
+
+    if (
+        len(
+            condicoes_pagamento
+        )
+        > MAX_CONDICOES_PAGAMENTO
+    ):
+
+        flash(
+            "As condições de pagamento podem ter no máximo 255 caracteres.",
             "warning"
         )
 
