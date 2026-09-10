@@ -6156,48 +6156,138 @@ _get_empresa_usuario = _get_empresa_usuario_da_sessao
 # Migrações leves / Setup inicial (idempotente)
 # --------------------------------------------------------------------
 def _ensure_auth_layer_and_link():
-    # 1) tabela de usuário
+    """
+    Garante apenas a estrutura mínima necessária
+    para a camada de autenticação.
+
+    IMPORTANTE:
+    Esta rotina NÃO realiza mais backfill automático.
+
+    Ela NÃO:
+    - cria Usuario para Empresa existente;
+    - altera empresa.user_id;
+    - vincula contas pelo e-mail;
+    - executa commit de dados comerciais.
+
+    Contas legadas são tratadas pelos fluxos explícitos
+    de autenticação/cadastro/edição.
+
+    A rotina permanece temporariamente no bootstrap apenas
+    para garantir compatibilidade estrutural do banco.
+    """
+
+    # ==========================================================
+    # 1) GARANTE TABELA USUARIO
+    # ==========================================================
+
     try:
-        Usuario.__table__.create(bind=db.engine, checkfirst=True)
+
+        Usuario.__table__.create(
+            bind=db.engine,
+            checkfirst=True
+        )
+
     except Exception as e:
-        app.logger.warning(f"create usuario table: {e}")
 
-    # 2) garantir coluna user_id em empresa (se ainda não existir)
-    try:
-        insp = inspect(db.engine)
-        cols = {c['name'] for c in insp.get_columns('empresa')}
-        if 'user_id' not in cols:
-            with db.engine.begin() as conn:
-                conn.exec_driver_sql('ALTER TABLE empresa ADD COLUMN user_id INTEGER')
-    except Exception as e:
-        app.logger.warning(f"add user_id to empresa failed: {e}")
-
-    # 3) backfill SEM carregar o modelo inteiro (evita depender de colunas novas)
-    try:
-        rows = db.session.execute(
-            text("SELECT id, email, user_id FROM empresa")
-        ).mappings().all()
-
-        for r in rows:
-            if r.get('user_id'):
-                continue
-            email = (r.get('email') or '').strip()
-            if not email:
-                continue
-            u = Usuario.query.filter_by(email=email).first()
-            if not u:
-                u = Usuario(email=email, senha_hash=None, role=None, is_active=True)
-                db.session.add(u)
-                db.session.flush()  # garante u.id
-
-            db.session.execute(
-                text("UPDATE empresa SET user_id = :uid WHERE id = :id AND (user_id IS NULL)"),
-                {"uid": u.id, "id": r['id']}
+        app.logger.warning(
+            (
+                "[BOOT][AUTH] "
+                f"Falha ao garantir tabela usuario: {e}"
             )
-        db.session.commit()
+        )
+
+    # ==========================================================
+    # 2) GARANTE COLUNA empresa.user_id
+    # ==========================================================
+
+    try:
+
+        insp = inspect(
+            db.engine
+        )
+
+        cols = {
+            coluna["name"]
+            for coluna
+            in insp.get_columns(
+                "empresa"
+            )
+        }
+
+        if "user_id" not in cols:
+
+            with db.engine.begin() as conn:
+
+                conn.exec_driver_sql(
+                    """
+                    ALTER TABLE empresa
+                    ADD COLUMN user_id INTEGER
+                    """
+                )
+
+            app.logger.info(
+                (
+                    "[BOOT][AUTH] "
+                    "Coluna empresa.user_id criada."
+                )
+            )
+
     except Exception as e:
-        app.logger.warning(f"backfill usuarios from empresas failed: {e}")
+
+        app.logger.warning(
+            (
+                "[BOOT][AUTH] "
+                f"Falha ao garantir empresa.user_id: {e}"
+            )
+        )
+
+    # ==========================================================
+    # 3) SOMENTE DIAGNÓSTICO
+    #
+    # Empresas antigas ainda sem Usuario podem continuar
+    # existindo. Apenas registramos a quantidade.
+    #
+    # NÃO criamos Usuario.
+    # NÃO preenchemos user_id.
+    # ==========================================================
+
+    try:
+
+        total_sem_vinculo = (
+            db.session.execute(
+                text(
+                    """
+                    SELECT COUNT(*)
+                    FROM empresa
+                    WHERE user_id IS NULL
+                    """
+                )
+            )
+            .scalar()
+            or 0
+        )
+
+        if total_sem_vinculo:
+
+            app.logger.info(
+                (
+                    "[BOOT][AUTH] "
+                    f"empresas_sem_user_id={total_sem_vinculo} "
+                    "backfill_automatico=desativado"
+                )
+            )
+
+    except Exception as e:
+
         db.session.rollback()
+
+        app.logger.warning(
+            (
+                "[BOOT][AUTH] "
+                "Não foi possível contar empresas "
+                f"sem user_id: {e}"
+            )
+        )
 
 def _ensure_cliente_profile_table():
     try:
@@ -6326,7 +6416,7 @@ def _run_bootstrap_once():
         _ensure_empresa_foto_column()
         _ensure_teares_pistas_cols()
 
-        # 3) auth + vinculação user_id (pode fazer SELECT minimalista)
+        # 3) garante estrutura mínima da camada de autenticação
         _ensure_auth_layer_and_link()
 
         # 4) tabela de perfil de cliente
