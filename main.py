@@ -21724,15 +21724,38 @@ def editar_empresa():
             )
 
         # ------------------------------------------------------
-        # Se o e-mail foi alterado, invalida tokens antigos
-        # de recuperação da malharia.
+        # REVOGAÇÃO DE CREDENCIAIS TEMPORÁRIAS
+        #
+        # Alterações sensíveis no perfil invalidam credenciais
+        # temporárias que tenham sido emitidas anteriormente.
+        #
+        # Regras:
+        #
+        # 1. mudança de senha:
+        #    invalida tokens ativos de recuperação de senha;
+        #
+        # 2. mudança de e-mail:
+        #    invalida tokens ativos de recuperação de senha
+        #    e OTPs ainda ativos vinculados ao e-mail anterior.
+        #
+        # Tudo permanece dentro da MESMA transação.
         # ------------------------------------------------------
 
-        if email_alterado:
+        if (
+            email_alterado
+            or senha_alterada
+        ):
 
             now = datetime.utcnow()
 
-            tokens_ativos = (
+            # --------------------------------------------------
+            # PASSWORD RESET TOKENS
+            #
+            # Um link de recuperação emitido antes de uma
+            # alteração sensível não deve permanecer utilizável.
+            # --------------------------------------------------
+
+            tokens_reset_ativos = (
                 PasswordResetToken.query
                 .filter(
                     PasswordResetToken.account_type
@@ -21746,9 +21769,39 @@ def editar_empresa():
                 .all()
             )
 
-            for token in tokens_ativos:
+            for token_reset in tokens_reset_ativos:
 
-                token.used_at = now
+                token_reset.used_at = now
+
+
+        # ------------------------------------------------------
+        # OTPs DO E-MAIL ANTERIOR
+        #
+        # O OtpToken é associado ao endereço de e-mail.
+        #
+        # Portanto, quando o endereço da conta muda,
+        # qualquer código ainda ativo enviado ao endereço
+        # anterior deve ser invalidado.
+        # ------------------------------------------------------
+
+        if email_alterado:
+
+            otps_email_anterior = (
+                OtpToken.query
+                .filter(
+                    func.lower(
+                        OtpToken.email
+                    )
+                    == email_anterior,
+
+                    OtpToken.used_at.is_(None),
+                )
+                .all()
+            )
+
+            for otp_token in otps_email_anterior:
+
+                otp_token.used_at = now
 
         # ------------------------------------------------------
         # Commit único
