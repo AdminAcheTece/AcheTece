@@ -14445,37 +14445,16 @@ def analisar_oportunidade(oportunidade_id):
     ).strip().lower()
 
     # ==============================================================
-    # PRIMEIRA VISUALIZAÇÃO
+    # VISUALIZAÇÃO DA OPORTUNIDADE — SOMENTE LEITURA
     #
-    # nova -> visualizada
+    # Esta rota utiliza GET.
     #
-    # Mas somente se a demanda ainda estiver PUBLICADA.
+    # Abrir uma oportunidade não deve modificar o banco de dados.
+    # Portanto, o status armazenado é apenas consultado.
     #
-    # Isso evita alterar registros históricos de uma demanda
-    # que já foi contratada ou encerrada.
+    # Alterações comerciais de status serão realizadas somente
+    # por ações explícitas da malharia em rotas POST.
     # ==============================================================
-
-    if (
-        oportunidade_status == "nova"
-        and demanda_status == "publicada"
-    ):
-
-        try:
-
-            oportunidade.status = "visualizada"
-
-            db.session.commit()
-
-            # Atualiza também a variável usada pelo template
-            oportunidade_status = "visualizada"
-
-        except Exception:
-
-            db.session.rollback()
-
-            current_app.logger.exception(
-                "[OPORTUNIDADE] Falha ao marcar como visualizada."
-            )
 
     # ==============================================================
     # MATCHES DA PRÓPRIA MALHARIA
