@@ -20937,6 +20937,99 @@ def editar_empresa():
         )
 
     # ==========================================================
+    # RECONCILIAÇÃO READ-ONLY DE USUÁRIO LEGADO
+    #
+    # IMPORTANTE:
+    #
+    # Esta etapa NÃO grava nada no banco.
+    #
+    # Caso exista uma Empresa antiga sem user_id, mas já exista
+    # exatamente um Usuario com o mesmo e-mail atual da Empresa,
+    # podemos reconhecê-lo como candidato ao vínculo.
+    #
+    # O vínculo definitivo somente será salvo no POST,
+    # dentro da transação da edição do perfil.
+    # ==========================================================
+
+    if (
+        usuario is None
+        and not getattr(
+            empresa,
+            "user_id",
+            None
+        )
+    ):
+
+        email_empresa_atual = (
+            empresa.email
+            or ""
+        ).strip().lower()
+
+        if email_empresa_atual:
+
+            candidatos_usuario = (
+                Usuario.query
+                .filter(
+                    func.lower(
+                        Usuario.email
+                    )
+                    == email_empresa_atual
+                )
+                .limit(2)
+                .all()
+            )
+
+            # --------------------------------------------------
+            # Só reconciliamos automaticamente quando existe
+            # exatamente um candidato.
+            #
+            # Se houver inconsistência/duplicidade, não fazemos
+            # nenhuma associação automática.
+            # --------------------------------------------------
+
+            if len(
+                candidatos_usuario
+            ) == 1:
+
+                candidato = (
+                    candidatos_usuario[0]
+                )
+
+                role_candidato = (
+                    candidato.role
+                    or ""
+                ).strip().lower()
+
+                # ----------------------------------------------
+                # Confirma que esse Usuario não pertence a
+                # outra Empresa.
+                # ----------------------------------------------
+
+                outra_empresa_vinculada = (
+                    Empresa.query
+                    .filter(
+                        Empresa.user_id
+                        == candidato.id,
+
+                        Empresa.id
+                        != empresa.id
+                    )
+                    .first()
+                )
+
+                if (
+                    role_candidato
+                    in {
+                        "",
+                        "malharia"
+                    }
+                    and outra_empresa_vinculada
+                    is None
+                ):
+
+                    usuario = candidato
+    
+    # ==========================================================
     # ESTADOS
     # ==========================================================
 
@@ -21448,10 +21541,15 @@ def editar_empresa():
     try:
 
         # ------------------------------------------------------
-        # Garante Usuario vinculado
+        # GARANTE USUARIO VINCULADO
         # ------------------------------------------------------
 
         if usuario is None:
+
+            # ----------------------------------------------
+            # Caso exista user_id na Empresa, tenta recuperar
+            # exatamente aquele Usuario.
+            # ----------------------------------------------
 
             if getattr(
                 empresa,
@@ -21464,12 +21562,22 @@ def editar_empresa():
                     empresa.user_id
                 )
 
+        # ------------------------------------------------------
+        # CONTA LEGADA SEM USUARIO
+        #
+        # Neste ponto:
+        #
+        # 1. a reconciliação read-only já tentou localizar
+        #    um Usuario legítimo com o e-mail atual;
+        #
+        # 2. as validações de conflito de e-mail já ocorreram;
+        #
+        # 3. portanto somente criamos um novo Usuario quando
+        #    realmente não existe um candidato reutilizável.
+        # ------------------------------------------------------
+
         if usuario is None:
 
-            # Conta legada sem Usuario relacionado.
-            #
-            # Como os conflitos de e-mail já foram verificados
-            # acima, podemos criar o espelho de autenticação.
             usuario = Usuario(
                 email=email,
                 senha_hash=empresa.senha,
@@ -21482,6 +21590,20 @@ def editar_empresa():
             )
 
             db.session.flush()
+
+        # ------------------------------------------------------
+        # VÍNCULO EMPRESA -> USUARIO
+        #
+        # Também cobre o caso legado em que encontramos um
+        # Usuario existente pelo mesmo e-mail, mas Empresa.user_id
+        # ainda estava vazio.
+        # ------------------------------------------------------
+
+        if not getattr(
+            empresa,
+            "user_id",
+            None
+        ):
 
             empresa.user_id = (
                 usuario.id
