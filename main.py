@@ -16594,49 +16594,126 @@ def _back_to_panel(ts: int):
 
 def _empresa_avatar_url(emp) -> str | None:
     """
-    Resolve a URL de foto para a empresa.
+    Resolve a URL da foto da empresa sem alterar o banco.
 
-    Ordem:
-    1) Se emp.foto_url estiver preenchido, usa.
-    2) Procura arquivo físico nas pastas usuais:
-       - static/uploads/avatars/empresa_<id>.(jpg|jpeg|png|webp)
-       - static/uploads/perfil/emp_<id>.(jpg|jpeg|png|webp)
-    3) Se achar, monta a URL, grava em emp.foto_url e commit.
-    4) Caso nada exista, retorna None (template mostra avatar padrão).
+    Ordem de busca:
+    1) usa emp.foto_url quando já estiver preenchido;
+    2) procura o arquivo atual em static/avatars;
+    3) procura formatos legados em static/uploads/avatars;
+    4) procura formatos legados em static/uploads/perfil;
+    5) se nada existir, retorna None.
+
+    IMPORTANTE:
+    Esta função é somente leitura.
+
+    Ela pode ser chamada durante requisições GET e, por isso,
+    não executa UPDATE, INSERT, DELETE, commit ou rollback.
+
+    A persistência de foto_url acontece exclusivamente no fluxo
+    explícito de upload da foto.
     """
+
     if not emp:
         return None
 
-    # 1) Já tem foto gravada no banco
-    url = getattr(emp, "foto_url", None)
+    # ==========================================================
+    # 1) URL JÁ PERSISTIDA NO CADASTRO
+    # ==========================================================
+
+    url = (
+        getattr(
+            emp,
+            "foto_url",
+            None
+        )
+        or ""
+    ).strip()
+
     if url:
         return url
 
-    # 2) Procura arquivos físicos (compat com seus diretórios)
+    # ==========================================================
+    # 2) FALLBACK SOMENTE LEITURA PARA ARQUIVOS FÍSICOS
+    #
+    # Incluímos:
+    # - formato atual: static/avatars/empresa_<id>.webp
+    # - formatos legados já utilizados pelo AcheTece
+    # ==========================================================
+
     try:
+
+        empresa_id = int(
+            emp.id
+        )
+
         candidates = [
-            (f"uploads/avatars/empresa_{emp.id}", (".webp", ".jpg", ".jpeg", ".png")),
-            (f"uploads/perfil/emp_{emp.id}",      (".webp", ".jpg", ".jpeg", ".png")),
+
+            # Fluxo atual de upload
+            (
+                f"avatars/empresa_{empresa_id}",
+                (
+                    ".webp",
+                    ".jpg",
+                    ".jpeg",
+                    ".png",
+                ),
+            ),
+
+            # Fluxo legado
+            (
+                f"uploads/avatars/empresa_{empresa_id}",
+                (
+                    ".webp",
+                    ".jpg",
+                    ".jpeg",
+                    ".png",
+                ),
+            ),
+
+            # Fluxo legado mais antigo
+            (
+                f"uploads/perfil/emp_{empresa_id}",
+                (
+                    ".webp",
+                    ".jpg",
+                    ".jpeg",
+                    ".png",
+                ),
+            ),
         ]
 
-        for base_rel, exts in candidates:
-            for ext in exts:
-                rel_path = f"{base_rel}{ext}"
-                abs_path = os.path.join(app.static_folder, rel_path)
-                if os.path.exists(abs_path):
-                    url = url_for("static", filename=rel_path)
+        for base_rel, extensions in candidates:
 
-                    # grava no banco para próximas vezes
-                    try:
-                        emp.foto_url = url
-                        db.session.commit()
-                    except Exception:
-                        db.session.rollback()
+            for extension in extensions:
 
-                    return url
+                rel_path = (
+                    f"{base_rel}{extension}"
+                )
 
-    except Exception as e:
-        app.logger.warning(f"[avatar] _empresa_avatar_url erro: {e}")
+                abs_path = os.path.join(
+                    app.static_folder,
+                    rel_path
+                )
+
+                if os.path.isfile(
+                    abs_path
+                ):
+
+                    return url_for(
+                        "static",
+                        filename=rel_path
+                    )
+
+    except Exception:
+
+        current_app.logger.exception(
+            (
+                "[AVATAR] Falha ao resolver foto "
+                "em modo somente leitura. "
+                f"empresa_id="
+                f"{getattr(emp, 'id', None)}"
+            )
+        )
 
     return None
 
