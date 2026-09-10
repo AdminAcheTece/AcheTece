@@ -14931,51 +14931,60 @@ def analisar_oportunidade(oportunidade_id):
     )
 
 # --------------------------------------------------------------------
-# AcheTece 2.0 - Malharia demonstra interesse
+# AcheTece 2.0 — Malharia demonstra interesse
 # --------------------------------------------------------------------
 
 @app.post(
     "/malharia/oportunidades/<int:oportunidade_id>/interesse",
     endpoint="oportunidade_interesse"
 )
-def oportunidade_interesse(oportunidade_id):
+@limiter.limit(
+    "60 per hour",
+    key_func=_malharia_rate_limit_key
+)
+@limiter.limit(
+    "300 per day",
+    key_func=_malharia_rate_limit_key
+)
+def oportunidade_interesse(
+    oportunidade_id
+):
+    """
+    Registra a manifestação explícita de interesse da malharia.
 
-    # ==============================================================
-    # AUTENTICAÇÃO
-    # ==============================================================
+    Segurança:
+    - somente POST;
+    - CSRF global;
+    - Rate Limit por malharia;
+    - identidade resolvida pelo helper central;
+    - oportunidade obrigatoriamente pertence à malharia;
+    - demanda precisa continuar publicada;
+    - transição aceita somente de nova/visualizada;
+    - operação idempotente;
+    - transação com rollback;
+    - logs sem dados comerciais sensíveis.
+    """
 
-    empresa_id = session.get(
-        "empresa_id"
+    # ==========================================================
+    # IDENTIDADE
+    # ==========================================================
+
+    empresa = (
+        _pegar_empresa_do_usuario(
+            required=True
+        )
     )
 
-    if not empresa_id:
+    if not isinstance(
+        empresa,
+        Empresa
+    ):
 
-        return redirect(
-            url_for("login")
-        )
+        return empresa
 
-    try:
-
-        empresa = db.session.get(
-            Empresa,
-            int(empresa_id)
-        )
-
-    except Exception:
-
-        empresa = None
-
-    if not empresa:
-
-        session.clear()
-
-        return redirect(
-            url_for("login")
-        )
-
-    # ==============================================================
-    # OPORTUNIDADE DA PRÓPRIA EMPRESA
-    # ==============================================================
+    # ==========================================================
+    # OPORTUNIDADE DA PRÓPRIA MALHARIA
+    # ==========================================================
 
     oportunidade = (
         Opportunity.query
@@ -14988,22 +14997,44 @@ def oportunidade_interesse(oportunidade_id):
 
     if not oportunidade:
 
+        current_app.logger.warning(
+            (
+                "[SECURITY][OPPORTUNITY_INTEREST_REJECTED] "
+                f"empresa_id={empresa.id} "
+                f"oportunidade_id={oportunidade_id} "
+                "motivo=nao_encontrada_ou_sem_permissao"
+            )
+        )
+
         flash(
             "Oportunidade não encontrada.",
             "warning"
         )
 
         return redirect(
-            url_for("minhas_oportunidades")
+            url_for(
+                "minhas_oportunidades"
+            )
         )
 
-    # ==============================================================
+    # ==========================================================
     # DEMANDA
-    # ==============================================================
+    # ==========================================================
 
-    demanda = oportunidade.demanda
+    demanda = (
+        oportunidade.demanda
+    )
 
     if not demanda:
+
+        current_app.logger.warning(
+            (
+                "[SECURITY][OPPORTUNITY_INTEREST_REJECTED] "
+                f"empresa_id={empresa.id} "
+                f"oportunidade_id={oportunidade.id} "
+                "motivo=demanda_ausente"
+            )
+        )
 
         flash(
             "A demanda vinculada não foi encontrada.",
@@ -15011,12 +15042,14 @@ def oportunidade_interesse(oportunidade_id):
         )
 
         return redirect(
-            url_for("minhas_oportunidades")
+            url_for(
+                "minhas_oportunidades"
+            )
         )
 
-    # ==============================================================
-    # STATUS
-    # ==============================================================
+    # ==========================================================
+    # STATUS ATUAL
+    # ==========================================================
 
     status_oportunidade = (
         oportunidade.status
@@ -15028,16 +15061,30 @@ def oportunidade_interesse(oportunidade_id):
         or ""
     ).strip().lower()
 
-    # ==============================================================
-    # BLINDAGEM DA DEMANDA
-    #
-    # Somente demanda PUBLICADA aceita novas manifestações.
-    # ==============================================================
+    # ==========================================================
+    # DEMANDA PRECISA ESTAR PUBLICADA
+    # ==========================================================
 
-    if status_demanda != "publicada":
+    if (
+        status_demanda
+        != "publicada"
+    ):
+
+        current_app.logger.warning(
+            (
+                "[SECURITY][OPPORTUNITY_INTEREST_REJECTED] "
+                f"empresa_id={empresa.id} "
+                f"oportunidade_id={oportunidade.id} "
+                f"demanda_id={demanda.id} "
+                f"motivo=demanda_{status_demanda or 'sem_status'}"
+            )
+        )
 
         flash(
-            "Esta demanda não está mais aberta para novas manifestações de interesse.",
+            (
+                "Esta demanda não está mais aberta "
+                "para novas manifestações de interesse."
+            ),
             "warning"
         )
 
@@ -15048,19 +15095,58 @@ def oportunidade_interesse(oportunidade_id):
             )
         )
 
-    # ==============================================================
-    # BLINDAGEM DA OPORTUNIDADE
+    # ==========================================================
+    # IDEMPOTÊNCIA
     #
-    # Interesse somente pode ser registrado partindo de:
-    #
-    # - nova
-    # - visualizada
-    # ==============================================================
+    # Repetir a mesma decisão não gera nova escrita.
+    # ==========================================================
 
-    if status_oportunidade == "interessada":
+    if (
+        status_oportunidade
+        == "interessada"
+    ):
 
         flash(
-            "Sua malharia já registrou interesse nesta oportunidade.",
+            (
+                "Sua malharia já registrou interesse "
+                "nesta oportunidade."
+            ),
+            "info"
+        )
+
+        return redirect(
+            url_for(
+                "analisar_oportunidade",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+    # ==========================================================
+    # TRANSIÇÃO PERMITIDA
+    # ==========================================================
+
+    if (
+        status_oportunidade
+        not in {
+            "nova",
+            "visualizada",
+        }
+    ):
+
+        current_app.logger.warning(
+            (
+                "[SECURITY][OPPORTUNITY_INTEREST_REJECTED] "
+                f"empresa_id={empresa.id} "
+                f"oportunidade_id={oportunidade.id} "
+                f"motivo=status_{status_oportunidade or 'vazio'}"
+            )
+        )
+
+        flash(
+            (
+                "Esta oportunidade não permite mais "
+                "registrar interesse."
+            ),
             "warning"
         )
 
@@ -15071,26 +15157,9 @@ def oportunidade_interesse(oportunidade_id):
             )
         )
 
-    if status_oportunidade not in {
-        "nova",
-        "visualizada"
-    }:
-
-        flash(
-            "Esta oportunidade não permite mais registrar interesse.",
-            "warning"
-        )
-
-        return redirect(
-            url_for(
-                "analisar_oportunidade",
-                oportunidade_id=oportunidade.id
-            )
-        )
-
-    # ==============================================================
+    # ==========================================================
     # REGISTRA INTERESSE
-    # ==============================================================
+    # ==========================================================
 
     try:
 
@@ -15105,11 +15174,19 @@ def oportunidade_interesse(oportunidade_id):
         db.session.rollback()
 
         current_app.logger.exception(
-            "[OPORTUNIDADE] Falha ao registrar interesse."
+            (
+                "[SECURITY][OPPORTUNITY_INTEREST] "
+                "Falha ao registrar interesse. "
+                f"empresa_id={empresa.id} "
+                f"oportunidade_id={oportunidade.id}"
+            )
         )
 
         flash(
-            "Não foi possível registrar seu interesse agora.",
+            (
+                "Não foi possível registrar seu interesse "
+                "agora. Tente novamente."
+            ),
             "danger"
         )
 
@@ -15119,6 +15196,20 @@ def oportunidade_interesse(oportunidade_id):
                 oportunidade_id=oportunidade.id
             )
         )
+
+    # ==========================================================
+    # LOG
+    # ==========================================================
+
+    current_app.logger.info(
+        (
+            "[SECURITY][OPPORTUNITY_INTEREST] "
+            f"empresa_id={empresa.id} "
+            f"oportunidade_id={oportunidade.id} "
+            f"demanda_id={demanda.id} "
+            "resultado=interessada"
+        )
+    )
 
     flash(
         "Interesse registrado com sucesso.",
@@ -15132,52 +15223,63 @@ def oportunidade_interesse(oportunidade_id):
         )
     )
 
+
 # --------------------------------------------------------------------
-# AcheTece 2.0 - Malharia recusa oportunidade
+# AcheTece 2.0 — Malharia informa que não possui interesse
 # --------------------------------------------------------------------
 
 @app.post(
     "/malharia/oportunidades/<int:oportunidade_id>/recusar",
     endpoint="oportunidade_recusar"
 )
-def oportunidade_recusar(oportunidade_id):
+@limiter.limit(
+    "60 per hour",
+    key_func=_malharia_rate_limit_key
+)
+@limiter.limit(
+    "300 per day",
+    key_func=_malharia_rate_limit_key
+)
+def oportunidade_recusar(
+    oportunidade_id
+):
+    """
+    Registra a decisão explícita da malharia de não participar.
 
-    # ==============================================================
-    # AUTENTICAÇÃO
-    # ==============================================================
+    Segurança:
+    - somente POST;
+    - CSRF global;
+    - Rate Limit por malharia;
+    - identidade centralizada;
+    - oportunidade precisa pertencer à malharia;
+    - demanda precisa continuar publicada;
+    - aceita somente nova/visualizada;
+    - operação idempotente;
+    - não permite recusa após existir proposta;
+    - transação com rollback;
+    - logs seguros.
+    """
 
-    empresa_id = session.get(
-        "empresa_id"
+    # ==========================================================
+    # IDENTIDADE
+    # ==========================================================
+
+    empresa = (
+        _pegar_empresa_do_usuario(
+            required=True
+        )
     )
 
-    if not empresa_id:
+    if not isinstance(
+        empresa,
+        Empresa
+    ):
 
-        return redirect(
-            url_for("login")
-        )
+        return empresa
 
-    try:
-
-        empresa = db.session.get(
-            Empresa,
-            int(empresa_id)
-        )
-
-    except Exception:
-
-        empresa = None
-
-    if not empresa:
-
-        session.clear()
-
-        return redirect(
-            url_for("login")
-        )
-
-    # ==============================================================
-    # OPORTUNIDADE DA PRÓPRIA EMPRESA
-    # ==============================================================
+    # ==========================================================
+    # OPORTUNIDADE DA PRÓPRIA MALHARIA
+    # ==========================================================
 
     oportunidade = (
         Opportunity.query
@@ -15190,22 +15292,44 @@ def oportunidade_recusar(oportunidade_id):
 
     if not oportunidade:
 
+        current_app.logger.warning(
+            (
+                "[SECURITY][OPPORTUNITY_REJECT_REJECTED] "
+                f"empresa_id={empresa.id} "
+                f"oportunidade_id={oportunidade_id} "
+                "motivo=nao_encontrada_ou_sem_permissao"
+            )
+        )
+
         flash(
             "Oportunidade não encontrada.",
             "warning"
         )
 
         return redirect(
-            url_for("minhas_oportunidades")
+            url_for(
+                "minhas_oportunidades"
+            )
         )
 
-    # ==============================================================
+    # ==========================================================
     # DEMANDA
-    # ==============================================================
+    # ==========================================================
 
-    demanda = oportunidade.demanda
+    demanda = (
+        oportunidade.demanda
+    )
 
     if not demanda:
+
+        current_app.logger.warning(
+            (
+                "[SECURITY][OPPORTUNITY_REJECT_REJECTED] "
+                f"empresa_id={empresa.id} "
+                f"oportunidade_id={oportunidade.id} "
+                "motivo=demanda_ausente"
+            )
+        )
 
         flash(
             "A demanda vinculada não foi encontrada.",
@@ -15213,12 +15337,14 @@ def oportunidade_recusar(oportunidade_id):
         )
 
         return redirect(
-            url_for("minhas_oportunidades")
+            url_for(
+                "minhas_oportunidades"
+            )
         )
 
-    # ==============================================================
-    # STATUS
-    # ==============================================================
+    # ==========================================================
+    # STATUS ATUAL
+    # ==========================================================
 
     status_oportunidade = (
         oportunidade.status
@@ -15230,14 +15356,30 @@ def oportunidade_recusar(oportunidade_id):
         or ""
     ).strip().lower()
 
-    # ==============================================================
-    # BLINDAGEM DA DEMANDA
-    # ==============================================================
+    # ==========================================================
+    # DEMANDA PRECISA ESTAR PUBLICADA
+    # ==========================================================
 
-    if status_demanda != "publicada":
+    if (
+        status_demanda
+        != "publicada"
+    ):
+
+        current_app.logger.warning(
+            (
+                "[SECURITY][OPPORTUNITY_REJECT_REJECTED] "
+                f"empresa_id={empresa.id} "
+                f"oportunidade_id={oportunidade.id} "
+                f"demanda_id={demanda.id} "
+                f"motivo=demanda_{status_demanda or 'sem_status'}"
+            )
+        )
 
         flash(
-            "Esta demanda não está mais aberta para novas decisões comerciais.",
+            (
+                "Esta demanda não está mais aberta "
+                "para novas decisões comerciais."
+            ),
             "warning"
         )
 
@@ -15248,50 +15390,72 @@ def oportunidade_recusar(oportunidade_id):
             )
         )
 
-    # ==============================================================
-    # BLINDAGEM DA OPORTUNIDADE
+    # ==========================================================
+    # IDEMPOTÊNCIA
+    # ==========================================================
+
+    if (
+        status_oportunidade
+        == "recusada"
+    ):
+
+        flash(
+            (
+                "Sua malharia já informou que não possui "
+                "interesse nesta oportunidade."
+            ),
+            "info"
+        )
+
+        return redirect(
+            url_for(
+                "analisar_oportunidade",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+    # ==========================================================
+    # TRANSIÇÃO PERMITIDA
+    # ==========================================================
+
+    if (
+        status_oportunidade
+        not in {
+            "nova",
+            "visualizada",
+        }
+    ):
+
+        current_app.logger.warning(
+            (
+                "[SECURITY][OPPORTUNITY_REJECT_REJECTED] "
+                f"empresa_id={empresa.id} "
+                f"oportunidade_id={oportunidade.id} "
+                f"motivo=status_{status_oportunidade or 'vazio'}"
+            )
+        )
+
+        flash(
+            (
+                "Esta oportunidade não permite mais "
+                "registrar a opção sem interesse."
+            ),
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "analisar_oportunidade",
+                oportunidade_id=oportunidade.id
+            )
+        )
+
+    # ==========================================================
+    # PROPOSTA EXISTENTE
     #
-    # A decisão "Não tenho interesse" só pode ocorrer antes
-    # da manifestação de interesse.
-    # ==============================================================
-
-    if status_oportunidade == "recusada":
-
-        flash(
-            "Sua malharia já informou que não possui interesse nesta oportunidade.",
-            "warning"
-        )
-
-        return redirect(
-            url_for(
-                "analisar_oportunidade",
-                oportunidade_id=oportunidade.id
-            )
-        )
-
-    if status_oportunidade not in {
-        "nova",
-        "visualizada"
-    }:
-
-        flash(
-            "Esta oportunidade não permite mais registrar a opção sem interesse.",
-            "warning"
-        )
-
-        return redirect(
-            url_for(
-                "analisar_oportunidade",
-                oportunidade_id=oportunidade.id
-            )
-        )
-
-    # ==============================================================
-    # PROTEÇÃO ADICIONAL
-    #
-    # Se existir proposta, não permitimos transformar a
-    # oportunidade em recusada.
-    # ==============================================================
+    # Uma oportunidade que já avançou para uma proposta
+    # comercial não pode voltar para "sem interesse".
+    # ==========================================================
 
     proposta_existente = (
         Proposal.query
@@ -15307,8 +15471,22 @@ def oportunidade_recusar(oportunidade_id):
 
     if proposta_existente:
 
+        current_app.logger.warning(
+            (
+                "[SECURITY][OPPORTUNITY_REJECT_REJECTED] "
+                f"empresa_id={empresa.id} "
+                f"oportunidade_id={oportunidade.id} "
+                f"proposta_id={proposta_existente.id} "
+                "motivo=proposta_existente"
+            )
+        )
+
         flash(
-            "Esta oportunidade já possui uma proposta comercial e não pode ser marcada como sem interesse.",
+            (
+                "Esta oportunidade já possui uma proposta "
+                "comercial e não pode ser marcada como "
+                "sem interesse."
+            ),
             "warning"
         )
 
@@ -15319,9 +15497,9 @@ def oportunidade_recusar(oportunidade_id):
             )
         )
 
-    # ==============================================================
+    # ==========================================================
     # REGISTRA RECUSA
-    # ==============================================================
+    # ==========================================================
 
     try:
 
@@ -15336,11 +15514,19 @@ def oportunidade_recusar(oportunidade_id):
         db.session.rollback()
 
         current_app.logger.exception(
-            "[OPORTUNIDADE] Falha ao recusar oportunidade."
+            (
+                "[SECURITY][OPPORTUNITY_REJECT] "
+                "Falha ao registrar decisão. "
+                f"empresa_id={empresa.id} "
+                f"oportunidade_id={oportunidade.id}"
+            )
         )
 
         flash(
-            "Não foi possível registrar sua decisão agora.",
+            (
+                "Não foi possível registrar sua decisão "
+                "agora. Tente novamente."
+            ),
             "danger"
         )
 
@@ -15351,13 +15537,29 @@ def oportunidade_recusar(oportunidade_id):
             )
         )
 
+    # ==========================================================
+    # LOG
+    # ==========================================================
+
+    current_app.logger.info(
+        (
+            "[SECURITY][OPPORTUNITY_REJECT] "
+            f"empresa_id={empresa.id} "
+            f"oportunidade_id={oportunidade.id} "
+            f"demanda_id={demanda.id} "
+            "resultado=recusada"
+        )
+    )
+
     flash(
         "Oportunidade marcada como sem interesse.",
         "success"
     )
 
     return redirect(
-        url_for("minhas_oportunidades")
+        url_for(
+            "minhas_oportunidades"
+        )
     )
 
 # --------------------------------------------------------------------
