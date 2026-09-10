@@ -5655,63 +5655,289 @@ def _whoami():
 
 def _get_empresa_usuario_da_sessao():
     """
-    Caminho feliz:
-      1) Usa session['empresa_id'] se existir.
-      2) Senão, tenta por user_id (flask_login/sessão) e depois por e-mail.
-    Garante:
-      - Empresa.usuario (cria/relaciona Usuario se necessário).
-      - Empresa.user_id preenchido.
-      - session['empresa_id'] e session['empresa_apelido'] atualizados.
-    Retorna:
-      (empresa, usuario) ou (None, None).
-    NÃO redireciona.
-    """
-    # 1) Por empresa_id na sessão
-    emp_id = session.get("empresa_id")
-    if emp_id:
-        emp = Empresa.query.get(emp_id)
-        if emp:
-            # Resolve usuário relacionado
-            u = emp.usuario or Usuario.query.filter_by(email=emp.email).first()
-            if not u:
-                # cria Usuario "espelho" da Empresa (compat com legado)
-                u = Usuario(email=emp.email, senha_hash=emp.senha, role=None, is_active=True)
-                db.session.add(u)
-                db.session.flush()
-                emp.user_id = u.id
-                db.session.commit()
-            elif not emp.user_id:
-                emp.user_id = u.id
-                db.session.commit()
-            session["empresa_apelido"] = emp.apelido or emp.nome or (emp.email.split("@")[0] if emp.email else "")
-            return emp, u
-        else:
-            # limpa sessão inválida
-            session.pop("empresa_id", None)
-            session.pop("empresa_apelido", None)
+    Resolve a Empresa e o Usuario associados à sessão atual.
 
-    # 2) Fallback: por identidade do usuário
+    Ordem:
+    1) session["empresa_id"];
+    2) identidade Usuario por user_id;
+    3) fallback legado por e-mail.
+
+    IMPORTANTE:
+    Esta função é somente leitura em relação ao banco de dados.
+
+    Ela NÃO:
+    - cria Usuario;
+    - altera Empresa.user_id;
+    - executa flush;
+    - executa commit;
+    - executa rollback.
+
+    Escritas de identidade devem acontecer exclusivamente em
+    fluxos explícitos de cadastro, login, atualização de perfil
+    ou migração controlada.
+
+    A função pode atualizar somente dados da sessão Flask,
+    pois isso não modifica o PostgreSQL.
+
+    Retorna:
+        (empresa, usuario)
+        ou
+        (None, None)
+
+    Não realiza redirect.
+    """
+
+    # ==========================================================
+    # HELPER LOCAL — APELIDO DA EMPRESA
+    # ==========================================================
+
+    def _apelido_empresa(emp):
+        if not emp:
+            return ""
+
+        email = (
+            getattr(
+                emp,
+                "email",
+                None
+            )
+            or ""
+        ).strip()
+
+        return (
+            getattr(
+                emp,
+                "apelido",
+                None
+            )
+            or getattr(
+                emp,
+                "nome",
+                None
+            )
+            or (
+                email.split("@")[0]
+                if email
+                else ""
+            )
+        )
+
+    # ==========================================================
+    # HELPER LOCAL — RESOLVER USUARIO SEM GRAVAR
+    # ==========================================================
+
+    def _usuario_empresa_somente_leitura(emp):
+        if not emp:
+            return None
+
+        # ------------------------------------------------------
+        # 1) relacionamento oficial Empresa.user_id
+        # ------------------------------------------------------
+
+        usuario = getattr(
+            emp,
+            "usuario",
+            None
+        )
+
+        if usuario:
+            return usuario
+
+        # ------------------------------------------------------
+        # 2) compatibilidade legada por e-mail
+        #
+        # Apenas consulta.
+        # NÃO cria Usuario e NÃO preenche Empresa.user_id.
+        # ------------------------------------------------------
+
+        email = (
+            getattr(
+                emp,
+                "email",
+                None
+            )
+            or ""
+        ).strip()
+
+        if not email:
+            return None
+
+        return (
+            Usuario.query
+            .filter(
+                func.lower(
+                    Usuario.email
+                )
+                == email.lower()
+            )
+            .first()
+        )
+
+    # ==========================================================
+    # 1) EMPRESA_ID PRESENTE NA SESSÃO
+    # ==========================================================
+
+    emp_id = session.get(
+        "empresa_id"
+    )
+
+    if emp_id:
+
+        try:
+            emp_id = int(
+                emp_id
+            )
+        except (
+            TypeError,
+            ValueError
+        ):
+            emp_id = None
+
+        if emp_id:
+
+            emp = db.session.get(
+                Empresa,
+                emp_id
+            )
+
+            if emp:
+
+                usuario = (
+                    _usuario_empresa_somente_leitura(
+                        emp
+                    )
+                )
+
+                session[
+                    "empresa_apelido"
+                ] = _apelido_empresa(
+                    emp
+                )
+
+                return (
+                    emp,
+                    usuario
+                )
+
+        # ------------------------------------------------------
+        # Sessão aponta para empresa inexistente/inválida.
+        #
+        # Limpamos somente os identificadores da sessão.
+        # Nenhuma alteração ocorre no banco.
+        # ------------------------------------------------------
+
+        session.pop(
+            "empresa_id",
+            None
+        )
+
+        session.pop(
+            "empresa_apelido",
+            None
+        )
+
+    # ==========================================================
+    # 2) FALLBACK PELA IDENTIDADE DO USUARIO
+    # ==========================================================
+
     uid, email = _whoami()
 
     if uid:
-        emp = Empresa.query.filter_by(user_id=uid).first()
-        if emp:
-            session["empresa_id"] = emp.id
-            session["empresa_apelido"] = emp.apelido or emp.nome or (emp.email.split("@")[0] if emp.email else "")
-            u = emp.usuario or Usuario.query.filter_by(email=emp.email).first()
-            return emp, u
+
+        try:
+            uid = int(
+                uid
+            )
+        except (
+            TypeError,
+            ValueError
+        ):
+            uid = None
+
+        if uid:
+
+            emp = (
+                Empresa.query
+                .filter_by(
+                    user_id=uid
+                )
+                .first()
+            )
+
+            if emp:
+
+                usuario = (
+                    _usuario_empresa_somente_leitura(
+                        emp
+                    )
+                )
+
+                session[
+                    "empresa_id"
+                ] = emp.id
+
+                session[
+                    "empresa_apelido"
+                ] = _apelido_empresa(
+                    emp
+                )
+
+                return (
+                    emp,
+                    usuario
+                )
+
+    # ==========================================================
+    # 3) FALLBACK LEGADO PELO E-MAIL
+    #
+    # Mantemos este caminho por compatibilidade com contas
+    # antigas, mas SEM criar ou vincular registros.
+    # ==========================================================
+
+    email = (
+        email
+        or ""
+    ).strip().lower()
 
     if email:
-        emp = Empresa.query.filter(func.lower(Empresa.email) == email.lower()).first()
+
+        emp = (
+            Empresa.query
+            .filter(
+                func.lower(
+                    Empresa.email
+                )
+                == email
+            )
+            .first()
+        )
+
         if emp:
-            session["empresa_id"] = emp.id
-            session["empresa_apelido"] = emp.apelido or emp.nome or (emp.email.split("@")[0] if emp.email else "")
-            u = emp.usuario or Usuario.query.filter_by(email=emp.email).first()
-            # se não houver vínculo user_id e já temos um Usuario, vincule
-            if u and not emp.user_id:
-                emp.user_id = u.id
-                db.session.commit()
-            return emp, u
+
+            usuario = (
+                _usuario_empresa_somente_leitura(
+                    emp
+                )
+            )
+
+            session[
+                "empresa_id"
+            ] = emp.id
+
+            session[
+                "empresa_apelido"
+            ] = _apelido_empresa(
+                emp
+            )
+
+            return (
+                emp,
+                usuario
+            )
+
+    # ==========================================================
+    # NENHUMA MALHARIA IDENTIFICADA
+    # ==========================================================
 
     return None, None
 
