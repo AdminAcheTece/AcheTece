@@ -908,6 +908,260 @@ AVATAR_MAX_PIXELS = (
     20_000_000
 )
 
+# ==============================================================
+# AVATAR — CLOUDFLARE R2
+# ==============================================================
+#
+# O filesystem local do Render NÃO será utilizado como
+# armazenamento permanente dos avatares.
+#
+# Fluxo futuro:
+#
+# upload do usuário
+#     ↓
+# validação / Pillow
+#     ↓
+# arquivo WEBP temporário
+#     ↓
+# Cloudflare R2
+#     ↓
+# URL pública persistente
+#     ↓
+# Empresa.foto_url no PostgreSQL
+#
+# IMPORTANTE:
+#
+# Este bloco NÃO grava nada no banco.
+# Este bloco NÃO envia nada ao R2 durante o boot.
+# ==============================================================
+
+
+# ==============================================================
+# CONFIGURAÇÃO R2 — VARIÁVEIS DE AMBIENTE
+# ==============================================================
+
+ACHETECE_R2_ACCOUNT_ID = (
+    os.getenv(
+        "ACHETECE_R2_ACCOUNT_ID"
+    )
+    or ""
+).strip()
+
+
+ACHETECE_R2_ACCESS_KEY_ID = (
+    os.getenv(
+        "ACHETECE_R2_ACCESS_KEY_ID"
+    )
+    or ""
+).strip()
+
+
+ACHETECE_R2_SECRET_ACCESS_KEY = (
+    os.getenv(
+        "ACHETECE_R2_SECRET_ACCESS_KEY"
+    )
+    or ""
+).strip()
+
+
+ACHETECE_R2_BUCKET = (
+    os.getenv(
+        "ACHETECE_R2_BUCKET"
+    )
+    or ""
+).strip()
+
+
+ACHETECE_R2_PUBLIC_BASE_URL = (
+    os.getenv(
+        "ACHETECE_R2_PUBLIC_BASE_URL"
+    )
+    or ""
+).strip().rstrip("/")
+
+
+# ==============================================================
+# R2 — VERIFICA CONFIGURAÇÃO
+# ==============================================================
+
+def _avatar_r2_configurado() -> bool:
+    """
+    Retorna True somente quando todas as variáveis necessárias
+    para o armazenamento persistente de avatares estão
+    configuradas.
+
+    Não realiza conexão externa.
+    Não grava dados.
+    """
+
+    return all(
+        (
+            ACHETECE_R2_ACCOUNT_ID,
+            ACHETECE_R2_ACCESS_KEY_ID,
+            ACHETECE_R2_SECRET_ACCESS_KEY,
+            ACHETECE_R2_BUCKET,
+            ACHETECE_R2_PUBLIC_BASE_URL,
+        )
+    )
+
+
+# ==============================================================
+# R2 — CLIENTE S3
+# ==============================================================
+
+def _avatar_r2_client():
+    """
+    Cria e retorna um cliente S3 compatível com Cloudflare R2.
+
+    O cliente somente será criado quando esta função for
+    explicitamente chamada.
+
+    Portanto:
+    - não conecta no R2 durante o boot;
+    - não faz upload;
+    - não faz delete;
+    - não altera banco.
+    """
+
+    if not _avatar_r2_configurado():
+
+        raise RuntimeError(
+            "Cloudflare R2 não está completamente configurado "
+            "para armazenamento de avatares."
+        )
+
+    endpoint_url = (
+        "https://"
+        f"{ACHETECE_R2_ACCOUNT_ID}"
+        ".r2.cloudflarestorage.com"
+    )
+
+    return boto3.client(
+        "s3",
+        endpoint_url=endpoint_url,
+        aws_access_key_id=(
+            ACHETECE_R2_ACCESS_KEY_ID
+        ),
+        aws_secret_access_key=(
+            ACHETECE_R2_SECRET_ACCESS_KEY
+        ),
+        region_name="auto",
+    )
+
+
+# ==============================================================
+# R2 — URL PÚBLICA DO OBJETO
+# ==============================================================
+
+def _avatar_r2_public_url(
+    object_key: str
+) -> str:
+    """
+    Constrói a URL pública persistente de um objeto do bucket.
+
+    Exemplo:
+
+    object_key:
+        avatars/empresa_10/abc123.webp
+
+    resultado:
+        https://pub-xxxx.r2.dev/
+        avatars/empresa_10/abc123.webp
+    """
+
+    object_key = (
+        object_key
+        or ""
+    ).strip().lstrip("/")
+
+    if not object_key:
+
+        raise ValueError(
+            "Chave R2 do avatar não informada."
+        )
+
+    if not ACHETECE_R2_PUBLIC_BASE_URL:
+
+        raise RuntimeError(
+            "URL pública do R2 não configurada."
+        )
+
+    return (
+        f"{ACHETECE_R2_PUBLIC_BASE_URL}/"
+        f"{object_key}"
+    )
+
+
+# ==============================================================
+# R2 — RECUPERA OBJECT KEY A PARTIR DA URL
+# ==============================================================
+
+def _avatar_r2_key_from_url(
+    url
+):
+    """
+    Tenta recuperar a object key de uma URL pertencente
+    ao bucket público configurado.
+
+    Exemplo:
+
+    URL:
+        https://pub-xxxx.r2.dev/
+        avatars/empresa_10/abc123.webp
+
+    retorna:
+        avatars/empresa_10/abc123.webp
+
+    URLs locais antigas, como:
+
+        /static/avatars/empresa_10.webp
+
+    retornam None.
+
+    Isso será importante para conseguirmos remover um avatar
+    anterior do R2 somente quando tivermos certeza de que ele
+    pertence ao nosso próprio bucket.
+    """
+
+    url = (
+        url
+        or ""
+    ).strip()
+
+    if not url:
+
+        return None
+
+    if not ACHETECE_R2_PUBLIC_BASE_URL:
+
+        return None
+
+    prefix = (
+        f"{ACHETECE_R2_PUBLIC_BASE_URL}/"
+    )
+
+    if not url.startswith(
+        prefix
+    ):
+
+        return None
+
+    object_key = (
+        url[
+            len(prefix):
+        ]
+        .split(
+            "?",
+            1
+        )[0]
+        .strip()
+        .lstrip("/")
+    )
+
+    return (
+        object_key
+        or None
+    )
 
 def _allowed_file(
     filename: str
