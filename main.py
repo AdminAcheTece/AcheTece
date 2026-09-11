@@ -6938,6 +6938,43 @@ def _security_headers(resp):
     # Essa parte será tratada posteriormente.
     nonce = _get_csp_nonce()
 
+    # ==========================================================
+    # CSP — ORIGEM PÚBLICA DOS AVATARES NO R2
+    # ==========================================================
+    #
+    # A URL pública é lida da mesma variável utilizada pelo
+    # armazenamento dos avatares.
+    #
+    # Exemplo:
+    # https://pub-xxxxxxxx.r2.dev
+    #
+    # Mantemos apenas scheme + host dentro da CSP.
+    # ==========================================================
+    
+    avatar_r2_csp_source = ""
+    
+    try:
+    
+        parsed_avatar_r2 = urlparse(
+            ACHETECE_R2_PUBLIC_BASE_URL
+        )
+    
+        if (
+            parsed_avatar_r2.scheme
+            == "https"
+            and parsed_avatar_r2.netloc
+        ):
+    
+            avatar_r2_csp_source = (
+                f"https://"
+                f"{parsed_avatar_r2.netloc}"
+            )
+    
+    except Exception:
+    
+        avatar_r2_csp_source = ""
+    
+    
     csp_policy = (
         "default-src 'self'; "
 
@@ -6959,8 +6996,17 @@ def _security_headers(resp):
 
         # ------------------------------------------------------
         # IMAGENS
+        #
+        # 'self' = imagens do próprio AcheTece.
+        # R2     = avatares persistentes das malharias.
         # ------------------------------------------------------
-        "img-src 'self'; "
+        
+        f"img-src 'self'"
+        f"{(
+            ' ' + avatar_r2_csp_source
+            if avatar_r2_csp_source
+            else ''
+        )}; "
 
         # ------------------------------------------------------
         # FETCH / XHR / API
@@ -18506,9 +18552,8 @@ def concluir_producao_malharia(pedido_id):
  
 from datetime import datetime
 
-
 # ==============================================================
-# FOTO DE PERFIL DA MALHARIA — UPLOAD SEGURO
+# FOTO DE PERFIL DA MALHARIA — UPLOAD PERSISTENTE NO R2
 # ==============================================================
 
 @app.post(
@@ -18525,21 +18570,26 @@ from datetime import datetime
 )
 def perfil_foto_upload():
     """
-    Recebe e processa a foto da malharia autenticada.
+    Recebe, valida, normaliza e persiste a foto da malharia.
 
-    Segurança:
-    - autenticação central da malharia;
-    - protegido pelo CSRF global;
-    - Rate Limit por empresa;
-    - limite global de 5 MB;
-    - não confia em extensão/MIME;
-    - conteúdo validado pelo Pillow;
-    - imagem reprocessada completamente;
-    - dimensões limitadas;
-    - EXIF removido;
-    - saída sempre WEBP;
-    - nome do arquivo é gerado pelo servidor;
-    - arquivo temporário é utilizado antes da substituição.
+    Fluxo:
+
+    navegador
+        ↓
+    Flask / autenticação / CSRF
+        ↓
+    Pillow
+        ↓
+    WEBP 400 x 400 temporário
+        ↓
+    Cloudflare R2
+        ↓
+    PostgreSQL — Empresa.foto_url
+        ↓
+    sessão
+
+    O filesystem local do Render é utilizado somente
+    durante o processamento temporário da imagem.
     """
 
     # ==========================================================
@@ -18562,10 +18612,35 @@ def perfil_foto_upload():
         )
 
     # ==========================================================
+    # CONFIGURAÇÃO R2
+    # ==========================================================
+
+    if not _avatar_r2_configurado():
+
+        current_app.logger.error(
+            (
+                "[AVATAR][R2] Configuração incompleta. "
+                f"empresa_id={emp.id}"
+            )
+        )
+
+        flash(
+            (
+                "O armazenamento de imagens está "
+                "temporariamente indisponível."
+            ),
+            "danger"
+        )
+
+        return _back_to_panel(
+            int(
+                datetime.utcnow()
+                .timestamp()
+            )
+        )
+
+    # ==========================================================
     # LOCALIZA O ARQUIVO
-    #
-    # O painel pode possuir mais de um input name="foto".
-    # Pegamos o primeiro que realmente contém um arquivo.
     # ==========================================================
 
     try:
@@ -18631,8 +18706,10 @@ def perfil_foto_upload():
     # ==========================================================
     # NOME ORIGINAL
     #
-    # Não utilizamos este nome para salvar o arquivo.
-    # Apenas fazemos normalização defensiva.
+    # Utilizado apenas para confirmar que existe um nome
+    # minimamente válido.
+    #
+    # NÃO será usado como nome no R2.
     # ==========================================================
 
     original_filename = (
@@ -18657,236 +18734,368 @@ def perfil_foto_upload():
         )
 
     # ==========================================================
-    # DIRETÓRIO
+    # ESTADO DO FLUXO
     # ==========================================================
 
-    avatars_dir = os.path.join(
-        app.static_folder,
-        "avatars"
-    )
-
-    try:
-
-        os.makedirs(
-            avatars_dir,
-            exist_ok=True
-        )
-
-    except Exception:
-
-        current_app.logger.exception(
-            (
-                "[AVATAR] Falha ao preparar "
-                f"diretório. empresa_id={emp.id}"
-            )
-        )
-
-        flash(
-            "Não foi possível preparar o envio da foto.",
-            "danger"
-        )
-
-        return _back_to_panel(
-            int(
-                datetime.utcnow()
-                .timestamp()
-            )
-        )
-
-    # ==========================================================
-    # NOMES CONTROLADOS PELO SERVIDOR
-    #
-    # A saída é SEMPRE .webp.
-    # ==========================================================
-
-    base_name = (
-        f"empresa_{emp.id}"
-    )
-
-    final_filename = (
-        f"{base_name}.webp"
-    )
-
-    final_path = os.path.join(
-        avatars_dir,
-        final_filename
-    )
-
-    temporary_filename = (
-        f".{base_name}."
-        f"{uuid.uuid4().hex}."
-        "tmp.webp"
-    )
-
-    temporary_path = os.path.join(
-        avatars_dir,
-        temporary_filename
-    )
-
+    temporary_path = None
+    r2 = None
+    object_key = None
+    objeto_novo_enviado = False
     image_info = None
 
-    # ==========================================================
-    # VALIDAÇÃO + REPROCESSAMENTO
-    # ==========================================================
-
     try:
 
-        image_info = (
-            _save_square_webp(
-                arquivo,
-                temporary_path,
-                side=400,
-                quality=85
-            )
-        )
-
-        # ------------------------------------------------------
-        # SUBSTITUIÇÃO ATÔMICA
+        # ======================================================
+        # ARQUIVO TEMPORÁRIO
         #
-        # Somente depois de gerar uma imagem WEBP válida,
-        # substituímos a foto oficial.
-        # ------------------------------------------------------
+        # tempfile.mkstemp cria um arquivo único no filesystem
+        # temporário do servidor.
+        #
+        # O finally no final desta função SEMPRE tentará
+        # removê-lo.
+        # ======================================================
 
-        os.replace(
-            temporary_path,
-            final_path
-        )
-
-    except ValueError as exc:
-
-        try:
-
-            if os.path.exists(
-                temporary_path
-            ):
-
-                os.remove(
-                    temporary_path
-                )
-
-        except OSError:
-
-            pass
-
-        current_app.logger.warning(
-            (
-                "[SECURITY][AVATAR_REJECTED] "
-                f"empresa_id={emp.id} "
-                f"motivo={str(exc)[:120]}"
-            )
-        )
-
-        flash(
-            (
-                "O arquivo enviado não é uma imagem "
-                "válida ou não possui um formato permitido."
+        fd, temporary_path = tempfile.mkstemp(
+            prefix=(
+                f"achetece_avatar_"
+                f"{emp.id}_"
             ),
-            "warning"
+            suffix=".webp"
         )
 
-        return _back_to_panel(
-            int(
-                datetime.utcnow()
-                .timestamp()
-            )
+        os.close(
+            fd
         )
 
-    except Exception:
+        # ======================================================
+        # VALIDAÇÃO + NORMALIZAÇÃO
+        # ======================================================
 
         try:
 
-            if os.path.exists(
-                temporary_path
-            ):
+            image_info = (
+                _save_square_webp(
+                    arquivo,
+                    temporary_path,
+                    side=400,
+                    quality=85
+                )
+            )
 
-                os.remove(
-                    temporary_path
+        except ValueError as exc:
+
+            current_app.logger.warning(
+                (
+                    "[SECURITY][AVATAR_REJECTED] "
+                    f"empresa_id={emp.id} "
+                    f"motivo={str(exc)[:120]}"
+                )
+            )
+
+            flash(
+                (
+                    "O arquivo enviado não é uma imagem "
+                    "válida ou não possui um formato permitido."
+                ),
+                "warning"
+            )
+
+            return _back_to_panel(
+                int(
+                    datetime.utcnow()
+                    .timestamp()
+                )
+            )
+
+        except Exception:
+
+            current_app.logger.exception(
+                (
+                    "[AVATAR] Falha ao processar imagem. "
+                    f"empresa_id={emp.id}"
+                )
+            )
+
+            flash(
+                "Não foi possível processar a foto enviada.",
+                "danger"
+            )
+
+            return _back_to_panel(
+                int(
+                    datetime.utcnow()
+                    .timestamp()
+                )
+            )
+
+        # ======================================================
+        # OBJECT KEY
+        #
+        # Cada upload recebe uma chave única.
+        #
+        # Exemplo:
+        #
+        # avatars/empresa_12/
+        # 6e14a79e59de4ac29babe9e83f997037.webp
+        #
+        # Não sobrescrevemos o avatar antigo antes de o banco
+        # confirmar a nova URL.
+        # ======================================================
+
+        object_key = (
+            f"avatars/"
+            f"empresa_{emp.id}/"
+            f"{uuid.uuid4().hex}.webp"
+        )
+
+        novo_url = (
+            _avatar_r2_public_url(
+                object_key
+            )
+        )
+
+        # ======================================================
+        # FOTO ANTERIOR
+        # ======================================================
+
+        url_anterior = (
+            getattr(
+                emp,
+                "foto_url",
+                None
+            )
+        )
+
+        key_anterior = (
+            _avatar_r2_key_from_url(
+                url_anterior
+            )
+        )
+
+        # ======================================================
+        # UPLOAD PARA O CLOUDFLARE R2
+        # ======================================================
+
+        try:
+
+            r2 = (
+                _avatar_r2_client()
+            )
+
+            with open(
+                temporary_path,
+                "rb"
+            ) as image_file:
+
+                r2.put_object(
+                    Bucket=(
+                        ACHETECE_R2_BUCKET
+                    ),
+                    Key=(
+                        object_key
+                    ),
+                    Body=(
+                        image_file
+                    ),
+                    ContentType=(
+                        "image/webp"
+                    ),
+                    CacheControl=(
+                        "public, "
+                        "max-age=31536000, "
+                        "immutable"
+                    ),
                 )
 
-        except OSError:
+            objeto_novo_enviado = True
 
-            pass
+        except Exception:
 
-        current_app.logger.exception(
-            (
-                "[AVATAR] Falha ao processar imagem. "
-                f"empresa_id={emp.id}"
+            current_app.logger.exception(
+                (
+                    "[AVATAR][R2] Falha no upload. "
+                    f"empresa_id={emp.id}"
+                )
             )
-        )
 
-        flash(
-            "Não foi possível processar a foto enviada.",
-            "danger"
-        )
-
-        return _back_to_panel(
-            int(
-                datetime.utcnow()
-                .timestamp()
+            flash(
+                (
+                    "Não foi possível armazenar a foto. "
+                    "Tente novamente."
+                ),
+                "danger"
             )
-        )
 
-    # ==========================================================
-    # REMOVE FORMATOS ANTIGOS
-    #
-    # O novo arquivo .webp só é criado depois da validação.
-    # ==============================================================
+            return _back_to_panel(
+                int(
+                    datetime.utcnow()
+                    .timestamp()
+                )
+            )
 
-    for old_ext in (
-        ".jpg",
-        ".jpeg",
-        ".png",
-        ".gif",
-    ):
+        # ======================================================
+        # BANCO DE DADOS
+        #
+        # O banco somente passa a apontar para o novo objeto
+        # DEPOIS que o upload ao R2 terminou com sucesso.
+        # ======================================================
 
-        old_path = os.path.join(
-            avatars_dir,
-            base_name + old_ext
-        )
+        try:
 
-        if os.path.exists(
-            old_path
+            emp.foto_url = (
+                novo_url
+            )
+
+            db.session.commit()
+
+        except Exception:
+
+            db.session.rollback()
+
+            # ==================================================
+            # COMPENSAÇÃO
+            #
+            # O arquivo novo chegou ao R2, mas o banco falhou.
+            #
+            # Como ninguém deve apontar para esse arquivo,
+            # tentamos removê-lo imediatamente.
+            # ==================================================
+
+            if (
+                objeto_novo_enviado
+                and r2 is not None
+                and object_key
+            ):
+
+                try:
+
+                    r2.delete_object(
+                        Bucket=(
+                            ACHETECE_R2_BUCKET
+                        ),
+                        Key=(
+                            object_key
+                        ),
+                    )
+
+                except Exception:
+
+                    current_app.logger.exception(
+                        (
+                            "[AVATAR][R2] Falha ao remover "
+                            "objeto após rollback. "
+                            f"empresa_id={emp.id}"
+                        )
+                    )
+
+            current_app.logger.exception(
+                (
+                    "[AVATAR] Falha ao gravar foto_url. "
+                    f"empresa_id={emp.id}"
+                )
+            )
+
+            flash(
+                (
+                    "A imagem foi armazenada, mas não pôde "
+                    "ser vinculada ao cadastro."
+                ),
+                "danger"
+            )
+
+            return _back_to_panel(
+                int(
+                    datetime.utcnow()
+                    .timestamp()
+                )
+            )
+
+        # ======================================================
+        # REMOVE AVATAR R2 ANTERIOR
+        #
+        # Aqui o banco JÁ aponta para a foto nova.
+        #
+        # Uma falha ao excluir a antiga não prejudica a nova.
+        # No pior cenário resta apenas um objeto órfão no bucket.
+        # ======================================================
+
+        if (
+            key_anterior
+            and key_anterior
+            != object_key
+            and r2 is not None
         ):
 
             try:
 
-                os.remove(
-                    old_path
+                r2.delete_object(
+                    Bucket=(
+                        ACHETECE_R2_BUCKET
+                    ),
+                    Key=(
+                        key_anterior
+                    ),
                 )
 
-            except OSError:
+            except Exception:
 
                 current_app.logger.warning(
                     (
-                        "[AVATAR] Não foi possível remover "
-                        f"arquivo legado. empresa_id={emp.id}"
+                        "[AVATAR][R2] Não foi possível remover "
+                        "o avatar anterior. "
+                        f"empresa_id={emp.id}"
                     )
                 )
 
-    # ==========================================================
-    # URL PÚBLICA
-    # ==========================================================
+        # ======================================================
+        # SESSÃO
+        #
+        # A object key é única, então não precisamos de ?v=
+        # para forçar cache-buster.
+        # ======================================================
 
-    rel_path = (
-        f"avatars/{final_filename}"
-    )
+        timestamp = int(
+            datetime.utcnow()
+            .timestamp()
+        )
 
-    novo_url = url_for(
-        "static",
-        filename=rel_path
-    )
-
-    # ==========================================================
-    # BANCO
-    # ==========================================================
-
-    try:
-
-        emp.foto_url = (
+        session[
+            "avatar_url"
+        ] = (
             novo_url
         )
 
-        db.session.commit()
+        session.modified = True
+
+        # ======================================================
+        # LOG
+        # ======================================================
+
+        current_app.logger.info(
+            (
+                "[AVATAR][R2] Upload concluído. "
+                f"empresa_id={emp.id} "
+                f"source_format="
+                f"{image_info.get('format')} "
+                f"source_width="
+                f"{image_info.get('width')} "
+                f"source_height="
+                f"{image_info.get('height')}"
+            )
+        )
+
+        flash(
+            "Foto atualizada com sucesso.",
+            "success"
+        )
+
+        return _back_to_panel(
+            timestamp
+        )
+
+    # ==========================================================
+    # FALHA INESPERADA
+    # ==========================================================
 
     except Exception:
 
@@ -18894,13 +19103,16 @@ def perfil_foto_upload():
 
         current_app.logger.exception(
             (
-                "[AVATAR] Falha ao gravar foto_url. "
+                "[AVATAR] Falha inesperada no fluxo R2. "
                 f"empresa_id={emp.id}"
             )
         )
 
         flash(
-            "A imagem foi processada, mas não pôde ser salva no cadastro.",
+            (
+                "Não foi possível atualizar a foto agora. "
+                "Tente novamente."
+            ),
             "danger"
         )
 
@@ -18912,46 +19124,41 @@ def perfil_foto_upload():
         )
 
     # ==========================================================
-    # SESSÃO + CACHE BUSTER
-    # ==========================================================
-
-    timestamp = int(
-        datetime.utcnow()
-        .timestamp()
-    )
-
-    session[
-        "avatar_url"
-    ] = (
-        f"{novo_url}?v={timestamp}"
-    )
-
-    session.modified = True
-
-    # ==========================================================
-    # LOG SEGURO
+    # LIMPEZA LOCAL GARANTIDA
     #
-    # Não registramos o nome original do arquivo.
+    # Executa mesmo se houver:
+    #
+    # - return por arquivo inválido;
+    # - erro no Pillow;
+    # - erro no R2;
+    # - rollback do banco;
+    # - sucesso.
     # ==========================================================
 
-    current_app.logger.info(
-        (
-            "[AVATAR] Upload concluído. "
-            f"empresa_id={emp.id} "
-            f"source_format={image_info.get('format')} "
-            f"source_width={image_info.get('width')} "
-            f"source_height={image_info.get('height')}"
-        )
-    )
+    finally:
 
-    flash(
-        "Foto atualizada com sucesso.",
-        "success"
-    )
+        if (
+            temporary_path
+            and os.path.exists(
+                temporary_path
+            )
+        ):
 
-    return _back_to_panel(
-        timestamp
-    )
+            try:
+
+                os.remove(
+                    temporary_path
+                )
+
+            except OSError:
+
+                current_app.logger.warning(
+                    (
+                        "[AVATAR] Não foi possível remover "
+                        "arquivo temporário. "
+                        f"empresa_id={emp.id}"
+                    )
+                )
 
 @app.context_processor
 def inject_avatar_url():
