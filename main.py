@@ -18,6 +18,8 @@ import csv
 import io
 import re
 import uuid
+import tempfile
+import boto3
 import logging
 import json
 import requests
