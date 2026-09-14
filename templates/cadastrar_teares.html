@@ -142,6 +142,42 @@
       background:#fff;
     }
 
+    /* =========================================================
+       VALIDAÇÃO SERVER-SIDE
+    ========================================================= */
+    
+    .field-error input,
+    .field-error select{
+      border-color:#B42318;
+      background:#FFF8F7;
+    }
+    
+    .field-error input:focus,
+    .field-error select:focus{
+      border-color:#B42318;
+      box-shadow:0 0 0 3px rgba(180,35,24,.12);
+    }
+    
+    .field-error-message{
+      margin-top:5px;
+      color:#B42318;
+      font-size:12px;
+      font-weight:700;
+      line-height:1.35;
+    }
+    
+    .form-error-summary{
+      margin:0 0 14px;
+      padding:11px 13px;
+      border:1px solid #F0B4AD;
+      border-radius:10px;
+      background:#FFF5F4;
+      color:#8A1C13;
+      font-size:13px;
+      font-weight:700;
+      line-height:1.4;
+    }
+    
     /* Remove “azulado” pós-digitação/autofill */
     input:-webkit-autofill,
     select:-webkit-autofill{
@@ -388,84 +424,601 @@
           <h1>{{ 'Editar Tear' if tear else 'Cadastrar Tear' }}</h1>
           <p class="sub">Preencha as informações do tear. Você pode editar depois quando precisar.</p>
 
+          {% set form_erros = erros if erros is defined and erros is mapping else {} %}
+
+          {% set valor_marca =
+            marca
+            if marca is defined
+            else (
+              tear.marca
+              if tear
+              else ''
+            )
+          %}
+          
+          {% set valor_modelo =
+            modelo
+            if modelo is defined
+            else (
+              tear.modelo
+              if tear
+              else ''
+            )
+          %}
+          
+          {% set valor_tipo =
+            tipo
+            if tipo is defined
+            else (
+              tear.tipo
+              if tear
+              else ''
+            )
+          %}
+          
+          {% set valor_finura =
+            finura
+            if finura is defined
+            else (
+              tear.finura
+              if tear and tear.finura is not none
+              else none
+            )
+          %}
+          
+          {% set valor_diametro =
+            diametro
+            if diametro is defined
+            else (
+              tear.diametro
+              if tear and tear.diametro is not none
+              else none
+            )
+          %}
+          
+          {% set valor_alimentadores =
+            alimentadores
+            if alimentadores is defined
+            else (
+              tear.alimentadores
+              if tear and tear.alimentadores is not none
+              else none
+            )
+          %}
+          
+          {% set valor_pistas_cilindro =
+            pistas_cilindro
+            if pistas_cilindro is defined
+            else (
+              tear.pistas_cilindro
+              if tear and tear.pistas_cilindro is not none
+              else none
+            )
+          %}
+          
+          {% set valor_pistas_disco =
+            pistas_disco
+            if pistas_disco is defined
+            else (
+              tear.pistas_disco
+              if tear and tear.pistas_disco is not none
+              else none
+            )
+          %}
+          
+          {% set valor_elastano =
+            elastano
+            if elastano is defined
+            else none
+          %}
+          
+          
           <form method="POST" class="formulario" novalidate>
+          
             <input
               type="hidden"
               name="csrf_token"
               value="{{ csrf_token() }}"
             >
+          
+          
+            {% if form_erros %}
+          
+              <div
+                class="form-error-summary"
+                role="alert"
+              >
+                Revise os campos destacados abaixo.
+              </div>
+          
+            {% endif %}
+          
+          
             <div class="grid">
-              <div>
-                <label for="marca">Marca</label>
-                <input type="text" id="marca" name="marca" required
-                       value="{{ tear.marca if tear else '' }}" autocomplete="organization">
+          
+          
+              <!-- =====================================================
+                   MARCA
+              ====================================================== -->
+          
+              <div class="{% if form_erros.get('marca') %}field-error{% endif %}">
+          
+                <label for="marca">
+                  Marca
+                </label>
+          
+                <input
+                  type="text"
+                  id="marca"
+                  name="marca"
+                  required
+                  maxlength="100"
+                  value="{{ valor_marca }}"
+                  autocomplete="organization"
+                  {% if form_erros.get('marca') %}
+                    aria-invalid="true"
+                    aria-describedby="marca-error"
+                  {% endif %}
+                >
+          
+                {% if form_erros.get('marca') %}
+          
+                  <div
+                    id="marca-error"
+                    class="field-error-message"
+                    role="alert"
+                  >
+                    {{ form_erros.get('marca') }}
+                  </div>
+          
+                {% endif %}
+          
               </div>
-
-              <div>
-                <label for="modelo">Modelo</label>
-                <input type="text" id="modelo" name="modelo" required
-                       value="{{ tear.modelo if tear else '' }}" autocomplete="off">
+          
+          
+              <!-- =====================================================
+                   MODELO
+              ====================================================== -->
+          
+              <div class="{% if form_erros.get('modelo') %}field-error{% endif %}">
+          
+                <label for="modelo">
+                  Modelo
+                </label>
+          
+                <input
+                  type="text"
+                  id="modelo"
+                  name="modelo"
+                  required
+                  maxlength="100"
+                  value="{{ valor_modelo }}"
+                  autocomplete="off"
+                  {% if form_erros.get('modelo') %}
+                    aria-invalid="true"
+                    aria-describedby="modelo-error"
+                  {% endif %}
+                >
+          
+                {% if form_erros.get('modelo') %}
+          
+                  <div
+                    id="modelo-error"
+                    class="field-error-message"
+                    role="alert"
+                  >
+                    {{ form_erros.get('modelo') }}
+                  </div>
+          
+                {% endif %}
+          
               </div>
-
-              <div>
-                <label for="tipo">Tipo</label>
-                <select id="tipo" name="tipo" required>
-                  <option value="">-- Selecione --</option>
-                  <option value="MONO"  {% if tear and (tear.tipo|string)|upper == 'MONO' %}selected{% endif %}>MONO</option>
-                  <option value="DUPLA" {% if tear and (tear.tipo|string)|upper == 'DUPLA' %}selected{% endif %}>DUPLA</option>
+          
+          
+              <!-- =====================================================
+                   TIPO
+              ====================================================== -->
+          
+              <div class="{% if form_erros.get('tipo') %}field-error{% endif %}">
+          
+                <label for="tipo">
+                  Tipo
+                </label>
+          
+                <select
+                  id="tipo"
+                  name="tipo"
+                  required
+                  {% if form_erros.get('tipo') %}
+                    aria-invalid="true"
+                    aria-describedby="tipo-error"
+                  {% endif %}
+                >
+          
+                  <option value="">
+                    -- Selecione --
+                  </option>
+          
+                  <option
+                    value="MONO"
+                    {% if (valor_tipo|string)|upper == 'MONO' %}
+                      selected
+                    {% endif %}
+                  >
+                    MONO
+                  </option>
+          
+                  <option
+                    value="DUPLA"
+                    {% if (valor_tipo|string)|upper == 'DUPLA' %}
+                      selected
+                    {% endif %}
+                  >
+                    DUPLA
+                  </option>
+          
                 </select>
+          
+                {% if form_erros.get('tipo') %}
+          
+                  <div
+                    id="tipo-error"
+                    class="field-error-message"
+                    role="alert"
+                  >
+                    {{ form_erros.get('tipo') }}
+                  </div>
+          
+                {% endif %}
+          
               </div>
-
-              <div>
-                <label for="finura">Finura</label>
-                <input type="number" id="finura" name="finura" required min="0" step="1"
-                       value="{{ tear.finura if tear and tear.finura is not none else '' }}">
+          
+          
+              <!-- =====================================================
+                   FINURA
+              ====================================================== -->
+          
+              <div class="{% if form_erros.get('finura') %}field-error{% endif %}">
+          
+                <label for="finura">
+                  Finura
+                </label>
+          
+                <input
+                  type="number"
+                  id="finura"
+                  name="finura"
+                  required
+                  min="1"
+                  max="100"
+                  step="1"
+                  value="{{
+                    valor_finura
+                    if valor_finura is not none
+                    else ''
+                  }}"
+                  {% if form_erros.get('finura') %}
+                    aria-invalid="true"
+                    aria-describedby="finura-error"
+                  {% endif %}
+                >
+          
+                {% if form_erros.get('finura') %}
+          
+                  <div
+                    id="finura-error"
+                    class="field-error-message"
+                    role="alert"
+                  >
+                    {{ form_erros.get('finura') }}
+                  </div>
+          
+                {% endif %}
+          
               </div>
-
-              <div>
-                <label for="diametro">Diâmetro</label>
-                <input type="number" id="diametro" name="diametro" required min="0" step="1"
-                       value="{{ tear.diametro if tear and tear.diametro is not none else '' }}">
+          
+          
+              <!-- =====================================================
+                   DIÂMETRO
+              ====================================================== -->
+          
+              <div class="{% if form_erros.get('diametro') %}field-error{% endif %}">
+          
+                <label for="diametro">
+                  Diâmetro
+                </label>
+          
+                <input
+                  type="number"
+                  id="diametro"
+                  name="diametro"
+                  required
+                  min="1"
+                  max="200"
+                  step="1"
+                  value="{{
+                    valor_diametro
+                    if valor_diametro is not none
+                    else ''
+                  }}"
+                  {% if form_erros.get('diametro') %}
+                    aria-invalid="true"
+                    aria-describedby="diametro-error"
+                  {% endif %}
+                >
+          
+                {% if form_erros.get('diametro') %}
+          
+                  <div
+                    id="diametro-error"
+                    class="field-error-message"
+                    role="alert"
+                  >
+                    {{ form_erros.get('diametro') }}
+                  </div>
+          
+                {% endif %}
+          
               </div>
-
-              <div>
-                <label for="alimentadores">Alimentadores</label>
-                <input type="number" id="alimentadores" name="alimentadores" required min="0" step="1"
-                       value="{{ tear.alimentadores if tear and tear.alimentadores is not none else '' }}">
+          
+          
+              <!-- =====================================================
+                   ALIMENTADORES
+              ====================================================== -->
+          
+              <div class="{% if form_erros.get('alimentadores') %}field-error{% endif %}">
+          
+                <label for="alimentadores">
+                  Alimentadores
+                </label>
+          
+                <input
+                  type="number"
+                  id="alimentadores"
+                  name="alimentadores"
+                  required
+                  min="1"
+                  max="1000"
+                  step="1"
+                  value="{{
+                    valor_alimentadores
+                    if valor_alimentadores is not none
+                    else ''
+                  }}"
+                  {% if form_erros.get('alimentadores') %}
+                    aria-invalid="true"
+                    aria-describedby="alimentadores-error"
+                  {% endif %}
+                >
+          
+                {% if form_erros.get('alimentadores') %}
+          
+                  <div
+                    id="alimentadores-error"
+                    class="field-error-message"
+                    role="alert"
+                  >
+                    {{ form_erros.get('alimentadores') }}
+                  </div>
+          
+                {% endif %}
+          
               </div>
-
-              <div>
-                <label for="pistas_cilindro">Pistas cilindro</label>
-                <input type="number" id="pistas_cilindro" name="pistas_cilindro" required min="0" step="1"
-                       value="{{ tear.pistas_cilindro if tear and tear.pistas_cilindro is not none else '' }}">
+          
+          
+              <!-- =====================================================
+                   PISTAS CILINDRO
+              ====================================================== -->
+          
+              <div class="{% if form_erros.get('pistas_cilindro') %}field-error{% endif %}">
+          
+                <label for="pistas_cilindro">
+                  Pistas cilindro
+                </label>
+          
+                <input
+                  type="number"
+                  id="pistas_cilindro"
+                  name="pistas_cilindro"
+                  required
+                  min="0"
+                  max="100"
+                  step="1"
+                  value="{{
+                    valor_pistas_cilindro
+                    if valor_pistas_cilindro is not none
+                    else ''
+                  }}"
+                  {% if form_erros.get('pistas_cilindro') %}
+                    aria-invalid="true"
+                    aria-describedby="pistas-cilindro-error"
+                  {% endif %}
+                >
+          
+                {% if form_erros.get('pistas_cilindro') %}
+          
+                  <div
+                    id="pistas-cilindro-error"
+                    class="field-error-message"
+                    role="alert"
+                  >
+                    {{ form_erros.get('pistas_cilindro') }}
+                  </div>
+          
+                {% endif %}
+          
               </div>
-
-              <div>
-                <label for="pistas_disco">Pistas disco</label>
-                <input type="number" id="pistas_disco" name="pistas_disco" required min="0" step="1"
-                       value="{{ tear.pistas_disco if tear and tear.pistas_disco is not none else '' }}">
+          
+          
+              <!-- =====================================================
+                   PISTAS DISCO
+              ====================================================== -->
+          
+              <div class="{% if form_erros.get('pistas_disco') %}field-error{% endif %}">
+          
+                <label for="pistas_disco">
+                  Pistas disco
+                </label>
+          
+                <input
+                  type="number"
+                  id="pistas_disco"
+                  name="pistas_disco"
+                  required
+                  min="0"
+                  max="100"
+                  step="1"
+                  value="{{
+                    valor_pistas_disco
+                    if valor_pistas_disco is not none
+                    else ''
+                  }}"
+                  {% if form_erros.get('pistas_disco') %}
+                    aria-invalid="true"
+                    aria-describedby="pistas-disco-error"
+                  {% endif %}
+                >
+          
+                {% if form_erros.get('pistas_disco') %}
+          
+                  <div
+                    id="pistas-disco-error"
+                    class="field-error-message"
+                    role="alert"
+                  >
+                    {{ form_erros.get('pistas_disco') }}
+                  </div>
+          
+                {% endif %}
+          
               </div>
-
-              <div style="grid-column:1 / -1;">
-                <label for="elastano">Kit Elastano</label>
-                <select id="elastano" name="elastano" required>
-                  <option value="">-- Selecione --</option>
-                  <option value="Sim"
-                    {% if tear and (tear.elastano is boolean) and tear.elastano %}selected
-                    {% elif tear and (tear.elastano is not boolean) and (tear.elastano|string)|lower in ['sim','s','true','1','on','com','tem','yes','y'] %}selected
-                    {% elif tear and (tear.kit_elastano is boolean) and tear.kit_elastano %}selected
-                    {% endif %}>Sim</option>
-
-                  <option value="Não"
-                    {% if tear and (tear.elastano is boolean) and (not tear.elastano) %}selected
-                    {% elif tear and (tear.elastano is not boolean) and (tear.elastano|string)|lower in ['nao','não','n','false','0','off','sem','no'] %}selected
-                    {% elif tear and (tear.kit_elastano is boolean) and (not tear.kit_elastano) %}selected
-                    {% endif %}>Não</option>
+          
+          
+              <!-- =====================================================
+                   ELASTANO
+              ====================================================== -->
+          
+              <div
+                class="{% if form_erros.get('elastano') %}field-error{% endif %}"
+                style="grid-column:1 / -1;"
+              >
+          
+                <label for="elastano">
+                  Kit Elastano
+                </label>
+          
+                <select
+                  id="elastano"
+                  name="elastano"
+                  required
+                  {% if form_erros.get('elastano') %}
+                    aria-invalid="true"
+                    aria-describedby="elastano-error"
+                  {% endif %}
+                >
+          
+                  <option value="">
+                    -- Selecione --
+                  </option>
+          
+          
+                  <option
+                    value="Sim"
+          
+                    {% if valor_elastano == 'Sim' %}
+          
+                      selected
+          
+                    {% elif valor_elastano is none
+                       and tear
+                       and
+                       (
+                         (
+                           tear.elastano is boolean
+                           and tear.elastano
+                         )
+                         or
+                         (
+                           tear.elastano is not boolean
+                           and
+                           (tear.elastano|string)|lower
+                           in [
+                             'sim','s','true','1','on',
+                             'com','tem','yes','y'
+                           ]
+                         )
+                       )
+                    %}
+          
+                      selected
+          
+                    {% endif %}
+                  >
+                    Sim
+                  </option>
+          
+          
+                  <option
+                    value="Não"
+          
+                    {% if valor_elastano == 'Não' %}
+          
+                      selected
+          
+                    {% elif valor_elastano is none
+                       and tear
+                       and
+                       (
+                         (
+                           tear.elastano is boolean
+                           and not tear.elastano
+                         )
+                         or
+                         (
+                           tear.elastano is not boolean
+                           and
+                           (tear.elastano|string)|lower
+                           in [
+                             'nao','não','n','false',
+                             '0','off','sem','no'
+                           ]
+                         )
+                       )
+                    %}
+          
+                      selected
+          
+                    {% endif %}
+                  >
+                    Não
+                  </option>
+          
                 </select>
+          
+                {% if form_erros.get('elastano') %}
+          
+                  <div
+                    id="elastano-error"
+                    class="field-error-message"
+                    role="alert"
+                  >
+                    {{ form_erros.get('elastano') }}
+                  </div>
+          
+                {% endif %}
+          
               </div>
+          
             </div>
-
-            <button type="submit" class="btn">{{ 'Salvar alterações' if tear else 'Salvar tear' }}</button>
+          
+          
+            <button
+              type="submit"
+              class="btn"
+            >
+              {{ 'Salvar alterações' if tear else 'Salvar tear' }}
+            </button>
+          
           </form>
         </div>
 
