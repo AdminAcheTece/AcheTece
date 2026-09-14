@@ -740,7 +740,46 @@
       margin:6px 0;
     }
 
-
+    /* =========================================================
+       MENSAGENS DO SERVIDOR
+    ========================================================= */
+    
+    .flash-wrap{
+      max-width:1120px;
+      margin:0 auto 16px;
+    }
+    
+    .flash-message{
+      padding:12px 14px;
+      border-radius:12px;
+      font-size:13px;
+      font-weight:700;
+      line-height:1.45;
+    }
+    
+    .flash-message + .flash-message{
+      margin-top:8px;
+    }
+    
+    .flash-success{
+      background:var(--success-bg);
+      border:1px solid #BFE0C2;
+      color:var(--success);
+    }
+    
+    .flash-warning{
+      background:var(--warn-bg);
+      border:1px solid #F0CAA5;
+      color:#875000;
+    }
+    
+    .flash-danger,
+    .flash-error{
+      background:var(--danger-bg);
+      border:1px solid #E7B4BE;
+      color:var(--danger);
+    }
+    
     /* =========================================================
        PORTAL DA MALHARIA
     ========================================================= */
@@ -3512,6 +3551,32 @@
 
     <div class="container">
 
+    {% with messages = get_flashed_messages(with_categories=true) %}
+
+      {% if messages %}
+    
+        <div
+          class="flash-wrap"
+          aria-live="polite"
+        >
+    
+          {% for category, message in messages %}
+    
+            <div
+              class="flash-message flash-{{ category }}"
+              role="status"
+            >
+              {{ message }}
+            </div>
+    
+          {% endfor %}
+    
+        </div>
+    
+      {% endif %}
+    
+    {% endwith %}
+      
 
       <!-- =====================================================
            PORTAL
@@ -4554,16 +4619,7 @@
                           value="{{ csrf_token() }}"
                         >
 
-
-                        <input
-                          type="hidden"
-                          name="next"
-                          value="{{ url_for(
-                            'painel_malharia'
-                          ) }}"
-                        >
-
-
+                        
                         <button
                           type="submit"
                           class="icon-btn danger"
@@ -4703,16 +4759,7 @@
                       value="{{ csrf_token() }}"
                     >
 
-
-                    <input
-                      type="hidden"
-                      name="next"
-                      value="{{ url_for(
-                        'painel_malharia'
-                      ) }}"
-                    >
-
-
+                    
                     <button
                       type="submit"
                       class="icon-btn danger"
