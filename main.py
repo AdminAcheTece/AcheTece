@@ -19760,14 +19760,42 @@ def cadastrar_teares():
     # permite cadastrar vários teares em sequência.
     return redirect(
         url_for(
-            "teares_form"
+            "cadastrar_teares"
         )
     )
 
-# Alias amigável do painel: /painel/teares
-@app.route("/painel/teares", methods=["GET", "POST"], endpoint="teares_form")
+# ==============================================================
+# PARQUE PRODUTIVO — ALIAS LEGADO DO FORMULÁRIO DE TEARES
+# ==============================================================
+#
+# /painel/teares permanece disponível para compatibilidade
+# com links antigos do AcheTece.
+#
+# IMPORTANTE:
+# este endpoint é SOMENTE GET.
+#
+# Toda mutação fica concentrada exclusivamente em:
+#
+#     POST /teares/cadastrar
+#
+# Assim:
+# - existe uma única superfície de criação;
+# - o Rate Limit fica inequivocamente no endpoint mutável;
+# - CSRF continua centralizado;
+# - links antigos continuam funcionando.
+# ==============================================================
+
+@app.get(
+    "/painel/teares",
+    endpoint="teares_form"
+)
 def teares_form():
-    return cadastrar_teares()
+
+    return redirect(
+        url_for(
+            "cadastrar_teares"
+        )
+    )
 
 # --------------------------------------------------------------------
 # Cadastro
