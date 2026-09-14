@@ -177,6 +177,38 @@
       font-weight:700;
       line-height:1.4;
     }
+
+    /* =========================================================
+       MENSAGENS FLASH
+    ========================================================= */
+    
+    .flash-message{
+      margin:0 0 14px;
+      padding:11px 13px;
+      border-radius:10px;
+      font-size:13px;
+      font-weight:700;
+      line-height:1.4;
+    }
+    
+    .flash-success{
+      background:#EDF8EF;
+      border:1px solid #B9DCBF;
+      color:#256033;
+    }
+    
+    .flash-warning{
+      background:#FFF7E7;
+      border:1px solid #E8D49B;
+      color:#755614;
+    }
+    
+    .flash-danger,
+    .flash-error{
+      background:#FFF0F2;
+      border:1px solid #EAB5BD;
+      color:#85202D;
+    }
     
     /* Remove “azulado” pós-digitação/autofill */
     input:-webkit-autofill,
@@ -424,6 +456,25 @@
           <h1>{{ 'Editar Tear' if tear else 'Cadastrar Tear' }}</h1>
           <p class="sub">Preencha as informações do tear. Você pode editar depois quando precisar.</p>
 
+          {% with messages = get_flashed_messages(with_categories=true) %}
+
+          {% if messages %}
+        
+            {% for category, message in messages %}
+        
+              <div
+                class="flash-message flash-{{ category }}"
+                role="status"
+              >
+                {{ message }}
+              </div>
+        
+            {% endfor %}
+        
+          {% endif %}
+        
+        {% endwith %}
+          
           {% set form_erros = erros if erros is defined and erros is mapping else {} %}
 
           {% set valor_marca =
@@ -820,7 +871,6 @@
                   type="number"
                   id="pistas_cilindro"
                   name="pistas_cilindro"
-                  required
                   min="0"
                   max="100"
                   step="1"
@@ -864,7 +914,6 @@
                   type="number"
                   id="pistas_disco"
                   name="pistas_disco"
-                  required
                   min="0"
                   max="100"
                   step="1"
