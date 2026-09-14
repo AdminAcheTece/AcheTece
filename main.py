@@ -20300,36 +20300,63 @@ def editar_tear(id):
         )
 
     # ==========================================================
-    # CONVERSÃO NUMÉRICA
+    # CONVERSÃO NUMÉRICA — INTEIROS ESTRITOS
+    # ==========================================================
+    #
+    # Os campos técnicos desta rota são INTEGER no banco.
+    #
+    # Não aceitamos:
+    #
+    # 24.5
+    # 24,5
+    # 1e2
+    # NaN
+    # Infinity
+    #
+    # Nenhum valor decimal deve ser truncado silenciosamente.
     # ==========================================================
 
     def _to_int(
         valor
     ):
 
+        if valor is None:
+
+            return None
+
+        texto = (
+            str(valor)
+            .strip()
+        )
+
+        if not texto:
+
+            return None
+
+        # Limite defensivo.
+        if len(texto) > 20:
+
+            return None
+
+        # Aceita somente representação inteira.
+        if re.fullmatch(
+            r"[+-]?[0-9]+",
+            texto
+        ) is None:
+
+            return None
+
         try:
 
-            if valor is None:
-
-                return None
-
-            texto = (
-                str(valor)
-                .strip()
-                .replace(",", ".")
-            )
-
-            if not texto:
-
-                return None
-
             return int(
-                float(texto)
+                texto,
+                10
             )
 
         except (
             TypeError,
-            ValueError
+            ValueError,
+            OverflowError
         ):
 
             return None
