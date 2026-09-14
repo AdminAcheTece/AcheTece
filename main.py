@@ -19248,36 +19248,89 @@ def cadastrar_teares():
         )
 
     # ==========================================================
-    # CONVERSÃO NUMÉRICA
+    # CONVERSÃO NUMÉRICA — INTEIROS ESTRITOS
+    # ==========================================================
+    #
+    # Os campos técnicos abaixo são INTEGER no banco:
+    #
+    # - finura
+    # - diâmetro
+    # - alimentadores
+    # - pistas do cilindro
+    # - pistas do disco
+    #
+    # Portanto não aceitamos:
+    #
+    # 24.5
+    # 24,5
+    # 1e2
+    # NaN
+    # Infinity
+    #
+    # Nenhuma entrada decimal deve ser silenciosamente
+    # arredondada ou truncada.
     # ==========================================================
 
     def _to_int(
         valor
     ):
 
+        if valor is None:
+
+            return None
+
+        texto = (
+            str(valor)
+            .strip()
+        )
+
+        if not texto:
+
+            return None
+
+        # ------------------------------------------------------
+        # Limite defensivo
+        #
+        # Nenhum campo técnico desta tela necessita de uma
+        # representação numérica tão longa.
+        # ------------------------------------------------------
+
+        if len(texto) > 20:
+
+            return None
+
+        # ------------------------------------------------------
+        # Aceita somente representação inteira.
+        #
+        # Exemplos válidos:
+        #
+        # 24
+        # 32
+        # 0
+        # -1
+        #
+        # Valores negativos ainda serão rejeitados pelas
+        # validações específicas de cada campo mais abaixo.
+        # ------------------------------------------------------
+
+        if re.fullmatch(
+            r"[+-]?[0-9]+",
+            texto
+        ) is None:
+
+            return None
+
         try:
 
-            if valor is None:
-
-                return None
-
-            texto = (
-                str(valor)
-                .strip()
-                .replace(",", ".")
-            )
-
-            if not texto:
-
-                return None
-
             return int(
-                float(texto)
+                texto,
+                10
             )
 
         except (
             TypeError,
-            ValueError
+            ValueError,
+            OverflowError
         ):
 
             return None
