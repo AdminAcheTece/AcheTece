@@ -138,6 +138,38 @@
       box-shadow:0 0 0 3px rgba(123,116,36,.15);
     }
 
+    /* =========================================================
+       MENSAGENS DE VALIDAÇÃO
+    ========================================================= */
+    
+    .flash-message{
+      margin:0 0 14px;
+      padding:11px 13px;
+      border-radius:10px;
+      font-size:13px;
+      font-weight:700;
+      line-height:1.4;
+    }
+    
+    .flash-success{
+      background:#EDF8EF;
+      border:1px solid #B9DCBF;
+      color:#256033;
+    }
+    
+    .flash-warning{
+      background:#FFF7E7;
+      border:1px solid #E8D49B;
+      color:#755614;
+    }
+    
+    .flash-danger,
+    .flash-error{
+      background:#FFF0F2;
+      border:1px solid #EAB5BD;
+      color:#85202D;
+    }
+    
     /* Remover “azulado/amarelo” de autofill */
     input:-webkit-autofill,
     select:-webkit-autofill{
@@ -381,61 +413,362 @@
       <div class="card">
         <h1 class="titulo">Editar Tear</h1>
 
-        {# Valores atuais normalizados #}
-        {% set _tipo_atual = (tear.tipo or '')|string|upper %}
-        {% set _raw_el = tear.elastano if (tear.elastano is not none) else tear.kit_elastano %}
-        {% set _el_str = (_raw_el|string).strip().lower() %}
-        {% set _el_sim = (_raw_el is boolean and _raw_el) or _el_str in ['sim','s','true','t','on','1','com','tem','yes','y'] %}
-        {% set _el_nao = (_raw_el is boolean and (not _raw_el)) or _el_str in ['não','nao','n','false','f','off','0','sem','no'] %}
+        <!-- =====================================================
+             MENSAGENS DO SERVIDOR
+        ====================================================== -->
 
-        {# Seleções vindas do form (para “grudar” valores após POST com erro) #}
-        {% set _sel_tipo = (request.form.get('tipo') or _tipo_atual)|upper %}
-        {% set _sel_el   = (request.form.get('elastano') or ('Sim' if _el_sim else 'Não' if _el_nao else ''))|lower %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
 
-        <form method="POST" class="formulario" action="{{ url_for('editar_tear', id=tear.id) }}">
+          {% if messages %}
+
+            {% for category, message in messages %}
+
+              <div
+                class="flash-message flash-{{ category }}"
+                role="status"
+              >
+                {{ message }}
+              </div>
+
+            {% endfor %}
+
+          {% endif %}
+
+        {% endwith %}
+
+
+        <!-- =====================================================
+             VALORES ATUAIS
+        ====================================================== -->
+
+        {% set _tipo_atual =
+          (tear.tipo or '')
+          |string
+          |upper
+        %}
+
+        {% set _raw_el =
+          tear.elastano
+          if tear.elastano is not none
+          else ''
+        %}
+
+        {% set _el_str =
+          (_raw_el|string)
+          .strip()
+          .lower()
+        %}
+
+        {% set _el_sim =
+          (
+            _raw_el is boolean
+            and _raw_el
+          )
+          or
+          _el_str in [
+            'sim',
+            's',
+            'true',
+            't',
+            'on',
+            '1',
+            'com',
+            'tem',
+            'yes',
+            'y'
+          ]
+        %}
+
+        {% set _el_nao =
+          (
+            _raw_el is boolean
+            and not _raw_el
+          )
+          or
+          _el_str in [
+            'não',
+            'nao',
+            'n',
+            'false',
+            'f',
+            'off',
+            '0',
+            'sem',
+            'no'
+          ]
+        %}
+
+
+        <!-- =====================================================
+             FORMULÁRIO
+        ====================================================== -->
+
+        <form
+          method="POST"
+          class="formulario"
+          action="{{ url_for('editar_tear', id=tear.id) }}"
+        >
+
           <input
             type="hidden"
             name="csrf_token"
             value="{{ csrf_token() }}"
           >
-          <label for="marca">Marca</label>
-          <input type="text" id="marca" name="marca" value="{{ request.form.get('marca', tear.marca or '') }}" required>
 
-          <label for="modelo">Modelo</label>
-          <input type="text" id="modelo" name="modelo" value="{{ request.form.get('modelo', tear.modelo or '') }}" required>
 
-          <label for="tipo">Tipo</label>
-          <select id="tipo" name="tipo" required>
-            <option value="">-- Selecione --</option>
-            <option value="MONO"  {% if _sel_tipo == 'MONO' %}selected{% endif %}>MONO</option>
-            <option value="DUPLA" {% if _sel_tipo == 'DUPLA' %}selected{% endif %}>DUPLA</option>
+          <!-- ===================================================
+               MARCA
+          ==================================================== -->
+
+          <label for="marca">
+            Marca
+          </label>
+
+          <input
+            type="text"
+            id="marca"
+            name="marca"
+            maxlength="100"
+            value="{{ tear.marca or '' }}"
+            required
+          >
+
+
+          <!-- ===================================================
+               MODELO
+          ==================================================== -->
+
+          <label for="modelo">
+            Modelo
+          </label>
+
+          <input
+            type="text"
+            id="modelo"
+            name="modelo"
+            maxlength="100"
+            value="{{ tear.modelo or '' }}"
+            required
+          >
+
+
+          <!-- ===================================================
+               TIPO
+          ==================================================== -->
+
+          <label for="tipo">
+            Tipo
+          </label>
+
+          <select
+            id="tipo"
+            name="tipo"
+            required
+          >
+
+            <option value="">
+              -- Selecione --
+            </option>
+
+            <option
+              value="MONO"
+              {% if _tipo_atual == 'MONO' %}
+                selected
+              {% endif %}
+            >
+              MONO
+            </option>
+
+            <option
+              value="DUPLA"
+              {% if _tipo_atual == 'DUPLA' %}
+                selected
+              {% endif %}
+            >
+              DUPLA
+            </option>
+
           </select>
 
-          <label for="finura">Finura</label>
-          <input type="number" id="finura" name="finura" value="{{ request.form.get('finura', tear.finura or tear.galga or '') }}" required>
 
-          <label for="diametro">Diâmetro</label>
-          <input type="number" id="diametro" name="diametro" value="{{ request.form.get('diametro', tear.diametro or '') }}" required>
+          <!-- ===================================================
+               FINURA
+          ==================================================== -->
 
-          <label for="pistas_cilindro">Pistas Cilindro</label>
-          <input type="number" id="pistas_cilindro" name="pistas_cilindro" value="{{ request.form.get('pistas_cilindro', tear.pistas_cilindro or '') }}" required>
+          <label for="finura">
+            Finura
+          </label>
 
-          <label for="pistas_disco">Pistas Disco</label>
-          <input type="number" id="pistas_disco" name="pistas_disco" value="{{ request.form.get('pistas_disco', tear.pistas_disco or '') }}" required>
+          <input
+            type="number"
+            id="finura"
+            name="finura"
+            min="1"
+            max="100"
+            step="1"
+            value="{{
+              tear.finura
+              if tear.finura is not none
+              else ''
+            }}"
+            required
+          >
 
-          <label for="alimentadores">Alimentadores</label>
-          <input type="number" id="alimentadores" name="alimentadores" value="{{ request.form.get('alimentadores', tear.alimentadores or '') }}" required>
 
-          <label for="elastano">Elastano</label>
-          <select id="elastano" name="elastano" required>
-            <option value="">-- Selecione --</option>
-            <option value="Sim" {% if _sel_el == 'sim' %}selected{% endif %}>Sim</option>
-            <option value="Não" {% if _sel_el == 'não' or _sel_el == 'nao' %}selected{% endif %}>Não</option>
+          <!-- ===================================================
+               DIÂMETRO
+          ==================================================== -->
+
+          <label for="diametro">
+            Diâmetro
+          </label>
+
+          <input
+            type="number"
+            id="diametro"
+            name="diametro"
+            min="1"
+            max="200"
+            step="1"
+            value="{{
+              tear.diametro
+              if tear.diametro is not none
+              else ''
+            }}"
+            required
+          >
+
+
+          <!-- ===================================================
+               PISTAS CILINDRO
+          ==================================================== -->
+
+          <label for="pistas_cilindro">
+            Pistas Cilindro
+            <span style="font-weight:400;color:#777;">
+              (opcional)
+            </span>
+          </label>
+
+          <input
+            type="number"
+            id="pistas_cilindro"
+            name="pistas_cilindro"
+            min="0"
+            max="100"
+            step="1"
+            value="{{
+              tear.pistas_cilindro
+              if tear.pistas_cilindro is not none
+              else ''
+            }}"
+          >
+
+
+          <!-- ===================================================
+               PISTAS DISCO
+          ==================================================== -->
+
+          <label for="pistas_disco">
+            Pistas Disco
+            <span style="font-weight:400;color:#777;">
+              (opcional)
+            </span>
+          </label>
+
+          <input
+            type="number"
+            id="pistas_disco"
+            name="pistas_disco"
+            min="0"
+            max="100"
+            step="1"
+            value="{{
+              tear.pistas_disco
+              if tear.pistas_disco is not none
+              else ''
+            }}"
+          >
+
+
+          <!-- ===================================================
+               ALIMENTADORES
+          ==================================================== -->
+
+          <label for="alimentadores">
+            Alimentadores
+          </label>
+
+          <input
+            type="number"
+            id="alimentadores"
+            name="alimentadores"
+            min="1"
+            max="1000"
+            step="1"
+            value="{{
+              tear.alimentadores
+              if tear.alimentadores is not none
+              else ''
+            }}"
+            required
+          >
+
+
+          <!-- ===================================================
+               ELASTANO
+          ==================================================== -->
+
+          <label for="elastano">
+            Kit Elastano
+          </label>
+
+          <select
+            id="elastano"
+            name="elastano"
+            required
+          >
+
+            <option value="">
+              -- Selecione --
+            </option>
+
+            <option
+              value="Sim"
+              {% if _el_sim %}
+                selected
+              {% endif %}
+            >
+              Sim
+            </option>
+
+            <option
+              value="Não"
+              {% if _el_nao %}
+                selected
+              {% endif %}
+            >
+              Não
+            </option>
+
           </select>
+
+
+          <!-- ===================================================
+               AÇÕES
+          ==================================================== -->
 
           <div class="acoes">
-            <button type="submit" class="btn">Salvar</button>
+
+            <button
+              type="submit"
+              class="btn"
+            >
+              Salvar
+            </button>
+
           </div>
+
         </form>
       </div>
 
