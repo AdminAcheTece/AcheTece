@@ -18455,9 +18455,9 @@ def iniciar_producao_malharia(
     pedido_id
 ):
 
-    # --------------------------------------------------------------
-    # Autenticação da malharia
-    # --------------------------------------------------------------
+    # ==============================================================
+    # AUTENTICAÇÃO DA MALHARIA
+    # ==============================================================
 
     empresa_id = session.get(
         "empresa_id"
@@ -18466,14 +18466,18 @@ def iniciar_producao_malharia(
     if not empresa_id:
 
         return redirect(
-            url_for("login")
+            url_for(
+                "login"
+            )
         )
 
     try:
 
         empresa = db.session.get(
             Empresa,
-            int(empresa_id)
+            int(
+                empresa_id
+            )
         )
 
     except Exception:
@@ -18485,62 +18489,144 @@ def iniciar_producao_malharia(
         session.clear()
 
         return redirect(
-            url_for("login")
-        )
-
-    # --------------------------------------------------------------
-    # Pedido somente da própria malharia
-    # --------------------------------------------------------------
-
-    pedido = (
-        Order.query
-        .filter_by(
-            id=pedido_id,
-            empresa_id=empresa.id
-        )
-        .first()
-    )
-
-    if not pedido:
-
-        flash(
-            "Pedido não encontrado.",
-            "warning"
-        )
-
-        return redirect(
-            url_for("meus_pedidos_malharia")
-        )
-
-    status_atual = (
-        pedido.status or ""
-    ).strip().lower()
-
-    # --------------------------------------------------------------
-    # Só pode iniciar a partir de CONFIRMADO
-    # --------------------------------------------------------------
-
-    if status_atual != "confirmado":
-
-        flash(
-            "Somente um pedido confirmado pode entrar em produção.",
-            "warning"
-        )
-
-        return redirect(
             url_for(
-                "detalhe_pedido_malharia",
-                pedido_id=pedido.id
+                "login"
             )
         )
 
-    # --------------------------------------------------------------
-    # Atualização
-    # --------------------------------------------------------------
+    # ==============================================================
+    # TRANSAÇÃO / LOCK DO PEDIDO
+    # ==============================================================
+    #
+    # SELECT FOR UPDATE impede que duas requisições alterem
+    # simultaneamente o mesmo pedido.
+    #
+    # Se duas solicitações tentarem iniciar a produção:
+    #
+    # - a primeira obtém o lock;
+    # - a segunda aguarda;
+    # - a primeira grava e faz commit;
+    # - a segunda então relê o registro já como em_producao;
+    # - nenhum segundo OrderEvent é criado.
+    # ==============================================================
 
     try:
 
-        pedido.status = "em_producao"
+        pedido = (
+            Order.query
+            .filter(
+                Order.id
+                == pedido_id,
+
+                Order.empresa_id
+                == empresa.id
+            )
+            .with_for_update()
+            .first()
+        )
+
+        # ==========================================================
+        # PEDIDO NÃO ENCONTRADO / OUTRA MALHARIA
+        # ==========================================================
+
+        if not pedido:
+
+            db.session.rollback()
+
+            flash(
+                "Pedido não encontrado.",
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "meus_pedidos_malharia"
+                )
+            )
+
+        # ==========================================================
+        # STATUS ATUAL — LIDO SOB LOCK
+        # ==========================================================
+
+        status_atual = (
+            pedido.status
+            or ""
+        ).strip().lower()
+
+        # ==========================================================
+        # IDEMPOTÊNCIA
+        #
+        # Se o pedido já entrou em produção, não criamos outro
+        # evento e não repetimos a transição.
+        # ==========================================================
+
+        if (
+            status_atual
+            == "em_producao"
+        ):
+
+            db.session.rollback()
+
+            flash(
+                (
+                    f"O pedido {pedido.codigo} "
+                    "já está em produção."
+                ),
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "detalhe_pedido_malharia",
+                    pedido_id=pedido.id
+                )
+            )
+
+        # ==========================================================
+        # MÁQUINA DE ESTADOS
+        #
+        # Única transição aceita:
+        #
+        # confirmado
+        #     ↓
+        # em_producao
+        # ==========================================================
+
+        if (
+            status_atual
+            != "confirmado"
+        ):
+
+            db.session.rollback()
+
+            flash(
+                (
+                    "Somente um pedido confirmado "
+                    "pode entrar em produção."
+                ),
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "detalhe_pedido_malharia",
+                    pedido_id=pedido.id
+                )
+            )
+
+        # ==========================================================
+        # ALTERAÇÃO DO PEDIDO
+        # ==========================================================
+
+        pedido.status = (
+            "em_producao"
+        )
+
+        # ==========================================================
+        # HISTÓRICO OPERACIONAL
+        #
+        # O OrderEvent participa da MESMA transação do pedido.
+        # ==============================================================
 
         evento = OrderEvent(
             order_id=pedido.id,
@@ -18558,6 +18644,10 @@ def iniciar_producao_malharia(
             evento
         )
 
+        # ==========================================================
+        # COMMIT ÚNICO
+        # ==============================================================
+
         db.session.commit()
 
     except Exception:
@@ -18565,20 +18655,31 @@ def iniciar_producao_malharia(
         db.session.rollback()
 
         current_app.logger.exception(
-            "[PEDIDO] Falha ao iniciar produção."
+            (
+                "[PEDIDO] Falha ao iniciar produção. "
+                f"pedido_id={pedido_id} "
+                f"empresa_id={getattr(empresa, 'id', None)}"
+            )
         )
 
         flash(
-            "Não foi possível iniciar a produção agora.",
+            (
+                "Não foi possível iniciar a produção agora. "
+                "Tente novamente."
+            ),
             "danger"
         )
 
         return redirect(
             url_for(
                 "detalhe_pedido_malharia",
-                pedido_id=pedido.id
+                pedido_id=pedido_id
             )
         )
+
+    # ==============================================================
+    # SUCESSO
+    # ==============================================================
 
     flash(
         (
