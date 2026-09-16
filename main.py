@@ -11078,26 +11078,79 @@ def executar_matching(demanda_id):
     # ==============================================================
     # RECÁLCULO
     # ==============================================================
+    #
+    # IMPORTANTE:
+    #
+    # DemandMatch também funciona como histórico técnico.
+    #
+    # Portanto, um recálculo NÃO deve apagar fisicamente os
+    # matches anteriores.
+    #
+    # Fluxo:
+    #
+    # 1. carrega os matches já existentes da demanda;
+    # 2. marca os matches anteriormente ativos como descartados;
+    # 3. recalcula todos os teares;
+    # 4. se um tear continuar compatível, reutiliza o registro
+    #    existente e volta seu status para "ativo";
+    # 5. se for um tear nunca antes compatível, cria novo registro;
+    # 6. matches que deixaram de ser compatíveis permanecem
+    #    como "descartado", preservando o histórico.
+    #
+    # Dessa forma também preservamos a integridade de:
+    #
+    #     DemandMatch.tear_id
+    #         ↓
+    #     Tear.id
+    #
+    # e a exclusão definitiva do tear continua bloqueada depois
+    # que ele tiver participado de qualquer matching.
+    # ==============================================================
 
     try:
 
-        # ----------------------------------------------------------
-        # Remove matches técnicos anteriores
-        # ----------------------------------------------------------
+        # ==========================================================
+        # MATCHES JÁ EXISTENTES
+        # ==========================================================
 
-        (
+        matches_existentes = (
             DemandMatch.query
             .filter_by(
                 demand_id=demanda.id
             )
-            .delete(
-                synchronize_session=False
-            )
+            .all()
         )
 
+        matches_por_tear = {
+            match.tear_id: match
+            for match in matches_existentes
+        }
+
         # ----------------------------------------------------------
-        # Analisa todos os teares
+        # Estado inicial do recálculo
+        #
+        # Somente matches atualmente ativos são rebaixados para
+        # descartado.
+        #
+        # Se continuarem compatíveis, serão reativados logo abaixo.
         # ----------------------------------------------------------
+
+        for match in matches_existentes:
+
+            status_match = (
+                match.status
+                or ""
+            ).strip().lower()
+
+            if status_match == "ativo":
+
+                match.status = (
+                    "descartado"
+                )
+
+        # ==========================================================
+        # ANALISA TODOS OS TEARES
+        # ==========================================================
 
         for tear in teares:
 
@@ -11126,30 +11179,75 @@ def executar_matching(demanda_id):
 
                 continue
 
-            # ------------------------------------------------------
-            # Match técnico
-            # ------------------------------------------------------
-
-            novo_match = DemandMatch(
-                demand_id=demanda.id,
-                tear_id=tear.id,
-                empresa_id=empresa.id,
-                score=score,
-                detalhes=" | ".join(
+            detalhes_texto = (
+                " | ".join(
                     detalhes
-                ),
-                status="ativo"
+                )
             )
 
-            db.session.add(
-                novo_match
+            # ======================================================
+            # MATCH JÁ EXISTIA
+            #
+            # Reutilizamos o mesmo registro.
+            #
+            # Isso evita:
+            # - apagar histórico;
+            # - criar duplicidade demand_id + tear_id;
+            # - perder a referência histórica ao equipamento.
+            # ======================================================
+
+            match_existente = (
+                matches_por_tear.get(
+                    tear.id
+                )
             )
+
+            if match_existente is not None:
+
+                match_existente.empresa_id = (
+                    empresa.id
+                )
+
+                match_existente.score = (
+                    score
+                )
+
+                match_existente.detalhes = (
+                    detalhes_texto
+                )
+
+                match_existente.status = (
+                    "ativo"
+                )
+
+            # ======================================================
+            # PRIMEIRA PARTICIPAÇÃO DO TEAR NESTA DEMANDA
+            # ======================================================
+
+            else:
+
+                novo_match = DemandMatch(
+                    demand_id=demanda.id,
+                    tear_id=tear.id,
+                    empresa_id=empresa.id,
+                    score=score,
+                    detalhes=detalhes_texto,
+                    status="ativo"
+                )
+
+                db.session.add(
+                    novo_match
+                )
+
+                matches_por_tear[
+                    tear.id
+                ] = novo_match
 
             total_compativeis += 1
 
-            # ------------------------------------------------------
-            # Agrupa por empresa
-            # ------------------------------------------------------
+            # ======================================================
+            # RESUMO POR EMPRESA
+            # ======================================================
 
             resumo = (
                 resumo_empresas
