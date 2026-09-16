@@ -18443,7 +18443,17 @@ def confirmar_pedido_malharia(
     "/malharia/pedidos/<int:pedido_id>/iniciar-producao",
     endpoint="iniciar_producao_malharia"
 )
-def iniciar_producao_malharia(pedido_id):
+@limiter.limit(
+    "20 per hour",
+    key_func=_malharia_rate_limit_key
+)
+@limiter.limit(
+    "60 per day",
+    key_func=_malharia_rate_limit_key
+)
+def iniciar_producao_malharia(
+    pedido_id
+):
 
     # --------------------------------------------------------------
     # Autenticação da malharia
