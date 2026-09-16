@@ -18180,6 +18180,14 @@ def detalhe_pedido_malharia(pedido_id):
     "/malharia/pedidos/<int:pedido_id>/confirmar",
     endpoint="confirmar_pedido_malharia"
 )
+@limiter.limit(
+    "20 per hour",
+    key_func=_malharia_rate_limit_key
+)
+@limiter.limit(
+    "60 per day",
+    key_func=_malharia_rate_limit_key
+)
 def confirmar_pedido_malharia(pedido_id):
 
     # --------------------------------------------------------------
