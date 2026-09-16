@@ -13525,9 +13525,9 @@ def confirmar_entrega_comprador(
     pedido_id
 ):
 
-    # --------------------------------------------------------------
-    # Autenticação do comprador
-    # --------------------------------------------------------------
+    # ==============================================================
+    # AUTENTICAÇÃO DO COMPRADOR
+    # ==============================================================
 
     user_id = session.get(
         "user_id"
@@ -13536,14 +13536,18 @@ def confirmar_entrega_comprador(
     if not user_id:
 
         return redirect(
-            url_for("login")
+            url_for(
+                "login"
+            )
         )
 
     try:
 
         usuario = db.session.get(
             Usuario,
-            int(user_id)
+            int(
+                user_id
+            )
         )
 
     except Exception:
@@ -13554,102 +13558,188 @@ def confirmar_entrega_comprador(
         not usuario
         or usuario.is_active is False
         or (
-            usuario.role or ""
-        ).strip().lower() != "cliente"
+            usuario.role
+            or ""
+        ).strip().lower()
+        != "cliente"
     ):
 
         return redirect(
-            url_for("login")
-        )
-
-    # --------------------------------------------------------------
-    # Pedido somente do próprio comprador
-    # --------------------------------------------------------------
-
-    pedido = (
-        Order.query
-        .filter_by(
-            id=pedido_id,
-            buyer_user_id=usuario.id
-        )
-        .first()
-    )
-
-    if not pedido:
-
-        flash(
-            "Pedido não encontrado.",
-            "warning"
-        )
-
-        return redirect(
-            url_for("meus_pedidos_comprador")
-        )
-
-    status_atual = (
-        pedido.status or ""
-    ).strip().lower()
-
-    # --------------------------------------------------------------
-    # Entrega só pode ser confirmada após conclusão
-    # --------------------------------------------------------------
-
-    if status_atual != "concluido":
-
-        flash(
-            (
-                "A entrega somente pode ser confirmada "
-                "após a conclusão da produção."
-            ),
-            "warning"
-        )
-
-        return redirect(
             url_for(
-                "detalhe_pedido_comprador",
-                pedido_id=pedido.id
+                "login"
             )
         )
 
-    # --------------------------------------------------------------
-    # Demanda vinculada
-    # --------------------------------------------------------------
-
-    demanda = pedido.demanda
-
-    # --------------------------------------------------------------
-    # Confirma entrega + encerra ciclo
-    # --------------------------------------------------------------
+    # ==============================================================
+    # TRANSAÇÃO / LOCK DO PEDIDO
+    # ==============================================================
+    #
+    # O Order funciona como a trava transacional deste ciclo.
+    #
+    # Duas confirmações simultâneas:
+    #
+    # 1. primeira requisição obtém o lock;
+    # 2. segunda aguarda;
+    # 3. primeira encerra todo o ciclo e faz commit;
+    # 4. segunda prossegue e encontra status = entregue;
+    # 5. nenhum efeito comercial é executado novamente.
+    # ==============================================================
 
     try:
 
+        pedido = (
+            Order.query
+            .filter(
+                Order.id
+                == pedido_id,
+
+                Order.buyer_user_id
+                == usuario.id
+            )
+            .with_for_update()
+            .first()
+        )
+
         # ==========================================================
-        # PEDIDO
+        # PEDIDO NÃO ENCONTRADO / OUTRO COMPRADOR
         # ==========================================================
 
-        pedido.status = "entregue"
+        if not pedido:
+
+            db.session.rollback()
+
+            flash(
+                "Pedido não encontrado.",
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "meus_pedidos_comprador"
+                )
+            )
+
+        # ==========================================================
+        # STATUS ATUAL — LIDO SOB LOCK
+        # ==========================================================
+
+        status_atual = (
+            pedido.status
+            or ""
+        ).strip().lower()
+
+        # ==========================================================
+        # IDEMPOTÊNCIA
+        #
+        # Se a entrega já foi confirmada:
+        #
+        # - não altera novamente o pedido;
+        # - não encerra novamente a demanda;
+        # - não altera propostas;
+        # - não cria ProposalInteraction;
+        # - não cria novo OrderEvent.
+        # ==========================================================
+
+        if (
+            status_atual
+            == "entregue"
+        ):
+
+            db.session.rollback()
+
+            flash(
+                (
+                    f"A entrega do pedido "
+                    f"{pedido.codigo} já está confirmada."
+                ),
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "detalhe_pedido_comprador",
+                    pedido_id=pedido.id
+                )
+            )
+
+        # ==========================================================
+        # MÁQUINA DE ESTADOS
+        #
+        # Única transição permitida:
+        #
+        # concluido
+        #     ↓
+        # entregue
+        # ==========================================================
+
+        if (
+            status_atual
+            != "concluido"
+        ):
+
+            db.session.rollback()
+
+            flash(
+                (
+                    "A entrega somente pode ser confirmada "
+                    "após a conclusão da produção."
+                ),
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "detalhe_pedido_comprador",
+                    pedido_id=pedido.id
+                )
+            )
+
+        # ==========================================================
+        # DEMANDA VINCULADA
+        # ==============================================================
+
+        demanda = pedido.demanda
+
+        # ==========================================================
+        # PEDIDO
+        # ==============================================================
+
+        pedido.status = (
+            "entregue"
+        )
 
         # ==========================================================
         # DEMANDA
         #
-        # Pedido entregue significa:
-        # demanda comercialmente encerrada.
+        # O recebimento confirmado encerra comercialmente
+        # a demanda.
+        #
+        # Uma demanda previamente cancelada é preservada como
+        # cancelada e não é reclassificada silenciosamente.
         # ==========================================================
 
         if demanda:
 
             status_demanda = (
-                demanda.status or ""
+                demanda.status
+                or ""
             ).strip().lower()
 
-            if status_demanda != "cancelada":
+            if (
+                status_demanda
+                != "cancelada"
+            ):
 
-                demanda.status = "encerrada"
+                demanda.status = (
+                    "encerrada"
+                )
 
         # ==========================================================
-        # GARANTIA:
-        # nenhuma oportunidade dessa demanda continua aberta
-        # ==========================================================
+        # OPORTUNIDADES
+        #
+        # Nenhuma oportunidade dessa demanda deve permanecer
+        # operacional depois da entrega.
+        # ==============================================================
 
         if demanda:
 
@@ -13663,12 +13753,18 @@ def confirmar_entrega_comprador(
 
             for oportunidade in oportunidades:
 
-                oportunidade.status = "inativa"
+                oportunidade.status = (
+                    "inativa"
+                )
 
         # ==========================================================
-        # GARANTIA:
-        # nenhuma proposta concorrente permanece aberta
-        # ==========================================================
+        # PROPOSTAS CONCORRENTES
+        #
+        # Preserva a proposta que originou o pedido.
+        #
+        # Qualquer concorrente ainda aberta é encerrada e recebe
+        # seu respectivo histórico ProposalInteraction.
+        # ==============================================================
 
         if demanda:
 
@@ -13698,14 +13794,18 @@ def confirmar_entrega_comprador(
                     "nao_selecionada"
                 )
 
-                interacao = ProposalInteraction(
-                    proposal_id=proposta_aberta.id,
-                    actor_role="sistema",
-                    action="nao_selecionada",
-                    message=(
-                        f"Proposta encerrada após "
-                        f"a conclusão do pedido "
-                        f"{pedido.codigo}."
+                interacao = (
+                    ProposalInteraction(
+                        proposal_id=(
+                            proposta_aberta.id
+                        ),
+                        actor_role="sistema",
+                        action="nao_selecionada",
+                        message=(
+                            "Proposta encerrada após "
+                            "a conclusão do pedido "
+                            f"{pedido.codigo}."
+                        )
                     )
                 )
 
@@ -13714,8 +13814,8 @@ def confirmar_entrega_comprador(
                 )
 
         # ==========================================================
-        # HISTÓRICO OPERACIONAL
-        # ==========================================================
+        # HISTÓRICO OPERACIONAL DO PEDIDO
+        # ==============================================================
 
         evento = OrderEvent(
             order_id=pedido.id,
@@ -13733,6 +13833,22 @@ def confirmar_entrega_comprador(
             evento
         )
 
+        # ==========================================================
+        # COMMIT ÚNICO
+        #
+        # São persistidos atomicamente:
+        #
+        # - Order.status;
+        # - ProductionRequest.status;
+        # - Opportunity.status;
+        # - Proposal.status;
+        # - ProposalInteraction;
+        # - OrderEvent.
+        #
+        # Se qualquer operação falhar, o except executa rollback
+        # de TODO o conjunto.
+        # ==============================================================
+
         db.session.commit()
 
     except Exception:
@@ -13740,20 +13856,31 @@ def confirmar_entrega_comprador(
         db.session.rollback()
 
         current_app.logger.exception(
-            "[PEDIDO] Falha ao confirmar entrega."
+            (
+                "[PEDIDO] Falha ao confirmar entrega. "
+                f"pedido_id={pedido_id} "
+                f"user_id={getattr(usuario, 'id', None)}"
+            )
         )
 
         flash(
-            "Não foi possível confirmar a entrega agora.",
+            (
+                "Não foi possível confirmar "
+                "a entrega agora."
+            ),
             "danger"
         )
 
         return redirect(
             url_for(
                 "detalhe_pedido_comprador",
-                pedido_id=pedido.id
+                pedido_id=pedido_id
             )
         )
+
+    # ==============================================================
+    # SUCESSO
+    # ==============================================================
 
     flash(
         (
