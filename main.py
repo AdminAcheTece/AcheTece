@@ -18188,11 +18188,13 @@ def detalhe_pedido_malharia(pedido_id):
     "60 per day",
     key_func=_malharia_rate_limit_key
 )
-def confirmar_pedido_malharia(pedido_id):
+def confirmar_pedido_malharia(
+    pedido_id
+):
 
-    # --------------------------------------------------------------
-    # Autenticação
-    # --------------------------------------------------------------
+    # ==============================================================
+    # AUTENTICAÇÃO
+    # ==============================================================
 
     empresa_id = session.get(
         "empresa_id"
@@ -18201,14 +18203,18 @@ def confirmar_pedido_malharia(pedido_id):
     if not empresa_id:
 
         return redirect(
-            url_for("login")
+            url_for(
+                "login"
+            )
         )
 
     try:
 
         empresa = db.session.get(
             Empresa,
-            int(empresa_id)
+            int(
+                empresa_id
+            )
         )
 
     except Exception:
@@ -18220,103 +18226,167 @@ def confirmar_pedido_malharia(pedido_id):
         session.clear()
 
         return redirect(
-            url_for("login")
-        )
-
-    # --------------------------------------------------------------
-    # Pedido da própria malharia
-    # --------------------------------------------------------------
-
-    pedido = (
-        Order.query
-        .filter_by(
-            id=pedido_id,
-            empresa_id=empresa.id
-        )
-        .first()
-    )
-
-    if not pedido:
-
-        flash(
-            "Pedido não encontrado.",
-            "warning"
-        )
-
-        return redirect(
             url_for(
-                "meus_pedidos_malharia"
+                "login"
             )
         )
 
-    status_atual = (
-        pedido.status or ""
-    ).strip().lower()
-
-    # --------------------------------------------------------------
-    # Somente aguardando_confirmacao pode ser confirmado
-    # --------------------------------------------------------------
-
-    if status_atual == "confirmado":
-
-        flash(
-            f"O pedido {pedido.codigo} já está confirmado.",
-            "warning"
-        )
-
-        return redirect(
-            url_for(
-                "detalhe_pedido_malharia",
-                pedido_id=pedido.id
-            )
-        )
-
-    if status_atual != "aguardando_confirmacao":
-
-        flash(
-            "Este pedido não pode ser confirmado no status atual.",
-            "warning"
-        )
-
-        return redirect(
-            url_for(
-                "detalhe_pedido_malharia",
-                pedido_id=pedido.id
-            )
-        )
-
-    # --------------------------------------------------------------
-    # Confirmação
-    # --------------------------------------------------------------
+    # ==============================================================
+    # TRANSAÇÃO / LOCK DO PEDIDO
+    # ==============================================================
+    #
+    # O SELECT FOR UPDATE serializa confirmações concorrentes
+    # do mesmo pedido.
+    #
+    # Duas requisições simultâneas não conseguem confirmar
+    # a mesma linha ao mesmo tempo.
+    #
+    # A segunda requisição aguarda a primeira finalizar e então
+    # lê o novo status já persistido.
+    # ==============================================================
 
     try:
 
-        pedido.status = "confirmado"
-    
+        pedido = (
+            Order.query
+            .filter(
+                Order.id
+                == pedido_id,
+
+                Order.empresa_id
+                == empresa.id
+            )
+            .with_for_update()
+            .first()
+        )
+
+        # ==========================================================
+        # PEDIDO NÃO ENCONTRADO / NÃO PERTENCE À MALHARIA
+        # ==========================================================
+
+        if not pedido:
+
+            # Libera imediatamente qualquer transação de leitura.
+            db.session.rollback()
+
+            flash(
+                "Pedido não encontrado.",
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "meus_pedidos_malharia"
+                )
+            )
+
+        # ==========================================================
+        # ESTADO ATUAL — LIDO SOB LOCK
+        # ==========================================================
+
+        status_atual = (
+            pedido.status
+            or ""
+        ).strip().lower()
+
+        # ==========================================================
+        # IDEMPOTÊNCIA
+        #
+        # Se outra requisição já confirmou o pedido enquanto esta
+        # aguardava o lock, não fazemos nenhuma nova gravação.
+        # ==========================================================
+
+        if status_atual == "confirmado":
+
+            db.session.rollback()
+
+            flash(
+                (
+                    f"O pedido {pedido.codigo} "
+                    "já está confirmado."
+                ),
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "detalhe_pedido_malharia",
+                    pedido_id=pedido.id
+                )
+            )
+
+        # ==========================================================
+        # MÁQUINA DE ESTADOS
+        # ==========================================================
+
+        if (
+            status_atual
+            != "aguardando_confirmacao"
+        ):
+
+            db.session.rollback()
+
+            flash(
+                (
+                    "Este pedido não pode ser confirmado "
+                    "no status atual."
+                ),
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "detalhe_pedido_malharia",
+                    pedido_id=pedido.id
+                )
+            )
+
+        # ==========================================================
+        # CONFIRMAÇÃO
+        # ==========================================================
+
+        pedido.status = (
+            "confirmado"
+        )
+
         pedido.confirmed_at = (
             datetime.utcnow()
         )
-    
+
         # ==========================================================
         # HISTÓRICO OPERACIONAL
         # ==========================================================
-    
+        #
+        # O evento participa da MESMA transação do Order.
+        #
+        # Portanto:
+        #
+        # - ou status + confirmed_at + OrderEvent são gravados;
+        # - ou tudo é revertido pelo rollback.
+        # ==============================================================
+
         evento = OrderEvent(
             order_id=pedido.id,
             actor_role="malharia",
             action="pedido_confirmado",
-            status_anterior="aguardando_confirmacao",
+            status_anterior=(
+                "aguardando_confirmacao"
+            ),
             status_novo="confirmado",
             message=(
-                f"A malharia confirmou o recebimento "
+                "A malharia confirmou o recebimento "
                 f"do pedido {pedido.codigo}."
             )
         )
-    
+
         db.session.add(
             evento
         )
-    
+
+        # ==========================================================
+        # COMMIT ÚNICO
+        # ==========================================================
+
         db.session.commit()
 
     except Exception:
@@ -18324,25 +18394,36 @@ def confirmar_pedido_malharia(pedido_id):
         db.session.rollback()
 
         current_app.logger.exception(
-            "[PEDIDO] Falha ao confirmar pedido."
+            (
+                "[PEDIDO] Falha ao confirmar pedido. "
+                f"pedido_id={pedido_id} "
+                f"empresa_id={getattr(empresa, 'id', None)}"
+            )
         )
 
         flash(
-            "Não foi possível confirmar o pedido agora.",
+            (
+                "Não foi possível confirmar o pedido agora. "
+                "Tente novamente."
+            ),
             "danger"
         )
 
         return redirect(
             url_for(
                 "detalhe_pedido_malharia",
-                pedido_id=pedido.id
+                pedido_id=pedido_id
             )
         )
+
+    # ==============================================================
+    # SUCESSO
+    # ==============================================================
 
     flash(
         (
             f"Pedido {pedido.codigo} "
-            f"confirmado com sucesso."
+            "confirmado com sucesso."
         ),
         "success"
     )
