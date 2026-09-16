@@ -12275,9 +12275,9 @@ def aceitar_proposta(
     proposta_id
 ):
 
-    # --------------------------------------------------------------
-    # Comprador autenticado
-    # --------------------------------------------------------------
+    # ==============================================================
+    # AUTENTICAÇÃO DO COMPRADOR
+    # ==============================================================
 
     user_id = session.get(
         "user_id"
@@ -12286,14 +12286,18 @@ def aceitar_proposta(
     if not user_id:
 
         return redirect(
-            url_for("login")
+            url_for(
+                "login"
+            )
         )
 
     try:
 
         usuario = db.session.get(
             Usuario,
-            int(user_id)
+            int(
+                user_id
+            )
         )
 
     except Exception:
@@ -12304,21 +12308,30 @@ def aceitar_proposta(
         not usuario
         or usuario.is_active is False
         or (
-            usuario.role or ""
-        ).strip().lower() != "cliente"
+            usuario.role
+            or ""
+        ).strip().lower()
+        != "cliente"
     ):
 
         return redirect(
-            url_for("login")
+            url_for(
+                "login"
+            )
         )
 
-    # --------------------------------------------------------------
-    # Proposta
+    # ==============================================================
+    # REFERÊNCIA INICIAL DA PROPOSTA
     #
-    # Garante que pertence a uma demanda do comprador logado.
-    # --------------------------------------------------------------
+    # Neste primeiro momento apenas:
+    # - validamos ownership;
+    # - descobrimos demand_id.
+    #
+    # A decisão comercial somente acontecerá DEPOIS que a demanda
+    # estiver bloqueada com SELECT FOR UPDATE.
+    # ==============================================================
 
-    proposta = (
+    proposta_inicial = (
         Proposal.query
         .join(
             ProductionRequest,
@@ -12335,7 +12348,7 @@ def aceitar_proposta(
         .first()
     )
 
-    if not proposta:
+    if not proposta_inicial:
 
         flash(
             "Proposta não encontrada.",
@@ -12343,154 +12356,285 @@ def aceitar_proposta(
         )
 
         return redirect(
-            url_for("minhas_demandas")
+            url_for(
+                "minhas_demandas"
+            )
         )
 
-    # --------------------------------------------------------------
-    # Demanda
-    # --------------------------------------------------------------
+    demanda_id = (
+        proposta_inicial.demand_id
+    )
 
-    demanda = proposta.demanda
-
-    if not demanda:
-
-        flash(
-            "A demanda vinculada não foi encontrada.",
-            "warning"
-        )
-
-        return redirect(
-            url_for("minhas_demandas")
-        )
-
-    status_demanda = (
-        demanda.status or ""
-    ).strip().lower()
-
-    # --------------------------------------------------------------
-    # Uma proposta só pode ser aceita enquanto a demanda
-    # ainda estiver publicada.
+    # ==============================================================
+    # TRANSAÇÃO / LOCK DA DEMANDA
+    # ==============================================================
     #
-    # Depois de contratada/encerrada, nenhuma nova proposta
-    # pode avançar.
-    # --------------------------------------------------------------
-
-    if status_demanda != "publicada":
-
-        flash(
-            (
-                "Esta demanda não está mais disponível "
-                "para aceite de propostas."
-            ),
-            "warning"
-        )
-
-        return redirect(
-            url_for(
-                "propostas_recebidas",
-                demanda_id=demanda.id
-            )
-        )
-
-    # --------------------------------------------------------------
-    # Status atual da proposta
-    # --------------------------------------------------------------
-
-    status_atual = (
-        proposta.status or ""
-    ).strip().lower()
-
-    if status_atual != "enviada":
-
-        flash(
-            (
-                "Esta proposta não está disponível "
-                "para aceite no status atual."
-            ),
-            "warning"
-        )
-
-        return redirect(
-            url_for(
-                "propostas_recebidas",
-                demanda_id=demanda.id
-            )
-        )
-
-    # --------------------------------------------------------------
-    # Regra atual:
-    # somente UMA proposta aceita por demanda
-    # --------------------------------------------------------------
-
-    outra_aceita = (
-        Proposal.query
-        .filter(
-            Proposal.demand_id
-            == demanda.id,
-
-            Proposal.id
-            != proposta.id,
-
-            Proposal.status
-            == "aceita"
-        )
-        .first()
-    )
-
-    if outra_aceita:
-
-        flash(
-            (
-                "Já existe uma proposta aceita "
-                "para esta demanda."
-            ),
-            "warning"
-        )
-
-        return redirect(
-            url_for(
-                "propostas_recebidas",
-                demanda_id=demanda.id
-            )
-        )
-
-    # --------------------------------------------------------------
-    # Proteção adicional:
-    # se já houver pedido na demanda, não permite novo aceite.
-    # --------------------------------------------------------------
-
-    pedido_existente = (
-        Order.query
-        .filter_by(
-            demand_id=demanda.id
-        )
-        .first()
-    )
-
-    if pedido_existente:
-
-        flash(
-            (
-                f"A demanda já originou o pedido "
-                f"{pedido_existente.codigo}."
-            ),
-            "warning"
-        )
-
-        return redirect(
-            url_for(
-                "propostas_recebidas",
-                demanda_id=demanda.id
-            )
-        )
-
-    # --------------------------------------------------------------
-    # Aceite
-    # --------------------------------------------------------------
+    # A demanda é o recurso compartilhado entre todas as propostas.
+    #
+    # Portanto, travamos ProductionRequest — e não apenas Proposal.
+    #
+    # Isso impede que duas propostas diferentes da mesma demanda
+    # sejam aceitas simultaneamente.
+    # ==============================================================
 
     try:
 
-        proposta.status = "aceita"
+        demanda = (
+            ProductionRequest.query
+            .filter(
+                ProductionRequest.id
+                == demanda_id,
+
+                ProductionRequest.user_id
+                == usuario.id
+            )
+            .with_for_update()
+            .first()
+        )
+
+        # ==========================================================
+        # DEMANDA NÃO ENCONTRADA / OWNERSHIP INCONSISTENTE
+        # ==========================================================
+
+        if not demanda:
+
+            db.session.rollback()
+
+            flash(
+                "A demanda vinculada não foi encontrada.",
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "minhas_demandas"
+                )
+            )
+
+        # ==========================================================
+        # RECARREGA E TRAVA A PROPOSTA
+        #
+        # A proposta foi consultada antes do lock da demanda.
+        #
+        # Depois de obter o lock, precisamos reler seu estado atual
+        # para não trabalhar com uma versão antiga carregada pela
+        # sessão ORM.
+        # ==========================================================
+
+        proposta = (
+            Proposal.query
+            .filter(
+                Proposal.id
+                == proposta_id,
+
+                Proposal.demand_id
+                == demanda.id
+            )
+            .populate_existing()
+            .with_for_update()
+            .first()
+        )
+
+        if not proposta:
+
+            db.session.rollback()
+
+            flash(
+                "Proposta não encontrada.",
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "propostas_recebidas",
+                    demanda_id=demanda.id
+                )
+            )
+
+        # ==========================================================
+        # ESTADO ATUAL DA DEMANDA — SOB LOCK
+        # ==========================================================
+
+        status_demanda = (
+            demanda.status
+            or ""
+        ).strip().lower()
+
+        if (
+            status_demanda
+            != "publicada"
+        ):
+
+            db.session.rollback()
+
+            flash(
+                (
+                    "Esta demanda não está mais disponível "
+                    "para aceite de propostas."
+                ),
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "propostas_recebidas",
+                    demanda_id=demanda.id
+                )
+            )
+
+        # ==========================================================
+        # ESTADO ATUAL DA PROPOSTA — SOB LOCK
+        # ==============================================================
+
+        status_atual = (
+            proposta.status
+            or ""
+        ).strip().lower()
+
+        # ==========================================================
+        # IDEMPOTÊNCIA
+        #
+        # O mesmo POST pode chegar novamente por:
+        # - duplo clique;
+        # - duas abas;
+        # - reenvio;
+        # - segunda requisição concorrente.
+        #
+        # Se esta proposta já estiver aceita, não criamos uma
+        # segunda ProposalInteraction.
+        # ==========================================================
+
+        if (
+            status_atual
+            == "aceita"
+        ):
+
+            db.session.rollback()
+
+            flash(
+                "Esta proposta já está aceita.",
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "propostas_recebidas",
+                    demanda_id=demanda.id
+                )
+            )
+
+        # ==========================================================
+        # SOMENTE ENVIADA → ACEITA
+        # ==========================================================
+
+        if (
+            status_atual
+            != "enviada"
+        ):
+
+            db.session.rollback()
+
+            flash(
+                (
+                    "Esta proposta não está disponível "
+                    "para aceite no status atual."
+                ),
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "propostas_recebidas",
+                    demanda_id=demanda.id
+                )
+            )
+
+        # ==========================================================
+        # UMA ÚNICA PROPOSTA ACEITA POR DEMANDA
+        #
+        # Esta consulta agora acontece SOMENTE depois de obter
+        # o lock exclusivo da ProductionRequest.
+        #
+        # Outra requisição de aceite para a mesma demanda precisa
+        # aguardar este lock.
+        # ==========================================================
+
+        outra_aceita = (
+            Proposal.query
+            .filter(
+                Proposal.demand_id
+                == demanda.id,
+
+                Proposal.id
+                != proposta.id,
+
+                Proposal.status
+                == "aceita"
+            )
+            .first()
+        )
+
+        if outra_aceita:
+
+            db.session.rollback()
+
+            flash(
+                (
+                    "Já existe uma proposta aceita "
+                    "para esta demanda."
+                ),
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "propostas_recebidas",
+                    demanda_id=demanda.id
+                )
+            )
+
+        # ==========================================================
+        # PROTEÇÃO CONTRA PEDIDO EXISTENTE
+        # ==========================================================
+
+        pedido_existente = (
+            Order.query
+            .filter_by(
+                demand_id=demanda.id
+            )
+            .first()
+        )
+
+        if pedido_existente:
+
+            db.session.rollback()
+
+            flash(
+                (
+                    f"A demanda já originou o pedido "
+                    f"{pedido_existente.codigo}."
+                ),
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "propostas_recebidas",
+                    demanda_id=demanda.id
+                )
+            )
+
+        # ==========================================================
+        # ACEITE
+        # ==============================================================
+
+        proposta.status = (
+            "aceita"
+        )
+
+        # ==========================================================
+        # HISTÓRICO COMERCIAL
+        # ==============================================================
 
         interacao = ProposalInteraction(
             proposal_id=proposta.id,
@@ -12505,6 +12649,13 @@ def aceitar_proposta(
             interacao
         )
 
+        # ==========================================================
+        # COMMIT ÚNICO
+        #
+        # Proposal.status + ProposalInteraction são persistidos
+        # atomicamente.
+        # ==============================================================
+
         db.session.commit()
 
     except Exception:
@@ -12512,7 +12663,11 @@ def aceitar_proposta(
         db.session.rollback()
 
         current_app.logger.exception(
-            "[PROPOSTA] Falha ao aceitar proposta."
+            (
+                "[PROPOSTA] Falha ao aceitar proposta. "
+                f"proposta_id={proposta_id} "
+                f"user_id={getattr(usuario, 'id', None)}"
+            )
         )
 
         flash(
@@ -12523,9 +12678,13 @@ def aceitar_proposta(
         return redirect(
             url_for(
                 "propostas_recebidas",
-                demanda_id=demanda.id
+                demanda_id=demanda_id
             )
         )
+
+    # ==============================================================
+    # SUCESSO
+    # ==============================================================
 
     flash(
         "Proposta aceita com sucesso.",
@@ -12538,7 +12697,6 @@ def aceitar_proposta(
             demanda_id=demanda.id
         )
     )
-
 # --------------------------------------------------------------------
 # AcheTece 2.0 - Comprador recusa proposta
 # --------------------------------------------------------------------
