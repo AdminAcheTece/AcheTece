@@ -10300,7 +10300,17 @@ def detalhe_demanda(demanda_id):
     "/comprador/demandas/<int:demanda_id>/publicar",
     endpoint="publicar_demanda"
 )
-def publicar_demanda(demanda_id):
+@limiter.limit(
+    "20 per hour",
+    key_func=_cliente_rate_limit_key
+)
+@limiter.limit(
+    "60 per day",
+    key_func=_cliente_rate_limit_key
+)
+def publicar_demanda(
+    demanda_id
+):
 
     # --------------------------------------------------------------
     # Verifica sessão
