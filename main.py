@@ -12263,7 +12263,17 @@ def propostas_recebidas(demanda_id):
     "/comprador/propostas/<int:proposta_id>/aceitar",
     endpoint="aceitar_proposta"
 )
-def aceitar_proposta(proposta_id):
+@limiter.limit(
+    "20 per hour",
+    key_func=_cliente_rate_limit_key
+)
+@limiter.limit(
+    "60 per day",
+    key_func=_cliente_rate_limit_key
+)
+def aceitar_proposta(
+    proposta_id
+):
 
     # --------------------------------------------------------------
     # Comprador autenticado
