@@ -12718,7 +12718,7 @@ def recusar_proposta(
 ):
 
     # ==============================================================
-    # AUTENTICAÇÃO
+    # AUTENTICAÇÃO DO COMPRADOR
     # ==============================================================
 
     user_id = session.get(
@@ -12728,14 +12728,18 @@ def recusar_proposta(
     if not user_id:
 
         return redirect(
-            url_for("login")
+            url_for(
+                "login"
+            )
         )
 
     try:
 
         usuario = db.session.get(
             Usuario,
-            int(user_id)
+            int(
+                user_id
+            )
         )
 
     except Exception:
@@ -12753,16 +12757,22 @@ def recusar_proposta(
     ):
 
         return redirect(
-            url_for("login")
+            url_for(
+                "login"
+            )
         )
 
     # ==============================================================
-    # PROPOSTA
+    # REFERÊNCIA INICIAL DA PROPOSTA
     #
-    # Garante que pertence a uma demanda do comprador autenticado.
+    # Aqui apenas:
+    # - validamos ownership;
+    # - descobrimos demand_id.
+    #
+    # A decisão somente acontece depois do lock da demanda.
     # ==============================================================
 
-    proposta = (
+    proposta_inicial = (
         Proposal.query
         .join(
             ProductionRequest,
@@ -12779,7 +12789,9 @@ def recusar_proposta(
         .first()
     )
 
-    if not proposta:
+    if not proposta_inicial:
+
+        db.session.rollback()
 
         flash(
             "Proposta não encontrada.",
@@ -12792,124 +12804,239 @@ def recusar_proposta(
             )
         )
 
-    # ==============================================================
-    # DEMANDA
-    # ==============================================================
-
-    demanda = proposta.demanda
-
-    if not demanda:
-
-        flash(
-            "A demanda vinculada não foi encontrada.",
-            "warning"
-        )
-
-        return redirect(
-            url_for(
-                "minhas_demandas"
-            )
-        )
-
-    status_demanda = (
-        demanda.status
-        or ""
-    ).strip().lower()
-
-    # ==============================================================
-    # BLINDAGEM DA DEMANDA
-    #
-    # Nenhuma decisão comercial nova pode ocorrer depois
-    # que a demanda sair de PUBLICADA.
-    # ==============================================================
-
-    if status_demanda != "publicada":
-
-        flash(
-            (
-                "Esta demanda não está mais aberta "
-                "para decisões sobre propostas."
-            ),
-            "warning"
-        )
-
-        return redirect(
-            url_for(
-                "propostas_recebidas",
-                demanda_id=demanda.id
-            )
-        )
-
-    # ==============================================================
-    # STATUS DA PROPOSTA
-    #
-    # Somente uma proposta ENVIADA pode ser recusada.
-    # ==============================================================
-
-    status_atual = (
-        proposta.status
-        or ""
-    ).strip().lower()
-
-    if status_atual != "enviada":
-
-        flash(
-            (
-                "Esta proposta não pode ser recusada "
-                "no status atual."
-            ),
-            "warning"
-        )
-
-        return redirect(
-            url_for(
-                "propostas_recebidas",
-                demanda_id=demanda.id
-            )
-        )
-
-    # ==============================================================
-    # PROTEÇÃO CONTRA PEDIDO EXISTENTE
-    #
-    # É redundante quando o ciclo está consistente, mas protege
-    # contra registros antigos ou alterações manuais de status.
-    # ==============================================================
-
-    pedido_existente = (
-        Order.query
-        .filter_by(
-            demand_id=demanda.id
-        )
-        .first()
+    demanda_id = (
+        proposta_inicial.demand_id
     )
 
-    if pedido_existente:
-
-        flash(
-            (
-                f"Esta demanda já originou o pedido "
-                f"{pedido_existente.codigo} "
-                "e não aceita novas decisões comerciais."
-            ),
-            "warning"
-        )
-
-        return redirect(
-            url_for(
-                "propostas_recebidas",
-                demanda_id=demanda.id
-            )
-        )
-
     # ==============================================================
-    # RECUSA
+    # TRANSAÇÃO / LOCK DA DEMANDA
+    #
+    # A ProductionRequest é o recurso comum entre:
+    #
+    # - aceitar proposta;
+    # - recusar proposta;
+    # - futuramente solicitar ajuste;
+    # - futuramente gerar pedido.
+    #
+    # Nesta etapa, aceitar e recusar passam a compartilhar
+    # exatamente o mesmo protocolo de lock.
     # ==============================================================
 
     try:
 
+        demanda = (
+            ProductionRequest.query
+            .filter(
+                ProductionRequest.id
+                == demanda_id,
+
+                ProductionRequest.user_id
+                == usuario.id
+            )
+            .with_for_update()
+            .first()
+        )
+
+        # ==========================================================
+        # DEMANDA NÃO ENCONTRADA / OWNERSHIP INCONSISTENTE
+        # ==========================================================
+
+        if not demanda:
+
+            db.session.rollback()
+
+            flash(
+                "A demanda vinculada não foi encontrada.",
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "minhas_demandas"
+                )
+            )
+
+        # ==========================================================
+        # RECARREGA E TRAVA A PROPOSTA
+        #
+        # A proposta já foi consultada antes para descobrirmos
+        # demand_id.
+        #
+        # populate_existing() força a releitura do estado atual,
+        # evitando utilizar um objeto antigo da sessão ORM.
+        # ==========================================================
+
+        proposta = (
+            Proposal.query
+            .filter(
+                Proposal.id
+                == proposta_id,
+
+                Proposal.demand_id
+                == demanda.id
+            )
+            .populate_existing()
+            .with_for_update()
+            .first()
+        )
+
+        if not proposta:
+
+            db.session.rollback()
+
+            flash(
+                "Proposta não encontrada.",
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "propostas_recebidas",
+                    demanda_id=demanda.id
+                )
+            )
+
+        # ==========================================================
+        # ESTADO DA DEMANDA — SOB LOCK
+        # ==========================================================
+
+        status_demanda = (
+            demanda.status
+            or ""
+        ).strip().lower()
+
+        if (
+            status_demanda
+            != "publicada"
+        ):
+
+            db.session.rollback()
+
+            flash(
+                (
+                    "Esta demanda não está mais aberta "
+                    "para decisões sobre propostas."
+                ),
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "propostas_recebidas",
+                    demanda_id=demanda.id
+                )
+            )
+
+        # ==========================================================
+        # ESTADO DA PROPOSTA — SOB LOCK
+        # ==========================================================
+
+        status_atual = (
+            proposta.status
+            or ""
+        ).strip().lower()
+
+        # ==========================================================
+        # IDEMPOTÊNCIA
+        #
+        # Uma segunda recusa da mesma proposta não:
+        #
+        # - altera novamente o status;
+        # - cria outra ProposalInteraction.
+        # ==========================================================
+
+        if (
+            status_atual
+            == "recusada"
+        ):
+
+            db.session.rollback()
+
+            flash(
+                "Esta proposta já está recusada.",
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "propostas_recebidas",
+                    demanda_id=demanda.id
+                )
+            )
+
+        # ==========================================================
+        # TRANSIÇÃO PERMITIDA
+        #
+        # enviada
+        #    ↓
+        # recusada
+        # ==========================================================
+
+        if (
+            status_atual
+            != "enviada"
+        ):
+
+            db.session.rollback()
+
+            flash(
+                (
+                    "Esta proposta não pode ser recusada "
+                    "no status atual."
+                ),
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "propostas_recebidas",
+                    demanda_id=demanda.id
+                )
+            )
+
+        # ==========================================================
+        # PROTEÇÃO CONTRA PEDIDO EXISTENTE
+        # ==========================================================
+
+        pedido_existente = (
+            Order.query
+            .filter_by(
+                demand_id=demanda.id
+            )
+            .first()
+        )
+
+        if pedido_existente:
+
+            db.session.rollback()
+
+            flash(
+                (
+                    f"Esta demanda já originou o pedido "
+                    f"{pedido_existente.codigo} "
+                    "e não aceita novas decisões comerciais."
+                ),
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "propostas_recebidas",
+                    demanda_id=demanda.id
+                )
+            )
+
+        # ==========================================================
+        # RECUSA
+        # ==========================================================
+
         proposta.status = (
             "recusada"
         )
+
+        # ==========================================================
+        # HISTÓRICO COMERCIAL
+        # ==========================================================
 
         interacao = ProposalInteraction(
             proposal_id=proposta.id,
@@ -12924,6 +13051,13 @@ def recusar_proposta(
             interacao
         )
 
+        # ==========================================================
+        # COMMIT ÚNICO
+        #
+        # Proposal.status + ProposalInteraction são persistidos
+        # atomicamente.
+        # ==========================================================
+
         db.session.commit()
 
     except Exception:
@@ -12931,7 +13065,11 @@ def recusar_proposta(
         db.session.rollback()
 
         current_app.logger.exception(
-            "[PROPOSTA] Falha ao recusar proposta."
+            (
+                "[PROPOSTA] Falha ao recusar proposta. "
+                f"proposta_id={proposta_id} "
+                f"user_id={getattr(usuario, 'id', None)}"
+            )
         )
 
         flash(
@@ -12942,9 +13080,13 @@ def recusar_proposta(
         return redirect(
             url_for(
                 "propostas_recebidas",
-                demanda_id=demanda.id
+                demanda_id=demanda_id
             )
         )
+
+    # ==============================================================
+    # SUCESSO
+    # ==============================================================
 
     flash(
         "Proposta recusada.",
