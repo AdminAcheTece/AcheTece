@@ -13316,7 +13316,25 @@ def solicitar_ajuste_proposta(
             "Descreva o ajuste que deseja solicitar.",
             "warning"
         )
-
+    
+        return redirect(
+            url_for(
+                "propostas_recebidas",
+                demanda_id=demanda.id
+            )
+        )
+    
+    
+    if len(mensagem) > 1000:
+    
+        flash(
+            (
+                "A solicitação de ajuste deve possuir "
+                "no máximo 1.000 caracteres."
+            ),
+            "warning"
+        )
+    
         return redirect(
             url_for(
                 "propostas_recebidas",
