@@ -13101,7 +13101,447 @@ def recusar_proposta(
     )
 
 # --------------------------------------------------------------------
+# --------------------------------------------------------------------
 # AcheTece 2.0 - Comprador solicita ajuste da proposta
+# --------------------------------------------------------------------
+
+@app.post(
+    "/comprador/propostas/<int:proposta_id>/solicitar-ajuste",
+    endpoint="solicitar_ajuste_proposta"
+)
+@limiter.limit(
+    "20 per hour",
+    key_func=_cliente_rate_limit_key
+)
+@limiter.limit(
+    "60 per day",
+    key_func=_cliente_rate_limit_key
+)
+def solicitar_ajuste_proposta(
+    proposta_id
+):
+
+    # ==============================================================
+    # AUTENTICAÇÃO DO COMPRADOR
+    # ==============================================================
+
+    user_id = session.get(
+        "user_id"
+    )
+
+    if not user_id:
+
+        return redirect(
+            url_for(
+                "login"
+            )
+        )
+
+    try:
+
+        usuario = db.session.get(
+            Usuario,
+            int(
+                user_id
+            )
+        )
+
+    except Exception:
+
+        usuario = None
+
+    if (
+        not usuario
+        or usuario.is_active is False
+        or (
+            usuario.role
+            or ""
+        ).strip().lower()
+        != "cliente"
+    ):
+
+        return redirect(
+            url_for(
+                "login"
+            )
+        )
+
+    # ==============================================================
+    # REFERÊNCIA INICIAL DA PROPOSTA
+    #
+    # Aqui apenas:
+    # - validamos ownership;
+    # - descobrimos demand_id.
+    #
+    # Nenhuma decisão comercial é feita antes do lock da demanda.
+    # ==============================================================
+
+    proposta_inicial = (
+        Proposal.query
+        .join(
+            ProductionRequest,
+            Proposal.demand_id
+            == ProductionRequest.id
+        )
+        .filter(
+            Proposal.id
+            == proposta_id,
+
+            ProductionRequest.user_id
+            == usuario.id
+        )
+        .first()
+    )
+
+    if not proposta_inicial:
+
+        db.session.rollback()
+
+        flash(
+            "Proposta não encontrada.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "minhas_demandas"
+            )
+        )
+
+    demanda_id = (
+        proposta_inicial.demand_id
+    )
+
+    # ==============================================================
+    # MENSAGEM DO AJUSTE
+    #
+    # Esta validação não depende de estado do banco.
+    # Fazemos antes do lock para não manter a demanda bloqueada
+    # enquanto validamos entrada inválida do usuário.
+    # ==============================================================
+
+    mensagem = (
+        request.form.get(
+            "mensagem_ajuste"
+        )
+        or ""
+    ).strip()
+
+    if len(mensagem) < 5:
+
+        db.session.rollback()
+
+        flash(
+            "Descreva o ajuste que deseja solicitar.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "propostas_recebidas",
+                demanda_id=demanda_id
+            )
+        )
+
+    if len(mensagem) > 1000:
+
+        db.session.rollback()
+
+        flash(
+            (
+                "A solicitação de ajuste deve possuir "
+                "no máximo 1.000 caracteres."
+            ),
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "propostas_recebidas",
+                demanda_id=demanda_id
+            )
+        )
+
+    # ==============================================================
+    # TRANSAÇÃO / LOCK DA DEMANDA
+    #
+    # ProductionRequest é o recurso compartilhado entre as
+    # decisões comerciais do comprador.
+    # ==============================================================
+
+    try:
+
+        demanda = (
+            ProductionRequest.query
+            .filter(
+                ProductionRequest.id
+                == demanda_id,
+
+                ProductionRequest.user_id
+                == usuario.id
+            )
+            .with_for_update()
+            .first()
+        )
+
+        # ==========================================================
+        # DEMANDA NÃO ENCONTRADA / OWNERSHIP INCONSISTENTE
+        # ==========================================================
+
+        if not demanda:
+
+            db.session.rollback()
+
+            flash(
+                "A demanda vinculada não foi encontrada.",
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "minhas_demandas"
+                )
+            )
+
+        # ==========================================================
+        # RECARREGA E TRAVA A PROPOSTA
+        #
+        # Como proposta_inicial foi consultada antes do lock,
+        # forçamos a releitura do estado atual.
+        # ==========================================================
+
+        proposta = (
+            Proposal.query
+            .filter(
+                Proposal.id
+                == proposta_id,
+
+                Proposal.demand_id
+                == demanda.id
+            )
+            .populate_existing()
+            .with_for_update()
+            .first()
+        )
+
+        if not proposta:
+
+            db.session.rollback()
+
+            flash(
+                "Proposta não encontrada.",
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "propostas_recebidas",
+                    demanda_id=demanda.id
+                )
+            )
+
+        # ==========================================================
+        # ESTADO DA DEMANDA — SOB LOCK
+        # ==========================================================
+
+        status_demanda = (
+            demanda.status
+            or ""
+        ).strip().lower()
+
+        if (
+            status_demanda
+            != "publicada"
+        ):
+
+            db.session.rollback()
+
+            flash(
+                (
+                    "Esta demanda não está mais aberta "
+                    "para negociação de propostas."
+                ),
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "propostas_recebidas",
+                    demanda_id=demanda.id
+                )
+            )
+
+        # ==========================================================
+        # ESTADO DA PROPOSTA — SOB LOCK
+        # ==========================================================
+
+        status_proposta = (
+            proposta.status
+            or ""
+        ).strip().lower()
+
+        # ==========================================================
+        # IDEMPOTÊNCIA
+        #
+        # Se a solicitação já foi registrada, uma segunda requisição
+        # não pode criar outra ProposalInteraction.
+        # ==========================================================
+
+        if (
+            status_proposta
+            == "ajuste_solicitado"
+        ):
+
+            db.session.rollback()
+
+            flash(
+                (
+                    "Já existe uma solicitação de ajuste "
+                    "pendente para esta proposta."
+                ),
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "propostas_recebidas",
+                    demanda_id=demanda.id
+                )
+            )
+
+        # ==========================================================
+        # TRANSIÇÃO PERMITIDA
+        #
+        # enviada
+        #    ↓
+        # ajuste_solicitado
+        # ==========================================================
+
+        if (
+            status_proposta
+            != "enviada"
+        ):
+
+            db.session.rollback()
+
+            flash(
+                (
+                    "Não é possível solicitar ajuste desta "
+                    "proposta no status atual."
+                ),
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "propostas_recebidas",
+                    demanda_id=demanda.id
+                )
+            )
+
+        # ==========================================================
+        # PROTEÇÃO CONTRA PEDIDO EXISTENTE
+        # ==========================================================
+
+        pedido_existente = (
+            Order.query
+            .filter_by(
+                demand_id=demanda.id
+            )
+            .first()
+        )
+
+        if pedido_existente:
+
+            db.session.rollback()
+
+            flash(
+                (
+                    f"Esta demanda já originou o pedido "
+                    f"{pedido_existente.codigo} "
+                    "e não aceita novos ajustes comerciais."
+                ),
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "propostas_recebidas",
+                    demanda_id=demanda.id
+                )
+            )
+
+        # ==========================================================
+        # SOLICITAÇÃO DE AJUSTE
+        # ==========================================================
+
+        proposta.status = (
+            "ajuste_solicitado"
+        )
+
+        # ==========================================================
+        # HISTÓRICO COMERCIAL
+        # ==========================================================
+
+        interacao = ProposalInteraction(
+            proposal_id=proposta.id,
+            actor_role="comprador",
+            action="ajuste_solicitado",
+            message=mensagem
+        )
+
+        db.session.add(
+            interacao
+        )
+
+        # ==========================================================
+        # COMMIT ÚNICO
+        #
+        # Proposal.status + ProposalInteraction são persistidos
+        # atomicamente.
+        # ==========================================================
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        current_app.logger.exception(
+            (
+                "[PROPOSTA] Falha ao solicitar ajuste. "
+                f"proposta_id={proposta_id} "
+                f"user_id={getattr(usuario, 'id', None)}"
+            )
+        )
+
+        flash(
+            "Não foi possível solicitar o ajuste agora.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "propostas_recebidas",
+                demanda_id=demanda_id
+            )
+        )
+
+    # ==============================================================
+    # SUCESSO
+    # ==============================================================
+
+    flash(
+        "Solicitação de ajuste enviada à malharia.",
+        "success"
+    )
+
+    return redirect(
+        url_for(
+            "propostas_recebidas",
+            demanda_id=demanda.id
+        )
+    )
 # --------------------------------------------------------------------
 
 @app.post(
