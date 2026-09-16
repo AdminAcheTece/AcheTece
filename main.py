@@ -13550,11 +13550,21 @@ def solicitar_ajuste_proposta(
     "/comprador/propostas/<int:proposta_id>/gerar-pedido",
     endpoint="gerar_pedido"
 )
-def gerar_pedido(proposta_id):
+@limiter.limit(
+    "20 per hour",
+    key_func=_cliente_rate_limit_key
+)
+@limiter.limit(
+    "60 per day",
+    key_func=_cliente_rate_limit_key
+)
+def gerar_pedido(
+    proposta_id
+):
 
-    # --------------------------------------------------------------
-    # Autenticação do comprador
-    # --------------------------------------------------------------
+    # ==============================================================
+    # AUTENTICAÇÃO DO COMPRADOR
+    # ==============================================================
 
     user_id = session.get(
         "user_id"
@@ -13563,7 +13573,9 @@ def gerar_pedido(proposta_id):
     if not user_id:
 
         return redirect(
-            url_for("login")
+            url_for(
+                "login"
+            )
         )
 
     try:
@@ -13581,21 +13593,29 @@ def gerar_pedido(proposta_id):
         not usuario
         or usuario.is_active is False
         or (
-            usuario.role or ""
-        ).strip().lower() != "cliente"
+            usuario.role
+            or ""
+        ).strip().lower()
+        != "cliente"
     ):
 
         return redirect(
-            url_for("login")
+            url_for(
+                "login"
+            )
         )
 
-    # --------------------------------------------------------------
-    # Proposta
+    # ==============================================================
+    # REFERÊNCIA INICIAL DA PROPOSTA
     #
-    # Garante que pertence ao comprador logado.
-    # --------------------------------------------------------------
+    # Aqui apenas:
+    # - validamos ownership;
+    # - descobrimos demand_id.
+    #
+    # Nenhuma decisão comercial ocorre antes do lock da demanda.
+    # ==============================================================
 
-    proposta = (
+    proposta_inicial = (
         Proposal.query
         .join(
             ProductionRequest,
@@ -13612,7 +13632,9 @@ def gerar_pedido(proposta_id):
         .first()
     )
 
-    if not proposta:
+    if not proposta_inicial:
+
+        db.session.rollback()
 
         flash(
             "Proposta não encontrada.",
@@ -13620,190 +13642,288 @@ def gerar_pedido(proposta_id):
         )
 
         return redirect(
-            url_for("minhas_demandas")
-        )
-
-    # --------------------------------------------------------------
-    # Somente proposta ACEITA pode gerar pedido
-    # --------------------------------------------------------------
-
-    status_proposta = (
-        proposta.status or ""
-    ).strip().lower()
-
-    if status_proposta != "aceita":
-
-        flash(
-            (
-                "Somente uma proposta aceita "
-                "pode gerar um pedido."
-            ),
-            "warning"
-        )
-
-        return redirect(
             url_for(
-                "propostas_recebidas",
-                demanda_id=proposta.demand_id
+                "minhas_demandas"
             )
         )
 
-    # --------------------------------------------------------------
-    # Proteção contra pedido duplicado
-    # --------------------------------------------------------------
-
-    pedido_existente = (
-        Order.query
-        .filter_by(
-            proposal_id=proposta.id
-        )
-        .first()
+    demanda_id = (
+        proposta_inicial.demand_id
     )
 
-    if pedido_existente:
-
-        flash(
-            (
-                f"O pedido "
-                f"{pedido_existente.codigo} "
-                f"já foi criado para esta proposta."
-            ),
-            "warning"
-        )
-
-        return redirect(
-            url_for(
-                "propostas_recebidas",
-                demanda_id=proposta.demand_id
-            )
-        )
-
-    # --------------------------------------------------------------
-    # Proteção adicional:
-    # uma demanda só pode gerar um pedido
-    # --------------------------------------------------------------
-
-    pedido_da_demanda = (
-        Order.query
-        .filter_by(
-            demand_id=proposta.demand_id
-        )
-        .first()
-    )
-
-    if pedido_da_demanda:
-
-        flash(
-            (
-                f"A demanda já originou o pedido "
-                f"{pedido_da_demanda.codigo}."
-            ),
-            "warning"
-        )
-
-        return redirect(
-            url_for(
-                "propostas_recebidas",
-                demanda_id=proposta.demand_id
-            )
-        )
-
-    # --------------------------------------------------------------
-    # Demanda
-    # --------------------------------------------------------------
-
-    demanda = proposta.demanda
-
-    if not demanda:
-
-        flash(
-            "A demanda vinculada não foi encontrada.",
-            "warning"
-        )
-
-        return redirect(
-            url_for("minhas_demandas")
-        )
-
-    status_demanda = (
-        demanda.status or ""
-    ).strip().lower()
-
-    # --------------------------------------------------------------
-    # Para gerar o pedido, a demanda ainda precisa estar publicada.
-    # --------------------------------------------------------------
-
-    if status_demanda != "publicada":
-
-        flash(
-            (
-                "Esta demanda não está disponível "
-                "para geração de um novo pedido."
-            ),
-            "warning"
-        )
-
-        return redirect(
-            url_for(
-                "propostas_recebidas",
-                demanda_id=demanda.id
-            )
-        )
-
-    # --------------------------------------------------------------
-    # Malharia
-    # --------------------------------------------------------------
-
-    empresa = proposta.empresa
-
-    if not empresa:
-
-        flash(
-            "A malharia vinculada não foi encontrada.",
-            "warning"
-        )
-
-        return redirect(
-            url_for(
-                "propostas_recebidas",
-                demanda_id=demanda.id
-            )
-        )
-
-    # --------------------------------------------------------------
-    # Valor total contratado
-    # --------------------------------------------------------------
+    # ==============================================================
+    # TRANSAÇÃO / LOCK DA DEMANDA
+    #
+    # A ProductionRequest é o recurso compartilhado entre todas
+    # as decisões comerciais desta negociação.
+    # ==============================================================
 
     try:
 
-        valor_total = (
-            proposta.quantidade_kg
-            * proposta.preco_por_kg
-        )
+        demanda = (
+            ProductionRequest.query
+            .filter(
+                ProductionRequest.id
+                == demanda_id,
 
-    except Exception:
-
-        current_app.logger.exception(
-            "[PEDIDO] Falha ao calcular valor total."
-        )
-
-        flash(
-            "Não foi possível calcular o valor do pedido.",
-            "danger"
-        )
-
-        return redirect(
-            url_for(
-                "propostas_recebidas",
-                demanda_id=demanda.id
+                ProductionRequest.user_id
+                == usuario.id
             )
+            .with_for_update()
+            .first()
         )
 
-    # --------------------------------------------------------------
-    # Criação do pedido + consolidação da demanda
-    # --------------------------------------------------------------
+        if not demanda:
 
-    try:
+            db.session.rollback()
+
+            flash(
+                "A demanda vinculada não foi encontrada.",
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "minhas_demandas"
+                )
+            )
+
+        # ==========================================================
+        # RECARREGA E TRAVA A PROPOSTA
+        #
+        # Ela foi consultada antes do lock apenas para descobrirmos
+        # a demanda. Agora precisamos do estado atual.
+        # ==========================================================
+
+        proposta = (
+            Proposal.query
+            .filter(
+                Proposal.id
+                == proposta_id,
+
+                Proposal.demand_id
+                == demanda.id
+            )
+            .populate_existing()
+            .with_for_update()
+            .first()
+        )
+
+        if not proposta:
+
+            db.session.rollback()
+
+            flash(
+                "Proposta não encontrada.",
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "propostas_recebidas",
+                    demanda_id=demanda.id
+                )
+            )
+
+        # ==========================================================
+        # IDEMPOTÊNCIA — PEDIDO JÁ EXISTENTE
+        #
+        # Esta verificação ocorre SOB O LOCK DA DEMANDA.
+        #
+        # Assim, duas requisições concorrentes não conseguem
+        # concluir a verificação simultaneamente.
+        # ==========================================================
+
+        pedido_existente = (
+            Order.query
+            .filter(
+                Order.proposal_id
+                == proposta.id
+            )
+            .first()
+        )
+
+        if pedido_existente:
+
+            db.session.rollback()
+
+            flash(
+                (
+                    f"O pedido "
+                    f"{pedido_existente.codigo} "
+                    "já foi criado para esta proposta."
+                ),
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "propostas_recebidas",
+                    demanda_id=demanda.id
+                )
+            )
+
+        # ==========================================================
+        # GARANTIA:
+        # UMA DEMANDA → UM PEDIDO
+        # ==========================================================
+
+        pedido_da_demanda = (
+            Order.query
+            .filter(
+                Order.demand_id
+                == demanda.id
+            )
+            .first()
+        )
+
+        if pedido_da_demanda:
+
+            db.session.rollback()
+
+            flash(
+                (
+                    f"A demanda já originou o pedido "
+                    f"{pedido_da_demanda.codigo}."
+                ),
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "propostas_recebidas",
+                    demanda_id=demanda.id
+                )
+            )
+
+        # ==========================================================
+        # SOMENTE PROPOSTA ACEITA
+        # ==========================================================
+
+        status_proposta = (
+            proposta.status
+            or ""
+        ).strip().lower()
+
+        if (
+            status_proposta
+            != "aceita"
+        ):
+
+            db.session.rollback()
+
+            flash(
+                (
+                    "Somente uma proposta aceita "
+                    "pode gerar um pedido."
+                ),
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "propostas_recebidas",
+                    demanda_id=demanda.id
+                )
+            )
+
+        # ==========================================================
+        # DEMANDA PRECISA CONTINUAR PUBLICADA
+        # ==========================================================
+
+        status_demanda = (
+            demanda.status
+            or ""
+        ).strip().lower()
+
+        if (
+            status_demanda
+            != "publicada"
+        ):
+
+            db.session.rollback()
+
+            flash(
+                (
+                    "Esta demanda não está disponível "
+                    "para geração de um novo pedido."
+                ),
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "propostas_recebidas",
+                    demanda_id=demanda.id
+                )
+            )
+
+        # ==========================================================
+        # MALHARIA
+        # ==========================================================
+
+        empresa = (
+            Empresa.query
+            .filter(
+                Empresa.id
+                == proposta.empresa_id
+            )
+            .first()
+        )
+
+        if not empresa:
+
+            db.session.rollback()
+
+            flash(
+                "A malharia vinculada não foi encontrada.",
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "propostas_recebidas",
+                    demanda_id=demanda.id
+                )
+            )
+
+        # ==========================================================
+        # VALOR TOTAL CONTRATADO
+        # ==========================================================
+
+        try:
+
+            valor_total = (
+                proposta.quantidade_kg
+                * proposta.preco_por_kg
+            )
+
+        except Exception:
+
+            db.session.rollback()
+
+            current_app.logger.exception(
+                (
+                    "[PEDIDO] Falha ao calcular valor total. "
+                    f"proposta_id={proposta_id}"
+                )
+            )
+
+            flash(
+                "Não foi possível calcular o valor do pedido.",
+                "danger"
+            )
+
+            return redirect(
+                url_for(
+                    "propostas_recebidas",
+                    demanda_id=demanda.id
+                )
+            )
+
+        # ==========================================================
+        # CRIAÇÃO DO PEDIDO
+        # ==========================================================
 
         pedido = Order(
             proposal_id=proposta.id,
@@ -13833,9 +13953,9 @@ def gerar_pedido(proposta_id):
             pedido
         )
 
-        # ----------------------------------------------------------
-        # Precisamos do ID para gerar ATP-000001
-        # ----------------------------------------------------------
+        # ==========================================================
+        # ID NECESSÁRIO PARA ATP-000001
+        # ==========================================================
 
         db.session.flush()
 
@@ -13846,7 +13966,7 @@ def gerar_pedido(proposta_id):
         # ==========================================================
         # HISTÓRICO OPERACIONAL — PEDIDO CRIADO
         # ==========================================================
-        
+
         evento_pedido_criado = OrderEvent(
             order_id=pedido.id,
             actor_role="sistema",
@@ -13858,22 +13978,21 @@ def gerar_pedido(proposta_id):
                 "foi criado a partir da proposta aceita."
             )
         )
-        
+
         db.session.add(
             evento_pedido_criado
         )
 
         # ==========================================================
-        # DEMANDA PASSA PARA CONTRATADA
+        # DEMANDA → CONTRATADA
         # ==========================================================
 
-        demanda.status = "contratada"
+        demanda.status = (
+            "contratada"
+        )
 
         # ==========================================================
-        # ENCERRA AS OUTRAS PROPOSTAS
-        #
-        # Elas continuam armazenadas no banco para histórico,
-        # porém não estão mais concorrendo pela demanda.
+        # ENCERRA PROPOSTAS CONCORRENTES
         # ==========================================================
 
         propostas_concorrentes = (
@@ -13907,8 +14026,8 @@ def gerar_pedido(proposta_id):
                 actor_role="sistema",
                 action="nao_selecionada",
                 message=(
-                    f"Proposta encerrada após a "
-                    f"contratação do pedido "
+                    "Proposta encerrada após a "
+                    "contratação do pedido "
                     f"{pedido.codigo}."
                 )
             )
@@ -13918,26 +14037,27 @@ def gerar_pedido(proposta_id):
             )
 
         # ==========================================================
-        # ENCERRA TODAS AS OPORTUNIDADES DA DEMANDA
-        #
-        # A negociação agora migra para o módulo de Pedidos.
+        # ENCERRA OPORTUNIDADES
         # ==========================================================
 
         oportunidades = (
             Opportunity.query
-            .filter_by(
-                demand_id=demanda.id
+            .filter(
+                Opportunity.demand_id
+                == demanda.id
             )
             .all()
         )
 
         for oportunidade in oportunidades:
 
-            oportunidade.status = "inativa"
+            oportunidade.status = (
+                "inativa"
+            )
 
-        # ----------------------------------------------------------
-        # Histórico da proposta escolhida
-        # ----------------------------------------------------------
+        # ==========================================================
+        # HISTÓRICO DA PROPOSTA VENCEDORA
+        # ==========================================================
 
         interacao = ProposalInteraction(
             proposal_id=proposta.id,
@@ -13945,7 +14065,7 @@ def gerar_pedido(proposta_id):
             action="pedido_gerado",
             message=(
                 f"Pedido {pedido.codigo} "
-                f"gerado a partir da proposta aceita."
+                "gerado a partir da proposta aceita."
             )
         )
 
@@ -13953,9 +14073,11 @@ def gerar_pedido(proposta_id):
             interacao
         )
 
-        # ----------------------------------------------------------
-        # Salva tudo em uma única transação
-        # ----------------------------------------------------------
+        # ==========================================================
+        # COMMIT ÚNICO
+        #
+        # O lock somente é liberado depois deste commit.
+        # ==========================================================
 
         db.session.commit()
 
@@ -13964,7 +14086,11 @@ def gerar_pedido(proposta_id):
         db.session.rollback()
 
         current_app.logger.exception(
-            "[PEDIDO] Falha ao gerar pedido."
+            (
+                "[PEDIDO] Falha ao gerar pedido. "
+                f"proposta_id={proposta_id} "
+                f"user_id={getattr(usuario, 'id', None)}"
+            )
         )
 
         flash(
@@ -13975,18 +14101,18 @@ def gerar_pedido(proposta_id):
         return redirect(
             url_for(
                 "propostas_recebidas",
-                demanda_id=demanda.id
+                demanda_id=demanda_id
             )
         )
 
-    # --------------------------------------------------------------
-    # Sucesso
-    # --------------------------------------------------------------
+    # ==============================================================
+    # SUCESSO
+    # ==============================================================
 
     flash(
         (
             f"Pedido {pedido.codigo} "
-            f"criado com sucesso."
+            "criado com sucesso."
         ),
         "success"
     )
