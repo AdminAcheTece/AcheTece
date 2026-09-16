@@ -174,7 +174,49 @@
             line-height:1.55;
         }
 
-
+        /* =========================================================
+           FLASH / MENSAGENS
+        ========================================================= */
+        
+        .flash{
+            margin-bottom:18px;
+        
+            padding:13px 15px;
+        
+            border-radius:11px;
+        
+            font-size:13px;
+            font-weight:700;
+        }
+        
+        
+        .flash.success{
+            background:#EDF8EF;
+        
+            border:1px solid #B9DCBF;
+        
+            color:#256033;
+        }
+        
+        
+        .flash.warning{
+            background:#FFF7E7;
+        
+            border:1px solid #E8D49B;
+        
+            color:#755614;
+        }
+        
+        
+        .flash.danger,
+        .flash.error{
+            background:var(--red-bg);
+        
+            border:1px solid #EAB5BD;
+        
+            color:var(--red);
+        }
+        
         /* =========================================================
            DEMANDA
         ========================================================= */
@@ -1155,7 +1197,30 @@
 
     </p>
 
-
+    <!-- =========================================================
+         FLASH / MENSAGENS
+    ========================================================== -->
+    
+    {% with messages =
+        get_flashed_messages(
+            with_categories=true
+        )
+    %}
+    
+        {% if messages %}
+    
+            {% for category, message in messages %}
+    
+                <div class="flash {{ category }}">
+                    {{ message }}
+                </div>
+    
+            {% endfor %}
+    
+        {% endif %}
+    
+    {% endwith %}
+    
     <!-- =========================================================
          CONTEXTO DA DEMANDA
     ========================================================== -->
