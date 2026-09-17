@@ -738,6 +738,7 @@ textarea:focus{
 
     <textarea
         name="observacoes_tecnicas"
+        maxlength="2000"
         placeholder="Observações complementares para análise técnica..."
     >{{ requisito.observacoes_tecnicas if requisito and requisito.observacoes_tecnicas else '' }}</textarea>
 
