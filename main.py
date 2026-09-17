@@ -10986,38 +10986,111 @@ def configurar_matching(
         elastano_required = False
 
     # ==============================================================
-    # VERIFICAÇÃO NOVAMENTE ANTES DE GRAVAR
+    # TRANSAÇÃO / LOCK DA DEMANDA
     #
-    # Fazemos uma segunda verificação imediatamente antes
-    # da alteração do requisito técnico.
-    # ==============================================================
-
-    (
-        matching_bloqueado,
-        matching_bloqueio_motivo
-    ) = _verificar_bloqueio_matching(
-        demanda
-    )
-
-    if matching_bloqueado:
-
-        flash(
-            matching_bloqueio_motivo,
-            "warning"
-        )
-
-        return redirect(
-            url_for(
-                "detalhe_demanda",
-                demanda_id=demanda.id
-            )
-        )
-
-    # ==============================================================
-    # UPSERT
+    # ProductionRequest é a trava comum da configuração técnica.
+    #
+    # Isso serializa:
+    # - criação inicial do requisito;
+    # - atualizações simultâneas;
+    # - futuras operações que adotem o mesmo protocolo de lock.
     # ==============================================================
 
     try:
+
+        demanda = (
+            ProductionRequest.query
+            .filter(
+                ProductionRequest.id
+                == demanda_id,
+
+                ProductionRequest.user_id
+                == usuario.id
+            )
+            .populate_existing()
+            .with_for_update()
+            .first()
+        )
+
+        # ==========================================================
+        # DEMANDA NÃO ENCONTRADA / OWNERSHIP INCONSISTENTE
+        # ==========================================================
+
+        if not demanda:
+
+            db.session.rollback()
+
+            flash(
+                "Demanda não encontrada.",
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "minhas_demandas"
+                )
+            )
+
+        # ==========================================================
+        # VERIFICAÇÃO AUTORITATIVA SOB LOCK
+        #
+        # A verificação feita no início da rota continua útil
+        # para GET e para resposta rápida.
+        #
+        # Esta é a verificação definitiva antes da escrita.
+        # ==========================================================
+
+        (
+            matching_bloqueado,
+            matching_bloqueio_motivo
+        ) = _verificar_bloqueio_matching(
+            demanda
+        )
+
+        if matching_bloqueado:
+
+            db.session.rollback()
+
+            flash(
+                matching_bloqueio_motivo,
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "detalhe_demanda",
+                    demanda_id=demanda.id
+                )
+            )
+
+        # ==========================================================
+        # RECARREGA O REQUISITO DEPOIS DO LOCK
+        #
+        # Não confiamos no objeto "requisito" carregado antes.
+        #
+        # Exemplo:
+        # - duas abas abriram quando ainda não havia requisito;
+        # - a primeira cria e faz commit;
+        # - a segunda espera o lock;
+        # - quando entrar aqui, encontra o requisito criado pela
+        #   primeira e passa a ATUALIZÁ-LO, em vez de tentar criar
+        #   uma segunda linha.
+        # ==========================================================
+
+        requisito = (
+            DemandTechnicalRequirement.query
+            .filter(
+                DemandTechnicalRequirement.demand_id
+                == demanda.id
+            )
+            .populate_existing()
+            .with_for_update()
+            .first()
+        )
+
+        # ==========================================================
+        # UPSERT
+        # ==========================================================
 
         if not requisito:
 
@@ -11030,6 +11103,10 @@ def configurar_matching(
             db.session.add(
                 requisito
             )
+
+        # ==========================================================
+        # APLICA A CONFIGURAÇÃO VALIDADA
+        # ==========================================================
 
         requisito.tipo_tear = (
             tipo_tear
@@ -11073,6 +11150,13 @@ def configurar_matching(
             or None
         )
 
+        # ==========================================================
+        # COMMIT ÚNICO
+        #
+        # A trava da ProductionRequest somente é liberada depois
+        # deste commit.
+        # ==========================================================
+
         db.session.commit()
 
     except Exception:
@@ -11080,7 +11164,12 @@ def configurar_matching(
         db.session.rollback()
 
         current_app.logger.exception(
-            "[MATCHING] Falha ao salvar requisitos técnicos."
+            (
+                "[MATCHING] Falha ao salvar "
+                "requisitos técnicos. "
+                f"demanda_id={demanda_id} "
+                f"user_id={getattr(usuario, 'id', None)}"
+            )
         )
 
         flash(
@@ -11091,7 +11180,7 @@ def configurar_matching(
         return redirect(
             url_for(
                 "configurar_matching",
-                demanda_id=demanda.id
+                demanda_id=demanda_id
             )
         )
 
