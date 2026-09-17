@@ -11204,7 +11204,17 @@ def configurar_matching(
     "/comprador/demandas/<int:demanda_id>/matching/executar",
     endpoint="executar_matching"
 )
-def executar_matching(demanda_id):
+@limiter.limit(
+    "20 per hour",
+    key_func=_cliente_rate_limit_key
+)
+@limiter.limit(
+    "60 per day",
+    key_func=_cliente_rate_limit_key
+)
+def executar_matching(
+    demanda_id
+):
 
     # ==============================================================
     # AUTENTICAÇÃO
