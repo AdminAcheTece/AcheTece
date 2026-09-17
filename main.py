@@ -10630,26 +10630,96 @@ def configurar_matching(
     # HELPERS
     # ==============================================================
 
-    def _int_or_none(valor):
+    def _parse_optional_int(
+        campo,
+        rotulo,
+        minimo
+    ):
 
-        valor = (
-            valor
+        texto = (
+            request.form.get(
+                campo
+            )
             or ""
         ).strip()
 
-        if not valor:
+        # Campo opcional realmente vazio.
+        if not texto:
 
-            return None
+            return (
+                None,
+                None
+            )
+
+        # Somente inteiro decimal positivo / zero.
+        #
+        # Rejeita, por exemplo:
+        # abc
+        # 1.5
+        # 1e3
+        # -10
+        # +10
+        if (
+            len(texto) > 10
+            or re.fullmatch(
+                r"[0-9]+",
+                texto
+            )
+            is None
+        ):
+
+            return (
+                None,
+                (
+                    f"{rotulo} deve ser informado "
+                    "como número inteiro."
+                )
+            )
 
         try:
 
-            return int(
-                valor
+            valor = int(
+                texto,
+                10
             )
 
-        except Exception:
+        except (
+            TypeError,
+            ValueError,
+            OverflowError
+        ):
 
-            return None
+            return (
+                None,
+                (
+                    f"{rotulo} possui um valor inválido."
+                )
+            )
+
+        if valor < minimo:
+
+            return (
+                None,
+                (
+                    f"{rotulo} deve ser maior ou igual "
+                    f"a {minimo}."
+                )
+            )
+
+        # Os campos correspondentes são db.Integer.
+        if valor > 2147483647:
+
+            return (
+                None,
+                (
+                    f"{rotulo} excede o limite permitido."
+                )
+            )
+
+        return (
+            valor,
+            None
+        )
 
     # ==============================================================
     # DADOS DO FORMULÁRIO
@@ -10661,54 +10731,6 @@ def configurar_matching(
         )
         or ""
     ).strip().upper()
-
-    finura_min = _int_or_none(
-        request.form.get(
-            "finura_min"
-        )
-    )
-
-    finura_max = _int_or_none(
-        request.form.get(
-            "finura_max"
-        )
-    )
-
-    diametro_min = _int_or_none(
-        request.form.get(
-            "diametro_min"
-        )
-    )
-
-    diametro_max = _int_or_none(
-        request.form.get(
-            "diametro_max"
-        )
-    )
-
-    alimentadores_min = (
-        _int_or_none(
-            request.form.get(
-                "alimentadores_min"
-            )
-        )
-    )
-
-    pistas_cilindro_min = (
-        _int_or_none(
-            request.form.get(
-                "pistas_cilindro_min"
-            )
-        )
-    )
-
-    pistas_disco_min = (
-        _int_or_none(
-            request.form.get(
-                "pistas_disco_min"
-            )
-        )
-    )
 
     elastano_raw = (
         request.form.get(
@@ -10723,6 +10745,169 @@ def configurar_matching(
         )
         or ""
     ).strip()
+
+    # ==============================================================
+    # CAMPOS INTEIROS
+    # ==============================================================
+
+    campos_numericos = (
+        (
+            "finura_min",
+            "Finura mínima",
+            1
+        ),
+        (
+            "finura_max",
+            "Finura máxima",
+            1
+        ),
+        (
+            "diametro_min",
+            "Diâmetro mínimo",
+            1
+        ),
+        (
+            "diametro_max",
+            "Diâmetro máximo",
+            1
+        ),
+        (
+            "alimentadores_min",
+            "Alimentadores mínimos",
+            0
+        ),
+        (
+            "pistas_cilindro_min",
+            "Pistas cilindro mínimas",
+            0
+        ),
+        (
+            "pistas_disco_min",
+            "Pistas disco mínimas",
+            0
+        ),
+    )
+
+    valores_numericos = {}
+
+    for (
+        campo,
+        rotulo,
+        minimo
+    ) in campos_numericos:
+
+        valor, erro = (
+            _parse_optional_int(
+                campo,
+                rotulo,
+                minimo
+            )
+        )
+
+        if erro:
+
+            flash(
+                erro,
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "configurar_matching",
+                    demanda_id=demanda.id
+                )
+            )
+
+        valores_numericos[
+            campo
+        ] = valor
+
+    finura_min = (
+        valores_numericos[
+            "finura_min"
+        ]
+    )
+
+    finura_max = (
+        valores_numericos[
+            "finura_max"
+        ]
+    )
+
+    diametro_min = (
+        valores_numericos[
+            "diametro_min"
+        ]
+    )
+
+    diametro_max = (
+        valores_numericos[
+            "diametro_max"
+        ]
+    )
+
+    alimentadores_min = (
+        valores_numericos[
+            "alimentadores_min"
+        ]
+    )
+
+    pistas_cilindro_min = (
+        valores_numericos[
+            "pistas_cilindro_min"
+        ]
+    )
+
+    pistas_disco_min = (
+        valores_numericos[
+            "pistas_disco_min"
+        ]
+    )
+
+    # ==============================================================
+    # ELASTANO — VALOR PERMITIDO
+    # ==============================================================
+
+    if elastano_raw not in {
+        "",
+        "sim",
+        "nao"
+    }:
+
+        flash(
+            "Selecione uma opção válida para elastano.",
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "configurar_matching",
+                demanda_id=demanda.id
+            )
+        )
+
+    # ==============================================================
+    # OBSERVAÇÃO TÉCNICA
+    # ==============================================================
+
+    if len(
+        observacoes_tecnicas
+    ) > 2000:
+
+        flash(
+            (
+                "A observação técnica deve possuir "
+                "no máximo 2.000 caracteres."
+            ),
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "configurar_matching",
+                demanda_id=demanda.id
+            )
+        )
 
     # ==============================================================
     # TIPO DE TEAR
