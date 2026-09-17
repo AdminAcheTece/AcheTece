@@ -11227,14 +11227,18 @@ def executar_matching(
     if not user_id:
 
         return redirect(
-            url_for("login")
+            url_for(
+                "login"
+            )
         )
 
     try:
 
         usuario = db.session.get(
             Usuario,
-            int(user_id)
+            int(
+                user_id
+            )
         )
 
     except Exception:
@@ -11252,178 +11256,199 @@ def executar_matching(
     ):
 
         return redirect(
-            url_for("login")
-        )
-
-    # ==============================================================
-    # DEMANDA
-    # ==============================================================
-
-    demanda = (
-        ProductionRequest.query
-        .filter_by(
-            id=demanda_id,
-            user_id=usuario.id
-        )
-        .first()
-    )
-
-    if not demanda:
-
-        flash(
-            "Demanda não encontrada.",
-            "warning"
-        )
-
-        return redirect(
-            url_for("minhas_demandas")
-        )
-
-    # ==============================================================
-    # BLINDAGEM DO MATCHING
-    #
-    # A mesma regra vale para configuração e execução.
-    # ==============================================================
-
-    (
-        matching_bloqueado,
-        matching_bloqueio_motivo
-    ) = _verificar_bloqueio_matching(
-        demanda
-    )
-
-    if matching_bloqueado:
-
-        flash(
-            matching_bloqueio_motivo,
-            "warning"
-        )
-
-        return redirect(
             url_for(
-                "detalhe_demanda",
-                demanda_id=demanda.id
+                "login"
             )
         )
 
     # ==============================================================
-    # REQUISITOS TÉCNICOS
-    # ==============================================================
-
-    requisito = (
-        DemandTechnicalRequirement.query
-        .filter_by(
-            demand_id=demanda.id
-        )
-        .first()
-    )
-
-    if not requisito:
-
-        flash(
-            "Configure os requisitos técnicos antes de executar o matching.",
-            "warning"
-        )
-
-        return redirect(
-            url_for(
-                "configurar_matching",
-                demanda_id=demanda.id
-            )
-        )
-
-    # ==============================================================
-    # SEGUNDA VERIFICAÇÃO ANTES DO RECÁLCULO
-    # ==============================================================
-
-    (
-        matching_bloqueado,
-        matching_bloqueio_motivo
-    ) = _verificar_bloqueio_matching(
-        demanda
-    )
-
-    if matching_bloqueado:
-
-        flash(
-            matching_bloqueio_motivo,
-            "warning"
-        )
-
-        return redirect(
-            url_for(
-                "detalhe_demanda",
-                demanda_id=demanda.id
-            )
-        )
-
-    # ==============================================================
-    # TEARES
-    # ==============================================================
-
-    teares = (
-        Tear.query
-        .order_by(
-            Tear.id.asc()
-        )
-        .all()
-    )
-
-    total_analisados = len(
-        teares
-    )
-
-    total_compativeis = 0
-
-    # ==============================================================
-    # RESUMO POR EMPRESA
-    # ==============================================================
-
-    resumo_empresas = {}
-
-    # ==============================================================
-    # RECÁLCULO
-    # ==============================================================
+    # TRANSAÇÃO / LOCK DA DEMANDA
     #
-    # IMPORTANTE:
+    # A ProductionRequest é a trava comum entre:
     #
-    # DemandMatch também funciona como histórico técnico.
+    # - configurar matching;
+    # - executar matching;
+    # - decisões comerciais do comprador que já adotaram
+    #   o mesmo protocolo.
     #
-    # Portanto, um recálculo NÃO deve apagar fisicamente os
-    # matches anteriores.
-    #
-    # Fluxo:
-    #
-    # 1. carrega os matches já existentes da demanda;
-    # 2. marca os matches anteriormente ativos como descartados;
-    # 3. recalcula todos os teares;
-    # 4. se um tear continuar compatível, reutiliza o registro
-    #    existente e volta seu status para "ativo";
-    # 5. se for um tear nunca antes compatível, cria novo registro;
-    # 6. matches que deixaram de ser compatíveis permanecem
-    #    como "descartado", preservando o histórico.
-    #
-    # Dessa forma também preservamos a integridade de:
-    #
-    #     DemandMatch.tear_id
-    #         ↓
-    #     Tear.id
-    #
-    # e a exclusão definitiva do tear continua bloqueada depois
-    # que ele tiver participado de qualquer matching.
+    # Duas execuções da mesma demanda não podem recalcular
+    # simultaneamente.
     # ==============================================================
 
     try:
 
+        demanda = (
+            ProductionRequest.query
+            .filter(
+                ProductionRequest.id
+                == demanda_id,
+
+                ProductionRequest.user_id
+                == usuario.id
+            )
+            .populate_existing()
+            .with_for_update()
+            .first()
+        )
+
+        # ==========================================================
+        # DEMANDA / OWNERSHIP
+        # ==========================================================
+
+        if not demanda:
+
+            db.session.rollback()
+
+            flash(
+                "Demanda não encontrada.",
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "minhas_demandas"
+                )
+            )
+
+        # ==========================================================
+        # BLINDAGEM DO MATCHING — SOB LOCK
+        # ==========================================================
+
+        (
+            matching_bloqueado,
+            matching_bloqueio_motivo
+        ) = _verificar_bloqueio_matching(
+            demanda
+        )
+
+        if matching_bloqueado:
+
+            db.session.rollback()
+
+            flash(
+                matching_bloqueio_motivo,
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "detalhe_demanda",
+                    demanda_id=demanda.id
+                )
+            )
+
+        # ==========================================================
+        # REQUISITOS TÉCNICOS — ESTADO ATUAL
+        #
+        # configurar_matching() também trava primeiro a demanda.
+        #
+        # Portanto:
+        #
+        # - se a configuração estiver sendo salva, esperamos;
+        # - depois lemos os requisitos já confirmados;
+        # - a configuração não pode mudar no meio do recálculo.
+        # ==========================================================
+
+        requisito = (
+            DemandTechnicalRequirement.query
+            .filter(
+                DemandTechnicalRequirement.demand_id
+                == demanda.id
+            )
+            .populate_existing()
+            .with_for_update()
+            .first()
+        )
+
+        if not requisito:
+
+            db.session.rollback()
+
+            flash(
+                (
+                    "Configure os requisitos técnicos "
+                    "antes de executar o matching."
+                ),
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "configurar_matching",
+                    demanda_id=demanda.id
+                )
+            )
+
+        # ==========================================================
+        # SEGUNDA BLINDAGEM
+        #
+        # Mantemos a validação imediatamente antes do recálculo.
+        # ==============================================================
+
+        (
+            matching_bloqueado,
+            matching_bloqueio_motivo
+        ) = _verificar_bloqueio_matching(
+            demanda
+        )
+
+        if matching_bloqueado:
+
+            db.session.rollback()
+
+            flash(
+                matching_bloqueio_motivo,
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "detalhe_demanda",
+                    demanda_id=demanda.id
+                )
+            )
+
+        # ==========================================================
+        # TEARES
+        # ==============================================================
+
+        teares = (
+            Tear.query
+            .order_by(
+                Tear.id.asc()
+            )
+            .all()
+        )
+
+        total_analisados = len(
+            teares
+        )
+
+        total_compativeis = 0
+
+        # ==========================================================
+        # RESUMO POR EMPRESA
+        # ==============================================================
+
+        resumo_empresas = {}
+
         # ==========================================================
         # MATCHES JÁ EXISTENTES
+        #
+        # Também bloqueamos os registros técnicos que serão
+        # eventualmente alterados.
         # ==========================================================
 
         matches_existentes = (
             DemandMatch.query
-            .filter_by(
-                demand_id=demanda.id
+            .filter(
+                DemandMatch.demand_id
+                == demanda.id
             )
+            .order_by(
+                DemandMatch.id.asc()
+            )
+            .with_for_update()
             .all()
         )
 
@@ -11432,14 +11457,16 @@ def executar_matching(
             for match in matches_existentes
         }
 
-        # ----------------------------------------------------------
-        # Estado inicial do recálculo
+        # ==========================================================
+        # ESTADO INICIAL DO RECÁLCULO
         #
-        # Somente matches atualmente ativos são rebaixados para
-        # descartado.
+        # Não apagamos histórico.
         #
-        # Se continuarem compatíveis, serão reativados logo abaixo.
-        # ----------------------------------------------------------
+        # Somente matches atualmente ativos são inicialmente
+        # rebaixados para descartado.
+        #
+        # Os que continuarem compatíveis voltarão a ativo.
+        # ==========================================================
 
         for match in matches_existentes:
 
@@ -11448,7 +11475,10 @@ def executar_matching(
                 or ""
             ).strip().lower()
 
-            if status_match == "ativo":
+            if (
+                status_match
+                == "ativo"
+            ):
 
                 match.status = (
                     "descartado"
@@ -11492,14 +11522,7 @@ def executar_matching(
             )
 
             # ======================================================
-            # MATCH JÁ EXISTIA
-            #
-            # Reutilizamos o mesmo registro.
-            #
-            # Isso evita:
-            # - apagar histórico;
-            # - criar duplicidade demand_id + tear_id;
-            # - perder a referência histórica ao equipamento.
+            # MATCH JÁ EXISTENTE
             # ======================================================
 
             match_existente = (
@@ -11508,7 +11531,10 @@ def executar_matching(
                 )
             )
 
-            if match_existente is not None:
+            if (
+                match_existente
+                is not None
+            ):
 
                 match_existente.empresa_id = (
                     empresa.id
@@ -11527,7 +11553,7 @@ def executar_matching(
                 )
 
             # ======================================================
-            # PRIMEIRA PARTICIPAÇÃO DO TEAR NESTA DEMANDA
+            # PRIMEIRA PARTICIPAÇÃO DO TEAR
             # ======================================================
 
             else:
@@ -11556,8 +11582,7 @@ def executar_matching(
             # ======================================================
 
             resumo = (
-                resumo_empresas
-                .get(
+                resumo_empresas.get(
                     empresa.id
                 )
             )
@@ -11597,14 +11622,22 @@ def executar_matching(
                     ] = score
 
         # ==========================================================
-        # OPORTUNIDADES
-        # ==============================================================
+        # OPORTUNIDADES JÁ EXISTENTES
+        #
+        # Como podem ser atualizadas pelo recálculo, também são
+        # bloqueadas durante esta transação.
+        # ==========================================================
 
         oportunidades_existentes = (
             Opportunity.query
-            .filter_by(
-                demand_id=demanda.id
+            .filter(
+                Opportunity.demand_id
+                == demanda.id
             )
+            .order_by(
+                Opportunity.id.asc()
+            )
+            .with_for_update()
             .all()
         )
 
@@ -11621,9 +11654,9 @@ def executar_matching(
             resumo_empresas.keys()
         )
 
-        # ----------------------------------------------------------
-        # Cria ou atualiza oportunidades compatíveis
-        # ----------------------------------------------------------
+        # ==========================================================
+        # CRIA OU ATUALIZA OPORTUNIDADES COMPATÍVEIS
+        # ==========================================================
 
         for (
             empresa_id,
@@ -11631,11 +11664,14 @@ def executar_matching(
         ) in resumo_empresas.items():
 
             oportunidade = (
-                oportunidades_por_empresa
-                .get(
+                oportunidades_por_empresa.get(
                     empresa_id
                 )
             )
+
+            # ======================================================
+            # NOVA OPORTUNIDADE
+            # ======================================================
 
             if not oportunidade:
 
@@ -11655,6 +11691,14 @@ def executar_matching(
                     oportunidade
                 )
 
+                oportunidades_por_empresa[
+                    empresa_id
+                ] = oportunidade
+
+            # ======================================================
+            # OPORTUNIDADE JÁ EXISTENTE
+            # ======================================================
+
             else:
 
                 oportunidade.best_score = (
@@ -11670,12 +11714,17 @@ def executar_matching(
                 )
 
                 # --------------------------------------------------
-                # Somente oportunidades técnicas sem decisão
-                # comercial podem ser reativadas.
+                # Somente oportunidade técnica sem decisão
+                # comercial pode ser reativada.
                 # --------------------------------------------------
 
-                if (
+                status_oportunidade = (
                     oportunidade.status
+                    or ""
+                ).strip().lower()
+
+                if (
+                    status_oportunidade
                     == "inativa"
                 ):
 
@@ -11683,9 +11732,9 @@ def executar_matching(
                         "nova"
                     )
 
-        # ----------------------------------------------------------
-        # Empresas que deixaram de ser compatíveis
-        # ----------------------------------------------------------
+        # ==========================================================
+        # EMPRESAS QUE DEIXARAM DE SER COMPATÍVEIS
+        # ==========================================================
 
         for oportunidade in oportunidades_existentes:
 
@@ -11694,11 +11743,16 @@ def executar_matching(
                 not in empresas_compativeis
             ):
 
+                status_oportunidade = (
+                    oportunidade.status
+                    or ""
+                ).strip().lower()
+
                 # --------------------------------------------------
-                # Nunca sobrescreve uma decisão comercial.
+                # Nunca sobrescreve decisão comercial.
                 # --------------------------------------------------
 
-                if oportunidade.status in {
+                if status_oportunidade in {
                     "nova",
                     "visualizada"
                 }:
@@ -11709,7 +11763,14 @@ def executar_matching(
 
         # ==========================================================
         # COMMIT ÚNICO
-        # ==============================================================
+        #
+        # Somente aqui são liberados:
+        #
+        # - lock da ProductionRequest;
+        # - lock do requisito;
+        # - locks dos DemandMatch;
+        # - locks das Opportunity existentes.
+        # ==========================================================
 
         db.session.commit()
 
@@ -11718,8 +11779,12 @@ def executar_matching(
         db.session.rollback()
 
         current_app.logger.exception(
-            "[MATCHING] Falha ao executar Matching Técnico "
-            "e gerar oportunidades."
+            (
+                "[MATCHING] Falha ao executar Matching Técnico "
+                "e gerar oportunidades. "
+                f"demanda_id={demanda_id} "
+                f"user_id={getattr(usuario, 'id', None)}"
+            )
         )
 
         flash(
@@ -11730,7 +11795,7 @@ def executar_matching(
         return redirect(
             url_for(
                 "detalhe_demanda",
-                demanda_id=demanda.id
+                demanda_id=demanda_id
             )
         )
 
