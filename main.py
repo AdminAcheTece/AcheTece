@@ -9569,35 +9569,67 @@ def cadastro_comprador():
 )
 def nova_demanda():
 
-    user_id = session.get("user_id")
+    # ==============================================================
+    # AUTENTICAÇÃO
+    # ==============================================================
+
+    user_id = session.get(
+        "user_id"
+    )
 
     if not user_id:
-        return redirect(url_for("login"))
+
+        return redirect(
+            url_for(
+                "login"
+            )
+        )
 
     try:
+
         usuario = db.session.get(
             Usuario,
-            int(user_id)
+            int(
+                user_id
+            )
         )
+
     except Exception:
+
         usuario = None
 
     if (
         not usuario
         or usuario.is_active is False
-        or (usuario.role or "").strip().lower() != "cliente"
+        or (
+            usuario.role
+            or ""
+        ).strip().lower()
+        != "cliente"
     ):
+
         return redirect(
-            url_for("painel_comprador")
+            url_for(
+                "painel_comprador"
+            )
         )
 
+    # ==============================================================
+    # ESTADOS PERMITIDOS
+    # ==============================================================
+
     estados = [
-        "AC","AL","AM","AP","BA","CE","DF","ES","GO","MA",
-        "MG","MS","MT","PA","PB","PE","PI","PR","RJ","RN",
-        "RO","RR","RS","SC","SE","SP","TO"
+        "AC", "AL", "AM", "AP", "BA", "CE", "DF",
+        "ES", "GO", "MA", "MG", "MS", "MT", "PA",
+        "PB", "PE", "PI", "PR", "RJ", "RN", "RO",
+        "RR", "RS", "SC", "SE", "SP", "TO"
     ]
 
     form_data = {}
+
+    # ==============================================================
+    # GET — SOMENTE LEITURA
+    # ==============================================================
 
     if request.method == "GET":
 
@@ -9607,82 +9639,137 @@ def nova_demanda():
             form_data=form_data
         )
 
-    # --------------------------------------------------------------
-    # Dados recebidos
-    # --------------------------------------------------------------
+    # ==============================================================
+    # DADOS RECEBIDOS
+    # ==============================================================
 
     produto = (
-        request.form.get("produto")
+        request.form.get(
+            "produto"
+        )
         or ""
     ).strip()
 
     estrutura_malha = (
-        request.form.get("estrutura_malha")
+        request.form.get(
+            "estrutura_malha"
+        )
         or ""
     ).strip()
 
     composicao = (
-        request.form.get("composicao")
+        request.form.get(
+            "composicao"
+        )
         or ""
     ).strip()
 
     titulo_fio = (
-        request.form.get("titulo_fio")
+        request.form.get(
+            "titulo_fio"
+        )
         or ""
     ).strip()
 
     gramatura_raw = (
-        request.form.get("gramatura")
+        request.form.get(
+            "gramatura"
+        )
         or ""
     ).strip()
 
     quantidade_raw = (
-        request.form.get("quantidade_kg")
+        request.form.get(
+            "quantidade_kg"
+        )
         or ""
     ).strip()
 
     data_raw = (
-        request.form.get("data_necessidade")
+        request.form.get(
+            "data_necessidade"
+        )
         or ""
     ).strip()
 
     estado_preferencial = (
-        request.form.get("estado_preferencial")
+        request.form.get(
+            "estado_preferencial"
+        )
         or ""
     ).strip().upper()
 
     cidade_preferencial = (
-        request.form.get("cidade_preferencial")
+        request.form.get(
+            "cidade_preferencial"
+        )
         or ""
     ).strip()
 
     tipo_servico = (
-        request.form.get("tipo_servico")
+        request.form.get(
+            "tipo_servico"
+        )
         or ""
     ).strip()
 
     observacoes = (
-        request.form.get("observacoes")
+        request.form.get(
+            "observacoes"
+        )
         or ""
     ).strip()
 
+    # ==============================================================
+    # PRESERVA FORMULÁRIO EM CASO DE ERRO
+    # ==============================================================
+
     form_data = {
-        "produto": produto,
-        "estrutura_malha": estrutura_malha,
-        "composicao": composicao,
-        "titulo_fio": titulo_fio,
-        "gramatura": gramatura_raw,
-        "quantidade_kg": quantidade_raw,
-        "data_necessidade": data_raw,
-        "estado_preferencial": estado_preferencial,
-        "cidade_preferencial": cidade_preferencial,
-        "tipo_servico": tipo_servico,
-        "observacoes": observacoes,
+        "produto":
+            produto,
+
+        "estrutura_malha":
+            estrutura_malha,
+
+        "composicao":
+            composicao,
+
+        "titulo_fio":
+            titulo_fio,
+
+        "gramatura":
+            gramatura_raw,
+
+        "quantidade_kg":
+            quantidade_raw,
+
+        "data_necessidade":
+            data_raw,
+
+        "estado_preferencial":
+            estado_preferencial,
+
+        "cidade_preferencial":
+            cidade_preferencial,
+
+        "tipo_servico":
+            tipo_servico,
+
+        "observacoes":
+            observacoes,
     }
 
-    # --------------------------------------------------------------
-    # Validação
-    # --------------------------------------------------------------
+    def _render_form():
+
+        return render_template(
+            "nova_demanda.html",
+            estados=estados,
+            form_data=form_data
+        )
+
+    # ==============================================================
+    # PRODUTO OBRIGATÓRIO
+    # ==============================================================
 
     if not produto:
 
@@ -9691,92 +9778,377 @@ def nova_demanda():
             "warning"
         )
 
-        return render_template(
-            "nova_demanda.html",
-            estados=estados,
-            form_data=form_data
+        return _render_form()
+
+    # ==============================================================
+    # LIMITES DOS CAMPOS DE TEXTO
+    #
+    # Alinhados ao modelo ProductionRequest.
+    # ==============================================================
+
+    limites_texto = (
+        (
+            produto,
+            120,
+            "Produto"
+        ),
+        (
+            estrutura_malha,
+            120,
+            "Estrutura / tipo de malha"
+        ),
+        (
+            composicao,
+            180,
+            "Composição"
+        ),
+        (
+            titulo_fio,
+            100,
+            "Título do fio"
+        ),
+        (
+            cidade_preferencial,
+            100,
+            "Cidade preferencial"
+        ),
+    )
+
+    for (
+        valor,
+        limite,
+        rotulo
+    ) in limites_texto:
+
+        if len(
+            valor
+        ) > limite:
+
+            flash(
+                (
+                    f"{rotulo} deve possuir "
+                    f"no máximo {limite} caracteres."
+                ),
+                "warning"
+            )
+
+            return _render_form()
+
+    # ==============================================================
+    # QUANTIDADE
+    #
+    # Aceita:
+    #
+    # 5000
+    # 5000,50
+    # 5000.50
+    # 5.000
+    # 5.000,50
+    #
+    # Rejeita:
+    #
+    # 1e3
+    # NaN
+    # Infinity
+    # negativos
+    # mais de 2 casas decimais
+    # formatos ambíguos / inválidos
+    # ==============================================================
+
+    def _parse_quantidade(
+        valor
+    ):
+
+        texto = (
+            valor
+            or ""
+        ).strip().replace(
+            " ",
+            ""
         )
 
-    try:
+        if (
+            not texto
+            or len(texto) > 30
+            or "e" in texto.lower()
+        ):
 
-        quantidade_normalizada = (
+            return None
+
+        normalizado = None
+
+        # ----------------------------------------------------------
+        # FORMATO COM VÍRGULA
+        # ----------------------------------------------------------
+
+        if "," in texto:
+
+            # Exemplo:
+            # 5.000,50
+            if "." in texto:
+
+                if re.fullmatch(
+                    (
+                        r"[0-9]{1,3}"
+                        r"(?:\.[0-9]{3})+"
+                        r"(?:,[0-9]{1,2})?"
+                    ),
+                    texto
+                ) is None:
+
+                    return None
+
+                normalizado = (
+                    texto
+                    .replace(
+                        ".",
+                        ""
+                    )
+                    .replace(
+                        ",",
+                        "."
+                    )
+                )
+
+            # Exemplo:
+            # 5000,50
+            else:
+
+                if re.fullmatch(
+                    r"[0-9]+(?:,[0-9]{1,2})?",
+                    texto
+                ) is None:
+
+                    return None
+
+                normalizado = (
+                    texto.replace(
+                        ",",
+                        "."
+                    )
+                )
+
+        # ----------------------------------------------------------
+        # FORMATO COM PONTO
+        # ----------------------------------------------------------
+
+        elif "." in texto:
+
+            # Decimal internacional:
+            # 5000.50
+            if re.fullmatch(
+                r"[0-9]+\.[0-9]{1,2}",
+                texto
+            ):
+
+                normalizado = texto
+
+            # Milhar brasileiro:
+            # 5.000
+            # 1.250.000
+            elif re.fullmatch(
+                (
+                    r"[0-9]{1,3}"
+                    r"(?:\.[0-9]{3})+"
+                ),
+                texto
+            ):
+
+                normalizado = (
+                    texto.replace(
+                        ".",
+                        ""
+                    )
+                )
+
+            else:
+
+                return None
+
+        # ----------------------------------------------------------
+        # SOMENTE DÍGITOS
+        # ----------------------------------------------------------
+
+        else:
+
+            if re.fullmatch(
+                r"[0-9]+",
+                texto
+            ) is None:
+
+                return None
+
+            normalizado = texto
+
+        try:
+
+            numero = Decimal(
+                normalizado
+            )
+
+        except (
+            InvalidOperation,
+            ValueError,
+            TypeError
+        ):
+
+            return None
+
+        if not numero.is_finite():
+
+            return None
+
+        return numero
+
+    quantidade_kg = (
+        _parse_quantidade(
             quantidade_raw
-            .replace(".", "")
-            .replace(",", ".")
         )
+    )
 
-        quantidade_kg = Decimal(
-            quantidade_normalizada
-        )
-
-        if quantidade_kg <= 0:
-            raise InvalidOperation
-
-    except Exception:
+    if (
+        quantidade_kg is None
+        or quantidade_kg <= 0
+    ):
 
         flash(
             "Informe uma quantidade válida em kg.",
             "warning"
         )
 
-        return render_template(
-            "nova_demanda.html",
-            estados=estados,
-            form_data=form_data
+        return _render_form()
+
+    # ProductionRequest.quantidade_kg = Numeric(12, 2)
+    MAX_QUANTIDADE_KG = Decimal(
+        "9999999999.99"
+    )
+
+    if (
+        quantidade_kg
+        > MAX_QUANTIDADE_KG
+    ):
+
+        flash(
+            (
+                "A quantidade informada "
+                "ultrapassa o limite permitido."
+            ),
+            "warning"
         )
+
+        return _render_form()
+
+    # ==============================================================
+    # GRAMATURA
+    # ==============================================================
 
     gramatura = None
 
     if gramatura_raw:
 
-        try:
-            gramatura = int(
+        if (
+            len(
+                gramatura_raw
+            ) > 10
+            or re.fullmatch(
+                r"[0-9]+",
                 gramatura_raw
             )
-
-            if gramatura <= 0:
-                raise ValueError
-
-        except Exception:
+            is None
+        ):
 
             flash(
                 "Informe uma gramatura válida.",
                 "warning"
             )
 
-            return render_template(
-                "nova_demanda.html",
-                estados=estados,
-                form_data=form_data
+            return _render_form()
+
+        try:
+
+            gramatura = int(
+                gramatura_raw,
+                10
             )
+
+        except (
+            TypeError,
+            ValueError,
+            OverflowError
+        ):
+
+            flash(
+                "Informe uma gramatura válida.",
+                "warning"
+            )
+
+            return _render_form()
+
+        if not (
+            1
+            <= gramatura
+            <= 2000
+        ):
+
+            flash(
+                (
+                    "A gramatura deve estar "
+                    "entre 1 e 2.000 g/m²."
+                ),
+                "warning"
+            )
+
+            return _render_form()
+
+    # ==============================================================
+    # DATA NECESSÁRIA
+    # ==============================================================
 
     data_necessidade = None
 
     if data_raw:
 
-        try:
-
-            data_necessidade = datetime.strptime(
-                data_raw,
-                "%Y-%m-%d"
-            ).date()
-
-        except Exception:
+        if re.fullmatch(
+            r"[0-9]{4}-[0-9]{2}-[0-9]{2}",
+            data_raw
+        ) is None:
 
             flash(
                 "Informe uma data válida.",
                 "warning"
             )
 
-            return render_template(
-                "nova_demanda.html",
-                estados=estados,
-                form_data=form_data
+            return _render_form()
+
+        try:
+
+            data_necessidade = (
+                datetime.strptime(
+                    data_raw,
+                    "%Y-%m-%d"
+                ).date()
             )
+
+        except (
+            TypeError,
+            ValueError
+        ):
+
+            flash(
+                "Informe uma data válida.",
+                "warning"
+            )
+
+            return _render_form()
+
+    # ==============================================================
+    # ESTADO
+    # ==============================================================
 
     if (
         estado_preferencial
-        and estado_preferencial not in estados
+        and estado_preferencial
+        not in estados
     ):
 
         flash(
@@ -9784,31 +10156,90 @@ def nova_demanda():
             "warning"
         )
 
-        return render_template(
-            "nova_demanda.html",
-            estados=estados,
-            form_data=form_data
+        return _render_form()
+
+    # ==============================================================
+    # TIPO DE SERVIÇO
+    # ==============================================================
+
+    tipos_servico_validos = {
+        "",
+        "Somente tecimento",
+        "Tecimento e beneficiamento",
+        "Produto acabado",
+        "A definir",
+    }
+
+    if (
+        tipo_servico
+        not in tipos_servico_validos
+    ):
+
+        flash(
+            "Selecione um escopo de serviço válido.",
+            "warning"
         )
 
-    # --------------------------------------------------------------
-    # Grava a demanda
-    # --------------------------------------------------------------
+        return _render_form()
+
+    # ==============================================================
+    # OBSERVAÇÕES
+    # ==============================================================
+
+    if len(
+        observacoes
+    ) > 3000:
+
+        flash(
+            (
+                "As observações devem possuir "
+                "no máximo 3.000 caracteres."
+            ),
+            "warning"
+        )
+
+        return _render_form()
+
+    # ==============================================================
+    # GRAVAÇÃO
+    # ==============================================================
 
     try:
 
         demanda = ProductionRequest(
             user_id=usuario.id,
             produto=produto,
-            estrutura_malha=estrutura_malha or None,
-            composicao=composicao or None,
-            titulo_fio=titulo_fio or None,
+            estrutura_malha=(
+                estrutura_malha
+                or None
+            ),
+            composicao=(
+                composicao
+                or None
+            ),
+            titulo_fio=(
+                titulo_fio
+                or None
+            ),
             gramatura=gramatura,
             quantidade_kg=quantidade_kg,
             data_necessidade=data_necessidade,
-            estado_preferencial=estado_preferencial or None,
-            cidade_preferencial=cidade_preferencial or None,
-            tipo_servico=tipo_servico or None,
-            observacoes=observacoes or None,
+            estado_preferencial=(
+                estado_preferencial
+                or None
+            ),
+            cidade_preferencial=(
+                cidade_preferencial
+                or None
+            ),
+            tipo_servico=(
+                tipo_servico
+                or None
+            ),
+            observacoes=(
+                observacoes
+                or None
+            ),
             status="rascunho"
         )
 
@@ -9816,13 +10247,15 @@ def nova_demanda():
             demanda
         )
 
-        # Precisamos do ID para formar o código público.
+        # Precisamos do ID para gerar o código público.
         db.session.flush()
 
         demanda.codigo = (
             f"ATD-{demanda.id:06d}"
         )
 
+        # ProductionRequest + código ATD entram
+        # no mesmo commit.
         db.session.commit()
 
     except Exception:
@@ -9830,7 +10263,10 @@ def nova_demanda():
         db.session.rollback()
 
         current_app.logger.exception(
-            "[DEMANDA] Falha ao criar demanda."
+            (
+                "[DEMANDA] Falha ao criar demanda. "
+                f"user_id={getattr(usuario, 'id', None)}"
+            )
         )
 
         flash(
@@ -9838,21 +10274,21 @@ def nova_demanda():
             "danger"
         )
 
-        return render_template(
-            "nova_demanda.html",
-            estados=estados,
-            form_data=form_data
-        )
+        return _render_form()
 
     flash(
-        f"Demanda {demanda.codigo} criada com sucesso.",
+        (
+            f"Demanda {demanda.codigo} "
+            "criada com sucesso."
+        ),
         "success"
     )
 
     return redirect(
-        url_for("painel_comprador")
+        url_for(
+            "painel_comprador"
+        )
     )
-
 # --------------------------------------------------------------------
 # Minhas Demandas - AcheTece 2.0
 # --------------------------------------------------------------------
