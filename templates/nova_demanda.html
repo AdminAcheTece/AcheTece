@@ -278,6 +278,105 @@
             name="creation_token"
             value="{{ creation_token }}"
         >
+
+# ==============================================================
+# VALIDAÇÃO DO TOKEN DE IDEMPOTÊNCIA
+# ==============================================================
+
+if (
+    len(creation_token) != 64
+    or re.fullmatch(
+        r"[0-9a-f]{64}",
+        creation_token
+    )
+    is None
+):
+
+    current_app.logger.warning(
+        (
+            "[DEMANDA] creation_token inválido. "
+            f"user_id={getattr(usuario, 'id', None)}"
+        )
+    )
+
+    flash(
+        (
+            "Este formulário não é mais válido. "
+            "Abra uma nova demanda e tente novamente."
+        ),
+        "warning"
+    )
+
+    return redirect(
+        url_for(
+            "nova_demanda"
+        )
+    )
+
+
+# ==============================================================
+# IDEMPOTÊNCIA SEQUENCIAL
+#
+# Se esse formulário já criou uma demanda anteriormente,
+# não cria outra.
+# ==============================================================
+
+demanda_por_token = (
+    ProductionRequest.query
+    .filter(
+        ProductionRequest.creation_token
+        == creation_token
+    )
+    .first()
+)
+
+if demanda_por_token:
+
+    # O token pertence a uma demanda deste comprador.
+    if (
+        demanda_por_token.user_id
+        == usuario.id
+    ):
+
+        flash(
+            (
+                f"A demanda {demanda_por_token.codigo} "
+                "já havia sido criada. "
+                "Nenhuma demanda duplicada foi gerada."
+            ),
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "detalhe_demanda",
+                demanda_id=demanda_por_token.id
+            )
+        )
+
+    # Situação extremamente improvável:
+    # token existente associado a outro comprador.
+    current_app.logger.warning(
+        (
+            "[DEMANDA] Tentativa de reutilização de "
+            "creation_token pertencente a outro usuário. "
+            f"user_id={usuario.id}"
+        )
+    )
+
+    flash(
+        (
+            "Este formulário não é mais válido. "
+            "Abra uma nova demanda."
+        ),
+        "warning"
+    )
+
+    return redirect(
+        url_for(
+            "nova_demanda"
+        )
+    )        
         
         <section class="card">
 
