@@ -10244,6 +10244,7 @@ def nova_demanda():
 
         demanda = ProductionRequest(
             user_id=usuario.id,
+            creation_token=creation_token,
             produto=produto,
             estrutura_malha=(
                 estrutura_malha
@@ -10294,37 +10295,94 @@ def nova_demanda():
         # no mesmo commit.
         db.session.commit()
 
-    except Exception:
+    except IntegrityError:
 
+        # ==========================================================
+        # CONCORRÊNCIA / DUPLO ENVIO
+        #
+        # Duas requisições podem ter consultado o token antes
+        # de qualquer uma concluir.
+        #
+        # O índice UNIQUE do PostgreSQL decide qual delas grava.
+        # A outra chega aqui.
+        # ==========================================================
+    
         db.session.rollback()
-
+    
+        demanda_existente = (
+            ProductionRequest.query
+            .filter(
+                ProductionRequest.creation_token
+                == creation_token
+            )
+            .first()
+        )
+    
+        if (
+            demanda_existente
+            and demanda_existente.user_id
+            == usuario.id
+        ):
+    
+            current_app.logger.info(
+                (
+                    "[DEMANDA] Reenvio idempotente absorvido. "
+                    f"user_id={usuario.id} "
+                    f"demanda_id={demanda_existente.id}"
+                )
+            )
+    
+            flash(
+                (
+                    f"A demanda {demanda_existente.codigo} "
+                    "já foi criada. "
+                    "Nenhuma demanda duplicada foi gerada."
+                ),
+                "warning"
+            )
+    
+            return redirect(
+                url_for(
+                    "detalhe_demanda",
+                    demanda_id=demanda_existente.id
+                )
+            )
+    
+        # Se houve IntegrityError por qualquer outro motivo,
+        # não mascaramos o erro como idempotência.
+        current_app.logger.exception(
+            (
+                "[DEMANDA] IntegrityError não identificado "
+                "como reenvio idempotente. "
+                f"user_id={getattr(usuario, 'id', None)}"
+            )
+        )
+    
+        flash(
+            "Não foi possível criar a demanda agora.",
+            "danger"
+        )
+    
+        return _render_form()
+    
+    
+    except Exception:
+    
+        db.session.rollback()
+    
         current_app.logger.exception(
             (
                 "[DEMANDA] Falha ao criar demanda. "
                 f"user_id={getattr(usuario, 'id', None)}"
             )
         )
-
+    
         flash(
             "Não foi possível criar a demanda agora.",
             "danger"
         )
-
+    
         return _render_form()
-
-    flash(
-        (
-            f"Demanda {demanda.codigo} "
-            "criada com sucesso."
-        ),
-        "success"
-    )
-
-    return redirect(
-        url_for(
-            "painel_comprador"
-        )
-    )
 # --------------------------------------------------------------------
 # Minhas Demandas - AcheTece 2.0
 # --------------------------------------------------------------------
