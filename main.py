@@ -9639,17 +9639,41 @@ def nova_demanda():
     form_data = {}
 
     # ==============================================================
+    # TOKEN DE IDEMPOTÊNCIA
+    #
+    # Cada abertura nova do formulário recebe um token próprio.
+    # ==============================================================
+    
+    creation_token = ""
+    
+    # ==============================================================
     # GET — SOMENTE LEITURA
     # ==============================================================
-
+    
     if request.method == "GET":
-
+    
+        creation_token = secrets.token_hex(
+            32
+        )
+    
         return render_template(
             "nova_demanda.html",
             estados=estados,
-            form_data=form_data
+            form_data=form_data,
+            creation_token=creation_token
         )
-
+    
+    # ==============================================================
+    # TOKEN RECEBIDO NO POST
+    # ==============================================================
+    
+    creation_token = (
+        request.form.get(
+            "creation_token"
+        )
+        or ""
+    ).strip()
+    
     # ==============================================================
     # DADOS RECEBIDOS
     # ==============================================================
@@ -9776,6 +9800,7 @@ def nova_demanda():
             "nova_demanda.html",
             estados=estados,
             form_data=form_data
+            creation_token=creation_token
         )
 
     # ==============================================================
