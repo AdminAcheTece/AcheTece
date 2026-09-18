@@ -272,6 +272,12 @@
             name="csrf_token"
             value="{{ csrf_token() }}"
         >
+
+        <input
+            type="hidden"
+            name="creation_token"
+            value="{{ creation_token }}"
+        >
         
         <section class="card">
 
