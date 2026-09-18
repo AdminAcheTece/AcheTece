@@ -9641,39 +9641,134 @@ def nova_demanda():
     # ==============================================================
     # TOKEN DE IDEMPOTÊNCIA
     #
-    # Cada abertura nova do formulário recebe um token próprio.
+    # Cada nova abertura do formulário recebe um token próprio.
     # ==============================================================
-    
+
     creation_token = ""
-    
+
     # ==============================================================
     # GET — SOMENTE LEITURA
     # ==============================================================
-    
+
     if request.method == "GET":
-    
+
         creation_token = secrets.token_hex(
             32
         )
-    
+
         return render_template(
             "nova_demanda.html",
             estados=estados,
             form_data=form_data,
             creation_token=creation_token
         )
-    
+
     # ==============================================================
     # TOKEN RECEBIDO NO POST
     # ==============================================================
-    
+
     creation_token = (
         request.form.get(
             "creation_token"
         )
         or ""
     ).strip()
-    
+
+    # ==============================================================
+    # VALIDAÇÃO DO TOKEN DE IDEMPOTÊNCIA
+    # ==============================================================
+
+    if (
+        len(creation_token) != 64
+        or re.fullmatch(
+            r"[0-9a-f]{64}",
+            creation_token
+        )
+        is None
+    ):
+
+        current_app.logger.warning(
+            (
+                "[DEMANDA] creation_token inválido. "
+                f"user_id={getattr(usuario, 'id', None)}"
+            )
+        )
+
+        flash(
+            (
+                "Este formulário não é mais válido. "
+                "Abra uma nova demanda e tente novamente."
+            ),
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "nova_demanda"
+            )
+        )
+
+    # ==============================================================
+    # IDEMPOTÊNCIA SEQUENCIAL
+    #
+    # Se este formulário já criou uma demanda anteriormente,
+    # não permitimos uma segunda criação.
+    # ==============================================================
+
+    demanda_por_token = (
+        ProductionRequest.query
+        .filter(
+            ProductionRequest.creation_token
+            == creation_token
+        )
+        .first()
+    )
+
+    if demanda_por_token:
+
+        if (
+            demanda_por_token.user_id
+            == usuario.id
+        ):
+
+            flash(
+                (
+                    f"A demanda {demanda_por_token.codigo} "
+                    "já havia sido criada. "
+                    "Nenhuma demanda duplicada foi gerada."
+                ),
+                "warning"
+            )
+
+            return redirect(
+                url_for(
+                    "detalhe_demanda",
+                    demanda_id=demanda_por_token.id
+                )
+            )
+
+        current_app.logger.warning(
+            (
+                "[DEMANDA] Tentativa de reutilização de "
+                "creation_token pertencente a outro usuário. "
+                f"user_id={usuario.id}"
+            )
+        )
+
+        flash(
+            (
+                "Este formulário não é mais válido. "
+                "Abra uma nova demanda."
+            ),
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "nova_demanda"
+            )
+        )
+
     # ==============================================================
     # DADOS RECEBIDOS
     # ==============================================================
@@ -9799,7 +9894,7 @@ def nova_demanda():
         return render_template(
             "nova_demanda.html",
             estados=estados,
-            form_data=form_data
+            form_data=form_data,
             creation_token=creation_token
         )
 
@@ -9818,8 +9913,6 @@ def nova_demanda():
 
     # ==============================================================
     # LIMITES DOS CAMPOS DE TEXTO
-    #
-    # Alinhados ao modelo ProductionRequest.
     # ==============================================================
 
     limites_texto = (
@@ -9874,7 +9967,6 @@ def nova_demanda():
     # QUANTIDADE
     #
     # Aceita:
-    #
     # 5000
     # 5000,50
     # 5000.50
@@ -9882,13 +9974,11 @@ def nova_demanda():
     # 5.000,50
     #
     # Rejeita:
-    #
     # 1e3
     # NaN
     # Infinity
     # negativos
     # mais de 2 casas decimais
-    # formatos ambíguos / inválidos
     # ==============================================================
 
     def _parse_quantidade(
@@ -9919,8 +10009,7 @@ def nova_demanda():
 
         if "," in texto:
 
-            # Exemplo:
-            # 5.000,50
+            # Ex.: 5.000,50
             if "." in texto:
 
                 if re.fullmatch(
@@ -9946,8 +10035,7 @@ def nova_demanda():
                     )
                 )
 
-            # Exemplo:
-            # 5000,50
+            # Ex.: 5000,50
             else:
 
                 if re.fullmatch(
@@ -9970,8 +10058,7 @@ def nova_demanda():
 
         elif "." in texto:
 
-            # Decimal internacional:
-            # 5000.50
+            # Decimal internacional: 5000.50
             if re.fullmatch(
                 r"[0-9]+\.[0-9]{1,2}",
                 texto
@@ -9979,9 +10066,7 @@ def nova_demanda():
 
                 normalizado = texto
 
-            # Milhar brasileiro:
-            # 5.000
-            # 1.250.000
+            # Milhar brasileiro: 5.000 / 1.250.000
             elif re.fullmatch(
                 (
                     r"[0-9]{1,3}"
@@ -10055,6 +10140,7 @@ def nova_demanda():
         return _render_form()
 
     # ProductionRequest.quantidade_kg = Numeric(12, 2)
+
     MAX_QUANTIDADE_KG = Decimal(
         "9999999999.99"
     )
@@ -10291,24 +10377,18 @@ def nova_demanda():
             f"ATD-{demanda.id:06d}"
         )
 
-        # ProductionRequest + código ATD entram
-        # no mesmo commit.
+        # ProductionRequest + creation_token + código ATD
+        # entram no mesmo commit.
         db.session.commit()
+
+    # ==============================================================
+    # CONCORRÊNCIA / DUPLO ENVIO
+    # ==============================================================
 
     except IntegrityError:
 
-        # ==========================================================
-        # CONCORRÊNCIA / DUPLO ENVIO
-        #
-        # Duas requisições podem ter consultado o token antes
-        # de qualquer uma concluir.
-        #
-        # O índice UNIQUE do PostgreSQL decide qual delas grava.
-        # A outra chega aqui.
-        # ==========================================================
-    
         db.session.rollback()
-    
+
         demanda_existente = (
             ProductionRequest.query
             .filter(
@@ -10317,13 +10397,13 @@ def nova_demanda():
             )
             .first()
         )
-    
+
         if (
             demanda_existente
             and demanda_existente.user_id
             == usuario.id
         ):
-    
+
             current_app.logger.info(
                 (
                     "[DEMANDA] Reenvio idempotente absorvido. "
@@ -10331,7 +10411,7 @@ def nova_demanda():
                     f"demanda_id={demanda_existente.id}"
                 )
             )
-    
+
             flash(
                 (
                     f"A demanda {demanda_existente.codigo} "
@@ -10340,16 +10420,17 @@ def nova_demanda():
                 ),
                 "warning"
             )
-    
+
             return redirect(
                 url_for(
                     "detalhe_demanda",
                     demanda_id=demanda_existente.id
                 )
             )
-    
-        # Se houve IntegrityError por qualquer outro motivo,
-        # não mascaramos o erro como idempotência.
+
+        # Se houve IntegrityError por outro motivo,
+        # não mascaramos como reenvio idempotente.
+
         current_app.logger.exception(
             (
                 "[DEMANDA] IntegrityError não identificado "
@@ -10357,32 +10438,54 @@ def nova_demanda():
                 f"user_id={getattr(usuario, 'id', None)}"
             )
         )
-    
+
         flash(
             "Não foi possível criar a demanda agora.",
             "danger"
         )
-    
+
         return _render_form()
-    
-    
+
+    # ==============================================================
+    # OUTRAS FALHAS
+    # ==============================================================
+
     except Exception:
-    
+
         db.session.rollback()
-    
+
         current_app.logger.exception(
             (
                 "[DEMANDA] Falha ao criar demanda. "
                 f"user_id={getattr(usuario, 'id', None)}"
             )
         )
-    
+
         flash(
             "Não foi possível criar a demanda agora.",
             "danger"
         )
-    
+
         return _render_form()
+
+    # ==============================================================
+    # SUCESSO
+    # ==============================================================
+
+    flash(
+        (
+            f"Demanda {demanda.codigo} "
+            "criada com sucesso."
+        ),
+        "success"
+    )
+
+    return redirect(
+        url_for(
+            "painel_comprador"
+        )
+    )
+    
 # --------------------------------------------------------------------
 # Minhas Demandas - AcheTece 2.0
 # --------------------------------------------------------------------
