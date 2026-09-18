@@ -3251,6 +3251,17 @@ class ProductionRequest(db.Model):
         index=True
     )
 
+    # Token de idempotência usado somente na criação da demanda.
+    # Impede que o mesmo formulário gere duas demandas em caso de:
+    # - duplo clique;
+    # - reenvio;
+    # - duas requisições concorrentes.
+    creation_token = db.Column(
+        db.String(64),
+        unique=True,
+        nullable=True
+    )
+
     # --------------------------------------------------------------
     # Produto / especificação
     # --------------------------------------------------------------
