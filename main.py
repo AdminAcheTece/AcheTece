@@ -9303,6 +9303,7 @@ from flask import make_response
 # --------------------------------------------------------------------
 # Cadastro do Comprador - AcheTece 2.0
 # --------------------------------------------------------------------
+
 @app.route(
     "/cadastro/comprador",
     methods=["GET", "POST"],
@@ -9318,13 +9319,22 @@ from flask import make_response
 )
 def cadastro_comprador():
 
+    # ==============================================================
+    # ESTADOS PERMITIDOS
+    # ==============================================================
+
     estados = [
-        "AC","AL","AM","AP","BA","CE","DF","ES","GO","MA",
-        "MG","MS","MT","PA","PB","PE","PI","PR","RJ","RN",
-        "RO","RR","RS","SC","SE","SP","TO"
+        "AC", "AL", "AM", "AP", "BA", "CE", "DF",
+        "ES", "GO", "MA", "MG", "MS", "MT", "PA",
+        "PB", "PE", "PI", "PR", "RJ", "RN", "RO",
+        "RR", "RS", "SC", "SE", "SP", "TO"
     ]
 
     form_data = {}
+
+    # ==============================================================
+    # GET — SOMENTE LEITURA
+    # ==============================================================
 
     if request.method == "GET":
 
@@ -9334,50 +9344,100 @@ def cadastro_comprador():
             form_data=form_data
         )
 
-    # --------------------------------------------------------------
-    # Dados recebidos
-    # --------------------------------------------------------------
+    # ==============================================================
+    # DADOS RECEBIDOS
+    # ==============================================================
 
-    nome = (request.form.get("nome") or "").strip()
+    nome = (
+        request.form.get(
+            "nome"
+        )
+        or ""
+    ).strip()
 
     empresa_nome = (
-        request.form.get("empresa") or ""
+        request.form.get(
+            "empresa"
+        )
+        or ""
     ).strip()
 
     whatsapp = (
-        request.form.get("whatsapp") or ""
+        request.form.get(
+            "whatsapp"
+        )
+        or ""
     ).strip()
 
     cidade = (
-        request.form.get("cidade") or ""
+        request.form.get(
+            "cidade"
+        )
+        or ""
     ).strip()
 
     estado = (
-        request.form.get("estado") or ""
+        request.form.get(
+            "estado"
+        )
+        or ""
     ).strip().upper()
 
     email = (
-        request.form.get("email") or ""
+        request.form.get(
+            "email"
+        )
+        or ""
     ).strip().lower()
 
+    # A senha NÃO é submetida a strip().
+    #
+    # Se o usuário deliberadamente utilizar espaço como parte
+    # da senha, o valor efetivamente digitado deve ser preservado.
     senha = (
-        request.form.get("senha") or ""
-    ).strip()
+        request.form.get(
+            "senha"
+        )
+        or ""
+    )
 
+    # ==============================================================
+    # PRESERVA O FORMULÁRIO EM CASO DE ERRO
+    #
+    # A senha nunca é devolvida ao template.
+    # ==============================================================
 
     form_data = {
-        "nome": nome,
-        "empresa": empresa_nome,
-        "whatsapp": whatsapp,
-        "cidade": cidade,
-        "estado": estado,
-        "email": email,
+        "nome":
+            nome,
+
+        "empresa":
+            empresa_nome,
+
+        "whatsapp":
+            whatsapp,
+
+        "cidade":
+            cidade,
+
+        "estado":
+            estado,
+
+        "email":
+            email,
     }
 
+    def _render_form():
 
-    # --------------------------------------------------------------
-    # Validações básicas
-    # --------------------------------------------------------------
+        return render_template(
+            "criar_conta_cliente.html",
+            estados=estados,
+            form_data=form_data
+        )
+
+    # ==============================================================
+    # CAMPOS OBRIGATÓRIOS
+    # ==============================================================
 
     if not nome:
 
@@ -9386,12 +9446,7 @@ def cadastro_comprador():
             "warning"
         )
 
-        return render_template(
-            "criar_conta_cliente.html",
-            estados=estados,
-            form_data=form_data
-        )
-
+        return _render_form()
 
     if not empresa_nome:
 
@@ -9400,26 +9455,7 @@ def cadastro_comprador():
             "warning"
         )
 
-        return render_template(
-            "criar_conta_cliente.html",
-            estados=estados,
-            form_data=form_data
-        )
-
-
-    if estado not in estados:
-
-        flash(
-            "Selecione um estado válido.",
-            "warning"
-        )
-
-        return render_template(
-            "criar_conta_cliente.html",
-            estados=estados,
-            form_data=form_data
-        )
-
+        return _render_form()
 
     if not cidade:
 
@@ -9428,99 +9464,214 @@ def cadastro_comprador():
             "warning"
         )
 
-        return render_template(
-            "criar_conta_cliente.html",
-            estados=estados,
-            form_data=form_data
+        return _render_form()
+
+    # ==============================================================
+    # LIMITES — CLIENTE PROFILE
+    # ==============================================================
+
+    limites_texto = (
+        (
+            nome,
+            120,
+            "Seu nome"
+        ),
+        (
+            empresa_nome,
+            160,
+            "Empresa / Marca / Confecção"
+        ),
+        (
+            whatsapp,
+            20,
+            "WhatsApp"
+        ),
+        (
+            cidade,
+            100,
+            "Cidade"
+        ),
+    )
+
+    for (
+        valor,
+        limite,
+        rotulo
+    ) in limites_texto:
+
+        if len(
+            valor
+        ) > limite:
+
+            flash(
+                (
+                    f"{rotulo} deve possuir "
+                    f"no máximo {limite} caracteres."
+                ),
+                "warning"
+            )
+
+            return _render_form()
+
+    # ==============================================================
+    # ESTADO
+    # ==============================================================
+
+    if estado not in estados:
+
+        flash(
+            "Selecione um estado válido.",
+            "warning"
         )
 
+        return _render_form()
 
-    if not email or "@" not in email:
+    # ==============================================================
+    # E-MAIL
+    #
+    # Não tentamos confirmar se a caixa postal realmente existe.
+    # Apenas validamos sintaxe e limite do modelo Usuario.
+    # ==============================================================
+
+    if (
+        not email
+        or len(email) > 255
+        or re.fullmatch(
+            r"[^@\s]+@[^@\s]+\.[^@\s]+",
+            email
+        )
+        is None
+    ):
 
         flash(
             "Informe um e-mail válido.",
             "warning"
         )
 
-        return render_template(
-            "criar_conta_cliente.html",
-            estados=estados,
-            form_data=form_data
-        )
+        return _render_form()
 
+    # ==============================================================
+    # SENHA
+    # ==============================================================
 
-    if len(senha) < 6:
+    if len(
+        senha
+    ) < 6:
 
         flash(
             "A senha precisa ter pelo menos 6 caracteres.",
             "warning"
         )
 
-        return render_template(
-            "criar_conta_cliente.html",
-            estados=estados,
-            form_data=form_data
+        return _render_form()
+
+    # Evita entradas excessivamente grandes antes do hashing.
+    if len(
+        senha
+    ) > 128:
+
+        flash(
+            "A senha deve possuir no máximo 128 caracteres.",
+            "warning"
         )
 
+        return _render_form()
 
-    # --------------------------------------------------------------
-    # Evita conta duplicada
-    # --------------------------------------------------------------
+    # Evita uma senha composta somente por espaços.
+    if not senha.strip():
 
-    usuario_existente = Usuario.query.filter(
-        func.lower(Usuario.email) == email
-    ).first()
+        flash(
+            "Informe uma senha válida.",
+            "warning"
+        )
 
-    empresa_existente = Empresa.query.filter(
-        func.lower(Empresa.email) == email
-    ).first()
+        return _render_form()
 
+    # ==============================================================
+    # UNICIDADE SEQUENCIAL DO E-MAIL
+    #
+    # Verificamos tanto Usuario quanto Empresa porque o e-mail
+    # representa identidade única no ecossistema AcheTece.
+    #
+    # A corrida entre duas requisições simultâneas será tratada
+    # separadamente na 7C.21C.
+    # ==============================================================
 
-    if usuario_existente or empresa_existente:
+    usuario_existente = (
+        Usuario.query
+        .filter(
+            func.lower(
+                Usuario.email
+            )
+            == email
+        )
+        .first()
+    )
+
+    empresa_existente = (
+        Empresa.query
+        .filter(
+            func.lower(
+                Empresa.email
+            )
+            == email
+        )
+        .first()
+    )
+
+    if (
+        usuario_existente
+        or empresa_existente
+    ):
 
         flash(
             "Este e-mail já possui uma conta no AcheTece.",
             "warning"
         )
 
-        return render_template(
-            "criar_conta_cliente.html",
-            estados=estados,
-            form_data=form_data
-        )
+        return _render_form()
 
-
-    # --------------------------------------------------------------
-    # Cria Usuario + ClienteProfile
-    # --------------------------------------------------------------
+    # ==============================================================
+    # CRIAÇÃO ATÔMICA
+    #
+    # Usuario + ClienteProfile entram na mesma transação.
+    # ==============================================================
 
     try:
 
         novo_usuario = Usuario(
             email=email,
-            senha_hash=generate_password_hash(senha),
+            senha_hash=generate_password_hash(
+                senha
+            ),
             role="cliente",
             is_active=True
         )
 
-        db.session.add(novo_usuario)
+        db.session.add(
+            novo_usuario
+        )
 
+        # Precisamos do ID para ClienteProfile.user_id.
         db.session.flush()
-
 
         novo_perfil = ClienteProfile(
             user_id=novo_usuario.id,
             nome=nome,
             empresa=empresa_nome,
-            whatsapp=whatsapp or None,
+            whatsapp=(
+                whatsapp
+                or None
+            ),
             cidade=cidade,
             estado=estado
         )
 
-        db.session.add(novo_perfil)
+        db.session.add(
+            novo_perfil
+        )
 
         db.session.commit()
-
 
     except Exception:
 
@@ -9531,32 +9682,37 @@ def cadastro_comprador():
         )
 
         flash(
-            "Não foi possível criar sua conta agora. Tente novamente.",
+            (
+                "Não foi possível criar sua conta agora. "
+                "Tente novamente."
+            ),
             "danger"
         )
 
-        return render_template(
-            "criar_conta_cliente.html",
-            estados=estados,
-            form_data=form_data
-        )
+        return _render_form()
 
+    # ==============================================================
+    # LOGIN AUTOMÁTICO
+    #
+    # Somente depois do commit bem-sucedido.
+    # ==============================================================
 
-    # ------------------------------------------------------------
-    # Login automático
-    # ------------------------------------------------------------
-    
-    _abrir_sessao_cliente(novo_usuario)
-
+    _abrir_sessao_cliente(
+        novo_usuario
+    )
 
     flash(
-        "Conta criada com sucesso. Bem-vindo ao AcheTece!",
+        (
+            "Conta criada com sucesso. "
+            "Bem-vindo ao AcheTece!"
+        ),
         "success"
     )
 
-
     return redirect(
-        url_for("painel_comprador")
+        url_for(
+            "painel_comprador"
+        )
     )
 
 # --------------------------------------------------------------------
