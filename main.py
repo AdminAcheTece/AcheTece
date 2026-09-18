@@ -25,7 +25,7 @@ import json
 import requests
 from unicodedata import normalize
 from sqlalchemy import inspect, text, or_, func, create_engine
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import OperationalError, IntegrityError
 from pathlib import Path
 import random
 from jinja2 import TemplateNotFound
