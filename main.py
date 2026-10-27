@@ -2294,7 +2294,7 @@ def oauth_google_callback():
     foto  = userinfo.get("picture")
 
     ctx = session.pop("oauth_ctx", "empresa")
-    nxt = session.pop("oauth_next", url_for(""))
+    nxt = session.pop("oauth_next", None) or url_for("painel_malharia")
 
     if not email:
         flash("Não foi possível obter o e-mail do Google.", "danger")
