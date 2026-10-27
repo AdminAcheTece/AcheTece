@@ -99,7 +99,9 @@ app.config.update(
 
     SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_COOKIE_DOMAIN=".achetece.com.br"
+    # Em homologacao no onrender.com, o cookie deve pertencer ao proprio host.
+    # Em producao, preserva o dominio atual.
+    SESSION_COOKIE_DOMAIN=(None if _env_bool("ED01_HOMOLOGACAO", False) else ".achetece.com.br")
 )
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY") or ""
@@ -2225,13 +2227,11 @@ def post_login_password():
         flash(GENERIC_FAIL, "error")
         return redirect(url_for("view_login_password", email=email))
 
-    if not DEMO_MODE and (user.status_pagamento or "").lower() not in ("aprovado", "ativo"):
-        flash("Pagamento ainda não aprovado.", "warning")
-        return redirect(url_for("login_method", email=email))
-
+    # ED01: login privado independente do pagamento. A vigencia controla
+    # exclusivamente a exposicao publica da malharia e de seus teares.
     session["empresa_id"] = user.id
     session["empresa_apelido"] = user.apelido or user.nome or user.email.split("@")[0]
-    return redirect(url_for(""))
+    return redirect(url_for("painel_malharia"))
 
 from flask import request, session, redirect, url_for, flash
 
