@@ -2250,7 +2250,7 @@ from flask import request, session, redirect, url_for, flash
 def oauth_google():
     # contexto padrão "empresa" e preserva redirecionamento
     ctx = request.args.get("ctx", "empresa")
-    nxt = request.args.get("next") or url_for("")
+    nxt = request.args.get("next") or url_for("painel_malharia")
 
     # guarda em sessão para usar no callback
     session["oauth_ctx"] = ctx
