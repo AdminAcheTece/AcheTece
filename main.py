@@ -1075,43 +1075,31 @@ class Empresa(db.Model):
 
     @hybrid_property
     def assinatura_ativa(self) -> bool:
+        """ED01: fail closed; apenas ATIVO e pagamento com vigência não expirada.
+
+        Mantém temporariamente as durações legadas (35/370 dias). ED02
+        substituirá por data contratual explícita após conciliação de registros.
         """
-        Regra FINAL:
-        - Considera ativa se status_norm == "ativo"
-        - E se data_pagamento existir: ainda está dentro do prazo do plano (mensal/anual)
-        - Se data_pagamento for None e status estiver ativo: considera ativo (casos raros/trial)
-        """
-        if self.status_pagamento_norm != "ativo":
+        if (self.status_pagamento or "").strip().lower() != "ativo":
             return False
-
         if self.data_pagamento is None:
-            return True
-
-        dias = self._dias_por_plano(getattr(self, "plano", "mensal"))
-        return (self.data_pagamento + timedelta(days=dias)) >= datetime.utcnow()
+            return False
+        return (self.data_pagamento + timedelta(
+            days=self._dias_por_plano(self.plano))) > datetime.utcnow()
 
     @assinatura_ativa.expression
     def assinatura_ativa(cls):
-        """
-        Versão SQL (Postgres):
-        status ok AND (data_pagamento IS NULL OR now() <= data_pagamento + intervalo(plano))
-        """
-        status_lower = func.lower(func.coalesce(cls.status_pagamento, ''))
-        plano_lower  = func.lower(func.coalesce(cls.plano, 'mensal'))
-
-        # dias por plano via CASE
-        dias = func.case(
-            (plano_lower == "anual", ASSINATURA_DIAS_ANUAL),
-            else_=ASSINATURA_DIAS_MENSAL
+        """Mesmo contrato aplicado diretamente pelo PostgreSQL nas buscas."""
+        from sqlalchemy import case
+        vencimento = case(
+            (func.lower(func.coalesce(cls.plano, "mensal")) == "anual",
+             cls.data_pagamento + timedelta(days=ASSINATURA_DIAS_ANUAL)),
+            else_=cls.data_pagamento + timedelta(days=ASSINATURA_DIAS_MENSAL),
         )
-
-        # make_interval(days => CASE...) no Postgres
         return and_(
-            status_lower.in_(list(STATUS_ATIVO_EQUIV)),
-            or_(
-                cls.data_pagamento.is_(None),
-                func.now() <= (cls.data_pagamento + func.make_interval(days=dias))
-            )
+            func.lower(func.coalesce(cls.status_pagamento, "")) == "ativo",
+            cls.data_pagamento.isnot(None),
+            vencimento > func.now(),
         )
 
     @property
@@ -1788,23 +1776,10 @@ def index():
         except Exception:
             pass
 
-        # 🔒 Regra de negócio: só empresas com pagamento/assinatura ativa
-        # 1) Se você tiver a propriedade híbrida Empresa.assinatura_ativa (recomendado)
-        try:
-            q_base = q_base.filter(Empresa.assinatura_ativa)
-        except Exception:
-            # 2) Fallback por data "pago até"
-            try:
-                q_base = q_base.filter(Empresa.pago_ate >= db.func.now())
-            except Exception:
-                # 3) Fallback por status textual
-                try:
-                    q_base = q_base.filter(Empresa.assinatura_status.in_(["active", "approved", "trial"]))
-                except Exception:
-                    # Se nada disso existir, segue sem o filtro (legado)
-                    pass
-        # ---- FIM: nova query base ----
-        
+        # ED01: filtro OBRIGATÓRIO, sem fallback permissivo.
+        # Em caso de falha de DB/SQL, o tratamento da rota não publica resultados.
+        q_base = q_base.filter(Empresa.assinatura_ativa)
+
         opcoes = {"tipo": [], "diâmetro": [], "galga": [], "estado": [], "cidade": []}
         from collections import defaultdict
         cidades_por_uf = defaultdict(set)
@@ -2593,84 +2568,13 @@ def painel_malharia():
             .all()
     )
 
-    # ---------------------------
-    # Assinatura: status + vencimento por plano
-    # ---------------------------
-    # Status que consideramos "pago/ativo" (cobre variações comuns do MP)
-    status_raw = (getattr(emp, "status_pagamento", None) or "pendente").strip().lower()
-    STATUS_ATIVO = {"ativo", "aprovado", "approved", "paid", "active", "trial"}
-    status_ok = status_raw in STATUS_ATIVO
-
-    # Cálculo de vencimento do ciclo atual:
-    # base = data_pagamento (ou outras datas se existirem) -> + dias do plano -> próximo dia útil BR
-    vencimento_proximo, dias_restantes = (None, None)
-    ativa_pelo_tempo = False
-
-    try:
-        # Hoje (preferindo timezone Brasil)
-        try:
-            from zoneinfo import ZoneInfo
-            hoje = datetime.now(ZoneInfo("America/Sao_Paulo")).date()
-        except Exception:
-            from datetime import date as _date
-            hoje = _date.today()
-
-        # normaliza possíveis campos de data (sempre para date)
-        def _to_date(v):
-            if not v:
-                return None
-            if isinstance(v, datetime):
-                return v.date()
-            try:
-                # se já vier date
-                return v
-            except Exception:
-                return None
-
-        ult_pgto = _to_date(getattr(emp, "assin_ultimo_pagamento", None))
-        data_pag = _to_date(getattr(emp, "data_pagamento", None))
-        inicio   = _to_date(getattr(emp, "assin_data_inicio", None))
-        created  = _to_date(getattr(emp, "created_at", None))
-
-        # ordem de prioridade: último pagamento > data_pagamento > início > criação > hoje
-        base_dt = ult_pgto or data_pag or inicio or created or hoje
-
-        # dias do ciclo conforme o plano
-        plano = (getattr(emp, "plano", None) or "mensal").strip().lower()
-        if "anual" in plano:
-            dias_plano = 365
-        else:
-            # ✅ mensal com folga (se você quer 35 como já vinha usando)
-            dias_plano = 35
-
-        # vencimento nominal e ajuste para próximo dia útil BR
-        nominal = base_dt + timedelta(days=dias_plano)
-        venc = _proximo_dia_util_br(nominal)
-
-        vencimento_proximo = venc
-
-        # dias_restantes pode ficar negativo se já venceu (para você exibir "vencido")
-        dias_restantes = (venc - hoje).days
-
-        # Ativa pelo tempo (tolerância opcional)
-        tol = int(globals().get("TOLERANCIA_DIAS", 0) or 0)
-        ativa_pelo_tempo = hoje <= (venc + timedelta(days=tol))
-
-        # (Opcional recomendado) Se venceu, e ainda está como "ativo", rebaixa para "pendente"
-        # assim o admin e o painel ficam coerentes.
-        if status_ok and (not ativa_pelo_tempo) and getattr(emp, "data_pagamento", None):
-            try:
-                emp.status_pagamento = "pendente"
-                db.session.commit()
-                status_ok = False
-            except Exception:
-                db.session.rollback()
-
-    except Exception as e:
-        app.logger.warning(f"[painel] cálculo de vencimento falhou: {e}")
-
-    # Assinatura ativa = status OK (pagamento) E ainda dentro do prazo calculado
-    is_ativa = bool(status_ok and ativa_pelo_tempo)
+    # ED01: painel e resultados públicos usam o mesmo status/validade.
+    # Exibir o painel jamais altera status ou data de pagamento no banco.
+    is_ativa = bool(emp.assinatura_ativa)
+    vencimento_proximo = emp.assinatura_expira_em.date() if emp.assinatura_expira_em else None
+    hoje = datetime.utcnow().date()
+    dias_restantes = ((vencimento_proximo - hoje).days
+                      if vencimento_proximo is not None else None)
 
     # ✅ CTA de pagamento no painel (pendente/vencida ou vencendo em breve)
     # Você pode usar isso no template para mostrar o banner/botões.
@@ -3575,7 +3479,8 @@ def exportar():
 
     galga    = to_int(filtros_raw['galga'])
     diametro = to_float(filtros_raw['diâmetro'])
-    query = Tear.query.join(Empresa)
+    # ED01: a exportação pública deve seguir a mesma regra da Home.
+    query = Tear.query.join(Empresa).filter(Empresa.assinatura_ativa)
     if filtros_raw['tipo']:
         query = query.filter(Tear.tipo == filtros_raw['tipo'])
     if diametro is not None:
@@ -4137,11 +4042,12 @@ def admin_seed_teares_all():
 def utils_empresas_json():
     escopo = (request.args.get("escopo") or "demo").lower()
     uf = request.args.get("uf")
-    q = Empresa.query
+    # ED01: rota sem autenticação também não pode divulgar empresas vencidas.
+    q = Empresa.query.filter(Empresa.assinatura_ativa)
     if escopo == "demo":
         q = q.filter(DEMO_FILTER)
     elif escopo == "pagantes":
-        q = q.filter(Empresa.status_pagamento == "ativo")
+        pass  # a condição de pagamento válido já foi aplicada obrigatoriamente
     if uf:
         q = q.filter(func.upper(Empresa.estado) == uf.upper())
     empresas = q.order_by(Empresa.id.desc()).all()
@@ -4692,7 +4598,11 @@ from flask import render_template, abort, redirect, url_for
 
 @app.get("/empresa/<int:empresa_id>")
 def empresa_perfil(empresa_id):
-    empresa = Empresa.query.get_or_404(empresa_id)
+    # ED01: a URL direta também deve respeitar a assinatura; 404 não expõe
+    # dados comerciais de uma malharia pendente ou vencida.
+    empresa = Empresa.query.filter(
+        Empresa.id == empresa_id, Empresa.assinatura_ativa
+    ).first_or_404()
     teares = Tear.query.filter_by(empresa_id=empresa_id).order_by(Tear.tipo.asc()).all()
 
     # registra analytics de visita ao perfil público
