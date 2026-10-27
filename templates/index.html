@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -11,12 +12,12 @@
 
   <!-- CSS principal -->
   <link rel="stylesheet" href="/static/style.css">
-  
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- Inter permanece no restante do site; Manrope somente no novo hero -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
   :root{
-    /* NOVA PALETA (inspirada no exemplo Falconi) */
     --olive:#7B7424;
     --olive-600:#5E581C;
     --olive-dark:#434326;
@@ -28,7 +29,6 @@
     --bg-150:#EAEAE8;
     --bg-200:#DFDFD9;
 
-    /* MAPA DE COMPATIBILIDADE */
     --roxo:var(--olive);
     --roxo-hover:var(--olive-600);
     --preto:#000;
@@ -39,7 +39,6 @@
     --roxinho:var(--olive-50);
     --cinza-150:var(--bg-150);
 
-    /* LIME */
     --lime:#B6F34D;
     --lime-700:#A2E532;
   }
@@ -69,7 +68,6 @@
   /* ===== FAIXA CINZA DO MIOLO ===== */
   .faixa-cinza{ background:var(--cinza-150); padding:16px 0 48px; }
 
-  /* Garante cards e campos internos SEM cinza */
   .localizacao-card, .results-card, .filters-panel, .card-tear{ background:#fff !important; }
 
   /* ===== CTA + FOOTER ===== */
@@ -95,62 +93,150 @@
     padding:0 16px;
   }
 
-  /* Container */
-  .page-hint{
-    margin:10px 0 6px;
-    padding:6px 0;
+  /* =========================================
+     NOVO HERO ACHETECE
+     Identidade original + tipografia compacta
+     ========================================= */
+  .ache-hero{
+    margin:0 auto;
+    padding:24px 0 22px;
     text-align:center;
     color:#000;
+    font-family:'Manrope', 'Inter', system-ui, sans-serif;
   }
 
-  /* Título principal */
-  #hint-teares{
-    font-size:60px !important;  /* desktop */
-    line-height:1.15;
+  .ache-hero__inner{
+    max-width:1120px;
+    margin:0 auto;
   }
 
-  @media (max-width:600px){
-    #hint-teares{
-      font-size:25px !important; /* mobile */
-      margin-top:8px;
-    }
+  .ache-hero__title{
+    max-width:1080px;
+    margin:0 auto;
+    font-size:clamp(35px, 4.3vw, 62px);
+    line-height:1.10;
+    letter-spacing:-.045em;
+    font-weight:500;
   }
 
-  /* Subtítulo */
-  .page-subhint{
-    margin-top:12px;
-    font-size:20px;
-    line-height:1.35;
+  .ache-hero__title strong{
+    font-weight:800;
+  }
+
+  .ache-hero__description{
+    max-width:810px;
+    margin:18px auto 0;
+    font-size:clamp(16px, 1.45vw, 19px);
+    font-weight:500;
+    line-height:1.45;
     color:#2a2535;
-    opacity:.86;
   }
 
-  /* Bullets */
-  .page-trust{
-    margin-top:14px;
-    margin-bottom:40px;
+  .ache-hero__benefits{
     display:flex;
     align-items:center;
     justify-content:center;
-    gap:18px;
     flex-wrap:wrap;
-    font-size:16px;
+    gap:12px 24px;
+    list-style:none;
+    margin:18px 0 0;
+    padding:0;
     color:#2a2535;
-    opacity:.92;
   }
-  .page-trust span{
+
+  .ache-hero__benefits li{
     display:inline-flex;
     align-items:center;
-    gap:8px;
-    font-weight:600;
+    gap:7px;
+    font-size:14px;
+    font-weight:700;
+    line-height:1.25;
+  }
+
+  .ache-hero__actions{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:14px;
+    margin-top:26px;
+  }
+
+  .ache-hero__button{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:12px;
+    min-height:50px;
+    padding:10px 23px;
+    border:1px solid #000;
+    border-radius:9999px;
+    font:800 14px/1.25 'Manrope','Inter',system-ui,sans-serif;
+    letter-spacing:-.01em;
+    text-align:center;
+    text-decoration:none;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+
+  .ache-hero__button--primary{
+    background:#000;
+    color:#fff;
+  }
+
+  .ache-hero__button--secondary{
+    background:#fff;
+    color:#000;
+  }
+
+  .ache-hero__button:hover{
+    transform:translateY(-2px);
+    box-shadow:0 8px 20px rgba(0,0,0,.10);
+  }
+
+  .ache-hero__button:focus-visible{
+    outline:3px solid var(--olive);
+    outline-offset:3px;
+  }
+
+  .ache-hero__button-icon{
+    font-size:19px;
+    line-height:1;
+  }
+
+  #busca-teares{
+    scroll-margin-top:118px;
+  }
+
+  html:focus-within{
+    scroll-behavior:smooth;
+  }
+
+  html{
+    scroll-behavior:smooth;
+  }
+
+  @media (max-width:820px){
+    .ache-hero{padding:24px 0 24px;}
+    .ache-hero__title{font-size:clamp(32px, 5.8vw, 48px);}
   }
 
   @media (max-width:600px){
-    .page-subhint{ font-size:16px; }
-    .page-trust{ font-size:14px; }
+    .ache-hero{padding:20px 0 24px;}
+    .ache-hero__title{font-size:clamp(30px, 8vw, 40px);line-height:1.13;}
+    .ache-hero__description{margin-top:16px;font-size:15px;}
+    .ache-hero__benefits{gap:10px 15px;margin-top:16px;}
+    .ache-hero__benefits li{font-size:12px;}
+    .ache-hero__actions{flex-direction:column;gap:10px;margin-top:23px;}
+    .ache-hero__button{width:100%;max-width:390px;min-height:49px;}
+    #busca-teares{scroll-margin-top:100px;}
   }
 
-  /* Botões topo (mobile) */
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto;}
+    .ache-hero__button{transition:none;}
+  }
+
+  /* ===== BOTÕES MOBILE ===== */
   .filters-toggle-bar{display:none; gap:8px; margin:8px 0 6px;}
   .btn-pill{
     display:inline-flex;align-items:center;justify-content:center;
@@ -167,15 +253,26 @@
   .search-layout{display:grid;grid-template-columns:300px 1fr;gap:24px;align-items:start;margin:10px 0 0;}
   @media (max-width:1024px){ .search-layout{grid-template-columns:1fr} }
 
-  /* Filtros (esquerda) */
-  .filters-panel{border:1px solid #eee;border-radius:14px;padding:16px;background:#fff;position:sticky;top:56px;max-height:calc(100vh - 72px);overflow:auto;z-index:10;}
+  /* ===== FILTROS ===== */
+  .filters-panel{
+    border:1px solid #eee;
+    border-radius:14px;
+    padding:16px;
+    background:#fff;
+    position:sticky;
+    top:56px;
+    max-height:calc(100vh - 72px);
+    overflow:auto;
+    z-index:10;
+  }
   .filters-title{margin:0 0 12px;font-size:18px;font-weight:700;}
   .filters-panel .filter-field{margin-bottom:22px;}
   .filters-panel .filter-field label{display:block;font-size:14px;margin-bottom:8px;color:#2a2535;font-weight:700;}
   .filter-field select,.filter-field input{width:100%;height:40px;padding:8px 10px;border:1px solid #ccc;border-radius:10px;background:#fff;color:#333;}
 
   /* Gaveta mobile */
-  .filters-close{display:none;} .filters-backdrop{display:none;}
+  .filters-close{display:none;}
+  .filters-backdrop{display:none;}
   @media (max-width:1024px){
     .filters-panel{position:fixed;left:0;top:0;bottom:0;width:min(90%,360px);max-width:90vw;border-radius:0;padding:16px;transform:translateX(-110%);transition:transform .2s ease;z-index:1001;max-height:none;overflow:auto}
     .filters-panel.is-open{transform:translateX(0)}
@@ -186,7 +283,7 @@
     .filters-title{padding-right:30px}
   }
 
-  /* Direita */
+  /* ===== COLUNA DIREITA ===== */
   .right-col{display:flex;flex-direction:column;gap:16px;}
   .localizacao-card{border:1px solid #eee;border-radius:12px;padding:16px 16px 8px;width:100%;max-width:100%;}
   .localizacao-card h2{margin:0 0 10px 0;font-size:18px;font-weight:700;}
@@ -208,22 +305,23 @@
   .crumbs .sep{opacity:.5;}
   .crumbs .current{color:#222;font-weight:600;}
 
-  /* Tabela (desktop) */
+  /* Tabela desktop */
   .table-wrap{overflow-x:auto;}
   .teares-table{width:100%;border-collapse:collapse;}
   .teares-table th,.teares-table td{padding:10px;border-bottom:1px solid #f1f1f1;text-align:left;font-size:14px;vertical-align:middle;}
   .teares-table th{background:#fafafa;font-weight:700;}
   .cell-empresa{font-weight:700;}
   @media (min-width:821px){
-    .teares-table th:nth-child(n+2), .teares-table td:nth-child(n+2){ text-align:center; }
+    .teares-table th:nth-child(n+2),
+    .teares-table td:nth-child(n+2){ text-align:center; }
   }
 
-  /* WhatsApp (ícone apenas) — tamanhos */
+  /* WhatsApp */
   .wa-link{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;border:1px solid #ddd;text-decoration:none;background:#fff;flex-shrink:0;}
   .wa-link:hover{background:#f7f7f7}
   .wa-icon{width:26px;height:26px;display:block}
 
-  /* Botão "Ver empresa" (pill) */
+  /* Botão ver empresa */
   .btn-view{
     display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 12px;border-radius:9999px;
     border:1px solid #ddd;background:#fff;color:#2a2535;text-decoration:none;font-weight:700;font-size:13px;
@@ -231,7 +329,7 @@
   .btn-view:hover{background:var(--bg-100);border-color:var(--line-olive)}
   .ic-building{width:18px;height:18px;color:var(--roxo);display:block}
 
-  /* ===== MOBILE (cards) ===== */
+  /* ===== MOBILE CARDS ===== */
   .cards-grid{display:grid;grid-template-columns:1fr;gap:12px;}
   .card-tear{ border:1px solid #eee;border-radius:16px;padding:12px; }
   @media (max-width:820px){ .card-tear{ border-color:#ccc; } }
@@ -266,6 +364,7 @@
   @media (max-width:820px){ .table-wrap{display:none;} }
   @media (min-width:821px){ .mobile-only{display:none;} }
 
+  /* ===== PAGINAÇÃO ===== */
   .pager{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:14px 4px 6px;flex-wrap:wrap}
   .pager .group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .pager .btn-page{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:36px;padding:0 10px;border:1px solid #ddd;border-radius:10px;background:#fff;color:#333;text-decoration:none;font-size:14px;}
@@ -280,7 +379,7 @@
       color: #fff !important;
       border-bottom: 1px solid var(--olive-600) !important;
     }
-    .teares-table tbody tr:nth-child(odd){  background:#FFFFFF; }
+    .teares-table tbody tr:nth-child(odd){ background:#FFFFFF; }
     .teares-table tbody tr:nth-child(even){ background:var(--olive-50); }
     .teares-table tbody tr:hover{ background:var(--olive-100); }
   }
@@ -291,53 +390,48 @@
     .empresa-top .nome{font-size:.95rem;}
   }
 
-  /* ✅ CTA "Cadastrar" igual ao botão "Conta Malharia" (pill branco + hover lime) */
+  /* ===== CTA RODAPÉ ===== */
   .cta-bar .cta-btn{
     display:inline-flex !important;
     align-items:center !important;
     justify-content:center !important;
-  
     height:44px !important;
     padding:0 22px !important;
     border-radius:9999px !important;
-  
     font-weight:800 !important;
     text-decoration:none !important;
     white-space:nowrap !important;
-  
     background:#fff !important;
     color:#000 !important;
-  
     border:0 !important;
     box-shadow:none !important;
     line-height:1 !important;
-  
     cursor:pointer;
     transition: background-color .15s ease, color .15s ease, transform .15s ease;
   }
-  
+
   .cta-bar .cta-btn:hover{
     background:var(--lime) !important;
     color:#111 !important;
     transform:translateY(-1px);
   }
-  
+
   .cta-bar .cta-btn:active{
     background:var(--lime-700) !important;
     color:#111 !important;
     transform:translateY(0);
   }
-  
+
   .cta-bar .cta-btn:focus-visible{
     outline:2px solid var(--lime);
     outline-offset:2px;
   }
-    
-</style>
+  </style>
 
-<!-- ✅ Header padrão deve ser o ÚLTIMO do head -->
-<link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
+  <!-- Header original -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
 </head>
+
 <body class="header-v1">
 
   <!-- Cabeçalho -->
@@ -354,21 +448,19 @@
         </a>
       </div>
     </div>
-  
-    <!-- Links do topo (somente desktop) -->
+
     <nav class="hdr-nav" aria-label="Navegação principal">
       <a href="{{ url_for('view_quem_somos') }}">O AcheTece</a>
       <a href="{{ url_for('malharia_info') }}">Como Funciona</a>
       <a href="{{ url_for('contato') }}">Fale Conosco</a>
     </nav>
-  
+
     <div class="header-right">
       <div class="hdr-actions">
         <a href="/login" class="btn-perfil" aria-label="Acessar sua conta da malharia" title="Acessar sua conta da malharia">
           <span>Conta Malharia</span>
         </a>
-  
-        <!-- BOTÃO MENU (SÓ NO MOBILE) -->
+
         <button class="btn-menu" id="openMenuBtn" type="button"
                 aria-label="Abrir menu" aria-controls="mobileMenu" aria-expanded="false">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -379,9 +471,9 @@
     </div>
   </header>
 
-  <!-- MENU MOBILE (SÓ NO MOBILE) -->
+  <!-- MENU MOBILE -->
   <div class="mobile-menu-backdrop" id="menuBackdrop" aria-hidden="true"></div>
-  
+
   <nav class="mobile-menu" id="mobileMenu" aria-label="Menu do site">
     <div class="menu-head">
       <a href="{{ url_for('index') }}" class="menu-logo" aria-label="Ir para a busca">
@@ -393,7 +485,7 @@
           >
         </span>
       </a>
-    
+
       <button class="menu-close" id="closeMenuBtn" type="button" aria-label="Fechar menu">
         <svg class="x-icon" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M6 6l12 12M18 6L6 18"></path>
@@ -401,87 +493,116 @@
       </button>
     </div>
 
-    <!-- (Opcional, mas recomendado) corpo do menu para separar padding do topo -->
     <div class="menu-body">
-    
-    <a href="{{ url_for('index') }}">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5Z"/>
-      </svg>
-      Buscar Tear
-    </a>
-  
-    <a href="{{ url_for('malharia_info') }}">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="12" cy="12" r="10"></circle>
-        <path d="M12 16v-4"></path>
-        <path d="M12 8h.01"></path>
-      </svg>
-      Como Funciona
-    </a>
-  
-    <a href="/login">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M20 21a8 8 0 0 0-16 0"></path>
-        <circle cx="12" cy="8" r="4"></circle>
-      </svg>
-      Já sou cadastrado
-    </a>
-  
-    <a href="{{ url_for('view_quem_somos') }}">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="12" cy="12" r="10"></circle>
-        <path d="M12 16v-4"></path>
-        <path d="M12 8h.01"></path>
-      </svg>
-      Quem Somos
-    </a>
-  
-    <a href="{{ url_for('contato') }}">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M4 4h16v14H5.5L4 19.5V4Z"></path>
-        <path d="M7 8h10"></path>
-        <path d="M7 12h7"></path>
-      </svg>
-      Fale conosco
-    </a>
-  
-    <a href="{{ url_for('termos') }}">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M6 2h9l3 3v17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"></path>
-        <path d="M9 9h6"></path>
-        <path d="M9 13h6"></path>
-        <path d="M9 17h6"></path>
-      </svg>
-      Termos e Políticas
-    </a>
+
+      <a href="{{ url_for('index') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5Z"/>
+        </svg>
+        Buscar Tear
+      </a>
+
+      <a href="{{ url_for('malharia_info') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 16v-4"></path>
+          <path d="M12 8h.01"></path>
+        </svg>
+        Como Funciona
+      </a>
+
+      <a href="/login">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20 21a8 8 0 0 0-16 0"></path>
+          <circle cx="12" cy="8" r="4"></circle>
+        </svg>
+        Já sou cadastrado
+      </a>
+
+      <a href="{{ url_for('view_quem_somos') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 16v-4"></path>
+          <path d="M12 8h.01"></path>
+        </svg>
+        Quem Somos
+      </a>
+
+      <a href="{{ url_for('contato') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 4h16v14H5.5L4 19.5V4Z"></path>
+          <path d="M7 8h10"></path>
+          <path d="M7 12h7"></path>
+        </svg>
+        Fale conosco
+      </a>
+
+      <a href="{{ url_for('termos') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 2h9l3 3v17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"></path>
+          <path d="M9 9h6"></path>
+          <path d="M9 13h6"></path>
+          <path d="M9 17h6"></path>
+        </svg>
+        Termos e Políticas
+      </a>
+    </div>
   </nav>
 
-  <!-- ===== Miolo em CINZA ===== -->
+  <!-- ===== MIOLO CINZA ===== -->
   <div class="faixa-cinza">
     <div class="page-outer">
 
-      <!-- Mensagem orientativa -->
-      <div class="page-hint" role="note">
-        <div id="hint-teares">
-          Encontre o <strong>tear</strong> e a <strong>malharia ideal</strong> para sua produção.
-        </div>
+      <!-- ====================================
+           NOVO HERO ACHETECE
+           ==================================== -->
+      <section class="ache-hero" aria-labelledby="ache-hero-title">
+        <div class="ache-hero__inner">
 
-        <div class="page-subhint">
-          Fornecedores e teares com informações estruturadas — contato direto e decisão mais rápida.
-        </div>
+          <h1 class="ache-hero__title" id="ache-hero-title">
+            Conectamos sua produção às
+            <strong>malharias certas.</strong>
+          </h1>
 
-        <div class="page-trust">
-          <span>✓ Dados organizados</span>
-          <span>✓ Contato direto</span>
-          <span>✓ Filtros técnicos</span>
-        </div>
-      </div>
+          <p class="ache-hero__description">
+            Encontre malharias, filtre teares por critérios técnicos
+            e entre em contato direto com fornecedores.
+          </p>
 
-      <!-- Botões topo (mobile) -->
+          <ul class="ache-hero__benefits" aria-label="Benefícios do AcheTece">
+            <li><span aria-hidden="true">✓</span> Busca técnica</li>
+            <li><span aria-hidden="true">✓</span> Dados organizados</li>
+            <li><span aria-hidden="true">✓</span> Contato direto</li>
+          </ul>
+
+          <div class="ache-hero__actions">
+            <a href="#busca-teares"
+               class="ache-hero__button ache-hero__button--primary">
+              Quero encontrar malharias
+              <span class="ache-hero__button-icon" aria-hidden="true">↓</span>
+            </a>
+
+            <a href="{{ url_for('login') }}"
+               class="ache-hero__button ache-hero__button--secondary">
+              Quero cadastrar minha malharia
+              <span class="ache-hero__button-icon" aria-hidden="true">↗</span>
+            </a>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Âncora para os filtros e listagem -->
+      <div id="busca-teares" aria-hidden="true"></div>
+
+      <!-- Botões mobile -->
       <div class="filters-toggle-bar">
-        <button class="btn-pill btn-open-filters" id="openFiltersBtn" type="button" aria-controls="filtersPanel" aria-expanded="false">
-          <svg class="ico-funil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <button class="btn-pill btn-open-filters" id="openFiltersBtn"
+                type="button" aria-controls="filtersPanel" aria-expanded="false">
+          <svg class="ico-funil" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round"
+               aria-hidden="true">
             <path d="M3 5h18M6 11h12M10 17h4"/>
           </svg>
           Filtros
@@ -489,15 +610,15 @@
         <a class="btn-pill btn-new-search" href="{{ url_for('index') }}">Nova busca</a>
       </div>
 
-      <!-- ===== FORM ÚNICO (GET) ===== -->
+      <!-- ===== FORM ÚNICO GET ===== -->
       <form id="filtrosForm" method="GET" action="{{ url_for('index') }}" class="search-layout">
 
-        <!-- Backdrop painel filtros mobile -->
         <div class="filters-backdrop" id="filtersBackdrop" aria-hidden="true"></div>
 
-        <!-- COLUNA ESQUERDA: FILTROS (sem Estado/Cidade) -->
+        <!-- FILTROS TÉCNICOS -->
         <aside class="filters-panel" id="filtersPanel" aria-label="Filtros de teares">
-          <button class="filters-close" id="closeFiltersBtn" type="button" aria-label="Fechar filtros">×</button>
+          <button class="filters-close" id="closeFiltersBtn"
+                  type="button" aria-label="Fechar filtros">×</button>
           <h2 class="filters-title">Filtrar teares</h2>
 
           {% for campo, opcoes_campo in opcoes.items() %}
@@ -506,12 +627,30 @@
               {% if c == 'galga' %}
                 <div class="filter-field">
                   <label for="{{ campo }}">Galga/Finura</label>
-                  <input type="number" id="{{ campo }}" name="{{ campo }}" class="auto-apply" inputmode="numeric" step="1" min="1" placeholder="Digite a galga (ex.: 28)" value="{{ filtros[campo] or '' }}" autocomplete="off">
+                  <input type="number"
+                         id="{{ campo }}"
+                         name="{{ campo }}"
+                         class="auto-apply"
+                         inputmode="numeric"
+                         step="1"
+                         min="1"
+                         placeholder="Digite a galga (ex.: 28)"
+                         value="{{ filtros[campo] or '' }}"
+                         autocomplete="off">
                 </div>
               {% elif c in ['diâmetro','diametro'] %}
                 <div class="filter-field">
                   <label for="{{ campo }}">Diâmetro</label>
-                  <input type="number" id="{{ campo }}" name="{{ campo }}" class="auto-apply" inputmode="decimal" step="0.1" min="1" placeholder="Digite o diâmetro (ex.: 30)" value="{{ filtros[campo] or '' }}" autocomplete="off">
+                  <input type="number"
+                         id="{{ campo }}"
+                         name="{{ campo }}"
+                         class="auto-apply"
+                         inputmode="decimal"
+                         step="0.1"
+                         min="1"
+                         placeholder="Digite o diâmetro (ex.: 30)"
+                         value="{{ filtros[campo] or '' }}"
+                         autocomplete="off">
                 </div>
               {% else %}
                 <div class="filter-field">
@@ -519,7 +658,10 @@
                   <select name="{{ campo }}" id="{{ campo }}" class="auto-apply">
                     <option value="">-- Todos --</option>
                     {% for opcao in opcoes_campo %}
-                      <option value="{{ opcao }}" {% if filtros[campo] == opcao %}selected{% endif %}>{{ opcao }}</option>
+                      <option value="{{ opcao }}"
+                              {% if filtros[campo] == opcao %}selected{% endif %}>
+                        {{ opcao }}
+                      </option>
                     {% endfor %}
                   </select>
                 </div>
@@ -527,20 +669,27 @@
             {% endif %}
           {% endfor %}
 
-          <!-- Hidden paginação -->
-          <input type="hidden" name="pagina" id="pagina_hidden" value="{{ request.args.get('pagina','1') }}">
-          <input type="hidden" name="pp" id="pp_hidden" value="{% if por_pagina is defined %}{{ por_pagina }}{% else %}{{ request.args.get('pp','20') }}{% endif %}">
+          <input type="hidden" name="pagina" id="pagina_hidden"
+                 value="{{ request.args.get('pagina','1') }}">
+          <input type="hidden" name="pp" id="pp_hidden"
+                 value="{% if por_pagina is defined %}{{ por_pagina }}{% else %}{{ request.args.get('pp','20') }}{% endif %}">
 
           <div class="filter-actions">
-            <a href="{{ url_for('index') }}" class="btn-limpar" title="Limpar filtros" style="display:inline-flex;align-items:center;gap:6px;background:var(--laranja);color:#fff;border-radius:9999px;height:36px;line-height:36px;padding:0 16px;text-decoration:none;font-weight:700;">Limpar</a>
+            <a href="{{ url_for('index') }}"
+               class="btn-limpar"
+               title="Limpar filtros"
+               style="display:inline-flex;align-items:center;gap:6px;background:var(--laranja);color:#fff;border-radius:9999px;height:36px;line-height:36px;padding:0 16px;text-decoration:none;font-weight:700;">
+              Limpar
+            </a>
           </div>
         </aside>
 
-        <!-- COLUNA DIREITA: Localização + RESULTADOS -->
+        <!-- LOCALIZAÇÃO + RESULTADOS -->
         <div class="right-col">
           <section class="localizacao-card" aria-labelledby="loc-title">
             {% set sel_uf = (filtros.get('estado') if filtros is defined else request.args.get('estado','')) %}
             {% set sel_cidade = (filtros.get('cidade') if filtros is defined else request.args.get('cidade','')) %}
+
             <h2 id="loc-title">Filtrar Localização</h2>
             <div class="row">
               <div>
@@ -555,14 +704,23 @@
               </div>
               <div>
                 <label for="cidade">Cidade</label>
-                <select id="cidade" name="cidade" class="auto-apply" data-selected="{{ sel_cidade }}" {% if not sel_uf %}disabled{% endif %}>
-                  <option value="">{% if not sel_uf %}Selecione o estado primeiro{% else %}Todas{% endif %}</option>
+                <select id="cidade" name="cidade"
+                        class="auto-apply"
+                        data-selected="{{ sel_cidade }}"
+                        {% if not sel_uf %}disabled{% endif %}>
+                  <option value="">
+                    {% if not sel_uf %}
+                      Selecione o estado primeiro
+                    {% else %}
+                      Todas
+                    {% endif %}
+                  </option>
                 </select>
               </div>
             </div>
           </section>
 
-          <!-- ===== RESULTADOS ===== -->
+          <!-- RESULTADOS -->
           <section class="results-card" aria-labelledby="res-title">
             <div class="results-head">
               <h3 id="res-title">Teares disponíveis</h3>
@@ -599,7 +757,7 @@
                 {% endif %}
               </div>
 
-              <!-- CARDS (mobile) -->
+              <!-- CARDS MOBILE -->
               <div class="mobile-only">
                 <div class="cards-grid">
                   {% for r in resultados %}
@@ -608,17 +766,28 @@
                     <article class="card-tear">
                       <h3 class="card-title">Tear Malharia Circular</h3>
 
-                      <!-- bloco compacto de infos -->
                       <div class="card-info2">
                         <div class="row">
-                          <span class="lbl">Tipo:</span><span class="val">{{ tipo_legivel or '—' }}</span>
+                          <span class="lbl">Tipo:</span>
+                          <span class="val">{{ tipo_legivel or '—' }}</span>
                         </div>
+
                         <div class="row two">
-                          <div><span class="lbl">Diâmetro:</span><span class="val">{{ r.diametro or '—' }}</span></div>
-                          <div><span class="lbl">Galga:</span><span class="val">{{ r.galga or '—' }}</span></div>
+                          <div>
+                            <span class="lbl">Diâmetro:</span>
+                            <span class="val">{{ r.diametro or '—' }}</span>
+                          </div>
+                          <div>
+                            <span class="lbl">Galga:</span>
+                            <span class="val">{{ r.galga or '—' }}</span>
+                          </div>
                         </div>
+
                         <div class="row two">
-                          <div><span class="lbl">Alimentadores:</span><span class="val">{{ r.alimentadores or '—' }}</span></div>
+                          <div>
+                            <span class="lbl">Alimentadores:</span>
+                            <span class="val">{{ r.alimentadores or '—' }}</span>
+                          </div>
                           <div>
                             <span class="lbl">Elastano:</span>
                             <span class="val">
@@ -637,7 +806,6 @@
                         </div>
                       </div>
 
-                      <!-- bloco roxinho com empresa e cidade/UF -->
                       <div class="card-empresa">
                         <div class="empresa-top">
                           <div class="nome">{{ r.empresa }}</div>
@@ -648,13 +816,17 @@
                                aria-label="Ver perfil da empresa"
                                data-company-id="{{ r.empresa_id }}"
                                data-tear-id="{{ r.id }}">
-                              <svg class="ic-building" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                              <svg class="ic-building" viewBox="0 0 24 24"
+                                   fill="none" stroke="currentColor" stroke-width="1.8"
+                                   stroke-linecap="round" stroke-linejoin="round"
+                                   aria-hidden="true">
                                 <rect x="3" y="3" width="18" height="18" rx="2"></rect>
                                 <path d="M9 9h1M9 13h1M9 17h1M14 9h1M14 13h1M14 17h1"></path>
                               </svg>
                               <span class="lbl-full">Ver empresa</span>
                               <span class="lbl-short">Ver</span>
                             </a>
+
                             {% if r.contato %}
                               <a class="wa-link js-wa"
                                  href="{{ r.contato }}"
@@ -672,8 +844,13 @@
                             {% endif %}
                           </div>
                         </div>
-                        <div class="empresa-bottom" title="{{ (r.cidade or '') }}{% if r.uf %}/{{ r.uf }}{% endif %}">
-                          <svg class="pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+
+                        <div class="empresa-bottom"
+                             title="{{ (r.cidade or '') }}{% if r.uf %}/{{ r.uf }}{% endif %}">
+                          <svg class="pin" viewBox="0 0 24 24" fill="none"
+                               stroke="currentColor" stroke-width="1.8"
+                               stroke-linecap="round" stroke-linejoin="round"
+                               aria-hidden="true">
                             <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0Z"/>
                             <circle cx="12" cy="10" r="3"/>
                           </svg>
@@ -685,7 +862,7 @@
                 </div>
               </div>
 
-              <!-- TABELA (desktop) -->
+              <!-- TABELA DESKTOP -->
               <div class="table-wrap desktop-only">
                 <table class="teares-table">
                   <thead>
@@ -701,6 +878,7 @@
                       <th>Perfil / Contato</th>
                     </tr>
                   </thead>
+
                   <tbody>
                     {% for r in resultados %}
                       <tr>
@@ -734,16 +912,22 @@
                                aria-label="Ver perfil da empresa"
                                data-company-id="{{ r.empresa_id }}"
                                data-tear-id="{{ r.id }}">
-                              <svg class="ic-building" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                              <svg class="ic-building" viewBox="0 0 24 24"
+                                   fill="none" stroke="currentColor" stroke-width="1.8"
+                                   stroke-linecap="round" stroke-linejoin="round"
+                                   aria-hidden="true">
                                 <rect x="3" y="3" width="18" height="18" rx="2"></rect>
                                 <path d="M9 9h1M9 13h1M9 17h1M14 9h1M14 13h1M14 17h1"></path>
                               </svg>
                               Ver
                             </a>
+
                             {% if r.contato %}
-                              <a href="{{ r.contato }}" target="_blank" rel="noopener"
+                              <a href="{{ r.contato }}"
+                                 target="_blank" rel="noopener"
                                  class="wa-link js-wa"
-                                 aria-label="WhatsApp" title="Contato via WhatsApp"
+                                 aria-label="WhatsApp"
+                                 title="Contato via WhatsApp"
                                  data-company-id="{{ r.empresa_id }}"
                                  data-tear-id="{{ r.id }}">
                                 <img class="wa-icon"
@@ -773,7 +957,8 @@
                         diametro=filtro_diam_,
                         galga=filtros.get('galga',''),
                         estado=filtros.get('estado',''),
-                        cidade=filtros.get('cidade','')) }}" aria-disabled="{{ 'true' if pagina==1 else 'false' }}">« Primeira</a>
+                        cidade=filtros.get('cidade','')) }}"
+                     aria-disabled="{{ 'true' if pagina==1 else 'false' }}">« Primeira</a>
 
                   <a class="btn-page" href="{{ url_for('index',
                         pagina=(pagina-1 if pagina>1 else 1), pp=por_pagina,
@@ -781,7 +966,8 @@
                         diametro=filtro_diam_,
                         galga=filtros.get('galga',''),
                         estado=filtros.get('estado',''),
-                        cidade=filtros.get('cidade','')) }}" aria-disabled="{{ 'true' if pagina==1 else 'false' }}">‹ Anterior</a>
+                        cidade=filtros.get('cidade','')) }}"
+                     aria-disabled="{{ 'true' if pagina==1 else 'false' }}">‹ Anterior</a>
 
                   <span class="info">Página {{ pagina }} de {{ total_paginas }}</span>
 
@@ -791,7 +977,8 @@
                         diametro=filtro_diam_,
                         galga=filtros.get('galga',''),
                         estado=filtros.get('estado',''),
-                        cidade=filtros.get('cidade','')) }}" aria-disabled="{{ 'true' if pagina==total_paginas else 'false' }}">Próxima ›</a>
+                        cidade=filtros.get('cidade','')) }}"
+                     aria-disabled="{{ 'true' if pagina==total_paginas else 'false' }}">Próxima ›</a>
 
                   <a class="btn-page" href="{{ url_for('index',
                         pagina=total_paginas, pp=por_pagina,
@@ -799,7 +986,8 @@
                         diametro=filtro_diam_,
                         galga=filtros.get('galga',''),
                         estado=filtros.get('estado',''),
-                        cidade=filtros.get('cidade','')) }}" aria-disabled="{{ 'true' if pagina==total_paginas else 'false' }}">Última »</a>
+                        cidade=filtros.get('cidade','')) }}"
+                     aria-disabled="{{ 'true' if pagina==total_paginas else 'false' }}">Última »</a>
                 </div>
 
                 <div class="group">
@@ -815,14 +1003,13 @@
               <div style="padding:8px 10px;">Nenhum tear encontrado para os filtros atuais.</div>
             {% endif %}
           </section>
+        </div>
+      </form>
 
-        </div><!-- /right-col -->
-      </form><!-- /filtrosForm -->
+    </div>
+  </div>
 
-    </div><!-- /page-outer -->
-  </div><!-- /faixa-cinza -->
-
-  <!-- CTA -->
+  <!-- CTA RODAPÉ -->
   <section class="cta-bar" aria-label="Convite para cadastro">
     <div class="cta-text">
       <h3>É proprietário de uma malharia?</h3>
@@ -831,10 +1018,12 @@
     <a href="/cadastrar_empresa" class="cta-btn">Cadastrar</a>
   </section>
 
-  <!-- Rodapé -->
+  <!-- RODAPÉ -->
   <footer class="site-footer">
     <div class="footer-inner">
-      <div class="footer-brand"><img src="/static/logo_simbolo.png" alt="AcheTece"></div>
+      <div class="footer-brand">
+        <img src="/static/logo_simbolo.png" alt="AcheTece">
+      </div>
       <div class="footer-cols">
         <div class="footer-col">
           <h4>Sobre nós</h4>
@@ -845,45 +1034,75 @@
             <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
           </ul>
         </div>
-        <div class="footer-col"><h4>&nbsp;</h4><ul><li>&nbsp;</li></ul></div>
+        <div class="footer-col">
+          <h4>&nbsp;</h4>
+          <ul><li>&nbsp;</li></ul>
+        </div>
       </div>
     </div>
   </footer>
 
-  <!-- ===== JS ===== -->
+  <!-- ===== JAVASCRIPT ORIGINAL ===== -->
   <script>
     // Auto-aplicar filtros
     (function(){
       const form = document.getElementById('filtrosForm');
       const paginaHidden = document.getElementById('pagina_hidden');
-      function submitResetPage(){ if(paginaHidden) paginaHidden.value='1'; if(form) form.submit(); }
-      document.addEventListener('change', e=>{ if(e.target.matches('select.auto-apply')) submitResetPage(); });
+
+      function submitResetPage(){
+        if(paginaHidden) paginaHidden.value='1';
+        if(form) form.submit();
+      }
+
+      document.addEventListener('change', e=>{
+        if(e.target.matches('select.auto-apply')) submitResetPage();
+      });
+
       let t=null;
       document.addEventListener('input', e=>{
-        if(e.target.matches('input.auto-apply')){ clearTimeout(t); t=setTimeout(submitResetPage,500); }
+        if(e.target.matches('input.auto-apply')){
+          clearTimeout(t);
+          t=setTimeout(submitResetPage,500);
+        }
       });
     })();
 
-    // Gaveta de filtros no mobile
+    // Gaveta de filtros mobile
     (function(){
       const openBtn=document.getElementById('openFiltersBtn');
       const closeBtn=document.getElementById('closeFiltersBtn');
       const panel=document.getElementById('filtersPanel');
       const backdrop=document.getElementById('filtersBackdrop');
-      function open(){ document.body.classList.add('filters-open'); panel.classList.add('is-open'); if(openBtn) openBtn.setAttribute('aria-expanded','true'); }
-      function close(){ document.body.classList.remove('filters-open'); panel.classList.remove('is-open'); if(openBtn) openBtn.setAttribute('aria-expanded','false'); }
+
+      function open(){
+        document.body.classList.add('filters-open');
+        panel.classList.add('is-open');
+        if(openBtn) openBtn.setAttribute('aria-expanded','true');
+      }
+
+      function close(){
+        document.body.classList.remove('filters-open');
+        panel.classList.remove('is-open');
+        if(openBtn) openBtn.setAttribute('aria-expanded','false');
+      }
+
       if(openBtn) openBtn.addEventListener('click', open);
       if(closeBtn) closeBtn.addEventListener('click', close);
       if(backdrop) backdrop.addEventListener('click', close);
-      document.addEventListener('keydown', e=>{ if(e.key==='Escape') close(); });
+      document.addEventListener('keydown', e=>{
+        if(e.key==='Escape') close();
+      });
     })();
 
     // Itens por página
     (function(){
-      const ppSel=document.getElementById('ppSelect'); const ppHidden=document.getElementById('pp_hidden');
+      const ppSel=document.getElementById('ppSelect');
+      const ppHidden=document.getElementById('pp_hidden');
       if(!ppSel) return;
+
       ppSel.addEventListener('change', ()=>{
         if(ppHidden) ppHidden.value=ppSel.value;
+
         const url=new URL(window.location);
         url.searchParams.set('pp', ppSel.value);
         url.searchParams.set('pagina', '1');
@@ -891,17 +1110,23 @@
       });
     })();
 
-    // ===== Analytics simples: view_company e wa_click =====
+    // Analytics
     (function(){
       function sendEvent(payload){
         try{
           const url = "/analytics/event";
           const str = JSON.stringify(payload);
+
           if (navigator.sendBeacon) {
             const blob = new Blob([str], {type:"application/json"});
             navigator.sendBeacon(url, blob);
           } else {
-            fetch(url, {method:"POST", headers:{'Content-Type':'application/json'}, body:str, keepalive:true}).catch(()=>{});
+            fetch(url, {
+              method:"POST",
+              headers:{'Content-Type':'application/json'},
+              body:str,
+              keepalive:true
+            }).catch(()=>{});
           }
         }catch(e){ }
       }
@@ -916,6 +1141,7 @@
             source: 'index'
           });
         }
+
         const wa = e.target.closest('.js-wa');
         if (wa){
           sendEvent({
@@ -928,20 +1154,22 @@
       });
     })();
 
-    // ===== UF/Cidade com lista completa (IBGE) =====
+    // UF/Cidade com lista completa do IBGE
     (function(){
       const estadoSel = document.getElementById('estado');
       const cidadeSel = document.getElementById('cidade');
-
       const CITIES_CACHE = Object.create(null);
 
       async function fetchCities(uf){
         if (!uf) return [];
         if (CITIES_CACHE[uf]) return CITIES_CACHE[uf];
+
         const url = 'https://servicodados.ibge.gov.br/api/v1/localidades/estados/'+ uf +'/municipios?orderBy=nome';
         const resp = await fetch(url, {mode:'cors'});
         const data = await resp.json();
-        const names = (Array.isArray(data) ? data.map(x=>x.nome) : []).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+        const names = (Array.isArray(data) ? data.map(x=>x.nome) : [])
+          .sort((a,b)=>a.localeCompare(b,'pt-BR'));
+
         CITIES_CACHE[uf] = names;
         return names;
       }
@@ -956,7 +1184,12 @@
 
       async function loadCities(uf, preselect){
         if (!cidadeSel) return;
-        clearAndBaseOption(cidadeSel, uf ? 'Todas' : 'Selecione o estado primeiro');
+
+        clearAndBaseOption(
+          cidadeSel,
+          uf ? 'Todas' : 'Selecione o estado primeiro'
+        );
+
         cidadeSel.disabled = !uf;
         if (!uf) return;
 
@@ -966,6 +1199,7 @@
             const o = new Option(name, name, false, false);
             cidadeSel.add(o);
           }
+
           if (preselect){
             cidadeSel.value = preselect;
           }
@@ -978,6 +1212,7 @@
       if (estadoSel && cidadeSel){
         const preUF = estadoSel.value || '';
         const preCity = cidadeSel.getAttribute('data-selected') || '';
+
         if (preUF){
           loadCities(preUF, preCity);
         } else {
@@ -986,12 +1221,12 @@
         }
 
         estadoSel.addEventListener('change', function(){
-          // auto-apply já submete o form; mantém comportamento padrão
+          // Auto-apply já submete o formulário.
         });
       }
     })();
 
-    // ===== MENU MOBILE (hamburger) =====
+    // Menu mobile
     (function(){
       const openBtn = document.getElementById('openMenuBtn');
       const closeBtn = document.getElementById('closeMenuBtn');
@@ -1002,6 +1237,7 @@
         document.body.classList.add('menu-open');
         if(openBtn) openBtn.setAttribute('aria-expanded','true');
       }
+
       function closeMenu(){
         document.body.classList.remove('menu-open');
         if(openBtn) openBtn.setAttribute('aria-expanded','false');
@@ -1011,7 +1247,6 @@
       if(closeBtn) closeBtn.addEventListener('click', closeMenu);
       if(backdrop) backdrop.addEventListener('click', closeMenu);
 
-      // fecha ao clicar em qualquer link do menu
       if(menu){
         menu.addEventListener('click', function(e){
           const a = e.target.closest('a');
@@ -1027,4 +1262,3 @@
 
 </body>
 </html>
-
