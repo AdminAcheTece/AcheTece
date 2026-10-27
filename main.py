@@ -9,6 +9,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from datetime import datetime, timedelta
 import mercadopago
+import hmac
 import os
 import csv
 import io
@@ -532,7 +533,7 @@ PLAN_MONTHLY = float(os.getenv("PLAN_MONTHLY", "2.00"))
 PLAN_YEARLY  = float(os.getenv("PLAN_YEARLY", "2.00"))
 
 # DEMO
-DEMO_MODE  = os.getenv("DEMO_MODE", "true").lower() == "true"
+DEMO_MODE  = os.getenv("DEMO_MODE", "false").lower() == "true"
 DEMO_TOKEN = os.getenv("DEMO_TOKEN", "localdemo")
 SEED_TOKEN = os.getenv("SEED_TOKEN", "ACHETECE")
 
@@ -761,11 +762,23 @@ def enviar_email_recuperacao(email, nome_empresa=""):
     if not ok:
         raise RuntimeError("Falha ao enviar e-mail de recuperação.")
 
+# Administrador: e-mail e hash de senha são configurados SOMENTE no Render.
+# Sem variáveis, o acesso administrativo permanece fechado (fail closed).
+ADMIN_EMAIL = (os.getenv("ADMIN_EMAIL") or "").strip().lower()
+ADMIN_PASSWORD_HASH = (os.getenv("ADMIN_PASSWORD_HASH") or "").strip()
+
+
+def _admin_autenticado() -> bool:
+    return bool(ADMIN_EMAIL and ADMIN_PASSWORD_HASH
+                and session.get("admin_auth_version") == "v2"
+                and hmac.compare_digest(session.get("admin_email", ""), ADMIN_EMAIL))
+
+
 def login_admin_requerido(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if session.get('admin_email') != 'gestao.achetece@gmail.com':
-            flash('Acesso não autorizado.')
+        if not _admin_autenticado():
+            flash('Acesso não autorizado.', 'error')
             return redirect(url_for('admin_login'))
         return f(*args, **kwargs)
     return decorated_function
@@ -3735,15 +3748,31 @@ def performance_acesso():
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
-        email = request.form.get('email'); senha = request.form.get('senha')
-        if email == 'gestao.achetece@gmail.com' and senha == '123adm@achetece':
-            session['admin_email'] = email
+        email = (request.form.get('email') or '').strip().lower()
+        senha = request.form.get('senha') or ''
+        valid = False
+        if ADMIN_EMAIL and ADMIN_PASSWORD_HASH and hmac.compare_digest(email, ADMIN_EMAIL):
+            try:
+                valid = check_password_hash(ADMIN_PASSWORD_HASH, senha)
+            except (ValueError, TypeError):
+                app.logger.error('[ADMIN] ADMIN_PASSWORD_HASH inválido')
+        if valid:
+            # Elimina dados antigos e impede que outro perfil seja herdado.
+            session.clear()
+            session['admin_email'] = ADMIN_EMAIL
+            session['admin_auth_version'] = 'v2'
             flash('Login de administrador realizado.', 'success')
             return redirect(url_for('admin_empresas'))
-        else:
-            flash('Email ou Senha incorreta.', 'error')
-            return redirect(url_for('admin_login'))
+        session.pop('admin_email', None)
+        session.pop('admin_auth_version', None)
+        flash('E-mail ou senha incorretos.', 'error')
+        return redirect(url_for('admin_login'))
     return render_template('admin_login.html')
+
+
+@app.get('/admin_login')
+def admin_login_compat():
+    return redirect(url_for('admin_login'), code=302)
 
 @app.route('/admin/logout', methods=['POST'])
 def admin_logout():
@@ -3881,9 +3910,6 @@ def admin_editar_status(empresa_id):
 @app.route('/admin/empresa_excluir/<int:empresa_id>', methods=['POST'])
 @login_admin_requerido
 def empresa_excluir(empresa_id):
-    if session.get('admin_email') != 'gestao.achetece@gmail.com':
-        flash('Acesso não autorizado.')
-        return redirect(url_for('login'))
     empresa = Empresa.query.get_or_404(empresa_id)
     db.session.delete(empresa); db.session.commit()
     flash(f'Empresa "{empresa.nome}" excluída com sucesso!')
@@ -3925,7 +3951,16 @@ DEMO_FILTER = or_(
 )
 
 def _seed_ok():
-    return request.args.get("token") == SEED_TOKEN
+    # Rotas de teste/impersonação desligadas em produção por padrão.
+    # Exigem sessão administrativa, habilitação explícita e token não padrão.
+    configured = (os.getenv('SEED_TOKEN') or '').strip()
+    return bool(
+        _admin_autenticado()
+        and _env_bool('ENABLE_ADMIN_TEST_ROUTES', False)
+        and configured
+        and configured != 'ACHETECE'
+        and hmac.compare_digest(request.args.get('token') or '', configured)
+    )
 
 def _cria_teares_fake(empresa, n):
     tipos = ["MONO", "DUPLA"]
@@ -4579,5 +4614,5 @@ def empresas_redirect(empresa_id):
 # Entry point local
 # --------------------------------------------------------------------
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=False, host='127.0.0.1', port=5000)
 
