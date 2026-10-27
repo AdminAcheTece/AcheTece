@@ -15,6 +15,7 @@ import csv
 import io
 import re
 import uuid
+import secrets
 import logging
 import json
 import requests
@@ -2313,6 +2314,38 @@ def oauth_google_callback():
         flash("Não foi possível obter o e-mail do Google.", "danger")
         return redirect(url_for("login"))
 
+    # Cadastro de cliente: identidade confirmada pelo Google OAuth.
+    # Preserva integralmente o fluxo existente para contas de malharia.
+    if ctx == "cliente":
+        if userinfo.get("email_verified") is not True:
+            flash("Não foi possível confirmar o e-mail da sua conta Google.", "error")
+            return redirect(url_for("index"))
+        emp_existente = Empresa.query.filter(func.lower(Empresa.email) == email).first()
+        if emp_existente:
+            flash("Este e-mail já pertence a uma malharia. Acesse sua conta de malharia.", "info")
+            return redirect(url_for("login", email=email))
+        usuario = Usuario.query.filter(func.lower(Usuario.email) == email).first()
+        if usuario and (usuario.role not in (None, "cliente") or Empresa.query.filter_by(user_id=usuario.id).first()):
+            flash("Este e-mail já está vinculado a outro tipo de conta.", "warning")
+            return redirect(url_for("login"))
+        if not usuario:
+            usuario = Usuario(email=email, google_id=str(userinfo.get("sub") or "") or None,
+                              role="cliente", is_active=True)
+            db.session.add(usuario)
+            db.session.flush()
+        else:
+            if usuario.is_active is False:
+                abort(403)
+            if usuario.google_id and usuario.google_id != str(userinfo.get("sub") or ""):
+                abort(403)
+            usuario.google_id = str(userinfo.get("sub") or "") or usuario.google_id
+            usuario.role = "cliente"
+        db.session.commit()
+        session.clear()
+        session["cliente_user_id"] = usuario.id
+        session["cliente_nome_google"] = nome
+        return redirect(url_for("criar_conta_cliente"))
+
     # ===== seu login existente (mesmo fluxo do login por e-mail) =====
     try:
         emp = Empresa.query.filter_by(email=email).first()
@@ -2331,8 +2364,73 @@ def oauth_google_callback():
 
     return redirect(nxt)
 
+# Cadastro de cliente: acesso somente após confirmação de identidade Google.
+@app.route("/criar_conta_cliente", methods=["GET", "POST"], endpoint="criar_conta_cliente")
+def criar_conta_cliente():
+    uid = session.get("cliente_user_id")
+    if not uid:
+        if request.method == "POST":
+            abort(403)
+        return redirect(url_for("oauth_google", ctx="cliente"))
+
+    usuario = db.session.get(Usuario, uid)
+    if not usuario or usuario.role != "cliente" or usuario.is_active is False:
+        session.pop("cliente_user_id", None)
+        abort(403)
+    if Empresa.query.filter(func.lower(Empresa.email) == usuario.email.lower()).first():
+        abort(403)
+
+    estados = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT',
+               'PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO']
+    perfil = ClienteProfile.query.filter_by(user_id=usuario.id).first()
+    if not session.get("cliente_csrf"):
+        session["cliente_csrf"] = secrets.token_urlsafe(32)
+
+    dados = {
+        "nome": (perfil.nome if perfil else None) or session.get("cliente_nome_google") or "",
+        "empresa": (perfil.empresa if perfil else None) or "",
+        "whatsapp": (perfil.whatsapp if perfil else None) or "",
+        "cidade": (perfil.cidade if perfil else None) or "",
+        "estado": (perfil.estado if perfil else None) or "",
+    }
+    erros = {}
+    if request.method == "POST":
+        if not secrets.compare_digest(request.form.get("csrf_token", ""), session["cliente_csrf"]):
+            abort(400)
+        dados = {k: (request.form.get(k) or "").strip() for k in dados}
+        if len(dados["nome"]) < 2 or len(dados["nome"]) > 120:
+            erros["nome"] = "Informe seu nome (até 120 caracteres)."
+        if len(dados["empresa"]) > 160:
+            erros["empresa"] = "Informe até 160 caracteres."
+        if dados["estado"] and dados["estado"] not in estados:
+            erros["estado"] = "UF inválida."
+        if len(dados["cidade"]) > 100:
+            erros["cidade"] = "Informe até 100 caracteres."
+        whatsapp = re.sub(r"\D", "", dados["whatsapp"])
+        if whatsapp and not (10 <= len(whatsapp) <= 13):
+            erros["whatsapp"] = "Informe o WhatsApp com DDD."
+        if not erros:
+            if not perfil:
+                perfil = ClienteProfile(user_id=usuario.id)
+                db.session.add(perfil)
+            perfil.nome = dados["nome"]
+            perfil.empresa = dados["empresa"] or None
+            perfil.estado = dados["estado"] or None
+            perfil.cidade = dados["cidade"] or None
+            perfil.whatsapp = whatsapp or None
+            db.session.commit()
+            session["cliente_csrf"] = secrets.token_urlsafe(32)
+            flash("Dados de cliente salvos com sucesso.", "success")
+            return redirect(url_for("index"))
+
+    return render_template("criar_conta_cliente.html", estados=estados, erros=erros,
+                           csrf_token=session["cliente_csrf"], **dados)
+
+
 @app.route("/logout")
 def logout():
+    session.pop("cliente_user_id", None)
+    session.pop("cliente_csrf", None)
     session.pop("empresa_id", None)
     session.pop("empresa_apelido", None)
     return redirect(url_for('login'))  # <- agora vai para a tela de login
