@@ -2,7 +2,7 @@
 {% block content %}
 <main class="container" style="max-width:920px; margin:24px auto; padding:0 16px;">
   <div style="background:#fff; border-radius:16px; padding:24px; box-shadow:0 8px 24px rgba(0,0,0,.06);">
-    <h1 style="margin:0 0 6px; font-size:28px; color:#4a145e; font-weight:700;">Como você quer usar o AcheTece?</h1>
+    <h1 style="margin:0 0 6px; font-size:28px; color:#101214; font-weight:700;">Como você quer usar o AcheTece?</h1>
     <p style="margin:0 0 24px; color:#666;">Escolha seu perfil para continuarmos.</p>
 
     <form method="POST" class="cards-grid" style="display:grid; gap:16px; grid-template-columns:1fr;">
@@ -12,10 +12,10 @@
           Encontre malharias por tipo de malha, finura, diâmetro e mais. Solicite orçamentos e contatos.
         </p>
         <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-          <button name="role" value="cliente" class="btn-roxo" style="background:#8A00FF; color:#fff; border:0; border-radius:14px; padding:10px 16px; font-weight:700; cursor:pointer;">
+          <button name="role" value="cliente" class="btn-roxo" style="background:#101214; color:#fff; border:0; border-radius:14px; padding:10px 16px; font-weight:700; cursor:pointer;">
             Criar conta
           </button>
-          <a href="{{ url_for('login') }}?perfil=cliente" class="link" style="text-decoration:none; color:#4a145e;">Já sou cadastrado</a>
+          <a href="{{ url_for('login') }}?perfil=cliente" class="link" style="text-decoration:none; color:#101214;">Já sou cadastrado</a>
         </div>
       </section>
 
@@ -25,10 +25,10 @@
           Cadastre sua malharia, publique seus teares e receba demandas. Painel com métricas e assinaturas.
         </p>
         <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-          <button name="role" value="malharia" class="btn-roxo" style="background:#8A00FF; color:#fff; border:0; border-radius:14px; padding:10px 16px; font-weight:700; cursor:pointer;">
+          <button name="role" value="malharia" class="btn-roxo" style="background:#101214; color:#fff; border:0; border-radius:14px; padding:10px 16px; font-weight:700; cursor:pointer;">
             Criar conta
           </button>
-          <a href="{{ url_for('login') }}?perfil=malharia" class="link" style="text-decoration:none; color:#4a145e;">Já sou cadastrado</a>
+          <a href="{{ url_for('login') }}?perfil=malharia" class="link" style="text-decoration:none; color:#101214;">Já sou cadastrado</a>
         </div>
       </section>
     </form>
