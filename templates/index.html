@@ -541,7 +541,7 @@
           <section class="localizacao-card" aria-labelledby="loc-title">
             {% set sel_uf = (filtros.get('estado') if filtros is defined else request.args.get('estado','')) %}
             {% set sel_cidade = (filtros.get('cidade') if filtros is defined else request.args.get('cidade','')) %}
-            <h2 id="loc-title">Localização</h2>
+            <h2 id="loc-title">Filtrar Localização</h2>
             <div class="row">
               <div>
                 <label for="estado">Estado</label>
