@@ -3484,7 +3484,7 @@ def exportar():
     if filtros_raw['tipo']:
         query = query.filter(Tear.tipo == filtros_raw['tipo'])
     if diametro is not None:
-        query = query.filter(Tear.diametro == diametro)
+        query = query.filter(func.round(Tear.diametro, 2) == round(diametro, 2))
     if galga is not None:
         query = query.filter(Tear.finura == galga)
     if filtros_raw['estado']:
@@ -4498,8 +4498,14 @@ def _carregar_cidades_estatico():
 _CIDADES_ESTATICO = _carregar_cidades_estatico()
 
 def _get_cidades_por_uf(uf: str):
-    if not uf: return []
+    if not uf:
+        return []
     uf = uf.strip().upper()
+    # A lista oficial versionada com o aplicativo evita depender de chamadas
+    # externas a cada cadastro (e funciona em deploys efêmeros do Render).
+    cidades_estaticas = _CIDADES_ESTATICO.get(uf, [])
+    if isinstance(cidades_estaticas, list) and cidades_estaticas:
+        return cidades_estaticas
     cache_path = os.path.join(CACHE_DIR, f'{uf}.json')
     try:
         if os.path.exists(cache_path) and os.path.getsize(cache_path) > 2:
