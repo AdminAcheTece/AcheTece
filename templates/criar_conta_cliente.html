@@ -28,6 +28,7 @@
       {% endif %}
 
       <form method="POST" style="display:grid;gap:12px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <label>Nome*
           <input type="text" name="nome" value="{{ nome or '' }}" required style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;">
           {% if erros and erros.get('nome') %}<small style="color:#b00020">{{erros.get('nome')}}</small>{% endif %}
@@ -58,7 +59,7 @@
 
         <div style="display:flex;gap:12px;align-items:center;margin-top:8px;">
           <button type="submit" class="btn-roxo" style="background:#101214;color:#fff;border:0;border-radius:14px;padding:10px 16px;font-weight:700;cursor:pointer;">Salvar</button>
-          <a href="{{ url_for('pos_login') }}" style="text-decoration:none;color:#101214;">Cancelar</a>
+          <a href="{{ url_for('index') }}" style="text-decoration:none;color:#101214;">Cancelar</a>
         </div>
       </form>
     </div>
