@@ -32,4 +32,5 @@ jobs:
         run: |
           python -m unittest -v test_ed02_shadow_mock
           python -m unittest -v test_ed02_3d_fluxo_mock
+          python -m unittest -v test_ed02_3e_mock
 
