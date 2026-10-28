@@ -3,6 +3,7 @@
 Extrai somente a função do main.py por AST; nunca importa/inicializa Flask,
 nunca faz HTTP, não precisa de credenciais e não conecta ao PostgreSQL.
 Documenta expressamente o problema legado de renovar a data em replays.
+A flag transacional ED02.3E permanece OFF nestes testes legados.
 """
 import ast
 import datetime as real_datetime
@@ -40,6 +41,7 @@ class ED023DFluxoMock(unittest.TestCase):
         self.fn, self.env = load_payment_function()
         self.empresa = FakeEmpresa()
         self.shadow_calls = []
+        self.shadow_enabled = False
         self.payment = {'id': '123456789', 'status': 'approved', 'status_detail': 'accredited',
                         'external_reference': 'achetece:1:ed023d-fixture',
                         'currency_id': 'BRL', 'transaction_amount': 2.0,
@@ -50,7 +52,7 @@ class ED023DFluxoMock(unittest.TestCase):
             'Empresa': types.SimpleNamespace(query=types.SimpleNamespace(get=lambda i: self.empresa if i == 1 else None)),
             '_mp_get_payment': Mock(return_value=self.payment),
             '_parse_empresa_id_from_external_reference': lambda ref: 1 if ref.startswith('achetece:1:') else None,
-            '_env_bool': Mock(return_value=False),
+            '_env_bool': Mock(side_effect=lambda key, default=False: (False if key == 'ED02_EXACT_ONCE_HOMOLOG' else self.shadow_enabled)),
             '_make_magic_link': Mock(return_value='https://example.invalid/magic/token'),
             '_email_ativacao_html': Mock(return_value='<p>Teste</p>'),
             '_send_email': Mock(),
@@ -67,16 +69,16 @@ class ED023DFluxoMock(unittest.TestCase):
         result = self.fn('123456789')
         self.assertTrue(result['ok'])
         self.assertEqual(self.shadow_calls, [])
-        self.env['_env_bool'].assert_called_with('ED02_SHADOW_LEDGER', False)
+        self.env['_env_bool'].assert_any_call('ED02_SHADOW_LEDGER', False)
         self.env['_mp_get_payment'].assert_called_once_with('123456789')
 
     def test_flag_on_invokes_shadow_once_with_verified_provider_result(self):
-        self.env['_env_bool'].return_value = True
+        self.shadow_enabled = True
         self.fn('123456789')
         self.assertEqual(self.shadow_calls, [('123456789', 1)])
 
     def test_shadow_error_does_not_block_legacy_but_rolls_back(self):
-        self.env['_env_bool'].return_value = True
+        self.shadow_enabled = True
         sys.modules['ed02_payment_shadow'].shadow_record_payment.side_effect = RuntimeError('falha fictícia')
         result = self.fn('123456789')
         self.assertTrue(result['ok'])
@@ -84,7 +86,7 @@ class ED023DFluxoMock(unittest.TestCase):
         self.env['app'].logger.exception.assert_called_once()
 
     def test_replayed_approved_payment_resets_legacy_payment_date__known_issue(self):
-        self.env['_env_bool'].return_value = True
+        self.shadow_enabled = True
         self.fn('123456789')
         self.empresa.data_pagamento = real_datetime.datetime(2025, 1, 1, 12, 0)
         self.fn('123456789')
