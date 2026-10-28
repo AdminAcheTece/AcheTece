@@ -37,4 +37,6 @@ jobs:
           python -m unittest -v test_ed02_3g2_webhook_seguro
           python -m unittest -v test_ed02_3g3_assinatura_mock
           python -m unittest -v test_ed02_3g4_assinatura_webhook_mock
+          python -m unittest -v test_ed02_3g5_banco_real_mock
+          python -m unittest -v test_ed02_3g4_assinatura_webhook_mock
 
