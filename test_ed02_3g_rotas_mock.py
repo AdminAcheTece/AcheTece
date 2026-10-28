@@ -72,12 +72,11 @@ class ED023GRotasMock(unittest.TestCase):
         self.envw['request'] = SimpleNamespace(method='POST', args={})
         self.processar.side_effect = RuntimeError('FALHA_SIMULADA_INTERNA')
         resposta, status = self.webhook()
-        self.assertEqual(status, 200)
+        self.assertEqual(status, 503)
         self.assertEqual(self.processar.call_count, 1)
-        self.assertTrue(resposta.get('ok'))
-        # Problema legado conhecido: resposta inclui detalhes internos.
-        # A correcao deve substituir este teste por assertNotIn.
-        self.assertIn('FALHA_SIMULADA_INTERNA', resposta.get('error', ''))
+        self.assertFalse(resposta.get('ok'))
+        self.assertEqual(resposta.get('error'), 'temporarily_unavailable')
+        self.assertNotIn('FALHA_SIMULADA_INTERNA', str(resposta))
 
 
 if __name__ == '__main__':

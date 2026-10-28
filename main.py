@@ -4418,21 +4418,24 @@ def webhook():
 
     payment_id, payload = _extract_payment_id(request)
 
-    # loga args + payload (isso é essencial!)
-    app.logger.info(f"[WEBHOOK] args={dict(request.args)} payload={payload}")
-
+    # ED02.3G.2: nao registrar payload, query string, tokens ou identificadores
+    # recebidos de terceiros nos logs. A resposta nao revela detalhes internos.
     if not payment_id:
-        app.logger.warning("[WEBHOOK] payment_id ausente. Vou responder 200 mesmo assim.")
+        app.logger.info("[WEBHOOK] notificacao sem identificador; ignorada")
         return jsonify({"ok": True, "ignored": True}), 200
 
     try:
         result = _processar_pagamento(payment_id)
-        app.logger.info(f"[WEBHOOK] processado: {result}")
+        if not isinstance(result, dict) or result.get("ok") is not True:
+            app.logger.error("[WEBHOOK] processamento sem confirmacao de sucesso")
+            return jsonify({"ok": False, "error": "temporarily_unavailable"}), 503
+        app.logger.info("[WEBHOOK] evento processado")
         return jsonify(result), 200
-    except Exception as e:
-        app.logger.exception(f"[WEBHOOK] erro payment_id={payment_id}: {e}")
-        # 200 evita loop de reenvio agressivo
-        return jsonify({"ok": True, "error": str(e)}), 200
+    except Exception:
+        app.logger.exception("[WEBHOOK] falha interna no processamento")
+        # 503 preserva oportunidade de retentativa pelo provedor.
+        # Nunca responder 200 para uma falha interna real.
+        return jsonify({"ok": False, "error": "temporarily_unavailable"}), 503
 
 @app.route("/magic/<token>")
 def magic_login(token):
