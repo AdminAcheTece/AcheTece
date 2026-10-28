@@ -4267,6 +4267,22 @@ def _processar_pagamento(payment_id: str):
     if not empresa:
         raise RuntimeError("Não encontrei a Empresa para este pagamento (sem external_reference e sem match por email).")
 
+    # ED02.3E: exclusivamente homologacao, flag DESLIGADA por padrao.
+    # A verificacao do banco ocorre DENTRO da mesma transacao da alteracao.
+    if _env_bool("ED02_EXACT_ONCE_HOMOLOG", False):
+        from ed02_payment_idempotency import process_verified_payment_exact_once
+        result = process_verified_payment_exact_once(db, payment, empresa.id)
+        if result["primeira_ativacao"]:
+            try:
+                link = _make_magic_link(empresa.id)
+                html = _email_ativacao_html(empresa, link)
+                _send_email(empresa.email, "Pagamento aprovado - AcheTece", html)
+            except Exception:
+                app.logger.exception("[ED02.3E] Falha no e-mail apos commit; nao reprocessar pagamento")
+        return {"ok": True, "empresa_id": empresa.id,
+                "ativou": result["aplicado"], "duplicado": result["duplicado"],
+                "modo": "ed02_homologacao", "status": result["status"]}
+
     # ED02.3B: registro SOMENTE observacional, desligado por padrão.
     # Nunca grava em produção e nunca interfere no checkout / fluxo ED01.
     if _env_bool("ED02_SHADOW_LEDGER", False):
