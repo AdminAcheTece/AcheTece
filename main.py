@@ -3910,6 +3910,62 @@ def admin_editar_status(empresa_id):
                             data_inicio=request.args.get('data_inicio', ''),
                             data_fim=request.args.get('data_fim', '')))
 
+
+# ===== ED01: Ferramenta TEMPORÁRIA de homologação de vencimento =====
+# Remover integralmente após validar os testes, antes do merge de produção.
+@app.route('/admin/ed01-teste-vencimento', methods=['GET', 'POST'])
+@login_admin_requerido
+def ed01_teste_vencimento():
+    from sqlalchemy import text as _ed01_sql_text
+
+    # Todos os bloqueios são obrigatórios (sem fallback e sem escrever na produção).
+    if (not _env_bool('ED01_HOMOLOGACAO', False)
+            or request.host.lower() != 'achetece-ed01-teste.onrender.com'
+            or db.engine.dialect.name != 'postgresql'):
+        abort(404)
+    nome_banco = db.session.execute(_ed01_sql_text('SELECT current_database()')).scalar()
+    if nome_banco != 'achetece_ed01_test':
+        abort(404)
+
+    empresa = Empresa.query.filter_by(nome='ED01 Malharia Teste').first_or_404()
+    # Nunca alterar outra empresa; exige o tear do cenário previamente homologado.
+    tear_teste = Tear.query.filter_by(empresa_id=empresa.id, modelo='HOMOLOG-01').first()
+    if tear_teste is None:
+        abort(409, description='Tear HOMOLOG-01 não encontrado nesta empresa.')
+
+    if request.method == 'POST':
+        token = request.form.get('token', '')
+        if not token or not hmac.compare_digest(token, session.get('ed01_vencimento_token', '')):
+            abort(403)
+        acao = request.form.get('acao')
+        if acao == 'vencido':
+            empresa.status_pagamento = 'ativo'
+            empresa.data_pagamento = datetime.utcnow() - timedelta(days=400)
+        elif acao == 'restaurar_pendente':
+            empresa.status_pagamento = 'pendente'
+            empresa.data_pagamento = None
+        else:
+            abort(400)
+        db.session.commit()
+        return redirect(url_for('ed01_teste_vencimento'))
+
+    session['ed01_vencimento_token'] = secrets.token_urlsafe(32)
+    data = (empresa.data_pagamento.strftime('%d/%m/%Y %H:%M UTC')
+            if empresa.data_pagamento else 'sem data')
+    return render_template_string('''<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>ED01 - Vencimento (homologação)</title><body style="max-width:740px;margin:45px auto;font:17px Arial;padding:15px">
+    <h1>ED01 — Teste de vencimento</h1><p><b>Ambiente:</b> HOMOLOGAÇÃO / <b>Banco:</b> {{ banco }}</p>
+    <p><b>Empresa:</b> {{ empresa.nome }} (ID {{ empresa.id }})</p><p><b>Status:</b> {{ empresa.status_pagamento }}<br><b>Pagamento:</b> {{ data }}</p>
+    <p><b>Assinatura vigente?</b> {{ 'SIM' if empresa.assinatura_ativa else 'NÃO' }}</p>
+    <hr><p>Use somente para o teste. Não processa pagamentos.</p>
+    <form method="post"><input type="hidden" name="token" value="{{token}}"><input type="hidden" name="acao" value="vencido">
+    <button style="padding:12px;margin:8px 0">1. Simular assinatura ATIVA mas VENCIDA há 400 dias</button></form>
+    <form method="post"><input type="hidden" name="token" value="{{token}}"><input type="hidden" name="acao" value="restaurar_pendente">
+    <button style="padding:12px;margin:8px 0">2. Restaurar PENDENTE e limpar data de pagamento</button></form>
+    </body></html>''', empresa=empresa, banco=nome_banco, data=data,
+                                  token=session['ed01_vencimento_token'])
+# ===== Fim da ferramenta TEMPORÁRIA ED01 =====
+
 @app.route('/admin/empresa_excluir/<int:empresa_id>', methods=['POST'])
 @login_admin_requerido
 def empresa_excluir(empresa_id):
