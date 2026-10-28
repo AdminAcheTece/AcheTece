@@ -4416,6 +4416,26 @@ def webhook():
     if request.method == "GET":
         return jsonify({"ok": True, "hint": "webhook ativo"}), 200
 
+    # ED02.3G.4: valida assinatura antes de extrair ID ou processar o pagamento.
+    # Habilitacao somente por flag explicita; em ausencia de chave, falha fechada.
+    if os.getenv("ED02_WEBHOOK_SIGNATURE_HOMOLOG", "false").strip().lower() == "true":
+        if not (
+            os.getenv("ED01_HOMOLOGACAO", "false").strip().lower() == "true"
+            and (os.getenv("ED02_HOMOLOG_DATABASE_NAME", "") == "achetece_ed01_test")
+        ):
+            app.logger.error("[WEBHOOK] verificacao ED02 bloqueada fora da homologacao")
+            return jsonify({"ok": False, "error": "temporarily_unavailable"}), 503
+
+        secret = os.getenv("ED02_MP_WEBHOOK_SECRET", "")
+        if not secret:
+            app.logger.error("[WEBHOOK] chave de autenticidade nao configurada")
+            return jsonify({"ok": False, "error": "temporarily_unavailable"}), 503
+
+        from ed02_webhook_signature import validate_mp_flask_request
+        if not validate_mp_flask_request(request, secret):
+            app.logger.warning("[WEBHOOK] assinatura ausente ou invalida")
+            return jsonify({"ok": False, "error": "unauthorized"}), 401
+
     payment_id, payload = _extract_payment_id(request)
 
     # ED02.3G.2: nao registrar payload, query string, tokens ou identificadores
