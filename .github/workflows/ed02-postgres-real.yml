@@ -3,6 +3,11 @@ name: ED02.3C - Teste PostgreSQL real
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - ed02-assinaturas-vigencia-ledger
+    paths:
+      - '.github/workflows/ed02-postgres-real.yml'
 
 permissions:
   contents: read
