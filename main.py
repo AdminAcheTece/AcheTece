@@ -3484,7 +3484,7 @@ def exportar():
     if filtros_raw['tipo']:
         query = query.filter(Tear.tipo == filtros_raw['tipo'])
     if diametro is not None:
-        query = query.filter(func.round(Tear.diametro, 2) == round(diametro, 2))
+        query = query.filter(Tear.diametro == diametro)
     if galga is not None:
         query = query.filter(Tear.finura == galga)
     if filtros_raw['estado']:
