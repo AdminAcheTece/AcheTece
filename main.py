@@ -4426,6 +4426,21 @@ def webhook():
             app.logger.error("[WEBHOOK] verificacao ED02 bloqueada fora da homologacao")
             return jsonify({"ok": False, "error": "temporarily_unavailable"}), 503
 
+        # ED02.3G.5: confirma o banco EFETIVO da sessao PostgreSQL.
+        # Variaveis de ambiente nunca substituem esta verificacao.
+        try:
+            from sqlalchemy import text as _ed02_sql_text
+            with db.session.no_autoflush:
+                _ed02_real_database = db.session.execute(
+                    _ed02_sql_text("SELECT current_database()")
+                ).scalar_one()
+            if db.engine.dialect.name != "postgresql" or _ed02_real_database != "achetece_ed01_test":
+                app.logger.error("[WEBHOOK] banco conectado nao autorizado para ED02")
+                return jsonify({"ok": False, "error": "temporarily_unavailable"}), 503
+        except Exception:
+            app.logger.exception("[WEBHOOK] falha na verificacao do banco ED02")
+            return jsonify({"ok": False, "error": "temporarily_unavailable"}), 503
+
         secret = os.getenv("ED02_MP_WEBHOOK_SECRET", "")
         if not secret:
             app.logger.error("[WEBHOOK] chave de autenticidade nao configurada")

@@ -21,7 +21,13 @@ class SignatureIntegrationTests(TestCase):
         self.process = Mock(return_value={"ok": True, "empresa_id": 1})
         self.extract = Mock(return_value=("123456", {"data": {"id": "123456"}}))
         self.logger = SimpleNamespace(info=Mock(), warning=Mock(), error=Mock(), exception=Mock())
+        fake_session = SimpleNamespace(
+            no_autoflush=__import__("contextlib").nullcontext(),
+            execute=Mock(return_value=SimpleNamespace(scalar_one=lambda: "achetece_ed01_test")),
+        )
         ENV.update(app=SimpleNamespace(logger=self.logger), jsonify=lambda item: item,
+                   db=SimpleNamespace(session=fake_session,
+                                      engine=SimpleNamespace(dialect=SimpleNamespace(name="postgresql"))),
                    _processar_pagamento=self.process, _extract_payment_id=self.extract)
         self.env = patch.dict(os.environ, {"ED02_WEBHOOK_SIGNATURE_HOMOLOG": "true",
                            "ED01_HOMOLOGACAO": "true",
