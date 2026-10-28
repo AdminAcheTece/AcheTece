@@ -34,4 +34,5 @@ jobs:
           python -m unittest -v test_ed02_3d_fluxo_mock
           python -m unittest -v test_ed02_3e_mock
           python -m unittest -v test_ed02_3g_rotas_mock
+          python -m unittest -v test_ed02_3g2_webhook_seguro
 
