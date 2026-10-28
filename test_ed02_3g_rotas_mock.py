@@ -3,6 +3,7 @@ Sem rede, MP, DB, envio de email ou modificacoes em producao.
 Verifica comportamento de rotas existentes; nao habilita flags.
 """
 import ast
+import os
 from pathlib import Path
 import unittest
 from unittest.mock import Mock
@@ -14,11 +15,26 @@ MAIN = ROOT / 'main.py'
 
 def carregar_rota(nome):
     arvore = ast.parse(MAIN.read_text(encoding='utf-8'))
-    funcao = next(n for n in arvore.body if isinstance(n, ast.FunctionDef) and n.name == nome)
+    funcao = next(
+        n for n in arvore.body
+        if isinstance(n, ast.FunctionDef) and n.name == nome
+    )
     funcao.decorator_list = []
-    ambiente = {}
-    exec(compile(ast.Module(body=[funcao], type_ignores=[]), str(MAIN), 'exec'), ambiente)
+
+    # Disponibiliza os no ambiente isolado dos testes.
+    ambiente = {'os': os}
+
+    exec(
+        compile(
+            ast.Module(body=[funcao], type_ignores=[]),
+            str(MAIN),
+            'exec'
+        ),
+        ambiente
+    )
+
     return ambiente[nome], ambiente
+
 
 
 class ED023GRotasMock(unittest.TestCase):
