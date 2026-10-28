@@ -4267,6 +4267,16 @@ def _processar_pagamento(payment_id: str):
     if not empresa:
         raise RuntimeError("Não encontrei a Empresa para este pagamento (sem external_reference e sem match por email).")
 
+    # ED02.3B: registro SOMENTE observacional, desligado por padrão.
+    # Nunca grava em produção e nunca interfere no checkout / fluxo ED01.
+    if _env_bool("ED02_SHADOW_LEDGER", False):
+        try:
+            from ed02_payment_shadow import shadow_record_payment
+            shadow_record_payment(db, payment, empresa.id)
+        except Exception:
+            app.logger.exception("[ED02 SHADOW] Falha no registro observacional; fluxo legado preservado")
+            db.session.rollback()
+
     # Só envia e-mail quando houver transição para ativo
     status_atual = (empresa.status_pagamento or "").strip().lower()
 
