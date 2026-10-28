@@ -1,0 +1,28 @@
+
+name: ED02 - Testes do histórico observacional
+
+on:
+  push:
+    branches:
+      - ed02-assinaturas-vigencia-ledger
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Obter codigo
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Executar testes isolados
+        run: python -m unittest -v test_ed02_shadow_mock
