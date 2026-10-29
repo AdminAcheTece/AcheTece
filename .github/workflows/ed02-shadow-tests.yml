@@ -43,6 +43,7 @@ jobs:
           python -m unittest -v test_ed02_3g7_financeiro_mock
           python -m unittest -v test_ed02_3g7c2_checkout_integrado
           python -m unittest -v test_ed02_3g7d_guard_mock
+          python -m unittest -v test_ed02_3g7d2_integracao_mock
 
   homologacao_postgres_checkout:
     name: ED02.3G.7C.3 - Persistencia real PostgreSQL
