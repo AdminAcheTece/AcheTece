@@ -1,0 +1,5 @@
+
+ED02.3G.7C.3
+Autorizacao de execucao unica do teste transacional PostgreSQL.
+Ambiente: achetece_ed01_test.
+Nenhuma ativacao de assinatura ou pagamento real.
