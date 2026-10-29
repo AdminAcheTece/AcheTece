@@ -1,0 +1,25 @@
+name: ED02.3G.7C.3 - Checkout PostgreSQL Real Homologacao
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  persistencia_checkout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Obter codigo
+        uses: actions/checkout@v4
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Instalar dependencias do teste
+        run: python -m pip install 'SQLAlchemy>=2.0,<3.0' 'psycopg2-binary>=2.9,<3.0'
+      - name: Executar teste real com rollback externo
+        env:
+          ED02_HOMOLOG_DATABASE_URL: ${{ secrets.ED02_HOMOLOG_DATABASE_URL }}
+        run: python test_ed02_3g7c3_postgres_real.py
