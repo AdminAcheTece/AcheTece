@@ -4255,17 +4255,58 @@ def _processar_pagamento(payment_id: str):
 
     app.logger.info(f"[MP] payment_id={payment_id} status={status} detail={detail} ext_ref={ext_ref}")
 
-    empresa_id = _parse_empresa_id_from_external_reference(ext_ref)
+    # ED02.3G.7D.2: validacao financeira obrigatoria antes de identificar
+    # empresa ou acionar qualquer caminho de atualizacao, apenas homologacao.
+    _ed02_guarda_financeira = _env_bool("ED02_FINANCIAL_GUARD_HOMOLOG", False)
+    if _ed02_guarda_financeira:
+        if not _env_bool("ED02_EXACT_ONCE_HOMOLOG", False):
+            raise RuntimeError("ED02 guarda exige processamento transacional")
+        from ed02_payment_contract_guard import verify_payment_against_contract
+        try:
+            contrato_validado = verify_payment_against_contract(db, payment, payment_id)
+        except Exception:
+            db.session.rollback()
+            app.logger.warning("[ED02 FINANCEIRO] pagamento nao validado; sem ativacao")
+            raise RuntimeError("Pagamento nao autorizado pela validacao financeira") from None
+        empresa_id = contrato_validado['empresa_id']
+    else:
+        empresa_id = _parse_empresa_id_from_external_reference(ext_ref)
 
-    # fallback por e-mail do pagador
+    # Fallback pelo e-mail e permitido SOMENTE com guarda desativada.
     empresa = None
     if empresa_id:
         empresa = Empresa.query.get(empresa_id)
-    if not empresa and payer_email:
+    if not empresa and payer_email and not _ed02_guarda_financeira:
         empresa = Empresa.query.filter(Empresa.email.ilike(payer_email)).first()
 
     if not empresa:
         raise RuntimeError("Não encontrei a Empresa para este pagamento (sem external_reference e sem match por email).")
+
+    # ED02.3E: exclusivamente homologacao, flag DESLIGADA por padrao.
+    # A verificacao do banco ocorre DENTRO da mesma transacao da alteracao.
+    if _env_bool("ED02_EXACT_ONCE_HOMOLOG", False):
+        from ed02_payment_idempotency import process_verified_payment_exact_once
+        result = process_verified_payment_exact_once(db, payment, empresa.id)
+        if result["primeira_ativacao"]:
+            try:
+                link = _make_magic_link(empresa.id)
+                html = _email_ativacao_html(empresa, link)
+                _send_email(empresa.email, "Pagamento aprovado - AcheTece", html)
+            except Exception:
+                app.logger.exception("[ED02.3E] Falha no e-mail apos commit; nao reprocessar pagamento")
+        return {"ok": True, "empresa_id": empresa.id,
+                "ativou": result["aplicado"], "duplicado": result["duplicado"],
+                "modo": "ed02_homologacao", "status": result["status"]}
+
+    # ED02.3B: registro SOMENTE observacional, desligado por padrão.
+    # Nunca grava em produção e nunca interfere no checkout / fluxo ED01.
+    if _env_bool("ED02_SHADOW_LEDGER", False):
+        try:
+            from ed02_payment_shadow import shadow_record_payment
+            shadow_record_payment(db, payment, empresa.id)
+        except Exception:
+            app.logger.exception("[ED02 SHADOW] Falha no registro observacional; fluxo legado preservado")
+            db.session.rollback()
 
     # Só envia e-mail quando houver transição para ativo
     status_atual = (empresa.status_pagamento or "").strip().lower()
@@ -4321,6 +4362,16 @@ def checkout():
 
     ext_ref = f"achetece:{empresa.id}:{uuid.uuid4().hex}"
 
+    # ED02.3G.7C: somente homologacao e desligado por padrao.
+    _ed02_registro_checkout = _env_bool("ED02_CHECKOUT_LEDGER_HOMOLOG", False)
+    if _ed02_registro_checkout:
+        try:
+            from ed02_checkout_ledger import registrar_contratacao
+            registrar_contratacao(db, empresa.id, ext_ref, plano, preco)
+        except Exception:
+            app.logger.error("[ED02 CHECKOUT] contratacao nao registrada")
+            return "<h2>Erro ao iniciar pagamento.</h2>", 503
+
     preference_data = {
         "items": [{
             "title": titulo_plano,
@@ -4346,14 +4397,35 @@ def checkout():
         preference = preference_response.get("response", {}) if isinstance(preference_response, dict) else {}
         init_point = preference.get("init_point") or preference.get("sandbox_init_point")
 
+        if _ed02_registro_checkout:
+            try:
+                from ed02_checkout_ledger import registrar_resultado_preferencia
+                pref_id = preference.get("id") if init_point else None
+                registrar_resultado_preferencia(db, ext_ref, str(pref_id) if pref_id else None)
+                if not pref_id:
+                    app.logger.error("[ED02 CHECKOUT] preference_id ausente")
+                    return "<h2>Erro ao iniciar pagamento.</h2>", 503
+            except Exception:
+                app.logger.error("[ED02 CHECKOUT] resultado da preferencia nao registrado")
+                return "<h2>Erro ao iniciar pagamento.</h2>", 503
+
         if not init_point:
-            app.logger.error(f"[CHECKOUT] init_point ausente. Resposta MP: {preference_response}")
+            app.logger.error("[CHECKOUT] init_point ausente" if _ed02_registro_checkout
+                             else f"[CHECKOUT] init_point ausente. Resposta MP: {preference_response}")
             return "<h2>Erro ao iniciar pagamento (init_point ausente).</h2>", 500
 
         return redirect(init_point)
 
     except Exception as e:
-        app.logger.exception(f"[CHECKOUT] Erro: {e}")
+        if not _ed02_registro_checkout:
+            app.logger.exception(f"[CHECKOUT] Erro: {e}")
+        else:
+            app.logger.error("[ED02 CHECKOUT] falha ao criar preferencia")
+            try:
+                from ed02_checkout_ledger import registrar_resultado_preferencia
+                registrar_resultado_preferencia(db, ext_ref, None)
+            except Exception:
+                app.logger.error("[ED02 CHECKOUT] falha ao marcar tentativa")
         return "<h2>Erro ao iniciar pagamento.</h2>", 500
 
 @app.route('/pagamento_aprovado')
@@ -4390,23 +4462,61 @@ def webhook():
     if request.method == "GET":
         return jsonify({"ok": True, "hint": "webhook ativo"}), 200
 
+    # ED02.3G.4: valida assinatura antes de extrair ID ou processar o pagamento.
+    # Habilitacao somente por flag explicita; em ausencia de chave, falha fechada.
+    if os.getenv("ED02_WEBHOOK_SIGNATURE_HOMOLOG", "false").strip().lower() == "true":
+        if not (
+            os.getenv("ED01_HOMOLOGACAO", "false").strip().lower() == "true"
+            and (os.getenv("ED02_HOMOLOG_DATABASE_NAME", "") == "achetece_ed01_test")
+        ):
+            app.logger.error("[WEBHOOK] verificacao ED02 bloqueada fora da homologacao")
+            return jsonify({"ok": False, "error": "temporarily_unavailable"}), 503
+
+        # ED02.3G.5: confirma o banco EFETIVO da sessao PostgreSQL.
+        # Variaveis de ambiente nunca substituem esta verificacao.
+        try:
+            from sqlalchemy import text as _ed02_sql_text
+            with db.session.no_autoflush:
+                _ed02_real_database = db.session.execute(
+                    _ed02_sql_text("SELECT current_database()")
+                ).scalar_one()
+            if db.engine.dialect.name != "postgresql" or _ed02_real_database != "achetece_ed01_test":
+                app.logger.error("[WEBHOOK] banco conectado nao autorizado para ED02")
+                return jsonify({"ok": False, "error": "temporarily_unavailable"}), 503
+        except Exception:
+            app.logger.error("[WEBHOOK] falha na verificacao do banco ED02; detalhes omitidos")
+            return jsonify({"ok": False, "error": "temporarily_unavailable"}), 503
+
+        secret = os.getenv("ED02_MP_WEBHOOK_SECRET", "")
+        if not secret:
+            app.logger.error("[WEBHOOK] chave de autenticidade nao configurada")
+            return jsonify({"ok": False, "error": "temporarily_unavailable"}), 503
+
+        from ed02_webhook_signature import validate_mp_flask_request
+        if not validate_mp_flask_request(request, secret):
+            app.logger.warning("[WEBHOOK] assinatura ausente ou invalida")
+            return jsonify({"ok": False, "error": "unauthorized"}), 401
+
     payment_id, payload = _extract_payment_id(request)
 
-    # loga args + payload (isso é essencial!)
-    app.logger.info(f"[WEBHOOK] args={dict(request.args)} payload={payload}")
-
+    # ED02.3G.2: nao registrar payload, query string, tokens ou identificadores
+    # recebidos de terceiros nos logs. A resposta nao revela detalhes internos.
     if not payment_id:
-        app.logger.warning("[WEBHOOK] payment_id ausente. Vou responder 200 mesmo assim.")
+        app.logger.info("[WEBHOOK] notificacao sem identificador; ignorada")
         return jsonify({"ok": True, "ignored": True}), 200
 
     try:
         result = _processar_pagamento(payment_id)
-        app.logger.info(f"[WEBHOOK] processado: {result}")
+        if not isinstance(result, dict) or result.get("ok") is not True:
+            app.logger.error("[WEBHOOK] processamento sem confirmacao de sucesso")
+            return jsonify({"ok": False, "error": "temporarily_unavailable"}), 503
+        app.logger.info("[WEBHOOK] evento processado")
         return jsonify(result), 200
-    except Exception as e:
-        app.logger.exception(f"[WEBHOOK] erro payment_id={payment_id}: {e}")
-        # 200 evita loop de reenvio agressivo
-        return jsonify({"ok": True, "error": str(e)}), 200
+    except Exception:
+        app.logger.error("[WEBHOOK] falha interna no processamento; detalhes omitidos")
+        # 503 preserva oportunidade de retentativa pelo provedor.
+        # Nunca responder 200 para uma falha interna real.
+        return jsonify({"ok": False, "error": "temporarily_unavailable"}), 503
 
 @app.route("/magic/<token>")
 def magic_login(token):
