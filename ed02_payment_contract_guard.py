@@ -31,6 +31,7 @@ def verify_payment_against_contract(db, payment, payment_id):
              status, provedor, preference_id
         FROM public.contratacao_checkout
        WHERE external_reference = :ref
+       FOR UPDATE
     '''), {'ref':ref}).mappings().one_or_none()
     if row is None:
         raise ContractGuardError('contratacao inexistente')

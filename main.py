@@ -4255,13 +4255,28 @@ def _processar_pagamento(payment_id: str):
 
     app.logger.info(f"[MP] payment_id={payment_id} status={status} detail={detail} ext_ref={ext_ref}")
 
-    empresa_id = _parse_empresa_id_from_external_reference(ext_ref)
+    # ED02.3G.7D.2: validacao financeira obrigatoria antes de identificar
+    # empresa ou acionar qualquer caminho de atualizacao, apenas homologacao.
+    _ed02_guarda_financeira = _env_bool("ED02_FINANCIAL_GUARD_HOMOLOG", False)
+    if _ed02_guarda_financeira:
+        if not _env_bool("ED02_EXACT_ONCE_HOMOLOG", False):
+            raise RuntimeError("ED02 guarda exige processamento transacional")
+        from ed02_payment_contract_guard import verify_payment_against_contract
+        try:
+            contrato_validado = verify_payment_against_contract(db, payment, payment_id)
+        except Exception:
+            db.session.rollback()
+            app.logger.warning("[ED02 FINANCEIRO] pagamento nao validado; sem ativacao")
+            raise RuntimeError("Pagamento nao autorizado pela validacao financeira") from None
+        empresa_id = contrato_validado['empresa_id']
+    else:
+        empresa_id = _parse_empresa_id_from_external_reference(ext_ref)
 
-    # fallback por e-mail do pagador
+    # Fallback pelo e-mail e permitido SOMENTE com guarda desativada.
     empresa = None
     if empresa_id:
         empresa = Empresa.query.get(empresa_id)
-    if not empresa and payer_email:
+    if not empresa and payer_email and not _ed02_guarda_financeira:
         empresa = Empresa.query.filter(Empresa.email.ilike(payer_email)).first()
 
     if not empresa:

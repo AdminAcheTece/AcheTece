@@ -12,6 +12,15 @@ def process_verified_payment_exact_once(db, payment, empresa_id):
     rec = extract_verified_record(payment, empresa_id)
     session = db.session
     try:
+        # ED02.3G.7D.2: segunda validacao financeira DENTRO da transacao
+        # que aplica a vigencia. Se a guarda estiver ligada, nenhuma escrita
+        # ou ativacao ocorre sem contrato previamente validado.
+        import os
+        if os.environ.get('ED02_FINANCIAL_GUARD_HOMOLOG', '').strip().lower() in ('1', 'true', 'yes', 'on'):
+            from ed02_payment_contract_guard import verify_payment_against_contract
+            verified = verify_payment_against_contract(db, payment, rec['payment_id'])
+            if verified['empresa_id'] != int(empresa_id):
+                raise ValueError('empresa diverge da contratacao')
         # Falha fechada: mesmo que a flag tenha sido ligada incorretamente em
         # producao, NENHUM UPDATE/INSERT ocorre antes desta verificacao.
         if session.execute(text('SELECT current_database()')).scalar_one() != 'achetece_ed01_test':
