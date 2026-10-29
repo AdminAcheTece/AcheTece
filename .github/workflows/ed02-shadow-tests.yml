@@ -41,4 +41,5 @@ jobs:
           python -m unittest -v test_ed02_3g4_assinatura_webhook_mock
           python -m unittest -v test_ed02_3g6_http_integrado
           python -m unittest -v test_ed02_3g7_financeiro_mock
+          python -m unittest -v test_ed02_3g7c2_checkout_integrado
 
