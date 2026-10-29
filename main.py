@@ -4347,6 +4347,16 @@ def checkout():
 
     ext_ref = f"achetece:{empresa.id}:{uuid.uuid4().hex}"
 
+    # ED02.3G.7C: somente homologacao e desligado por padrao.
+    _ed02_registro_checkout = _env_bool("ED02_CHECKOUT_LEDGER_HOMOLOG", False)
+    if _ed02_registro_checkout:
+        try:
+            from ed02_checkout_ledger import registrar_contratacao
+            registrar_contratacao(db, empresa.id, ext_ref, plano, preco)
+        except Exception:
+            app.logger.error("[ED02 CHECKOUT] contratacao nao registrada")
+            return "<h2>Erro ao iniciar pagamento.</h2>", 503
+
     preference_data = {
         "items": [{
             "title": titulo_plano,
@@ -4372,14 +4382,35 @@ def checkout():
         preference = preference_response.get("response", {}) if isinstance(preference_response, dict) else {}
         init_point = preference.get("init_point") or preference.get("sandbox_init_point")
 
+        if _ed02_registro_checkout:
+            try:
+                from ed02_checkout_ledger import registrar_resultado_preferencia
+                pref_id = preference.get("id") if init_point else None
+                registrar_resultado_preferencia(db, ext_ref, str(pref_id) if pref_id else None)
+                if not pref_id:
+                    app.logger.error("[ED02 CHECKOUT] preference_id ausente")
+                    return "<h2>Erro ao iniciar pagamento.</h2>", 503
+            except Exception:
+                app.logger.error("[ED02 CHECKOUT] resultado da preferencia nao registrado")
+                return "<h2>Erro ao iniciar pagamento.</h2>", 503
+
         if not init_point:
-            app.logger.error(f"[CHECKOUT] init_point ausente. Resposta MP: {preference_response}")
+            app.logger.error("[CHECKOUT] init_point ausente" if _ed02_registro_checkout
+                             else f"[CHECKOUT] init_point ausente. Resposta MP: {preference_response}")
             return "<h2>Erro ao iniciar pagamento (init_point ausente).</h2>", 500
 
         return redirect(init_point)
 
     except Exception as e:
-        app.logger.exception(f"[CHECKOUT] Erro: {e}")
+        if not _ed02_registro_checkout:
+            app.logger.exception(f"[CHECKOUT] Erro: {e}")
+        else:
+            app.logger.error("[ED02 CHECKOUT] falha ao criar preferencia")
+            try:
+                from ed02_checkout_ledger import registrar_resultado_preferencia
+                registrar_resultado_preferencia(db, ext_ref, None)
+            except Exception:
+                app.logger.error("[ED02 CHECKOUT] falha ao marcar tentativa")
         return "<h2>Erro ao iniciar pagamento.</h2>", 500
 
 @app.route('/pagamento_aprovado')
