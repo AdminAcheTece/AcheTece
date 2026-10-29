@@ -42,7 +42,7 @@ class ED023GRotasMock(unittest.TestCase):
         self.webhook, self.envw = carregar_rota('webhook')
         self.retorno, self.envr = carregar_rota('pagamento_aprovado')
         self.processar = Mock(return_value={'ok': True, 'empresa_id': 1, 'duplicado': False})
-        self.logger = SimpleNamespace(info=Mock(), warning=Mock(), exception=Mock())
+        self.logger = SimpleNamespace(info=Mock(), warning=Mock(), error=Mock(), exception=Mock())
         self.jsonify = lambda obj: obj
         self.envw.update(app=SimpleNamespace(logger=self.logger), jsonify=self.jsonify,
                          _processar_pagamento=self.processar,
