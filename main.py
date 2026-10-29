@@ -4484,7 +4484,7 @@ def webhook():
                 app.logger.error("[WEBHOOK] banco conectado nao autorizado para ED02")
                 return jsonify({"ok": False, "error": "temporarily_unavailable"}), 503
         except Exception:
-            app.logger.exception("[WEBHOOK] falha na verificacao do banco ED02")
+            app.logger.error("[WEBHOOK] falha na verificação do banco ED02; detalhes omitidos")
             return jsonify({"ok": False, "error": "temporarily_unavailable"}), 503
 
         secret = os.getenv("ED02_MP_WEBHOOK_SECRET", "")
@@ -4513,7 +4513,7 @@ def webhook():
         app.logger.info("[WEBHOOK] evento processado")
         return jsonify(result), 200
     except Exception:
-        app.logger.exception("[WEBHOOK] falha interna no processamento")
+        app.logger.error("[WEBHOOK] falha interna no processamento; detalhes omitidos")
         # 503 preserva oportunidade de retentativa pelo provedor.
         # Nunca responder 200 para uma falha interna real.
         return jsonify({"ok": False, "error": "temporarily_unavailable"}), 503
