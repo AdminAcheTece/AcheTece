@@ -75,13 +75,14 @@ class ED023GRotasMock(unittest.TestCase):
 
     def test_retorno_com_payment_id_chama_mesmo_processador(self):
         self.envr['request'] = SimpleNamespace(args={'payment_id': '123456'})
+        self.processar.return_value = {'ok': True, 'ativou': True}
         pagina = self.retorno()
         self.assertEqual(pagina, 'pagamento_aprovado.html')
         self.processar.assert_called_once_with('123456')
 
     def test_retorno_sem_payment_id_nao_processa(self):
         self.envr['request'] = SimpleNamespace(args={})
-        self.assertEqual(self.retorno(), 'pagamento_aprovado.html')
+        self.assertEqual(self.retorno(), 'pagamento_pendente.html')
         self.processar.assert_not_called()
 
     def test_falha_no_webhook_nao_ativa_empresa(self):

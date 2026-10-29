@@ -4253,7 +4253,7 @@ def _processar_pagamento(payment_id: str):
     ext_ref = payment.get("external_reference") or ""
     payer_email = (payment.get("payer") or {}).get("email")
 
-    app.logger.info(f"[MP] payment_id={payment_id} status={status} detail={detail} ext_ref={ext_ref}")
+    app.logger.info("[MP] consulta ao provedor concluida; dados financeiros omitidos")
 
     # ED02.3G.7D.2: validacao financeira obrigatoria antes de identificar
     # empresa ou acionar qualquer caminho de atualizacao, apenas homologacao.
@@ -4293,7 +4293,7 @@ def _processar_pagamento(payment_id: str):
                 html = _email_ativacao_html(empresa, link)
                 _send_email(empresa.email, "Pagamento aprovado - AcheTece", html)
             except Exception:
-                app.logger.exception("[ED02.3E] Falha no e-mail apos commit; nao reprocessar pagamento")
+                app.logger.error("[ED02.3E] falha ao notificar apos commit; detalhes omitidos")
         return {"ok": True, "empresa_id": empresa.id,
                 "ativou": result["aplicado"], "duplicado": result["duplicado"],
                 "modo": "ed02_homologacao", "status": result["status"]}
@@ -4305,7 +4305,7 @@ def _processar_pagamento(payment_id: str):
             from ed02_payment_shadow import shadow_record_payment
             shadow_record_payment(db, payment, empresa.id)
         except Exception:
-            app.logger.exception("[ED02 SHADOW] Falha no registro observacional; fluxo legado preservado")
+            app.logger.error("[ED02 SHADOW] falha observacional; detalhes omitidos")
             db.session.rollback()
 
     # Só envia e-mail quando houver transição para ativo
@@ -4411,14 +4411,14 @@ def checkout():
 
         if not init_point:
             app.logger.error("[CHECKOUT] init_point ausente" if _ed02_registro_checkout
-                             else f"[CHECKOUT] init_point ausente. Resposta MP: {preference_response}")
+                             else "[CHECKOUT] init_point ausente; detalhes omitidos")
             return "<h2>Erro ao iniciar pagamento (init_point ausente).</h2>", 500
 
         return redirect(init_point)
 
-    except Exception as e:
+    except Exception:
         if not _ed02_registro_checkout:
-            app.logger.exception(f"[CHECKOUT] Erro: {e}")
+            app.logger.error("[CHECKOUT] falha ao iniciar pagamento; detalhes omitidos")
         else:
             app.logger.error("[ED02 CHECKOUT] falha ao criar preferencia")
             try:
@@ -4436,18 +4436,27 @@ def pagamento_aprovado():
         or request.args.get("paymentId")
     )
 
-    if payment_id:
-        try:
-            result = _processar_pagamento(str(payment_id))
-            app.logger.info(f"[BACK_URL] processado: {result}")
-        except Exception as e:
-            app.logger.exception(f"[BACK_URL] erro payment_id={payment_id}: {e}")
-
-    return render_template('pagamento_aprovado.html')
+    # ED02.4: o retorno do navegador NAO e comprovante de pagamento.
+    # Renderiza sucesso somente quando a consulta autenticada confirma e o
+    # processador declara ativacao (ou replay idempotente do pagamento).
+    if not payment_id:
+        app.logger.info("[BACK_URL] retorno sem identificador; confirmacao pendente")
+        return render_template('pagamento_pendente.html')
+    try:
+        result = _processar_pagamento(str(payment_id))
+        if (isinstance(result, dict) and result.get('ok') is True
+                and (result.get('ativou') is True or result.get('duplicado') is True)):
+            app.logger.info("[BACK_URL] pagamento confirmado; detalhes omitidos")
+            return render_template('pagamento_aprovado.html')
+        app.logger.info("[BACK_URL] pagamento nao confirmado; detalhes omitidos")
+    except Exception:
+        app.logger.error("[BACK_URL] falha de confirmacao; detalhes omitidos")
+    return render_template('pagamento_pendente.html')
 
 @app.route('/pagamento_sucesso')
 def pagamento_sucesso():
-    return render_template('pagamento_aprovado.html')
+    # Link legado sem prova de pagamento: nunca exibir aprovacao diretamente.
+    return render_template('pagamento_pendente.html')
 
 @app.route('/pagamento_erro')
 def pagamento_erro():
