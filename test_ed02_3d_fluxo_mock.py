@@ -54,7 +54,7 @@ class ED023DFluxoMock(unittest.TestCase):
             '_make_magic_link': Mock(return_value='https://example.invalid/magic/token'),
             '_email_ativacao_html': Mock(return_value='<p>Teste</p>'),
             '_send_email': Mock(),
-            'app': types.SimpleNamespace(logger=types.SimpleNamespace(info=Mock(), exception=Mock())),
+            'app': types.SimpleNamespace(logger=types.SimpleNamespace(info=Mock(), exception=Mock(), error=Mock())),
         })
         module = types.ModuleType('ed02_payment_shadow')
         module.shadow_record_payment = Mock(side_effect=lambda db, payment, empresa_id:
@@ -81,7 +81,9 @@ class ED023DFluxoMock(unittest.TestCase):
         result = self.fn('123456789')
         self.assertTrue(result['ok'])
         self.db.session.rollback.assert_called_once()
-        self.env['app'].logger.exception.assert_called_once()
+        self.env['app'].logger.error.assert_called_once_with(
+            '[ED02 SHADOW] falha observacional; detalhes omitidos')
+        self.env['app'].logger.exception.assert_not_called()
 
     def test_replayed_approved_payment_resets_legacy_payment_date__known_issue(self):
         self.env['_env_bool'].side_effect = lambda name, default=False: name == 'ED02_SHADOW_LEDGER'
