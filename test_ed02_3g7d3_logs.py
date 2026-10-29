@@ -17,7 +17,7 @@ class WebhookLogSafetyTests(unittest.TestCase):
 
     def test_ambos_erros_fecham_sem_detalhes(self):
         s = MAIN.read_text(encoding='utf-8')
-        self.assertIn('falha na verificacao do banco ED02; detalhes omitidos', s)
+        self.assertIn('falha na verificação do banco ED02; detalhes omitidos', s)
         self.assertIn('falha interna no processamento; detalhes omitidos', s)
 
 if __name__ == '__main__':
