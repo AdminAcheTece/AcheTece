@@ -51,6 +51,7 @@ jobs:
           python -m unittest -v test_ed02_5_v56_elegibilidade
           python -m unittest -v test_ed02_5_v57_politica
           python -m unittest -v test_ed02_5_v571_auditoria
+          python -m unittest -v test_ed02_5_v572_http_visibilidade
           
   homologacao_postgres_checkout:
     name: ED02.3G.7C.3 - Persistencia real PostgreSQL
