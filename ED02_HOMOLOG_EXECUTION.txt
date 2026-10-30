@@ -9,3 +9,4 @@ ED02.3G.7D.3 - Segunda execucao controlada apos atualizar a URL externa do Postg
 ED02.4 - Execucao controlada do teste de concorrencia PostgreSQL.
 ED02.5 - Ensaio controlado da estrutura de vigencia PostgreSQL.
 ED02.5 - Segunda execucao controlada do ensaio DDL apos correcao do driver.
+ED02.5 V4 - Execucao controlada da homologacao transacional da vigencia.
