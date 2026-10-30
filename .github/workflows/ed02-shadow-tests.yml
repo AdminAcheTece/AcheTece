@@ -53,6 +53,7 @@ jobs:
           python -m unittest -v test_ed02_5_v571_auditoria
           python -m unittest -v test_ed02_5_v572_http_visibilidade
           python -m unittest -v test_ed02_5_v573_auditoria
+          python -m unittest -v test_ed02_5_v574_safety
           
   homologacao_postgres_checkout:
     name: ED02.3G.7C.3 - Persistencia real PostgreSQL
@@ -395,3 +396,30 @@ jobs:
           ED02_V573_READONLY_AUTHORIZED: 'true'
           ED02_HOMOLOG_DATABASE_URL: ${{ secrets.ED02_TEST_DATABASE_URL }}
         run: python test_ed02_5_v573_pg_readonly.py
+
+  diagnostico_v574_pg_http_readonly:
+    name: ED02.5 V5.7.4 - Diagnostico HTTP SQLAlchemy PostgreSQL READ ONLY
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/ed02-assinaturas-vigencia-ledger' &&
+      github.actor == 'AdminAcheTece' &&
+      github.event.head_commit.message == 'ED02_RUN_HTTP_PG_ED025_V574'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    concurrency:
+      group: ed02-postgres-checkout-homolog
+      cancel-in-progress: false
+    steps:
+      - name: Obter codigo
+        uses: actions/checkout@v4
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Instalar dependencias
+        run: python -m pip install "Flask>=3.0,<4.0" "SQLAlchemy>=2.0,<3.0" "psycopg[binary]>=3.1,<4.0"
+      - name: HTTP e SQL real sem gravacoes
+        env:
+          ED02_V574_READONLY_AUTHORIZED: 'true'
+          ED02_HOMOLOG_DATABASE_URL: ${{ secrets.ED02_TEST_DATABASE_URL }}
+        run: python ed02_5_v574_http_pg_readonly.py
