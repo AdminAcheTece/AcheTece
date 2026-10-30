@@ -155,3 +155,32 @@ jobs:
         env:
           ED02_HOMOLOG_DATABASE_URL: ${{ secrets.ED02_TEST_DATABASE_URL }}
         run: python test_ed02_5_pg_ddl_ensaio.py
+
+  homologacao_ed025_transacional_v4:
+    name: ED02.5 V4 - Vigencia transacional PostgreSQL com rollback
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/ed02-assinaturas-vigencia-ledger' &&
+      github.actor == 'AdminAcheTece' &&
+      github.event.head_commit.message == 'ED02_RUN_VIGENCIA_ED025_V4'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    concurrency:
+      group: ed02-postgres-checkout-homolog
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    steps:
+      - name: Obter codigo
+        uses: actions/checkout@v4
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Instalar dependencias
+        run: python -m pip install "SQLAlchemy>=2.0,<3.0" "psycopg2-binary>=2.9,<3.0" "psycopg[binary]>=3.1,<4.0"
+      - name: Ensaio transacional protegido - rollback obrigatorio
+        env:
+          ED02_HOMOLOG_DATABASE_URL: ${{ secrets.ED02_TEST_DATABASE_URL }}
+          ED02_V4_TRANSACAO_AUTORIZADA: 'true'
+        run: python test_ed02_5_pg_transacional_v4.py
