@@ -1,6 +1,7 @@
-"""ED02.5 V5.7.6: rotas originais, fixtures nao confirmadas e rollback.
+"""ED02.5 V5.7.6 R2 — rotas originais, PG real e rollback.
 
-Executar apenas pelo workflow protegido. Falha fechada; NUNCA usar em producao.
+NUNCA executar em produção. Somente GitHub Actions com gatilho exato.
+As empresas/teares temporários usam IDs positivos explícitos, não há commit.
 """
 import csv
 import io
@@ -8,12 +9,13 @@ import os
 import re
 import secrets
 from datetime import datetime, timedelta
+from unittest.mock import patch
 from urllib.parse import urlparse
 
 HOST = 'dpg-dbgfj8l9fdbs73depvd0-a.oregon-postgres.render.com'
 DB = 'achetece_ed01_test'
-TRIGGER = 'ED02_RUN_ELIGIBILITY_ED025_V576'
-PREFIX = 'ED02_V576_FIXTURE_'
+TRIGGER = 'ED02_RUN_ELIGIBILITY_ED025_V576_R2'
+PREFIX = 'ED02_V576_R2_FIXTURE_'
 
 
 def configure():
@@ -26,15 +28,19 @@ def configure():
     }
     for key, expected in required.items():
         if os.getenv(key) != expected:
-            raise RuntimeError('BLOQUEADO: gate de homologacao invalido')
+            raise RuntimeError('BLOQUEADO: autorizacao de homologacao invalida')
+
     raw = os.getenv('ED02_HOMOLOG_DATABASE_URL', '')
     p = urlparse(raw)
     if not (p.scheme in ('postgresql', 'postgresql+psycopg', 'postgresql+psycopg2')
-            and p.hostname == HOST and p.path == '/' + DB and p.username and p.password
-            and p.port in (None, 5432) and not p.fragment):
+            and p.hostname == HOST and p.path == '/' + DB
+            and p.username and p.password and p.port in (None, 5432)
+            and not p.fragment):
         raise RuntimeError('BLOQUEADO: banco fora da homologacao autorizada')
+
     from sqlalchemy.engine import make_url
     url = make_url(raw).set(drivername='postgresql+psycopg')
+    # A aplicação deve conectar apenas à homologação; flags ED02 desligadas.
     os.environ.pop('INTERNAL_DATABASE_URL', None)
     os.environ.pop('DATABASE_URL_INTERNAL', None)
     os.environ['SQLALCHEMY_DATABASE_URI'] = url.render_as_string(hide_password=False)
@@ -52,124 +58,204 @@ def run():
     import main as m
     from sqlalchemy import event, insert, select, text
 
-    # Impede callbacks de bootstrap e analytics que poderiam gerar commits ou DDL.
+    # Não mexer nas quatro funções de rota originais.
+    # Evitar bootstrap/analytics com DML ou DDL durante as requisições.
     m.app.before_request_funcs[None] = [
         fn for fn in m.app.before_request_funcs.get(None, [])
         if fn.__name__ not in {'_bootstrap_and_analytics_lazy'}
     ]
-    m.track_event = lambda *a, **kw: None
+    m.track_event = lambda *args, **kwargs: None
     m.app.config.update(TESTING=False, PROPAGATE_EXCEPTIONS=False)
 
-    tag = PREFIX + secrets.token_hex(5)
-    ids = [-secrets.randbelow(500_000_000) - 100_000_000 - i for i in range(4)]
+    tag = PREFIX + secrets.token_hex(6)
+    # IDs positivos (< 2^31) são obrigatórios para /empresa/<int:empresa_id>.
+    # IDs explícitos também evitam avanço de sequences não transacionais.
+    base = 1_500_000_000 + secrets.randbelow(100_000_000)
+    company_ids = [base + i for i in range(4)]
+    tear_ids = [base + 500 + i for i in range(4)]
     names = [tag + suffix for suffix in ('_ATIVA', '_PENDENTE', '_VENCIDA', '_SEM_DATA')]
     now = datetime.utcnow()
-    statuses = [('ativo', now - timedelta(days=1)),
-                ('pendente', now - timedelta(days=1)),
-                ('ativo', now - timedelta(days=60)),
-                ('ativo', None)]
-    engine = None
-    guarded = False
-    sql_seen = []
+    statuses = [
+        ('ativo', now - timedelta(days=1)),
+        ('pendente', now - timedelta(days=1)),
+        ('ativo', now - timedelta(days=60)),
+        ('ativo', None),
+    ]
+
     with m.app.app_context():
         engine = m.db.engine
-        with engine.connect() as separate:
-            assert separate.execute(text('SELECT current_database()')).scalar_one() == DB
-            baseline = separate.execute(text('SELECT id, status_pagamento, data_pagamento FROM empresa ORDER BY id')).all()
-            if len(baseline) != 1 or baseline[0][0] != 1 or (baseline[0][1] or '').lower() != 'pendente' or baseline[0][2] is not None:
-                raise RuntimeError('BLOQUEADO: baseline de homologacao inesperado')
-        # Uma transacao externa mantem todas as fixtures invisiveis a outras conexoes.
-        with engine.connect() as conn:
-            tx = conn.begin()
-            try:
-                assert conn.execute(text('SELECT current_database()')).scalar_one() == DB
-                assert conn.execute(text('SHOW transaction_read_only')).scalar_one() == 'off'
-                for i, ((status, payment_dt), name) in enumerate(zip(statuses, names)):
-                    conn.execute(insert(m.Empresa.__table__).values(
-                        id=ids[i], nome=name, email=f'{tag.lower()}_{i}@example.invalid',
-                        senha='INUTILIZAVEL-V576', plano='mensal',
-                        estado='SC', cidade='Jaragua do Sul', status_pagamento=status,
-                        data_pagamento=payment_dt))
-                    conn.execute(insert(m.Tear.__table__).values(
-                        marca='V576_TESTE', modelo=name, tipo='circular', finura=28,
-                        diametro=30, alimentadores=90, elastano='Não', empresa_id=ids[i]))
-                # Confirma que nao houve commit; outra conexao NAO enxerga fixtures.
-                with engine.connect() as separate:
-                    n = separate.execute(select(m.Empresa.id).where(m.Empresa.id.in_(ids))).all()
-                    assert not n, 'FALHOU: fixtures ficaram publicas antes do rollback'
+        with engine.connect() as independent:
+            assert independent.execute(text('SELECT current_database()')).scalar_one() == DB
+            baseline = independent.execute(text(
+                'SELECT id, status_pagamento, data_pagamento FROM empresa ORDER BY id'
+            )).all()
+            if (len(baseline) != 1 or baseline[0][0] != 1
+                    or (baseline[0][1] or '').strip().lower() != 'pendente'
+                    or baseline[0][2] is not None):
+                raise RuntimeError('BLOQUEADO: baseline da empresa de homologacao inesperado')
+            baseline_teares = independent.execute(text('SELECT COUNT(*) FROM tear')).scalar_one()
+            if independent.execute(select(m.Empresa.id).where(m.Empresa.id.in_(company_ids))).first():
+                raise RuntimeError('BLOQUEADO: colisao com identificadores de empresa')
+            if independent.execute(select(m.Tear.id).where(m.Tear.id.in_(tear_ids))).first():
+                raise RuntimeError('BLOQUEADO: colisao com identificadores de tear')
 
-                # Flask-SQLAlchemy resolve as queries na mesma conexao transacional.
-                m.db.session.remove()
-                m.db.session.configure(bind=conn, join_transaction_mode='create_savepoint')
+        # Auditoria independente também roda se uma validação HTTP falhar.
+        try:
+            with engine.connect() as conn:
+                outer_tx = conn.begin()
+                try:
+                    assert conn.execute(text('SELECT current_database()')).scalar_one() == DB
+                    assert conn.execute(text('SHOW transaction_read_only')).scalar_one() == 'off'
 
-                def assert_readonly_sql(connection, cursor, statement, parameters, context, executemany):
-                    if connection is not conn:
-                        return
-                    sql_seen.append(statement)
-                    cleaned = re.sub(r'^\s*(?:/\*.*?\*/\s*)*', '', statement, flags=re.S).upper()
-                    if re.match(r'^(INSERT|UPDATE|DELETE|ALTER|DROP|CREATE|TRUNCATE|MERGE|COPY|GRANT|REVOKE)\b', cleaned):
-                        raise RuntimeError('BLOQUEADO: escrita durante chamadas HTTP')
+                    # Inserções exclusivamente dentro da transação externa.
+                    for i, ((status, payment_dt), name) in enumerate(zip(statuses, names)):
+                        conn.execute(insert(m.Empresa.__table__).values(
+                            id=company_ids[i], nome=name,
+                            email=f'{tag.lower()}_{i}@example.invalid',
+                            senha='INUTILIZAVEL-V576-R2', plano='mensal',
+                            estado='SC', cidade='Jaragua do Sul',
+                            status_pagamento=status, data_pagamento=payment_dt,
+                        ))
+                        conn.execute(insert(m.Tear.__table__).values(
+                            id=tear_ids[i], marca='ED02_TESTE_R2', modelo=name,
+                            tipo='circular', finura=28, diametro=30,
+                            alimentadores=90, elastano='Não',
+                            empresa_id=company_ids[i],
+                        ))
 
-                event.listen(engine, 'before_cursor_execute', assert_readonly_sql)
-                guarded = True
-                client = m.app.test_client()
+                    with engine.connect() as independent:
+                        unseen = independent.execute(select(m.Empresa.id).where(
+                            m.Empresa.id.in_(company_ids)
+                        )).all()
+                        assert unseen == [], 'FALHOU: fixtures visiveis fora da transacao'
+                    print('PASSOU: fixtures temporarias isoladas de conexoes independentes.')
 
-                def get(path, expected=200):
-                    response = client.get(path)
-                    assert response.status_code == expected, f'FALHOU: {path}: HTTP {response.status_code} != {expected}'
-                    return response
+                    # Flask-SQLAlchemy possui Session.get_bind customizado: configurar
+                    # o sessionmaker isoladamente NAO garante o uso desta conexao.
+                    # Override restrito ao processo de teste e desfeito pelo patch.
+                    m.db.session.remove()
+                    m.db.session.configure(bind=conn, join_transaction_mode='create_savepoint')
+                    session_cls = m.db.session.session_factory.class_
 
-                active, pending, expired, no_date = names
-                home = get('/').get_data(as_text=True)
-                assert active in home, 'FALHOU: empresa ativa nao aparece na home'
-                for name in (pending, expired, no_date):
-                    assert name not in home, 'FALHOU: empresa bloqueada aparece na home'
-                filtered = get('/?estado=SC&cidade=Jaragua%20do%20Sul&tipo=circular').get_data(as_text=True)
-                assert active in filtered, 'FALHOU: ativa nao aparece com filtros'
-                for name in (pending, expired, no_date):
-                    assert name not in filtered, 'FALHOU: filtros divulgam empresa bloqueada'
-                get('/?estado=SC&pagina=2&pp=1')
-                print('PASSOU: home, filtros e paginacao com consulta SQL real.')
+                    def bind_on_test_connection(self, mapper=None, clause=None, bind=None, **kwargs):
+                        return conn
 
-                for path in ('/exportar', '/exportar?estado=SC&tipo=circular'):
-                    body = get(path).get_data(as_text=True).lstrip('\ufeff')
-                    rows = list(csv.reader(io.StringIO(body)))
-                    raw = '\n'.join(','.join(row) for row in rows)
-                    assert active in raw, 'FALHOU: CSV nao inclui empresa ativa'
-                    for name in (pending, expired, no_date):
-                        assert name not in raw, 'FALHOU: CSV divulga bloqueada'
-                print('PASSOU: CSV original inclui apenas a fixture elegivel.')
+                    with patch.object(session_cls, 'get_bind', bind_on_test_connection):
+                        assert m.db.session().get_bind() is conn
+                        visible = m.Empresa.query.filter(
+                            m.Empresa.id == company_ids[0], m.Empresa.assinatura_ativa
+                        ).count()
+                        assert visible == 1, (
+                            'FALHOU: expressao SQL de vigencia ED01 nao reconhece a fixture ativa'
+                        )
+                        visible_tears = m.Tear.query.join(m.Empresa).filter(
+                            m.Tear.empresa_id == company_ids[0], m.Empresa.assinatura_ativa
+                        ).count()
+                        assert visible_tears == 1, (
+                            'FALHOU: SQL de busca nao encontra tear da empresa elegivel'
+                        )
+                        print('PASSOU: mesma conexao transacional; ORM confirma empresa e tear elegiveis.')
 
-                for path in ('/utils/empresas_json?escopo=pagantes',
-                             '/utils/empresas_json?escopo=pagantes&uf=SC'):
-                    payload = get(path).get_json()
-                    assert isinstance(payload, list)
-                    seen = {row['id'] for row in payload}
-                    assert ids[0] in seen and all(bad not in seen for bad in ids[1:])
-                print('PASSOU: JSON original inclui ativa e bloqueia demais.')
+                        http_sql = []
 
-                assert active in get(f'/empresa/{ids[0]}').get_data(as_text=True)
-                for bad in ids[1:]:
-                    get(f'/empresa/{bad}', 404)
-                print('PASSOU: perfil original ativo HTTP 200; bloqueadas HTTP 404.')
-                assert len(sql_seen) > 0, 'FALHOU: nao foi observada consulta SQL'
-            finally:
-                if guarded:
-                    event.remove(engine, 'before_cursor_execute', assert_readonly_sql)
-                m.db.session.remove()
-                # Mesmo se alguma rota falhar, nenhuma fixture e confirmada.
-                tx.rollback()
-                # Evita vazamento de bind para uso futuro da sessao neste processo.
-                m.db.session.configure(bind=None)
-        with engine.connect() as separate:
-            after = separate.execute(text('SELECT id, status_pagamento, data_pagamento FROM empresa ORDER BY id')).all()
-            assert after == baseline, 'FALHOU: empresa original modificada'
-            residues = separate.execute(select(m.Empresa.id).where(m.Empresa.id.in_(ids))).all()
-            assert residues == [], 'FALHOU: empresas temporarias persistiram'
-            residues_teares = separate.execute(select(m.Tear.id).where(m.Tear.empresa_id.in_(ids))).all()
-            assert residues_teares == [], 'FALHOU: teares temporarios persistiram'
-        print('PASSOU: rollback e segunda conexao confirmam zero residuos; empresa original intacta.')
-        print('LIMITACAO: ED01 vigente testada; politica de elegibilidade ED02 permanece desligada.')
+                        def readonly_http(connection, cursor, statement, parameters, context, executemany):
+                            # Event listener é instalado após INSERTs das fixtures.
+                            cleaned = re.sub(r'^\s*(?:/\*.*?\*/\s*)*', '', statement,
+                                             flags=re.S).upper()
+                            if re.match(r'^(INSERT|UPDATE|DELETE|ALTER|DROP|CREATE|TRUNCATE|'
+                                        r'MERGE|COPY|GRANT|REVOKE)\b', cleaned):
+                                raise RuntimeError('BLOQUEADO: escrita SQL durante HTTP')
+                            if (connection is not conn and
+                                    re.search(r'\b(?:FROM|JOIN)\s+"?(?:empresa|tear)"?\b',
+                                              statement, flags=re.I)):
+                                raise RuntimeError('BLOQUEADO: consulta a empresa/tear fora da transacao')
+                            if connection is conn:
+                                http_sql.append(statement)
+
+                        event.listen(engine, 'before_cursor_execute', readonly_http)
+                        try:
+                            client = m.app.test_client()
+
+                            def get(path, expected=200):
+                                response = client.get(path)
+                                assert response.status_code == expected, (
+                                    f'FALHOU: {path}: HTTP {response.status_code} != {expected}'
+                                )
+                                return response
+
+                            active, pending, expired, no_date = names
+                            blocked = (pending, expired, no_date)
+                            home = get('/').get_data(as_text=True)
+                            assert active in home, 'FALHOU: empresa ativa ausente na home'
+                            assert all(name not in home for name in blocked), (
+                                'FALHOU: home divulgou empresa bloqueada'
+                            )
+                            filtered = get(
+                                '/?estado=SC&cidade=Jaragua%20do%20Sul&tipo=circular'
+                            ).get_data(as_text=True)
+                            assert active in filtered, 'FALHOU: empresa ativa ausente nos filtros'
+                            assert all(name not in filtered for name in blocked), (
+                                'FALHOU: filtros divulgaram empresa bloqueada'
+                            )
+                            get('/?estado=SC&pagina=2&pp=1')
+                            print('PASSOU: home, filtros e paginacao reais.')
+
+                            for path in ('/exportar', '/exportar?estado=SC&tipo=circular'):
+                                body = get(path).get_data(as_text=True).lstrip('\ufeff')
+                                rows = list(csv.reader(io.StringIO(body)))
+                                raw = '\n'.join(','.join(row) for row in rows)
+                                assert active in raw, 'FALHOU: CSV omitiu empresa elegivel'
+                                assert all(name not in raw for name in blocked), (
+                                    'FALHOU: CSV divulgou bloqueada'
+                                )
+                            print('PASSOU: CSV das rotas originais publica somente elegiveis.')
+
+                            for path in ('/utils/empresas_json?escopo=pagantes',
+                                         '/utils/empresas_json?escopo=pagantes&uf=SC'):
+                                payload = get(path).get_json()
+                                assert isinstance(payload, list), 'FALHOU: JSON nao e lista'
+                                found = {row['id'] for row in payload}
+                                assert company_ids[0] in found and all(
+                                    x not in found for x in company_ids[1:]
+                                ), 'FALHOU: JSON nao respeita elegibilidade'
+                            print('PASSOU: JSON original respeita elegibilidade.')
+
+                            assert active in get(f'/empresa/{company_ids[0]}').get_data(
+                                as_text=True
+                            ), 'FALHOU: perfil ativo nao contem empresa'
+                            for bad_id in company_ids[1:]:
+                                get(f'/empresa/{bad_id}', 404)
+                            print('PASSOU: perfil ativo HTTP 200; bloqueadas HTTP 404.')
+                            assert http_sql, 'FALHOU: nenhuma consulta SQL na conexao HTTP'
+                        finally:
+                            event.remove(engine, 'before_cursor_execute', readonly_http)
+                finally:
+                    # Remover sessão e liberar savepoints antes do rollback externo.
+                    try:
+                        m.db.session.remove()
+                        m.db.session.configure(bind=None,
+                                               join_transaction_mode='conditional_savepoint')
+                    finally:
+                        if outer_tx.is_active:
+                            outer_tx.rollback()
+        finally:
+            # Auditoria roda tanto em SUCESSO quanto em FALHA do ensaio.
+            with engine.connect() as independent:
+                after = independent.execute(text(
+                    'SELECT id, status_pagamento, data_pagamento FROM empresa ORDER BY id'
+                )).all()
+                assert after == baseline, 'FALHOU: empresa original foi alterada'
+                assert independent.execute(text('SELECT COUNT(*) FROM tear')).scalar_one() == baseline_teares, (
+                    'FALHOU: quantidade de teares original mudou'
+                )
+                assert independent.execute(select(m.Empresa.id).where(
+                    m.Empresa.id.in_(company_ids)
+                )).all() == [], 'FALHOU: fixtures de empresa persistiram'
+                assert independent.execute(select(m.Tear.id).where(
+                    m.Tear.id.in_(tear_ids)
+                )).all() == [], 'FALHOU: fixtures de tear persistiram'
+            print('PASSOU: auditoria independente apos rollback; zero residuos e baseline intacto.')
+    print('LIMITACAO: homologacao ED01; politica ED02 continua desligada.')
 
 
 if __name__ == '__main__':
