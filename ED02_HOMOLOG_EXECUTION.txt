@@ -11,3 +11,4 @@ ED02.5 - Ensaio controlado da estrutura de vigencia PostgreSQL.
 ED02.5 - Segunda execucao controlada do ensaio DDL apos correcao do driver.
 ED02.5 V4 - Execucao controlada da homologacao transacional da vigencia.
 ED02.5 V5.1 - Inspecao controlada dos pre-requisitos PostgreSQL.
+ED02.5 V5.2 - Execucao autorizada da migracao persistente no banco de homologacao.
