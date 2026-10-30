@@ -19,3 +19,4 @@ ED02.5 V5.6 - Execucao controlada da auditoria historica somente leitura.
 ED02.5 V5.7.3 - Auditoria protegida de visibilidade PostgreSQL somente leitura.
 ED02.5 V5.7.4 - Diagnostico protegido HTTP PostgreSQL somente leitura.
 ED02.5 V5.7.5 - Execucao autorizada das rotas originais com PostgreSQL somente leitura.
+ED02.5 V5.7.6 - Ensaio de elegibilidade com rollback transacional.
