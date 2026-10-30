@@ -4282,6 +4282,34 @@ def _processar_pagamento(payment_id: str):
     if not empresa:
         raise RuntimeError("Não encontrei a Empresa para este pagamento (sem external_reference e sem match por email).")
 
+    # ED02.5 V5 — registro de vigencia em homologacao, isolado do caminho
+    # legado de ativacao e de e-mail. NUNCA habilitar sem tabela persistente,
+    # testes integrados e autorizacao especifica de homologacao.
+    if _env_bool("ED02_VIGENCIA_WRITE_HOMOLOG", False):
+        if not (
+            _env_bool("ED01_HOMOLOGACAO", False)
+            and _env_bool("ED02_FINANCIAL_GUARD_HOMOLOG", False)
+            and _env_bool("ED02_CHECKOUT_LEDGER_HOMOLOG", False)
+            and _env_bool("ED02_EXACT_ONCE_HOMOLOG", False)
+        ):
+            raise RuntimeError("ED02.5: configuracao de homologacao incompleta")
+        # O adaptador realiza a verificacao do banco EFETIVO, bloqueio da
+        # empresa, verificacao contratual, ledger e vigencia na mesma transacao.
+        from datetime import timezone
+        from ed02_5_transacao import registrar_periodo_homolog
+        try:
+            periodo = registrar_periodo_homolog(
+                db, payment, empresa.id, datetime.now(timezone.utc)
+            )
+        except Exception:
+            db.session.rollback()
+            app.logger.error("[ED02.5] vigencia nao registrada; detalhes omitidos")
+            raise RuntimeError("ED02.5: processamento nao confirmado") from None
+        # Nao ativa Empresa e nao envia email. A visibilidade ED01 permanece.
+        return {"ok": True, "empresa_id": empresa.id,
+                "ativou": False, "duplicado": periodo["duplicado"],
+                "modo": "ed02_5_vigencia_homologacao", "status": "periodo_registrado"}
+
     # ED02.3E: exclusivamente homologacao, flag DESLIGADA por padrao.
     # A verificacao do banco ocorre DENTRO da mesma transacao da alteracao.
     if _env_bool("ED02_EXACT_ONCE_HOMOLOG", False):
