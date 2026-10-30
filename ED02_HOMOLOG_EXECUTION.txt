@@ -14,3 +14,4 @@ ED02.5 V5.1 - Inspecao controlada dos pre-requisitos PostgreSQL.
 ED02.5 V5.2 - Execucao autorizada da migracao persistente no banco de homologacao.
 ED02.5 V5.3 - Execucao controlada da verificacao Flask e PostgreSQL.
 ED02.5 V5.4 - Execucao controlada do processamento Flask PostgreSQL integrado.
+ED02.5 V5.5.1 - Execucao controlada de commits concorrentes e limpeza auditada.
