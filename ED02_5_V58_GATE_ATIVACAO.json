@@ -1,0 +1,20 @@
+{
+  "etapa": "ED02.5 V5.8",
+  "tipo": "REGISTRO_DE_PENDENCIAS_NAO_OPERACIONAL",
+  "versao_contrato": 1,
+  "ativacao_producao_permitida": false,
+  "observacao": "Valores false indicam verificacao pendente. Mudar este arquivo nao habilita nenhuma funcionalidade.",
+  "prerequisitos": {
+    "historico_conciliado_e_auditado": false,
+    "politica_estorno_disputa_aprovada": false,
+    "comparacao_ed01_ed02_em_shadow_homologada": false,
+    "consultas_sql_ed02_e_integridade_homologadas": false,
+    "webhooks_idempotencia_e_reversoes_homologados": false,
+    "replay_legado_nao_prorroga_vigencia_sem_novo_pagamento": false,
+    "checkout_mensal_recorrente_e_anual_homologados": false,
+    "renovacao_vencimento_e_avisos_homologados": false,
+    "fluxo_usuario_completo_homologado": false,
+    "backup_monitoramento_e_rollback_documentados": false,
+    "autorizacao_explicita_de_release": false
+  }
+}
