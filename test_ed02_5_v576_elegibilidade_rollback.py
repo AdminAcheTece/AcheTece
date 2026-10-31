@@ -1,4 +1,4 @@
-"""ED02.5 V5.7.6 R2 — rotas originais, PG real e rollback.
+"""ED02.5 V5.7.6 R3 — rotas originais, PG real e rollback.
 
 NUNCA executar em produção. Somente GitHub Actions com gatilho exato.
 As empresas/teares temporários usam IDs positivos explícitos, não há commit.
@@ -14,8 +14,8 @@ from urllib.parse import urlparse
 
 HOST = 'dpg-dbgfj8l9fdbs73depvd0-a.oregon-postgres.render.com'
 DB = 'achetece_ed01_test'
-TRIGGER = 'ED02_RUN_ELIGIBILITY_ED025_V576_R2'
-PREFIX = 'ED02_V576_R2_FIXTURE_'
+TRIGGER = 'ED02_RUN_ELIGIBILITY_ED025_V576_R3'
+PREFIX = 'ED02_V576_R3_FIXTURE_'
 
 
 def configure():
@@ -110,14 +110,14 @@ def run():
                     # Inserções exclusivamente dentro da transação externa.
                     for i, ((status, payment_dt), name) in enumerate(zip(statuses, names)):
                         conn.execute(insert(m.Empresa.__table__).values(
-                            id=company_ids[i], nome=name,
+                            id=company_ids[i], nome=name, apelido=name,
                             email=f'{tag.lower()}_{i}@example.invalid',
-                            senha='INUTILIZAVEL-V576-R2', plano='mensal',
+                            senha='INUTILIZAVEL-V576-R3', plano='mensal',
                             estado='SC', cidade='Jaragua do Sul',
                             status_pagamento=status, data_pagamento=payment_dt,
                         ))
                         conn.execute(insert(m.Tear.__table__).values(
-                            id=tear_ids[i], marca='ED02_TESTE_R2', modelo=name,
+                            id=tear_ids[i], marca='ED02_TESTE_R3', modelo=name,
                             tipo='circular', finura=28, diametro=30,
                             alimentadores=90, elastano='Não',
                             empresa_id=company_ids[i],
@@ -220,12 +220,20 @@ def run():
                                 ), 'FALHOU: JSON nao respeita elegibilidade'
                             print('PASSOU: JSON original respeita elegibilidade.')
 
-                            assert active in get(f'/empresa/{company_ids[0]}').get_data(
-                                as_text=True
-                            ), 'FALHOU: perfil ativo nao contem empresa'
+                            # O perfil público renderiza primeiro empresa.apelido;
+                            # a fixture deve preencher esse campo como uma malharia real.
+                            perfil_ativo = get(f'/empresa/{company_ids[0]}')
+                            perfil_html = perfil_ativo.get_data(as_text=True)
+                            assert active in perfil_html, (
+                                'FALHOU: perfil ativo HTTP 200, mas nome comercial nao exibido'
+                            )
+                            assert re.search(
+                                r'<h1\b[^>]*class=["\']title["\'][^>]*>\s*' +
+                                re.escape(active) + r'\s*</h1>', perfil_html, re.I
+                            ), 'FALHOU: titulo do perfil nao corresponde ao apelido da fixture'
                             for bad_id in company_ids[1:]:
                                 get(f'/empresa/{bad_id}', 404)
-                            print('PASSOU: perfil ativo HTTP 200; bloqueadas HTTP 404.')
+                            print('PASSOU: perfil ativo HTTP 200 com titulo comercial; bloqueadas HTTP 404.')
                             assert http_sql, 'FALHOU: nenhuma consulta SQL na conexao HTTP'
                         finally:
                             event.remove(engine, 'before_cursor_execute', readonly_http)

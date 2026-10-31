@@ -1,4 +1,4 @@
-"""ED02.5 V5.7.6 R2 — testes isolados de segurança do ensaio."""
+"""ED02.5 V5.7.6 R3 — testes isolados de segurança do ensaio."""
 import inspect
 import os
 import unittest
@@ -6,7 +6,7 @@ from unittest.mock import patch
 import test_ed02_5_v576_elegibilidade_rollback as v
 
 
-class SafetyV576R2(unittest.TestCase):
+class SafetyV576R3(unittest.TestCase):
     def test_sem_gatilho_bloqueia(self):
         with patch.dict(os.environ, {}, clear=True):
             with self.assertRaisesRegex(RuntimeError, 'BLOQUEADO'):
@@ -66,6 +66,18 @@ class SafetyV576R2(unittest.TestCase):
         source = inspect.getsource(v.run)
         self.assertNotIn('.commit(', source)
         self.assertIn('id=tear_ids[i]', source)
+
+    def test_fixture_preenche_apelido_do_perfil_publico(self):
+        source = inspect.getsource(v.run)
+        self.assertIn('id=company_ids[i], nome=name, apelido=name', source)
+        self.assertIn('perfil_ativo = get(', source)
+        self.assertIn("re.escape(active)", source)
+        self.assertIn('titulo do perfil nao corresponde ao apelido', source)
+
+    def test_gatilho_r3_distinto_do_r2(self):
+        self.assertEqual(v.TRIGGER, 'ED02_RUN_ELIGIBILITY_ED025_V576_R3')
+        self.assertIn('R3_FIXTURE_', v.PREFIX)
+        self.assertNotIn('.commit(', inspect.getsource(v.run))
 
     def test_rota_nao_pode_escrever(self):
         source = inspect.getsource(v.run)
