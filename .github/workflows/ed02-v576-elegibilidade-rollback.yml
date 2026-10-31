@@ -6,7 +6,7 @@ permissions:
   contents: read
 jobs:
   safety_v576:
-    name: ED02.5 V5.7.6 R2 - Testes de seguranca
+    name: ED02.5 V5.7.6 R3 - Testes de seguranca
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -16,12 +16,12 @@ jobs:
           python-version: '3.11'
       - run: python -m unittest -v test_ed02_5_v576_safety
   homolog_v576:
-    name: ED02.5 V5.7.6 R2 - HTTP original PostgreSQL rollback
+    name: ED02.5 V5.7.6 R3 - HTTP original PostgreSQL rollback
     if: >-
       github.event_name == 'push' &&
       github.ref == 'refs/heads/ed02-assinaturas-vigencia-ledger' &&
       github.actor == 'AdminAcheTece' &&
-      github.event.head_commit.message == 'ED02_RUN_ELIGIBILITY_ED025_V576_R2'
+      github.event.head_commit.message == 'ED02_RUN_ELIGIBILITY_ED025_V576_R3'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     concurrency:
@@ -33,7 +33,7 @@ jobs:
         with:
           python-version: '3.11'
       - run: python -m pip install -r requirements.txt
-      - name: Ensaio protegido de elegibilidade R2 com rollback
+      - name: Ensaio protegido de elegibilidade R3 com rollback
         env:
           ED02_HOMOLOG_DATABASE_URL: ${{ secrets.ED02_TEST_DATABASE_URL }}
           ED02_V576_AUTHORIZED: 'true'
