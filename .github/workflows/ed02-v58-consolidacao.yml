@@ -1,0 +1,53 @@
+name: ED02 V5.8 - Consolidacao e gate documental protegido
+on:
+  push:
+    branches:
+      - ed02-assinaturas-vigencia-ledger
+permissions:
+  contents: read
+jobs:
+  consolidacao_v58:
+    name: ED02.5 V5.8 - Testes de compatibilidade e gate bloqueado
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Obter codigo
+        uses: actions/checkout@v4
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verificar compilacao
+        run: python -m py_compile ed02_5_v58_consolidacao.py ed02_5_v58_gate_ativacao.py ed02_5_v58_pg_auditoria.py
+      - name: Testar politica shadow e gate
+        run: python -m unittest -v test_ed02_5_v58_consolidacao test_ed02_5_v58_gate test_ed02_5_v58_pg_safety
+      - name: Conferir manifesto inicial bloqueado
+        run: |
+          python -c "from ed02_5_v58_gate_ativacao import ler_gate_arquivo; x=ler_gate_arquivo('ED02_5_V58_GATE_ATIVACAO.json'); assert not x.prontidao_documental and not x.pode_ativar_producao; print('PASSOU: ED02 V5.8 nao autoriza ativacao.')"
+  auditoria_shadow_pg_v58:
+    name: ED02.5 V5.8 - Auditoria agregada PostgreSQL READ ONLY
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/ed02-assinaturas-vigencia-ledger' &&
+      github.actor == 'AdminAcheTece' &&
+      github.event.head_commit.message == 'ED02_RUN_CONSOLIDACAO_ED025_V58_READONLY'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    concurrency:
+      group: ed02-postgres-checkout-homolog
+      cancel-in-progress: false
+    steps:
+      - name: Obter codigo
+        uses: actions/checkout@v4
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Instalar driver PostgreSQL e SQLAlchemy
+        run: python -m pip install 'SQLAlchemy>=2.0,<3.0' 'psycopg[binary]>=3.1,<4.0'
+      - name: Diagnostico agregado apenas leitura
+        env:
+          ED02_HOMOLOG_DATABASE_URL: ${{ secrets.ED02_TEST_DATABASE_URL }}
+          ED02_V58_READONLY_AUTORIZADA: 'true'
+          ED02_V58_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: python ed02_5_v58_pg_auditoria.py
