@@ -24,3 +24,4 @@ ED02.5 V5.7.6 R2 - Execucao protegida de elegibilidade e rollback transacional.
 ED02.5 V5.7.6 R3 - Homologacao de elegibilidade e rollback.
 ED02.5 V5.7.6 R3 - Homologacao transacional de elegibilidade.
 ED02.5 V5.8 - Auditoria agregada de compatibilidade historica em PostgreSQL somente leitura.
+ED02.5 V5.9 - Auditoria shadow PostgreSQL somente leitura.
