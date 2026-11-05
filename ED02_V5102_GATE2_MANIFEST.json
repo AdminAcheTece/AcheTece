@@ -1,0 +1,24 @@
+{
+  "etapa": "ED02.5 V5.10.2 Gate 2",
+  "natureza": "preflight e regressao em copia isolada",
+  "publicacao_operacional": false,
+  "autoriza_producao": false,
+  "arquivos": {
+    "ed02_v5102_gate2_runner.py": {
+      "sha256": "ac21ecef5b5b078451a434be2b7ad8b2e62a14ee895dcba6abfa1b1a9e072782",
+      "bytes": 13475
+    },
+    "test_ed02_v5102_gate2_runner.py": {
+      "sha256": "d6ecc8b1cc7b04f6b3128a2cd8128bb2c7dbbfbe2e644a89021130862306eaab",
+      "bytes": 3112
+    },
+    "LEIA_ME_ED02_5_V5102_GATE2.md": {
+      "sha256": "6d07779dcd94db2a4bd29f5402c6453b9d7c3c759fcdda95cbfc9a12821a444a",
+      "bytes": 5263
+    },
+    ".github/workflows/ed02-v5102-gate2-regressao-isolada.yml": {
+      "sha256": "2d6e656102d0086aaee063f821087221387de015aa3de3b2b8ff2e1b322b0d6a",
+      "bytes": 2400
+    }
+  }
+}
