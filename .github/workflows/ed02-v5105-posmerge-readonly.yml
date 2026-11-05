@@ -1,0 +1,107 @@
+name: ED02 V5.10.5 - Homologacao pos-merge Flask PostgreSQL READ ONLY
+
+on:
+  push:
+    branches:
+      - ed02-assinaturas-vigencia-ledger
+
+permissions:
+  contents: read
+
+jobs:
+  preflight_posmerge:
+    name: V5.10.5 - Integridade e regressao pos-merge SEM banco
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - name: Obter o codigo exatamente deste commit
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Instalar dependencias para regressao offline
+        run: python -m pip install -r requirements.txt
+      - name: Verificar compilacao do ensaio e do Flask integrado
+        run: |
+          python -m py_compile main.py ed02_5_v510_http_shadow.py test_ed02_5_v5105_pg_posmerge.py test_ed02_5_v5105_seguranca.py
+      - name: Testar guardas e integridade sem conectar PostgreSQL
+        run: python -m unittest -v test_ed02_5_v5105_seguranca
+      - name: Regressao V5.10.1 corrigida apos merge
+        run: |
+          python -m unittest -v test_ed02_5_v5101_integracao test_ed02_5_v5101_shadow test_ed02_5_v5101_pg_guard
+      - name: Regressao integrada V5.10.3 no HEAD atual
+        run: |
+          python -m unittest -v \
+            test_ed02_5_v510_replay_unit \
+            test_ed02_5_v510_shadow_historico \
+            test_ed02_5_v5101_shadow \
+            test_ed02_5_v5101_pg_guard \
+            test_ed02_5_v5102_integracao \
+            test_ed02_5_v59_replay \
+            test_ed02_5_v59_shadow \
+            test_ed02_5_v59_pg_safety \
+            test_ed02_5_v58_consolidacao \
+            test_ed02_5_v58_gate \
+            test_ed02_5_v58_pg_safety \
+            test_ed02_5_v510_pg_safety \
+            test_ed02_5_v56_elegibilidade \
+            test_ed02_5_v57_politica \
+            test_ed02_5_v572_http_visibilidade \
+            test_ed02_5_v55_http_concorrente \
+            test_ed02_3g6_http_integrado \
+            test_ed02_3g7c2_checkout_integrado
+      - name: Garantir que os arquivos operacionais nao foram modificados pelos testes
+        run: git diff --exit-code -- main.py ed02_5_v510_http_shadow.py
+
+  postgres_readonly_posmerge:
+    name: V5.10.5 - HTTP original + PostgreSQL REAL READ ONLY (OFF e SHADOW)
+    needs: preflight_posmerge
+    if: >-
+      ${{ github.event_name == 'push' &&
+          github.ref == 'refs/heads/ed02-assinaturas-vigencia-ledger' &&
+          github.actor == 'AdminAcheTece' &&
+          github.event.head_commit.message == 'ED02_RUN_HTTP_PG_ED025_V5105_READONLY' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    concurrency:
+      group: ed02-postgres-checkout-homolog
+      cancel-in-progress: false
+    env:
+      ED02_HOMOLOG_DATABASE_URL: ${{ secrets.ED02_TEST_DATABASE_URL }}
+      ED02_V5105_READONLY_AUTHORIZED: 'true'
+      ED02_V5105_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+    steps:
+      - name: Obter codigo do commit autorizado
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Instalar dependencias de Flask e PostgreSQL
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pip install 'SQLAlchemy>=2.0,<3.0' 'psycopg[binary]>=3.1,<4.0'
+      - name: Rotas reais ED01 com shadow desligado
+        run: |
+          python test_ed02_5_v5105_pg_posmerge.py \
+            --mode off --output "$RUNNER_TEMP/v5105_off.json"
+      - name: Rotas reais ED01 com shadow observacional ligado
+        run: |
+          python test_ed02_5_v5105_pg_posmerge.py \
+            --mode shadow --baseline "$RUNNER_TEMP/v5105_off.json" \
+            --output "$RUNNER_TEMP/v5105_shadow.json"
+      - name: Publicar apenas os relatorios sanitizados (nunca credenciais)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ED02_V5105_POSTMERGE_HTTP_PG_READONLY
+          path: |
+            ${{ runner.temp }}/v5105_off.json
+            ${{ runner.temp }}/v5105_shadow.json
+          if-no-files-found: warn
+          retention-days: 14
