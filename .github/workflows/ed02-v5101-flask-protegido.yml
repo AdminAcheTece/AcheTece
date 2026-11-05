@@ -1,0 +1,86 @@
+name: ED02 V5.10.1 - Flask protegido e arquivo integral de homologacao
+on:
+  push:
+    branches:
+      - ed02-assinaturas-vigencia-ledger
+permissions:
+  contents: read
+jobs:
+  v5101_preparacao:
+    name: ED02.5 V5.10.1 - Testes e main.py CANDIDATO completo
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Obter codigo do HEAD
+        uses: actions/checkout@v4
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Instalar dependencias minimas
+        run: python -m pip install 'SQLAlchemy>=2.0,<3.0'
+      - name: Compilar scripts
+        run: |
+          python -m py_compile aplicar_ed02_v510_main.py aplicar_ed02_v5101_main.py test_ed02_5_v5101_integracao.py test_ed02_5_v5101_shadow.py test_ed02_5_v5101_pg_guard.py test_ed02_5_v5101_pg_http.py
+      - name: Testes de integracao e protecao
+        run: |
+          python -m unittest -v test_ed02_5_v5101_integracao test_ed02_5_v5101_shadow test_ed02_5_v5101_pg_guard
+      - name: Gerar arquivo main.py completo e diff revisavel SEM substituir o original
+        run: |
+          python aplicar_ed02_v5101_main.py
+          python -m py_compile main_V5101_CANDIDATO.py
+          git diff --exit-code -- main.py
+      - name: Publicar candidato para revisao humana
+        uses: actions/upload-artifact@v4
+        with:
+          name: ED02_V5101_MAIN_COMPLETO_E_DIFF
+          path: |
+            main_V5101_CANDIDATO.py
+            ED02_V5101_MAIN.diff
+            ED02_V5101_RELATORIO.json
+          retention-days: 14
+          if-no-files-found: error
+
+  v5101_pg_http_readonly:
+    name: ED02.5 V5.10.1 - HTTP ORIGINAL + PostgreSQL READ ONLY (duas flags)
+    needs: v5101_preparacao
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/ed02-assinaturas-vigencia-ledger' &&
+      github.actor == 'AdminAcheTece' &&
+      github.event.head_commit.message == 'ED02_RUN_FLASK_HTTP_ED025_V5101_READONLY'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    concurrency:
+      group: ed02-postgres-checkout-homolog
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    steps:
+      - name: Obter codigo do HEAD
+        uses: actions/checkout@v4
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Instalar dependencias reais do Flask + PostgreSQL
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pip install 'SQLAlchemy>=2.0,<3.0' 'psycopg[binary]>=3.1,<4.0'
+      - name: Gerar candidato integral a partir do HEAD
+        run: |
+          python aplicar_ed02_v5101_main.py
+          python -m py_compile main_V5101_CANDIDATO.py
+          git diff --exit-code -- main.py
+      - name: Rotas HTTP originais ED01 (shadow desligado)
+        env:
+          ED02_HOMOLOG_DATABASE_URL: ${{ secrets.ED02_TEST_DATABASE_URL }}
+          ED02_V5101_PG_AUTHORIZED: 'true'
+          ED02_V5101_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: python test_ed02_5_v5101_pg_http.py --mode off --output /tmp/ed02_v5101_off.json
+      - name: Rotas HTTP originais ED01 + observacao shadow real (sem alterar respostas)
+        env:
+          ED02_HOMOLOG_DATABASE_URL: ${{ secrets.ED02_TEST_DATABASE_URL }}
+          ED02_V5101_PG_AUTHORIZED: 'true'
+          ED02_V5101_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: python test_ed02_5_v5101_pg_http.py --mode shadow --baseline /tmp/ed02_v5101_off.json --output /tmp/ed02_v5101_shadow.json
