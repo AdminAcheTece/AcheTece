@@ -1,0 +1,58 @@
+name: ED02 V5.10 - Replay legado e shadow HTTP protegidos
+on:
+  push:
+    branches:
+      - ed02-assinaturas-vigencia-ledger
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  v510_unit:
+    name: ED02.5 V5.10 - Testes de replay shadow e gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Obter codigo
+        uses: actions/checkout@v4
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Instalar dependencias
+        run: python -m pip install 'SQLAlchemy>=2.0,<3.0'
+      - name: Verificar codigo e testes
+        run: |
+          python -m py_compile ed02_5_v510_legacy_once.py ed02_5_v510_http_shadow.py ed02_5_v510_historico.py aplicar_ed02_v510_main.py test_ed02_5_v510_pg_rollback.py
+          python -m unittest -v test_ed02_5_v510_replay_unit test_ed02_5_v510_shadow_historico test_ed02_5_v510_patcher test_ed02_5_v510_pg_safety
+
+  v510_pg_rollback:
+    name: ED02.5 V5.10 - Replay PostgreSQL real COM rollback
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/ed02-assinaturas-vigencia-ledger' &&
+      github.actor == 'AdminAcheTece' &&
+      github.event.head_commit.message == 'ED02_RUN_REPLAY_ED025_V510_ROLLBACK'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    concurrency:
+      group: ed02-postgres-checkout-homolog
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    steps:
+      - name: Obter codigo
+        uses: actions/checkout@v4
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Instalar dependencias PostgreSQL
+        run: python -m pip install 'SQLAlchemy>=2.0,<3.0' 'psycopg[binary]>=3.1,<4.0'
+      - name: Ensaio protegido sem pagamentos reais
+        env:
+          ED02_HOMOLOG_DATABASE_URL: ${{ secrets.ED02_TEST_DATABASE_URL }}
+          ED02_V510_PG_RUN_AUTHORIZED: 'true'
+          ED02_V510_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          ED01_HOMOLOGACAO: 'true'
+          ED02_V510_REPLAY_HOMOLOG: 'true'
+        run: python test_ed02_5_v510_pg_rollback.py
