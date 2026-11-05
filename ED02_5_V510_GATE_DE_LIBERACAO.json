@@ -1,0 +1,18 @@
+{
+  "etapa": "ED02.5 V5.10",
+  "modo": "HOMOLOGACAO_SOMENTE",
+  "permite_producao": false,
+  "permite_visibilidade_ed02": false,
+  "permite_processamento_financeiro_real": false,
+  "pendencias": {
+    "testes_github_v510": false,
+    "ensaio_postgres_rollback_real": false,
+    "patch_main_head_revisado": false,
+    "shadow_http_original_homologado": false,
+    "legado_idempotencia_real_conciliada": false,
+    "estornos_e_contestacoes_homologados": false,
+    "ciclo_mercado_pago_mensal_anual_homologado": false,
+    "clientes_historicos_conciliados": false,
+    "autorizacao_formal_de_publicacao": false
+  }
+}

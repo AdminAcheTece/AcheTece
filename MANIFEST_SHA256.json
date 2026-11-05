@@ -1,0 +1,15 @@
+{
+  ".github/workflows/ed02-v510-financeiro-shadow.yml": "d56108fdac2d03187178047d1abe957ef17e86270b947f629cf79ed9fb52320c",
+  "ED02_5_V510_CONTRATO_HISTORICO.md": "6e9a67e66f593fa2e64ed042c691253eff33191d4ed416b85f4edc6b63773aa1",
+  "ED02_5_V510_GATE_DE_LIBERACAO.json": "0e3868ae8c6726d60706f1ec6b23f34e1f63b3232b9ffc84c4a927a31d78f950",
+  "LEIA_ME_ED02_5_V510.md": "a4733d1ec301c5e9639c9a3f778c8837ca57f3fd3c21bdb16e1447ab7892ee47",
+  "aplicar_ed02_v510_main.py": "68550226295461198e730aeb70b34a175f6e167332c1f82c5dc53003c622f8cc",
+  "ed02_5_v510_historico.py": "47e2a4193a0b17074d5fb15cd011e1bb9630d7f758fc06fb5a750e1daf6238c9",
+  "ed02_5_v510_http_shadow.py": "95d2f0ff4e4959ca5e4ca18a95ad189e3944802bd313a4f3eb6b7124727ca5cd",
+  "ed02_5_v510_legacy_once.py": "ab5b4e861d19be13da3b10844d19575d6586b9ccec5bec60b9f42664d10703ab",
+  "test_ed02_5_v510_patcher.py": "529c663137599b817e7d52ce8d98596f965e1ebebe1fde90d9ed273a689a9914",
+  "test_ed02_5_v510_pg_rollback.py": "714312964acc8bbc5dcb3999dae90ac75c06e9d1dbd7343c005c8b99ba008c8b",
+  "test_ed02_5_v510_pg_safety.py": "7c421fa8cf7a1380059bfc0b78005224905494a25326b7b8cf8023f6f70d1464",
+  "test_ed02_5_v510_replay_unit.py": "7eae237c309776b954f69453c584e511d3db092f687de64daa65f6e7b27421e3",
+  "test_ed02_5_v510_shadow_historico.py": "6b68eeece86c09327433e3358207e7e247c83a6d945a4d2ca99001785c2f43fe"
+}
