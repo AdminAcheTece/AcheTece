@@ -1,0 +1,50 @@
+name: ED02 V5.10.2 - Revisao de candidato Flask protegido
+on:
+  push:
+    branches:
+      - ed02-assinaturas-vigencia-ledger
+    paths:
+      - 'main_V5101_BASE.py'
+      - 'main_V5102_CANDIDATO.py'
+      - 'ed02_5_v510_http_shadow_V5102_CANDIDATO.py'
+      - 'test_ed02_5_v5102_integracao.py'
+      - 'verificar_ed02_v5102_head.py'
+      - 'ED02_V5102_RELATORIO.json'
+      - 'ED02_V5102_DIFF_MAIN.patch'
+      - 'ED02_V5102_DIFF_SHADOW.patch'
+      - 'LEIA_ME_ED02_5_V5102.md'
+      - '.github/workflows/ed02-v5102-candidato-protegido.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  revisar-candidato:
+    name: V5.10.2 - Integridade e testes sem deploy
+    if: ${{ github.ref == 'refs/heads/ed02-assinaturas-vigencia-ledger' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout somente leitura
+        uses: actions/checkout@v4
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verificar compilacao dos arquivos completos
+        run: |
+          python -m py_compile main_V5101_BASE.py main_V5102_CANDIDATO.py ed02_5_v510_http_shadow_V5102_CANDIDATO.py verificar_ed02_v5102_head.py test_ed02_5_v5102_integracao.py
+      - name: Testes de revisao e seguranca V5.10.2
+        run: python -m unittest -v test_ed02_5_v5102_integracao
+      - name: Validar HEAD e hashes antes de qualquer aplicacao
+        run: python verificar_ed02_v5102_head.py
+      - name: Publicar artefatos de revisao (nao faz deploy)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ED02_V5102_CANDIDATOS_PARA_REVISAO
+          path: |
+            main_V5102_CANDIDATO.py
+            ed02_5_v510_http_shadow_V5102_CANDIDATO.py
+            ED02_V5102_DIFF_MAIN.patch
+            ED02_V5102_DIFF_SHADOW.patch
+            ED02_V5102_RELATORIO.json
+          retention-days: 14
