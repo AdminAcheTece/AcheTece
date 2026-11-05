@@ -92,8 +92,16 @@ class CandidatoV5101(unittest.TestCase):
         self.assertEqual(can,novamente);self.assertEqual(modo,"ja_integrado")
     def test_patch_parcial_bloqueado(self):
         src=original()
+        # Antes da instalacao, um marcador solto e um patch parcial.
+        # Depois da integracao, repetir marcador nao representa patch parcial.
+        # Simular perda de uma das duas ancoras ja presentes.
+        if _integrado(src):
+            danificado=src.replace('ED02_V510_HTTP_SHADOW_HOMOLOG', 'ED02_V510_HTTP_SHADOW_AUSENTE')
+            self.assertNotEqual(src, danificado)
+        else:
+            danificado=src+"\n# ED02_V510_REPLAY_HOMOLOG\n"
         with self.assertRaises(RuntimeError):
-            gerar_candidato(src+"\n# ED02_V510_REPLAY_HOMOLOG\n")
+            gerar_candidato(danificado)
     def test_ed01_sem_filtro_bloqueado(self):
         src=original().replace('Empresa.assinatura_ativa','Empresa.id',1)
         with self.assertRaises(RuntimeError): gerar_candidato(src)
@@ -131,40 +139,54 @@ class RamoFinanceiroFlaskV5101(unittest.TestCase):
             result=state.fn('00101')
         self.assertTrue(result['ativou']);self.assertEqual(state.compromissos,['commit'])
         self.assertEqual(len(state.emails),1)
-    def test_primeiro_pagamento_novo_caminho_so_um_email(self):
+    def test_sem_homologacao_bloqueia_antes_de_consultar_provedor(self):
+        """A protecao V5102 permanece obrigatoria no codigo ja integrado.
+
+        Nao usa banco, nao chama provedor e nao habilita nenhum modo real.
+        """
         state=ProcessadorEmMemoria({'ED02_V510_REPLAY_HOMOLOG':True})
+        def chamada_proibida(_):
+            raise AssertionError('nao consultar provedor sem homologacao')
+        state.ns['_mp_get_payment']=chamada_proibida
+        with self.assertRaisesRegex(RuntimeError, 'autorizado apenas em homologacao'):
+            state.fn('00101')
+        self.assertEqual(state.compromissos,[])
+        self.assertEqual(state.emails,[])
+
+    def test_primeiro_pagamento_novo_caminho_so_um_email(self):
+        state=ProcessadorEmMemoria({'ED02_V510_REPLAY_HOMOLOG':True,'ED01_HOMOLOGACAO':True})
         efeito={'primeira_ativacao':True,'aplicado':True,'duplicado':False,'revisao_historica':False,'status':'approved'}
         with patch('ed02_5_v510_legacy_once.processar_legado_uma_vez_homolog',return_value=efeito) as f:
             result=state.fn('00101')
         f.assert_called_once();self.assertEqual(state.compromissos,[])
         self.assertEqual(len(state.emails),1);self.assertTrue(result['ativou'])
     def test_replay_duplicado_nao_renova_e_nao_envia_email(self):
-        state=ProcessadorEmMemoria({'ED02_V510_REPLAY_HOMOLOG':True})
+        state=ProcessadorEmMemoria({'ED02_V510_REPLAY_HOMOLOG':True,'ED01_HOMOLOGACAO':True})
         efeito={'primeira_ativacao':False,'aplicado':False,'duplicado':True,'revisao_historica':False,'status':'approved'}
         with patch('ed02_5_v510_legacy_once.processar_legado_uma_vez_homolog',return_value=efeito):
             result=state.fn('00101')
         self.assertTrue(result['duplicado']);self.assertEqual(state.compromissos,[])
         self.assertIsNone(state.empresa.data_pagamento);self.assertEqual(state.emails,[])
     def test_novo_pagamento_renova_sem_email_de_primeira_ativacao(self):
-        state=ProcessadorEmMemoria({'ED02_V510_REPLAY_HOMOLOG':True})
+        state=ProcessadorEmMemoria({'ED02_V510_REPLAY_HOMOLOG':True,'ED01_HOMOLOGACAO':True})
         efeito={'primeira_ativacao':False,'aplicado':True,'duplicado':False,'revisao_historica':False,'status':'approved'}
         with patch('ed02_5_v510_legacy_once.processar_legado_uma_vez_homolog',return_value=efeito):
             result=state.fn('00202')
         self.assertTrue(result['ativou']);self.assertEqual(state.emails,[])
         self.assertEqual(state.compromissos,[])
     def test_revisao_historica_sem_ativar(self):
-        state=ProcessadorEmMemoria({'ED02_V510_REPLAY_HOMOLOG':True})
+        state=ProcessadorEmMemoria({'ED02_V510_REPLAY_HOMOLOG':True,'ED01_HOMOLOGACAO':True})
         efeito={'primeira_ativacao':False,'aplicado':False,'duplicado':False,'revisao_historica':True,'status':'approved'}
         with patch('ed02_5_v510_legacy_once.processar_legado_uma_vez_homolog',return_value=efeito):
             result=state.fn('00303')
         self.assertTrue(result['revisao_historica']);self.assertFalse(result['ativou'])
         self.assertEqual(state.emails,[])
     def test_flags_financeiras_conflitantes_bloqueadas(self):
-        state=ProcessadorEmMemoria({'ED02_V510_REPLAY_HOMOLOG':True,'ED02_EXACT_ONCE_HOMOLOG':True})
+        state=ProcessadorEmMemoria({'ED02_V510_REPLAY_HOMOLOG':True,'ED01_HOMOLOGACAO':True,'ED02_EXACT_ONCE_HOMOLOG':True})
         with self.assertRaises(RuntimeError):state.fn('00101')
         self.assertEqual(state.compromissos,[])
     def test_erro_financeiro_nao_faz_fallback_legado(self):
-        state=ProcessadorEmMemoria({'ED02_V510_REPLAY_HOMOLOG':True})
+        state=ProcessadorEmMemoria({'ED02_V510_REPLAY_HOMOLOG':True,'ED01_HOMOLOGACAO':True})
         with patch('ed02_5_v510_legacy_once.processar_legado_uma_vez_homolog',side_effect=RuntimeError('fail')):
             with self.assertRaises(RuntimeError):state.fn('00101')
         self.assertEqual(state.compromissos,[]);self.assertEqual(state.emails,[])
