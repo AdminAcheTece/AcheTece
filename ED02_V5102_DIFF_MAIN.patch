@@ -1,0 +1,34 @@
+--- main_V5101_CANDIDATO.py
++++ main_V5102_CANDIDATO.py
+@@ -4246,6 +4246,20 @@
+     Consulta no MP e atualiza Empresa.status_pagamento / data_pagamento.
+     Envia e-mail quando virar aprovado.
+     """
++    # ED02.5 V5.10.2 — modo V510 fail-closed ANTES da consulta ao MP.
++    # ED02_VIGENCIA_WRITE requer EXACT_ONCE no fluxo historico: bloquear a
++    # combinacao com V510, sem modificar a prioridade dos ramos legados.
++    if _env_bool("ED02_V510_REPLAY_HOMOLOG", False):
++        if not _env_bool("ED01_HOMOLOGACAO", False):
++            raise RuntimeError("V5102: modo financeiro autorizado apenas em homologacao")
++        if any(_env_bool(chave, False) for chave in (
++            "ED02_VIGENCIA_WRITE_HOMOLOG",
++            "ED02_EXACT_ONCE_HOMOLOG",
++            "ED02_FINANCIAL_GUARD_HOMOLOG",
++            "ED02_SHADOW_LEDGER",
++        )):
++            raise RuntimeError("V5102: modos financeiros conflitantes")
++
+     payment = _mp_get_payment(payment_id)
+ 
+     status = (payment.get("status") or "").lower()          # approved, pending, in_process...
+@@ -4321,7 +4335,9 @@
+             try:
+                 link = _make_magic_link(empresa.id)
+                 html = _email_ativacao_html(empresa, link)
+-                _send_email(empresa.email, "Pagamento aprovado - AcheTece", html)
++                texto = ("Pagamento aprovado na AcheTece.\n"
++                         "Acesse sua conta pelo link: " + link)
++                _send_email(empresa.email, "Pagamento aprovado - AcheTece", texto, html)
+             except Exception:
+                 app.logger.error("[ED02 V510] notificacao nao enviada; detalhes omitidos")
+         return {"ok": True, "empresa_id": empresa.id,

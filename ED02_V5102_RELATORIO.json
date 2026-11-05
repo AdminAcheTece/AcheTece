@@ -1,0 +1,23 @@
+{
+  "etapa": "ED02.5 V5.10.2",
+  "status": "CANDIDATO NAO APLICADO",
+  "main_v5101_sha256": "2e262117443ceef4e44e35d964675b2bb4b2f435108c9e449ea5b1cbb65b4ae6",
+  "main_v5102_sha256": "7e5725b80b0f5c50f3b78b4a6f8ca930c74de0b4d97949ebf1b1794f79275200",
+  "shadow_v5101_sha256": "95d2f0ff4e4959ca5e4ca18a95ad189e3944802bd313a4f3eb6b7124727ca5cd",
+  "shadow_v5102_sha256": "45fe37566c9efedcd109eda56499e5ef0c48b978ef3a596003dcc30ec5973e44",
+  "head_main_esperado_sha256": "9b90b67b6195bd63d28c7f1c3e8011240b5ab366c680e8d1acd27a99f6157d84",
+  "flags": {
+    "ED02_V510_REPLAY_HOMOLOG": false,
+    "ED02_V510_HTTP_SHADOW_HOMOLOG": false
+  },
+  "pendencias": [
+    "Execucao do workflow no HEAD da branch",
+    "Revisao humana de diff",
+    "Regressao sobre o main real",
+    "Homologacao PG e HTTP apos integracao",
+    "Verificar _send_email nos ramos EXACT_ONCE/legado separadamente",
+    "Conciliação historica e estornos"
+  ],
+  "producao_autorizada": false,
+  "aplicado_ao_main": false
+}
