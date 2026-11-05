@@ -1,0 +1,18 @@
+{
+  "etapa": "ED02.5 V5.10.5",
+  "finalidade": "Homologacao pos-merge do main.py integrado com Flask e PostgreSQL READ ONLY",
+  "branch_autorizada": "ed02-assinaturas-vigencia-ledger",
+  "commit_merge_referencia": "303d29f",
+  "main_integrado_sha256": "7e5725b80b0f5c50f3b78b4a6f8ca930c74de0b4d97949ebf1b1794f79275200",
+  "shadow_integrado_sha256": "45fe37566c9efedcd109eda56499e5ef0c48b978ef3a596003dcc30ec5973e44",
+  "postgresql_autorizado": "achetece_ed01_test",
+  "ambiente_real_pg_execucao": "PENDENTE",
+  "pagamento_real": false,
+  "webhook_real": false,
+  "deploy_render": false,
+  "ativacao_producao": false,
+  "regra_ed01_modificada": false,
+  "gate_ed02_publico_ativado": false,
+  "auto_deploy_render": "OFF_CONFIRMADO_ANTES_DESTA_ETAPA",
+  "referencia_rollback_render": "04fbdca"
+}
