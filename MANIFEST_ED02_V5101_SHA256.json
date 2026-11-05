@@ -1,0 +1,20 @@
+{
+  "etapa": "ED02.5 V5.10.1",
+  "arquivos": {
+    "aplicar_ed02_v5101_main.py": "df5b52f0eb3424bfea60321f2c96abed4924a143d4cca530d5d2a6f00064d4e0",
+    "test_ed02_5_v5101_integracao.py": "81ee1402af842cb3d8934cc5fb211408313b7805d25b1ca59ec341b8148d6c86",
+    "test_ed02_5_v5101_shadow.py": "1acc639b4ea8248e9c01c45c6eaefd5f4ed1d494c1f350eb3600431abc1777df",
+    "test_ed02_5_v5101_pg_guard.py": "c6281545f246e3484fcf9da0d8e909826d1d76ca7426ad4675411055acb0fdb3",
+    "test_ed02_5_v5101_pg_http.py": "74421c8e7da37c8dad2f34f9067863224ee706ffb62ab5b42caba09a144e2429",
+    ".github/workflows/ed02-v5101-flask-protegido.yml": "4272eed371591d190394ada7a9b2fbc2b29398a523236c5ed5e3a078bd37f3dd",
+    "LEIA_ME_ED02_5_V5101.md": "10d24a3056412ceaf2bc44b217a04d52904cf1f1978f0cb6080f3595da7ab4c9",
+    "ED02_V5101_CRITERIOS_DE_ACEITE.md": "fdcc79bcc72f9b15701b82b7e57b98dc6f98eb3e7a8f1336b2db475ea9cb87a9"
+  },
+  "tipo": "integracao_candidata_nao_operacional",
+  "source_of_truth_main": "HEAD da branch via workflow; nunca snapshot obsoleto",
+  "testes_locais_v5101": 34,
+  "testes_com_regressao_v510": 68,
+  "gatilho_pg": "ED02_RUN_FLASK_HTTP_ED025_V5101_READONLY",
+  "main_operacional_alterado": false,
+  "gate_producao": "BLOQUEADO"
+}
