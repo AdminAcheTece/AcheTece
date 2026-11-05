@@ -108,6 +108,24 @@ def observar_http(db, endpoint: str, args: dict, empresa_id=None) -> dict:
     return resultado
 
 
+
+def contar_divergencias_reais(resumo: dict) -> int:
+    """Soma alertas financeiros, nao classificacoes convergentes.
+
+    A camada shadow continua exclusivamente observacional: nunca publica.
+    Chaves futuras desconhecidas contam como alertas para evitar subcontagem.
+    """
+    categorias = resumo.get("divergencias")
+    if not isinstance(categorias, dict):
+        raise ValueError("diagnostico malformado")
+    total = 0
+    for nome, valor in categorias.items():
+        if type(nome) is not str or type(valor) is not int or valor < 0:
+            raise ValueError("contagem de diagnostico invalida")
+        if nome not in ("CONVERGENTE_VISIVEL", "CONVERGENTE_OCULTO_ED01"):
+            total += valor
+    return total
+
 def instalar_shadow_http(app, db) -> bool:
     """Somente registrar hook sob aprovação explícita da HOMOLOGAÇÃO."""
     if not (os.getenv("ED02_V510_HTTP_SHADOW_HOMOLOG", "").strip().lower() == "true"
@@ -126,7 +144,7 @@ def instalar_shadow_http(app, db) -> bool:
             # Somente contagens agregadas; não logar query string, IDs ou payload.
             app.logger.info("[V510 SHADOW] rota=%s escopo=coorte contagem=%d divergencias=%d publicacoes=0",
                             request.endpoint, resumo["empresas_auditadas"],
-                            sum(resumo["divergencias"].values()))
+                            contar_divergencias_reais(resumo))
         except Exception:
             app.logger.warning("[V510 SHADOW] diagnostico indisponivel; detalhes omitidos")
         return response
