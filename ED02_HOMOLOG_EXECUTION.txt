@@ -27,3 +27,4 @@ ED02.5 V5.8 - Auditoria agregada de compatibilidade historica em PostgreSQL some
 ED02.5 V5.9 - Auditoria shadow PostgreSQL somente leitura.
 ED02.5 V5.10 - Ensaio protegido de replay e renovacao PostgreSQL.
 ED02.5 V5.10.1 - Homologacao HTTP Flask e PostgreSQL com shadow protegido.
+ED02.5 V5.10.5 - Autorizacao de homologacao HTTP e PostgreSQL somente leitura.
