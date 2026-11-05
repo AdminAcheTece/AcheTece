@@ -1,0 +1,23 @@
+{
+  "etapa": "ED02.5 V5.10.3",
+  "tipo": "PR de integracao candidata e regressao sem deploy",
+  "origem": "ed02-assinaturas-vigencia-ledger",
+  "destino": "ed02-v5103-integracao-candidata",
+  "sha256": {
+    "main.py": "7e5725b80b0f5c50f3b78b4a6f8ca930c74de0b4d97949ebf1b1794f79275200",
+    "ed02_5_v510_http_shadow.py": "45fe37566c9efedcd109eda56499e5ef0c48b978ef3a596003dcc30ec5973e44"
+  },
+  "main_baseline_admitido": [
+    "9b90b67b6195bd63d28c7f1c3e8011240b5ab366c680e8d1acd27a99f6157d84",
+    "2e262117443ceef4e44e35d964675b2bb4b2f435108c9e449ea5b1cbb65b4ae6"
+  ],
+  "shadow_baseline": "95d2f0ff4e4959ca5e4ca18a95ad189e3944802bd313a4f3eb6b7124727ca5cd",
+  "gate2_aprovado_em_github": true,
+  "render_alterado": false,
+  "merge_autorizado": false,
+  "producao_autorizada": false,
+  "flags_financeiras_ativadas": false,
+  "postgresql_real_testado_apos_merge": false,
+  "verificacao_auto_deploy_render": "PENDENTE_CONFIRMACAO_HUMANA",
+  "checkout_pagamentos_reais_autorizado": false
+}

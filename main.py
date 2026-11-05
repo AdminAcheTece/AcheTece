@@ -4246,6 +4246,20 @@ def _processar_pagamento(payment_id: str):
     Consulta no MP e atualiza Empresa.status_pagamento / data_pagamento.
     Envia e-mail quando virar aprovado.
     """
+    # ED02.5 V5.10.2 — modo V510 fail-closed ANTES da consulta ao MP.
+    # ED02_VIGENCIA_WRITE requer EXACT_ONCE no fluxo historico: bloquear a
+    # combinacao com V510, sem modificar a prioridade dos ramos legados.
+    if _env_bool("ED02_V510_REPLAY_HOMOLOG", False):
+        if not _env_bool("ED01_HOMOLOGACAO", False):
+            raise RuntimeError("V5102: modo financeiro autorizado apenas em homologacao")
+        if any(_env_bool(chave, False) for chave in (
+            "ED02_VIGENCIA_WRITE_HOMOLOG",
+            "ED02_EXACT_ONCE_HOMOLOG",
+            "ED02_FINANCIAL_GUARD_HOMOLOG",
+            "ED02_SHADOW_LEDGER",
+        )):
+            raise RuntimeError("V5102: modos financeiros conflitantes")
+
     payment = _mp_get_payment(payment_id)
 
     status = (payment.get("status") or "").lower()          # approved, pending, in_process...
@@ -4309,6 +4323,27 @@ def _processar_pagamento(payment_id: str):
         return {"ok": True, "empresa_id": empresa.id,
                 "ativou": False, "duplicado": periodo["duplicado"],
                 "modo": "ed02_5_vigencia_homologacao", "status": "periodo_registrado"}
+
+    # ED02.5 V5.10: replay com ledger atômico SOMENTE na homologacao.
+    # Flag OFF por padrão; não habilitar sem gate financeiro e banco autorizado.
+    if _env_bool("ED02_V510_REPLAY_HOMOLOG", False):
+        if _env_bool("ED02_EXACT_ONCE_HOMOLOG", False) or _env_bool("ED02_SHADOW_LEDGER", False):
+            raise RuntimeError("V510: modos de pagamento mutuamente exclusivos")
+        from ed02_5_v510_legacy_once import processar_legado_uma_vez_homolog
+        result = processar_legado_uma_vez_homolog(db, payment, empresa.id)
+        if result["primeira_ativacao"]:
+            try:
+                link = _make_magic_link(empresa.id)
+                html = _email_ativacao_html(empresa, link)
+                texto = ("Pagamento aprovado na AcheTece.\n"
+                         "Acesse sua conta pelo link: " + link)
+                _send_email(empresa.email, "Pagamento aprovado - AcheTece", texto, html)
+            except Exception:
+                app.logger.error("[ED02 V510] notificacao nao enviada; detalhes omitidos")
+        return {"ok": True, "empresa_id": empresa.id,
+                "ativou": result["aplicado"], "duplicado": result["duplicado"],
+                "revisao_historica": result["revisao_historica"],
+                "modo": "v510_homologacao", "status": result["status"]}
 
     # ED02.3E: exclusivamente homologacao, flag DESLIGADA por padrao.
     # A verificacao do banco ocorre DENTRO da mesma transacao da alteracao.
@@ -4770,6 +4805,12 @@ def empresa_perfil(empresa_id):
 @app.get("/empresas/<int:empresa_id>")
 def empresas_redirect(empresa_id):
     return redirect(url_for("empresa_perfil", empresa_id=empresa_id), code=301)
+
+# ED02.5 V5.10: diagnostico HTTP em HOMOLOGACAO, nao afeta respostas.
+# A flag nao deve ser ligada em producao.
+if _env_bool("ED02_V510_HTTP_SHADOW_HOMOLOG", False):
+    from ed02_5_v510_http_shadow import instalar_shadow_http
+    instalar_shadow_http(app, db)
 
 # --------------------------------------------------------------------
 # Entry point local
