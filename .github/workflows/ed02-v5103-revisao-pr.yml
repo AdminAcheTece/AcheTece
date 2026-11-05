@@ -1,0 +1,71 @@
+name: ED02 V5.10.3 - Integracao candidata PR SEM deploy
+on:
+  push:
+    branches:
+      - ed02-v5103-integracao-candidata
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ed02-v5103-revisao-candidata
+  cancel-in-progress: false
+jobs:
+  integridade:
+    name: Gate 3 - Preflight SHA e ED01
+    if: ${{ github.ref == 'refs/heads/ed02-v5103-integracao-candidata' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compilar verificador e scripts de seguranca
+        run: python -m py_compile main.py ed02_5_v510_http_shadow.py ed02_v5103_gate.py test_ed02_v5103_gate.py
+      - name: Testes estaticos de seguranca
+        run: python -m unittest -v test_ed02_v5103_gate
+      - name: Validar origem, HEAD, hashes, quatro rotas e escopo
+        run: python ed02_v5103_gate.py preflight --out "$RUNNER_TEMP/ed02-v5103"
+      - name: Gerar copia de reversao dos arquivos da ED02 sem alterar nada
+        run: |
+          mkdir -p "$RUNNER_TEMP/ed02-v5103/backup_ED02"
+          git show origin/ed02-assinaturas-vigencia-ledger:main.py > "$RUNNER_TEMP/ed02-v5103/backup_ED02/main.py"
+          git show origin/ed02-assinaturas-vigencia-ledger:ed02_5_v510_http_shadow.py > "$RUNNER_TEMP/ed02-v5103/backup_ED02/ed02_5_v510_http_shadow.py"
+          cd "$RUNNER_TEMP/ed02-v5103/backup_ED02" && sha256sum main.py ed02_5_v510_http_shadow.py > SHA256.txt
+      - name: Publicar relatorio e backup somente de homologacao
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ED02_V5103_GATE_PREFLIGHT_E_BACKUP
+          path: ${{ runner.temp }}/ed02-v5103/
+          if-no-files-found: warn
+          retention-days: 14
+  regressao:
+    name: Gate 3 - Regressao dos arquivos operacionais em copia
+    needs: integridade
+    if: ${{ github.ref == 'refs/heads/ed02-v5103-integracao-candidata' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Instalar dependencias para regressao offline
+        run: python -m pip install -r requirements.txt
+      - name: Regressao ampliada na copia temporaria, sem secrets
+        run: python ed02_v5103_gate.py regressao --out "$RUNNER_TEMP/ed02-v5103"
+      - name: Publicar resultado, inclusive em caso de falha
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ED02_V5103_REGRESSAO_OFFLINE
+          path: ${{ runner.temp }}/ed02-v5103/
+          if-no-files-found: warn
+          retention-days: 14
