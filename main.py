@@ -14,6 +14,9 @@ from functools import wraps
 from datetime import datetime, timedelta
 import mercadopago
 import os
+from p03d_staging_guard import (
+    is_target_staging, validate_staging_config, block_side_effect_path
+)
 import csv
 import io
 import re
@@ -63,6 +66,14 @@ TOLERANCIA_DIAS = int(os.getenv("ASSIN_TOLERANCIA_DIAS", "1"))
 # --------------------------------------------------------------------
 # Configuração básica
 # --------------------------------------------------------------------
+# Um serviço Render de staging específico fica protegido automaticamente.
+# Nunca definir este modo pelo nome de domínio público ou por input HTTP.
+P03D_STAGING_ACTIVE = is_target_staging(os.environ)
+if P03D_STAGING_ACTIVE:
+    if __import__('sys').version_info[:2] != (3, 11):
+        raise RuntimeError('P03D_CONFIG_REJECTED:python_runtime_not_homologated')
+    validate_staging_config(os.environ)
+
 app = Flask(__name__)
 
 app.logger.setLevel(
@@ -333,6 +344,8 @@ def _safe_from_address() -> str:
     return f"AcheTece <no-reply@{RESEND_DOMAIN}>"
 
 def _send_via_resend(to: str, subject: str, html: str, text: Optional[str] = None) -> Tuple[bool, str]:
+    if P03D_STAGING_ACTIVE:
+        return False, 'envio desativado no Staging P0.3-D'
     """
     Envio via Resend HTTP (estável e sem duplicação).
     Variáveis:
@@ -370,6 +383,8 @@ def _send_via_resend(to: str, subject: str, html: str, text: Optional[str] = Non
         return False, f"Resend erro: {e!s}"
 
 def _send_via_mailgun(to: str, subject: str, html: str, text: Optional[str] = None) -> Tuple[bool, str]:
+    if P03D_STAGING_ACTIVE:
+        return False, 'envio desativado no Staging P0.3-D'
     domain = os.getenv("MAILGUN_DOMAIN")
     key = os.getenv("MAILGUN_API_KEY")
     if not (domain and key):
@@ -398,6 +413,8 @@ def _send_via_mailgun(to: str, subject: str, html: str, text: Optional[str] = No
         return False, f"Mailgun erro: {e!s}"
 
 def _send_via_sendgrid(to: str, subject: str, html: str, text: Optional[str] = None) -> Tuple[bool, str]:
+    if P03D_STAGING_ACTIVE:
+        return False, 'envio desativado no Staging P0.3-D'
     key = os.getenv("SENDGRID_API_KEY")
     if not key:
         return False, "SENDGRID_API_KEY ausente"
@@ -430,6 +447,8 @@ def _send_via_sendgrid(to: str, subject: str, html: str, text: Optional[str] = N
         return False, f"SendGrid erro: {e!s}"
 
 def _send_via_smtp(to: str, subject: str, html: str, text: Optional[str] = None) -> Tuple[bool, str]:
+    if P03D_STAGING_ACTIVE:
+        return False, 'envio desativado no Staging P0.3-D'
     """Fallback via SMTP (SSL/TLS) — agora será usado de verdade."""
     host = app.config.get("SMTP_HOST") or "smtp.gmail.com"
     port = int(app.config.get("SMTP_PORT") or 465)
@@ -472,6 +491,9 @@ def _send_via_smtp(to: str, subject: str, html: str, text: Optional[str] = None)
 
 def send_email(to: str, subject: str, html: str, text: Optional[str] = None) -> bool:
     from flask import current_app
+    if P03D_STAGING_ACTIVE:
+        current_app.logger.info('[P03D] email suprimido sem envio externo')
+        return False
 
     if current_app.config.get("MAIL_SUPPRESS_SEND"):
         current_app.logger.info(f"[send_email] MAIL_SUPPRESS_SEND=True — suprimido. to={to} subject={subject}")
@@ -807,7 +829,7 @@ def _otp_validate(
 
 # Mercado Pago (mantido para compat)
 MP_ACCESS_TOKEN = os.getenv("MP_ACCESS_TOKEN") or os.getenv("MERCADO_PAGO_TOKEN", "")
-sdk = mercadopago.SDK(MP_ACCESS_TOKEN)
+sdk = (None if P03D_STAGING_ACTIVE else mercadopago.SDK(MP_ACCESS_TOKEN))
 PLAN_MONTHLY = float(os.getenv("PLAN_MONTHLY", "2.00"))
 PLAN_YEARLY  = float(os.getenv("PLAN_YEARLY", "2.00"))
 
@@ -1010,6 +1032,8 @@ def _avatar_r2_configurado() -> bool:
 # ==============================================================
 
 def _avatar_r2_client():
+    if P03D_STAGING_ACTIVE:
+        raise RuntimeError('P03D: R2 desativado no Staging')
     """
     Cria e retorna um cliente S3 compatível com Cloudflare R2.
 
@@ -2673,11 +2697,18 @@ def _try_ping(url: str) -> bool:
         with engine.connect() as c:
             c.exec_driver_sql("SELECT 1")
         return True
-    except Exception as e:
-        app.logger.warning("[DB] ping falhou para %s: %r", url, e)
+    except Exception:
+        # Não registrar URL nem repr de exceções: ambos podem conter credenciais.
+        app.logger.warning('[DB] ping falhou; detalhes de conexão ocultos')
         return False
 
 def _pick_database_uri() -> str:
+    if P03D_STAGING_ACTIVE:
+        # Configuração verificada sem divulgar credenciais.
+        validated_url = validate_staging_config(os.environ)
+        url = _normalize_db_url(validated_url)
+        _try_ping(url)
+        return url  # falha fechada: não substitui a conexão por SQLite
     internal = os.getenv("INTERNAL_DATABASE_URL") or os.getenv("DATABASE_URL_INTERNAL") or ""
     primary  = os.getenv("SQLALCHEMY_DATABASE_URI") or os.getenv("DATABASE_URL") or ""
     raw_url  = (internal or primary).strip()
@@ -2750,6 +2781,13 @@ h1{font-size:24px;margin:0 0 8px}p{line-height:1.55;margin:10px 0}small{color:#8
     if status == 503:
         headers["Retry-After"] = "10"
     return resp, status, headers
+
+@app.before_request
+def _p03d_block_external_side_effects():
+    if P03D_STAGING_ACTIVE:
+        status = block_side_effect_path(request.path, request.method)
+        if status is not None:
+            return jsonify({'ok': False, 'staging': 'financial_operations_disabled'}), status
 
 @app.before_request
 def _mark_db_status():
@@ -2834,6 +2872,12 @@ def track_event(
     - valida IDs básicos antes da gravação;
     - limita os metadados persistidos.
     """
+
+    # P0.3-D R2.1: durante a homologacao sintética de Staging,
+    # visualizacao publica nunca grava analytics nem modifica a sessao.
+    # Esta protecao NAO se aplica a outros servicos.
+    if P03D_STAGING_ACTIVE:
+        return
 
     # ==========================================================
     # EVENTO
@@ -3138,43 +3182,45 @@ class Empresa(db.Model):
 
     @hybrid_property
     def assinatura_ativa(self) -> bool:
+        """P0: fail-closed, contrato legado em dias (35/370), data UTC.
+
+        Apenas status literal 'ativo', plano reconhecido e data real válida
+        podem conceder visibilidade. Datas ausentes/futuras não concedem.
+        A política de migração para meses de calendário é etapa separada.
         """
-        Regra FINAL:
-        - Considera ativa se status_norm == "ativo"
-        - E se data_pagamento existir: ainda está dentro do prazo do plano (mensal/anual)
-        - Se data_pagamento for None e status estiver ativo: considera ativo (casos raros/trial)
-        """
-        if self.status_pagamento_norm != "ativo":
+        status = (self.status_pagamento or "").strip().lower()
+        plano = (self.plano or "").strip().lower()
+        pago_em = self.data_pagamento
+        if status != "ativo" or plano not in {"mensal", "anual"} or pago_em is None:
             return False
-
-        if self.data_pagamento is None:
-            return True
-
-        dias = self._dias_por_plano(getattr(self, "plano", "mensal"))
-        return (self.data_pagamento + timedelta(days=dias)) >= datetime.utcnow()
+        agora = datetime.utcnow()
+        prazo_dias = self._dias_por_plano(plano)
+        return pago_em <= agora <= (pago_em + timedelta(days=prazo_dias))
 
     @assinatura_ativa.expression
     def assinatura_ativa(cls):
-        """
-        Versão SQL (Postgres):
-        status ok AND (data_pagamento IS NULL OR now() <= data_pagamento + intervalo(plano))
-        """
-        status_lower = func.lower(func.coalesce(cls.status_pagamento, ''))
-        plano_lower  = func.lower(func.coalesce(cls.plano, 'mensal'))
+        """Expressão SQL portável e fail-closed, equivalente ao getter.
 
-        # dias por plano via CASE
-        dias = func.case(
-            (plano_lower == "anual", ASSINATURA_DIAS_ANUAL),
-            else_=ASSINATURA_DIAS_MENSAL
-        )
-
-        # make_interval(days => CASE...) no Postgres
+        Compara timestamps por limites UTC calculados no servidor;
+        não usa func.case/make_interval e não contém fallback permissivo.
+        """
+        agora = datetime.utcnow()
+        status = func.lower(func.trim(func.coalesce(cls.status_pagamento, "")))
+        plano = func.lower(func.trim(func.coalesce(cls.plano, "")))
         return and_(
-            status_lower.in_(list(STATUS_ATIVO_EQUIV)),
+            status == "ativo",
+            cls.data_pagamento.isnot(None),
+            cls.data_pagamento <= agora,
             or_(
-                cls.data_pagamento.is_(None),
-                func.now() <= (cls.data_pagamento + func.make_interval(days=dias))
-            )
+                and_(
+                    plano == "mensal",
+                    cls.data_pagamento >= (agora - timedelta(days=ASSINATURA_DIAS_MENSAL)),
+                ),
+                and_(
+                    plano == "anual",
+                    cls.data_pagamento >= (agora - timedelta(days=ASSINATURA_DIAS_ANUAL)),
+                ),
+            ),
         )
 
     @property
@@ -6657,6 +6703,9 @@ def _boot_ensure_empresa_plano_column():
 
 def _run_bootstrap_once():
     """Cria tabelas/migrações leves quando o DB está UP; caso contrário, adia."""
+    if P03D_STAGING_ACTIVE:
+        # P0.3-D é pré-provisionamento: migrações dependem de aceite separado.
+        return
     global _BOOTSTRAP_DONE
     if _BOOTSTRAP_DONE:
         return
@@ -6699,6 +6748,8 @@ def _run_bootstrap_once():
 @app.before_request
 def _bootstrap_and_analytics_lazy():
     global _ANALYTICS_READY
+    if P03D_STAGING_ACTIVE:
+        return  # Não criar sequer a tabela de analytics antes do gate de migração.
     if getattr(g, "db_up", False):
         _run_bootstrap_once()
         if not _ANALYTICS_READY:
@@ -7012,12 +7063,9 @@ def _security_headers(resp):
         # R2     = avatares persistentes das malharias.
         # ------------------------------------------------------
         
-        f"img-src 'self'"
-        f"{(
-            ' ' + avatar_r2_csp_source
-            if avatar_r2_csp_source
-            else ''
-        )}; "
+        "img-src 'self'"
+        + (" " + avatar_r2_csp_source if avatar_r2_csp_source else "")
+        + "; "
 
         # ------------------------------------------------------
         # FETCH / XHR / API
@@ -7484,29 +7532,14 @@ def index():
             "cidade":   (v.get("cidade") or "").strip(),
         }
 
-        q_base = Tear.query.join(Empresa, Tear.empresa_id == Empresa.id)
-        # Se a coluna 'ativo' não existir, ignora silenciosamente
-        try:
-            q_base = q_base.filter(Tear.ativo.is_(True))
-        except Exception:
-            pass
-
-        # 🔒 Regra de negócio: só empresas com pagamento/assinatura ativa
-        # 1) Se você tiver a propriedade híbrida Empresa.assinatura_ativa (recomendado)
-        try:
-            q_base = q_base.filter(Empresa.assinatura_ativa)
-        except Exception:
-            # 2) Fallback por data "pago até"
-            try:
-                q_base = q_base.filter(Empresa.pago_ate >= db.func.now())
-            except Exception:
-                # 3) Fallback por status textual
-                try:
-                    q_base = q_base.filter(Empresa.assinatura_status.in_(["active", "approved", "trial"]))
-                except Exception:
-                    # Se nada disso existir, segue sem o filtro (legado)
-                    pass
-        # ---- FIM: nova query base ----
+        # P0: filtro OBRIGATÓRIO e sem fallback. Inclui opções de filtro
+        # (cidade, UF, galga etc.) para evitar divulgação lateral.
+        # Se a expressão falhar, a rota cai no tratamento de falha/offline.
+        q_base = (
+            Tear.query
+            .join(Empresa, Tear.empresa_id == Empresa.id)
+            .filter(Empresa.assinatura_ativa)
+        )
         
         opcoes = {"tipo": [], "diâmetro": [], "galga": [], "estado": [], "cidade": []}
         from collections import defaultdict
@@ -7632,6 +7665,8 @@ from datetime import datetime, timedelta
 from flask import current_app, session
 
 def _email_send_html_first(to_email: str, subject: str, text: str, html: str | None) -> bool:
+    if P03D_STAGING_ACTIVE:
+        return False
     """
     Envia priorizando HTML:
       1) Flask-Mail (via current_app.extensions['mail'] ou 'mail' global);
@@ -23269,7 +23304,9 @@ def exportar():
 
     galga    = to_int(filtros_raw['galga'])
     diametro = to_float(filtros_raw['diâmetro'])
-    query = Tear.query.join(Empresa)
+    # P0: aplicar a MESMA guarda pública antes de exportar qualquer linha.
+    # Uma falha de SQL interrompe a exportação; não há CSV permissivo.
+    query = Tear.query.join(Empresa).filter(Empresa.assinatura_ativa)
     if filtros_raw['tipo']:
         query = query.filter(Tear.tipo == filtros_raw['tipo'])
     if diametro is not None:
@@ -26439,6 +26476,8 @@ def admin_desimpersonar():
 )
 @admin_tool_requerido
 def admin_test_email():
+    if P03D_STAGING_ACTIVE:
+        return 'Serviço de e-mail desativado para o Staging.', 403
 
     to_addr = (
         request.values.get(
@@ -26543,6 +26582,8 @@ def pagar():
 
 # --- Checkout Mercado Pago ---------------------------------------------------
 def _mp_sdk():
+    if P03D_STAGING_ACTIVE:
+        raise RuntimeError('P03D: Mercado Pago desativado no Staging')
     token = os.environ.get("MP_ACCESS_TOKEN", "")
     if not token:
         raise RuntimeError("MP_ACCESS_TOKEN não definido.")
@@ -27039,6 +27080,9 @@ def _parse_empresa_id_from_external_reference(
     return empresa_id
 
 def _send_email(to_email: str, subject: str, text_body: str, html_body: str):
+    if P03D_STAGING_ACTIVE:
+        app.logger.info('[P03D] email financeiro suprimido')
+        return False
     # Aceita tanto MAIL_* quanto SMTP_*
     host = os.environ.get("MAIL_HOST") or os.environ.get("SMTP_HOST")
     port = int(os.environ.get("MAIL_PORT") or os.environ.get("SMTP_PORT") or "587")
@@ -28511,6 +28555,8 @@ def _carregar_cidades_estatico():
 _CIDADES_ESTATICO = _carregar_cidades_estatico()
 
 def _get_cidades_por_uf(uf: str):
+    if P03D_STAGING_ACTIVE:
+        return []  # API IBGE não é acessada durante este marco de segurança.
     if not uf: return []
     uf = uf.strip().upper()
     cache_path = os.path.join(CACHE_DIR, f'{uf}.json')
@@ -29147,8 +29193,14 @@ from flask import render_template, abort, redirect, url_for
 
 @app.get("/empresa/<int:empresa_id>")
 def empresa_perfil(empresa_id):
-    empresa = Empresa.query.get_or_404(empresa_id)
-    teares = Tear.query.filter_by(empresa_id=empresa_id).order_by(Tear.tipo.asc()).all()
+    # P0: consulta pública por URL direta também exige assinatura vigente.
+    # 404 tanto para ID inexistente quanto para malharia não publicável.
+    empresa = (
+        Empresa.query
+        .filter(Empresa.id == empresa_id, Empresa.assinatura_ativa)
+        .first_or_404()
+    )
+    teares = Tear.query.filter_by(empresa_id=empresa.id).order_by(Tear.tipo.asc()).all()
 
     # registra analytics de visita ao perfil público
     try:
