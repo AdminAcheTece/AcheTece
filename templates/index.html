@@ -187,7 +187,7 @@
   }
 
   /* Direita */
-  .right-col{display:flex;flex-direction:column;gap:16px;}
+  .right-col{display:flex;flex-direction:column;gap:16px;min-width:0;}
   .localizacao-card{border:1px solid #eee;border-radius:12px;padding:16px 16px 8px;width:100%;max-width:100%;}
   .localizacao-card h2{margin:0 0 10px 0;font-size:18px;font-weight:700;}
   .localizacao-card .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
@@ -196,7 +196,7 @@
   @media (max-width:620px){.localizacao-card .row{grid-template-columns:1fr}}
 
   /* ===== RESULTADOS ===== */
-  .results-card{border:1px solid #eee;border-radius:12px;padding:12px;max-width:1140px;margin:0 auto;}
+  .results-card{border:1px solid #eee;border-radius:12px;padding:12px;width:100%;max-width:100%;min-width:0;margin:0;}
   .results-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 4px 6px;}
   .results-head h3{margin:0;font-size:16px;font-weight:700;}
   .results-count{font-size:13px;color:#555;}
@@ -209,8 +209,10 @@
   .crumbs .current{color:#222;font-weight:600;}
 
   /* Tabela (desktop) */
-  .table-wrap{overflow-x:auto;}
-  .teares-table{width:100%;border-collapse:collapse;}
+  /* Rolagem horizontal limitada ao resultado: mantém todas as 9 colunas legíveis. */
+  .table-wrap{display:block;width:100%;max-width:100%;min-width:0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .teares-table{width:100%;min-width:1080px;margin-top:0;border-collapse:collapse;}
+  .table-scroll-hint{margin:8px 4px 0;font-size:12px;line-height:1.4;color:#595959;}
   .teares-table th,.teares-table td{padding:10px;border-bottom:1px solid #f1f1f1;text-align:left;font-size:14px;vertical-align:middle;}
   .teares-table th{background:#fafafa;font-weight:700;}
   .cell-empresa{font-weight:700;}
@@ -555,8 +557,13 @@
               </div>
               <div>
                 <label for="cidade">Cidade</label>
-                <select id="cidade" name="cidade" class="auto-apply" data-selected="{{ sel_cidade }}" {% if not sel_uf %}disabled{% endif %}>
-                  <option value="">{% if not sel_uf %}Selecione o estado primeiro{% else %}Todas{% endif %}</option>
+                {# As opções vêm da consulta pública já filtrada por assinatura ativa. #}
+                {% set cidades_ativas = opcoes.get('cidade', []) %}
+                <select id="cidade" name="cidade" class="auto-apply" {% if not sel_uf or not cidades_ativas %}disabled{% endif %}>
+                  <option value="">{% if not sel_uf %}Selecione o estado primeiro{% elif not cidades_ativas %}Nenhuma malharia disponível neste estado{% else %}Todas as cidades disponíveis{% endif %}</option>
+                  {% for nome_cidade in cidades_ativas %}
+                    <option value="{{ nome_cidade }}" {% if sel_cidade == nome_cidade %}selected{% endif %}>{{ nome_cidade }}</option>
+                  {% endfor %}
                 </select>
               </div>
             </div>
@@ -664,9 +671,8 @@
                                  data-company-id="{{ r.empresa_id }}"
                                  data-tear-id="{{ r.id }}">
                                 <img class="wa-icon"
-                                     src="/static/icone_whatsapp.png"
-                                     data-alt="/static/ícone_whatsapp.png,/estatico/icone_whatsapp.png,/estático/ícone_whatsapp.png"
-                                     alt="WhatsApp"                                     
+                                     src="{{ url_for('static', filename='ícone_whatsapp.png') }}"
+                                     alt="WhatsApp">
                               </a>
                             {% endif %}
                           </div>
@@ -685,7 +691,7 @@
               </div>
 
               <!-- TABELA (desktop) -->
-              <div class="table-wrap desktop-only">
+              <div class="table-wrap desktop-only" role="region" aria-label="Tabela de teares disponíveis" aria-describedby="teares-scroll-hint" tabindex="0">
                 <table class="teares-table">
                   <thead>
                     <tr>
@@ -746,9 +752,8 @@
                                  data-company-id="{{ r.empresa_id }}"
                                  data-tear-id="{{ r.id }}">
                                 <img class="wa-icon"
-                                     src="/static/icone_whatsapp.png"
-                                     data-alt="/static/ícone_whatsapp.png,/estatico/icone_whatsapp.png,/estático/ícone_whatsapp.png"
-                                     alt="WhatsApp"                                     
+                                     src="{{ url_for('static', filename='ícone_whatsapp.png') }}"
+                                     alt="WhatsApp">
                               </a>
                             {% else %}
                               —
@@ -760,6 +765,7 @@
                   </tbody>
                 </table>
               </div>
+              <p class="table-scroll-hint desktop-only" id="teares-scroll-hint">Deslize a tabela horizontalmente para consultar todas as colunas e ações.</p>
 
               <!-- PAGINAÇÃO -->
               {% set filtro_diam_ = filtros.get('diâmetro') or filtros.get('diametro') or '' %}
@@ -855,7 +861,16 @@
       const form = document.getElementById('filtrosForm');
       const paginaHidden = document.getElementById('pagina_hidden');
       function submitResetPage(){ if(paginaHidden) paginaHidden.value='1'; if(form) form.submit(); }
-      document.addEventListener('change', e=>{ if(e.target.matches('select.auto-apply')) submitResetPage(); });
+      document.addEventListener('change', e=>{
+        if (e.target.matches('select.auto-apply')) {
+          // Ao mudar a UF, nunca enviar a cidade selecionada na UF anterior.
+          if (e.target.id === 'estado') {
+            const cidade = document.getElementById('cidade');
+            if (cidade) cidade.value = '';
+          }
+          submitResetPage();
+        }
+      });
       let t=null;
       document.addEventListener('input', e=>{
         if(e.target.matches('input.auto-apply')){ clearTimeout(t); t=setTimeout(submitResetPage,500); }
@@ -926,68 +941,8 @@
       });
     })();
 
-    // ===== UF/Cidade com lista completa (IBGE) =====
-    (function(){
-      const estadoSel = document.getElementById('estado');
-      const cidadeSel = document.getElementById('cidade');
-
-      const CITIES_CACHE = Object.create(null);
-
-      async function fetchCities(uf){
-        if (!uf) return [];
-        if (CITIES_CACHE[uf]) return CITIES_CACHE[uf];
-        const url = 'https://servicodados.ibge.gov.br/api/v1/localidades/estados/'+ uf +'/municipios?orderBy=nome';
-        const resp = await fetch(url, {mode:'cors'});
-        const data = await resp.json();
-        const names = (Array.isArray(data) ? data.map(x=>x.nome) : []).sort((a,b)=>a.localeCompare(b,'pt-BR'));
-        CITIES_CACHE[uf] = names;
-        return names;
-      }
-
-      function clearAndBaseOption(select, text){
-        select.innerHTML = '';
-        const opt = document.createElement('option');
-        opt.value = '';
-        opt.textContent = text || 'Todas';
-        select.appendChild(opt);
-      }
-
-      async function loadCities(uf, preselect){
-        if (!cidadeSel) return;
-        clearAndBaseOption(cidadeSel, uf ? 'Todas' : 'Selecione o estado primeiro');
-        cidadeSel.disabled = !uf;
-        if (!uf) return;
-
-        try{
-          const list = await fetchCities(uf);
-          for (const name of list){
-            const o = new Option(name, name, false, false);
-            cidadeSel.add(o);
-          }
-          if (preselect){
-            cidadeSel.value = preselect;
-          }
-        }catch(err){
-          clearAndBaseOption(cidadeSel, 'Falha ao carregar cidades');
-          cidadeSel.disabled = false;
-        }
-      }
-
-      if (estadoSel && cidadeSel){
-        const preUF = estadoSel.value || '';
-        const preCity = cidadeSel.getAttribute('data-selected') || '';
-        if (preUF){
-          loadCities(preUF, preCity);
-        } else {
-          clearAndBaseOption(cidadeSel, 'Selecione o estado primeiro');
-          cidadeSel.disabled = true;
-        }
-
-        estadoSel.addEventListener('change', function(){
-          // auto-apply já submete o form; mantém comportamento padrão
-        });
-      }
-    })();
+    // Cidades são renderizadas no HTML a partir da lista de malharias
+    // com assinatura ativa: sem consultas externas e sem expor pendentes.
 
     // ===== MENU MOBILE (hamburger) =====
     (function(){
