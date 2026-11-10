@@ -28,7 +28,7 @@
       {% endif %}
 
       <form method="POST" style="display:grid;gap:12px;">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label>Nome*
           <input type="text" name="nome" value="{{ nome or '' }}" required style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;">
           {% if erros and erros.get('nome') %}<small style="color:#b00020">{{erros.get('nome')}}</small>{% endif %}

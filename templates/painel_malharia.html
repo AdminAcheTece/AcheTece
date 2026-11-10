@@ -1056,7 +1056,7 @@
                     <span class="sub-plan-name">Mensal</span>
                   </div>
                   <div class="sub-price">
-                    {% if preco_mensal is defined %}R$ {{ '%.2f'|format(preco_mensal)|replace('.', ',') }}{% else %}R$ 47,00{% endif %}
+                    R$ {{ '%.2f'|format(preco_mensal)|replace('.', ',') }}
                     <small>/mês</small>
                   </div>
                   <div class="sub-meta">Recorrente mensal. Cancele quando quiser.</div>
@@ -1066,10 +1066,10 @@
                   <div class="sub-plan-top">
                     <span class="sub-radio" aria-hidden="true"></span>
                     <span class="sub-plan-name">Anual</span>
-                    <span class="sub-badge">15% OFF</span>
+                    <span class="sub-badge">{{ desconto_percentual }}% OFF</span>
                   </div>
                   <div class="sub-price">
-                    {% if preco_anual is defined %}R$ {{ '%.2f'|format(preco_anual)|replace('.', ',') }}{% else %}R$ 479,40{% endif %}
+                    R$ {{ '%.2f'|format(preco_anual)|replace('.', ',') }}
                     <small>/ano</small>
                   </div>
                   <div class="sub-meta">Economize no ano e mantenha acesso contínuo.</div>
@@ -1077,6 +1077,12 @@
 
                 <div class="sub-actions">
                   <span class="sub-hint">Você será redirecionado(a) ao Mercado Pago.</span>
+                  {% if pode_cancelar_recorrencia %}
+                  <form method="POST" action="{{ url_for('cancelar_assinatura') }}" onsubmit="return confirm('Cancelar futuras cobranças mensais? Seu acesso permanece até o vencimento.');" style="display:inline-block;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn" style="background:#eee;color:#111;">Cancelar renovação automática</button>
+                  </form>
+                  {% endif %}
                   <a id="subCta" class="btn" href="{{ url_for('checkout', plano=('anual' if is_anual else 'mensal')) }}">
                     {% if _assin_ativa %}Renovar agora{% else %}Continuar para pagamento{% endif %}
                   </a>
@@ -1148,6 +1154,7 @@
                             action="{{ url_for('excluir_tear', id=tear.id) }}"
                             onsubmit="return confirm('Confirma excluir este tear? Essa ação é irreversível.');"
                             style="display:inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="next" value="{{ url_for('painel_malharia') }}">
                         <button type="submit" class="icon-btn danger" title="Excluir tear" aria-label="Excluir">
                           <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path></svg>
@@ -1178,6 +1185,7 @@
                     <form method="POST"
                           action="{{ url_for('excluir_tear', id=tear.id) }}"
                           onsubmit="return confirm('Confirma excluir este tear? Essa ação é irreversível.');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                       <input type="hidden" name="next" value="{{ url_for('painel_malharia') }}">
                       <button type="submit" class="icon-btn danger" title="Excluir">
                         <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path></svg>

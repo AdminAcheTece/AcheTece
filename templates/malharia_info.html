@@ -586,7 +586,7 @@
         <div class="pricing-grid" aria-label="Planos AcheTece">
           <div class="pricing-card pricing-monthly" aria-label="Plano mensal AcheTece">
             <span class="badge-top">Mensal</span>
-            <h2 class="pricing-value">R$47,00 <small>/ mês</small></h2>
+            <h2 class="pricing-value">R${{ preco_mensal }} <small>/ mês</small></h2>
             <div class="pricing-meta" aria-hidden="true">
               <div class="line">Pagamento recorrente mensal</div>
               <div class="line">Cancele quando quiser</div>
@@ -594,11 +594,11 @@
           </div>
 
           <div class="pricing-card pricing-annual" aria-label="Plano anual AcheTece">
-            <span class="badge-top badge-annual">Anual — 15% OFF</span>
-            <h2 class="pricing-value">R$479,40 <small>/ ano</small></h2>
+            <span class="badge-top badge-annual">Anual — {{ desconto_percentual }}% OFF</span>
+            <h2 class="pricing-value">R${{ preco_anual }} <small>/ ano</small></h2>
             <div class="pricing-meta">
-              <div class="line">Equivale a <strong>R$39,95/mês</strong></div>
-              <div class="line">Economize <strong>R$84,60</strong> no ano</div>
+              <div class="line">Equivale a <strong>R${{ preco_equivalente }}/mês</strong></div>
+              <div class="line">Economize <strong>R${{ economia }}</strong> no ano</div>
             </div>
           </div>
         </div>

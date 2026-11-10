@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Confirmar assinatura | AcheTece</title>
+<style>
+body{font:16px/1.55 system-ui,-apple-system,Segoe UI,sans-serif;background:#f6f7f8;margin:0;color:#141414}
+main{max-width:500px;margin:8vh auto;background:white;border:1px solid #dedede;border-radius:16px;padding:32px}
+h1{font-size:1.45rem} .button{background:#151515;color:white;border:0;border-radius:8px;padding:13px 20px;font-size:1rem;cursor:pointer;width:100%;}
+small{color:#626262;display:block;margin:14px 0}a{color:#333}
+</style></head><body>
+<main><h1>Confirme sua assinatura AcheTece</h1>
+<p>Plano escolhido: <strong>{{ 'Mensal recorrente' if plano == 'mensal' else 'Anual' }}</strong></p>
+<p>Valor: <strong>R$ {{ preco }}{{ ' por mês' if plano == 'mensal' else ' por ano' }}</strong></p>
+<small>Seu acesso será ativado após confirmação do pagamento pelo Mercado Pago. A assinatura mensal terá cobrança automática; o anual é uma cobrança única do período.</small>
+<form action="{{ url_for('checkout') }}" method="POST">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="plano" value="{{ plano }}">
+  <button type="submit" class="button">Continuar no Mercado Pago</button>
+</form>
+<p><a href="{{ url_for('painel_malharia') }}">Voltar ao meu painel</a></p></main>
+</body></html>

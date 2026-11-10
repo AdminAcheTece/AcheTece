@@ -284,6 +284,7 @@
     </p>
 
     <form method="POST" class="formulario">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       {% for campo, opcoes_campo in opcoes.items() %}
         <div class="campo">
           <label for="{{ campo }}">{{ campo|capitalize }}:</label>

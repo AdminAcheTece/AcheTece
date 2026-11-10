@@ -4,6 +4,12 @@ from flask import (
 )
 # Removido o uso de Flask-Mail; usamos Resend + SMTP com timeout
 from flask_sqlalchemy import SQLAlchemy
+from flask_wtf.csrf import CSRFProtect, CSRFError
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from billing_release import (BillingError, ProviderError, MercadoPagoClient, money_cents,
+                             price_cents_from_environment, next_expiration, fmt_brl,
+                             verify_webhook_signature, check_verified_payment, credential_environment_allowed)
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
@@ -19,6 +25,7 @@ import secrets
 import logging
 import json
 import requests
+from datetime import timezone
 from unicodedata import normalize
 from sqlalchemy import inspect, text, or_, func, create_engine
 from sqlalchemy.exc import OperationalError
@@ -57,8 +64,22 @@ TOLERANCIA_DIAS = int(os.getenv("ASSIN_TOLERANCIA_DIAS", "1"))
 # --------------------------------------------------------------------
 app = Flask(__name__)
 app.logger.setLevel(logging.INFO)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-unsafe')
+_release_secret = (os.getenv('SECRET_KEY') or '').strip()
+if len(_release_secret) < 32 or _release_secret == 'dev-key-unsafe':
+    raise RuntimeError('SECRET_KEY forte e obrigatoria (minimo 32 caracteres)')
+app.config['SECRET_KEY'] = _release_secret
 app.config['PREFERRED_URL_SCHEME'] = 'https'
+app.config['WTF_CSRF_CHECK_DEFAULT'] = True
+app.config['WTF_CSRF_TIME_LIMIT'] = 4 * 60 * 60
+csrf = CSRFProtect(app)
+# Limite por IP; em multiplas instancias, configurar armazenamento Redis compartilhado.
+limiter = Limiter(get_remote_address, app=app, default_limits=[],
+                  storage_uri=os.getenv('RATELIMIT_STORAGE_URI', 'memory://'))
+
+@app.errorhandler(CSRFError)
+def _release_csrf_error(error):
+    app.logger.warning('[SECURITY] CSRF rejeitado path=%s', request.path)
+    return 'Requisicao nao autorizada. Atualize a pagina e tente novamente.', 400
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
@@ -101,7 +122,7 @@ app.config.update(
     SESSION_COOKIE_SAMESITE="Lax",
     # Em homologacao no onrender.com, o cookie deve pertencer ao proprio host.
     # Em producao, preserva o dominio atual.
-    SESSION_COOKIE_DOMAIN=(None if _env_bool("ED01_HOMOLOGACAO", False) else ".achetece.com.br")
+    SESSION_COOKIE_DOMAIN=(os.getenv('SESSION_COOKIE_DOMAIN') or None)
 )
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY") or ""
@@ -532,8 +553,44 @@ def _otp_validate(email: str, codigo: str):
 # Mercado Pago (mantido para compat)
 MP_ACCESS_TOKEN = os.getenv("MP_ACCESS_TOKEN") or os.getenv("MERCADO_PAGO_TOKEN", "")
 sdk = mercadopago.SDK(MP_ACCESS_TOKEN)
-PLAN_MONTHLY = float(os.getenv("PLAN_MONTHLY", "2.00"))
-PLAN_YEARLY  = float(os.getenv("PLAN_YEARLY", "2.00"))
+# Preco canônico da release: o checkout e a vitrine usam a mesma fonte.
+# Sem variaveis explicitas de preco, a liberacao financeira falha fechada.
+def _release_price_cents(plano: str) -> int:
+    return price_cents_from_environment(os.environ, plano)
+
+def _release_billing_ready() -> bool:
+    if not _env_bool('ACHETECE_BILLING_V1_ENABLED', False):
+        return False
+    try:
+        mensal_cents = _release_price_cents('mensal')
+        anual_cents = _release_price_cents('anual')
+        if anual_cents >= mensal_cents * 12:
+            return False
+        for key in ('MP_ACCESS_TOKEN', 'MP_WEBHOOK_SECRET', 'MP_COLLECTOR_ID',
+                    'ACHETECE_BILLING_CALLBACK_BASE_URL'):
+            if not (os.environ.get(key) or '').strip():
+                return False
+        token = os.environ['MP_ACCESS_TOKEN'].strip()
+        modo = (os.getenv('ACHETECE_BILLING_ENV') or '').strip().lower()
+        # Mercado Pago tambem usa APP_USR para credenciais de TESTE.
+        # Com esse prefixo no sandbox, exigir verificacao humana explicita
+        # na aba Teste do painel, pois o prefixo NAO distingue producao.
+        if not credential_environment_allowed(
+            token, modo,
+            test_credential_confirmed=_env_bool('ACHETECE_MP_TEST_TOKEN_CONFIRMED', False),
+        ):
+            return False
+        base = os.environ['ACHETECE_BILLING_CALLBACK_BASE_URL'].rstrip('/')
+        parsed = urlparse(base)
+        if parsed.scheme != 'https' or not parsed.netloc or parsed.path not in ('','/') or parsed.query:
+            return False
+        return True
+    except BillingError:
+        return False
+
+PLAN_MONTHLY = 0.0  # legado: na release nunca usar como fonte de cobranca
+PLAN_YEARLY = 0.0
+
 
 # DEMO
 DEMO_MODE  = os.getenv("DEMO_MODE", "false").lower() == "true"
@@ -830,7 +887,9 @@ def _pick_database_uri() -> str:
             return "sqlite:///achetece.db"
         app.logger.error("[DB] Postgres indisponível e fallback desativado; retornarei 503 até estabilizar.")
         return url
-    return url or "sqlite:///achetece.db"
+    if not url:
+        raise RuntimeError('DATABASE_URL ou INTERNAL_DATABASE_URL obrigatoria na release')
+    return url
 
 FINAL_DB_URI = _pick_database_uri()
 engine_opts = {"pool_pre_ping": True, "pool_recycle": 280, "pool_timeout": 30}
@@ -1045,7 +1104,8 @@ class Empresa(db.Model):
     plano = db.Column(db.String(10), default="mensal", nullable=False, index=True)
 
     status_pagamento = db.Column(db.String(20), default='pendente', index=True)
-    data_pagamento = db.Column(db.DateTime)  # último pagamento aprovado (UTC)
+    data_pagamento = db.Column(db.DateTime)  # ultimo pagamento aprovado (UTC)
+    assinatura_ate = db.Column(db.DateTime)  # vigencia explicita (UTC), release V1
 
     teares = db.relationship('Tear', backref='empresa', lazy=True, cascade="all, delete-orphan")
 
@@ -1077,39 +1137,65 @@ class Empresa(db.Model):
 
     @hybrid_property
     def assinatura_ativa(self) -> bool:
-        """ED01: fail closed; apenas ATIVO e pagamento com vigência não expirada.
-
-        Mantém temporariamente as durações legadas (35/370 dias). ED02
-        substituirá por data contratual explícita após conciliação de registros.
-        """
-        if (self.status_pagamento or "").strip().lower() != "ativo":
+        if (self.status_pagamento or '').strip().lower() != 'ativo':
             return False
-        if self.data_pagamento is None:
-            return False
-        return (self.data_pagamento + timedelta(
-            days=self._dias_por_plano(self.plano))) > datetime.utcnow()
+        if self.assinatura_ate is not None:
+            return self.assinatura_ate > datetime.utcnow()
+        # Contas anteriores a release preservam a vigencia ED01.
+        return bool(self.data_pagamento and (
+            self.data_pagamento + timedelta(days=self._dias_por_plano(self.plano))
+        ) > datetime.utcnow())
 
     @assinatura_ativa.expression
     def assinatura_ativa(cls):
-        """Mesmo contrato aplicado diretamente pelo PostgreSQL nas buscas."""
         from sqlalchemy import case
-        vencimento = case(
-            (func.lower(func.coalesce(cls.plano, "mensal")) == "anual",
+        legacy_expiration = case(
+            (func.lower(func.coalesce(cls.plano, 'mensal')) == 'anual',
              cls.data_pagamento + timedelta(days=ASSINATURA_DIAS_ANUAL)),
             else_=cls.data_pagamento + timedelta(days=ASSINATURA_DIAS_MENSAL),
         )
         return and_(
-            func.lower(func.coalesce(cls.status_pagamento, "")) == "ativo",
-            cls.data_pagamento.isnot(None),
-            vencimento > func.now(),
+            func.lower(func.coalesce(cls.status_pagamento, '')) == 'ativo',
+            func.coalesce(cls.assinatura_ate, legacy_expiration) > func.now(),
         )
 
     @property
     def assinatura_expira_em(self):
+        if self.assinatura_ate is not None:
+            return self.assinatura_ate
         if self.data_pagamento is None:
             return None
-        dias = self._dias_por_plano(getattr(self, "plano", "mensal"))
-        return self.data_pagamento + timedelta(days=dias)
+        return self.data_pagamento + timedelta(days=self._dias_por_plano(self.plano))
+
+
+class BillingIntent(db.Model):
+    __tablename__ = 'billing_intent'
+    id = db.Column(db.Integer, primary_key=True)
+    empresa_id = db.Column(db.Integer, db.ForeignKey('empresa.id'), nullable=False, index=True)
+    external_reference = db.Column(db.String(100), unique=True, nullable=False)
+    plano = db.Column(db.String(10), nullable=False)
+    amount_cents = db.Column(db.Integer, nullable=False)
+    currency = db.Column(db.String(3), nullable=False, default='BRL')
+    status = db.Column(db.String(30), nullable=False, default='created')
+    provider_resource_id = db.Column(db.String(160), unique=True)
+    checkout_url = db.Column(db.String(600))
+    cancel_at_period_end = db.Column(db.Boolean, nullable=False, default=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class BillingPayment(db.Model):
+    __tablename__ = 'billing_payment'
+    id = db.Column(db.Integer, primary_key=True)
+    intent_id = db.Column(db.Integer, db.ForeignKey('billing_intent.id'), nullable=False)
+    provider_payment_id = db.Column(db.String(60), unique=True, nullable=False)
+    amount_cents = db.Column(db.Integer, nullable=False)
+    currency = db.Column(db.String(3), nullable=False, default='BRL')
+    status = db.Column(db.String(24), nullable=False)
+    period_start = db.Column(db.DateTime, nullable=False)
+    period_end = db.Column(db.DateTime, nullable=False)
+    processed_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
 
 class Tear(db.Model):
     # __tablename__ = 'tear'  # opcional (SQLAlchemy infere 'tear')
@@ -1462,6 +1548,15 @@ def _boot_ensure_empresa_plano_column():
     except Exception as e:
         app.logger.warning(f"[BOOT] erro garantindo empresa.plano: {e}")
 
+def _ensure_release_billing_schema():
+    """Fail closed until DBA applies release V1 migration in an isolated DB."""
+    cols = {c['name'] for c in inspect(db.engine).get_columns('empresa')}
+    if 'assinatura_ate' not in cols:
+        raise RuntimeError('Migração release V1 não aplicada: empresa.assinatura_ate')
+    for table in ('billing_intent', 'billing_payment'):
+        if not inspect(db.engine).has_table(table):
+            raise RuntimeError(f'Migração release V1 não aplicada: {table}')
+
 def _run_bootstrap_once():
     """Cria tabelas/migrações leves quando o DB está UP; caso contrário, adia."""
     global _BOOTSTRAP_DONE
@@ -1480,7 +1575,13 @@ def _run_bootstrap_once():
 
     try:
         # 1) cria tabelas base
-        db.create_all()
+        if not _env_bool('ACHETECE_RELEASE_SCHEMA_READY', False):
+            # Antes de configurar a release: nao iniciar migrations financeiras.
+            # O bootstrap legado continua para compatibilidade de paginas publicas.
+            db.create_all(tables=[model for model in db.metadata.sorted_tables
+                                  if model.name not in ('billing_intent', 'billing_payment')])
+        else:
+            _ensure_release_billing_schema()
         _ensure_empresa_plano_column()
 
         # 2) GARANTE colunas críticas ANTES de qualquer query em Empresa
@@ -1722,6 +1823,7 @@ def _to_int(s):
         return None
 
 @app.post("/api/track")
+@csrf.exempt
 def api_track():
     data = request.get_json(silent=True) or {}
     event      = data.get("event")
@@ -2086,6 +2188,7 @@ def _otp_send(to_email: str, ip: str = "", ua: str = ""):
 
 # /login
 @app.route("/login", methods=["GET", "POST"], endpoint="login")
+@limiter.limit("10 per minute", methods=["POST"])
 def view_login():
     if request.method == "GET":
         email = (request.args.get("email") or "").strip().lower()
@@ -2626,6 +2729,10 @@ def painel_malharia():
 
         # ✅ opcional (para banner/botões de pagar/renovar)
         mostrar_pagamento=mostrar_pagamento,
+        preco_mensal=_release_price_cents('mensal') / 100 if os.getenv('ACHETECE_PRICE_MONTHLY_BRL') else 47,
+        preco_anual=_release_price_cents('anual') / 100 if os.getenv('ACHETECE_PRICE_YEARLY_BRL') else 479.40,
+        desconto_percentual=round((1 - (_release_price_cents('anual') / (12 * _release_price_cents('mensal')))) * 100) if (os.getenv('ACHETECE_PRICE_MONTHLY_BRL') and os.getenv('ACHETECE_PRICE_YEARLY_BRL')) else 15,
+        pode_cancelar_recorrencia=bool(BillingIntent.query.filter_by(empresa_id=emp.id, plano='mensal', status='active', cancel_at_period_end=False).first()) if _env_bool('ACHETECE_RELEASE_SCHEMA_READY', False) else False,
     ))
     resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     resp.headers["Pragma"] = "no-cache"
@@ -3749,6 +3856,7 @@ def performance_acesso():
 # Admin: empresas
 # --------------------------------------------------------------------
 @app.route('/admin/login', methods=['GET', 'POST'])
+@limiter.limit("5 per 15 minutes", methods=["POST"])
 def admin_login():
     if request.method == 'POST':
         email = (request.form.get('email') or '').strip().lower()
@@ -3881,28 +3989,26 @@ def admin_empresas():
         plano=f_plano,                 # <- NOVO: devolve pro template manter seleção
     )
 
-@app.route('/admin/editar_status/<int:empresa_id>', methods=['GET', 'POST'])
+@app.route('/admin/editar_status/<int:empresa_id>', methods=['POST'])
 @login_admin_requerido
 def admin_editar_status(empresa_id):
+    abort(403)  # release V1: alteracoes de status somente pelo reconciliador financeiro
     empresa = Empresa.query.get_or_404(empresa_id)
+    # Com o faturamento V1, o administrador pode suspender; somente um
+    # pagamento conciliado e aprovado pode reativar a conta.
+    if (empresa.status_pagamento or '').strip().lower() != 'ativo':
+        flash('Ativacao manual bloqueada. Somente pagamento confirmado ativa malharia.', 'warning')
+        return redirect(url_for('admin_empresas'))
 
-    STATUS_VALIDOS = {"ativo", "pendente"}
-
-    status_req = (request.values.get('status') or '').strip().lower()
-
-    if status_req in STATUS_VALIDOS:
-        novo_status = status_req
-    else:
-        # toggle seguro
-        novo_status = 'ativo' if (empresa.status_pagamento or '').strip().lower() != 'ativo' else 'pendente'
+    STATUS_VALIDOS = {'pendente'}
 
     status_anterior = (empresa.status_pagamento or '').strip().lower()
-
-    empresa.status_pagamento = novo_status
-    empresa.data_pagamento = datetime.utcnow() if novo_status == 'ativo' else None
+    empresa.status_pagamento = 'pendente'
+    empresa.assinatura_ate = None
+    empresa.data_pagamento = None
     db.session.commit()
 
-    flash(f'Status de "{empresa.apelido or empresa.nome}" atualizado para {novo_status}.', 'success')
+    flash(f'Malharia "{empresa.apelido or empresa.nome}" suspensa.', 'success')
 
     return redirect(url_for('admin_empresas',
                             pagina=request.args.get('pagina', 1),
@@ -3914,6 +4020,8 @@ def admin_editar_status(empresa_id):
 @login_admin_requerido
 def empresa_excluir(empresa_id):
     empresa = Empresa.query.get_or_404(empresa_id)
+    if BillingIntent.query.filter_by(empresa_id=empresa.id).first():
+        return 'Conta com historico financeiro: solicitar exclusao assistida ao suporte.', 409
     db.session.delete(empresa); db.session.commit()
     flash(f'Empresa "{empresa.nome}" excluída com sucesso!')
     return redirect(url_for('admin_empresas'))
@@ -3928,6 +4036,9 @@ def empresa_excluir_by_id(empresa_id):
     if empresa.id != empresa_id:
         from flask import abort
         abort(403)
+    if BillingIntent.query.filter_by(empresa_id=empresa.id).first():
+        flash('Sua conta possui historico de cobrancas. Contate o suporte para solicitar a exclusao segura.', 'warning')
+        return redirect(url_for('painel_malharia'))
 
     # Se não tiver cascade no relacionamento, elimine os teares antes:
     try:
@@ -3996,6 +4107,7 @@ def _topup(empresa, minimo):
 
 @app.route("/admin/seed_teares")
 def admin_seed_teares():
+    abort(404)  # release: utilitario desabilitado
     if not _seed_ok(): return "Não autorizado", 403
     empresa_id = request.args.get("empresa_id", type=int)
     n = request.args.get("n", default=5, type=int)
@@ -4006,6 +4118,7 @@ def admin_seed_teares():
 
 @app.route("/admin/seed_teares_all")
 def admin_seed_teares_all():
+    abort(404)  # release: utilitario desabilitado
     if not _seed_ok(): return "Não autorizado", 403
     escopo = (request.args.get("escopo") or "demo").lower()  # demo|pagantes|todas
     uf = request.args.get("uf")
@@ -4065,6 +4178,7 @@ def utils_empresas_json():
 
 @app.route("/admin/impersonar/<int:empresa_id>")
 def admin_impersonar(empresa_id):
+    abort(404)  # release: impersonacao desabilitada
     if not _seed_ok(): return "Não autorizado", 403
     session["admin_impersonando"] = True
     session["perfil"] = "malharia"
@@ -4076,6 +4190,7 @@ def admin_impersonar(empresa_id):
 
 @app.route("/admin/desimpersonar")
 def admin_desimpersonar():
+    abort(404)  # release: impersonacao desabilitada
     session.pop("admin_impersonando", None)
     session.pop("perfil", None)
     session.pop("empresa_id", None)
@@ -4086,6 +4201,7 @@ def admin_desimpersonar():
 # --------------------------------------------------------------------
 @app.get("/admin/test-email")
 def admin_test_email():
+    abort(404)  # release: utilitario desabilitado
     if not _seed_ok():
         return "Não autorizado", 403
     to_addr = (request.args.get("to") or os.getenv("CONTACT_TO") or os.getenv("EMAIL_FROM") or os.getenv("SMTP_FROM") or "").strip()
@@ -4238,216 +4354,230 @@ def _serializer():
 
 def _make_magic_link(empresa_id: int) -> str:
     token = _serializer().dumps({"empresa_id": empresa_id})
-    base = _public_base_url()  # você já usa essa função
+    base = _release_base_url() if _release_billing_ready() else _public_base_url()
     return f"{base}/magic/{token}"
 
+def _release_mp_client():
+    return MercadoPagoClient((os.environ.get('MP_ACCESS_TOKEN') or '').strip())
+
+
+def _release_base_url():
+    if not _release_billing_ready():
+        raise RuntimeError('Ambiente de cobranca nao configurado')
+    return os.environ['ACHETECE_BILLING_CALLBACK_BASE_URL'].rstrip('/')
+
+
 def _processar_pagamento(payment_id: str):
-    """
-    Consulta no MP e atualiza Empresa.status_pagamento / data_pagamento.
-    Envia e-mail quando virar aprovado.
-    """
-    payment = _mp_get_payment(payment_id)
+    """Conciliação servidor-servidor, atomicidade + idempotência do provedor."""
+    if not _release_billing_ready() or not _env_bool('ACHETECE_RELEASE_SCHEMA_READY', False):
+        raise RuntimeError('Faturamento da release ainda nao habilitado')
+    payment = _release_mp_client().get_payment(payment_id)
+    ref = str(payment.get('external_reference') or '')
+    intent = BillingIntent.query.filter_by(external_reference=ref).first()
+    if intent is None:
+        raise BillingError('Contratacao nao localizada')
 
-    status = (payment.get("status") or "").lower()          # approved, pending, in_process...
-    detail = (payment.get("status_detail") or "").lower()
-    ext_ref = payment.get("external_reference") or ""
-    payer_email = (payment.get("payer") or {}).get("email")
+    status = check_verified_payment(
+        payment, expected_payment_id=payment_id, expected_reference=intent.external_reference,
+        expected_cents=intent.amount_cents, expected_collector=os.environ['MP_COLLECTOR_ID'],
+        expected_currency=intent.currency,
+        expected_subscription=(intent.provider_resource_id if intent.plano == 'mensal' else None),
+        expected_live_mode=(os.getenv('ACHETECE_BILLING_ENV') == 'production'),
+    )
+    # Serialize payments for the same intent even during concurrent webhooks.
+    intent = (BillingIntent.query.filter_by(id=intent.id)
+              .with_for_update().one())
+    prev = BillingPayment.query.filter_by(provider_payment_id=str(payment_id)).first()
+    if prev is not None and prev.intent_id != intent.id:
+        raise BillingError('Pagamento ja associado a outra contratacao')
 
-    app.logger.info(f"[MP] payment_id={payment_id} status={status} detail={detail} ext_ref={ext_ref}")
+    if status in ('refunded', 'charged_back'):
+        # Reverter apenas o pagamento estornado; preservar direitos de outros
+        # pagamentos aprovados validos da mesma empresa, se existirem.
+        if prev and prev.status == 'approved':
+            prev.status = status
+            company = Empresa.query.filter_by(id=intent.empresa_id).with_for_update().one()
+            active_payment = (BillingPayment.query.join(BillingIntent,
+                               BillingPayment.intent_id == BillingIntent.id)
+                              .filter(BillingIntent.empresa_id == company.id,
+                                      BillingPayment.status == 'approved')
+                              .order_by(BillingPayment.period_end.desc()).first())
+            now = datetime.utcnow()
+            if active_payment and active_payment.period_end > now:
+                remaining_contract = BillingIntent.query.get(active_payment.intent_id)
+                company.plano = remaining_contract.plano
+                company.status_pagamento = 'ativo'
+                company.assinatura_ate = active_payment.period_end
+            else:
+                company.status_pagamento = 'pendente'
+                company.assinatura_ate = now
+            db.session.commit()
+        return {'ok': True, 'aplicado': False, 'estornado': bool(prev)}
 
-    # ED02.3G.7D.2: validacao financeira obrigatoria antes de identificar
-    # empresa ou acionar qualquer caminho de atualizacao, apenas homologacao.
-    _ed02_guarda_financeira = _env_bool("ED02_FINANCIAL_GUARD_HOMOLOG", False)
-    if _ed02_guarda_financeira:
-        if not _env_bool("ED02_EXACT_ONCE_HOMOLOG", False):
-            raise RuntimeError("ED02 guarda exige processamento transacional")
-        from ed02_payment_contract_guard import verify_payment_against_contract
+    if status != 'approved':
+        # Nunca desativar assinatura vigente por cobrança ainda pendente.
+        return {'ok': True, 'aplicado': False, 'status': status}
+    if prev is not None:
+        return {'ok': True, 'aplicado': False, 'duplicado': True}
+    if intent.plano == 'mensal' and not intent.provider_resource_id:
+        raise BillingError('Assinatura recorrente nao vinculada')
+
+    empresa = Empresa.query.filter_by(id=intent.empresa_id).with_for_update().one()
+    agora = datetime.utcnow()
+    origem = max(agora, empresa.assinatura_ate) if empresa.assinatura_ate else agora
+    # Não sobrepor mensal e anual simultaneamente. Exigir cancelamento prévio.
+    if (empresa.assinatura_ativa and empresa.plano != intent.plano):
+        raise BillingError('Mudanca de plano exige conciliacao manual')
+    vencimento = next_expiration(origem, intent.plano)
+
+    db.session.add(BillingPayment(
+        intent_id=intent.id, provider_payment_id=str(payment_id),
+        amount_cents=intent.amount_cents, currency=intent.currency,
+        status='approved', period_start=origem, period_end=vencimento,
+    ))
+    primeira_ativacao = not empresa.assinatura_ativa
+    empresa.plano = intent.plano
+    empresa.status_pagamento = 'ativo'
+    empresa.data_pagamento = agora
+    empresa.assinatura_ate = vencimento
+    intent.status = ('paid' if intent.plano == 'anual' else
+                     ('canceled' if intent.cancel_at_period_end else 'active'))
+    db.session.commit()
+
+    # E-mails não participam da transação financeira.
+    if primeira_ativacao:
         try:
-            contrato_validado = verify_payment_against_contract(db, payment, payment_id)
-        except Exception:
-            db.session.rollback()
-            app.logger.warning("[ED02 FINANCEIRO] pagamento nao validado; sem ativacao")
-            raise RuntimeError("Pagamento nao autorizado pela validacao financeira") from None
-        empresa_id = contrato_validado['empresa_id']
-    else:
-        empresa_id = _parse_empresa_id_from_external_reference(ext_ref)
-
-    # Fallback pelo e-mail e permitido SOMENTE com guarda desativada.
-    empresa = None
-    if empresa_id:
-        empresa = Empresa.query.get(empresa_id)
-    if not empresa and payer_email and not _ed02_guarda_financeira:
-        empresa = Empresa.query.filter(Empresa.email.ilike(payer_email)).first()
-
-    if not empresa:
-        raise RuntimeError("Não encontrei a Empresa para este pagamento (sem external_reference e sem match por email).")
-
-    # ED02.3E: exclusivamente homologacao, flag DESLIGADA por padrao.
-    # A verificacao do banco ocorre DENTRO da mesma transacao da alteracao.
-    if _env_bool("ED02_EXACT_ONCE_HOMOLOG", False):
-        from ed02_payment_idempotency import process_verified_payment_exact_once
-        result = process_verified_payment_exact_once(db, payment, empresa.id)
-        if result["primeira_ativacao"]:
-            try:
-                link = _make_magic_link(empresa.id)
-                html = _email_ativacao_html(empresa, link)
-                _send_email(empresa.email, "Pagamento aprovado - AcheTece", html)
-            except Exception:
-                app.logger.exception("[ED02.3E] Falha no e-mail apos commit; nao reprocessar pagamento")
-        return {"ok": True, "empresa_id": empresa.id,
-                "ativou": result["aplicado"], "duplicado": result["duplicado"],
-                "modo": "ed02_homologacao", "status": result["status"]}
-
-    # ED02.3B: registro SOMENTE observacional, desligado por padrão.
-    # Nunca grava em produção e nunca interfere no checkout / fluxo ED01.
-    if _env_bool("ED02_SHADOW_LEDGER", False):
-        try:
-            from ed02_payment_shadow import shadow_record_payment
-            shadow_record_payment(db, payment, empresa.id)
-        except Exception:
-            app.logger.exception("[ED02 SHADOW] Falha no registro observacional; fluxo legado preservado")
-            db.session.rollback()
-
-    # Só envia e-mail quando houver transição para ativo
-    status_atual = (empresa.status_pagamento or "").strip().lower()
-
-    if status == "approved":
-        status_atual = (empresa.status_pagamento or "").strip().lower()
-    
-        empresa.status_pagamento = "ativo"
-        empresa.data_pagamento = datetime.utcnow()
-        db.session.commit()
-    
-        # envia e-mail só na transição (evita spam por webhooks repetidos)
-        if status_atual != "ativo":
             link = _make_magic_link(empresa.id)
-            html = _email_ativacao_html(empresa, link)
-            _send_email(empresa.email, "Pagamento aprovado - AcheTece", html)
-    
-        return {"ok": True, "empresa_id": empresa.id, "ativou": True}
+            if not _env_bool('MAIL_SUPPRESS_SEND', False):
+                _send_email(empresa.email, 'Pagamento aprovado - AcheTece',
+                            'Sua assinatura AcheTece foi ativada. Entre em '+link,
+                            _email_ativacao_html(empresa, link))
+        except Exception:
+            app.logger.warning('[BILLING] Notificacao por e-mail nao concluida')
+    return {'ok': True, 'aplicado': True, 'duplicado': False}
 
-    # outros status: mantém como pendente (mas atualiza se quiser)
-    if status_atual != "ativo":
-        empresa.status_pagamento = "pendente"
-        db.session.commit()
 
-    return {"ok": True, "empresa_id": empresa.id, "ativou": False, "status": status}
-
-@app.route('/checkout')
+@app.route('/checkout', methods=['GET', 'POST'])
 def checkout():
-    # exige sessão da empresa
-    if 'empresa_id' not in session:
-        return redirect(url_for('login'))
+    if not _release_billing_ready() or not _env_bool('ACHETECE_RELEASE_SCHEMA_READY', False):
+        return 'A assinatura ainda esta em preparacao. Tente novamente mais tarde.', 503
 
-    empresa = Empresa.query.get(session['empresa_id'])
+    empresa_id = session.get('empresa_id')
+    if not empresa_id:
+        return redirect(url_for('login'))
+    empresa = Empresa.query.get(empresa_id)
     if not empresa:
         session.clear()
         return redirect(url_for('login'))
-
-    base = _public_base_url()
-
-    # plano
-    plano = (request.args.get('plano') or 'mensal').strip().lower()
+    plano = ((request.form.get('plano') if request.method == 'POST'
+              else request.args.get('plano')) or 'mensal').lower()
     if plano not in ('mensal', 'anual'):
-        plano = 'mensal'
+        abort(400)
+    cents = _release_price_cents(plano)
+    if request.method == 'GET':
+        return render_template('checkout_confirmacao.html', plano=plano,
+                               preco=fmt_brl(cents))
 
-    titulo_plano = "Assinatura anual AcheTece" if plano == 'anual' else "Assinatura mensal AcheTece"
-    preco = float(PLAN_YEARLY if plano == 'anual' else PLAN_MONTHLY)
+    # Nao permitir nova assinatura recorrente se ja houver uma ativa.
+    open_recurring = (BillingIntent.query.filter_by(empresa_id=empresa.id, plano='mensal')
+                      .filter(BillingIntent.status.in_(['active','paid','authorized']))
+                      .order_by(BillingIntent.id.desc()).first())
+    if open_recurring and open_recurring.provider_resource_id and not open_recurring.cancel_at_period_end:
+        flash('Sua assinatura mensal ja esta configurada. Contate o suporte para alterar o plano.', 'warning')
+        return redirect(url_for('painel_malharia'))
+    if empresa.assinatura_ativa and empresa.plano != plano:
+        flash('Para trocar de plano, contate o suporte.', 'warning')
+        return redirect(url_for('painel_malharia'))
 
-    # URLs de retorno + webhook
-    success_url = f"{base}/pagamento_aprovado?plano={plano}"
-    failure_url = f"{base}/pagamento_erro?plano={plano}"
-    pending_url = f"{base}/pagamento_pendente?plano={plano}"
-    notify_url  = f"{base}/webhook"  # se sua rota for /webhook/mercadopago, troque aqui
+    recent_pending = (BillingIntent.query.filter_by(empresa_id=empresa.id, plano=plano)
+                      .filter(BillingIntent.status.in_(['created','pending']))
+                      .order_by(BillingIntent.id.desc()).first())
+    if recent_pending:
+        if recent_pending.checkout_url and recent_pending.checkout_url.startswith('https://'):
+            return redirect(recent_pending.checkout_url, code=303)
+        # Uma contratacao ja foi iniciada: nao criar outra concorrente.
+        return 'Uma contratacao ja esta em processamento. Contate o suporte.', 409
 
-    ext_ref = f"achetece:{empresa.id}:{uuid.uuid4().hex}"
-
-    # ED02.3G.7C: somente homologacao e desligado por padrao.
-    _ed02_registro_checkout = _env_bool("ED02_CHECKOUT_LEDGER_HOMOLOG", False)
-    if _ed02_registro_checkout:
-        try:
-            from ed02_checkout_ledger import registrar_contratacao
-            registrar_contratacao(db, empresa.id, ext_ref, plano, preco)
-        except Exception:
-            app.logger.error("[ED02 CHECKOUT] contratacao nao registrada")
-            return "<h2>Erro ao iniciar pagamento.</h2>", 503
-
-    preference_data = {
-        "items": [{
-            "title": titulo_plano,
-            "quantity": 1,
-            "currency_id": "BRL",
-            "unit_price": preco
-        }],
-        "payer": {"email": getattr(empresa, "email", "")} if getattr(empresa, "email", "") else {},
-        "back_urls": {
-            "success": success_url,
-            "failure": failure_url,
-            "pending": pending_url
-        },
-        "auto_return": "approved",
-        "notification_url": notify_url,
-        "external_reference": ext_ref,
-        "statement_descriptor": "AcheTece"
-    }
-
+    reference = 'achetece-v1-' + uuid.uuid4().hex
+    intent = BillingIntent(empresa_id=empresa.id, external_reference=reference,
+                           plano=plano, amount_cents=cents, currency='BRL', status='created')
+    db.session.add(intent)
+    db.session.commit()
     try:
-        sdk = mercadopago.SDK(os.environ.get("MP_ACCESS_TOKEN", ""))
-        preference_response = sdk.preference().create(preference_data)
-        preference = preference_response.get("response", {}) if isinstance(preference_response, dict) else {}
-        init_point = preference.get("init_point") or preference.get("sandbox_init_point")
-
-        if _ed02_registro_checkout:
-            try:
-                from ed02_checkout_ledger import registrar_resultado_preferencia
-                pref_id = preference.get("id") if init_point else None
-                registrar_resultado_preferencia(db, ext_ref, str(pref_id) if pref_id else None)
-                if not pref_id:
-                    app.logger.error("[ED02 CHECKOUT] preference_id ausente")
-                    return "<h2>Erro ao iniciar pagamento.</h2>", 503
-            except Exception:
-                app.logger.error("[ED02 CHECKOUT] resultado da preferencia nao registrado")
-                return "<h2>Erro ao iniciar pagamento.</h2>", 503
-
-        if not init_point:
-            app.logger.error("[CHECKOUT] init_point ausente" if _ed02_registro_checkout
-                             else f"[CHECKOUT] init_point ausente. Resposta MP: {preference_response}")
-            return "<h2>Erro ao iniciar pagamento (init_point ausente).</h2>", 500
-
-        return redirect(init_point)
-
-    except Exception as e:
-        if not _ed02_registro_checkout:
-            app.logger.exception(f"[CHECKOUT] Erro: {e}")
+        client = _release_mp_client()
+        if plano == 'mensal':
+            result = client.create_monthly_subscription(
+                email=empresa.email, reference=reference, cents=cents,
+                return_url=_release_base_url() + '/pagamento_pendente')
         else:
-            app.logger.error("[ED02 CHECKOUT] falha ao criar preferencia")
-            try:
-                from ed02_checkout_ledger import registrar_resultado_preferencia
-                registrar_resultado_preferencia(db, ext_ref, None)
-            except Exception:
-                app.logger.error("[ED02 CHECKOUT] falha ao marcar tentativa")
-        return "<h2>Erro ao iniciar pagamento.</h2>", 500
+            sdk_local = _mp_sdk()
+            preference_response = sdk_local.preference().create({
+                'items': [{'title':'AcheTece - assinatura anual', 'quantity':1,
+                           'currency_id':'BRL', 'unit_price': cents / 100}],
+                'payer':{'email': empresa.email},
+                'external_reference':reference,
+                'notification_url':_release_base_url() + '/webhook',
+                'back_urls':{'success':_release_base_url() + '/pagamento_aprovado',
+                             'pending':_release_base_url() + '/pagamento_pendente',
+                             'failure':_release_base_url() + '/pagamento_erro'},
+                'auto_return':'approved',
+                'statement_descriptor':'AcheTece',
+            })
+            result = preference_response.get('response') or {}
+        url = result.get('init_point')
+        resource_id = result.get('id')
+        if not url or not resource_id or not url.startswith('https://'):
+            raise ProviderError('Checkout nao confirmado pelo provedor')
+        intent.provider_resource_id = str(resource_id)
+        intent.checkout_url = url
+        intent.status = 'pending'
+        db.session.commit()
+        return redirect(url, code=303)
+    except Exception:
+        db.session.rollback()
+        intent = BillingIntent.query.filter_by(external_reference=reference).first()
+        if intent and intent.status == 'created':
+            intent.status = 'failed'
+            db.session.commit()
+        app.logger.warning('[BILLING] Falha ao iniciar contratacao; sem dados sensiveis')
+        return 'Nao foi possivel iniciar o pagamento. Contate o suporte.', 503
+
+
+@app.route('/assinatura/cancelar', methods=['POST'])
+def cancelar_assinatura():
+    empresa_id = session.get('empresa_id')
+    if not empresa_id:
+        return redirect(url_for('login'))
+    if not _release_billing_ready():
+        return 'Assinatura indisponivel', 503
+    intent = (BillingIntent.query.filter_by(empresa_id=empresa_id, plano='mensal')
+              .filter(BillingIntent.status.in_(['active','paid','authorized']))
+              .order_by(BillingIntent.id.desc()).first())
+    if not intent or not intent.provider_resource_id:
+        return 'Nenhuma assinatura mensal recorrente encontrada', 404
+    try:
+        provider = _release_mp_client().cancel_subscription(intent.provider_resource_id)
+    except (BillingError, ProviderError):
+        return 'Nao foi possivel cancelar. Contate o suporte.', 503
+    if provider.get('status') != 'canceled':
+        return 'Cancelamento pendente de confirmacao', 503
+    intent.status = 'canceled'
+    intent.cancel_at_period_end = True
+    db.session.commit()
+    flash('Renovacao automatica cancelada. O acesso pago permanece ate o vencimento.', 'success')
+    return redirect(url_for('painel_malharia'))
+
 
 @app.route('/pagamento_aprovado')
 def pagamento_aprovado():
-    payment_id = (
-        request.args.get("payment_id")
-        or request.args.get("collection_id")
-        or request.args.get("paymentId")
-    )
-
-    if payment_id:
-        try:
-            result = _processar_pagamento(str(payment_id))
-            app.logger.info(f"[BACK_URL] processado: {result}")
-        except Exception as e:
-            app.logger.exception(f"[BACK_URL] erro payment_id={payment_id}: {e}")
-
-    return render_template('pagamento_aprovado.html')
+    # O retorno do navegador nao comprova o pagamento.
+    # Somente webhook assinado + consulta ao provedor ativam o cadastro.
+    return render_template('pagamento_pendente.html')
 
 @app.route('/pagamento_sucesso')
 def pagamento_sucesso():
-    return render_template('pagamento_aprovado.html')
+    # A URL publica nao e comprovante de liquidacao.
+    return render_template('pagamento_pendente.html')
 
 @app.route('/pagamento_erro')
 def pagamento_erro():
@@ -4457,66 +4587,48 @@ def pagamento_erro():
 def pagamento_pendente():
     return render_template('pagamento_pendente.html')
 
-@app.route("/webhook", methods=["GET", "POST"])
+@app.route('/webhook', methods=['POST'])
+@csrf.exempt
 def webhook():
-    if request.method == "GET":
-        return jsonify({"ok": True, "hint": "webhook ativo"}), 200
-
-    # ED02.3G.4: valida assinatura antes de extrair ID ou processar o pagamento.
-    # Habilitacao somente por flag explicita; em ausencia de chave, falha fechada.
-    if os.getenv("ED02_WEBHOOK_SIGNATURE_HOMOLOG", "false").strip().lower() == "true":
-        if not (
-            os.getenv("ED01_HOMOLOGACAO", "false").strip().lower() == "true"
-            and (os.getenv("ED02_HOMOLOG_DATABASE_NAME", "") == "achetece_ed01_test")
-        ):
-            app.logger.error("[WEBHOOK] verificacao ED02 bloqueada fora da homologacao")
-            return jsonify({"ok": False, "error": "temporarily_unavailable"}), 503
-
-        # ED02.3G.5: confirma o banco EFETIVO da sessao PostgreSQL.
-        # Variaveis de ambiente nunca substituem esta verificacao.
+    if not _release_billing_ready() or not _env_bool('ACHETECE_RELEASE_SCHEMA_READY', False):
+        return jsonify({'ok':False,'error':'billing_offline'}), 503
+    payload = request.get_json(silent=True) or {}
+    topic = (request.args.get('type') or request.args.get('topic') or payload.get('type') or '').strip()
+    event_id = str(request.args.get('data.id') or
+                   ((payload.get('data') or {}).get('id') if isinstance(payload.get('data'),dict) else '') or '')
+    if not verify_webhook_signature(request.headers.get('X-Signature',''),
+                                    request.headers.get('X-Request-Id',''), event_id,
+                                    os.getenv('MP_WEBHOOK_SECRET','')):
+        app.logger.warning('[SECURITY] Webhook MP rejeitado')
+        return jsonify({'ok':False,'error':'unauthorized'}),401
+    if topic == 'payment':
         try:
-            from sqlalchemy import text as _ed02_sql_text
-            with db.session.no_autoflush:
-                _ed02_real_database = db.session.execute(
-                    _ed02_sql_text("SELECT current_database()")
-                ).scalar_one()
-            if db.engine.dialect.name != "postgresql" or _ed02_real_database != "achetece_ed01_test":
-                app.logger.error("[WEBHOOK] banco conectado nao autorizado para ED02")
-                return jsonify({"ok": False, "error": "temporarily_unavailable"}), 503
+            _processar_pagamento(event_id)
+        except BillingError:
+            app.logger.warning('[BILLING] Pagamento recusado pela conciliacao')
+            return jsonify({'ok':False,'error':'reconciliation_failed'}),422
         except Exception:
-            app.logger.error("[WEBHOOK] falha na verificacao do banco ED02; detalhes omitidos")
-            return jsonify({"ok": False, "error": "temporarily_unavailable"}), 503
-
-        secret = os.getenv("ED02_MP_WEBHOOK_SECRET", "")
-        if not secret:
-            app.logger.error("[WEBHOOK] chave de autenticidade nao configurada")
-            return jsonify({"ok": False, "error": "temporarily_unavailable"}), 503
-
-        from ed02_webhook_signature import validate_mp_flask_request
-        if not validate_mp_flask_request(request, secret):
-            app.logger.warning("[WEBHOOK] assinatura ausente ou invalida")
-            return jsonify({"ok": False, "error": "unauthorized"}), 401
-
-    payment_id, payload = _extract_payment_id(request)
-
-    # ED02.3G.2: nao registrar payload, query string, tokens ou identificadores
-    # recebidos de terceiros nos logs. A resposta nao revela detalhes internos.
-    if not payment_id:
-        app.logger.info("[WEBHOOK] notificacao sem identificador; ignorada")
-        return jsonify({"ok": True, "ignored": True}), 200
-
-    try:
-        result = _processar_pagamento(payment_id)
-        if not isinstance(result, dict) or result.get("ok") is not True:
-            app.logger.error("[WEBHOOK] processamento sem confirmacao de sucesso")
-            return jsonify({"ok": False, "error": "temporarily_unavailable"}), 503
-        app.logger.info("[WEBHOOK] evento processado")
-        return jsonify(result), 200
-    except Exception:
-        app.logger.error("[WEBHOOK] falha interna no processamento; detalhes omitidos")
-        # 503 preserva oportunidade de retentativa pelo provedor.
-        # Nunca responder 200 para uma falha interna real.
-        return jsonify({"ok": False, "error": "temporarily_unavailable"}), 503
+            db.session.rollback()
+            app.logger.error('[BILLING] Erro temporario na confirmacao')
+            return jsonify({'ok':False,'error':'temporarily_unavailable'}),503
+        return jsonify({'ok':True}),200
+    if topic == 'subscription_preapproval':
+        try:
+            record = _release_mp_client().get_subscription(event_id)
+            intent = BillingIntent.query.filter_by(provider_resource_id=str(record.get('id'))).first()
+            if intent and record.get('external_reference') == intent.external_reference:
+                if record.get('status') in ('canceled','paused'):
+                    intent.status = str(record['status'])
+                    intent.cancel_at_period_end = True
+                    db.session.commit()
+                # Nunca ativar com status authorized sem pagamento aprovado.
+            return jsonify({'ok':True}),200
+        except Exception:
+            db.session.rollback()
+            return jsonify({'ok':False,'error':'temporarily_unavailable'}),503
+    # O tópico subscription_authorized_payment nao ativa a conta sem o
+    # evento financeiro 'payment'. Acompanhamento por webhook payment.
+    return jsonify({'ok':True,'ignored':True}),200
 
 @app.route("/magic/<token>")
 def magic_login(token):
@@ -4587,6 +4699,7 @@ def quem_somos_html():
 
 @app.route('/rota-teste')
 def rota_teste():
+    abort(404)  # release V1: nao publicar rota de teste
     return "✅ A rota funciona!"
 
 # --------------------------------------------------------------------
@@ -4647,6 +4760,7 @@ def api_cidades():
 # Recuperação de senha
 # --------------------------------------------------------------------
 @app.route('/esqueci_senha', methods=['GET', 'POST'])
+@limiter.limit("5 per hour", methods=["POST"])
 def esqueci_senha():
     if request.method == 'POST':
         email = (request.form.get('email') or '').strip().lower()
@@ -4704,7 +4818,13 @@ def static_alias_whatsapp():
 
 @app.route('/malharia_info')
 def malharia_info():
-    return render_template('malharia_info.html')
+    mensal = _release_price_cents('mensal') if os.getenv('ACHETECE_PRICE_MONTHLY_BRL') else 4700
+    anual = _release_price_cents('anual') if os.getenv('ACHETECE_PRICE_YEARLY_BRL') else 47940
+    return render_template('malharia_info.html', preco_mensal=fmt_brl(mensal),
+                           preco_anual=fmt_brl(anual),
+                           preco_equivalente=fmt_brl(anual // 12),
+                           economia=fmt_brl(mensal * 12 - anual),
+                           desconto_percentual=round((1 - anual / (12 * mensal)) * 100) if mensal else 0)
 
 # --- Perfil público da empresa ---
 from flask import render_template, abort, redirect, url_for

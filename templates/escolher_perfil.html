@@ -6,6 +6,7 @@
     <p style="margin:0 0 24px; color:#666;">Escolha seu perfil para continuarmos.</p>
 
     <form method="POST" class="cards-grid" style="display:grid; gap:16px; grid-template-columns:1fr;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <section class="card" style="background:#fafafa; border-radius:14px; padding:18px;">
         <h2 style="margin:0 0 8px; font-size:20px;">Cliente de Malharia</h2>
         <p style="margin:0 0 14px; color:#555;">
