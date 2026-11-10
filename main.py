@@ -892,6 +892,26 @@ def _pick_database_uri() -> str:
     return url
 
 FINAL_DB_URI = _pick_database_uri()
+
+# Homologacao financeira: confirmar o banco ANTES de criar qualquer objeto.
+# Nao habilitado na producao, somente com variavel explicita na HML.
+_hml_db_expected = (os.getenv('ACHETECE_HML_EXPECTED_DB_NAME') or '').strip()
+if _hml_db_expected:
+    if _hml_db_expected != 'achetece_release_v1_test':
+        raise RuntimeError('HML: identificador esperado de banco invalido')
+    if not FINAL_DB_URI.startswith('postgresql+psycopg://'):
+        raise RuntimeError('HML: PostgreSQL exigido')
+    try:
+        _hml_probe = create_engine(FINAL_DB_URI, connect_args={'connect_timeout': 5})
+        try:
+            with _hml_probe.connect() as _hml_conn:
+                _hml_db_actual = _hml_conn.execute(text('SELECT current_database()')).scalar_one()
+        finally:
+            _hml_probe.dispose()
+    except Exception:
+        raise RuntimeError('HML: nao foi possivel validar banco isolado') from None
+    if _hml_db_actual != _hml_db_expected:
+        raise RuntimeError('HML: conexao bloqueada; banco de destino incorreto')
 engine_opts = {"pool_pre_ping": True, "pool_recycle": 280, "pool_timeout": 30}
 if FINAL_DB_URI.startswith("postgresql+psycopg://"):
     engine_opts["connect_args"] = {"connect_timeout": 5}
@@ -1578,8 +1598,9 @@ def _run_bootstrap_once():
         if not _env_bool('ACHETECE_RELEASE_SCHEMA_READY', False):
             # Antes de configurar a release: nao iniciar migrations financeiras.
             # O bootstrap legado continua para compatibilidade de paginas publicas.
-            db.create_all(tables=[model for model in db.metadata.sorted_tables
-                                  if model.name not in ('billing_intent', 'billing_payment')])
+            db.metadata.create_all(bind=db.engine,
+                tables=[table for table in db.metadata.sorted_tables
+                        if table.name not in ('billing_intent', 'billing_payment')])
         else:
             _ensure_release_billing_schema()
         _ensure_empresa_plano_column()
