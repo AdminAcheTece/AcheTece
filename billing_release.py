@@ -167,6 +167,43 @@ def check_verified_payment(payment: dict, *, expected_payment_id: str,
     return str(payment.get('status') or '').lower()
 
 
+def is_legacy_ipn_payment_hint(args, payload: dict) -> bool:
+    """Classify the OLD IPN shape, not a signed Webhook.
+
+    IPN origin cannot be authenticated by x-signature. This only grants the
+    right to trigger an authenticated provider GET; the event itself is never
+    proof of payment. Activation is still authorized by check_verified_payment.
+    """
+    if not isinstance(payload, dict):
+        return False
+    topic = str(args.get('topic') or '').strip().lower()
+    payment_id = str(args.get('id') or '').strip()
+    if topic != 'payment' or not re.fullmatch(r'[0-9]{1,32}', payment_id):
+        return False
+    # Modern signed events use type=payment and data.id. Never downgrade them.
+    if args.get('type') or args.get('data.id'):
+        return False
+    body_topic = str(payload.get('type') or '').strip().lower()
+    if body_topic and body_topic != 'payment':
+        return False
+    details = payload.get('data')
+    if details is not None:
+        if not isinstance(details, dict) or str(details.get('id') or '') != payment_id:
+            return False
+    return True
+
+
+def hml_legacy_ipn_hint_enabled(env) -> bool:
+    """Fail closed: IPN hinting allowed only in an explicitly isolated HML DB."""
+    return (
+        env.get('ACHETECE_HML_LEGACY_IPN_HINTS') == '1'
+        and env.get('ACHETECE_BILLING_ENV') == 'sandbox'
+        and env.get('ACHETECE_HML_EXPECTED_DB_NAME') == 'achetece_release_v1_test'
+        and env.get('ACHETECE_MP_TEST_TOKEN_CONFIRMED') == '1'
+        and str(env.get('ACHETECE_HML_TEST_BUYER_USER_ID') or '').isdigit()
+    )
+
+
 class MercadoPagoClient:
     ROOT = 'https://api.mercadopago.com'
 

@@ -9,7 +9,8 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from billing_release import (BillingError, ProviderError, MercadoPagoClient, money_cents,
                              price_cents_from_environment, next_expiration, fmt_brl,
-                             verify_webhook_signature, check_verified_payment, credential_environment_allowed)
+                             verify_webhook_signature, check_verified_payment, credential_environment_allowed,
+                             is_legacy_ipn_payment_hint, hml_legacy_ipn_hint_enabled)
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
@@ -4545,7 +4546,9 @@ def checkout():
                            'currency_id':'BRL', 'unit_price': cents / 100}],
                 'payer':{'email': empresa.email},
                 'external_reference':reference,
-                'notification_url':_release_base_url() + '/webhook',
+                # A URL de notificacoes fica configurada no painel do
+                # Mercado Pago (Webhooks, assinatura HMAC). Nao sobrescrever
+                # por preferencia, pois isso tem prioridade sobre o painel.
                 'back_urls':{'success':_release_base_url() + '/pagamento_aprovado',
                              'pending':_release_base_url() + '/pagamento_pendente',
                              'failure':_release_base_url() + '/pagamento_erro'},
@@ -4682,58 +4685,103 @@ def pagamento_erro():
 def pagamento_pendente():
     return render_template('pagamento_pendente.html')
 
+
 @app.route('/webhook', methods=['POST'])
 @csrf.exempt
+@limiter.limit('120 per minute', methods=['POST'])
 def webhook():
+    """Webhook HMAC canonical; optional HML-only IPN as untrusted API hint.
+
+    Never grant entitlement from request parameters, user agent or redirect.
+    Only _processar_pagamento() can grant rights, after authenticated MP GET,
+    exact intent/collector/amount/currency/payer checks and DB idempotency.
+    """
     if not _release_billing_ready() or not _env_bool('ACHETECE_RELEASE_SCHEMA_READY', False):
-        return jsonify({'ok':False,'error':'billing_offline'}), 503
+        return jsonify({'ok': False, 'error': 'billing_offline'}), 503
+
     payload = request.get_json(silent=True) or {}
-    topic = (request.args.get('type') or request.args.get('topic') or payload.get('type') or '').strip()
-    query_id = str(request.args.get('data.id') or '')
-    body_data = payload.get('data')
-    body_id = str(body_data.get('id') or '') if isinstance(body_data, dict) else ''
-    if query_id and body_id and query_id.lower() != body_id.lower():
-        app.logger.warning('[SECURITY] Webhook MP recusado: ids divergentes')
-        return jsonify({'ok':False,'error':'unauthorized'}),401
-    event_id = query_id or body_id
-    signature = request.headers.get('X-Signature', '')
-    request_id = request.headers.get('X-Request-Id', '')
-    if not verify_webhook_signature(signature, request_id, event_id,
-                                    os.getenv('MP_WEBHOOK_SECRET','')):
-        # Categoria segura para diagnostico; nunca imprimir headers/assinatura.
-        reason = ('missing_data_id' if not event_id else
-                  'missing_signature' if not signature else
-                  'missing_request_id' if not request_id else 'invalid_signature')
-        app.logger.warning('[SECURITY] Webhook MP rejeitado: %s', reason)
-        return jsonify({'ok':False,'error':'unauthorized'}),401
+    if not isinstance(payload, dict):
+        return jsonify({'ok': False, 'error': 'invalid_event'}), 400
+
+    legacy_id = str(request.args.get('id') or '').strip()
+    legacy_topic = str(request.args.get('topic') or '').strip().lower()
+    # Checkout Pro's old merchant_order IPN is not itself a payment and must
+    # never authorize an entitlement. Acknowledge only its known legacy shape.
+    if legacy_topic == 'merchant_order' and re.fullmatch(r'[0-9]{1,32}', legacy_id) and not request.args.get('data.id'):
+        app.logger.info('[BILLING] Aviso de ordem IPN recebido, sem ativacao')
+        return jsonify({'ok': True, 'ignored': True}), 200
+
+    channel = 'signed'
+    if is_legacy_ipn_payment_hint(request.args, payload):
+        # The legacy IPN signature is not verifiable by HMAC even if an
+        # x-signature header happens to exist. This is a HML-only compatibility
+        # path for previously created Checkout Pro preferences; NEVER prod.
+        if not hml_legacy_ipn_hint_enabled(os.environ):
+            app.logger.warning('[SECURITY] IPN nao autenticavel, fora da HML permitida')
+            return jsonify({'ok':False,'error':'unauthorized'}),401
+        topic = 'payment'
+        event_id = legacy_id
+        channel = 'legacy_hml_api_hint'
+    else:
+        # Modern signed Webhook. Never fall back to legacy upon HMAC failure.
+        query_id = str(request.args.get('data.id') or '')
+        body_data = payload.get('data')
+        body_id = str(body_data.get('id') or '') if isinstance(body_data, dict) else ''
+        if query_id and body_id and query_id.lower() != body_id.lower():
+            app.logger.warning('[SECURITY] Webhook ids divergentes')
+            return jsonify({'ok':False,'error':'unauthorized'}),401
+        event_id = query_id or body_id
+        topic = str(request.args.get('type') or payload.get('type') or '').strip().lower()
+        body_type = str(payload.get('type') or '').strip().lower()
+        if request.args.get('type') and body_type and topic != body_type:
+            return jsonify({'ok':False,'error':'unauthorized'}),401
+        signature = request.headers.get('X-Signature', '')
+        request_id = request.headers.get('X-Request-Id', '')
+        if not verify_webhook_signature(signature, request_id, event_id,
+                                        os.getenv('MP_WEBHOOK_SECRET', '')):
+            # Log only safe metadata, never token, HMAC, signature or payload.
+            reason = ('missing_data_id' if not event_id else
+                      'missing_signature' if not signature else
+                      'missing_request_id' if not request_id else 'invalid_signature')
+            app.logger.warning('[SECURITY] Webhook MP rejeitado: %s', reason)
+            return jsonify({'ok':False,'error':'unauthorized'}),401
+
     if topic == 'payment':
+        if not re.fullmatch(r'[0-9]{1,32}', event_id):
+            return jsonify({'ok': False, 'error': 'invalid_payment_id'}), 400
         try:
-            _processar_pagamento(event_id)
+            result = _processar_pagamento(event_id)
         except BillingError:
-            app.logger.warning('[BILLING] Pagamento recusado pela conciliacao')
-            return jsonify({'ok':False,'error':'reconciliation_failed'}),422
+            db.session.rollback()
+            app.logger.warning('[BILLING] Webhook %s: pagamento nao conciliado', channel)
+            return jsonify({'ok': False, 'error': 'reconciliation_failed'}), 422
         except Exception:
             db.session.rollback()
-            app.logger.error('[BILLING] Erro temporario na confirmacao')
-            return jsonify({'ok':False,'error':'temporarily_unavailable'}),503
-        return jsonify({'ok':True}),200
+            app.logger.error('[BILLING] Webhook %s: erro temporario', channel)
+            return jsonify({'ok': False, 'error': 'temporarily_unavailable'}), 503
+        # Safe diagnostics for operator, without ids, signatures or payer data.
+        outcome = ('duplicate' if result.get('duplicado') else
+                   'activated' if result.get('aplicado') else 'unchanged')
+        app.logger.info('[BILLING] Webhook payment canal=%s resultado=%s', channel, outcome)
+        return jsonify({'ok': True, 'result': outcome}), 200
+
     if topic == 'subscription_preapproval':
         try:
             record = _release_mp_client().get_subscription(event_id)
             intent = BillingIntent.query.filter_by(provider_resource_id=str(record.get('id'))).first()
             if intent and record.get('external_reference') == intent.external_reference:
-                if record.get('status') in ('canceled','paused'):
+                if record.get('status') in ('canceled', 'paused'):
                     intent.status = str(record['status'])
                     intent.cancel_at_period_end = True
                     db.session.commit()
-                # Nunca ativar com status authorized sem pagamento aprovado.
-            return jsonify({'ok':True}),200
+            return jsonify({'ok': True}), 200
         except Exception:
             db.session.rollback()
-            return jsonify({'ok':False,'error':'temporarily_unavailable'}),503
-    # O tópico subscription_authorized_payment nao ativa a conta sem o
-    # evento financeiro 'payment'. Acompanhamento por webhook payment.
-    return jsonify({'ok':True,'ignored':True}),200
+            return jsonify({'ok': False, 'error': 'temporarily_unavailable'}), 503
+
+    # Subscription_authorized_payment cannot activate without the verified
+    # payment event. Merchant order / other authenticated events are read-only.
+    return jsonify({'ok': True, 'ignored': True}), 200
 
 @app.route("/magic/<token>")
 def magic_login(token):
