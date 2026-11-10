@@ -870,7 +870,7 @@ def _try_ping(url: str) -> bool:
             c.exec_driver_sql("SELECT 1")
         return True
     except Exception as e:
-        app.logger.warning("[DB] ping falhou para %s: %r", url, e)
+        app.logger.warning("[DB] conexao indisponivel; detalhes privados omitidos; tipo=%s", type(e).__name__)
         return False
 
 def _pick_database_uri() -> str:
