@@ -4398,12 +4398,20 @@ def _processar_pagamento(payment_id: str):
     if intent is None:
         raise BillingError('Contratacao nao localizada')
 
+    # Excecao apenas em HML: comprador TESTUSER identificado no painel
+    # oficial. Sem as tres chaves concordantes, mantem live_mode estrito.
+    hml_test_buyer = None
+    if (os.getenv('ACHETECE_BILLING_ENV') == 'sandbox'
+            and os.getenv('ACHETECE_HML_EXPECTED_DB_NAME') == 'achetece_release_v1_test'
+            and _env_bool('ACHETECE_MP_TEST_TOKEN_CONFIRMED', False)):
+        hml_test_buyer = (os.getenv('ACHETECE_HML_TEST_BUYER_USER_ID') or '').strip()
     status = check_verified_payment(
         payment, expected_payment_id=payment_id, expected_reference=intent.external_reference,
         expected_cents=intent.amount_cents, expected_collector=os.environ['MP_COLLECTOR_ID'],
         expected_currency=intent.currency,
         expected_subscription=(intent.provider_resource_id if intent.plano == 'mensal' else None),
         expected_live_mode=(os.getenv('ACHETECE_BILLING_ENV') == 'production'),
+        expected_hml_test_buyer_id=hml_test_buyer,
     )
     # Serialize payments for the same intent even during concurrent webhooks.
     intent = (BillingIntent.query.filter_by(id=intent.id)

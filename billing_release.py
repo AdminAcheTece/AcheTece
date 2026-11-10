@@ -127,7 +127,8 @@ def check_verified_payment(payment: dict, *, expected_payment_id: str,
                            expected_reference: str, expected_cents: int,
                            expected_collector: str, expected_currency: str = 'BRL',
                            expected_subscription: str | None = None,
-                           expected_live_mode: bool | None = None) -> str:
+                           expected_live_mode: bool | None = None,
+                           expected_hml_test_buyer_id: str | None = None) -> str:
     """Validate the response from authenticated GET /v1/payments/{id}.
 
     Never infer a company from payer email or an untrusted URL. Reject missing
@@ -140,7 +141,21 @@ def check_verified_payment(payment: dict, *, expected_payment_id: str,
     if str(payment.get('collector_id') or '') != str(expected_collector):
         raise BillingError('Recebedor da cobrança divergente')
     if expected_live_mode is not None and payment.get('live_mode') is not expected_live_mode:
-        raise BillingError('Ambiente do pagamento divergente')
+        # Checkout Pro legado: algumas compras com comprador ficticio podem
+        # aparecer na API como live_mode=True. NUNCA remover a checagem geral.
+        # Somente a HML, com conta de teste explicitamente identificada pelo
+        # operador, pode aceitar essa divergencia. Os outros checks de id,
+        # referencia, collector, valor, moeda e status continuam obrigatorios.
+        payer = payment.get('payer') or {}
+        test_buyer_matches = (
+            expected_live_mode is False
+            and payment.get('live_mode') is True
+            and isinstance(payer, dict)
+            and str(expected_hml_test_buyer_id or '').isdigit()
+            and str(payer.get('id') or '') == str(expected_hml_test_buyer_id)
+        )
+        if not test_buyer_matches:
+            raise BillingError('Ambiente do pagamento divergente')
     if str(payment.get('currency_id') or '') != expected_currency:
         raise BillingError('Moeda divergente')
     if money_cents(payment.get('transaction_amount')) != int(expected_cents):
