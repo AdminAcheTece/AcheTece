@@ -229,27 +229,27 @@
           <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
         </div>
 
-        <h1>Pagamento Pendente</h1>
+        <h1>Pagamento em verificação</h1>
 
         {% if empresa %}
-          <p>Olá, <strong>{{ empresa.apelido or empresa.nome }}</strong>. Ainda não identificamos a compensação do seu pagamento.</p>
+          <p>Olá, <strong>{{ empresa.apelido or empresa.nome }}</strong>. Estamos conferindo sua contratação diretamente com o Mercado Pago.</p>
         {% else %}
-          <p>Olá! Ainda não identificamos a compensação do seu pagamento.</p>
+          <p>Estamos conferindo a contratação diretamente com o Mercado Pago.</p>
         {% endif %}
 
         <p>
-          Isso pode acontecer com <strong>boleto</strong> (compensação em horas ou até 1 dia útil) ou <strong>Pix em análise</strong>.
-          Assim que o pagamento for confirmado, seu acesso será liberado automaticamente.
+          A aprovação apresentada pelo Mercado Pago ainda precisa ser conciliada pelo nosso servidor.
+          <strong>Se você já concluiu a compra, não pague novamente.</strong> Consulte o Painel da Malharia.
         </p>
 
-        <a href="{{ url_for('pagar') }}" class="botao-acao">Realizar pagamento</a>
+        <a href="{{ url_for('painel_malharia') }}" class="botao-acao">Voltar ao Painel da Malharia</a>
 
         <div class="hint" id="hint">
-          Estamos verificando periodicamente. Você será redirecionado quando o acesso estiver liberado.
+          Se entrou no Mercado Pago em janela privativa, consulte o painel na janela em que cadastrou a malharia.
         </div>
 
         <noscript>
-          <p class="muted">Ative o JavaScript para verificação automática. Você pode realizar o pagamento pelo botão acima.</p>
+          <p class="muted">Consulte o Painel da Malharia em sua sessão original. Não repita a compra.</p>
         </noscript>
       </div>
 
@@ -312,10 +312,15 @@
         try {
           const qs = ext ? ("?ext=" + encodeURIComponent(ext)) : "";
           const res = await fetch("/api/pagamento_status" + qs, { cache: "no-store" });
+          if (res.status === 401) {
+            const hint = document.getElementById("hint");
+            if (hint) hint.textContent = "Use o painel na janela em que cadastrou a malharia. Não faça outra compra.";
+            return;
+          }
           if (res.ok) {
             const js = await res.json();
             if (js && js.status === "ativo") {
-              window.location.href = "/login";
+              window.location.href = "/painel_malharia";
               return;
             }
           }
@@ -326,7 +331,7 @@
           setTimeout(checarStatus, 4000);
         } else {
           const hint = document.getElementById("hint");
-          if (hint) hint.textContent = "Se preferir, clique em “Realizar pagamento” ou retorne mais tarde.";
+          if (hint) hint.textContent = "Ainda não houve confirmação no painel. Não repita o pagamento.";
         }
       }
 

@@ -4589,6 +4589,72 @@ def cancelar_assinatura():
     return redirect(url_for('painel_malharia'))
 
 
+@app.route('/api/pagamento_status', methods=['GET'])
+def api_pagamento_status():
+    """Consulta apenas o estado salvo; jamais concede acesso via GET."""
+    empresa_id = session.get('empresa_id')
+    if not empresa_id:
+        resp = jsonify({'status': 'nao_autenticado'})
+        resp.status_code = 401
+    else:
+        empresa = db.session.get(Empresa, empresa_id)
+        if empresa is None:
+            resp = jsonify({'status': 'nao_encontrado'})
+            resp.status_code = 404
+        else:
+            resp = jsonify({'status': 'ativo' if empresa.assinatura_ativa else 'pendente'})
+    resp.headers['Cache-Control'] = 'no-store'
+    return resp
+
+
+@app.route('/assinatura/conciliar', methods=['GET', 'POST'])
+@limiter.limit('10 per hour')
+def conciliar_pagamento_hml():
+    """Recupera pagamento existente apenas pelo titular, via API autenticada.
+
+    Rotina de contingencia restrita ao banco HML. Nunca confia no status do
+    retorno do navegador nem aceita identificador de outra malharia.
+    """
+    if (os.getenv('ACHETECE_HML_EXPECTED_DB_NAME') or '') != 'achetece_release_v1_test':
+        abort(404)
+    empresa_id = session.get('empresa_id')
+    if not empresa_id:
+        return redirect(url_for('login'))
+    empresa = db.session.get(Empresa, empresa_id)
+    if empresa is None:
+        return redirect(url_for('login'))
+    if not _release_billing_ready() or not _env_bool('ACHETECE_RELEASE_SCHEMA_READY', False):
+        return 'Integracao financeira temporariamente indisponivel', 503
+    if request.method == 'GET':
+        return render_template('conciliacao_hml.html', empresa=empresa)
+
+    payment_id = (request.form.get('payment_id') or '').strip()
+    if not re.fullmatch(r'[0-9]{1,32}', payment_id):
+        return 'ID do pagamento invalido', 400
+    try:
+        payment = _release_mp_client().get_payment(payment_id)
+        ref = str(payment.get('external_reference') or '')
+        intent = BillingIntent.query.filter_by(
+            empresa_id=empresa.id, external_reference=ref).first()
+        if intent is None or intent.plano != 'anual':
+            return 'Pagamento nao pertence a esta malharia ou plano', 403
+        result = _processar_pagamento(payment_id)
+    except BillingError as exc:
+        db.session.rollback()
+        app.logger.warning('[BILLING] HML conciliacao recusada: %s', str(exc))
+        return 'Nao foi possivel validar a cobranca; confira a notificacao no painel.', 422
+    except ProviderError:
+        db.session.rollback()
+        return 'Mercado Pago indisponivel para verificacao; nao repita a compra.', 503
+    except Exception:
+        db.session.rollback()
+        app.logger.exception('[BILLING] Falha HML na conciliacao manual')
+        return 'Falha temporaria na conciliacao; nao repita a compra.', 503
+    if result.get('aplicado') or result.get('duplicado'):
+        return redirect(url_for('painel_malharia'), code=303)
+    return 'Pagamento ainda nao confirmado pela API oficial; nenhuma liberacao feita.', 409
+
+
 @app.route('/pagamento_aprovado')
 def pagamento_aprovado():
     # O retorno do navegador nao comprova o pagamento.
@@ -4615,12 +4681,22 @@ def webhook():
         return jsonify({'ok':False,'error':'billing_offline'}), 503
     payload = request.get_json(silent=True) or {}
     topic = (request.args.get('type') or request.args.get('topic') or payload.get('type') or '').strip()
-    event_id = str(request.args.get('data.id') or
-                   ((payload.get('data') or {}).get('id') if isinstance(payload.get('data'),dict) else '') or '')
-    if not verify_webhook_signature(request.headers.get('X-Signature',''),
-                                    request.headers.get('X-Request-Id',''), event_id,
+    query_id = str(request.args.get('data.id') or '')
+    body_data = payload.get('data')
+    body_id = str(body_data.get('id') or '') if isinstance(body_data, dict) else ''
+    if query_id and body_id and query_id.lower() != body_id.lower():
+        app.logger.warning('[SECURITY] Webhook MP recusado: ids divergentes')
+        return jsonify({'ok':False,'error':'unauthorized'}),401
+    event_id = query_id or body_id
+    signature = request.headers.get('X-Signature', '')
+    request_id = request.headers.get('X-Request-Id', '')
+    if not verify_webhook_signature(signature, request_id, event_id,
                                     os.getenv('MP_WEBHOOK_SECRET','')):
-        app.logger.warning('[SECURITY] Webhook MP rejeitado')
+        # Categoria segura para diagnostico; nunca imprimir headers/assinatura.
+        reason = ('missing_data_id' if not event_id else
+                  'missing_signature' if not signature else
+                  'missing_request_id' if not request_id else 'invalid_signature')
+        app.logger.warning('[SECURITY] Webhook MP rejeitado: %s', reason)
         return jsonify({'ok':False,'error':'unauthorized'}),401
     if topic == 'payment':
         try:

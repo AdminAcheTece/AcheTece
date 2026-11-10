@@ -98,7 +98,7 @@ def verify_webhook_signature(signature: str, request_id: str, data_id: str,
     manifest: id:<data.id lower>;request-id:<X-Request-Id>;ts:<ts>;
     Provider timestamp is milliseconds since epoch; do not log the signature.
     """
-    if not all((signature, request_id, data_id, secret)):
+    if not all((signature, data_id, secret)):
         return False
     attrs = dict(fragment.strip().split('=', 1) for fragment in signature.split(',') if '=' in fragment)
     ts, received = attrs.get('ts', ''), attrs.get('v1', '')
@@ -106,14 +106,19 @@ def verify_webhook_signature(signature: str, request_id: str, data_id: str,
         return False
     now = now or datetime.now(timezone.utc)
     try:
-        ts_sec = int(ts)
-        # MP documentation uses milliseconds, with older integration examples
-        # using seconds. Accept only exactly documented milliseconds in v1.
-        if abs(now.timestamp() - ts_sec / 1000) > max_age_seconds:
+        # Mercado Pago documenta exemplos com segundos (10 digitos) e
+        # milissegundos (13 digitos). Ambos exigem HMAC correto e janela curta.
+        if len(ts) == 13:
+            timestamp_seconds = int(ts) / 1000
+        elif len(ts) == 10:
+            timestamp_seconds = int(ts)
+        else:
+            return False
+        if abs(now.timestamp() - timestamp_seconds) > max_age_seconds:
             return False
     except (OverflowError, ValueError):
         return False
-    manifest = f'id:{data_id.lower()};request-id:{request_id};ts:{ts};'
+    manifest = f'id:{data_id.lower()};' + (f'request-id:{request_id};' if request_id else '') + f'ts:{ts};'
     expected = hmac.new(secret.encode('utf-8'), manifest.encode('utf-8'), hashlib.sha256).hexdigest()
     return hmac.compare_digest(received.lower(), expected)
 

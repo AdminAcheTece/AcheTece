@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conciliação de pagamento — AcheTece HML</title>
+<style>
+  *{box-sizing:border-box} body{background:#f4f5f6;color:#151515;font:16px/1.6 system-ui,Arial,sans-serif;margin:0}
+  header{background:#101010;color:#fff;padding:24px;text-align:center;font-weight:700;font-size:28px}
+  main{max-width:640px;margin:48px auto;padding:28px;background:#fff;border:1px solid #d8dee2;border-radius:18px}
+  h1{font-size:26px;margin:0 0 12px}p{color:#454545}label{font-weight:650;display:block;margin:18px 0 5px}
+  input{width:100%;padding:12px;font:inherit;border:1px solid #9da9b0;border-radius:8px}
+  button{font:inherit;background:#101010;color:#a8e63d;border:0;border-radius:12px;padding:13px 18px;margin-top:20px;cursor:pointer}
+  a{color:#202020}small{color:#696969;display:block;margin-top:18px}
+</style></head><body><header>AcheTece · Homologação</header>
+<main><h1>Verificar pagamento de teste</h1>
+<p>Malharia: <strong>{{ empresa.nome }}</strong>. Esta página consulta o pagamento diretamente no Mercado Pago e só libera a assinatura se o recebedor, o valor, o ambiente e a contratação estiverem corretos.</p>
+<form method="post" action="{{ url_for('conciliar_pagamento_hml') }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<label for="payment_id">ID do pagamento aprovado</label>
+<input id="payment_id" name="payment_id" type="text" inputmode="numeric" pattern="[0-9]{1,32}" maxlength="32" required autocomplete="off" placeholder="Apenas números">
+<button type="submit">Conferir pagamento com segurança</button>
+</form>
+<small>Use somente o ID do pagamento fictício. Não faça uma nova compra nem utilize cartão verdadeiro.</small>
+<p><a href="{{ url_for('painel_malharia') }}">Voltar ao painel da malharia</a></p>
+</main></body></html>
