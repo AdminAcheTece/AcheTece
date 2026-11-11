@@ -132,6 +132,54 @@ def _safe_provider_response_details(response) -> dict:
     }
 
 
+# V1.8: separate MP test payer from knitting mill's registered contact.
+# The official Subscriptions API uses test@testuser.com in test examples.
+# It is a fixture, not an asserted e-mail inbox of the buyer TESTUSER.
+_MP_HML_TEST_PAYER_EMAILS = re.compile(
+    r'(?:test|testuser[0-9]{6,15})@testuser\.com', re.IGNORECASE)
+
+
+def monthly_payer_email_for_checkout(registered_email: str, env,
+                                     *, actual_database_name: str) -> str:
+    """Choose payer only for tightly guarded monthly sandbox homologation.
+
+    No company record is changed. Missing opt-in preserves historical behavior.
+    A configured override with an unexpected HML environment fails closed.
+    Production always uses the actual client's registered e-mail.
+    """
+    original = str(registered_email or '').strip()
+    if not original or '@' not in original:
+        raise BillingError('E-mail registrado invalido')
+
+    if str(env.get('ACHETECE_BILLING_ENV') or '').strip().lower() != 'sandbox':
+        return original
+
+    configured = str(env.get('ACHETECE_HML_MP_TEST_PAYER_EMAIL') or '').strip()
+    if not configured:
+        return original
+
+    buyer_id = str(env.get('ACHETECE_HML_TEST_BUYER_USER_ID') or '').strip()
+    seller_id = str(env.get('MP_COLLECTOR_ID') or '').strip()
+    guards_ok = (
+        env.get('ACHETECE_HML_EXPECTED_DB_NAME') == 'achetece_release_v1_test'
+        and actual_database_name == 'achetece_release_v1_test'
+        and env.get('ACHETECE_MP_TEST_TOKEN_CONFIRMED') == '1'
+        and str(env.get('ACHETECE_BILLING_V1_ENABLED') or '').strip().lower()
+            in ('1','true','yes','sim')
+        and env.get('ACHETECE_BILLING_CALLBACK_BASE_URL')
+            == 'https://achetece-assinaturas-hml.onrender.com'
+        and bool(re.fullmatch(r'[0-9]{6,16}', buyer_id))
+        and bool(re.fullmatch(r'[0-9]{6,16}', seller_id))
+        and buyer_id != seller_id
+    )
+    if not guards_ok:
+        raise BillingError('Bloqueio de seguranca do pagador HML')
+
+    if configured.lower() != configured or not _MP_HML_TEST_PAYER_EMAILS.fullmatch(configured):
+        raise BillingError('Pagador ficticio nao permitido no teste HML')
+    return configured
+
+
 def money_cents(value) -> int:
     try:
         amount = Decimal(str(value))

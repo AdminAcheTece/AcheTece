@@ -10,7 +10,8 @@ from flask_limiter.util import get_remote_address
 from billing_release import (verify_authorized_invoice, BillingError, ProviderError, MercadoPagoClient, money_cents,
                              price_cents_from_environment, next_expiration, fmt_brl,
                              verify_webhook_signature, check_verified_payment, credential_environment_allowed,
-                             is_legacy_ipn_payment_hint, hml_legacy_ipn_hint_enabled)
+                             is_legacy_ipn_payment_hint, hml_legacy_ipn_hint_enabled,
+                             monthly_payer_email_for_checkout)
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
@@ -4560,8 +4561,19 @@ def checkout():
     try:
         client = _release_mp_client()
         if plano == 'mensal':
+            # V1.8: somente para o sandbox HML explicitamente habilitado.
+            # Confere o nome REAL do banco antes de substituir payer_email;
+            # email do cadastro, login e comunicacoes nao e modificado.
+            actual_db = ''
+            if (os.getenv('ACHETECE_BILLING_ENV') == 'sandbox'
+                    and (os.getenv('ACHETECE_HML_MP_TEST_PAYER_EMAIL') or '').strip()):
+                actual_db = str(db.session.execute(text('SELECT current_database()')).scalar() or '')
+            payer_email = monthly_payer_email_for_checkout(
+                empresa.email, os.environ, actual_database_name=actual_db)
+            if payer_email != empresa.email:
+                app.logger.info('[BILLING] Checkout mensal HML: pagador ficticio separado do cadastro')
             result = client.create_monthly_subscription(
-                email=empresa.email, reference=reference, cents=cents,
+                email=payer_email, reference=reference, cents=cents,
                 return_url=_release_base_url() + '/pagamento_pendente')
         else:
             sdk_local = _mp_sdk()
