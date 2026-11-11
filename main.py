@@ -4589,13 +4589,21 @@ def checkout():
         intent.status = 'pending'
         db.session.commit()
         return redirect(url, code=303)
-    except Exception:
+    except Exception as exc:
         db.session.rollback()
         intent = BillingIntent.query.filter_by(external_reference=reference).first()
         if intent and intent.status == 'created':
             intent.status = 'failed'
             db.session.commit()
-        app.logger.warning('[BILLING] Falha ao iniciar contratacao; sem dados sensiveis')
+        # Codes only: never log raw error messages, MP response, email or tokens.
+        if isinstance(exc, ProviderError):
+            app.logger.warning(
+                '[BILLING] Checkout falhou plano=%s tipo=ProviderError http=%s mp_error=%s mp_cause=%s',
+                plano, exc.http_status, exc.provider_code or 'unspecified',
+                exc.cause_code or 'unspecified')
+        else:
+            app.logger.warning('[BILLING] Checkout falhou plano=%s tipo=%s',
+                               plano, type(exc).__name__)
         return 'Nao foi possivel iniciar o pagamento. Contate o suporte.', 503
 
 

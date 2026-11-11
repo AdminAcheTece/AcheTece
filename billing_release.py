@@ -22,7 +22,25 @@ class BillingError(ValueError):
 
 
 class ProviderError(RuntimeError):
-    pass
+    """Error with redacted provider metadata, never raw payloads or credentials."""
+
+    def __init__(self, message: str, *, http_status=None,
+                 provider_code: str = '', cause_code: str = ''):
+        super().__init__(message)
+        self.http_status = http_status
+        self.provider_code = provider_code
+        self.cause_code = cause_code
+
+
+def _safe_provider_code(value) -> str:
+    """Only allow short machine-readable codes in logs. Never log API messages."""
+    if isinstance(value, bool) or not isinstance(value, (int, str)):
+        return 'unspecified'
+    candidate = str(value)
+    if (not candidate.upper().startswith(('APP_USR', 'TEST-', 'BEARER'))
+            and re.fullmatch(r'[A-Za-z0-9_.-]{1,48}', candidate)):
+        return candidate
+    return 'unspecified'
 
 
 def money_cents(value) -> int:
@@ -260,6 +278,22 @@ class MercadoPagoClient:
                                         json=payload, timeout=self.timeout)
             response.raise_for_status()
             data = response.json()
+        except requests.HTTPError as exc:
+            response = exc.response
+            http_status = response.status_code if response is not None else None
+            try:
+                details = response.json() if response is not None else None
+            except ValueError:
+                details = None
+            details = details if isinstance(details, dict) else {}
+            causes = details.get('cause')
+            first_cause = next((x for x in causes if isinstance(x, dict)), {}) if isinstance(causes, list) else {}
+            raise ProviderError(
+                'Falha na comunicação com Mercado Pago',
+                http_status=http_status,
+                provider_code=_safe_provider_code(details.get('error')),
+                cause_code=_safe_provider_code(first_cause.get('code')),
+            ) from exc
         except (requests.RequestException, ValueError) as exc:
             raise ProviderError('Falha na comunicação com Mercado Pago') from exc
         if not isinstance(data, dict):
