@@ -128,7 +128,8 @@ def check_verified_payment(payment: dict, *, expected_payment_id: str,
                            expected_collector: str, expected_currency: str = 'BRL',
                            expected_subscription: str | None = None,
                            expected_live_mode: bool | None = None,
-                           expected_hml_test_buyer_id: str | None = None) -> str:
+                           expected_hml_test_buyer_id: str | None = None,
+                           verified_invoice_reference: str | None = None) -> str:
     """Validate the response from authenticated GET /v1/payments/{id}.
 
     Never infer a company from payer email or an untrusted URL. Reject missing
@@ -136,8 +137,14 @@ def check_verified_payment(payment: dict, *, expected_payment_id: str,
     """
     if str(payment.get('id', '')) != str(expected_payment_id):
         raise BillingError('Identificador de pagamento divergente')
-    if str(payment.get('external_reference') or '') != str(expected_reference):
+    # Em faturas recorrentes o pagamento pode omitir external_reference.
+    # O chamador so pode usar a referencia da FATURA consultada via API
+    # depois de validar id, preapproval_id, valor, moeda e payment.id.
+    reference = str(payment.get('external_reference') or '')
+    if reference and reference != str(expected_reference):
         raise BillingError('Referência da contratação divergente')
+    if not reference and str(verified_invoice_reference or '') != str(expected_reference):
+        raise BillingError('Referência da contratação ausente')
     if str(payment.get('collector_id') or '') != str(expected_collector):
         raise BillingError('Recebedor da cobrança divergente')
     if expected_live_mode is not None and payment.get('live_mode') is not expected_live_mode:
@@ -165,6 +172,33 @@ def check_verified_payment(payment: dict, *, expected_payment_id: str,
         if found and str(found) != str(expected_subscription):
             raise BillingError('Assinatura do pagamento divergente')
     return str(payment.get('status') or '').lower()
+
+
+def verify_authorized_invoice(invoice: dict, *, invoice_id: str,
+                              subscription_id: str, reference: str,
+                              payment_id: str, cents: int,
+                              currency: str = 'BRL') -> bool:
+    """Validate a subscription invoice fetched from MP's authenticated API.
+
+    A signed event is only a trigger: it cannot grant access or determine which
+    knitting mill owns the payment. Match invoice + subscription + payment first.
+    """
+    if not isinstance(invoice, dict) or str(invoice.get('id') or '') != str(invoice_id):
+        raise BillingError('Identificador da fatura divergente')
+    if str(invoice.get('preapproval_id') or '') != str(subscription_id):
+        raise BillingError('Assinatura da fatura divergente')
+    if str(invoice.get('external_reference') or '') != str(reference):
+        raise BillingError('Referencia da fatura divergente')
+    if str(invoice.get('currency_id') or '') != currency:
+        raise BillingError('Moeda da fatura divergente')
+    if money_cents(invoice.get('transaction_amount')) != int(cents):
+        raise BillingError('Valor da fatura divergente')
+    paid = invoice.get('payment')
+    if not isinstance(paid, dict) or str(paid.get('id') or '') != str(payment_id):
+        raise BillingError('Pagamento da fatura divergente')
+    if str(paid.get('status') or '').lower() != 'approved':
+        raise BillingError('Pagamento da fatura nao aprovado')
+    return True
 
 
 def is_legacy_ipn_payment_hint(args, payload: dict) -> bool:
@@ -216,7 +250,7 @@ class MercadoPagoClient:
     def _request(self, method: str, path: str, payload: dict | None = None,
                  idempotency_key: str | None = None) -> dict:
         # Prevent arbitrary outbound host/path requests.
-        if not path.startswith(('/preapproval', '/v1/payments/')) or not re.fullmatch(r'/[A-Za-z0-9_./-]+', path):
+        if not path.startswith(('/preapproval', '/v1/payments/', '/authorized_payments/')) or not re.fullmatch(r'/[A-Za-z0-9_./-]+', path):
             raise BillingError('Endpoint Mercado Pago inválido')
         headers = {'Authorization': f'Bearer {self._token}', 'Content-Type': 'application/json'}
         if idempotency_key:
@@ -243,6 +277,11 @@ class MercadoPagoClient:
             'back_url': return_url,
             'status': 'pending'
         }, idempotency_key=reference)
+
+    def get_authorized_payment(self, invoice_id: str) -> dict:
+        if not re.fullmatch(r'[0-9]{1,32}', str(invoice_id)):
+            raise BillingError('Identificador de fatura invalido')
+        return self._request('GET', f'/authorized_payments/{invoice_id}')
 
     def get_subscription(self, subscription_id: str) -> dict:
         if not re.fullmatch(r'[A-Za-z0-9_-]{4,128}', str(subscription_id)):

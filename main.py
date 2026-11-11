@@ -7,7 +7,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect, CSRFError
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from billing_release import (BillingError, ProviderError, MercadoPagoClient, money_cents,
+from billing_release import (verify_authorized_invoice, BillingError, ProviderError, MercadoPagoClient, money_cents,
                              price_cents_from_environment, next_expiration, fmt_brl,
                              verify_webhook_signature, check_verified_payment, credential_environment_allowed,
                              is_legacy_ipn_payment_hint, hml_legacy_ipn_hint_enabled)
@@ -4389,15 +4389,38 @@ def _release_base_url():
     return os.environ['ACHETECE_BILLING_CALLBACK_BASE_URL'].rstrip('/')
 
 
-def _processar_pagamento(payment_id: str):
+def _processar_pagamento(payment_id: str, *, invoice_id: str | None = None):
     """Conciliação servidor-servidor, atomicidade + idempotência do provedor."""
     if not _release_billing_ready() or not _env_bool('ACHETECE_RELEASE_SCHEMA_READY', False):
         raise RuntimeError('Faturamento da release ainda nao habilitado')
-    payment = _release_mp_client().get_payment(payment_id)
+    client = _release_mp_client()
+    payment = client.get_payment(payment_id)
     ref = str(payment.get('external_reference') or '')
-    intent = BillingIntent.query.filter_by(external_reference=ref).first()
-    if intent is None:
-        raise BillingError('Contratacao nao localizada')
+    verified_invoice_reference = None
+    if invoice_id is not None:
+        invoice = client.get_authorized_payment(invoice_id)
+        subscription_id = str(invoice.get('preapproval_id') or '')
+        intent = BillingIntent.query.filter_by(provider_resource_id=subscription_id, plano='mensal').first()
+        if intent is None:
+            raise BillingError('Assinatura da fatura nao localizada')
+        verify_authorized_invoice(
+            invoice, invoice_id=invoice_id, subscription_id=subscription_id,
+            reference=intent.external_reference, payment_id=payment_id,
+            cents=intent.amount_cents, currency=intent.currency)
+        # Confere tambem a assinatura junto ao provedor, sem confiar na fatura
+        # como unica prova do vinculo com o recebedor.
+        subscription = client.get_subscription(subscription_id)
+        if (str(subscription.get('id') or '') != subscription_id or
+                str(subscription.get('external_reference') or '') != intent.external_reference or
+                str(subscription.get('collector_id') or '') != os.environ['MP_COLLECTOR_ID']):
+            raise BillingError('Assinatura/recebedor divergente')
+        verified_invoice_reference = intent.external_reference
+        if ref and ref != verified_invoice_reference:
+            raise BillingError('Referencia de pagamento divergente da fatura')
+    else:
+        intent = BillingIntent.query.filter_by(external_reference=ref).first()
+        if intent is None:
+            raise BillingError('Contratacao nao localizada')
 
     # Excecao apenas em HML: comprador TESTUSER identificado no painel
     # oficial. Sem as tres chaves concordantes, mantem live_mode estrito.
@@ -4413,6 +4436,7 @@ def _processar_pagamento(payment_id: str):
         expected_subscription=(intent.provider_resource_id if intent.plano == 'mensal' else None),
         expected_live_mode=(os.getenv('ACHETECE_BILLING_ENV') == 'production'),
         expected_hml_test_buyer_id=hml_test_buyer,
+        verified_invoice_reference=verified_invoice_reference,
     )
     # Serialize payments for the same intent even during concurrent webhooks.
     intent = (BillingIntent.query.filter_by(id=intent.id)
@@ -4765,6 +4789,32 @@ def webhook():
         app.logger.info('[BILLING] Webhook payment canal=%s resultado=%s', channel, outcome)
         return jsonify({'ok': True, 'result': outcome}), 200
 
+    if topic == 'subscription_authorized_payment':
+        # O data.id deste evento e ID DA FATURA, nao ID do pagamento.
+        # Consultar a fatura autenticada e so depois o pagamento aprovado.
+        if not re.fullmatch(r'[0-9]{1,32}', event_id):
+            return jsonify({'ok': False, 'error': 'invalid_invoice_id'}), 400
+        try:
+            invoice = _release_mp_client().get_authorized_payment(event_id)
+            paid = invoice.get('payment') or {}
+            payment_id = str(paid.get('id') or '') if isinstance(paid, dict) else ''
+            if not re.fullmatch(r'[0-9]{1,32}', payment_id) or str(paid.get('status') or '').lower() != 'approved':
+                app.logger.info('[BILLING] Fatura recorrente recebida, ainda sem pagamento aprovado')
+                return jsonify({'ok': True, 'result': 'unchanged'}), 200
+            result = _processar_pagamento(payment_id, invoice_id=event_id)
+        except BillingError:
+            db.session.rollback()
+            app.logger.warning('[BILLING] Fatura recorrente nao conciliada')
+            return jsonify({'ok': False, 'error': 'reconciliation_failed'}), 422
+        except Exception:
+            db.session.rollback()
+            app.logger.error('[BILLING] Falha temporaria ao validar fatura recorrente')
+            return jsonify({'ok': False, 'error': 'temporarily_unavailable'}), 503
+        outcome = ('duplicate' if result.get('duplicado') else
+                   'activated' if result.get('aplicado') else 'unchanged')
+        app.logger.info('[BILLING] Webhook subscription_authorized_payment canal=%s resultado=%s', channel, outcome)
+        return jsonify({'ok': True, 'result': outcome}), 200
+
     if topic == 'subscription_preapproval':
         try:
             record = _release_mp_client().get_subscription(event_id)
@@ -4779,8 +4829,7 @@ def webhook():
             db.session.rollback()
             return jsonify({'ok': False, 'error': 'temporarily_unavailable'}), 503
 
-    # Subscription_authorized_payment cannot activate without the verified
-    # payment event. Merchant order / other authenticated events are read-only.
+    # Outros eventos assinados permanecem somente informativos.
     return jsonify({'ok': True, 'ignored': True}), 200
 
 @app.route("/magic/<token>")
