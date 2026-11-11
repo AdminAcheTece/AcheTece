@@ -25,11 +25,18 @@ class ProviderError(RuntimeError):
     """Error with redacted provider metadata, never raw payloads or credentials."""
 
     def __init__(self, message: str, *, http_status=None,
-                 provider_code: str = '', cause_code: str = ''):
+                 provider_code: str = '', cause_code: str = '',
+                 message_hint: str = 'indisponivel',
+                 cause_hint: str = 'indisponivel',
+                 response_kind: str = 'desconhecido'):
         super().__init__(message)
         self.http_status = http_status
         self.provider_code = provider_code
         self.cause_code = cause_code
+        # Apenas vocabulario controlado; mensagens originais nunca saem do cliente.
+        self.message_hint = message_hint
+        self.cause_hint = cause_hint
+        self.response_kind = response_kind
 
 
 def _safe_provider_code(value) -> str:
@@ -41,6 +48,88 @@ def _safe_provider_code(value) -> str:
             and re.fullmatch(r'[A-Za-z0-9_.-]{1,48}', candidate)):
         return candidate
     return 'unspecified'
+
+
+# V1.7: somente termos tecnicos predeterminados podem aparecer nos logs.
+# A API pode inserir dados pessoais, emails e tokens dentro de "message" e
+# "cause.description". NUNCA registrar esses campos integralmente.
+_MP_SAFE_DIAGNOSTIC_WORDS = frozenset("""
+access account accounts active allowed already amount api app application associated
+at authentication authorization authorized available bad back billing blocked brl
+business canceled cannot cant card cards category charge checkout client code
+configuration configured conflict country create created creation credential
+credentials currency customer data date denied disabled document domain duplicate
+email enabled environment error expired failure field forbidden format frequency
+from invalid invoice is key limit live merchant method missing mode month months
+must no not null operation parameter payer payer_email payment payments pending
+permission permissions plan preapproval preapproval_plan_id present production
+provider recurring rejected required request resource restricted risk sandbox
+seller should site stage status subscription subscriptions test token transaction
+type unauthorized unavailable unsupported user users valid validation value with
+without wrong
+nao pode permitido invalido obrigatorio assinatura assinaturas credencial
+credenciais usuario vendedor comprador conta teste pagamentos permissao restrito
+""".split())
+
+
+def safe_mp_message_hint(value) -> str:
+    """Summarize provider prose using a strict static vocabulary (no free text).
+
+    Unknown words, URLs, emails, names, IDs, tokens and error body contents
+    cannot be written. The result is a technical hint, not a verbatim quote.
+    """
+    if not isinstance(value, str) or not value:
+        return 'indisponivel'
+    stripped = value[:4000]
+    stripped = re.sub(r'https?://[^\s]+', ' ', stripped, flags=re.IGNORECASE)
+    stripped = re.sub(r'[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}', ' ', stripped)
+    stripped = re.sub(r'(?:APP_USR|TEST)-[^\s,;]+', ' ', stripped, flags=re.IGNORECASE)
+    stripped = re.sub(r'[0-9]{5,}', ' ', stripped)
+    words = re.findall(r'[A-Za-z][A-Za-z0-9_-]{1,60}', stripped.lower())
+    approved = [word for word in words if word in _MP_SAFE_DIAGNOSTIC_WORDS]
+    hint = ' '.join(approved[:32])[:180].strip()
+    return hint if hint else 'indisponivel'
+
+
+def _safe_provider_response_details(response) -> dict:
+    """Discard provider error details after extracting non-sensitive metadata."""
+    try:
+        raw = response.json()
+    except (ValueError, TypeError):
+        raw = None
+    if isinstance(raw, dict):
+        details = raw
+        kind = 'json_object'
+    elif isinstance(raw, list):
+        details = next((x for x in raw if isinstance(x, dict)), {})
+        kind = 'json_list'
+    else:
+        details = {}
+        content_type = str(response.headers.get('Content-Type') or '').lower()
+        kind = 'text_plain' if content_type.startswith('text/plain') else 'non_json'
+    causes = details.get('cause')
+    first_cause = next((x for x in causes if isinstance(x, dict)), {}) if isinstance(causes, list) else {}
+    nested_error = details.get('error') if isinstance(details.get('error'), dict) else {}
+    errors = details.get('errors')
+    first_error = next((x for x in errors if isinstance(x, dict)), {}) if isinstance(errors, list) else {}
+    provider_code = (nested_error.get('code') or details.get('error')
+                     or details.get('code') or first_error.get('code'))
+    if isinstance(provider_code, dict):
+        provider_code = None
+    message = (details.get('message') or details.get('description')
+               or nested_error.get('message') or first_error.get('message'))
+    cause_message = (first_cause.get('description') or first_cause.get('message')
+                     or first_error.get('description'))
+    if kind == 'text_plain':
+        # Plain-text messages are still parsed ONLY through the same vocabulary.
+        message = response.text[:4000]
+    return {
+        'provider_code': _safe_provider_code(provider_code),
+        'cause_code': _safe_provider_code(first_cause.get('code') or first_error.get('code')),
+        'message_hint': safe_mp_message_hint(message),
+        'cause_hint': safe_mp_message_hint(cause_message),
+        'response_kind': kind,
+    }
 
 
 def money_cents(value) -> int:
@@ -281,24 +370,37 @@ class MercadoPagoClient:
         except requests.HTTPError as exc:
             response = exc.response
             http_status = response.status_code if response is not None else None
-            try:
-                details = response.json() if response is not None else None
-            except ValueError:
-                details = None
-            details = details if isinstance(details, dict) else {}
-            causes = details.get('cause')
-            first_cause = next((x for x in causes if isinstance(x, dict)), {}) if isinstance(causes, list) else {}
+            diagnostic = (_safe_provider_response_details(response)
+                          if response is not None else {})
             raise ProviderError(
                 'Falha na comunicação com Mercado Pago',
                 http_status=http_status,
-                provider_code=_safe_provider_code(details.get('error')),
-                cause_code=_safe_provider_code(first_cause.get('code')),
+                **diagnostic,
             ) from exc
         except (requests.RequestException, ValueError) as exc:
             raise ProviderError('Falha na comunicação com Mercado Pago') from exc
         if not isinstance(data, dict):
             raise ProviderError('Resposta do Mercado Pago inválida')
         return data
+
+    def subscription_api_access_status(self) -> str:
+        """HML-only read probe. Status only: never log response, token or payer.
+
+        A 200 confirms read access to Subscriptions API, not the right to POST
+        nor compatibility of every request field. The caller gates this probe
+        on the isolated sandbox environment and only after checkout failure.
+        """
+        try:
+            result = requests.request(
+                'GET', self.ROOT + '/preapproval/search',
+                headers={'Authorization': f'Bearer {self._token}',
+                         'Accept': 'application/json'},
+                timeout=min(self.timeout, 8),
+            )
+            status = int(result.status_code)
+            return str(status) if 100 <= status <= 599 else 'invalid_http'
+        except requests.RequestException:
+            return 'falha_rede'
 
     def create_monthly_subscription(self, *, email: str, reference: str,
                                     cents: int, return_url: str) -> dict:

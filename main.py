@@ -4597,10 +4597,31 @@ def checkout():
             db.session.commit()
         # Codes only: never log raw error messages, MP response, email or tokens.
         if isinstance(exc, ProviderError):
-            app.logger.warning(
-                '[BILLING] Checkout falhou plano=%s tipo=ProviderError http=%s mp_error=%s mp_cause=%s',
-                plano, exc.http_status, exc.provider_code or 'unspecified',
-                exc.cause_code or 'unspecified')
+            # V1.7: prova limitada de acesso a API de Assinaturas pelo MESMO
+            # token; nunca executar em producao nem publicar dados da resposta.
+            diag_hml = (
+                os.getenv('ACHETECE_BILLING_ENV') == 'sandbox'
+                and os.getenv('ACHETECE_HML_EXPECTED_DB_NAME') == 'achetece_release_v1_test'
+                and os.getenv('ACHETECE_MP_TEST_TOKEN_CONFIRMED') == '1'
+                and _env_bool('ACHETECE_BILLING_V1_ENABLED', False)
+            )
+            sub_api_http = 'nao_consultada'
+            if plano == 'mensal' and diag_hml and isinstance(locals().get('client'), MercadoPagoClient):
+                sub_api_http = client.subscription_api_access_status()
+            if diag_hml:
+                app.logger.warning(
+                    '[BILLING] Checkout HML falhou plano=%s tipo=ProviderError '
+                    'http=%s mp_error=%s mp_cause=%s mensagem_filtrada="%s" '
+                    'causa_filtrada="%s" resposta_formato=%s '
+                    'assinaturas_api_get_http=%s',
+                    plano, exc.http_status, exc.provider_code or 'unspecified',
+                    exc.cause_code or 'unspecified',
+                    exc.message_hint, exc.cause_hint, exc.response_kind,
+                    sub_api_http)
+            else:
+                app.logger.warning(
+                    '[BILLING] Checkout falhou plano=%s tipo=ProviderError http=%s',
+                    plano, exc.http_status)
         else:
             app.logger.warning('[BILLING] Checkout falhou plano=%s tipo=%s',
                                plano, type(exc).__name__)
