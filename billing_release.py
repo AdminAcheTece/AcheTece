@@ -180,6 +180,58 @@ def monthly_payer_email_for_checkout(registered_email: str, env,
     return configured
 
 
+
+# V1.9 — Verify the monthly HML test payer from an earlier authorized
+# sandbox payment of the SAME test buyer and seller. The API's generic
+# test@testuser.com example is NOT an identity; never invent a buyer email.
+_HML_REAL_TEST_PAYER = re.compile(
+    r'(?:test_user_[a-z0-9]{4,24}|testuser[0-9]{6,15})@testuser\.com',
+    re.IGNORECASE,
+)
+
+
+def verified_monthly_hml_payer_from_payment(payment: dict, *,
+                                            source_payment_id: str,
+                                            source_reference: str,
+                                            source_amount_cents: int,
+                                            expected_collector_id: str,
+                                            expected_buyer_id: str) -> str:
+    """Only return an email attached to an already approved TESTUSER payment.
+
+    No raw provider information is logged or persisted. A missing or
+    inconsistent attribute fails closed before POST /preapproval. Verified
+    identity and country use seller ID + buyer ID + BRL payment, not an
+    assumed email constructed from a nickname or API documentation fixture.
+    """
+    if not isinstance(payment, dict):
+        raise BillingError('Pagador HML: pagamento anterior indisponivel')
+    if (not re.fullmatch(r'[0-9]{6,32}', str(source_payment_id))
+            or not str(expected_buyer_id).isdigit()
+            or not str(expected_collector_id).isdigit()):
+        raise BillingError('Pagador HML: identificadores invalidos')
+    if (str(payment.get('id') or '') != str(source_payment_id)
+            or str(payment.get('status') or '') != 'approved'
+            or str(payment.get('collector_id') or '') != str(expected_collector_id)
+            or str(payment.get('currency_id') or '') != 'BRL'
+            or str(payment.get('external_reference') or '') != str(source_reference)):
+        raise BillingError('Pagador HML: pagamento de origem divergente')
+    try:
+        cents = money_cents(payment.get('transaction_amount'))
+    except BillingError as exc:
+        raise BillingError('Pagador HML: valor da origem invalido') from exc
+    if cents != source_amount_cents:
+        raise BillingError('Pagador HML: valor da origem divergente')
+    payer = payment.get('payer')
+    if not isinstance(payer, dict) or str(payer.get('id') or '') != str(expected_buyer_id):
+        raise BillingError('Pagador HML: comprador anterior divergente')
+    email = payer.get('email')
+    if not isinstance(email, str):
+        raise BillingError('Pagador HML: email do comprador nao disponivel')
+    email = email.strip().lower()
+    if not _HML_REAL_TEST_PAYER.fullmatch(email):
+        raise BillingError('Pagador HML: email de teste nao reconhecido')
+    return email
+
 def money_cents(value) -> int:
     try:
         amount = Decimal(str(value))

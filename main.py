@@ -11,7 +11,8 @@ from billing_release import (verify_authorized_invoice, BillingError, ProviderEr
                              price_cents_from_environment, next_expiration, fmt_brl,
                              verify_webhook_signature, check_verified_payment, credential_environment_allowed,
                              is_legacy_ipn_payment_hint, hml_legacy_ipn_hint_enabled,
-                             monthly_payer_email_for_checkout)
+                             monthly_payer_email_for_checkout,
+                             verified_monthly_hml_payer_from_payment)
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
@@ -4571,7 +4572,34 @@ def checkout():
             payer_email = monthly_payer_email_for_checkout(
                 empresa.email, os.environ, actual_database_name=actual_db)
             if payer_email != empresa.email:
-                app.logger.info('[BILLING] Checkout mensal HML: pagador ficticio separado do cadastro')
+                # V1.9: do not trust example email from documentation for
+                # the Brazilian buyer. Read-only lookup of the already
+                # approved annual sandbox payment and verify actual identity.
+                source_payment_id = (os.getenv('ACHETECE_HML_MP_TEST_PAYER_SOURCE_PAYMENT_ID') or '').strip()
+                if source_payment_id:
+                    if not re.fullmatch(r'[0-9]{6,32}', source_payment_id):
+                        raise BillingError('Pagador HML: fonte de teste invalida')
+                    source_payment = BillingPayment.query.filter_by(
+                        provider_payment_id=source_payment_id, status='approved').first()
+                    if source_payment is None:
+                        raise BillingError('Pagador HML: pagamento anterior nao conciliado')
+                    source_intent = BillingIntent.query.get(source_payment.intent_id)
+                    if (source_intent is None or source_intent.plano != 'anual'
+                            or source_intent.currency != 'BRL'
+                            or source_payment.currency != 'BRL'
+                            or source_intent.amount_cents != source_payment.amount_cents
+                            or source_intent.empresa_id == empresa.id):
+                        raise BillingError('Pagador HML: fonte anterior invalida')
+                    verified_payment = client.get_payment(source_payment_id)
+                    payer_email = verified_monthly_hml_payer_from_payment(
+                        verified_payment, source_payment_id=source_payment_id,
+                        source_reference=source_intent.external_reference,
+                        source_amount_cents=source_payment.amount_cents,
+                        expected_collector_id=os.environ['MP_COLLECTOR_ID'],
+                        expected_buyer_id=os.environ['ACHETECE_HML_TEST_BUYER_USER_ID'])
+                    app.logger.info('[BILLING] Checkout mensal HML: comprador teste validado via pagamento anterior')
+                else:
+                    raise BillingError('Pagador HML: fonte de identidade nao configurada')
             result = client.create_monthly_subscription(
                 email=payer_email, reference=reference, cents=cents,
                 return_url=_release_base_url() + '/pagamento_pendente')
