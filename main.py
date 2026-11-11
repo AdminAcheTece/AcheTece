@@ -4848,6 +4848,26 @@ def webhook():
             db.session.rollback()
             app.logger.warning('[BILLING] Webhook %s: pagamento nao conciliado', channel)
             return jsonify({'ok': False, 'error': 'reconciliation_failed'}), 422
+        except ProviderError as exc:
+            db.session.rollback()
+            # V2.0.1: acknowledge a confirmed missing payment ONLY for signed
+            # events in the isolated HML sandbox. No entitlement is granted.
+            # Legacy IPN, production and all transient/ambiguous errors retry.
+            hml_missing_payment = (
+                channel == 'signed'
+                and exc.http_status == 404
+                and os.getenv('ACHETECE_BILLING_ENV') == 'sandbox'
+                and os.getenv('ACHETECE_HML_EXPECTED_DB_NAME') == 'achetece_release_v1_test'
+                and os.getenv('ACHETECE_MP_TEST_TOKEN_CONFIRMED') == '1'
+                and os.getenv('ACHETECE_BILLING_CALLBACK_BASE_URL')
+                    == 'https://achetece-assinaturas-hml.onrender.com'
+            )
+            if hml_missing_payment:
+                app.logger.info('[BILLING] Webhook signed: pagamento inexistente ignorado somente na HML')
+                return jsonify({'ok': True, 'result': 'ignored_missing_hml_payment'}), 200
+            app.logger.warning('[BILLING] Webhook %s: falha do provedor http=%s',
+                               channel, exc.http_status if isinstance(exc.http_status, int) else 'unknown')
+            return jsonify({'ok': False, 'error': 'temporarily_unavailable'}), 503
         except Exception:
             db.session.rollback()
             app.logger.error('[BILLING] Webhook %s: erro temporario', channel)
