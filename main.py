@@ -2394,6 +2394,37 @@ def oauth_google():
         hl="pt-BR"
     )
 
+def _google_malharia_identity_ok(userinfo, empresa, usuario, outro_dono):
+    """Validacao isolada da identidade Google, sem gravar banco ou sessao.
+
+    Primeiro vinculo de Google permitido somente a quem controla um endereco
+    verificado e possui Usuario ativo, explicitamente associado a Empresa.
+    """
+    if not isinstance(userinfo, dict) or userinfo.get("email_verified") is not True:
+        return False
+    sub = str(userinfo.get("sub") or "").strip()
+    email = str(userinfo.get("email") or "").strip().lower()
+    if not sub or not email or "@" not in email:
+        return False
+    if empresa is None or usuario is None:
+        return False
+    if getattr(empresa, "user_id", None) != getattr(usuario, "id", None):
+        return False
+    if str(getattr(empresa, "email", "") or "").strip().lower() != email:
+        return False
+    if str(getattr(usuario, "email", "") or "").strip().lower() != email:
+        return False
+    if getattr(usuario, "is_active", None) is not True:
+        return False
+    if getattr(usuario, "role", None) not in (None, "malharia"):
+        return False
+    existente = str(getattr(usuario, "google_id", "") or "").strip()
+    if existente and existente != sub:
+        return False
+    if outro_dono is not None and getattr(outro_dono, "id", None) != getattr(usuario, "id", None):
+        return False
+    return True
+
 @app.get("/oauth/google/callback")
 def oauth_google_callback():
     try:
@@ -2448,15 +2479,32 @@ def oauth_google_callback():
         session["cliente_nome_google"] = nome
         return redirect(url_for("criar_conta_cliente"))
 
-    # ===== seu login existente (mesmo fluxo do login por e-mail) =====
-    try:
-        emp = Empresa.query.filter_by(email=email).first()
-    except Exception:
-        emp = None
-
+    # HML V2.3.12: login de malharia exige identidade Google verificavel
+    # e vinculo EXPLICITO entre Empresa e Usuario. Nenhuma concessao por email isolado.
+    emp = Empresa.query.filter(func.lower(Empresa.email) == email).first()
     if not emp:
         flash("Não encontramos uma conta para este e-mail. Faça o cadastro para continuar.", "warning")
         return redirect(url_for("cadastrar_empresa", email=email))
+
+    usuario = db.session.get(Usuario, emp.user_id) if emp.user_id else None
+    sub = str(userinfo.get("sub") or "").strip()
+    outro_dono = (Usuario.query.filter_by(google_id=sub).first() if sub else None)
+    if not _google_malharia_identity_ok(userinfo, emp, usuario, outro_dono):
+        current_app.logger.warning("[GOOGLE_MALHARIA] Identidade ou vinculo recusado")
+        flash("Não foi possível validar o acesso desta malharia pelo Google.", "danger")
+        return redirect(url_for("login"))
+
+    # Vinculo Google persistido apenas depois de validar email, sub e titularidade.
+    # Contas ja vinculadas a outro sub nunca sao substituidas.
+    if not usuario.google_id:
+        try:
+            usuario.google_id = sub
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            current_app.logger.exception("[GOOGLE_MALHARIA] Falha ao vincular identidade")
+            flash("Não foi possível concluir o acesso com Google.", "danger")
+            return redirect(url_for("login"))
 
     session.clear()
     session["empresa_id"] = emp.id
@@ -2464,7 +2512,8 @@ def oauth_google_callback():
     if foto:
         session["avatar_url"] = foto
 
-    return redirect(nxt)
+    # Destino fixo: evita redirecionamento externo enviado por parametro 'next'.
+    return redirect(url_for("painel_malharia"))
 
 # Cadastro de cliente: acesso somente após confirmação de identidade Google.
 @app.route("/criar_conta_cliente", methods=["GET", "POST"], endpoint="criar_conta_cliente")
