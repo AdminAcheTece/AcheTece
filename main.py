@@ -4719,7 +4719,14 @@ def conciliar_pagamento_hml():
     Rotina de contingencia restrita ao banco HML. Nunca confia no status do
     retorno do navegador nem aceita identificador de outra malharia.
     """
-    if (os.getenv('ACHETECE_HML_EXPECTED_DB_NAME') or '') != 'achetece_release_v1_test':
+    # V2.3.2: never expose manual recovery outside the isolated financial HML.
+    if not (
+        os.getenv('ACHETECE_BILLING_ENV') == 'sandbox'
+        and os.getenv('ACHETECE_HML_EXPECTED_DB_NAME') == 'achetece_release_v1_test'
+        and _env_bool('ACHETECE_MP_TEST_TOKEN_CONFIRMED', False)
+        and (os.getenv('ACHETECE_BILLING_CALLBACK_BASE_URL') or '').rstrip('/')
+            == 'https://achetece-assinaturas-hml.onrender.com'
+    ):
         abort(404)
     empresa_id = session.get('empresa_id')
     if not empresa_id:
@@ -4733,16 +4740,57 @@ def conciliar_pagamento_hml():
         return render_template('conciliacao_hml.html', empresa=empresa)
 
     payment_id = (request.form.get('payment_id') or '').strip()
+    invoice_id = (request.form.get('invoice_id') or '').strip()
     if not re.fullmatch(r'[0-9]{1,32}', payment_id):
         return 'ID do pagamento invalido', 400
+    if invoice_id and not re.fullmatch(r'[0-9]{1,32}', invoice_id):
+        return 'ID da fatura invalido', 400
     try:
-        payment = _release_mp_client().get_payment(payment_id)
+        client = _release_mp_client()
+        payment = client.get_payment(payment_id)
         ref = str(payment.get('external_reference') or '')
-        intent = BillingIntent.query.filter_by(
-            empresa_id=empresa.id, external_reference=ref).first()
-        if intent is None or intent.plano != 'anual':
-            return 'Pagamento nao pertence a esta malharia ou plano', 403
-        result = _processar_pagamento(payment_id)
+        # V2.3.4: uma fatura recorrente autenticada pode fornecer a referencia
+        # ausente no pagamento. Nunca usar essa via se o pagamento apresentar
+        # uma referencia (mesmo que ela nao pertença à empresa autenticada).
+        invoice = None
+        if not ref:
+            if not re.fullmatch(r'[0-9]{1,32}', invoice_id):
+                return 'ID da fatura mensal obrigatorio', 400
+            invoice = client.get_authorized_payment(invoice_id)
+            subscription_id = str(invoice.get('preapproval_id') or '')
+            if not subscription_id:
+                raise BillingError('Assinatura da fatura ausente')
+            intent = BillingIntent.query.filter_by(
+                empresa_id=empresa.id, plano='mensal',
+                provider_resource_id=subscription_id).first()
+        else:
+            intent = BillingIntent.query.filter_by(
+                empresa_id=empresa.id, external_reference=ref).first()
+        if intent is None:
+            return 'Pagamento nao pertence a esta malharia', 403
+        if intent.plano == 'mensal':
+            # Invoice is compulsory for recurring recovery. The trusted GET
+            # binds invoice, payment and subscription before reconciliation.
+            if not re.fullmatch(r'[0-9]{1,32}', invoice_id):
+                return 'ID da fatura mensal obrigatorio', 400
+            if not intent.provider_resource_id:
+                raise BillingError('Assinatura mensal sem identificador do provedor')
+            if invoice is None:
+                invoice = client.get_authorized_payment(invoice_id)
+            verify_authorized_invoice(
+                invoice, invoice_id=invoice_id,
+                subscription_id=intent.provider_resource_id,
+                reference=intent.external_reference, payment_id=payment_id,
+                cents=intent.amount_cents, currency=intent.currency)
+            if str(invoice.get('status') or '').lower() != 'processed':
+                raise BillingError('Fatura mensal nao processada')
+            result = _processar_pagamento(payment_id, invoice_id=invoice_id)
+        elif intent.plano == 'anual':
+            if invoice_id:
+                return 'Fatura nao se aplica ao pagamento anual', 400
+            result = _processar_pagamento(payment_id)
+        else:
+            return 'Plano nao suportado', 403
     except BillingError as exc:
         db.session.rollback()
         app.logger.warning('[BILLING] HML conciliacao recusada: %s', str(exc))

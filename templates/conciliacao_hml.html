@@ -17,8 +17,10 @@
 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 <label for="payment_id">ID do pagamento aprovado</label>
 <input id="payment_id" name="payment_id" type="text" inputmode="numeric" pattern="[0-9]{1,32}" maxlength="32" required autocomplete="off" placeholder="Apenas números">
+<label for="invoice_id">ID da fatura (obrigatório para plano mensal)</label>
+<input id="invoice_id" name="invoice_id" type="text" inputmode="numeric" pattern="[0-9]{1,32}" maxlength="32" autocomplete="off" placeholder="Apenas números; deixe vazio para plano anual">
 <button type="submit">Conferir pagamento com segurança</button>
 </form>
-<small>Use somente o ID do pagamento fictício. Não faça uma nova compra nem utilize cartão verdadeiro.</small>
+<small>Informe os IDs do pagamento e, para assinatura mensal, da fatura de teste já aprovados no Mercado Pago. Não faça uma nova compra nem utilize cartão verdadeiro.</small>
 <p><a href="{{ url_for('painel_malharia') }}">Voltar ao painel da malharia</a></p>
 </main></body></html>
