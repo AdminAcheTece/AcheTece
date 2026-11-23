@@ -5039,6 +5039,9 @@ def webhook():
         topic = str(request.args.get('type') or payload.get('type') or '').strip().lower()
         body_type = str(payload.get('type') or '').strip().lower()
         if request.args.get('type') and body_type and topic != body_type:
+            app.logger.warning(
+                '[SECURITY] Webhook rejeitado: tipos de evento divergentes'
+            )
             return jsonify({'ok':False,'error':'unauthorized'}),401
         signature = request.headers.get('X-Signature', '')
         request_id = request.headers.get('X-Request-Id', '')
