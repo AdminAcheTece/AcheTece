@@ -4856,6 +4856,84 @@ def conciliar_pagamento_hml():
     return 'Pagamento ainda nao confirmado pela API oficial; nenhuma liberacao feita.', 409
 
 
+@app.route('/assinatura/conciliar-mensal-hml', methods=['GET', 'POST'])
+@limiter.limit('5 per hour')
+def conciliar_mensal_hml():
+    """HML-only recovery of an already-approved recurring invoice; no new charge.
+
+    Requires logged-in mill, exact isolated DB identity, signed-in user's own
+    subscription and all original provider-side payment and invoice validations.
+    """
+    if (os.getenv('ACHETECE_BILLING_ENV') != 'sandbox' or
+            os.getenv('ACHETECE_HML_EXPECTED_DB_NAME') != 'achetece_release_v1_test' or
+            not _env_bool('ACHETECE_MP_TEST_TOKEN_CONFIRMED', False)):
+        abort(404)
+    if not _release_billing_ready() or not _env_bool('ACHETECE_RELEASE_SCHEMA_READY', False):
+        return 'Conciliação indisponível', 503
+    # Environment labels alone do not prove isolation. Check the live DB name.
+    database_name = str(db.session.execute(text('SELECT current_database()')).scalar() or '')
+    if database_name != 'achetece_release_v1_test':
+        abort(404)
+    empresa_id = session.get('empresa_id')
+    if not empresa_id:
+        return redirect(url_for('login'))
+    empresa = db.session.get(Empresa, empresa_id)
+    if empresa is None:
+        return redirect(url_for('login'))
+    if request.method == 'GET':
+        return render_template('conciliacao_mensal_hml.html', empresa=empresa)
+    if empresa.assinatura_ativa:
+        return redirect(url_for('painel_malharia'), code=303)
+    intent = (BillingIntent.query.filter_by(empresa_id=empresa.id, plano='mensal')
+              .filter(BillingIntent.provider_resource_id.isnot(None))
+              .filter(BillingIntent.status.in_(['created','pending','active','authorized','paid']))
+              .order_by(BillingIntent.id.desc()).first())
+    if intent is None:
+        return 'Nenhuma contratação mensal vinculada encontrada. Não pague novamente.', 409
+    try:
+        client = _release_mp_client()
+        subscription = client.get_subscription(intent.provider_resource_id)
+        if (str(subscription.get('id') or '') != str(intent.provider_resource_id) or
+                str(subscription.get('external_reference') or '') != intent.external_reference or
+                str(subscription.get('collector_id') or '') != os.environ['MP_COLLECTOR_ID']):
+            raise BillingError('Identidade da assinatura divergente')
+        invoices = client.search_authorized_payments(intent.provider_resource_id)
+        candidates = []
+        for item in invoices:
+            if not isinstance(item, dict):
+                continue
+            if str(item.get('preapproval_id') or '') != str(intent.provider_resource_id):
+                continue
+            payment = item.get('payment')
+            if not isinstance(payment, dict) or str(payment.get('status') or '').lower() != 'approved':
+                continue
+            invoice_id = str(item.get('id') or '')
+            payment_id = str(payment.get('id') or '')
+            if re.fullmatch(r'[0-9]{1,32}', invoice_id) and re.fullmatch(r'[0-9]{1,32}', payment_id):
+                candidates.append((invoice_id, payment_id))
+        if not candidates:
+            return 'Nenhuma fatura aprovada encontrada. Não pague novamente.', 409
+        # Use latest invoices first, but never grant access based on search response.
+        for invoice_id, payment_id in sorted(candidates, key=lambda t:int(t[0]), reverse=True):
+            # Full authenticated GETs, invoice/reference/amount/currency/collector
+            # checks, DB idempotency and entitlement logic are unchanged.
+            result = _processar_pagamento(payment_id, invoice_id=invoice_id)
+            if result.get('aplicado') or result.get('duplicado'):
+                return redirect(url_for('painel_malharia'), code=303)
+        return 'A cobrança ainda não pôde ser confirmada. Não pague novamente.', 409
+    except BillingError:
+        db.session.rollback()
+        app.logger.warning('[BILLING] Conciliação mensal HML: cobrança não validada')
+        return 'Não foi possível validar a mensalidade. Não pague novamente.', 422
+    except ProviderError:
+        db.session.rollback()
+        return 'Consulta ao Mercado Pago indisponível. Não pague novamente.', 503
+    except Exception:
+        db.session.rollback()
+        app.logger.exception('[BILLING] Falha na conciliação mensal HML')
+        return 'Falha temporária na conciliação. Não pague novamente.', 503
+
+
 @app.route('/pagamento_aprovado')
 def pagamento_aprovado():
     # O retorno do navegador nao comprova o pagamento.

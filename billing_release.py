@@ -514,6 +514,35 @@ class MercadoPagoClient:
             'status': 'pending'
         }, idempotency_key=reference)
 
+    def search_authorized_payments(self, subscription_id: str) -> list[dict]:
+        """Read-only provider lookup for one known subscription; never grants access."""
+        if not re.fullmatch(r'[A-Za-z0-9_-]{4,128}', str(subscription_id)):
+            raise BillingError('Assinatura invalida para pesquisa de faturas')
+        try:
+            response = requests.get(
+                self.ROOT + '/authorized_payments/search',
+                params={'preapproval_id': str(subscription_id), 'limit': 20, 'offset': 0},
+                headers={'Authorization': f'Bearer {self._token}', 'Accept': 'application/json'},
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            data = response.json()
+        except requests.HTTPError as exc:
+            reply = exc.response
+            details = _safe_provider_response_details(reply) if reply is not None else {}
+            raise ProviderError('Falha ao consultar faturas',
+                                http_status=(reply.status_code if reply is not None else None),
+                                **details) from exc
+        except (requests.RequestException, ValueError) as exc:
+            raise ProviderError('Falha ao consultar faturas') from exc
+        if not isinstance(data, dict) or not isinstance(data.get('results'), list):
+            raise ProviderError('Lista de faturas do provedor invalida')
+        if len(data['results']) > 20:
+            raise ProviderError('Resposta de faturas excede o limite')
+        # Do not trust search pagination, invoice, payment or subscription as authorization.
+        # The caller re-GETs each candidate and calls _processar_pagamento().
+        return data['results']
+
     def get_authorized_payment(self, invoice_id: str) -> dict:
         if not re.fullmatch(r'[0-9]{1,32}', str(invoice_id)):
             raise BillingError('Identificador de fatura invalido')

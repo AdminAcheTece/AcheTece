@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from billing_release import (BillingError, verify_webhook_signature, is_legacy_ipn_payment_hint,
                              hml_legacy_ipn_hint_enabled)
+from billing_release import ProviderError
 SOURCE = (ROOT/'main.py').read_text(encoding='utf-8')
 TREE = ast.parse(SOURCE)
 WH = next(x for x in TREE.body if isinstance(x,ast.FunctionDef) and x.name=='webhook')
@@ -63,6 +64,7 @@ class Harness:
             '_processar_pagamento':self.process,
             '_release_mp_client':Mock(),
             'BillingError':BillingError,
+            'ProviderError':ProviderError,
             'BillingIntent':Mock(),
         }
         exec(EXEC,local)
