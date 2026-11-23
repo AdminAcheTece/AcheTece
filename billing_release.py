@@ -521,7 +521,7 @@ class MercadoPagoClient:
         try:
             response = requests.get(
                 self.ROOT + '/authorized_payments/search',
-                params={'preapproval_id': str(subscription_id), 'limit': 20, 'offset': 0},
+                params={'preapproval_id': str(subscription_id)},
                 headers={'Authorization': f'Bearer {self._token}', 'Accept': 'application/json'},
                 timeout=self.timeout,
             )
