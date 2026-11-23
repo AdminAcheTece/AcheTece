@@ -128,11 +128,12 @@ class PublicoUX2Tests(unittest.TestCase):
 
     def test_precos_comerciais_dependem_da_configuracao_do_checkout(self):
         rota = "/malharia_info"
-        for mensal, anual, mostra in ((2.0, 2.0, False), (47.0, 2.0, False), (47.0, 479.4, True)):
+        for mensal, anual, mostra in ((2.0, 2.0, False), (37.0, 2.0, False), (47.0, 479.4, False), (37.0, 377.4, True)):
             with self.subTest(mensal=mensal, anual=anual), patch.multiple(
                 self.m, PLAN_MONTHLY=mensal, PLAN_YEARLY=anual,
             ):
                 pagina = self.client.get(rota).get_data(as_text=True)
-                self.assertEqual("R$47,00" in pagina, mostra)
-                self.assertEqual("R$479,40" in pagina, mostra)
+                self.assertEqual("R$37,00" in pagina, mostra)
+                self.assertEqual("R$377,40" in pagina, mostra)
+                self.assertEqual("R$31,45" in pagina, mostra)
                 self.assertNotIn("12x", pagina)
