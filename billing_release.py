@@ -289,6 +289,29 @@ def add_months(base: datetime, months: int) -> datetime:
     return base.replace(year=year, month=month, day=min(base.day, monthrange(year, month)[1]))
 
 
+def monthly_invoice_period(invoice: dict) -> tuple[datetime, datetime]:
+    """Validado apenas após verify_authorized_invoice + GET do provedor.
+
+    debit_date identifica o ciclo da fatura, não o momento da reconciliação.
+    Datas UTC naive por compatibilidade com colunas existentes no banco.
+    Na ausência de data inequívoca, falha fechada.
+    """
+    if not isinstance(invoice, dict):
+        raise BillingError('Fatura mensal invalida para vigencia')
+    raw = invoice.get('debit_date')
+    if not isinstance(raw, str) or not raw.strip():
+        raise BillingError('Fatura mensal sem data de ciclo')
+    try:
+        parsed = datetime.fromisoformat(raw.strip().replace('Z', '+00:00'))
+        if parsed.tzinfo is None or parsed.utcoffset() is None:
+            raise ValueError('falta timezone')
+        start = parsed.astimezone(timezone.utc).replace(tzinfo=None)
+        end = add_months(start, 1)
+    except (ValueError, OverflowError) as exc:
+        raise BillingError('Data do ciclo mensal invalida') from exc
+    return start, end
+
+
 def next_expiration(start: datetime, plan: str) -> datetime:
     if plan == 'mensal':
         return add_months(start, 1)

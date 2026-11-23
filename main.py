@@ -7,7 +7,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect, CSRFError
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from billing_release import (verify_authorized_invoice, BillingError, ProviderError, MercadoPagoClient, money_cents,
+from billing_release import (monthly_invoice_period, verify_authorized_invoice, BillingError, ProviderError, MercadoPagoClient, money_cents,
                              price_cents_from_environment, next_expiration, fmt_brl,
                              verify_webhook_signature, check_verified_payment, credential_environment_allowed,
                              is_legacy_ipn_payment_hint, hml_legacy_ipn_hint_enabled,
@@ -4529,11 +4529,23 @@ def _processar_pagamento(payment_id: str, *, invoice_id: str | None = None):
 
     empresa = Empresa.query.filter_by(id=intent.empresa_id).with_for_update().one()
     agora = datetime.utcnow()
-    origem = max(agora, empresa.assinatura_ate) if empresa.assinatura_ate else agora
     # Não sobrepor mensal e anual simultaneamente. Exigir cancelamento prévio.
     if (empresa.assinatura_ativa and empresa.plano != intent.plano):
         raise BillingError('Mudanca de plano exige conciliacao manual')
-    vencimento = next_expiration(origem, intent.plano)
+    if intent.plano == 'mensal':
+        # Sem fatura autenticada nao se pode inferir um ciclo pelo horario atual.
+        if invoice_id is None:
+            raise BillingError('Mensalidade exige fatura autenticada para vigencia')
+        origem, vencimento = monthly_invoice_period(invoice)
+        if vencimento <= agora:
+            raise BillingError('Ciclo mensal ja encerrado')
+        # Nao encurtar outro periodo ja pago, nem conceder mes adicional.
+        vencimento_empresa = max(vencimento, empresa.assinatura_ate) if empresa.assinatura_ate else vencimento
+    else:
+        # Plano anual: regra original preservada.
+        origem = max(agora, empresa.assinatura_ate) if empresa.assinatura_ate else agora
+        vencimento = next_expiration(origem, intent.plano)
+        vencimento_empresa = vencimento
 
     db.session.add(BillingPayment(
         intent_id=intent.id, provider_payment_id=str(payment_id),
@@ -4544,7 +4556,7 @@ def _processar_pagamento(payment_id: str, *, invoice_id: str | None = None):
     empresa.plano = intent.plano
     empresa.status_pagamento = 'ativo'
     empresa.data_pagamento = agora
-    empresa.assinatura_ate = vencimento
+    empresa.assinatura_ate = vencimento_empresa
     intent.status = ('paid' if intent.plano == 'anual' else
                      ('canceled' if intent.cancel_at_period_end else 'active'))
     db.session.commit()
