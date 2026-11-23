@@ -1124,6 +1124,17 @@ class EmpresaArquivamento(db.Model):
     )
 
 
+class EmpresaDesarquivamento(db.Model):
+    """Histórico de cada ciclo encerrado, com os responsáveis pelas duas ações."""
+
+    id = db.Column(db.Integer, primary_key=True)
+    empresa_id = db.Column(db.Integer, db.ForeignKey('empresa.id', ondelete='CASCADE'), nullable=False, index=True)
+    arquivada_em = db.Column(db.DateTime, nullable=False)
+    arquivada_por = db.Column(db.String(254), nullable=False)
+    desarquivada_em = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    desarquivada_por = db.Column(db.String(254), nullable=False)
+
+
 def empresa_arquivada():
     return db.exists().where(EmpresaArquivamento.empresa_id == Empresa.id)
 
@@ -3909,8 +3920,12 @@ def admin_empresa_ficha(empresa_id):
     teares = Tear.query.filter_by(empresa_id=empresa_id).order_by(Tear.id).all()
     registro = db.session.get(EmpresaArquivamento, empresa_id)
     publicavel = Empresa.query.filter(Empresa.id == empresa_id, empresa_publicavel()).count() > 0
+    historico = EmpresaDesarquivamento.query.filter_by(empresa_id=empresa_id).order_by(
+        EmpresaDesarquivamento.desarquivada_em.desc(), EmpresaDesarquivamento.id.desc(),
+    ).all()
     return render_template(
         'admin_empresa_ficha.html', empresa=empresa, teares=teares, registro=registro,
+        historico=historico,
         visibilidade=_visibilidade_admin(registro is not None, publicavel and bool(teares)),
         situacao_assinatura=_situacao_assinatura(empresa)[1], csrf_token=_csrf_admin(),
     )
@@ -3933,6 +3948,30 @@ def admin_arquivar_empresa(empresa_id):
                 raise
         else:
             flash(f'{empresa.nome} foi arquivada.', 'success')
+    return redirect(url_for('admin_empresa_ficha', empresa_id=empresa_id))
+
+
+@app.post('/admin/empresas/<int:empresa_id>/desarquivar')
+@login_admin_requerido
+def admin_desarquivar_empresa(empresa_id):
+    _validar_csrf_admin()
+    if request.form.get('confirmar') != 'sim':
+        abort(400, 'Confirme o desarquivamento na ficha da empresa.')
+    # Mesmo bloqueio do arquivamento para serializar mudanças da empresa.
+    empresa = Empresa.query.filter_by(id=empresa_id).with_for_update().first_or_404()
+    registro = db.session.get(EmpresaArquivamento, empresa.id)
+    if registro is not None:
+        if request.form.get('arquivado_em') != registro.registrado_em.isoformat():
+            abort(409, 'O arquivamento mudou. Reabra a ficha antes de confirmar.')
+        db.session.add(EmpresaDesarquivamento(
+            empresa_id=empresa.id,
+            arquivada_em=registro.registrado_em,
+            arquivada_por=registro.administrador,
+            desarquivada_por=session['admin_email'],
+        ))
+        db.session.delete(registro)
+        db.session.commit()
+        flash(f'{empresa.nome} foi desarquivada.', 'success')
     return redirect(url_for('admin_empresa_ficha', empresa_id=empresa_id))
 
 
@@ -4824,4 +4863,3 @@ def empresas_redirect(empresa_id):
 # --------------------------------------------------------------------
 if __name__ == '__main__':
     app.run(debug=False, host='127.0.0.1', port=5000)
-
