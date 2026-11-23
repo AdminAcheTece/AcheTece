@@ -416,7 +416,7 @@
           <input type="number" id="pistas_cilindro" name="pistas_cilindro" value="{{ request.form.get('pistas_cilindro', tear.pistas_cilindro or '') }}" required>
 
           <label for="pistas_disco">Pistas Disco</label>
-          <input type="number" id="pistas_disco" name="pistas_disco" value="{{ request.form.get('pistas_disco', tear.pistas_disco or '') }}" required>
+          <input type="number" id="pistas_disco" name="pistas_disco" value="{{ request.form.get('pistas_disco', tear.pistas_disco if tear.pistas_disco is not none else '') }}" required>
 
           <label for="alimentadores">Alimentadores</label>
           <input type="number" id="alimentadores" name="alimentadores" value="{{ request.form.get('alimentadores', tear.alimentadores or '') }}" required>

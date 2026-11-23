@@ -16,43 +16,16 @@
 
   <!-- CSS SOMENTE do conteúdo desta página (SEM HEADER AQUI) -->
   <style>
-    :root{
-      /* Paleta oliva (padrão novo) */
+    :root {
       --olive:#101214;
-      --olive-600:#202528;
-      --olive-dark:#101214;
-      --olive-50:#F5F6F6;
-      --olive-100:#EDF0F0;
-      --line-olive:#E1E5E7;
-
-      --bg-150:#F5F6F6;   /* miolo cinza igual index/admin */
-      --site-bg: var(--bg-150);
-
-      /* Compatibilidade com CSS legado */
-      --roxo:var(--olive);
-      --roxo-hover:var(--olive-600);
-
-      /* Hover neon */
-      --lime:#A8E63D;
-      --lime-700:#95D32B;
-
-      /* Neutros */
+      --olive-50:#f4f6f7;
+      --site-bg:#f4f6f7;
+      --lime:#a8e63d;
+      --line:#dce2e6;
       --cinza-900:#111827;
-      --text:#1f1f1f;
-      --muted:#6b6b6b;
-      --line:#cfd3dc;
-      --line-strong:#b9bfca;
-      --bg:#ffffff;
-
-      /* Status */
-      --success:#2e7d32;
-      --warn:#b85e00;
-      --danger:#b00020;
-
       --maxw:1280px;
     }
 
-    html, body { max-width:100%; overflow-x:hidden; }
     *, *::before, *::after { box-sizing:border-box; }
 
     body{
@@ -69,26 +42,9 @@
     }
 
     /* Miolo cinza + container central (igual padrão) */
-    .faixa-cinza{ background: var(--site-bg); padding:16px 0 48px; }
+    .painel-area{ background:var(--site-bg); padding:16px 0 48px; }
     .page-outer{ max-width:var(--maxw); margin:0 auto; padding:0 16px; }
 
-    /* ✅ PATCH FUNDO: impede “retângulo branco gigante” herdado do style.css */
-    .page-outer,
-    .container{
-      background: transparent !important;
-      border: 0 !important;
-      box-shadow: none !important;
-      border-radius: 0 !important;
-    }
-
-    /* ==========================================================
-       TOPO (ESPECÍFICO DO PAINEL):
-       - Sem "Conta Malharia"
-       - Manter Chat + Notificações + Perfil (ícones) à esquerda da casinha
-       - Ícones com mesma “cara” da casinha (tamanho/cores)
-       ========================================================== */
-
-    /* Blindagem visual dos 3 botões do painel para ficarem iguais à casinha */
     .hdr-actions.painel-actions{
       position:relative; /* base para popovers se necessário */
       display:flex;
@@ -99,8 +55,8 @@
     /* Botões ícone (Chat, Notif, Perfil) com o mesmo estilo da casinha */
     .hdr-actions.painel-actions .icon-btn,
     .hdr-actions.painel-actions .profile-pill{
-      width:40px !important;
-      height:40px !important;
+      width:44px !important;
+      height:44px !important;
       border-radius:12px !important;
       border:1px solid #e4e4e4 !important;
       background:#fff !important;
@@ -144,41 +100,6 @@
       stroke-linejoin:round;
     }
 
-    /* Botão de texto no header (Treinamento / Teares) */
-    .hdr-text-btn{
-      height:40px;
-      padding:0 14px;
-      border-radius:9999px;
-      border:1px solid #e4e4e4;
-      background:#fff;
-      color:#000;
-      font-weight:900;
-      font-size:13.5px;
-      text-decoration:none;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      cursor:pointer;
-      white-space:nowrap;
-      transition: background-color .15s ease, transform .12s ease;
-    }
-    .hdr-text-btn:hover{
-      background:var(--lime);
-      transform:translateY(-1px);
-    }
-    .hdr-text-btn:active{
-      background:var(--lime-700);
-      transform:translateY(0);
-    }
-    .hdr-text-btn:focus-visible{
-      outline:2px solid var(--lime);
-      outline-offset:2px;
-    }
-    
-    @media (max-width:520px){
-      .hdr-text-btn{ padding:0 10px; font-size:12.5px; }
-    }
-    
     /* Badge (mantém funcional) */
     .badge-wrap{ position:relative; }
     .badge{
@@ -254,415 +175,152 @@
     .pm-item svg{ width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:1.8; }
     .pm-sep{ height:1px; background:var(--line); margin:6px 0; }
 
-    /* ==========================================================
-       CONTEÚDO DO PAINEL (mantém suas funcionalidades)
-       ========================================================== */
-
-    th, td{ text-align:center; }
-
-    .container{ max-width:1100px; margin:0 auto; padding:0 16px 28px; }
-
-    h1.titulo{
-      text-align:center;
-      margin:10px 0 4px;
-      color:var(--olive-dark);
-      font-size:28px;
-      font-weight:900;
-      letter-spacing:-0.02em;
-    }
-
-    .painel-sub{
-      text-align:center;
-      margin:6px 0 14px;
-      font-weight:800;
-      font-size:14.5px;
-      color:#2b2b2b;
-    }
-
-    h2{ margin:0; color:#1d1d1d; }
-
-    /* ====== NOVO: AÇÕES RÁPIDAS (Teares x Treinamento) ====== */
-    .pm-quick{
+    .painel-conteudo {
       display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:16px;
-      max-width:1100px;
-      margin: 10px auto 14px auto;
-      padding: 0 0; /* container já controla padding */
+      gap:20px;
+      max-width:1160px;
+      margin:0 auto;
     }
-
-    .pm-quick-card{
-      display:block;
-      text-decoration:none;
-      border:1px solid rgba(0,0,0,.08);
-      background:#fff;
-      border-radius:18px;
-      padding:16px 16px;
-      box-shadow: 0 6px 18px rgba(0,0,0,.06);
-      transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
-      color: inherit;
-      position:relative;
-      overflow:hidden;
-    }
-
-    .pm-quick-card:hover{
-      transform: translateY(-1px);
-      box-shadow: 0 10px 22px rgba(0,0,0,.10);
-    }
-
-    .pm-quick-title{
-      font-weight: 900;
-      font-size: 16px;
-      margin-bottom: 6px;
-      color:#111;
-      letter-spacing:-0.01em;
-    }
-
-    .pm-quick-desc{
-      font-size: 13px;
-      color:#444;
-      opacity: .92;
-      line-height: 1.35;
-      margin-bottom: 10px;
-    }
-
-    .pm-quick-cta{
-      font-weight: 900;
-      font-size: 13px;
-      color:#111;
-      display:inline-flex;
-      gap:8px;
-      align-items:center;
-    }
-
-    .pm-quick-cta svg{
-      width:16px; height:16px;
-      stroke: currentColor;
-      fill:none;
-      stroke-width:2;
-      stroke-linecap:round;
-      stroke-linejoin:round;
-      transform: translateY(0.5px);
-    }
-
-    /* Destaque do Treinamento (sem exagero) */
-    .pm-quick-highlight{
-      border-color: rgba(123,116,36,.35);
-      box-shadow: 0 0 0 3px rgba(182,243,77,.12), 0 6px 18px rgba(0,0,0,.06);
-    }
-
-    /* Label pequeno opcional */
-    .pm-quick-tag{
-      position:absolute;
+    .painel-salto:focus {
+      position:fixed;
       top:12px;
-      right:12px;
-      font-size:11px;
-      font-weight:900;
-      padding:6px 10px;
-      border-radius:999px;
-      background: rgba(182,243,77,.95);
-      color:#000;
-      border:1px solid rgba(0,0,0,.10);
+      left:12px;
+      z-index:10000;
+      width:auto;
+      height:auto;
+      padding:10px 14px;
+      margin:0;
+      clip:auto;
+      border-radius:8px;
+      background:#0b0d0e;
+      color:#fff;
     }
-
-    @media (max-width: 860px){
-      .pm-quick{ grid-template-columns: 1fr; }
+    .painel-cartao {
+      border:1px solid #dce2e6;
+      border-radius:16px;
+      background:#fff;
+      padding:clamp(14px, 3vw, 24px);
+      min-width:0;
+      scroll-margin-top:118px;
     }
-
-    /* ===== Botões padrão (preto -> lime no hover) ===== */
-    .btn{
-      display:inline-flex; align-items:center; justify-content:center;
-      height:40px; padding:0 16px; border-radius:9999px; border:0;
-      background:#000; color:var(--lime); font-weight:900; font-size:14px;
-      text-decoration:none; cursor:pointer;
-      transition:.15s background-color, .15s color, .12s transform;
-      box-shadow:none !important;
-      white-space:nowrap;
+    .painel-conteudo h1, .painel-conteudo h2, .painel-conteudo h3 { margin:0; }
+    .painel-conteudo h1 { font-size:clamp(1.6rem, 4vw, 2.4rem); }
+    .painel-conteudo h2 { font-size:1.3rem; }
+    .painel-conteudo p { margin:6px 0 0; }
+    .painel-resumo { color:#46545f; }
+    .painel-cabecalho, .perfil-identidade {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      gap:12px;
     }
-    .btn:hover{ background:var(--lime); color:#000; transform:translateY(-2px); }
-    .btn:active{ background:var(--lime-700); color:#000; transform:translateY(0); }
-    .btn:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
-
-    /* Botões “sec-actions” (padronizados como CTA principal) */
-    .btn-roxo,
-    a.btn-roxo,
-    button.btn-roxo{
-      background:#000 !important;
-      color:var(--lime) !important;
-      border:0 !important;
-      height:40px !important;
-      padding:0 18px !important;
-      border-radius:9999px !important;
-      font-weight:900 !important;
-      text-decoration:none !important;
-      cursor:pointer;
-      transition: background-color .15s ease, color .15s ease, transform .12s ease;
-      box-shadow:none !important;
-      white-space:nowrap;
+    .perfil-identidade { justify-content:flex-start; min-width:0; }
+    .perfil-identidade strong, .tear-card h3 { overflow-wrap:anywhere; }
+    .perfil-foto {
+      flex:0 0 48px;
+      width:48px;
+      height:48px;
+      border-radius:50%;
+      object-fit:cover;
+    }
+    .painel-acoes {
+      display:flex;
+      align-items:center;
+      gap:8px 16px;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+    .painel-acao, .painel-botao, .painel-acoes select {
       display:inline-flex;
       align-items:center;
       justify-content:center;
+      min-height:44px;
+      font:inherit;
     }
-    .btn-roxo:hover{
-      background:var(--lime) !important;
-      color:#000 !important;
-      transform:translateY(-2px);
-    }
-    .btn-roxo:active{
-      background:var(--lime-700) !important;
-      color:#000 !important;
-      transform:translateY(0);
-    }
-    .btn-roxo:focus-visible{
-      outline:2px solid var(--lime);
-      outline-offset:2px;
-    }
-
-    /* ===== Assinatura (bloco colapsável) ===== */
-    .sub-wrap{ max-width:1100px; margin:12px auto 0; }
-    .sub-card{
-      background:#fff; border:1px solid var(--line); border-radius:18px;
-      overflow:hidden;
-    }
-    .sub-sum{
-      list-style:none; cursor:pointer;
-      padding:14px 16px;
-      display:flex; align-items:flex-start; justify-content:space-between;
-      gap:12px;
-      flex-wrap:nowrap;
-    }
-    .sub-sum::-webkit-details-marker{ display:none; }
-    .sub-left{ min-width:0; flex:1 1 auto; }
-    .sub-title{ font-weight:900; color:#111; }
-    .sub-sub{
-      margin-top:3px;
-      display:flex;
-      flex-wrap:wrap;
-      gap:6px;
-      align-items:center;
-      font-size:13px;
-      color:#666;
-      line-height:1.35;
-    }
-
-    .sub-right{
-      margin-left:auto;
-      display:flex;
-      align-items:center;
-      gap:10px;
-      white-space:nowrap;
-      flex:0 0 auto;
-    }
-
-    .sub-pill{
-      height:30px; padding:0 12px; border-radius:999px;
-      display:inline-flex; align-items:center; justify-content:center;
-      font-weight:900; font-size:13px; border:1px solid var(--line);
-      background:var(--olive-50); color:#222; white-space:nowrap;
-    }
-    .sub-pill.ok{ background:#e9f7ef; border-color:#bfe7cc; color:#135b2b; }
-    .sub-pill.warn{ background:#fff3e6; border-color:#ffd4a8; color:#7a3d00; }
-    .sub-pill.danger{ background:#ffe9ee; border-color:#ffc1cf; color:#7a0013; }
-
-    .sub-caret{
-      width:26px; height:26px;
-      display:grid; place-items:center;
-      border-radius:999px; border:1px solid var(--line);
-      background:#fff;
-    }
-    .sub-caret svg{ width:16px; height:16px; color:#444; }
-
-    .sub-body{
-      border-top:1px solid var(--line);
-      padding:14px 16px 16px;
-      display:grid; grid-template-columns:1.05fr .95fr; gap:14px;
-    }
-    @media (max-width:900px){ .sub-body{ grid-template-columns:1fr; } }
-
-    .sub-note{
-      background:var(--olive-50);
-      border:1px solid var(--line-olive);
-      border-radius:14px;
-      padding:12px;
-      color:#333;
-    }
-    .sub-note ul{ margin:8px 0 0 18px; padding:0; }
-    .sub-note li{ margin:6px 0; }
-    .sub-tip{ margin-top:8px; font-size:13px; color:#555; }
-
-    .sub-plans{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-    @media (max-width:520px){ .sub-plans{ grid-template-columns:1fr; } }
-
-    .sub-plan{
-      border:1px solid var(--line);
-      border-radius:16px;
-      background:#fff;
-      padding:12px;
-      text-align:left;
-      cursor:pointer;
-      transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease;
-    }
-    .sub-plan:hover{ transform:translateY(-2px); }
-    .sub-plan.selected{
-      border-color: rgba(182,243,77,.85);
-      box-shadow: 0 0 0 3px rgba(182,243,77,.22);
-    }
-    .sub-plan-top{ display:flex; align-items:center; gap:10px; font-weight:900; }
-    .sub-radio{
-      width:14px; height:14px; border-radius:50%;
-      border:2px solid #bbb;
-      display:inline-block;
-    }
-    .sub-plan.selected .sub-radio{ border-color:var(--lime); background:var(--lime); }
-    .sub-badge{
-      margin-left:auto;
-      background:var(--lime); color:#000;
-      font-size:12px; font-weight:900;
-      padding:4px 8px; border-radius:999px;
-      border:1px solid rgba(0,0,0,.12);
-    }
-    .sub-price{ font-weight:900; font-size:20px; margin-top:6px; color:#111; }
-    .sub-price small{ font-size:13px; font-weight:900; color:#666; margin-left:6px; }
-    .sub-meta{ margin-top:4px; font-size:12.5px; color:#666; line-height:1.35; }
-
-    .sub-actions{
-      grid-column:1 / -1;
-      margin-top:4px;
-      display:flex; gap:10px; flex-wrap:wrap;
-      align-items:center; justify-content:flex-end;
-    }
-    .sub-hint{ font-size:12.5px; color:#666; margin-right:auto; }
-
-    /* Mobile: alinhar “Plano” e “Vence em” à esquerda */
-    @media (max-width:520px){
-      .sub-sub{
-        display:flex;
-        flex-direction:column;
-        align-items:flex-start;
-        gap:2px;
-        text-align:left;
-      }
-      .sub-right{ gap:8px; }
-    }
-
-    /* ===== Seção Teares ===== */
-    .sec-title{
-      display:flex; align-items:center; justify-content:space-between; gap:12px;
-      margin-top:28px; margin-bottom:6px;
-    }
-    .sec-actions{
-      display:flex;
-      gap:10px;
-      align-items:center;
-    }
-
-    @media (max-width:520px){
-      .sec-title{ gap:8px; }
-      .sec-actions{ gap:8px; }
-      .sec-actions .btn-roxo{
-        height:32px !important;
-        font-size:.80rem !important;
-        padding:0 10px !important;
-      }
-    }
-
-    .table-wrapper{ overflow-x:auto; margin-top:8px; }
-    table{ width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--line); }
-    th, td{ padding:10px; border:1px solid var(--line); }
-    tbody tr:hover{ background:#fcfcff; }
-
-    /* Cabeçalho olive + zebra */
-    .table-wrapper table thead th{
-      background:var(--olive) !important;
-      color:#fff !important;
-      border-color:var(--olive-600) !important;
+    .painel-acao { color:#2368a8; text-decoration:underline; }
+    .painel-botao {
+      padding:8px 14px;
+      border:1px solid #0b0d0e;
+      border-radius:10px;
+      background:#0b0d0e;
+      color:#fff;
       font-weight:700;
+      text-decoration:none;
+      cursor:pointer;
     }
-    .table-wrapper table tbody tr:nth-child(odd){  background:#fff; }
-    .table-wrapper table tbody tr:nth-child(even){ background:var(--olive-50); }
-    .table-wrapper table tbody td{ border-color: var(--line-olive); }
-
-    /* Ações por ícone (editar/excluir) */
-    .acoes-wrap{ display:flex; justify-content:center; gap:8px; flex-wrap:wrap; }
-    .acoes-wrap .icon-btn{
-      width:36px; height:36px;
-      border-radius:12px;
-      border:1px solid var(--line);
+    .painel-botao:hover { background:#293238; color:#fff; }
+    .painel-acoes select {
+      border:1px solid #7f8b93;
+      border-radius:8px;
       background:#fff;
-      display:inline-flex; align-items:center; justify-content:center;
+      padding:6px 12px;
+      color:#0b0d0e;
+    }
+    .painel-status {
+      display:inline-block;
+      padding:3px 8px;
+      border-radius:8px;
+      background:#edf0f0;
+      color:#34424a;
+      font-weight:700;
+      font-size:.875rem;
+    }
+    .painel-status.ok { background:#e9f7ef; color:#135b2b; }
+    .painel-status.warn { background:#fff3e6; color:#7a3d00; }
+    .painel-status.danger { background:#ffe9ee; color:#7a0013; }
+    .painel-alertas { margin:0; padding-left:2rem; }
+    .tabela-teares {
+      width:100%;
+      table-layout:fixed;
+      border-collapse:collapse;
+      background:#fff;
+      margin-top:12px;
+    }
+    .tabela-teares th, .tabela-teares td {
+      padding:9px;
+      border-bottom:1px solid #dce2e6;
+      text-align:left;
+      overflow-wrap:anywhere;
+    }
+    .tabela-teares th { background:#f4f6f7; }
+    .tabela-teares th:first-child { width:23%; }
+    .tabela-teares th:is(:nth-child(5), :nth-child(6)) { width:17%; }
+    .tabela-teares th:last-child { width:17%; }
+    .teares-cards { display:none; }
+    .tear-card {
+      border:1px solid #dce2e6;
+      border-radius:12px;
+      background:#fff;
+      padding:12px;
+      min-width:0;
+    }
+    .tear-card h3 { font-size:1rem; }
+    .tear-card dl {
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0,1fr));
+      gap:8px 12px;
+      margin:12px 0 0;
+    }
+    .tear-card dt { font-size:.875rem; color:#46545f; }
+    .tear-card dd { margin:0; overflow-wrap:anywhere; }
+    .tear-acoes { display:flex; flex-wrap:wrap; gap:0 12px; }
+    .tear-acoes button {
+      display:inline-flex;
+      align-items:center;
+      min-height:44px;
+      border:0;
+      background:transparent;
+      padding:0;
+      font:inherit;
+      color:#7a0013;
+      text-decoration:underline;
       cursor:pointer;
-      transition:.15s background-color, .12s transform;
-      box-shadow:none !important;
-    }
-    .acoes-wrap .icon-btn:hover{ background:var(--olive-50); transform:translateY(-1px); }
-    .acoes-wrap .icon-btn svg{ width:18px; height:18px; stroke:#444; fill:none; stroke-width:1.8; }
-    .acoes-wrap .icon-btn.edit:hover svg{ stroke:var(--olive); }
-    .acoes-wrap .icon-btn.danger:hover svg{ stroke:var(--danger); }
-
-    /* Mobile: cards */
-    .teares-cards{ display:none; grid-template-columns:1fr; gap:10px; }
-    .tear-card{ border:1px solid var(--line); border-radius:14px; background:#fff; padding:12px; }
-    .tear-hd{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
-    .tear-title{ font-weight:900; color:#1d1d1d; }
-    .tear-actions{ display:flex; gap:8px; margin-left:auto; }
-    .tear-body{ display:grid; grid-template-columns:1fr 1fr; gap:8px 12px; }
-    .tear-item span{ display:block; font-size:11px; color:#777; }
-    .tear-item strong{ font-size:14px; color:#222; }
-    .it-tipo{ grid-column:1 / -1; }
-
-    @media (max-width:640px){
-      .table-wrapper{ display:none; }
-      .teares-cards{ display:grid; }
     }
 
-    /* ========= CTA & RODAPÉ (padrão global) ========= */
-    .cta-bar{
-      background:#000; color:#fff; padding:20px 16px;
-      display:flex; align-items:center; gap:16px; flex-wrap:wrap;
-      border-top:1px solid rgba(255,255,255,0.06);
-      margin-top:0;
-      justify-content:flex-start;
-    }
-    .cta-text h3{ margin:0 0 4px 0; font-size:18px; font-weight:900; line-height:1.2; }
-    .cta-text p{ margin:0; font-size:15px; opacity:.9; }
-
-    /* CTA "Cadastrar" igual ao botão "Conta Malharia" (pill branco + hover lime) */
-    .cta-bar .cta-btn{
-      display:inline-flex !important;
-      align-items:center !important;
-      justify-content:center !important;
-
-      height:44px !important;
-      padding:0 22px !important;
-      border-radius:9999px !important;
-
-      font-weight:800 !important;
-      text-decoration:none !important;
-      white-space:nowrap !important;
-
-      background:#fff !important;
-      color:#000 !important;
-
-      border:0 !important;
-      box-shadow:none !important;
-      line-height:1 !important;
-
-      cursor:pointer;
-      transition: background-color .15s ease, color .15s ease, transform .15s ease;
-    }
-    .cta-bar .cta-btn:hover{
-      background:var(--lime) !important;
-      color:#111 !important;
-      transform:translateY(-1px);
-    }
-    .cta-bar .cta-btn:active{
-      background:var(--lime-700) !important;
-      color:#111 !important;
-      transform:translateY(0);
-    }
-    .cta-bar .cta-btn:focus-visible{
-      outline:2px solid var(--lime);
-      outline-offset:2px;
+    @media (max-width:850px) {
+      .tabela-teares { display:none; }
+      .teares-cards { display:grid; gap:10px; margin-top:12px; }
     }
 
     .site-footer{
@@ -689,102 +347,68 @@
       html, body{ background: var(--site-bg) !important; color: var(--cinza-900); }
     }
 
-    /* ===== PATCH: Título + botões "Teares Cadastrados" no MOBILE ===== */
-
-    /* (Recomendado) evita “padding duplo” (page-outer já tem 16px) */
-    .container{
-      padding: 0 0 28px;  /* antes era 0 16px 28px */
+    .notify-panel:not(.open), .profile-menu:not(.open) { visibility:hidden; }
+    .painel-conteudo :is(a,button,select):focus-visible {
+      outline:2px solid #2368a8;
+      outline-offset:3px;
     }
 
-    /* Desktop mantém como está */
-    .sec-title{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      margin-top:28px;
-      margin-bottom:6px;
-    }
-    .sec-actions{
-      display:flex;
-      gap:10px;
-      align-items:center;
-    }
-
-    /* Mobile: título em cima + botões embaixo (grid) */
-    @media (max-width: 640px){
-      .sec-title{
-        flex-direction:column;
-        align-items:stretch;
-        gap:10px;
-      }
-
-      .sec-title h2{
-        margin:0;
-        font-size:22px;      /* ajusta o tamanho do título */
-        line-height:1.15;
-        text-align:left;
-      }
-
-      /* Botões em 2 colunas quando couber */
-      .sec-actions{
-        width:100%;
-        display:grid;
-        grid-template-columns: 1fr 1fr;
-        gap:10px;
-      }
-
-      /* Botões ocupam a célula inteira e não estouram */
-      .sec-actions .btn-roxo{
-        width:100% !important;
-        justify-content:center !important;
-        padding:0 10px !important;
-        font-size:13px !important;
-        height:38px !important;
-        min-width:0 !important;
+    @media (prefers-reduced-motion:reduce) {
+      .ux2-malharia *, .ux2-malharia *::before, .ux2-malharia *::after {
+        animation-duration:0.01ms !important;
+        transition-duration:0.01ms !important;
+        scroll-behavior:auto !important;
       }
     }
-
-    /* Mobile pequeno: empilha os botões (100% largura) */
-    @media (max-width: 420px){
-      .sec-actions{
-        grid-template-columns: 1fr;
-      }
-      .sec-actions .btn-roxo{
-        height:40px !important;
-        font-size:14px !important;
-      }
-    }
-
   </style>
 
   <!-- ✅ Header padrão (SEMPRE o último do head) -->
   <link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
 </head>
 
-<body class="header-v1">
+<body class="header-v1 ux2-malharia">
 
-{% set nome_empresa =
-    (empresa.apelido if empresa and empresa.apelido else
-     (empresa.nome_fantasia if empresa and empresa.nome_fantasia else
-      (empresa.razao_social if empresa and empresa.razao_social else 'Minha Malharia'))) %}
-{% set _assin_ativa = (assinatura_ativa if assinatura_ativa is defined else False) %}
-{% set lista_teares =
-    (teares if teares is defined and teares is not none
-     else (empresa.teares if empresa and empresa.teares else [])) %}
-{% set plano_atual = (empresa.plano if empresa and empresa.plano else 'mensal') %}
+{% set nome_empresa = empresa.apelido or empresa.nome %}
+{% set notif_count = notificacoes %}
+{% set assinatura_tom = {
+  'ativa': 'ok',
+  'pendente': 'warn',
+  'processamento': 'warn',
+  'vencida': 'danger',
+  'bloqueada': 'danger'
+} %}
+{% set assinatura_descricao = {
+  'pendente': 'O cadastro aguarda a confirmação do pagamento.',
+  'processamento': 'O pagamento está em processamento. Aguarde a confirmação.',
+  'vencida': 'A vigência encerrou. A publicação depende de uma assinatura ativa.',
+  'cancelada': 'A assinatura foi cancelada. Escolha um plano para solicitar nova ativação.',
+  'bloqueada': 'Entre em contato com o suporte para verificar a situação.',
+  'sem_assinatura': 'Escolha um plano para ativar a publicação dos teares.',
+  'nao_confirmada': 'Fale com o suporte para verificar a vigência da assinatura.'
+} %}
 
-{# ===== Controle de exibição do bloco de assinatura (banner_full) ===== #}
-{% set plano_sel = ((empresa.plano or 'mensal') | string | lower) %}
-{% set dias = (dias_restantes if dias_restantes is defined and dias_restantes is not none else none) %}
-{% set venc_fmt = (vencimento_proximo.strftime('%d/%m/%Y') if vencimento_proximo else '') %}
+{% macro tear_acoes(tear) %}
+  <div class="tear-acoes">
+    <a class="painel-acao" href="{{ url_for('editar_tear', id=tear.id) }}"
+       aria-label="Editar {{ tear.marca }} {{ tear.modelo }}">Editar</a>
+    <form method="POST" action="{{ url_for('excluir_tear', id=tear.id) }}"
+          onsubmit="return confirm('Confirma excluir este tear? Essa ação é irreversível.');">
+      <input type="hidden" name="csrf_token" value="{{ tear_csrf }}">
+      <button type="submit" aria-label="Excluir {{ tear.marca }} {{ tear.modelo }}">Excluir</button>
+    </form>
+  </div>
+{% endmacro %}
 
-{# Mostra bloco completo quando: pendente OU faltam <=7 dias #}
-{% set banner_full = (not _assin_ativa) or (dias is not none and dias <= 7) %}
-{% set is_anual = ('anual' in plano_sel) %}
+{% macro tear_publicacao(tear) %}
+  {% if tear.id in publicados %}
+    <span class="painel-status ok">Publicado</span>
+  {% else %}
+    <span class="painel-status">Não publicado</span>
+  {% endif %}
+  {% if tear.id in dados_incompletos %}<p>Dados técnicos incompletos</p>{% endif %}
+{% endmacro %}
 
-{% set chat_count = (chat_nao_lidos if chat_nao_lidos is defined else 0) %}
-{% set notif_count = (notificacoes if notificacoes is defined else 0) %}
+  <a class="sr-only painel-salto" href="#conteudo">Ir para o conteúdo</a>
 
   <!-- ===== HEADER PADRÃO (com ajuste específico do painel) ===== -->
   <header class="navbar">
@@ -801,33 +425,17 @@
       </div>
     </div>
 
-    <!-- Links do topo (somente desktop) — ordem fixa -->
+    <!-- Navegação do painel -->
     <nav class="hdr-nav" aria-label="Navegação principal">
-      <a href="{{ url_for('quem_somos') }}">O AcheTece</a>
-      <a href="{{ url_for('malharia_info') }}">Como Funciona</a>
-      <a href="{{ url_for('contato') }}">Fale Conosco</a>
+      <a href="#assinatura">Assinatura</a>
+      <a href="#teares">Teares</a>
     </nav>
 
     <div class="header-right">
       <div class="hdr-actions painel-actions">
 
-        <!-- Treinamento (botão antes do Chat) -->
-        {#
-        <a href="{{ url_for('treinamento_home') }}" class="hdr-text-btn" title="Treinamento Operacional">
-          Treinamento
-        </a>
-        #}
-        
-        <!-- Chat -->
-        <a href="{{ url_for('fale_conosco') }}" class="icon-btn badge-wrap" aria-label="Chat" title="Chat">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path>
-          </svg>
-          {% if chat_count|int > 0 %}<span class="badge">{{ chat_count }}</span>{% endif %}
-        </a>
-
         <!-- Notificações -->
-        <button id="notifToggle" class="icon-btn badge-wrap" aria-label="Notificações" title="Notificações" type="button">
+        <button id="notifToggle" class="icon-btn badge-wrap" aria-label="Notificações" aria-controls="notifPanel" aria-expanded="false" type="button">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
             <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
@@ -836,7 +444,7 @@
         </button>
 
         <!-- Perfil -->
-        <button class="profile-pill" id="profileToggle" type="button" aria-haspopup="menu" aria-expanded="false" title="Abrir menu do perfil">
+        <button class="profile-pill" id="profileToggle" type="button" aria-label="Menu de perfil" aria-controls="profileMenu" aria-expanded="false">
           <span class="avatar avatar-ico" aria-hidden="true" style="border:0;background:transparent;width:auto;height:auto;">
             <svg class="user-ico" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z"></path>
@@ -931,7 +539,7 @@
   </nav>
 
   <!-- ===== Popover Notificações ===== -->
-  <nav id="notifPanel" class="notify-panel" aria-label="Notificações" role="dialog" aria-modal="false">
+  <section id="notifPanel" class="notify-panel" aria-label="Notificações">
     <div class="np-header">Notificações</div>
     {% if (notificacoes_lista is defined) and notificacoes_lista %}
       {% for n in notificacoes_lista %}
@@ -943,10 +551,10 @@
     {% else %}
       <div class="np-empty">Nenhuma notificação.</div>
     {% endif %}
-  </nav>
+  </section>
 
   <!-- ===== Dropdown Perfil ===== -->
-  <nav class="profile-menu" id="profileMenu" role="menu" aria-label="Menu de perfil">
+  <nav class="profile-menu" id="profileMenu" aria-label="Menu de perfil">
     <div class="pm-header">
       <span class="avatar-ico" aria-hidden="true">
         <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
@@ -960,15 +568,11 @@
     </div>
 
     <div class="pm-group-title">Minha conta</div>
-    <a href="{{ url_for('editar_empresa') }}" class="pm-item" role="menuitem" title="Editar cadastro">
+    <a href="{{ url_for('editar_empresa') }}" class="pm-item" title="Editar cadastro">
       <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
       <span>Editar cadastro</span>
     </a>
-    <a href="{{ url_for('performance_acesso') }}" class="pm-item" role="menuitem" title="Ver performance de acesso">
-      <svg viewBox="0 0 24 24"><path d="M3 3v18h18"></path><path d="M7 13l3 3 7-7"></path></svg>
-      <span>Performance de acesso</span>
-    </a>
-    <a href="{{ url_for('treinamento_home') }}" class="pm-item" role="menuitem" title="Treinamento Operacional">
+    <a href="{{ url_for('treinamento_home') }}" class="pm-item" title="Treinamento Operacional">
       <svg viewBox="0 0 24 24">
         <path d="M4 19.5V4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"></path>
         <path d="M8 6h8"></path>
@@ -979,239 +583,154 @@
     </a>
     
     <div class="pm-group-title">Assinatura</div>
-    <a href="{{ url_for('painel_malharia') }}#assinatura" class="pm-item" role="menuitem" title="Assinatura e pagamento">
+    <a href="#assinatura" class="pm-item" title="Assinatura e pagamento">
       <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"></rect><path d="M3 10h18"></path></svg>
-      <span>{% if _assin_ativa %}Minha assinatura (ativa){% else %}Assinatura pendente (pagar){% endif %}</span>
+      <span>Assinatura</span>
     </a>
 
     <div class="pm-sep"></div>
 
-    <a href="{{ url_for('fale_conosco') }}" class="pm-item" role="menuitem" title="Falar com o suporte">
+    <a href="{{ url_for('fale_conosco') }}" class="pm-item" title="Falar com o suporte">
       <svg viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path></svg>
       <span>Suporte AcheTece</span>
     </a>
-    <a href="{{ url_for('logout') }}" class="pm-item" role="menuitem" title="Sair">
+    <a href="{{ url_for('logout') }}" class="pm-item" title="Sair">
       <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><path d="M16 17l5-5-5-5"></path><path d="M21 12H9"></path></svg>
       <span>Sair</span>
     </a>
   </nav>
 
-  <!-- ===== CONTEÚDO (miolo cinza) ===== -->
-  <div class="faixa-cinza">
+  <div class="painel-area">
     <div class="page-outer">
+      <main id="conteudo" class="painel-conteudo" tabindex="-1">
+        <h1>Painel da Malharia</h1>
 
-      <div class="container">
-        <h1 class="titulo">Painel da Malharia</h1>
-        <p style="text-align:center;margin:0 0 6px;">Bem-vindo(a), <strong>{{ nome_empresa }}</strong>!</p>
-        <p class="painel-sub">Gerencie seus teares e assinatura em um só lugar.</p>       
-
-        <!-- ===== Assinatura ===== -->
-        <section id="assinatura" class="sub-wrap" aria-label="Assinatura e pagamento">
-          <details class="sub-card" {% if banner_full %}open{% endif %}>
-            <summary class="sub-sum">
-              <div class="sub-left">
-                <div class="sub-title">Assinatura</div>
-                <div class="sub-sub">
-                  <span class="meta-plano">Plano: <strong>{% if is_anual %}Anual{% else %}Mensal{% endif %}</strong></span>
-                  {% if venc_fmt %}
-                    <span class="meta-venc">• Vence em <strong>{{ venc_fmt }}</strong></span>
-                  {% endif %}
-                </div>
-              </div>
-
-              <div class="sub-right">
-                {% if _assin_ativa %}
-                  {% if dias is not none and dias <= 7 %}
-                    <span class="sub-pill warn">Vencendo</span>
-                  {% else %}
-                    <span class="sub-pill ok">Ativa</span>
-                  {% endif %}
-                {% else %}
-                  <span class="sub-pill danger">Pendente</span>
-                {% endif %}
-
-                <span class="sub-caret" aria-hidden="true">
-                  <svg viewBox="0 0 24 24">
-                    <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2"/>
-                  </svg>
-                </span>
-              </div>
-            </summary>
-
-            <div class="sub-body">
-              <div class="sub-note">
-                <strong>Como funciona</strong>
-                <ul>
-                  <li>Escolha o plano (mensal ou anual).</li>
-                  <li>Você será redirecionado(a) ao <strong>Mercado Pago</strong>.</li>
-                  <li>Após aprovação, o AcheTece libera o acesso e envia e-mail de confirmação.</li>
-                </ul>
-                <div class="sub-tip">Dica: se estiver pendente, pague por aqui para evitar bloqueio do painel.</div>
-              </div>
-
-              <div class="sub-plans" role="radiogroup" aria-label="Seleção de plano">
-                <button type="button" class="sub-plan {% if not is_anual %}selected{% endif %}" data-sub-plan="mensal">
-                  <div class="sub-plan-top">
-                    <span class="sub-radio" aria-hidden="true"></span>
-                    <span class="sub-plan-name">Mensal</span>
-                  </div>
-                  <div class="sub-price">
-                    {% if preco_mensal is defined %}R$ {{ '%.2f'|format(preco_mensal)|replace('.', ',') }}{% else %}R$ 47,00{% endif %}
-                    <small>/mês</small>
-                  </div>
-                  <div class="sub-meta">Recorrente mensal. Cancele quando quiser.</div>
-                </button>
-
-                <button type="button" class="sub-plan {% if is_anual %}selected{% endif %}" data-sub-plan="anual">
-                  <div class="sub-plan-top">
-                    <span class="sub-radio" aria-hidden="true"></span>
-                    <span class="sub-plan-name">Anual</span>
-                    <span class="sub-badge">15% OFF</span>
-                  </div>
-                  <div class="sub-price">
-                    {% if preco_anual is defined %}R$ {{ '%.2f'|format(preco_anual)|replace('.', ',') }}{% else %}R$ 479,40{% endif %}
-                    <small>/ano</small>
-                  </div>
-                  <div class="sub-meta">Economize no ano e mantenha acesso contínuo.</div>
-                </button>
-
-                <div class="sub-actions">
-                  <span class="sub-hint">Você será redirecionado(a) ao Mercado Pago.</span>
-                  <a id="subCta" class="btn" href="{{ url_for('checkout', plano=('anual' if is_anual else 'mensal')) }}">
-                    {% if _assin_ativa %}Renovar agora{% else %}Continuar para pagamento{% endif %}
-                  </a>
-                </div>
-              </div>
-            </div>
-          </details>
-        </section>
-        <!-- ===== /Assinatura ===== -->
-
-        <!-- ✅ ÂNCORA: destino do card "Teares" -->
-        <div id="teares"></div>
-
-        <div class="sec-title">
-          <h2>Teares Cadastrados:</h2>
-          <div class="sec-actions">
-            <a href="{{ url_for('performance_acesso') }}" class="btn-roxo">Visualizações</a>
-            <a href="{{ url_for('teares_form') }}" class="btn-roxo">+ Cadastrar Tear</a>
-          </div>
-        </div>
-
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Marca</th>
-                <th>Modelo</th>
-                <th>Tipo</th>
-                <th>Galga/Finura</th>
-                <th>Diâmetro</th>
-                <th>Alimentadores</th>
-                <th>Pistas (cil)</th>
-                <th>Pistas (disco)</th>
-                <th>Elastano</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% set _vaz = '—' %}
-              {% if lista_teares and lista_teares|length %}
-                {% for tear in lista_teares %}
-                <tr>
-                  <td>{{ tear.marca or _vaz }}</td>
-                  <td>{{ tear.modelo or _vaz }}</td>
-                  <td>{{ tear.tipo or _vaz }}</td>
-                  <td>{{ tear.finura or tear.galga or _vaz }}</td>
-                  <td>{{ tear.diametro or _vaz }}</td>
-                  <td>{{ tear.alimentadores or _vaz }}</td>
-                  <td>{{ tear.pistas_cilindro or _vaz }}</td>
-                  <td>{{ tear.pistas_disco or _vaz }}</td>
-                  <td>
-                    {% set raw = tear.elastano if (tear.elastano is not none) else tear.kit_elastano %}
-                    {% if raw is boolean %}
-                      {{ 'Sim' if raw else 'Não' }}
-                    {% else %}
-                      {% set s = (raw|string).strip().lower() %}
-                      {% if s in ['sim','s','true','t','on','1','com','tem','yes','y'] %}Sim
-                      {% elif s in ['não','nao','n','false','f','off','0','sem','no'] %}Não
-                      {% else %}{{ _vaz }}{% endif %}
-                    {% endif %}
-                  </td>
-                  <td>
-                    <div class="acoes-wrap">
-                      <a href="{{ url_for('editar_tear', id=tear.id) }}" class="icon-btn edit" title="Editar tear" aria-label="Editar">
-                        <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                        <span class="sr-only">Editar</span>
-                      </a>
-                      <form method="POST"
-                            action="{{ url_for('excluir_tear', id=tear.id) }}"
-                            onsubmit="return confirm('Confirma excluir este tear? Essa ação é irreversível.');"
-                            style="display:inline">
-                        <input type="hidden" name="next" value="{{ url_for('painel_malharia') }}">
-                        <button type="submit" class="icon-btn danger" title="Excluir tear" aria-label="Excluir">
-                          <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path></svg>
-                          <span class="sr-only">Excluir</span>
-                        </button>
-                      </form>
-                    </div>
-                  </td>
-                </tr>
-                {% endfor %}
-              {% else %}
-                <tr><td colspan="10">Nenhum tear cadastrado ainda.</td></tr>
-              {% endif %}
-            </tbody>
-          </table>
-        </div>
-
-        <div class="teares-cards">
-          {% if lista_teares|length %}
-            {% for tear in lista_teares %}
-              <div class="tear-card">
-                <div class="tear-hd">
-                  <div class="tear-title">{{ tear.marca or '-' }} — {{ tear.modelo or '-' }}</div>
-                  <div class="tear-actions">
-                    <a href="{{ url_for('editar_tear', id=tear.id) }}" class="icon-btn edit" title="Editar">
-                      <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                    </a>
-                    <form method="POST"
-                          action="{{ url_for('excluir_tear', id=tear.id) }}"
-                          onsubmit="return confirm('Confirma excluir este tear? Essa ação é irreversível.');">
-                      <input type="hidden" name="next" value="{{ url_for('painel_malharia') }}">
-                      <button type="submit" class="icon-btn danger" title="Excluir">
-                        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path></svg>
-                      </button>
-                    </form>
-                  </div>
-                </div>
-
-                <div class="tear-body">
-                  <div class="tear-item it-tipo"><span>Tipo</span><strong>{{ tear.tipo or '-' }}</strong></div>
-                  <div class="tear-item"><span>Diâmetro</span><strong>{{ tear.diametro if tear.diametro is not none else '-' }}</strong></div>
-                  <div class="tear-item"><span>Finura</span><strong>{{ tear.finura if tear.finura is not none else '-' }}</strong></div>
-                  <div class="tear-item"><span>Alimentadores</span><strong>{{ tear.alimentadores if tear.alimentadores is not none else '-' }}</strong></div>
-                  <div class="tear-item"><span>Elastano</span><strong>{{ 'Sim' if (tear.elastano or tear.kit_elastano) else 'Não' }}</strong></div>
-                </div>
-              </div>
-            {% endfor %}
-          {% else %}
-            <div class="tear-card">Nenhum tear cadastrado ainda.</div>
+        {% with mensagens = get_flashed_messages() %}
+          {% if mensagens %}
+            <ul class="painel-cartao painel-alertas" aria-label="Mensagens">
+              {% for mensagem in mensagens %}<li>{{ mensagem }}</li>{% endfor %}
+            </ul>
           {% endif %}
-        </div>
+        {% endwith %}
 
-      </div>
+        <section class="painel-cartao painel-cabecalho" aria-labelledby="perfil-titulo">
+          <div class="perfil-identidade">
+            {% if foto_url %}
+              <img class="perfil-foto" src="{{ foto_url }}" alt="" width="48" height="48">
+            {% endif %}
+            <div>
+              <h2 id="perfil-titulo">Perfil da malharia</h2>
+              <strong>{{ nome_empresa }}</strong>
+              {% if empresa.cidade and empresa.estado %}
+                <p class="painel-resumo">{{ empresa.cidade }} · {{ empresa.estado }}</p>
+              {% endif %}
+              {% if not perfil_ok %}<p class="painel-resumo">Complete o responsável, a localização e o telefone.</p>{% endif %}
+            </div>
+          </div>
+          <a class="painel-acao" href="{{ url_for('editar_empresa') }}">Editar perfil</a>
+        </section>
+
+        <section id="assinatura" class="painel-cartao" aria-labelledby="assinatura-titulo">
+          <div class="painel-cabecalho">
+            <h2 id="assinatura-titulo">Assinatura</h2>
+            <span class="painel-status {{ assinatura_tom.get(situacao_assinatura, '') }}">{{ rotulo_assinatura }}</span>
+          </div>
+          {% if fim_vigencia %}
+            <p>Plano {{ plano }} ·
+              {{ 'Vigente até' if situacao_assinatura == 'ativa' else 'Vigência encerrada em' }}
+              <time datetime="{{ fim_vigencia.date().isoformat() }}">{{ fim_vigencia.strftime('%d/%m/%Y') }}</time>
+            </p>
+          {% endif %}
+          {% if arquivada %}
+            <p class="painel-resumo">A malharia está arquivada. Fale com o suporte para revisar a publicação.</p>
+          {% elif situacao_assinatura in assinatura_descricao %}
+            <p class="painel-resumo">{{ assinatura_descricao[situacao_assinatura] }}</p>
+          {% endif %}
+
+          {% if mostrar_pagamento %}
+            <form class="painel-acoes" method="GET" action="{{ url_for('checkout') }}">
+              {% if situacao_assinatura == 'ativa' %}
+                <input type="hidden" name="plano" value="{{ plano }}">
+              {% else %}
+                <label for="painel-plano">Plano para pagamento</label>
+                <select name="plano" id="painel-plano">
+                  <option value="mensal" {{ 'selected' if plano == 'mensal' }}>Mensal</option>
+                  <option value="anual" {{ 'selected' if plano == 'anual' }}>Anual</option>
+                </select>
+              {% endif %}
+              <button type="submit" class="painel-botao">
+                {{ 'Renovar no Mercado Pago' if situacao_assinatura in ('ativa', 'vencida') else 'Continuar para pagamento' }}
+              </button>
+            </form>
+          {% endif %}
+          <a class="painel-acao" href="{{ url_for('fale_conosco') }}">
+            {{ 'Gerenciar assinatura com o suporte' if situacao_assinatura == 'ativa' else 'Falar com o suporte' }}
+          </a>
+        </section>
+
+        <section id="teares" class="painel-cartao" aria-labelledby="teares-titulo">
+          <div class="painel-cabecalho">
+            <div>
+              <h2 id="teares-titulo">Teares</h2>
+              <p class="painel-resumo">
+                {{ teares|length }} {{ 'cadastrado' if teares|length == 1 else 'cadastrados' }} ·
+                {{ publicados|length }} {{ 'publicado' if publicados|length == 1 else 'publicados' }}
+              </p>
+            </div>
+            <a class="painel-botao" href="{{ url_for('teares_form') }}">Cadastrar tear</a>
+          </div>
+
+          {% if teares %}
+            <table class="tabela-teares">
+              <caption class="sr-only">Teares e situação de publicação</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Tear</th>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Galga</th>
+                  <th scope="col">Diâmetro</th>
+                  <th scope="col">Alimentadores</th>
+                  <th scope="col">Publicação</th>
+                  <th scope="col">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for tear in teares %}
+                  <tr>
+                    <th scope="row">{{ tear.marca or '—' }} · {{ tear.modelo or '—' }}</th>
+                    <td>{{ tear.tipo or '—' }}</td>
+                    <td>{{ tear.finura or '—' }}</td>
+                    <td>{{ tear.diametro or '—' }}</td>
+                    <td>{{ tear.alimentadores or '—' }}</td>
+                    <td>{{ tear_publicacao(tear) }}</td>
+                    <td>{{ tear_acoes(tear) }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+
+            <div class="teares-cards">
+              {% for tear in teares %}
+                <article class="tear-card">
+                  <h3>{{ tear.marca or '—' }} · {{ tear.modelo or '—' }}</h3>
+                  <div>{{ tear_publicacao(tear) }}</div>
+                  <dl>
+                    <div><dt>Tipo</dt><dd>{{ tear.tipo or '—' }}</dd></div>
+                    <div><dt>Galga</dt><dd>{{ tear.finura or '—' }}</dd></div>
+                    <div><dt>Diâmetro</dt><dd>{{ tear.diametro or '—' }}</dd></div>
+                    <div><dt>Alimentadores</dt><dd>{{ tear.alimentadores or '—' }}</dd></div>
+                  </dl>
+                  {{ tear_acoes(tear) }}
+                </article>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="painel-resumo">Nenhum tear cadastrado.</p>
+          {% endif %}
+        </section>
+      </main>
     </div>
   </div>
-
-  <!-- ===== Faixa preta (CTA) ===== -->
-  <section class="cta-bar">
-    <div class="cta-text">
-      <h3>É proprietário de uma malharia?</h3>
-      <p>Cadastre sua malharia e comece a receber novos pedidos.</p>
-    </div>
-    <a href="{{ url_for('malharia_info') }}" class="cta-btn">Cadastrar</a>
-  </section>
 
   <!-- ===== Rodapé ===== -->
   <footer class="site-footer">
@@ -1244,7 +763,7 @@
     (function(){
       function setNavH(){
         const nav = document.querySelector('.navbar');
-        const h = nav ? nav.offsetHeight : 0;
+        const h = nav ? nav.getBoundingClientRect().bottom : 0;
         document.documentElement.style.setProperty('--nav-h', h + 'px');
       }
       setNavH();
@@ -1262,10 +781,13 @@
       function openMenu(){
         document.body.classList.add('menu-open');
         if(openBtn) openBtn.setAttribute('aria-expanded','true');
+        closeBtn?.focus();
       }
       function closeMenu(){
+        if(!document.body.classList.contains('menu-open')) return;
         document.body.classList.remove('menu-open');
         if(openBtn) openBtn.setAttribute('aria-expanded','false');
+        openBtn?.focus();
       }
 
       if(openBtn) openBtn.addEventListener('click', (e)=>{ e.stopPropagation(); openMenu(); });
@@ -1292,10 +814,12 @@
       function openMenu(){
         menu?.classList.add('open');
         toggle?.setAttribute('aria-expanded','true');
+        menu?.querySelector('a')?.focus();
       }
       function toggleMenu(e){
         if(e) e.stopPropagation();
         if (!menu) return;
+        closeNotif();
         menu.classList.contains('open') ? closeMenu() : openMenu();
       }
       toggle?.addEventListener('click', toggleMenu);
@@ -1304,45 +828,17 @@
       const nbtn   = document.getElementById('notifToggle');
       const npanel = document.getElementById('notifPanel');
 
-      function closeNotif(){ npanel?.classList.remove('open'); }
+      function closeNotif(){
+        npanel?.classList.remove('open');
+        nbtn?.setAttribute('aria-expanded', 'false');
+      }
       function toggleNotif(e){
         e.stopPropagation();
-        npanel?.classList.toggle('open');
+        closeMenu();
+        const aberto = npanel?.classList.toggle('open');
+        nbtn?.setAttribute('aria-expanded', String(Boolean(aberto)));
       }
       nbtn?.addEventListener('click', toggleNotif);
-
-      // ===== ASSINATURA: seleciona plano e atualiza CTA =====
-      const subCta   = document.getElementById('subCta');
-      const subPlans = Array.from(document.querySelectorAll('[data-sub-plan]'));
-
-      const hrefMensal = "{{ url_for('checkout', plano='mensal') }}";
-      const hrefAnual  = "{{ url_for('checkout', plano='anual') }}";
-
-      function setSubPlan(val){
-        if (!val) return;
-        const normalized = (String(val).toLowerCase().includes('anual')) ? 'anual' : 'mensal';
-
-        subPlans.forEach(btn => {
-          const isSelected = (btn.dataset.subPlan === normalized);
-          btn.classList.toggle('selected', isSelected);
-          btn.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
-        });
-
-        if (subCta){
-          subCta.href = (normalized === 'anual') ? hrefAnual : hrefMensal;
-        }
-      }
-
-      if (subPlans.length){
-        subPlans.forEach(btn => {
-          btn.addEventListener('click', (e)=>{
-            e.preventDefault();
-            e.stopPropagation();
-            setSubPlan(btn.dataset.subPlan);
-          });
-        });
-        setSubPlan("{{ 'anual' if is_anual else 'mensal' }}");
-      }
 
       // ===== FECHAR AO CLICAR FORA / ESC =====
       document.addEventListener('click', ()=>{
@@ -1352,12 +848,17 @@
 
       document.addEventListener('keydown', (e)=>{
         if (e.key === 'Escape'){
+          if (menu?.classList.contains('open')) toggle?.focus();
+          if (npanel?.classList.contains('open')) nbtn?.focus();
           closeMenu();
           closeNotif();
         }
       });
 
-      menu?.addEventListener('click', (e)=> e.stopPropagation());
+      menu?.addEventListener('click', (e)=>{
+        if (e.target.closest('a')) closeMenu();
+        e.stopPropagation();
+      });
       npanel?.addEventListener('click', (e)=> e.stopPropagation());
     })();
   </script>

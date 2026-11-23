@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Administração{% endblock %} | AcheTece</title>
+  <link rel="icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='achetece_admin.css') }}">
+</head>
+<body>
+  <a class="admin-skip" href="#conteudo">Ir para o conteúdo</a>
+  <header class="admin-header">
+    <div class="admin-shell admin-header-inner">
+      <a class="admin-brand" href="{{ url_for('admin_empresas') }}">
+        <img src="{{ url_for('static', filename='Logo_Branco_AcheTece_sem_fundo.png') }}" alt="AcheTece">
+        <span>Administração</span>
+      </a>
+      <form action="{{ url_for('admin_logout') }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button class="admin-button admin-button-inverse" type="submit">Sair</button>
+      </form>
+    </div>
+  </header>
+  <main id="conteudo" class="admin-shell admin-main">
+    {% for mensagem in get_flashed_messages() %}
+      <p class="admin-feedback" role="status">{{ mensagem }}</p>
+    {% endfor %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
