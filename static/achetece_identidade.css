@@ -1,0 +1,74 @@
+:root {
+  --achetece-action-blue: #2368a8;
+  --achetece-action-hover: #195385;
+  --achetece-footer-bg: #0c1420;
+}
+
+.achetece-brand {
+  display: inline-grid;
+  position: relative;
+  place-items: center;
+  flex: none;
+  width: 184px;
+  height: 56px;
+  overflow: hidden;
+  vertical-align: middle;
+  border-radius: 7px;
+  background: #0b0d0e;
+}
+
+body .achetece-brand > img,
+body.header-v1 .achetece-brand > img,
+body.header-v1 .mobile-menu .achetece-brand > img {
+  position: absolute !important;
+  display: block !important;
+  inset: 50% auto auto 50% !important;
+  width: 184px !important;
+  max-width: none !important;
+  height: 92px !important;
+  max-height: none !important;
+  object-fit: contain !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+@media (max-width: 600px) {
+  .achetece-brand {
+    width: 48px;
+    height: 48px;
+  }
+  body .achetece-brand > img,
+body.header-v1 .achetece-brand > img,
+body.header-v1 .mobile-menu .achetece-brand > img {
+    width: 45px !important;
+    height: 45px !important;
+  }
+}
+
+.achetece-copyright {
+  margin: 0;
+  padding: .7rem max(1rem, calc((100% - 75rem) / 2));
+  background: var(--achetece-footer-bg);
+  color: #d1deee;
+  font: .8125rem/1.5 system-ui, sans-serif;
+  text-align: left;
+}
+
+.site-footer .achetece-copyright {
+  border-top: 1px solid #334255;
+}
+
+body :is(.button, .btn-primary, .admin-primary, .painel-botao, .botao-pagamento, .btn[type="submit"]):not(.admin-danger):not(.btn-danger) {
+  background: var(--achetece-action-blue) !important;
+  border-color: var(--achetece-action-blue) !important;
+  color: #fff !important;
+}
+
+body :is(.button, .btn-primary, .admin-primary, .painel-botao, .botao-pagamento, .btn[type="submit"]):not(.admin-danger):not(.btn-danger):hover {
+  background: var(--achetece-action-hover) !important;
+  border-color: var(--achetece-action-hover) !important;
+}
+
+body :is(.button, .btn-primary, .admin-primary, .painel-botao, .botao-pagamento, .btn[type="submit"]):focus-visible {
+  outline: 3px solid #2368a8;
+  outline-offset: 3px;
+}
