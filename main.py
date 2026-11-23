@@ -4942,10 +4942,15 @@ def conciliar_mensal_hml():
                 return 'indefinido'
             return valor if re.fullmatch(r'[A-Za-z0-9_.-]{1,48}', valor) else 'indefinido'
         app.logger.warning(
-            '[BILLING] Recuperacao mensal HML etapa=%s http=%s provider_code=%s cause_code=%s',
+            '[BILLING] Recuperacao mensal HML etapa=%s http=%s '
+            'provider_code=%s cause_code=%s message_hint=%s '
+            'cause_hint=%s response_kind=%s',
             etapa_consulta, http,
             codigo_seguro(getattr(exc, 'provider_code', None)),
             codigo_seguro(getattr(exc, 'cause_code', None)),
+            getattr(exc, 'message_hint', 'indisponivel'),
+            getattr(exc, 'cause_hint', 'indisponivel'),
+            getattr(exc, 'response_kind', 'desconhecido'),
         )
         return 'Consulta ao Mercado Pago indisponível. Não pague novamente.', 503
     except Exception:
