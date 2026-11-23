@@ -676,6 +676,7 @@
       transform-origin: left center;
     }
   </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
 </head>
 
 <body>
@@ -685,7 +686,7 @@
   <header class="topbar" id="topbar">
     <div class="brand">
       <a href="{{ url_for('treinamento_home') }}" aria-label="Treinamento - Início">
-        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
+        {% include '_marca_cabecalho.html' %}
       </a>
     </div>
 
@@ -1029,5 +1030,6 @@
   })();
 </script>
 
+  <footer class="achetece-footer">{% include '_direitos_reservados.html' %}</footer>
 </body>
 </html>

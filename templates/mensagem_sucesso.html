@@ -89,6 +89,7 @@
         .mensagem-box{ margin:24px 12px; padding:28px; }
       }
     </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
 </head>
 <body>
 
@@ -98,5 +99,6 @@
         <a href="{{ url_for('login') }}" class="botao-voltar">Ir para o login</a>
     </div>
 
+  <footer class="achetece-footer">{% include '_direitos_reservados.html' %}</footer>
 </body>
 </html>

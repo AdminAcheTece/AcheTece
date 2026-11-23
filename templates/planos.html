@@ -65,12 +65,13 @@
             max-height: 80px;
         }
     </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
 </head>
 <body>
 
     <div class="container">
         <div class="logo">
-            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece">
+            {% include '_marca_cabecalho.html' %}
         </div>
 
         <h1>Assinatura não concluída</h1>
@@ -86,5 +87,6 @@
         <a href="{{ url_for('checkout') }}" class="botao-pagamento">Tentar novamente o pagamento</a>
     </div>
 
+  <footer class="achetece-footer">{% include '_direitos_reservados.html' %}</footer>
 </body>
 </html>

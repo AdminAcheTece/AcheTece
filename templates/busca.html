@@ -183,6 +183,7 @@
         .icon-btn:active{ transform:translateY(1px); }
         .icon{ width:20px; height:20px; color:#222; }
     </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
 </head>
 <body>
 
@@ -190,7 +191,7 @@
   <header class="navbar">
     <div class="header-left">
       <div class="logo">
-        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo AcheTece" decoding="async" fetchpriority="high">
+        {% include '_marca_cabecalho.html' %}
       </div>
     </div>
 
@@ -411,5 +412,6 @@
       window.addEventListener('resize', setNavH);
     })();
   </script>
+  <footer class="achetece-footer">{% include '_direitos_reservados.html' %}</footer>
 </body>
 </html>

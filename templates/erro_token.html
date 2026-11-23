@@ -55,6 +55,7 @@
             background-color: #002a80;
         }
     </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
 </head>
 <body>
     <div class="container">
@@ -65,5 +66,6 @@
         </div>
         <a class="botao" href="{{ url_for('esqueci_senha') }}">Solicitar novo link</a>
     </div>
+  <footer class="achetece-footer">{% include '_direitos_reservados.html' %}</footer>
 </body>
 </html>

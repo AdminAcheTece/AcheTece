@@ -6,13 +6,14 @@
   <title>{% block title %}Administração{% endblock %} | AcheTece</title>
   <link rel="icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='achetece_admin.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
 </head>
 <body>
   <a class="admin-skip" href="#conteudo">Ir para o conteúdo</a>
   <header class="admin-header">
     <div class="admin-shell admin-header-inner">
       <a class="admin-brand" href="{{ url_for('admin_empresas') }}">
-        <img src="{{ url_for('static', filename='Logo_Branco_AcheTece_sem_fundo.png') }}" alt="AcheTece">
+        {% include '_marca_cabecalho.html' %}
         <span>Administração</span>
       </a>
       <form action="{{ url_for('admin_logout') }}" method="post">
@@ -27,5 +28,6 @@
     {% endfor %}
     {% block content %}{% endblock %}
   </main>
+  <footer class="achetece-footer">{% include '_direitos_reservados.html' %}</footer>
 </body>
 </html>
