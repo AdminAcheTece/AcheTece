@@ -496,6 +496,7 @@
       font-weight:800;
     }
   </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
 </head>
 
 <body>
@@ -506,7 +507,7 @@
     <div class="brand">
       <!-- Troque o filename pelo seu arquivo preto real -->
       <a href="{{ url_for('treinamento_home') }}" aria-label="Treinamento - Início">
-        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece">
+        {% include '_marca_cabecalho.html' %}
       </a>
     </div>
 
@@ -672,5 +673,6 @@
   })();
 </script>
 
+  <footer class="achetece-footer">{% include '_direitos_reservados.html' %}</footer>
 </body>
 </html>

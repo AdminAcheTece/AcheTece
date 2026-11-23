@@ -1849,40 +1849,44 @@ def _numero_comercial(empresa):
 def index():
     _limitar_consulta_publica(90)
     filtros = _filtros_teares()
-    pesquisou = request.args.get("buscar") == "1" or any(filtros.values())
+    filtrada = any(filtros.values())
     try:
         base = _teares_publicados()
         cidades = {}
         localidades = (
             base.with_entities(Empresa.estado, Empresa.cidade)
-            .filter(Empresa.estado.isnot(None), Empresa.cidade.isnot(None))
+            .filter(Empresa.estado.isnot(None))
             .distinct().order_by(Empresa.estado, Empresa.cidade).all()
         )
         for uf, cidade in localidades:
-            if uf and cidade:
-                cidades.setdefault(uf.upper(), []).append(cidade)
+            if uf:
+                municipios = cidades.setdefault(uf.upper(), [])
+                if cidade and cidade not in municipios:
+                    municipios.append(cidade)
         tipos = [
             tipo for tipo, in base.with_entities(Tear.tipo).distinct().order_by(Tear.tipo)
             if tipo
         ]
-        resultados = []
+        galgas = [valor for valor, in base.with_entities(Tear.finura).distinct().order_by(Tear.finura)]
+        diametros = [valor for valor, in base.with_entities(Tear.diametro).distinct().order_by(Tear.diametro)]
+        consulta = _aplicar_filtros_teares(base, filtros)
+        total, malharias = consulta.with_entities(
+            func.count(Tear.id), func.count(db.distinct(Tear.empresa_id)),
+        ).one()
         pp = min(100, max(1, request.args.get("pp", 20, type=int)))
-        pagina = 1
-        paginas = 1
-        total = None
-        if pesquisou:
-            consulta = _aplicar_filtros_teares(base, filtros)
-            total = consulta.count()
-            paginas = max(1, (total + pp - 1) // pp)
-            pagina = min(paginas, max(1, request.args.get("pagina", 1, type=int)))
-            resultados = (
-                consulta.options(db.joinedload(Tear.empresa)).order_by(Tear.id.desc())
-                .offset((pagina - 1) * pp).limit(pp).all()
-            )
+        paginas = max(1, (total + pp - 1) // pp)
+        pagina = min(paginas, max(1, request.args.get("pagina", 1, type=int)))
+        inicio = (pagina - 1) * pp
+        resultados = (
+            consulta.options(db.contains_eager(Tear.empresa))
+            .order_by(Tear.tipo, Tear.finura, Tear.diametro, Tear.id)
+            .offset(inicio).limit(pp).all()
+        ) if total else []
         return render_template(
             "index.html", titulo_pagina="Buscar teares", filtros=filtros, tipos=tipos,
+            galgas=galgas, diametros=diametros, filtrada=filtrada, malharias=malharias,
             cidades=cidades, resultados=resultados, total=total, pagina=pagina, paginas=paginas,
-            por_pagina=pp, tem_whatsapp=_numero_comercial,
+            inicio=inicio, por_pagina=pp, tem_whatsapp=_numero_comercial,
         )
     except Exception:
         app.logger.exception("[INDEX] falha ao consultar teares")
@@ -4838,8 +4842,15 @@ def empresa_perfil(empresa_id):
     except Exception:
         app.logger.exception("[analytics] falha ao registrar COMPANY_PROFILE_VIEW")
 
-    return render_template("empresa_perfil.html", empresa=empresa, teares=teares,
-                           tem_whatsapp=bool(_numero_comercial(empresa)))
+    contexto = {chave: valor for chave, valor in _filtros_teares().items() if valor}
+    return render_template(
+        "empresa_perfil.html", empresa=empresa, teares=teares,
+        tem_whatsapp=bool(_numero_comercial(empresa)),
+        voltar_busca=url_for(
+            "index", pagina=request.args.get("pagina", 1, type=int),
+            pp=request.args.get("pp", 20, type=int), **contexto,
+        ) + "#resultados",
+    )
 
 @app.get("/empresa/<int:empresa_id>/whatsapp")
 def empresa_whatsapp(empresa_id):

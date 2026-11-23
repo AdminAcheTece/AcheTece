@@ -628,6 +628,7 @@
 
     </style>
 
+  <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
 </head>
 
 
@@ -643,13 +644,7 @@
             class="brand"
         >
 
-            <img
-                src="{{ url_for(
-                    'static',
-                    filename='Logo_Branco_AcheTece_sem_fundo.png'
-                ) }}"
-                alt="AcheTece"
-            >
+            {% include '_marca_cabecalho.html' %}
 
         </a>
 
@@ -948,6 +943,7 @@
 </main>
 
 
+  <footer class="achetece-footer">{% include '_direitos_reservados.html' %}</footer>
 </body>
 
 </html>

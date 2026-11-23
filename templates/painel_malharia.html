@@ -364,6 +364,7 @@
 
   <!-- ✅ Header padrão (SEMPRE o último do head) -->
   <link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
 </head>
 
 <body class="header-v1 ux2-malharia">
@@ -415,12 +416,7 @@
     <div class="header-left">
       <div class="logo">
         <a href="{{ url_for('index') }}" aria-label="Página inicial">
-          <img
-            src="{{ url_for('static', filename='Logo_Branco_AcheTece_sem_fundo.png') }}"
-            alt="Logo AcheTece"
-            decoding="async"
-            fetchpriority="high"
-          >
+          {% include '_marca_cabecalho.html' %}
         </a>
       </div>
     </div>
@@ -480,7 +476,7 @@
     <div class="menu-head">
       <a href="{{ url_for('index') }}" class="menu-logo" aria-label="Ir para a busca">
         <span class="menu-logoBox">
-          <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AcheTece" decoding="async">
+          {% include '_marca_cabecalho.html' %}
         </span>
       </a>
 
@@ -756,6 +752,7 @@
         </div>
       </div>
     </div>
+    {% include '_direitos_reservados.html' %}
   </footer>
 
   <!-- ===== JS: Medir altura do header para popovers ===== -->

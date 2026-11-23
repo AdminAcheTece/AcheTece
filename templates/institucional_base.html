@@ -7,21 +7,18 @@
   <link rel="icon" href="{{ url_for('static', filename='favicon_final.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='institucional.css') }}">
   {% block head %}{% endblock %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
 </head>
 <body>
   <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
   <header class="site-header">
     <nav aria-label="Navegação principal" class="site-width">
       <a class="brand" href="{{ url_for('index') }}">
-        <img src="{{ url_for('static', filename='Logo_Branco_AcheTece_sem_fundo.png') }}" alt="AcheTece">
+        {% include '_marca_cabecalho.html' %}
       </a>
       <a href="{{ url_for('index') }}">Buscar teares</a>
       <a href="{{ url_for('malharia_info') }}"{% if request.endpoint == 'malharia_info' %} aria-current="page"{% endif %}>Como funciona</a>
-      {% if session.get('empresa_id') %}
-        <a href="{{ url_for('painel_malharia') }}">Meu painel</a>
-      {% elif not (session.get('user_id') or session.get('auth_user_id')) %}
-        <a href="{{ url_for('login') }}">Entrar</a>
-      {% endif %}
+      <a class="malharia-nav" href="{{ url_for('painel_malharia' if session.get('empresa_id') else 'login') }}">Área da Malharia</a>
     </nav>
   </header>
 
@@ -35,6 +32,7 @@
       <a href="{{ url_for('contato') }}">Fale conosco</a>
       <a href="{{ url_for('termos') }}">Termos e políticas</a>
     </nav>
+    {% include '_direitos_reservados.html' %}
   </footer>
 </body>
 </html>

@@ -26,9 +26,10 @@
     .btn:hover{ background:var(--laranja-hover); }
     .back{ display:inline-block; margin-top:10px; color:#5b2fff; text-decoration:none; font-weight:700; text-align:center; width:100%; }
   </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
 </head>
 <body>
-  <header class="navbar"><div class="logo"><img src="/static/logo.jpg" alt="AcheTece"></div></header>
+  <header class="navbar"><div class="logo">{% include '_marca_cabecalho.html' %}</div></header>
 
   <main class="auth-wrap">
     <section class="card">
@@ -74,5 +75,6 @@
       <a class="back" href="/login">Voltar para o login</a>
     </section>
   </main>
+  <footer class="achetece-footer">{% include '_direitos_reservados.html' %}</footer>
 </body>
 </html>
