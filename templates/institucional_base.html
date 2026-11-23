@@ -17,11 +17,7 @@
       </a>
       <a href="{{ url_for('index') }}">Buscar teares</a>
       <a href="{{ url_for('malharia_info') }}"{% if request.endpoint == 'malharia_info' %} aria-current="page"{% endif %}>Como funciona</a>
-      {% if session.get('empresa_id') %}
-        <a href="{{ url_for('painel_malharia') }}">Meu painel</a>
-      {% elif not (session.get('user_id') or session.get('auth_user_id')) %}
-        <a href="{{ url_for('login') }}">Entrar</a>
-      {% endif %}
+      <a class="malharia-nav" href="{{ url_for('painel_malharia' if session.get('empresa_id') else 'login') }}">Área da Malharia</a>
     </nav>
   </header>
 
