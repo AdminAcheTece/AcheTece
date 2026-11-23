@@ -57,8 +57,21 @@
   <h2 id="historico">Histórico de publicação</h2>
   {% if registro %}
   <p>Empresa arquivada em {{ registro.registrado_em.strftime('%d/%m/%Y às %H:%M UTC') }} por {{ registro.administrador }}.</p>
+  <details class="admin-archive">
+    <summary>Desarquivar empresa</summary>
+    <p>A empresa e seus teares voltam aos canais públicos se atenderem às regras de publicação vigentes. Os dados de pagamento são preservados.</p>
+    <form action="{{ url_for('admin_desarquivar_empresa', empresa_id=empresa.id) }}" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="arquivado_em" value="{{ registro.registrado_em.isoformat() }}">
+      <label class="admin-confirm">
+        <input type="checkbox" name="confirmar" value="sim" required>
+        Confirmo o desarquivamento de {{ empresa.apelido or empresa.nome }}
+      </label>
+      <button class="admin-button admin-primary" type="submit">Confirmar desarquivamento</button>
+    </form>
+  </details>
   {% else %}
-  <p>Nenhum arquivamento registrado.</p>
+  {% if not historico %}<p>Nenhum arquivamento registrado.</p>{% endif %}
   <details class="admin-archive">
     <summary>Arquivar empresa</summary>
     <p>O arquivamento retira a empresa e seus teares da pesquisa e da exportação públicas. Os dados cadastrais e o histórico de pagamentos são preservados. A baixa de uma cobrança, recorrência ou assinatura deve ser tratada no fluxo financeiro próprio.</p>
@@ -71,6 +84,16 @@
       <button class="admin-button admin-danger" type="submit">Confirmar arquivamento</button>
     </form>
   </details>
+  {% endif %}
+  {% if historico %}
+  <ul>
+    {% for evento in historico %}
+    <li>
+      Arquivada em {{ evento.arquivada_em.strftime('%d/%m/%Y às %H:%M UTC') }} por {{ evento.arquivada_por }}.
+      Desarquivada em {{ evento.desarquivada_em.strftime('%d/%m/%Y às %H:%M UTC') }} por {{ evento.desarquivada_por }}.
+    </li>
+    {% endfor %}
+  </ul>
   {% endif %}
 </section>
 {% endblock %}
