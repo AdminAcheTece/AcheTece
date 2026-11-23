@@ -4813,7 +4813,7 @@ def static_alias_whatsapp():
 def malharia_info():
     return render_template(
         'malharia_info.html',
-        exibir_precos=(PLAN_MONTHLY, PLAN_YEARLY) == (47.00, 479.40),
+        exibir_precos=(PLAN_MONTHLY, PLAN_YEARLY) == (37.00, 377.40),
     )
 
 # --- Perfil público da empresa ---
