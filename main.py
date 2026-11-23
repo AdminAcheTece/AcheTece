@@ -4890,13 +4890,16 @@ def conciliar_mensal_hml():
               .order_by(BillingIntent.id.desc()).first())
     if intent is None:
         return 'Nenhuma contratação mensal vinculada encontrada. Não pague novamente.', 409
+    etapa_consulta = 'inicializacao_cliente'
     try:
         client = _release_mp_client()
+        etapa_consulta = 'consulta_assinatura'
         subscription = client.get_subscription(intent.provider_resource_id)
         if (str(subscription.get('id') or '') != str(intent.provider_resource_id) or
                 str(subscription.get('external_reference') or '') != intent.external_reference or
                 str(subscription.get('collector_id') or '') != os.environ['MP_COLLECTOR_ID']):
             raise BillingError('Identidade da assinatura divergente')
+        etapa_consulta = 'pesquisa_faturas'
         invoices = client.search_authorized_payments(intent.provider_resource_id)
         candidates = []
         for item in invoices:
@@ -4917,6 +4920,7 @@ def conciliar_mensal_hml():
         for invoice_id, payment_id in sorted(candidates, key=lambda t:int(t[0]), reverse=True):
             # Full authenticated GETs, invoice/reference/amount/currency/collector
             # checks, DB idempotency and entitlement logic are unchanged.
+            etapa_consulta = 'validacao_pagamento'
             result = _processar_pagamento(payment_id, invoice_id=invoice_id)
             if result.get('aplicado') or result.get('duplicado'):
                 return redirect(url_for('painel_malharia'), code=303)
@@ -4925,8 +4929,24 @@ def conciliar_mensal_hml():
         db.session.rollback()
         app.logger.warning('[BILLING] Conciliação mensal HML: cobrança não validada')
         return 'Não foi possível validar a mensalidade. Não pague novamente.', 422
-    except ProviderError:
+    except ProviderError as exc:
         db.session.rollback()
+        # Somente metadados tecnicos normalizados; sem resposta bruta, IDs ou credenciais.
+        http = getattr(exc, 'http_status', None)
+        http = http if type(http) is int and 100 <= http <= 599 else 'indefinido'
+        def codigo_seguro(valor):
+            if type(valor) not in (str, int):
+                return 'indefinido'
+            valor = str(valor)
+            if valor.upper().startswith(('APP_USR', 'TEST-', 'BEARER')):
+                return 'indefinido'
+            return valor if re.fullmatch(r'[A-Za-z0-9_.-]{1,48}', valor) else 'indefinido'
+        app.logger.warning(
+            '[BILLING] Recuperacao mensal HML etapa=%s http=%s provider_code=%s cause_code=%s',
+            etapa_consulta, http,
+            codigo_seguro(getattr(exc, 'provider_code', None)),
+            codigo_seguro(getattr(exc, 'cause_code', None)),
+        )
         return 'Consulta ao Mercado Pago indisponível. Não pague novamente.', 503
     except Exception:
         db.session.rollback()
