@@ -117,6 +117,42 @@ class AdminUX2Tests(unittest.TestCase):
         self.assertIn('Fábrica Especial', lista)
         self.assertNotIn('Empresa 01', lista)
 
+    def test_desarquivamento_mantem_historico_e_rejeita_confirmacao_antiga(self):
+        m = self.app_module
+        ficha = f'/admin/empresas/{self.empresa_id}'
+        rota = f'{ficha}/desarquivar'
+        self.assertEqual(self.client.post(rota).status_code, 302)
+        self.autenticar()
+        self.client.get(ficha)
+        with self.client.session_transaction() as sessao:
+            token = sessao['admin_csrf']
+        dados = {'csrf_token': token, 'confirmar': 'sim'}
+        with m.app.app_context():
+            original = m.db.session.get(m.Empresa, self.empresa_id).data_pagamento
+        for ciclo in (1, 2):
+            self.assertEqual(self.client.post(f'{ficha}/arquivar', data=dados).status_code, 302)
+            with m.app.app_context():
+                ativo = m.db.session.get(m.EmpresaArquivamento, self.empresa_id)
+                data = ativo.registrado_em.isoformat()
+            form = dict(dados, arquivado_em=data)
+            self.assertEqual(self.client.post(rota, data={'confirmar': 'sim'}).status_code, 400)
+            self.assertEqual(self.client.post(rota, data={'csrf_token': token}).status_code, 400)
+            self.assertEqual(self.client.post(rota, data=dict(form, arquivado_em='antigo')).status_code, 409)
+            for _ in range(2):
+                self.assertEqual(self.client.post(rota, data=form).status_code, 302)
+            with m.app.app_context():
+                self.assertIsNone(m.db.session.get(m.EmpresaArquivamento, self.empresa_id))
+                self.assertEqual(m.EmpresaDesarquivamento.query.count(), ciclo)
+                evento = m.EmpresaDesarquivamento.query.order_by(
+                    m.EmpresaDesarquivamento.id.desc()).first()
+                self.assertEqual(evento.arquivada_em.isoformat(), data)
+                self.assertEqual(evento.arquivada_por, m.ADMIN_EMAIL)
+                self.assertEqual(evento.desarquivada_por, m.ADMIN_EMAIL)
+                empresa = m.db.session.get(m.Empresa, self.empresa_id)
+                self.assertEqual((empresa.status_pagamento, empresa.data_pagamento), ('ativo', original))
+                self.assertEqual(len(empresa.teares), 1)
+            self.assertIn('Desarquivada em', self.client.get(ficha).get_data(as_text=True))
+
 
 if __name__ == '__main__':
     unittest.main()
