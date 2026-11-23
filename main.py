@@ -7,6 +7,8 @@ from flask_sqlalchemy import SQLAlchemy
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
+from threading import Lock
+from cachetools import TTLCache
 from datetime import datetime, timedelta
 import mercadopago
 import hmac
@@ -21,7 +23,7 @@ import json
 import requests
 from unicodedata import normalize
 from sqlalchemy import inspect, text, or_, func, create_engine
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import IntegrityError, OperationalError
 from pathlib import Path
 import random
 from jinja2 import TemplateNotFound
@@ -1111,6 +1113,30 @@ class Empresa(db.Model):
         dias = self._dias_por_plano(getattr(self, "plano", "mensal"))
         return self.data_pagamento + timedelta(days=dias)
 
+class EmpresaArquivamento(db.Model):
+    """Registro operacional independente da assinatura e do último pagamento."""
+
+    empresa_id = db.Column(db.Integer, db.ForeignKey('empresa.id', ondelete='CASCADE'), primary_key=True)
+    registrado_em = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    administrador = db.Column(db.String(254), nullable=False)
+    empresa = db.relationship(
+        Empresa, backref=db.backref('arquivamento', uselist=False, cascade='all, delete-orphan'),
+    )
+
+
+def empresa_arquivada():
+    return db.exists().where(EmpresaArquivamento.empresa_id == Empresa.id)
+
+
+def empresa_publicavel():
+    return and_(
+        Empresa.assinatura_ativa,
+        ~empresa_arquivada(),
+        ~func.coalesce(Empresa.apelido, "").ilike("%[DEMO]%"),
+        ~Empresa.email.ilike("%@achetece.demo"),
+    )
+
+
 class Tear(db.Model):
     # __tablename__ = 'tear'  # opcional (SQLAlchemy infere 'tear')
     id = db.Column(db.Integer, primary_key=True)
@@ -1707,20 +1733,6 @@ def _get_notificacoes(empresa_id):
     return len(items), items
 
 # --------------------------------------------------------------------
-# INDEX
-# --------------------------------------------------------------------
-def _num_key(x):
-    try:
-        return float(str(x).replace(",", "."))
-    except Exception:
-        return 0.0
-
-def _to_int(s):
-    try:
-        return int(float(str(s).replace(",", ".")))
-    except Exception:
-        return None
-
 @app.post("/api/track")
 def api_track():
     data = request.get_json(silent=True) or {}
@@ -1755,150 +1767,116 @@ def api_track():
 
 # ================================================================
 
+_FILTROS_NUMERICOS = {
+    "diametro": Tear.diametro,
+    "galga": Tear.finura,
+    "alimentadores": Tear.alimentadores,
+    "pistas_cilindro": Tear.pistas_cilindro,
+    "pistas_disco": Tear.pistas_disco,
+}
+_FILTROS_TEXTO = {
+    "tipo": Tear.tipo,
+    "estado": Empresa.estado,
+    "cidade": Empresa.cidade,
+    "elastano": Tear.elastano,
+}
+# Limite por endereço observado pelo servidor, sem confiar em cabeçalhos do cliente.
+_limites_publicos = TTLCache(maxsize=4096, ttl=60)
+_limites_publicos_lock = Lock()
+
+
+def _limitar_consulta_publica(limite):
+    chave = (request.endpoint, request.remote_addr)
+    with _limites_publicos_lock:
+        pedidos = _limites_publicos.get(chave, 0)
+        if pedidos >= limite:
+            resposta = make_response("Muitas consultas. Tente novamente em um minuto.", 429)
+            resposta.headers["Retry-After"] = "60"
+            abort(resposta)
+        _limites_publicos[chave] = pedidos + 1
+
+
+def _filtros_teares():
+    filtros = {
+        campo: request.args.get(campo, "").strip()[:100]
+        for campo in (*_FILTROS_TEXTO, *_FILTROS_NUMERICOS)
+    }
+    filtros["diametro"] = filtros["diametro"] or request.args.get("diâmetro", "").strip()[:100]
+    filtros["estado"] = filtros["estado"].upper()
+    if not filtros["estado"]:
+        filtros["cidade"] = ""
+    return filtros
+
+
+def _teares_publicados():
+    return Tear.query.join(Empresa).filter(empresa_publicavel())
+
+
+def _aplicar_filtros_teares(query, filtros):
+    for campo, coluna in _FILTROS_TEXTO.items():
+        if filtros[campo]:
+            query = query.filter(func.lower(coluna) == filtros[campo].lower())
+    for campo, coluna in _FILTROS_NUMERICOS.items():
+        valor = filtros[campo]
+        if valor:
+            if not re.fullmatch(r"[0-9]{1,9}", valor):
+                return query.filter(db.false())
+            query = query.filter(coluna == int(valor))
+    return query
+
+
+def _numero_comercial(empresa):
+    numero = re.sub(r"[^0-9]", "", empresa.telefone or "")
+    if len(numero) in (10, 11):
+        return "55" + numero
+    if len(numero) in (12, 13) and numero.startswith("55"):
+        return numero
+    return None
+
+
 @app.route("/", methods=["GET"])
 def index():
-    # Se o DB estiver indisponível (marcado no before_request), serve a página offline
-    if not getattr(g, "db_up", True):
-        return _render_offline()
-
+    _limitar_consulta_publica(90)
+    filtros = _filtros_teares()
+    pesquisou = request.args.get("buscar") == "1" or any(filtros.values())
     try:
-        v = request.args
-        filtros = {
-            "tipo":     (v.get("tipo") or "").strip(),
-            "diâmetro": (v.get("diâmetro") or v.get("diametro") or "").strip(),
-            "galga":    (v.get("galga") or "").strip(),
-            "estado":   (v.get("estado") or "").strip(),
-            "cidade":   (v.get("cidade") or "").strip(),
-        }
-
-        q_base = Tear.query.join(Empresa, Tear.empresa_id == Empresa.id)
-        # Se a coluna 'ativo' não existir, ignora silenciosamente
-        try:
-            q_base = q_base.filter(Tear.ativo.is_(True))
-        except Exception:
-            pass
-
-        # ED01: filtro OBRIGATÓRIO, sem fallback permissivo.
-        # Em caso de falha de DB/SQL, o tratamento da rota não publica resultados.
-        q_base = q_base.filter(Empresa.assinatura_ativa)
-
-        opcoes = {"tipo": [], "diâmetro": [], "galga": [], "estado": [], "cidade": []}
-        from collections import defaultdict
-        cidades_por_uf = defaultdict(set)
-        tipos_set, diam_set, galga_set, estados_set = set(), set(), set(), set()
-
-        for t_tipo, t_diam, t_fin, e_uf, e_cid in q_base.with_entities(
-            Tear.tipo, Tear.diametro, Tear.finura, Empresa.estado, Empresa.cidade
-        ).all():
-            if t_tipo:
-                tipos_set.add(t_tipo)
-            if t_diam is not None:
-                diam_set.add(str(t_diam))
-            if t_fin is not None:
-                galga_set.add(str(t_fin))
-            if e_uf:
-                estados_set.add(e_uf)
-                if e_cid:
-                    cidades_por_uf[e_uf].add(e_cid)
-
-        opcoes["tipo"] = sorted(tipos_set)
-        opcoes["diâmetro"] = sorted(diam_set, key=_num_key)
-        opcoes["galga"] = sorted(galga_set, key=_num_key)
-        opcoes["estado"] = sorted(estados_set)
-        opcoes["cidade"] = sorted(cidades_por_uf.get(filtros["estado"], set())) if filtros["estado"] else []
-
-        q = q_base
-        if filtros["tipo"]:
-            q = q.filter(db.func.lower(Tear.tipo) == filtros["tipo"].lower())
-        di = _to_int(filtros["diâmetro"])
-        if di is not None:
-            q = q.filter(Tear.diametro == di)
-        ga = _to_int(filtros["galga"])
-        if ga is not None:
-            q = q.filter(Tear.finura == ga)
-        if filtros["estado"]:
-            q = q.filter(db.func.lower(Empresa.estado) == filtros["estado"].lower())
-        if filtros["cidade"]:
-            q = q.filter(db.func.lower(Empresa.cidade) == filtros["cidade"].lower())
-
-        pagina = max(1, int(request.args.get("pagina", 1) or 1))
-        por_pagina = int(request.args.get("pp", 20) or 20)
-        por_pagina = max(1, min(100, por_pagina))
-
-        total = q.count()
-        q = q.order_by(Tear.id.desc())
-        teares_page = q.offset((pagina - 1) * por_pagina).limit(por_pagina).all()
-        total_paginas = max(1, (total + por_pagina - 1) // por_pagina)
-
-        resultados = []
-        for tear in teares_page:
-            emp = getattr(tear, "empresa", None)
-            apelido = (
-                (emp.apelido if emp else None)
-                or (getattr(emp, "nome_fantasia", None) if emp else None)
-                or (getattr(emp, "nome", None) if emp else None)
-                or ((emp.email.split("@")[0]) if emp and getattr(emp, "email", None) else None)
-                or "—"
-            )
-            numero = re.sub(r"\D", "", (emp.telefone or "")) if emp else ""
-            contato_link = f"https://wa.me/{'55' + numero if numero and not numero.startswith('55') else numero}" if numero else None
-
-            # pega o valor como estiver no banco; se houver legado em 'kit_elastano', usa como fallback
-            raw_elastano = getattr(tear, "elastano", None)
-            if raw_elastano is None:
-                raw_elastano = getattr(tear, "kit_elastano", None)
-
-            item = {
-                "empresa_id": (getattr(emp, "id", None) if emp else None),  # 👈 ID da malharia
-                "empresa": apelido,
-                "tipo": tear.tipo or "—",
-                "galga": tear.finura if tear.finura is not None else "—",
-                "diametro": tear.diametro if tear.diametro is not None else "—",
-                "alimentadores": getattr(tear, "alimentadores", None) if getattr(tear, "alimentadores", None) is not None else "—",
-                "elastano": raw_elastano,          # 👈 agora vai para o template
-                "kit_elastano": raw_elastano,      # 👈 alias para compatibilidade
-                "uf": (emp.estado if emp and getattr(emp, "estado", None) else "—"),
-                "cidade": (emp.cidade if emp and getattr(emp, "cidade", None) else "—"),
-                "contato": contato_link,
-
-                # Aliases para CSV antigo (opcional manter)
-                "Empresa": apelido,
-                "Tipo": tear.tipo or "—",
-                "Galga": tear.finura if tear.finura is not None else "—",
-                "Diâmetro": tear.diametro if tear.diametro is not None else "—",
-                "Alimentadores": getattr(tear, "alimentadores", None) if getattr(tear, "alimentadores", None) is not None else "—",
-                "Elastano": raw_elastano,          # 👈 alias CSV
-                "UF": (emp.estado if emp and getattr(emp, "estado", None) else "—"),
-                "Cidade": (emp.cidade if emp and getattr(emp, "cidade", None) else "—"),
-                "Contato": contato_link,
-            }
-            resultados.append(item)
-
-        app.logger.info({
-            "rota": "index",
-            "total_encontrado": total,
-            "pagina": pagina,
-            "pp": por_pagina,
-            "filtros": filtros
-        })
-
-        return render_template(
-            "index.html",
-            opcoes=opcoes,
-            filtros=filtros,
-            resultados=resultados,
-            teares=teares_page,
-            total=total,
-            pagina=pagina,
-            por_pagina=por_pagina,
-            total_paginas=total_paginas,
-            estados=opcoes["estado"],
+        base = _teares_publicados()
+        cidades = {}
+        localidades = (
+            base.with_entities(Empresa.estado, Empresa.cidade)
+            .filter(Empresa.estado.isnot(None), Empresa.cidade.isnot(None))
+            .distinct().order_by(Empresa.estado, Empresa.cidade).all()
         )
+        for uf, cidade in localidades:
+            if uf and cidade:
+                cidades.setdefault(uf.upper(), []).append(cidade)
+        tipos = [
+            tipo for tipo, in base.with_entities(Tear.tipo).distinct().order_by(Tear.tipo)
+            if tipo
+        ]
+        resultados = []
+        pp = min(100, max(1, request.args.get("pp", 20, type=int)))
+        pagina = 1
+        paginas = 1
+        total = None
+        if pesquisou:
+            consulta = _aplicar_filtros_teares(base, filtros)
+            total = consulta.count()
+            paginas = max(1, (total + pp - 1) // pp)
+            pagina = min(paginas, max(1, request.args.get("pagina", 1, type=int)))
+            resultados = (
+                consulta.options(db.joinedload(Tear.empresa)).order_by(Tear.id.desc())
+                .offset((pagina - 1) * pp).limit(pp).all()
+            )
+        return render_template(
+            "index.html", titulo_pagina="Buscar teares", filtros=filtros, tipos=tipos,
+            cidades=cidades, resultados=resultados, total=total, pagina=pagina, paginas=paginas,
+            por_pagina=pp, tem_whatsapp=_numero_comercial,
+        )
+    except Exception:
+        app.logger.exception("[INDEX] falha ao consultar teares")
+        return _render_offline(503)
 
-    except Exception as e:
-        # Qualquer falha (inclui OperationalError do Postgres) cai na página offline
-        app.logger.exception("[INDEX] falha ao consultar DB: %s", e)
-        return _render_offline()
 
 # --- OTP / E-mail helpers (força HTML) --------------------------------------
 import random
@@ -2406,6 +2384,7 @@ def criar_conta_cliente():
 def logout():
     session.pop("cliente_user_id", None)
     session.pop("cliente_csrf", None)
+    session.pop("tear_csrf", None)
     session.pop("empresa_id", None)
     session.pop("empresa_apelido", None)
     return redirect(url_for('login'))  # <- agora vai para a tela de login
@@ -2414,24 +2393,9 @@ def logout():
 # Onboarding helpers + Painel
 # --------------------------------------------------------------------
 def _empresa_basica_completa(emp: Empresa) -> bool:
-    ok_resp = bool((emp.responsavel_nome or "").strip())
-    ok_local = bool((emp.cidade or "").strip()) and bool((emp.estado or "").strip())
-    ok_tel   = bool((emp.telefone or "").strip())
-    return ok_resp, ok_local, ok_tel
-
-def _conta_teares(emp_id: int) -> int:
-    try:
-        return Tear.query.filter_by(empresa_id=emp_id).count()
-    except Exception:
-        return 0
-
-def _proximo_step(emp: Empresa) -> str:
-    ok_resp, ok_local, ok_tel = _empresa_basica_completa(emp)
-    if not (ok_resp and ok_local and ok_tel):
-        return "perfil"
-    if _conta_teares(emp.id) == 0:
-        return "teares"
-    return "resumo"
+    return all((valor or "").strip() for valor in (
+        emp.responsavel_nome, emp.cidade, emp.estado, emp.telefone,
+    ))
 
 from flask import make_response
 
@@ -2536,7 +2500,40 @@ def minhas_oportunidades():
         total_recusadas=total_recusadas,
     )
 
-# --- Rota do Painel (vencimento por plano + ajuste p/ próximo dia útil BR) ---
+ROTULOS_ASSINATURA = {
+    "ativa": "Ativa",
+    "vencida": "Vencida",
+    "processamento": "Em processamento",
+    "cancelada": "Cancelada",
+    "bloqueada": "Bloqueada",
+    "pendente": "Pendente",
+    "sem_assinatura": "Sem assinatura",
+    "nao_confirmada": "Vigência não confirmada",
+}
+_SITUACOES_ASSINATURA = {
+    **dict.fromkeys(("vencida", "vencido", "expired"), "vencida"),
+    **dict.fromkeys(("processing", "inprocess", "in_process", "em_processamento", "processamento"), "processamento"),
+    **dict.fromkeys(("cancelada", "cancelado", "cancelled", "canceled"), "cancelada"),
+    **dict.fromkeys(("bloqueado", "bloqueada", "blocked"), "bloqueada"),
+    **dict.fromkeys(("pendente", "pending"), "pendente"),
+    "sem_assinatura": "sem_assinatura",
+}
+
+
+def _situacao_assinatura(empresa):
+    """Interpreta somente o que o cadastro informa sobre a assinatura."""
+    status = (empresa.status_pagamento or "").strip().lower()
+    if empresa.assinatura_ativa:
+        situacao = "ativa"
+    elif status == "ativo" and empresa.data_pagamento:
+        situacao = "vencida"
+    elif not status and not empresa.data_pagamento:
+        situacao = "sem_assinatura"
+    else:
+        situacao = _SITUACOES_ASSINATURA.get(status, "nao_confirmada")
+    return situacao, ROTULOS_ASSINATURA[situacao]
+
+
 @app.route('/painel_malharia', endpoint="painel_malharia")
 def painel_malharia():
     emp, u = _get_empresa_usuario_da_sessao()
@@ -2558,74 +2555,49 @@ def painel_malharia():
     except Exception:
         pass
 
-    step = request.args.get("step") or _proximo_step(emp)
-
-    # Reconsulta FRESCA os teares e ordena (mais recente primeiro)
-    teares = (
-        Tear.query
-            .filter_by(empresa_id=emp.id)
-            .order_by(Tear.id.desc())
-            .all()
+    teares = Tear.query.filter_by(empresa_id=emp.id).order_by(Tear.id.desc()).all()
+    arquivada = db.session.get(EmpresaArquivamento, emp.id) is not None
+    publicados = {
+        tear_id for tear_id, in
+        db.session.query(Tear.id).join(Empresa).filter(
+            Tear.empresa_id == emp.id, empresa_publicavel(),
+        )
+    }
+    dados_incompletos = {
+        tear.id for tear in teares
+        if not all((valor or "").strip() for valor in (
+            tear.marca, tear.modelo, tear.tipo, tear.elastano,
+        )) or not all(valor and valor > 0 for valor in (
+            tear.finura, tear.diametro, tear.alimentadores,
+        ))
+    }
+    situacao, rotulo = _situacao_assinatura(emp)
+    fim_vigencia = emp.assinatura_expira_em if situacao in {"ativa", "vencida"} else None
+    renovar = bool(situacao == "ativa" and fim_vigencia <= datetime.utcnow() + timedelta(days=7))
+    mostrar_pagamento = not arquivada and (
+        renovar or situacao in {"pendente", "vencida", "sem_assinatura", "cancelada"}
     )
 
-    # ED01: painel e resultados públicos usam o mesmo status/validade.
-    # Exibir o painel jamais altera status ou data de pagamento no banco.
-    is_ativa = bool(emp.assinatura_ativa)
-    vencimento_proximo = emp.assinatura_expira_em.date() if emp.assinatura_expira_em else None
-    hoje = datetime.utcnow().date()
-    dias_restantes = ((vencimento_proximo - hoje).days
-                      if vencimento_proximo is not None else None)
-
-    # ✅ CTA de pagamento no painel (pendente/vencida ou vencendo em breve)
-    # Você pode usar isso no template para mostrar o banner/botões.
-    mostrar_pagamento = (not is_ativa)
-    if (is_ativa is True) and (dias_restantes is not None) and (dias_restantes <= 7):
-        mostrar_pagamento = True
-
-    checklist = {
-        "perfil_ok": all(_empresa_basica_completa(emp)),
-        "teares_ok": _conta_teares(emp.id) > 0,
-        "plano_ok": is_ativa or DEMO_MODE,  # <--- aqui é "or"
-        "step": step,
-    }
-
-    # Notificações / chat (mantidos)
+    if "tear_csrf" not in session:
+        session["tear_csrf"] = secrets.token_urlsafe(32)
     notif_count, notif_lista = _get_notificacoes(emp.id)
-    chat_nao_lidos = 0  # ajuste aqui se tiver chat real
-
-    # Foto: resolve sempre via helper (banco + arquivos)
-    foto_url = _empresa_avatar_url(emp)
-
-    app.logger.info({
-        "rota": "painel_malharia",
-        "empresa_id": emp.id,
-        "status_pagamento": getattr(emp, "status_pagamento", None),
-        "plano": getattr(emp, "plano", None),
-        "vencimento_proximo": str(vencimento_proximo) if vencimento_proximo else None,
-        "dias_restantes": dias_restantes,
-        "assinatura_ativa": is_ativa,
-        "foto_url_resolvida": foto_url,
-    })
-
-    # Render + evita cache para ver dados sempre atualizados
     resp = make_response(render_template(
         "painel_malharia.html",
         empresa=emp,
         teares=teares,
-        assinatura_ativa=is_ativa,
-        checklist=checklist,
-        step=step,
+        publicados=publicados,
+        tear_csrf=session["tear_csrf"],
+        dados_incompletos=dados_incompletos,
+        perfil_ok=_empresa_basica_completa(emp),
+        arquivada=arquivada,
+        situacao_assinatura=situacao,
+        rotulo_assinatura=rotulo,
+        plano=Empresa._plano_norm(emp.plano),
+        fim_vigencia=fim_vigencia,
+        mostrar_pagamento=mostrar_pagamento,
         notificacoes=notif_count,
         notificacoes_lista=notif_lista,
-        chat_nao_lidos=chat_nao_lidos,
-        foto_url=foto_url,
-
-        # ✅ dados de vencimento (para chip)
-        vencimento_proximo=vencimento_proximo,
-        dias_restantes=dias_restantes,
-
-        # ✅ opcional (para banner/botões de pagar/renovar)
-        mostrar_pagamento=mostrar_pagamento,
+        foto_url=_empresa_avatar_url(emp),
     ))
     resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     resp.headers["Pragma"] = "no-cache"
@@ -3443,6 +3415,11 @@ def excluir_tear(id):
     if tear.empresa_id != empresa.id:
         abort(403)
 
+    token = session.get("tear_csrf")
+    enviado = request.form.get("csrf_token", "")
+    if not token or not secrets.compare_digest(enviado.encode(), token.encode()):
+        abort(400, "Abra novamente o painel para excluir o tear.")
+
     db.session.delete(tear)
     db.session.commit()
     flash("Tear excluído com sucesso!", "success")
@@ -3462,47 +3439,21 @@ def excluir_tear(id):
 # --------------------------------------------------------------------
 @app.route('/exportar')
 def exportar():
-    filtros_raw = {
-        'tipo'    : (request.args.get('tipo', '') or '').strip(),
-        'diâmetro': (request.args.get('diâmetro', '') or request.args.get('diametro', '') or '').strip(),
-        'galga'   : (request.args.get('galga', '') or '').strip(),
-        'estado'  : (request.args.get('estado', '') or '').strip(),
-        'cidade'  : (request.args.get('cidade', '') or '').strip(),
-    }
-    def to_int(s):
-        s = re.sub(r'\D', '', (s or ''))
-        return int(s) if s else None
-    def to_float(s):
-        s = (s or '').strip().replace(',', '.')
-        s = re.sub(r'[^0-9\.]', '', s)
-        return float(s) if s else None
-
-    galga    = to_int(filtros_raw['galga'])
-    diametro = to_float(filtros_raw['diâmetro'])
-    # ED01: a exportação pública deve seguir a mesma regra da Home.
-    query = Tear.query.join(Empresa).filter(Empresa.assinatura_ativa)
-    if filtros_raw['tipo']:
-        query = query.filter(Tear.tipo == filtros_raw['tipo'])
-    if diametro is not None:
-        query = query.filter(Tear.diametro == diametro)
-    if galga is not None:
-        query = query.filter(Tear.finura == galga)
-    if filtros_raw['estado']:
-        query = query.filter(Empresa.estado == filtros_raw['estado'])
-    if filtros_raw['cidade']:
-        query = query.filter(Empresa.cidade == filtros_raw['cidade'])
-    teares = query.all()
+    _limitar_consulta_publica(10)
+    teares = (
+        _aplicar_filtros_teares(_teares_publicados(), _filtros_teares())
+        .options(db.joinedload(Tear.empresa)).order_by(Tear.id.desc()).all()
+    )
 
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(['Empresa', 'Marca', 'Modelo', 'Tipo', 'Diâmetro', 'Galga', 'Alimentadores', 'Elastano', 'Estado', 'Cidade'])
     for tear in teares:
-        writer.writerow([
-            tear.empresa.apelido or tear.empresa.nome or tear.empresa.email.split('@')[0],
+        writer.writerow([_csv_safe_cell(valor) for valor in (
+            tear.empresa.apelido or tear.empresa.nome,
             tear.marca, tear.modelo, tear.tipo, tear.diametro, tear.finura,
-            tear.alimentadores, tear.elastano,
-            tear.empresa.estado, tear.empresa.cidade
-        ])
+            tear.alimentadores, tear.elastano, tear.empresa.estado, tear.empresa.cidade,
+        )])
     output.seek(0)
     return send_file(
         io.BytesIO(output.read().encode('utf-8')),
@@ -3778,108 +3729,227 @@ def admin_login_compat():
     return redirect(url_for('admin_login'), code=302)
 
 @app.route('/admin/logout', methods=['POST'])
+@login_admin_requerido
 def admin_logout():
+    _validar_csrf_admin()
     session.pop('admin_email', None)
+    session.pop('admin_auth_version', None)
+    session.pop('admin_csrf', None)
     flash('Você saiu do painel administrativo.')
     return redirect(url_for('index'))
 
-from datetime import datetime, timedelta
 
-from datetime import datetime, timedelta
-from sqlalchemy import func  # <- garante o import
+def _csrf_admin():
+    if 'admin_csrf' not in session:
+        session['admin_csrf'] = secrets.token_urlsafe(32)
+    return session['admin_csrf']
+
+
+def _validar_csrf_admin():
+    token = session.get('admin_csrf')
+    enviado = request.form.get('csrf_token', '')
+    if not token or not secrets.compare_digest(enviado.encode(), token.encode()):
+        abort(400, 'Sessão expirada. Abra novamente a ficha da empresa.')
+
+
+def _csv_safe_cell(valor):
+    """Protege os campos textuais interpretados por planilhas como fórmulas."""
+    if isinstance(valor, str) and (
+        valor.startswith(('\t', '\r', '\n'))
+        or valor.lstrip().startswith(('=', '+', '-', '@', '＝', '＋', '－', '＠'))
+    ):
+        return "'" + valor
+    return valor
+
+
+def _situacao_assinatura_admin_sql():
+    situacao = func.lower(func.trim(func.coalesce(Empresa.status_pagamento, '')))
+    return db.case(
+        (Empresa.assinatura_ativa, 'ativa'),
+        (db.and_(situacao == 'ativo', Empresa.data_pagamento.isnot(None)), 'vencida'),
+        *[(situacao == origem, destino)
+          for origem, destino in _SITUACOES_ASSINATURA.items() if origem],
+        (db.and_(situacao == '', Empresa.data_pagamento.is_(None)), 'sem_assinatura'),
+        else_='nao_confirmada',
+    )
+
+
+def _consulta_admin_empresas(argumentos):
+    filtros = {
+        chave: argumentos.get(chave, '').strip()[:120]
+        for chave in ('q', 'plano', 'status', 'visibilidade', 'estado', 'cidade', 'data_inicio', 'data_fim')
+    }
+    filtros['estado'] = filtros['estado'].upper()
+    filtros['status'] = {'ativo': 'ativa'}.get(filtros['status'], filtros['status'])
+    assinatura = _situacao_assinatura_admin_sql()
+    arquivada = empresa_arquivada()
+    publicavel = empresa_publicavel()
+    total_teares = (
+        db.select(func.count(Tear.id))
+        .where(Tear.empresa_id == Empresa.id)
+        .correlate(Empresa)
+        .scalar_subquery()
+    )
+    publicados = db.case((publicavel, total_teares), else_=0)
+    query = db.session.query(Empresa, arquivada, total_teares, publicados)
+    if filtros['q']:
+        query = query.filter(or_(
+            Empresa.nome.icontains(filtros['q'], autoescape=True),
+            Empresa.apelido.icontains(filtros['q'], autoescape=True),
+            Empresa.email.icontains(filtros['q'], autoescape=True),
+        ))
+    if filtros['plano'] in {'mensal', 'anual'}:
+        plano = func.lower(func.trim(func.coalesce(Empresa.plano, 'mensal')))
+        anual = plano.in_(('anual', 'annual', 'yearly', '12m', 'ano'))
+        query = query.filter(anual if filtros['plano'] == 'anual' else ~anual)
+    if filtros['status'] in ROTULOS_ASSINATURA:
+        query = query.filter(assinatura == filtros['status'])
+
+    visibilidades = {
+        'publicada': publicados > 0,
+        'nao_publicada': db.and_(~arquivada, publicados == 0),
+        'arquivada': arquivada,
+    }
+    if filtros['visibilidade'] in visibilidades:
+        query = query.filter(visibilidades[filtros['visibilidade']])
+    if filtros['estado']:
+        query = query.filter(func.upper(Empresa.estado) == filtros['estado'])
+    if filtros['cidade']:
+        query = query.filter(func.lower(Empresa.cidade) == filtros['cidade'].lower())
+
+    erros = []
+    datas = {}
+    for chave in ('data_inicio', 'data_fim'):
+        if filtros[chave]:
+            try:
+                datas[chave] = datetime.strptime(filtros[chave], '%Y-%m-%d').date()
+            except ValueError:
+                erros.append('Informe as datas no formato válido.')
+                break
+    inicio = datas.get('data_inicio')
+    fim = datas.get('data_fim')
+    if inicio and fim and inicio > fim:
+        erros.append('A data inicial deve ser anterior ou igual à final.')
+    if inicio:
+        query = query.filter(Empresa.data_pagamento >= datetime.combine(inicio, datetime.min.time()))
+    if fim and fim != date.max:
+        query = query.filter(Empresa.data_pagamento < datetime.combine(fim + timedelta(days=1), datetime.min.time()))
+    return query, filtros, erros
+
 
 @app.route('/admin/empresas', methods=['GET', 'POST'])
 @login_admin_requerido
 def admin_empresas():
-    pagina = int(request.args.get('pagina', 1))
-    por_pagina = 10
-
-    STATUS_VALIDOS = {"ativo", "pendente"}
-
-    # valores padrão
-    status = ''
-    data_inicio = ''
-    data_fim = ''
-    f_plano = 'todos'  # <- NOVO: filtro de plano (mensal|anual|todos)
-
-    query = Empresa.query
-
-    # ----- POST: lê filtros do formulário e redireciona para GET com querystring
+    valores = request.form if request.method == 'POST' else request.args
+    query, filtros, erros = _consulta_admin_empresas(valores)
     if request.method == 'POST':
-        status      = (request.form.get('status', '') or '').strip().lower()
-        data_inicio = (request.form.get('data_inicio', '') or '').strip()
-        data_fim    = (request.form.get('data_fim', '') or '').strip()
-        f_plano     = (request.form.get('plano', 'todos') or 'todos').strip().lower()  # <- NOVO
+        return redirect(url_for('admin_empresas', **filtros))
 
-        return redirect(url_for(
-            'admin_empresas',
-            pagina=1,
-            status=status,
-            data_inicio=data_inicio,
-            data_fim=data_fim,
-            plano=f_plano,               # <- NOVO
-        ))
+    total = query.count() if not erros else 0
+    por_pagina = 10
+    total_paginas = max(1, (total + por_pagina - 1) // por_pagina)
+    pagina = min(total_paginas, max(1, request.args.get('pagina', 1, type=int)))
+    empresas = (
+        query.order_by(Empresa.nome, Empresa.id)
+        .offset((pagina - 1) * por_pagina).limit(por_pagina).all()
+    ) if total else []
 
-    # ----- GET: aplica filtros
-    status      = (request.args.get('status', '') or '').strip().lower()
-    data_inicio = (request.args.get('data_inicio', '') or '').strip()
-    data_fim    = (request.args.get('data_fim', '') or '').strip()
-    f_plano     = (request.args.get('plano', 'todos') or 'todos').strip().lower()  # <- NOVO
-
-    # status
-    if status in STATUS_VALIDOS:
-        query = query.filter(Empresa.status_pagamento == status)
-
-    # datas (inclusive no fim do dia)
-    if data_inicio:
-        try:
-            dt_ini = datetime.strptime(data_inicio, "%Y-%m-%d")
-            query = query.filter(Empresa.data_pagamento >= dt_ini)
-        except ValueError:
-            pass
-
-    if data_fim:
-        try:
-            dt_fim = datetime.strptime(data_fim, "%Y-%m-%d") + timedelta(days=1)
-            query = query.filter(Empresa.data_pagamento < dt_fim)
-        except ValueError:
-            pass
-
-    # ----- NOVO: filtro por PLANO (Mensal/Anual)
-    # normaliza possíveis valores já gravados
-    if f_plano == 'mensal':
-        query = query.filter(
-            func.lower(func.coalesce(Empresa.plano, 'mensal')).in_(
-                ['mensal', 'monthly', '1m', '']
-            )
-        )
-    elif f_plano == 'anual':
-        query = query.filter(
-            func.lower(func.coalesce(Empresa.plano, 'mensal')).in_(
-                ['anual', 'annual', 'yearly', '12m', 'ano']
-            )
-        )
-    # 'todos' não filtra
-
-    total = query.count()
-    empresas = (query
-               .order_by(Empresa.nome)
-               .offset((pagina - 1) * por_pagina)
-               .limit(por_pagina)
-               .all())
-
-    total_paginas = (total + por_pagina - 1) // por_pagina
-
+    indicadores = {
+        'empresas': Empresa.query.count(),
+        'publicados': Tear.query.join(Empresa).filter(empresa_publicavel()).count(),
+        'pendencias': Empresa.query.filter(
+            ~empresa_arquivada(),
+            _situacao_assinatura_admin_sql().in_(('pendente', 'processamento')),
+        ).count(),
+    }
     return render_template(
-        'admin_empresas.html',
-        empresas=empresas,
-        pagina=pagina,
-        total_paginas=total_paginas,
-        status=status,
-        data_inicio=data_inicio,
-        data_fim=data_fim,
-        plano=f_plano,                 # <- NOVO: devolve pro template manter seleção
+        'admin_empresas.html', empresas=empresas, indicadores=indicadores,
+        pagina=pagina, total_paginas=total_paginas, total=total, filtros=filtros,
+        erros=erros, rotulos_assinatura=ROTULOS_ASSINATURA,
+        situacao_assinatura=_situacao_assinatura, csrf_token=_csrf_admin(),
     )
+
+
+@app.get('/admin/empresas/exportar')
+@login_admin_requerido
+def admin_exportar_empresas():
+    query, _, erros = _consulta_admin_empresas(request.args)
+    if erros:
+        abort(400, ' '.join(erros))
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        'Empresa', 'Apelido', 'Cidade', 'UF', 'Teares cadastrados',
+        'Teares publicados', 'Plano', 'Assinatura', 'Visibilidade', 'Vigência até (UTC)',
+    ])
+    for emp, arquivada, cadastrados, publicados in query.order_by(Empresa.nome, Empresa.id).yield_per(200):
+        expiracao = emp.assinatura_expira_em
+        writer.writerow([_csv_safe_cell(valor) for valor in (
+            emp.nome, emp.apelido, emp.cidade, emp.estado, cadastrados, publicados,
+            _plano_label(emp.plano), _situacao_assinatura(emp)[1],
+            _visibilidade_admin(arquivada, publicados),
+            expiracao.date().isoformat() if expiracao else '',
+        )])
+    return send_file(
+        io.BytesIO(output.getvalue().encode('utf-8-sig')), mimetype='text/csv',
+        as_attachment=True, download_name='empresas-filtradas.csv',
+    )
+
+
+def _visibilidade_admin(arquivada, publicados):
+    if arquivada:
+        return 'Arquivada'
+    return 'Publicada' if publicados else 'Sem teares publicados'
+
+
+@app.get('/admin/empresas/<int:empresa_id>')
+@login_admin_requerido
+def admin_empresa_ficha(empresa_id):
+    empresa = db.get_or_404(Empresa, empresa_id)
+    teares = Tear.query.filter_by(empresa_id=empresa_id).order_by(Tear.id).all()
+    registro = db.session.get(EmpresaArquivamento, empresa_id)
+    publicavel = Empresa.query.filter(Empresa.id == empresa_id, empresa_publicavel()).count() > 0
+    return render_template(
+        'admin_empresa_ficha.html', empresa=empresa, teares=teares, registro=registro,
+        visibilidade=_visibilidade_admin(registro is not None, publicavel and bool(teares)),
+        situacao_assinatura=_situacao_assinatura(empresa)[1], csrf_token=_csrf_admin(),
+    )
+
+
+@app.post('/admin/empresas/<int:empresa_id>/arquivar')
+@login_admin_requerido
+def admin_arquivar_empresa(empresa_id):
+    _validar_csrf_admin()
+    if request.form.get('confirmar') != 'sim':
+        abort(400, 'Confirme o arquivamento na ficha da empresa.')
+    empresa = Empresa.query.filter_by(id=empresa_id).with_for_update().first_or_404()
+    if db.session.get(EmpresaArquivamento, empresa.id) is None:
+        db.session.add(EmpresaArquivamento(empresa_id=empresa.id, administrador=session['admin_email']))
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            if db.session.get(EmpresaArquivamento, empresa_id) is None:
+                raise
+        else:
+            flash(f'{empresa.nome} foi arquivada.', 'success')
+    return redirect(url_for('admin_empresa_ficha', empresa_id=empresa_id))
+
+
+@app.before_request
+def _desativar_acoes_admin_legadas():
+    if request.endpoint in {'admin_editar_status', 'empresa_excluir'}:
+        if not _admin_autenticado():
+            return redirect(url_for('admin_login'))
+        abort(410, 'Ação descontinuada. Consulte a ficha da empresa no painel.')
+
+
+@app.after_request
+def _admin_respostas_privadas(resposta):
+    if request.path == '/admin' or request.path.startswith('/admin/'):
+        resposta.headers['Cache-Control'] = 'no-store'
+    return resposta
+
 
 @app.route('/admin/editar_status/<int:empresa_id>', methods=['GET', 'POST'])
 @login_admin_requerido
@@ -4040,14 +4110,12 @@ def admin_seed_teares_all():
 
 @app.route("/utils/empresas_json")
 def utils_empresas_json():
+    _limitar_consulta_publica(20)
     escopo = (request.args.get("escopo") or "demo").lower()
     uf = request.args.get("uf")
-    # ED01: rota sem autenticação também não pode divulgar empresas vencidas.
-    q = Empresa.query.filter(Empresa.assinatura_ativa)
-    if escopo == "demo":
-        q = q.filter(DEMO_FILTER)
-    elif escopo == "pagantes":
-        pass  # a condição de pagamento válido já foi aplicada obrigatoriamente
+    if escopo != "pagantes":
+        return jsonify([])
+    q = Empresa.query.filter(empresa_publicavel())
     if uf:
         q = q.filter(func.upper(Empresa.estado) == uf.upper())
     empresas = q.order_by(Empresa.id.desc()).all()
@@ -4704,7 +4772,10 @@ def static_alias_whatsapp():
 
 @app.route('/malharia_info')
 def malharia_info():
-    return render_template('malharia_info.html')
+    return render_template(
+        'malharia_info.html',
+        exibir_precos=(PLAN_MONTHLY, PLAN_YEARLY) == (47.00, 479.40),
+    )
 
 # --- Perfil público da empresa ---
 from flask import render_template, abort, redirect, url_for
@@ -4714,10 +4785,11 @@ from flask import render_template, abort, redirect, url_for
 
 @app.get("/empresa/<int:empresa_id>")
 def empresa_perfil(empresa_id):
+    _limitar_consulta_publica(30)
     # ED01: a URL direta também deve respeitar a assinatura; 404 não expõe
     # dados comerciais de uma malharia pendente ou vencida.
     empresa = Empresa.query.filter(
-        Empresa.id == empresa_id, Empresa.assinatura_ativa
+        Empresa.id == empresa_id, empresa_publicavel()
     ).first_or_404()
     teares = Tear.query.filter_by(empresa_id=empresa_id).order_by(Tear.tipo.asc()).all()
 
@@ -4727,7 +4799,20 @@ def empresa_perfil(empresa_id):
     except Exception:
         app.logger.exception("[analytics] falha ao registrar COMPANY_PROFILE_VIEW")
 
-    return render_template("empresa_perfil.html", empresa=empresa, teares=teares)
+    return render_template("empresa_perfil.html", empresa=empresa, teares=teares,
+                           tem_whatsapp=bool(_numero_comercial(empresa)))
+
+@app.get("/empresa/<int:empresa_id>/whatsapp")
+def empresa_whatsapp(empresa_id):
+    _limitar_consulta_publica(20)
+    empresa = Empresa.query.filter(Empresa.id == empresa_id, empresa_publicavel()).first_or_404()
+    numero = _numero_comercial(empresa)
+    if numero is None:
+        abort(404)
+    resposta = redirect(f"https://wa.me/{numero}")
+    resposta.headers["Cache-Control"] = "no-store"
+    return resposta
+
 
 # (opcional) compatibilidade com URLs antigas /empresas/<id>
 @app.get("/empresas/<int:empresa_id>")

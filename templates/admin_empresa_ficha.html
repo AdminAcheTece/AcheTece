@@ -1,0 +1,76 @@
+{% extends "admin_base.html" %}
+{% block title %}Ficha da empresa{% endblock %}
+{% block content %}
+<a class="admin-button" href="{{ url_for('admin_empresas') }}">Voltar para empresas</a>
+<h1>{{ empresa.apelido or empresa.nome }}</h1>
+<div class="admin-detail-grid">
+  <section class="admin-card" aria-labelledby="cadastro">
+    <h2 id="cadastro">Dados empresariais</h2>
+    <dl class="admin-fields">
+      <div><dt>Nome cadastral</dt><dd>{{ empresa.nome }}</dd></div>
+      <div><dt>Apelido</dt><dd>{{ empresa.apelido or '—' }}</dd></div>
+      <div><dt>Responsável</dt><dd>{{ [empresa.responsavel_nome, empresa.responsavel_sobrenome]|select|join(' ') or '—' }}</dd></div>
+      <div><dt>E-mail</dt><dd>{{ empresa.email }}</dd></div>
+      <div><dt>Telefone</dt><dd>{{ empresa.telefone or '—' }}</dd></div>
+      <div><dt>Cidade / UF</dt><dd>{{ [empresa.cidade, empresa.estado]|select|join(' / ') or '—' }}</dd></div>
+      <div><dt>Endereço</dt><dd>{{ empresa.endereco or '—' }}</dd></div>
+      <div><dt>CEP</dt><dd>{{ empresa.cep or '—' }}</dd></div>
+    </dl>
+  </section>
+  <section class="admin-card" aria-labelledby="assinatura">
+    <h2 id="assinatura">Assinatura e visibilidade</h2>
+    <dl class="admin-fields">
+      <div><dt>Plano</dt><dd>{{ empresa.plano|plano_label }}</dd></div>
+      <div><dt>Situação da assinatura</dt><dd>{{ situacao_assinatura }}</dd></div>
+      <div><dt>Último pagamento (UTC)</dt><dd>{{ empresa.data_pagamento.strftime('%d/%m/%Y') if empresa.data_pagamento else '—' }}</dd></div>
+      <div><dt>Vigência até (UTC)</dt><dd>{{ empresa.assinatura_expira_em.strftime('%d/%m/%Y') if empresa.assinatura_expira_em else '—' }}</dd></div>
+      <div><dt>Visibilidade pública</dt><dd>{{ visibilidade }}</dd></div>
+    </dl>
+  </section>
+</div>
+
+<section class="admin-card admin-section" aria-labelledby="teares">
+  <h2 id="teares">Teares cadastrados ({{ teares|length }})</h2>
+  {% if teares %}
+  <div class="admin-machines">
+    {% for tear in teares %}
+    <article class="admin-machine">
+      <h3>{{ tear.marca }} {{ tear.modelo }}</h3>
+      <dl class="admin-fields">
+        <div><dt>Tipo</dt><dd>{{ tear.tipo }}</dd></div>
+        <div><dt>Diâmetro</dt><dd>{{ tear.diametro }}″</dd></div>
+        <div><dt>Galga</dt><dd>{{ tear.finura }}</dd></div>
+        <div><dt>Alimentadores</dt><dd>{{ tear.alimentadores }}</dd></div>
+        <div><dt>Pistas no cilindro</dt><dd>{{ tear.pistas_cilindro if tear.pistas_cilindro is not none else '—' }}</dd></div>
+        <div><dt>Pistas no disco</dt><dd>{{ tear.pistas_disco if tear.pistas_disco is not none else '—' }}</dd></div>
+        <div><dt>Elastano</dt><dd>{{ tear.elastano or '—' }}</dd></div>
+      </dl>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p>Esta empresa ainda não cadastrou teares.</p>
+  {% endif %}
+</section>
+
+<section class="admin-card admin-section" aria-labelledby="historico">
+  <h2 id="historico">Histórico de publicação</h2>
+  {% if registro %}
+  <p>Empresa arquivada em {{ registro.registrado_em.strftime('%d/%m/%Y às %H:%M UTC') }} por {{ registro.administrador }}.</p>
+  {% else %}
+  <p>Nenhum arquivamento registrado.</p>
+  <details class="admin-archive">
+    <summary>Arquivar empresa</summary>
+    <p>O arquivamento retira a empresa e seus teares da pesquisa e da exportação públicas. Os dados cadastrais e o histórico de pagamentos são preservados. A baixa de uma cobrança, recorrência ou assinatura deve ser tratada no fluxo financeiro próprio.</p>
+    <form action="{{ url_for('admin_arquivar_empresa', empresa_id=empresa.id) }}" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label class="admin-confirm">
+        <input type="checkbox" name="confirmar" value="sim" required>
+        Confirmo o arquivamento de {{ empresa.apelido or empresa.nome }}
+      </label>
+      <button class="admin-button admin-danger" type="submit">Confirmar arquivamento</button>
+    </form>
+  </details>
+  {% endif %}
+</section>
+{% endblock %}

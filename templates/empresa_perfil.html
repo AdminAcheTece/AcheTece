@@ -460,10 +460,8 @@
           </div>
 
           <div class="actions">
-            {% set _fone = empresa.telefone or empresa.contato_telefone or empresa.celular %}
-            {% set _wa = empresa.contato_whatsapp or (('https://wa.me/' ~ ('55' ~ _fone|replace(' ','')|replace('(','')|replace(')','')|replace('-','') if _fone and not (_fone|replace(' ','')|replace('(','')|replace(')','')|replace('-','') ).startswith('55') else _fone|replace(' ','')|replace('(','')|replace(')','')|replace('-',''))) if _fone else None) %}
-            {% if _wa %}
-              <a class="btn btn-ghost btn-icon" href="{{ _wa }}" target="_blank" rel="noopener" aria-label="WhatsApp" title="WhatsApp">
+            {% if tem_whatsapp %}
+              <a class="btn btn-ghost btn-icon" href="{{ url_for('empresa_whatsapp', empresa_id=empresa.id) }}" target="_blank" rel="noopener" aria-label="WhatsApp" title="WhatsApp">
                 <svg class="svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <path d="M20.52 3.48A11.77 11.77 0 0 0 12.01 0C5.4 0 .03 5.37.03 12c0 2.11.55 4.17 1.6 5.99L0 24l6.19-1.61A11.93 11.93 0 0 0 12 24c6.62 0 12-5.37 12-12 0-3.21-1.25-6.23-3.48-8.52Zm-8.51 18.2a9.9 9.9 0 0 1-5.05-1.39l-.36-.21-3.68.96.98-3.58-.23-.37A9.92 9.92 0 1 1 21.9 12c0 5.46-4.44 9.68-9.89 9.68Zm5.68-7.25c-.31-.16-1.83-.9-2.11-1.01-.28-.11-.48-.16-.68.16-.2.31-.78 1.01-.96 1.22-.18.21-.36.23-.66.08-.31-.16-1.31-.48-2.49-1.52-.92-.82-1.54-1.82-1.72-2.13-.18-.31-.02-.48.13-.64.14-.14.31-.36.47-.54.16-.18.21-.31.31-.52.1-.21.05-.39-.03-.55-.08-.16-.68-1.63-.93-2.24-.24-.58-.49-.5-.68-.51l-.58-.01c-.2 0-.52.08-.79.39-.27.31-1.04 1.02-1.04 2.49 0 1.47 1.07 2.9 1.22 3.1.15.2 2.12 3.24 5.14 4.54.72.31 1.28.5 1.71.64.72.23 1.38.2 1.9.12.58-.09 1.83-.75 2.09-1.47.26-.72.26-1.33.18-1.46-.08-.13-.28-.21-.59-.37Z"/>
                 </svg>

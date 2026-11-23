@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ titulo_pagina }} | AcheTece</title>
+  <link rel="icon" href="{{ url_for('static', filename='favicon_final.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='institucional.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+  <header class="site-header">
+    <nav aria-label="Navegação principal" class="site-width">
+      <a class="brand" href="{{ url_for('index') }}">
+        <img src="{{ url_for('static', filename='Logo_Branco_AcheTece_sem_fundo.png') }}" alt="AcheTece">
+      </a>
+      <a href="{{ url_for('index') }}">Buscar teares</a>
+      <a href="{{ url_for('malharia_info') }}"{% if request.endpoint == 'malharia_info' %} aria-current="page"{% endif %}>Como funciona</a>
+      {% if session.get('empresa_id') %}
+        <a href="{{ url_for('painel_malharia') }}">Meu painel</a>
+      {% elif not (session.get('user_id') or session.get('auth_user_id')) %}
+        <a href="{{ url_for('login') }}">Entrar</a>
+      {% endif %}
+    </nav>
+  </header>
+
+  <main class="site-width" id="conteudo" tabindex="-1">
+    {% block conteudo %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <nav class="site-width" aria-label="Informações institucionais">
+      <a href="{{ url_for('quem_somos') }}"{% if request.endpoint in ('quem_somos', 'view_quem_somos') %} aria-current="page"{% endif %}>O AcheTece</a>
+      <a href="{{ url_for('contato') }}">Fale conosco</a>
+      <a href="{{ url_for('termos') }}">Termos e políticas</a>
+    </nav>
+  </footer>
+</body>
+</html>
