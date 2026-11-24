@@ -2399,6 +2399,8 @@ def criar_conta_cliente():
 def logout():
     session.pop("cliente_user_id", None)
     session.pop("cliente_csrf", None)
+    session.pop("portal_membro", None)
+    session.pop("portal_csrf", None)
     session.pop("tear_csrf", None)
     session.pop("empresa_id", None)
     session.pop("empresa_apelido", None)
@@ -2613,6 +2615,7 @@ def painel_malharia():
         notificacoes=notif_count,
         notificacoes_lista=notif_lista,
         foto_url=_empresa_avatar_url(emp),
+        **contexto_portal(emp.id, request.args.get("secao", "teares")),
     ))
     resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     resp.headers["Pragma"] = "no-cache"
@@ -4870,6 +4873,11 @@ def empresas_redirect(empresa_id):
     return redirect(url_for("empresa_perfil", empresa_id=empresa_id), code=301)
 
 # --------------------------------------------------------------------
+# Fluxos de gestão do Portal da Malharia
+from portal_fluxos import instalar
+
+contexto_portal = instalar(app, db, Empresa, empresa_publicavel, _get_empresa_usuario_da_sessao, send_email, _limitar_consulta_publica, _filtros_teares)
+
 # Entry point local
 # --------------------------------------------------------------------
 if __name__ == '__main__':
