@@ -115,12 +115,15 @@ def instalar(app, db, Empresa, empresa_publicavel, identificar, enviar_email, li
     def portal_identificar_visitante(empresa_id):
         limitar(30)
         empresa = Empresa.query.filter(Empresa.id == empresa_id, empresa_publicavel()).first_or_404()
+        contato = request.args.get("acao") == "whatsapp"
         if request.method == "POST":
             conferir_csrf()
             nome = request.form.get("nome", "").strip()
             email = request.form.get("email", "").strip().lower()
             if 2 <= len(nome) <= 100 and len(email) <= 254 and EMAIL.fullmatch(email) and request.form.get("autorizar") == "sim":
-                registrar(empresa.id, "acesso", {"nome": nome, "email": email})
+                registrar(empresa.id, "contato" if contato else "acesso", {"nome": nome, "email": email})
+                if contato:
+                    return redirect(url_for("empresa_whatsapp", empresa_id=empresa.id))
                 if preferencia(empresa.id).get("email_acessos"):
                     enviar_email(empresa.email, "Novo acesso ao perfil AcheTece",
                                  "<p>Há um novo acesso identificado no Portal da Malharia.</p>")
@@ -129,7 +132,7 @@ def instalar(app, db, Empresa, empresa_publicavel, identificar, enviar_email, li
                                         pp=request.args.get("pp", 20, type=int),
                                         **{k: v for k, v in filtros_busca().items() if v}))
             flash("Preencha nome, e-mail e confirme o compartilhamento.")
-        return render_template("portal_acesso.html", modo="visitante", empresa=empresa, portal_csrf=csrf()), 200, {
+        return render_template("portal_acesso.html", modo="visitante", contato=contato, empresa=empresa, portal_csrf=csrf()), 200, {
             "Cache-Control": "no-store",
         }
 
@@ -149,8 +152,14 @@ def instalar(app, db, Empresa, empresa_publicavel, identificar, enviar_email, li
             else:
                 empresa.responsavel_nome = nome
                 empresa.responsavel_sobrenome = sobrenome or None
-                db.session.commit()
-                flash("Dados do administrador salvos.")
+                email = request.form.get("responsavel_email", "").strip().lower()
+                telefone = re.sub(r"\D", "", request.form.get("responsavel_telefone", ""))
+                if (email and (len(email) > 254 or not EMAIL.fullmatch(email))) or (telefone and len(telefone) != 11):
+                    db.session.rollback()
+                    flash("Confira o e-mail e o telefone do responsável.")
+                else:
+                    registrar(empresa.id, "dados_administrador", {"email": email, "telefone": telefone})
+                    flash("Dados do administrador salvos.")
         elif secao == "equipe" and tipo == "revogar":
             membro_id = request.form.get("membro", type=int)
             Membro.query.filter_by(id=membro_id, empresa_id=empresa.id).delete()
@@ -235,6 +244,13 @@ def instalar(app, db, Empresa, empresa_publicavel, identificar, enviar_email, li
                             registrar(empresa_id, "lembrete_vigencia", {"vigencia": fim.isoformat()})
             db.session.rollback()
 
+    def dados_cadastrais(empresa_id, tipo):
+        registro = registros(empresa_id, {tipo}).order_by(Registro.id.desc()).first()
+        return registro.dados if registro else {}
+
+    def guardar_empresa(empresa_id, dados):
+        db.session.add(Registro(empresa_id=empresa_id, tipo="dados_empresa", dados=dados))
+
     def contexto(empresa_id, secao):
         if session.get("portal_membro"):
             return {}
@@ -245,8 +261,11 @@ def instalar(app, db, Empresa, empresa_publicavel, identificar, enviar_email, li
             dados["categorias_sugestao"] = CATEGORIAS_SUGESTAO
         if secao in SECOES:
             dados["historico"] = registros(empresa_id, SECOES[secao]).order_by(Registro.id.desc()).limit(50).all()
-        if secao == "acessos":
-            dados["acessos"] = registros(empresa_id, {"acesso"}).filter(
+        if secao == "perfil":
+            dados["administrador"] = dados_cadastrais(empresa_id, "dados_administrador")
+        if secao in {"acessos", "visitas", "contatos"}:
+            tipo = "contato" if secao == "contatos" else "acesso"
+            dados["acessos"] = registros(empresa_id, {tipo}).filter(
                 Registro.criado_em >= datetime.utcnow() - timedelta(days=90),
             ).order_by(Registro.id.desc()).limit(100).all()
         if secao in {"configuracoes", "notificacoes"}:
@@ -257,4 +276,4 @@ def instalar(app, db, Empresa, empresa_publicavel, identificar, enviar_email, li
                 ).count()
         return dados
 
-    return contexto
+    return contexto, dados_cadastrais, guardar_empresa

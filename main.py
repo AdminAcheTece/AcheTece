@@ -2621,6 +2621,7 @@ def painel_malharia():
         notificacoes_lista=notif_lista,
         foto_url=_empresa_avatar_url(emp),
         **contexto_portal(emp.id, request.args.get("secao", "teares")),
+        metricas=get_performance(emp.id) if request.args.get("secao") in {"acessos", "visitas", "contatos"} else None,
         **_precos_portal(),
     ))
     resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
@@ -3632,6 +3633,7 @@ def editar_empresa():
 
     foto_csrf = session.setdefault("empresa_edicao_csrf", secrets.token_urlsafe(32))
     foto_empresa = empresa.foto_url
+    detalhes = dados_cadastrais_portal(empresa.id, "dados_empresa")
     if request.method == "POST" and not secrets.compare_digest(foto_csrf, request.form.get("csrf_token", "")):
         abort(400)
 
@@ -3648,7 +3650,7 @@ def editar_empresa():
 
         return render_template(
             'editar_empresa.html',
-            foto_csrf=foto_csrf, foto_empresa=foto_empresa, estados=estados,
+            detalhes=detalhes, foto_csrf=foto_csrf, foto_empresa=foto_empresa, estados=estados,
             nome=empresa.nome or '',
             apelido=empresa.apelido or '',
             email=empresa.email or '',
@@ -3671,7 +3673,10 @@ def editar_empresa():
     telefone = _only_digits(request.form.get('telefone',''))
 
     # NOVOS CAMPOS
-    endereco_full = (request.form.get('endereco') or '').strip()
+    detalhes = {campo: request.form.get(campo, "").strip() for campo in ("rua", "numero", "complemento", "bairro", "linkedin")}
+    detalhes["cnpj"] = _only_digits(request.form.get("cnpj", ""))
+    endereco_full = ", ".join(detalhes[campo] for campo in ("rua", "numero", "complemento", "bairro") if detalhes[campo])
+    endereco_full = endereco_full or request.form.get("endereco", "").strip()
     cep_raw = (request.form.get('cep') or '').strip()
 
     # Normaliza CEP para apenas dígitos (ex.: '00000-000' -> '00000000')
@@ -3679,6 +3684,18 @@ def editar_empresa():
     cep_digits = re.sub(r'\D', '', cep_raw)
 
     erros = {}
+    if detalhes["cnpj"] and len(detalhes["cnpj"]) != 14:
+        erros["cnpj"] = "Informe os 14 dígitos do CNPJ."
+    linkedin = detalhes["linkedin"]
+    try:
+        link = urlparse(linkedin)
+        linkedin_valido = link.scheme == "https" and link.hostname in {"linkedin.com", "www.linkedin.com", "br.linkedin.com"} and link.path not in {"", "/"} and not link.username
+    except ValueError:
+        linkedin_valido = False
+    if linkedin and (len(linkedin) > 240 or not linkedin_valido):
+        erros["linkedin"] = "Informe um link HTTPS do LinkedIn."
+    if len(endereco_full) > 240:
+        erros["endereco"] = "O endereço completo deve ter até 240 caracteres."
     if telefone and (len(telefone) < 10 or len(telefone) > 13):
         erros['telefone'] = 'Telefone inválido.'
     if nome and nome != (empresa.nome or '') and Empresa.query.filter_by(nome=nome).first():
@@ -3702,7 +3719,7 @@ def editar_empresa():
             cidades = []
         return render_template(
             'editar_empresa.html',
-            erro='Corrija os campos.', erros=erros, estados=estados, foto_csrf=foto_csrf, foto_empresa=foto_empresa,
+            erro='Corrija os campos.', erros=erros, estados=estados, detalhes=detalhes, foto_csrf=foto_csrf, foto_empresa=foto_empresa,
             nome=nome or empresa.nome, apelido=apelido or empresa.apelido,
             email=email or empresa.email, cidade=cidade or empresa.cidade,
             estado=estado or empresa.estado, telefone=telefone or empresa.telefone,
@@ -3726,6 +3743,7 @@ def editar_empresa():
     # Armazena CEP somente com dígitos (padrão unificado no banco)
     _set_if_has(empresa, ["cep","CEP"], cep_digits)
 
+    guardar_dados_empresa(empresa.id, detalhes)
     db.session.commit()
     session['empresa_apelido'] = empresa.apelido or empresa.nome or empresa.email.split('@')[0]
     return redirect(url_for('editar_empresa', ok=1))
@@ -3737,16 +3755,7 @@ def performance_acesso():
     if not emp or not u:
         return redirect(url_for('login'))
 
-    # Usa o agregador de analytics (A.1) já adicionado acima
-    total_visitas, total_contatos, series = get_performance(emp.id)
-
-    return render_template(
-        'performance_acesso.html',
-        empresa=emp,
-        series=series,
-        total_visitas=total_visitas,
-        total_contatos=total_contatos
-    )
+    return redirect(url_for("painel_malharia", secao="visitas"))
 
 # --------------------------------------------------------------------
 # Admin: empresas
@@ -4907,6 +4916,7 @@ def empresa_whatsapp(empresa_id):
     numero = _numero_comercial(empresa)
     if numero is None:
         abort(404)
+    track_event("CONTACT_CLICK_WHATSAPP", company_id=empresa.id)
     resposta = redirect(f"https://wa.me/{numero}")
     resposta.headers["Cache-Control"] = "no-store"
     return resposta
@@ -4921,7 +4931,7 @@ def empresas_redirect(empresa_id):
 # Fluxos de gestão do Portal da Malharia
 from portal_fluxos import instalar
 
-contexto_portal = instalar(app, db, Empresa, empresa_publicavel, _get_empresa_usuario_da_sessao, send_email, _limitar_consulta_publica, _filtros_teares)
+contexto_portal, dados_cadastrais_portal, guardar_dados_empresa = instalar(app, db, Empresa, empresa_publicavel, _get_empresa_usuario_da_sessao, send_email, _limitar_consulta_publica, _filtros_teares)
 
 # Entry point local
 # --------------------------------------------------------------------
