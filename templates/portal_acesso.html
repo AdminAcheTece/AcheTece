@@ -16,11 +16,12 @@
       <form method="post" class="portal-formulario">
         <input type="hidden" name="csrf_token" value="{{ portal_csrf }}">
         {% if modo == 'visitante' %}
-          <p>Seu nome e e-mail serão compartilhados com {{ empresa.apelido or empresa.nome }} para que ela possa entrar em contato.</p>
+          <p>Seu nome, e-mail e telefone serão compartilhados com {{ empresa.apelido or empresa.nome }} para que ela possa entrar em contato.</p>
           <label>Nome<input name="nome" required maxlength="100" autocomplete="name"></label>
         {% endif %}
         {% if modo != 'convite' %}<label>E-mail<input name="email" type="email" required maxlength="254" autocomplete="email"></label>{% endif %}
         {% if modo == 'visitante' %}
+          <label>Telefone com DDD<input name="telefone" type="tel" autocomplete="tel-national" required maxlength="18" placeholder="(XX) XXXXX-XXXX"></label>
           <label class="portal-opcao"><input type="checkbox" name="autorizar" value="sim" required> Autorizo o compartilhamento com esta malharia.</label>
         {% else %}
           <label>Senha<input name="senha" type="password" required maxlength="128" autocomplete="{{ 'new-password' if modo == 'convite' else 'current-password' }}"></label>

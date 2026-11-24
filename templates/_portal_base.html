@@ -27,7 +27,7 @@
       <details class="portal-navegacao" open>
         <summary>Menu do portal</summary>
         <nav aria-label="Portal da Malharia">
-          <details{% if em_cadastro or secao in ('perfil','equipe','configuracoes','notificacoes','seguranca','sugestoes') %} open{% endif %}>
+          <details open>
             <summary class="portal-conta">{{ icone('pessoa') }} Perfil da Malharia</summary>
             {% if not session.get("portal_membro") %}
             {{ portal_link('Administrador', 'perfil', 'pessoa') }}
@@ -37,7 +37,7 @@
             {% endif %}
             <a href="{{ url_for('logout') }}">{{ icone('sair') }} Sair</a>
           </details>
-          <details{% if not em_cadastro and secao in ('teares','ativos','inativos') %} open{% endif %}>
+          <details open>
             <summary>{{ icone('tear') }} Teares cadastrados</summary>
             <a href="{{ url_for('teares_form') }}"{% if request.endpoint in ('teares_form','cadastrar_teares') %} aria-current="page"{% endif %}>Cadastro</a>
             {{ portal_link('Todos os teares', 'teares', 'tear') }}
@@ -45,17 +45,17 @@
             {{ portal_link('Teares inativos', 'inativos', 'tear') }}
           </details>
           {% if not session.get("portal_membro") %}
-          <details{% if secao in ('acessos', 'visitas', 'contatos') %} open{% endif %}>
-            <summary>{{ icone('acessos') }} Performance da malharia</summary>
+          <details open>
+            <summary>{{ icone('grafico') }} Performance da malharia</summary>
             {{ portal_link('Visitas ao perfil', 'visitas', 'acessos') }}
             {{ portal_link('Contatos recebidos', 'contatos', 'mensagem') }}
           </details>
           {{ portal_link('Financeiro', 'financeiro', 'financeiro') }}
-          <details{% if not em_cadastro and secao == 'suporte' %} open{% endif %}>
-            <summary>{{ icone('mensagem') }} Suporte</summary>
+          <details open>
+            <summary>{{ icone('suporte') }} Suporte</summary>
             {{ portal_link('Central de Ajuda', 'suporte', 'mensagem') }}
-            <a href="mailto:gestao.achetece@gmail.com">E-mail</a>
-            <a href="https://wa.me/5547991120670">WhatsApp</a>
+            <a href="mailto:gestao.achetece@gmail.com">{{ icone('email') }} E-mail</a>
+            <a href="https://wa.me/5547991120670">{{ icone('whatsapp') }} WhatsApp</a>
           </details>
           {% endif %}
         </nav>
@@ -65,13 +65,6 @@
       {% block content %}{% endblock %}
     </main>
   </div>
-  <script>
-    const navegacao = document.querySelector('.portal-navegacao');
-    const desktop = matchMedia('(min-width: 801px)');
-    const ajustarMenu = () => { navegacao.open = desktop.matches; };
-    ajustarMenu();
-    desktop.addEventListener('change', ajustarMenu);
-  </script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

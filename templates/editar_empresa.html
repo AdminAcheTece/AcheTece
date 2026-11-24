@@ -33,7 +33,7 @@
           </div>
 <div><label for="cnpj">{{ icone('empresa') }} CNPJ</label><input id="cnpj" name="cnpj" inputmode="numeric" maxlength="18" value="{{ detalhes.get('cnpj', '') }}">
 {% if erros and erros.get('cnpj') %}<p class="mensagem-campo">{{ erros.cnpj }}</p>{% endif %}</div>
-<div><label for="linkedin">{{ icone('acessos') }} LinkedIn</label><input type="url" id="linkedin" name="linkedin" maxlength="240" value="{{ detalhes.get('linkedin', '') }}">
+<div><label for="linkedin">{{ icone('linkedin') }} LinkedIn</label><input type="url" id="linkedin" name="linkedin" maxlength="240" value="{{ detalhes.get('linkedin', '') }}">
 {% if erros and erros.get('linkedin') %}<p class="mensagem-campo">{{ erros.linkedin }}</p>{% endif %}</div>
           <div>
           <label for="telefone">{{ icone('pessoa') }} Telefone</label>

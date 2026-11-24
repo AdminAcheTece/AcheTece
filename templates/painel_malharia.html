@@ -167,7 +167,6 @@
     </section>
     {% else %}
     <section class="painel-cartao" id="sugestoes">
-      <h2>{{ icone('mensagem') }} Sugestões de melhoria</h2>
       {% set opcoes = [('sugestao', 'Enviar sugestão')] %}
       {% include '_portal_solicitacoes.html' %}
     </section>
@@ -180,10 +179,10 @@
       {% if contatos %}<p class="painel-resumo">A lista mostra quem se identificou antes de abrir o WhatsApp. O envio de uma mensagem é confirmado no WhatsApp.</p>{% endif %}
       <h2>Últimos 90 dias · registros identificados</h2>
       <div class="portal-tabela-wrap">
-        <table class="portal-tabela"><thead><tr><th>Nome</th><th>E-mail</th><th>Data</th></tr></thead>
+        <table class="portal-tabela"><thead><tr><th>Nome</th><th>E-mail</th><th>Telefone</th><th>Data</th></tr></thead>
           <tbody>{% for item in acessos %}
-            <tr><td>{{ item.dados.nome }}</td><td>{{ item.dados.email }}</td><td>{{ item.criado_em.strftime('%d/%m/%Y') }}</td></tr>
-          {% else %}<tr><td colspan="3">Nenhum registro identificado.</td></tr>{% endfor %}</tbody>
+            <tr><td>{{ item.dados.nome }}</td><td>{{ item.dados.email }}</td>{% set fone = item.dados.telefone|default('') %}<td>{{ '(' ~ fone[:2] ~ ') ' ~ fone[2:-4] ~ '-' ~ fone[-4:] if fone else '—' }}</td><td>{{ item.criado_em.strftime('%d/%m/%Y') }}</td></tr>
+          {% else %}<tr><td colspan="4">Nenhum registro identificado.</td></tr>{% endfor %}</tbody>
         </table>
       </div>
       <details class="portal-bloco">

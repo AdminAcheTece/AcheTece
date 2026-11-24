@@ -1,5 +1,11 @@
 <div class="painel-cartao">
-  {% if secao == 'sugestoes' %}<details><summary class="painel-acao">+ Nova sugestão</summary>{% endif %}
+  {% if secao == 'sugestoes' %}
+  <div class="portal-sugestao-topo">
+    <h2>{{ icone('mensagem') }} Sugestões de melhoria</h2>
+    <button type="button" class="painel-botao" aria-controls="nova-sugestao" aria-expanded="false" onclick="const form = document.getElementById('nova-sugestao'); form.hidden = !form.hidden; this.setAttribute('aria-expanded', String(!form.hidden)); if (!form.hidden) form.querySelector('select').focus();">+ Nova sugestão</button>
+  </div>
+  <div id="nova-sugestao" hidden>
+  {% endif %}
   <form class="portal-formulario" method="post" action="{{ url_for('portal_acao', secao=secao) }}">
     <input type="hidden" name="csrf_token" value="{{ portal_csrf }}">
     {% if secao == 'sugestoes' %}
@@ -17,7 +23,7 @@
     <label class="portal-campo-largo">Detalhes<textarea name="mensagem" required {% if secao == 'sugestoes' %}minlength="20"{% endif %} maxlength="2000" rows="4"></textarea></label>
     <div class="portal-acoes-fim"><button class="painel-botao">{{ 'Enviar sugestão' if secao == 'sugestoes' else 'Enviar solicitação' }}</button></div>
   </form>
-  {% if secao == 'sugestoes' %}</details>{% endif %}
+  {% if secao == 'sugestoes' %}</div>{% endif %}
   <h2>{{ ('Histórico de sugestões (' ~ historico|length ~ ')') if secao == 'sugestoes' else 'Histórico' }}</h2>
   <ul class="portal-registros">
     {% for item in historico if item.tipo in (opcoes|map(attribute=0)|list) %}
