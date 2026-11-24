@@ -472,50 +472,11 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
 </head>
 
-<body class="header-v1">
+<body class="achetece-site header-v1">
+  {% include '_cabecalho_site.html' %}
 
   <!-- Cabeçalho -->
-  <header class="navbar">
-    <div class="header-left">
-      <div class="logo">
-        <a href="{{ url_for('index') }}" aria-label="Página inicial">
-          {% include '_marca_cabecalho.html' %}
-        </a>
-      </div>
-    </div>
 
-    <!-- Barra preta: SOMENTE 3 links (ordem fixa) -->
-    <nav class="hdr-nav" aria-label="Menu principal">
-      <a href="{{ url_for('quem_somos') }}">O AcheTece</a>
-      <a href="{{ url_for('malharia_info') }}">Como funciona</a>
-      <a href="{{ url_for('contato') }}">Fale conosco</a>
-    </nav>
-
-    <div class="header-right">
-      <div class="hdr-actions">
-        <!-- Conta Malharia -->
-        <a class="btn-perfil" href="{{ url_for('login') }}">Conta Malharia</a>
-
-        <!-- Casinha (sempre à direita do Conta Malharia) -->
-        <a class="btn-home" href="{{ url_for('index') }}" aria-label="Página inicial" title="Página inicial">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M3 10.5 12 3l9 7.5"></path>
-            <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
-            <path d="M9 21V12h6v9"></path>
-          </svg>
-        </a>
-
-        <!-- Botão menu (mobile) -->
-        <button class="btn-menu" type="button" aria-label="Abrir menu" aria-controls="mobileMenu" aria-expanded="false">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-            <path d="M4 7h16"></path>
-            <path d="M4 12h16"></path>
-            <path d="M4 17h16"></path>
-          </svg>
-        </button>
-      </div>
-    </div>
-  </header>
 
   <!-- Menu mobile -->
   <div class="mobile-menu-backdrop" data-menu-close></div>
@@ -644,26 +605,7 @@
   </section>
 
   <!-- Rodapé padrão -->
-  <footer class="site-footer">
-    <div class="footer-inner">
-      <div class="footer-brand">
-        <img src="{{ url_for('static', filename='logo_simbolo.png') }}" alt="AcheTece">
-      </div>
-      <div class="footer-cols">
-        <div class="footer-col">
-          <h4>Sobre nós</h4>
-          <ul>
-            <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
-            <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
-            <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
-            <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
-          </ul>
-        </div>
-        <div class="footer-col"><h4>&nbsp;</h4><ul><li>&nbsp;</li></ul></div>
-      </div>
-    </div>
-    {% include '_direitos_reservados.html' %}
-  </footer>
+  {% include '_rodape_site.html' %}
 
   <script>
     (function () {

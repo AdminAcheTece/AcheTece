@@ -44,17 +44,20 @@
     </label>
   </div>
 
-  {% set adicionais = [('alimentadores', 'Quantidade de alimentadores'),
+  {% set adicionais = [('alimentadores', 'Alimentadores'), ('elastano', 'Elastano'),
                         ('pistas_cilindro', 'Pistas do cilindro'), ('pistas_disco', 'Pistas do disco')] %}
   <details {% if filtros.alimentadores or filtros.pistas_cilindro or filtros.pistas_disco or filtros.elastano %}open{% endif %}>
     <summary>Filtros técnicos adicionais</summary>
-    <div class="search-fields">
+    <div class="search-fields search-extra-fields">
       {% for key, label in adicionais %}
         <label for="{{ key }}">{{ label }}
-          <input id="{{ key }}" name="{{ key }}" type="number" min="0" max="999999999" value="{{ filtros[key] }}">
+          {% if key == 'elastano' %}
+            {{ opcoes(key, ['Sim', 'Não']) }}
+          {% else %}
+            <input id="{{ key }}" name="{{ key }}" type="number" min="0" max="999999999" value="{{ filtros[key] }}">
+          {% endif %}
         </label>
       {% endfor %}
-      <label for="elastano">Equipamento para elastano {{ opcoes('elastano', ['Sim', 'Não']) }}</label>
     </div>
   </details>
 

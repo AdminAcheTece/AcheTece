@@ -9,30 +9,15 @@
   {% block head %}{% endblock %}
   <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
 </head>
-<body>
+<body class="achetece-site">
+  {% include '_cabecalho_site.html' %}
   <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
-  <header class="site-header">
-    <nav aria-label="Navegação principal" class="site-width">
-      <a class="brand" href="{{ url_for('index') }}">
-        {% include '_marca_cabecalho.html' %}
-      </a>
-      <a href="{{ url_for('index') }}">Buscar teares</a>
-      <a href="{{ url_for('malharia_info') }}"{% if request.endpoint == 'malharia_info' %} aria-current="page"{% endif %}>Como funciona</a>
-      <a class="malharia-nav" href="{{ url_for('painel_malharia' if session.get('empresa_id') else 'login') }}">Área da Malharia</a>
-    </nav>
-  </header>
+
 
   <main class="site-width" id="conteudo" tabindex="-1">
     {% block conteudo %}{% endblock %}
   </main>
 
-  <footer class="site-footer">
-    <nav class="site-width" aria-label="Informações institucionais">
-      <a href="{{ url_for('quem_somos') }}"{% if request.endpoint in ('quem_somos', 'view_quem_somos') %} aria-current="page"{% endif %}>O AcheTece</a>
-      <a href="{{ url_for('contato') }}">Fale conosco</a>
-      <a href="{{ url_for('termos') }}">Termos e políticas</a>
-    </nav>
-    {% include '_direitos_reservados.html' %}
-  </footer>
+  {% include '_rodape_site.html' %}
 </body>
 </html>

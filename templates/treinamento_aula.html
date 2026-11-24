@@ -529,16 +529,13 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
 </head>
 
-<body>
+<body class="achetece-site">
+  {% include '_cabecalho_site.html' %}
 
 <!-- ✅ Topbar branca fixa (IGUAL ao treinamento_home / treinamento_modulo) -->
 <div class="topbar-wrap">
-  <header class="topbar" id="topbar">
-    <div class="brand">
-      <a href="{{ url_for('treinamento_home') }}" aria-label="Treinamento - Início">
-        {% include '_marca_cabecalho.html' %}
-      </a>
-    </div>
+  <div class="topbar" id="topbar">
+
 
     <nav class="nav-links" aria-label="Menu do treinamento">
       <a href="{{ url_for('treinamento_home') }}#o-treinamento">O Treinamento</a>
@@ -553,7 +550,7 @@
         <path d="M9 21V12h6v9"></path>
       </svg>
     </a>
-  </header>
+  </div>
 </div>
 
 <main>
@@ -691,6 +688,6 @@
   })();
 </script>
 
-  <footer class="achetece-footer">{% include '_direitos_reservados.html' %}</footer>
+  {% include '_rodape_site.html' %}
 </body>
 </html>

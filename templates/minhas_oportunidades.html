@@ -632,21 +632,15 @@
 </head>
 
 
-<body>
+<body class="achetece-site">
+  {% include '_cabecalho_site.html' %}
 
 
-<header class="topbar">
+<div class="topbar">
 
     <div class="topbar-inner">
 
-        <a
-            href="{{ url_for('painel_malharia') }}"
-            class="brand"
-        >
 
-            {% include '_marca_cabecalho.html' %}
-
-        </a>
 
 
         <div class="top-actions">
@@ -662,7 +656,7 @@
 
     </div>
 
-</header>
+</div>
 
 
 <main class="page">
@@ -943,7 +937,7 @@
 </main>
 
 
-  <footer class="achetece-footer">{% include '_direitos_reservados.html' %}</footer>
+  {% include '_rodape_site.html' %}
 </body>
 
 </html>

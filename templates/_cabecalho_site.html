@@ -1,0 +1,17 @@
+{% macro links() %}
+  <a href="{{ url_for('index') }}"{% if request.endpoint == 'index' %} aria-current="page"{% endif %}>Buscar teares</a>
+  <a href="{{ url_for('malharia_info') }}"{% if request.endpoint == 'malharia_info' %} aria-current="page"{% endif %}>Como funciona</a>
+{% endmacro %}
+<header class="achetece-site-header">
+  <div class="achetece-site-row">
+    <a class="achetece-site-brand" href="{{ url_for('index') }}" aria-label="AcheTece, página inicial">
+      {% include '_marca_cabecalho.html' %}
+    </a>
+    <nav class="achetece-desktop-nav" aria-label="Navegação principal">{{ links() }}</nav>
+    <details class="achetece-mobile-menu">
+      <summary aria-label="Menu de navegação"><span aria-hidden="true"></span></summary>
+      <nav aria-label="Navegação principal">{{ links() }}</nav>
+    </details>
+    <a class="achetece-area-link" href="{{ url_for('painel_malharia' if session.get('empresa_id') else 'login') }}">Área da Malharia</a>
+  </div>
+</header>
