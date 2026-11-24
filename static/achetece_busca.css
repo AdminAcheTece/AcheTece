@@ -53,3 +53,6 @@
 @media (min-width: 58rem) {
   .search-main-fields { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 }
+
+.search-intro h1 strong { color: #2368a8; }
+.search-extra-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }

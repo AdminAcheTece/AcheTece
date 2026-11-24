@@ -72,3 +72,95 @@ body :is(.button, .btn-primary, .admin-primary, .painel-botao, .botao-pagamento,
   outline: 3px solid #2368a8;
   outline-offset: 3px;
 }
+
+html { scroll-padding-top: 76px; }
+body.achetece-site { margin: 0; padding-top: 64px; }
+.achetece-site-header {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 2010;
+  background: #0b0d0e;
+  color: #fff;
+  font: 1rem/1.4 Inter, system-ui, sans-serif;
+}
+.achetece-site-row, .achetece-site-footer nav {
+  box-sizing: border-box;
+  width: min(100% - 2rem, 75rem);
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.achetece-site-row { height: 64px; position: relative; }
+.achetece-site-header a, .achetece-site-footer nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: #fff;
+  text-decoration: none;
+}
+.achetece-site-header a:hover, .achetece-site-footer nav a:hover,
+.achetece-site-header a[aria-current] { text-decoration: underline; }
+.achetece-site-header .achetece-site-brand { margin-inline-end: auto; }
+.achetece-desktop-nav { display: flex; align-items: center; gap: 1rem; }
+.achetece-site-header .achetece-area-link {
+  flex: none;
+  padding-inline: .75rem;
+  border-radius: .4rem;
+  background: #fff;
+  color: #0b0d0e;
+  font-weight: 700;
+}
+.achetece-mobile-menu { display: none; }
+.achetece-site-footer {
+  background: #0b0d0e;
+  color: #fff;
+  font: 1rem/1.4 Inter, system-ui, sans-serif;
+}
+.achetece-site-footer nav { flex-wrap: wrap; gap: 0 1rem; padding-block: .35rem; }
+.achetece-site-header :focus-visible, .achetece-site-footer :focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+body.achetece-site.header-v1 .navbar {
+  position: relative !important;
+  inset: auto !important;
+  transform: none !important;
+  z-index: auto !important;
+  margin: .5rem auto !important;
+}
+.achetece-site .admin-header { position: relative; top: auto; }
+.achetece-site .topbar-wrap { top: 64px; }
+
+@media (max-width: 600px) {
+  .achetece-site-row { width: calc(100% - 1.25rem); gap: .55rem; }
+  .achetece-site-header .achetece-area-link { font-size: .82rem; padding-inline: .65rem; }
+  .achetece-desktop-nav { display: none; }
+  .achetece-mobile-menu { display: block; }
+  .achetece-mobile-menu summary {
+    display: grid;
+    place-items: center;
+    list-style: none;
+    cursor: pointer;
+    width: 44px;
+    height: 44px;
+    border: 1px solid #56616b;
+    border-radius: .4rem;
+  }
+  .achetece-mobile-menu summary::-webkit-details-marker { display: none; }
+  .achetece-mobile-menu summary span {
+    width: 19px;
+    height: 2px;
+    background: #fff;
+    box-shadow: 0 -6px #fff, 0 6px #fff;
+    border-radius: 2px;
+  }
+  .achetece-mobile-menu nav {
+    position: absolute;
+    inset: 100% 0 auto;
+    background: #0b0d0e;
+    border: 1px solid #56616b;
+    padding: .35rem .75rem;
+  }
+  .achetece-mobile-menu nav a { display: flex; }
+}
