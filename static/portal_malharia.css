@@ -292,3 +292,20 @@ body.portal-malharia {
   .portal-layout .painel-cartao { padding: 12px; }
   .portal-layout .portal-formulario { gap: 7px 10px; }
 }
+
+.portal-icone { width: 1.3em; height: 1.3em; vertical-align: -.25em; color: #2368a8; }
+.portal-malharia-nome { display: flex; align-items: center; gap: 10px; margin: 8px 8px 10px; overflow-wrap: anywhere; }
+.portal-malharia-nome .portal-icone { flex: none; }
+.portal-lateral .portal-novo { font-size: 1.1em; }
+.portal-acoes-fim { grid-column: 1 / -1; display: flex; justify-content: flex-end; margin-top: 10px; }
+.portal-foto-linha, .portal-linha { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.portal-foto-linha { padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid #dce2e6; }
+.portal-foto-linha form { display: grid; gap: 6px; min-width: 0; }
+.portal-foto-linha input { max-width: 100%; font: inherit; }
+.portal-foto { display: grid; place-items: center; width: 60px; height: 60px; object-fit: contain; background: #eaf0f6; border-radius: 10px; font-size: 22px; }
+.portal-bloco { margin: 10px 0; padding: 12px; border: 1px solid #dce2e6; border-radius: 8px; }
+.portal-bloco label { display: block; padding: 5px 0; }
+.portal-linha { justify-content: space-between; }
+.portal-dicas { background: #fff8e8; }
+.config-links [aria-current] { box-shadow: inset 0 -2px #2368a8; font-weight: 700; }
+.portal-mp { object-fit: contain; margin-inline-start: 8px; border-radius: 2px; }
