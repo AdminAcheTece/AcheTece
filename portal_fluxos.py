@@ -13,6 +13,7 @@ SECOES = {
     "suporte": {"chamado"},
     "sugestoes": {"sugestao"},
 }
+CATEGORIAS_SUGESTAO = ("Facilidade de uso", "Funcionalidades", "Outro")
 EMAIL = re.compile(r"[^\s@]+@[^\s@]+\.[^\s@]+")
 
 
@@ -140,7 +141,17 @@ def instalar(app, db, Empresa, empresa_publicavel, identificar, enviar_email, li
             abort(403)
         conferir_csrf()
         tipo = request.form.get("tipo")
-        if secao == "equipe" and tipo == "revogar":
+        if secao == "perfil" and tipo == "administrador":
+            nome = request.form.get("responsavel_nome", "").strip()
+            sobrenome = request.form.get("responsavel_sobrenome", "").strip()
+            if not 2 <= len(nome) <= 80 or len(sobrenome) > 80 or sum(c.isalpha() for c in nome) < 2:
+                flash("Informe um nome válido para o responsável.")
+            else:
+                empresa.responsavel_nome = nome
+                empresa.responsavel_sobrenome = sobrenome or None
+                db.session.commit()
+                flash("Dados do administrador salvos.")
+        elif secao == "equipe" and tipo == "revogar":
             membro_id = request.form.get("membro", type=int)
             Membro.query.filter_by(id=membro_id, empresa_id=empresa.id).delete()
             db.session.commit()
@@ -186,7 +197,13 @@ def instalar(app, db, Empresa, empresa_publicavel, identificar, enviar_email, li
             mensagem = request.form.get("mensagem", "").strip()
             if not (1 <= len(titulo) <= 100 and 1 <= len(mensagem) <= 2000):
                 abort(400)
-            item = registrar(empresa.id, tipo, {"titulo": titulo, "mensagem": mensagem})
+            dados = {"titulo": titulo, "mensagem": mensagem}
+            if tipo == "sugestao":
+                categoria = request.form.get("categoria")
+                if categoria not in CATEGORIAS_SUGESTAO or len(mensagem) < 20:
+                    abort(400, "Selecione uma categoria e descreva a sugestão com pelo menos 20 caracteres.")
+                dados["categoria"] = categoria
+            item = registrar(empresa.id, tipo, dados)
             enviado = enviar_email("gestao.achetece@gmail.com", f"AcheTece: solicitação #{item.id}",
                                    f"<p>Solicitação #{item.id}, malharia #{empresa.id}.</p><p>{escape(titulo)}</p><p>{escape(mensagem)}</p>",
                                    f"Malharia #{empresa.id}\n{titulo}\n{mensagem}")
@@ -224,6 +241,8 @@ def instalar(app, db, Empresa, empresa_publicavel, identificar, enviar_email, li
         dados = {"portal_csrf": csrf()}
         if secao == "equipe":
             dados["membros"] = Membro.query.filter_by(empresa_id=empresa_id).order_by(Membro.nome).all()
+        if secao == "sugestoes":
+            dados["categorias_sugestao"] = CATEGORIAS_SUGESTAO
         if secao in SECOES:
             dados["historico"] = registros(empresa_id, SECOES[secao]).order_by(Registro.id.desc()).limit(50).all()
         if secao == "acessos":

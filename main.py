@@ -3085,6 +3085,39 @@ def perfil_foto_upload():
     if not emp or not u:
         return redirect(url_for("login"))
 
+    if request.form.get("destino") == "empresa":
+        from io import BytesIO
+        from PIL import Image, ImageOps, UnidentifiedImageError
+        token = session.get("empresa_edicao_csrf")
+        if not token or not secrets.compare_digest(token, request.form.get("csrf_token", "")):
+            abort(400)
+        foto = request.files.get("foto")
+        try:
+            if not foto:
+                raise ValueError()
+            dados = foto.stream.read(2 * 1024 * 1024 + 1)
+            if len(dados) > 2 * 1024 * 1024:
+                raise ValueError()
+            with Image.open(BytesIO(dados), formats=("JPEG", "PNG", "WEBP")) as imagem:
+                if imagem.width * imagem.height > 16_000_000:
+                    raise ValueError()
+                imagem = ImageOps.exif_transpose(imagem)
+                imagem.thumbnail((512, 512))
+                saida = BytesIO()
+                imagem.convert("RGBA").save(saida, format="WEBP", quality=85)
+            arquivo = f"avatars/empresa_{emp.id}_{secrets.token_hex(8)}.webp"
+            caminho = os.path.join(app.static_folder, arquivo)
+            os.makedirs(os.path.dirname(caminho), exist_ok=True)
+            with open(caminho, "wb") as destino:
+                destino.write(saida.getvalue())
+            emp.foto_url = url_for("static", filename=arquivo)
+            db.session.commit()
+            session["avatar_url"] = emp.foto_url
+            flash("Foto da empresa salva.")
+        except (ValueError, UnidentifiedImageError, Image.DecompressionBombError, OSError):
+            flash("Selecione uma imagem JPG, PNG ou WebP de até 2 MB.")
+        return redirect(url_for("editar_empresa"))
+
     # Existem até 3 inputs <input type="file" name="foto"> (lib, cam, file).
     # Precisamos pegar o primeiro que REALMENTE tenha arquivo.
     file = None
@@ -3597,6 +3630,11 @@ def editar_empresa():
 
     estados = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO']
 
+    foto_csrf = session.setdefault("empresa_edicao_csrf", secrets.token_urlsafe(32))
+    foto_empresa = empresa.foto_url
+    if request.method == "POST" and not secrets.compare_digest(foto_csrf, request.form.get("csrf_token", "")):
+        abort(400)
+
     if request.method == 'GET':
         # tenta montar valores atuais de endereço/CEP, independente do nome da coluna
         endereco_atual = getattr(empresa, 'endereco', None) or getattr(empresa, 'logradouro', None) or getattr(empresa, 'endereco_completo', '')
@@ -3610,7 +3648,7 @@ def editar_empresa():
 
         return render_template(
             'editar_empresa.html',
-            estados=estados,
+            foto_csrf=foto_csrf, foto_empresa=foto_empresa, estados=estados,
             nome=empresa.nome or '',
             apelido=empresa.apelido or '',
             email=empresa.email or '',
@@ -3628,12 +3666,9 @@ def editar_empresa():
     nome  = (request.form.get('nome','') or '').strip()
     apelido = (request.form.get('apelido','') or '').strip()
     email = (request.form.get('email','') or '').strip().lower()
-    senha = (request.form.get('senha','') or '').strip()
     cidade = (request.form.get('cidade','') or '').strip()
     estado = (request.form.get('estado','') or '').strip()
     telefone = _only_digits(request.form.get('telefone',''))
-    responsavel_nome = (request.form.get('responsavel_nome') or '').strip()
-    responsavel_sobrenome = (request.form.get('responsavel_sobrenome') or '').strip()
 
     # NOVOS CAMPOS
     endereco_full = (request.form.get('endereco') or '').strip()
@@ -3654,8 +3689,6 @@ def editar_empresa():
         erros['email'] = 'E-mail já cadastrado.'
     if estado and estado not in estados:
         erros['estado'] = 'Estado inválido.'
-    if not responsavel_nome or len(re.sub(r'[^A-Za-zÀ-ÿ]', '', responsavel_nome)) < 2:
-        erros['responsavel_nome'] = 'Informe o primeiro nome do responsável.'
     # endereço/CEP obrigatórios na edição
     if not endereco_full:
         erros['endereco'] = 'Informe o endereço completo.'
@@ -3669,7 +3702,7 @@ def editar_empresa():
             cidades = []
         return render_template(
             'editar_empresa.html',
-            erro='Corrija os campos.', erros=erros, estados=estados,
+            erro='Corrija os campos.', erros=erros, estados=estados, foto_csrf=foto_csrf, foto_empresa=foto_empresa,
             nome=nome or empresa.nome, apelido=apelido or empresa.apelido,
             email=email or empresa.email, cidade=cidade or empresa.cidade,
             estado=estado or empresa.estado, telefone=telefone or empresa.telefone,
@@ -3687,16 +3720,11 @@ def editar_empresa():
     empresa.cidade = cidade or empresa.cidade
     empresa.estado = estado or empresa.estado
     empresa.telefone = telefone or empresa.telefone
-    empresa.responsavel_nome = responsavel_nome or empresa.responsavel_nome
-    empresa.responsavel_sobrenome = responsavel_sobrenome or None
 
     # grava Endereço completo e CEP (com nomes alternativos de coluna)
     _set_if_has(empresa, ["endereco","logradouro","endereco_completo"], endereco_full)
     # Armazena CEP somente com dígitos (padrão unificado no banco)
     _set_if_has(empresa, ["cep","CEP"], cep_digits)
-
-    if senha:
-        empresa.senha = generate_password_hash(senha)
 
     db.session.commit()
     session['empresa_apelido'] = empresa.apelido or empresa.nome or empresa.email.split('@')[0]
