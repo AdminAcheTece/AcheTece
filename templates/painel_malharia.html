@@ -51,7 +51,7 @@
       align-items:center;
       gap:10px;
     }
-        
+
     /* Botões ícone (Chat, Notif, Perfil) com o mesmo estilo da casinha */
     .hdr-actions.painel-actions .icon-btn,
     .hdr-actions.painel-actions .profile-pill{
@@ -367,7 +367,8 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
 </head>
 
-<body class="header-v1 ux2-malharia">
+<body class="achetece-site header-v1 ux2-malharia">
+  {% include '_cabecalho_site.html' %}
 
 {% set nome_empresa = empresa.apelido or empresa.nome %}
 {% set notif_count = notificacoes %}
@@ -412,13 +413,9 @@
   <a class="sr-only painel-salto" href="#conteudo">Ir para o conteúdo</a>
 
   <!-- ===== HEADER PADRÃO (com ajuste específico do painel) ===== -->
-  <header class="navbar">
+  <div class="navbar">
     <div class="header-left">
-      <div class="logo">
-        <a href="{{ url_for('index') }}" aria-label="Página inicial">
-          {% include '_marca_cabecalho.html' %}
-        </a>
-      </div>
+
     </div>
 
     <!-- Navegação do painel -->
@@ -467,7 +464,7 @@
 
       </div>
     </div>
-  </header>
+  </div>
 
   <!-- ===== MENU MOBILE (SÓ NO MOBILE) ===== -->
   <div class="mobile-menu-backdrop" id="menuBackdrop" aria-hidden="true"></div>
@@ -476,7 +473,7 @@
     <div class="menu-head">
       <a href="{{ url_for('index') }}" class="menu-logo" aria-label="Ir para a busca">
         <span class="menu-logoBox">
-          {% include '_marca_cabecalho.html' %}
+
         </span>
       </a>
 
@@ -577,7 +574,7 @@
       </svg>
       <span>Treinamento Operacional</span>
     </a>
-    
+
     <div class="pm-group-title">Assinatura</div>
     <a href="#assinatura" class="pm-item" title="Assinatura e pagamento">
       <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"></rect><path d="M3 10h18"></path></svg>
@@ -729,31 +726,7 @@
   </div>
 
   <!-- ===== Rodapé ===== -->
-  <footer class="site-footer">
-    <div class="footer-inner">
-      <div class="footer-brand">
-        <img src="{{ url_for('static', filename='logo_simbolo.png') }}" alt="AcheTece">
-      </div>
-
-      <div class="footer-cols">
-        <div class="footer-col">
-          <h4>Sobre nós</h4>
-          <ul>
-            <li><a href="{{ url_for('quem_somos') }}">O AcheTece</a></li>
-            <li><a href="{{ url_for('malharia_info') }}">Como funciona</a></li>
-            <li><a href="{{ url_for('contato') }}">Fale conosco</a></li>
-            <li><a href="{{ url_for('termos') }}">Termos e Políticas</a></li>
-          </ul>
-        </div>
-
-        <div class="footer-col">
-          <h4>&nbsp;</h4>
-          <ul><li>&nbsp;</li></ul>
-        </div>
-      </div>
-    </div>
-    {% include '_direitos_reservados.html' %}
-  </footer>
+  {% include '_rodape_site.html' %}
 
   <!-- ===== JS: Medir altura do header para popovers ===== -->
   <script>

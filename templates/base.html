@@ -8,7 +8,8 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
 </head>
-<body>
+<body class="achetece-site">
+  {% include '_cabecalho_site.html' %}
 
   <!-- Faixa preta estreita de destaque -->
   <div class="promo-bar">
@@ -19,11 +20,9 @@
   </div>
 
   <!-- Cabeçalho principal -->
-  <header class="navbar">
+  <div class="navbar">
     <div class="header-left">
-      <div class="logo">
-        {% include '_marca_cabecalho.html' %}
-      </div>
+
     </div>
 
     <div class="header-right">
@@ -103,7 +102,7 @@
         </nav>
       </div>
     </div>
-  </header>
+  </div>
 
   <main>
     {% block content %}{% endblock %}
@@ -291,6 +290,6 @@
     })();
   </script>
 
-  <footer class="achetece-footer">{% include '_direitos_reservados.html' %}</footer>
+  {% include '_rodape_site.html' %}
 </body>
 </html>

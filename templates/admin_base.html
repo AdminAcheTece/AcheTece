@@ -8,12 +8,13 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='achetece_admin.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
 </head>
-<body>
+<body class="achetece-site">
+  {% include '_cabecalho_site.html' %}
   <a class="admin-skip" href="#conteudo">Ir para o conteúdo</a>
-  <header class="admin-header">
+  <div class="admin-header">
     <div class="admin-shell admin-header-inner">
       <a class="admin-brand" href="{{ url_for('admin_empresas') }}">
-        {% include '_marca_cabecalho.html' %}
+
         <span>Administração</span>
       </a>
       <form action="{{ url_for('admin_logout') }}" method="post">
@@ -21,13 +22,13 @@
         <button class="admin-button admin-button-inverse" type="submit">Sair</button>
       </form>
     </div>
-  </header>
+  </div>
   <main id="conteudo" class="admin-shell admin-main">
     {% for mensagem in get_flashed_messages() %}
       <p class="admin-feedback" role="status">{{ mensagem }}</p>
     {% endfor %}
     {% block content %}{% endblock %}
   </main>
-  <footer class="achetece-footer">{% include '_direitos_reservados.html' %}</footer>
+  {% include '_rodape_site.html' %}
 </body>
 </html>

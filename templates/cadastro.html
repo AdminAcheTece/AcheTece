@@ -28,8 +28,9 @@
   </style>
   <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
 </head>
-<body>
-  <header class="navbar"><div class="logo">{% include '_marca_cabecalho.html' %}</div></header>
+<body class="achetece-site">
+  {% include '_cabecalho_site.html' %}
+
 
   <main class="auth-wrap">
     <section class="card">
@@ -75,6 +76,6 @@
       <a class="back" href="/login">Voltar para o login</a>
     </section>
   </main>
-  <footer class="achetece-footer">{% include '_direitos_reservados.html' %}</footer>
+  {% include '_rodape_site.html' %}
 </body>
 </html>

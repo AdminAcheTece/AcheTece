@@ -12,15 +12,16 @@
       border-radius: 6px;
       margin-top: 20px;
     }
-  
+
   <!-- Ícone da aba (favicon) -->
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
-    
+
   </style>
   <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
 </head>
-<body>
+<body class="achetece-site">
+  {% include '_cabecalho_site.html' %}
   <h2>Bem-vindo, {{ empresa.nome }}</h2>
   <p>Seu pagamento está ativo desde: {{ empresa.data_pagamento }}</p>
 
@@ -29,6 +30,6 @@
 
   <br><br>
   <a href="/logout">Sair</a>
-  <footer class="achetece-footer">{% include '_direitos_reservados.html' %}</footer>
+  {% include '_rodape_site.html' %}
 </body>
 </html>

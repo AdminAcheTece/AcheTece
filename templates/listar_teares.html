@@ -111,7 +111,8 @@
     </style>
   <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
 </head>
-<body>
+<body class="achetece-site">
+  {% include '_cabecalho_site.html' %}
     <div class="container">
         <div style="text-align: center; margin-bottom: 20px;">
             <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" style="max-height: 80px;">
@@ -172,6 +173,6 @@
         });
       });
     </script>
-  <footer class="achetece-footer">{% include '_direitos_reservados.html' %}</footer>
+  {% include '_rodape_site.html' %}
 </body>
 </html>

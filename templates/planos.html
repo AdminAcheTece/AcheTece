@@ -5,11 +5,11 @@
     <title>Planos - AcheTece</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
     <!-- Ícone da aba (favicon) -->
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}"> 
-    
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -67,12 +67,11 @@
     </style>
   <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
 </head>
-<body>
+<body class="achetece-site">
+  {% include '_cabecalho_site.html' %}
 
     <div class="container">
-        <div class="logo">
-            {% include '_marca_cabecalho.html' %}
-        </div>
+
 
         <h1>Assinatura não concluída</h1>
 
@@ -87,6 +86,6 @@
         <a href="{{ url_for('checkout') }}" class="botao-pagamento">Tentar novamente o pagamento</a>
     </div>
 
-  <footer class="achetece-footer">{% include '_direitos_reservados.html' %}</footer>
+  {% include '_rodape_site.html' %}
 </body>
 </html>

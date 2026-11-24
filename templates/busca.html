@@ -8,7 +8,7 @@
     <!-- Ícone da aba (favicon) -->
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
-    
+
     <!-- Tipografia e seu CSS principal -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
@@ -29,7 +29,7 @@
         }
         .campo{ flex:1 1 200px; display:flex; flex-direction:column; }
         label{ font-weight:bold; margin-bottom:5px; color:#003bb3; }
-        
+
         /* (4) Cor dentro dos campos = #8A00FF (texto e foco) */
         select{
           padding:10px; border-radius:6px; border:1px solid #101214;
@@ -185,96 +185,11 @@
     </style>
   <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
 </head>
-<body>
+<body class="achetece-site">
+  {% include '_cabecalho_site.html' %}
 
   <!-- ===== Cabeçalho (idêntico ao index; sem top-nav; com casinha) ===== -->
-  <header class="navbar">
-    <div class="header-left">
-      <div class="logo">
-        {% include '_marca_cabecalho.html' %}
-      </div>
-    </div>
 
-    <div class="header-right">
-      <!-- Casinha (fica “por dentro” do sanduíche) -->
-      <a href="{{ url_for('index') }}" class="icon-btn" aria-label="Página inicial" title="Página inicial">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 10.5 12 3l9 7.5"></path>
-          <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
-          <path d="M9 21V12h6v9"></path>
-        </svg>
-      </a>
-
-      <!-- Menu sanduíche -->
-      <div class="menu-wrap">
-        <button class="hamburger" id="hamburger" type="button" aria-label="Abrir menu" aria-controls="menu-lateral" aria-haspopup="menu" aria-expanded="false">
-          <span></span><span></span><span></span>
-        </button>
-
-        <nav class="menu-dropdown" id="menu-lateral" role="menu" aria-label="Menu rápido">
-          <div class="menu-header">
-            <span>Menu</span>
-            <button type="button" class="menu-close" aria-label="Fechar menu">
-              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
-              </svg>
-            </button>
-          </div>
-
-          <a href="{{ url_for('buscar_teares') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="11" cy="11" r="7"></circle>
-              <line x1="16.65" y1="16.65" x2="21" y2="21"></line>
-            </svg>
-            <span>Buscar Tear</span>
-          </a>
-
-          <a href="{{ url_for('malharia_info') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"></circle>
-              <path d="M9.5 9a2.5 2.5 0 1 1 4.1 2A3 3 0 0 0 12 13.6"></path>
-              <circle cx="12" cy="17" r="1.2" fill="currentColor"></circle>
-            </svg>
-            <span>Como Funciona</span>
-          </a>
-
-          <a href="{{ url_for('login') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="8" r="4"></circle>
-              <path d="M4 20a8 8 0 0 1 16 0"></path>
-            </svg>
-            <span>Já sou cadastrado</span>
-          </a>
-
-          <a href="{{ url_for('quem_somos') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"></circle>
-              <circle cx="12" cy="8" r="1.5" fill="currentColor"></circle>
-              <path d="M11 11h2v6h-2z" fill="currentColor"></path>
-            </svg>
-            <span>Quem Somos</span>
-          </a>
-
-          <a href="{{ url_for('contato') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 4h16v12H4z"></path>
-              <path d="M22 20H2"></path>
-              <path d="M22 8l-10 6L2 8" fill="none"></path>
-            </svg>
-            <span>Fale conosco</span>
-          </a>
-
-          <a href="{{ url_for('termos') }}" class="menu-item" role="menuitem">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="4" y="4" width="16" height="16" rx="2"></rect>
-              <path d="M8 8h8M8 12h8M8 16h5"></path>
-            </svg>
-            <span>Termos e Políticas</span>
-          </a>
-        </nav>
-      </div>
-    </div>
-  </header>
 
   <!-- ===== Conteúdo da BUSCA ===== -->
   <div class="container">
@@ -412,6 +327,6 @@
       window.addEventListener('resize', setNavH);
     })();
   </script>
-  <footer class="achetece-footer">{% include '_direitos_reservados.html' %}</footer>
+  {% include '_rodape_site.html' %}
 </body>
 </html>
