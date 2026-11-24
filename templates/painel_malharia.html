@@ -1,236 +1,6 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-  <meta charset="UTF-8" />
-  <title>Painel da Malharia - AcheTece</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <link rel="icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
-  <style>
-    .sr-only{
-      position:absolute; width:1px; height:1px; padding:0; margin:-1px;
-      overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
-    }
-
-    .painel-conteudo {
-      display:grid;
-      gap:16px;
-      max-width:1160px;
-      margin:0 auto;
-    }
-    .painel-salto:focus {
-      position:fixed;
-      top:12px;
-      left:12px;
-      z-index:10000;
-      width:auto;
-      height:auto;
-      padding:10px 14px;
-      margin:0;
-      clip:auto;
-      border-radius:8px;
-      background:#0b0d0e;
-      color:#fff;
-    }
-    .painel-cartao {
-      border:1px solid #dce2e6;
-      border-radius:16px;
-      background:#fff;
-      padding:clamp(14px, 3vw, 24px);
-      min-width:0;
-    }
-    .painel-conteudo h1, .painel-conteudo h2, .painel-conteudo h3 { margin:0; }
-    .painel-conteudo h1 { font-size:clamp(1.6rem, 4vw, 2.4rem); }
-    .painel-conteudo h2 { font-size:1.3rem; }
-    .painel-conteudo p { margin:6px 0 0; }
-    .painel-resumo { color:#46545f; }
-    .painel-cabecalho, .perfil-identidade {
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      flex-wrap:wrap;
-      gap:12px;
-    }
-    .perfil-identidade { justify-content:flex-start; min-width:0; }
-    .perfil-identidade strong, .tear-card h3 { overflow-wrap:anywhere; }
-    .perfil-foto {
-      flex:0 0 48px;
-      width:48px;
-      height:48px;
-      border-radius:50%;
-      object-fit:cover;
-    }
-    .painel-acoes {
-      display:flex;
-      align-items:center;
-      gap:8px 16px;
-      flex-wrap:wrap;
-      margin-top:12px;
-    }
-    .painel-acao, .painel-botao, .painel-acoes select {
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      min-height:44px;
-      font:inherit;
-    }
-    .painel-acao { color:#2368a8; text-decoration:underline; }
-    .painel-botao {
-      padding:8px 14px;
-      border:1px solid var(--achetece-action-blue);
-      border-radius:10px;
-      background:var(--achetece-action-blue);
-      color:#fff;
-      font-weight:700;
-      text-decoration:none;
-      cursor:pointer;
-    }
-    .painel-botao:hover { background:var(--achetece-action-hover); color:#fff; }
-    .painel-acoes select {
-      border:1px solid #7f8b93;
-      border-radius:8px;
-      background:#fff;
-      padding:6px 12px;
-      color:#0b0d0e;
-    }
-    .painel-status {
-      display:inline-block;
-      padding:3px 8px;
-      border-radius:8px;
-      background:#edf0f0;
-      color:#34424a;
-      font-weight:700;
-      font-size:.875rem;
-    }
-    .painel-status.ok { background:#e9f7ef; color:#135b2b; }
-    .painel-status.warn { background:#fff3e6; color:#7a3d00; }
-    .painel-status.danger { background:#ffe9ee; color:#7a0013; }
-    .tabela-teares {
-      width:100%;
-      table-layout:fixed;
-      border-collapse:collapse;
-      background:#fff;
-      margin-top:12px;
-    }
-    .tabela-teares th, .tabela-teares td {
-      padding:9px;
-      border-bottom:1px solid #dce2e6;
-      text-align:left;
-      overflow-wrap:anywhere;
-    }
-    .tabela-teares th { background:#f4f6f7; }
-    .tabela-teares th:first-child { width:23%; }
-    .tabela-teares th:is(:nth-child(5), :nth-child(6)) { width:17%; }
-    .tabela-teares th:last-child { width:17%; }
-    .teares-cards { display:none; }
-    .tear-card {
-      border-top:1px solid #dce2e6;
-      padding:12px 0 0;
-      min-width:0;
-    }
-    .tear-card h3 { font-size:1rem; }
-    .tear-card dl {
-      display:grid;
-      grid-template-columns:repeat(2, minmax(0,1fr));
-      gap:8px 12px;
-      margin:12px 0 0;
-    }
-    .tear-card dt { font-size:.875rem; color:#46545f; }
-    .tear-card dd { margin:0; overflow-wrap:anywhere; }
-    .tear-acoes { display:flex; flex-wrap:wrap; gap:0 12px; }
-    .tear-acoes button {
-      display:inline-flex;
-      align-items:center;
-      min-height:44px;
-      border:0;
-      background:transparent;
-      padding:0;
-      font:inherit;
-      color:#7a0013;
-      text-decoration:underline;
-      cursor:pointer;
-    }
-
-    *, *::before, *::after { box-sizing:border-box; }
-    body.portal-malharia {
-      background:#f4f6f7;
-      color:#111827;
-      font:1rem/1.5 Inter, system-ui, sans-serif;
-      min-height:100vh;
-      display:flex;
-      flex-direction:column;
-    }
-    .painel-conteudo {
-      flex:1;
-      align-content:start;
-      width:min(100% - 2rem, 72.5rem);
-      padding:clamp(20px, 4vw, 44px) 0 40px;
-    }
-    .portal-contexto { color:#46545f; font-weight:700; }
-    .portal-identidade h1 { overflow-wrap:anywhere; }
-    .portal-cabecalho nav, .portal-perfil summary {
-      display:flex;
-      align-items:center;
-      gap:clamp(8px, 2vw, 24px);
-    }
-    .portal-cabecalho nav { font-weight:600; }
-    .portal-perfil { position:relative; }
-    .portal-perfil summary {
-      gap:6px;
-      min-height:44px;
-      padding:0 10px;
-      border:1px solid #65717a;
-      border-radius:8px;
-      cursor:pointer;
-      list-style:none;
-    }
-    .portal-perfil summary::-webkit-details-marker { display:none; }
-    .portal-perfil summary svg {
-      width:19px;
-      height:19px;
-      fill:none;
-      stroke:currentColor;
-      stroke-width:1.8;
-    }
-    .portal-menu {
-      position:absolute;
-      right:0;
-      top:calc(100% + 10px);
-      width:min(19rem, 100vw - 2rem);
-      max-height:calc(100dvh - 84px);
-      overflow:auto;
-      padding:10px;
-      background:#fff;
-      color:#111827;
-      border:1px solid #dce2e6;
-      border-radius:12px;
-      box-shadow:0 12px 30px #11182725;
-    }
-    .portal-menu > strong { display:block; padding:8px; overflow-wrap:anywhere; }
-    .portal-menu a { display:flex; color:#164d7e; padding:0 8px; }
-    .portal-menu a:hover { background:#f4f6f7; }
-    .portal-notificacao { border-top:1px solid #dce2e6; padding:8px; }
-    .portal-notificacao p { margin:3px 0 0; font-weight:400; overflow-wrap:anywhere; }
-    .assinatura-resumo {
-      border-block:1px solid #dce2e6;
-      padding:14px 0;
-    }
-    .assinatura-resumo .painel-cabecalho { justify-content:flex-start; }
-    .assinatura-alerta { color:#7a3d00; font-weight:700; }
-    .painel-alerta { border-left:3px solid #2368a8; padding-left:10px; }
-    .painel-conteudo :focus-visible { outline:2px solid #2368a8; outline-offset:3px; }
-    @media (max-width:850px) {
-      .tabela-teares { display:none; }
-      .teares-cards { display:grid; gap:10px; margin-top:12px; }
-    }
-    @media (max-width:600px) {
-      .portal-cabecalho .achetece-site-row { gap:6px; }
-      .portal-cabecalho nav { font-size:.83rem; white-space:nowrap; }
-    }
-  </style>
-</head>
-<body class="achetece-site portal-malharia">
+{% extends '_portal_base.html' %}
+{% set nome_empresa = empresa.apelido or empresa.nome %}
+{% block content %}
 {% set nome_empresa = empresa.apelido or empresa.nome %}
 {% set assinatura_tom = {
   'ativa': 'ok',
@@ -253,11 +23,13 @@
   <div class="tear-acoes">
     <a class="painel-acao" href="{{ url_for('editar_tear', id=tear.id) }}"
        aria-label="Editar {{ tear.marca }} {{ tear.modelo }}">Editar</a>
+    {% if not session.get("portal_membro") %}
     <form method="POST" action="{{ url_for('excluir_tear', id=tear.id) }}"
           onsubmit="return confirm('Confirma excluir este tear? Essa ação é irreversível.');">
       <input type="hidden" name="csrf_token" value="{{ tear_csrf }}">
       <button type="submit" aria-label="Excluir {{ tear.marca }} {{ tear.modelo }}">Excluir</button>
     </form>
+    {% endif %}
   </div>
 {% endmacro %}
 
@@ -270,65 +42,18 @@
   {% if tear.id in dados_incompletos %}<p>Dados técnicos incompletos</p>{% endif %}
 {% endmacro %}
 
-  <a class="sr-only painel-salto" href="#conteudo">Ir para o conteúdo</a>
-  <header class="achetece-site-header portal-cabecalho">
-    <div class="achetece-site-row">
-      <a class="achetece-site-brand" href="{{ url_for('painel_malharia') }}" aria-label="AcheTece, painel da malharia">
-        {% include '_marca_cabecalho.html' %}
-      </a>
-      <nav aria-label="Navegação da malharia">
-        <a href="{{ url_for('fale_conosco') }}">Fale Conosco</a>
-        <a href="#assinatura">Assinatura</a>
-        <details class="portal-perfil">
-          <summary aria-label="Perfil da malharia">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="8" r="4"></circle>
-              <path d="M4 21v-2a8 8 0 0 1 16 0v2"></path>
-            </svg>
-            Perfil{% if notificacoes|int > 0 %} ({{ notificacoes }}){% endif %}
-          </summary>
-          <div class="portal-menu">
-            <strong>{{ nome_empresa }}</strong>
-            <a href="{{ url_for('editar_empresa') }}">Editar cadastro</a>
-            <a href="{{ url_for('treinamento_home') }}">Treinamento operacional</a>
-            <a href="{{ url_for('index') }}">Buscar teares no AcheTece</a>
-            {% for notificacao in notificacoes_lista %}
-              <div class="portal-notificacao">
-                <strong>{{ notificacao.titulo }}</strong>
-                <p>{{ notificacao.mensagem }}</p>
-              </div>
-            {% endfor %}
-            <a href="{{ url_for('logout') }}">Sair</a>
-          </div>
-        </details>
-      </nav>
-    </div>
-  </header>
-
-  <main id="conteudo" class="painel-conteudo" tabindex="-1">
-    <div class="perfil-identidade portal-identidade">
-      {% if foto_url %}
-        <img class="perfil-foto" src="{{ foto_url }}" alt="" width="48" height="48">
-      {% endif %}
-      <div>
-        <p class="portal-contexto">Painel da Malharia</p>
-        <h1>{{ nome_empresa }}</h1>
-        {% if empresa.cidade and empresa.estado %}
-          <p class="painel-resumo">{{ empresa.cidade }} · {{ empresa.estado }}</p>
-        {% endif %}
-      </div>
-    </div>
-
     {% for mensagem in get_flashed_messages() %}
       <p class="painel-alerta" role="status">{{ mensagem }}</p>
     {% endfor %}
-    {% if not perfil_ok %}
+    {% if not perfil_ok and not session.get("portal_membro") %}
       <p class="painel-alerta">
         <a class="painel-acao" href="{{ url_for('editar_empresa') }}">Complete o cadastro da malharia</a>
         com o responsável, a localização e o telefone.
       </p>
     {% endif %}
 
+  {% if secao == 'financeiro' %}
+    <h1>Financeiro</h1>
     <section id="assinatura" class="assinatura-resumo" aria-labelledby="assinatura-titulo">
       <div class="painel-cabecalho">
         <h2 id="assinatura-titulo">Assinatura</h2>
@@ -367,16 +92,112 @@
       {% endif %}
     </section>
 
+    {% set opcoes = [('troca_plano', 'Solicitar troca de plano'), ('cancelamento', 'Solicitar cancelamento')] %}
+    {% include '_portal_solicitacoes.html' %}
+  {% elif secao == 'perfil' %}
+    <h1>Perfil</h1>
+    <section class="painel-cartao">
+      <h2>{{ nome_empresa }}</h2>
+      <dl class="portal-dados">
+        <dt>Responsável</dt><dd>{{ empresa.responsavel_nome or '' }} {{ empresa.responsavel_sobrenome or '' }}</dd>
+        <dt>E-mail</dt><dd>{{ empresa.email }}</dd>
+      </dl>
+      <a class="painel-botao" href="{{ url_for('editar_empresa') }}#responsavel_nome">Editar dados do responsável</a>
+    </section>
+  {% elif secao == 'equipe' %}
+    <h1>Equipe</h1>
+    <section class="painel-cartao">
+      <h2>Responsável pelo acesso</h2>
+      <p>{{ empresa.email }}</p>
+      <p>Membros podem cadastrar e editar teares da sua malharia.</p>
+      <form method="post" class="portal-formulario" action="{{ url_for('portal_acao', secao='equipe') }}">
+        <input type="hidden" name="csrf_token" value="{{ portal_csrf }}">
+        <input type="hidden" name="tipo" value="convidar">
+        <label>Nome<input name="nome" required maxlength="100"></label>
+        <label>E-mail<input name="email" type="email" required maxlength="254"></label>
+        <button class="painel-botao">Gerar convite</button>
+      </form>
+      <ul class="portal-registros">
+        {% for membro in membros %}
+          <li>
+            <strong>{{ membro.nome }}</strong> · {{ membro.email }} · {{ 'Ativo' if membro.senha else 'Convite pendente' }}
+            <form method="post" action="{{ url_for('portal_acao', secao='equipe') }}">
+              <input type="hidden" name="csrf_token" value="{{ portal_csrf }}">
+              <input type="hidden" name="tipo" value="revogar">
+              <input type="hidden" name="membro" value="{{ membro.id }}">
+              <button class="painel-botao">Remover acesso</button>
+            </form>
+          </li>
+        {% else %}<li>Nenhum membro convidado.</li>{% endfor %}
+      </ul>
+    </section>
+  {% elif secao == 'configuracoes' %}
+    <h1>Configurações</h1>
+    {% include '_portal_config_links.html' %}
+    <section class="painel-cartao" id="notificacoes">
+      <h2>Notificações</h2>
+      <form method="post" action="{{ url_for('portal_acao', secao='configuracoes') }}">
+        <input type="hidden" name="csrf_token" value="{{ portal_csrf }}">
+        <input type="hidden" name="tipo" value="preferencias">
+        <p><label class="portal-opcao"><input type="checkbox" name="novos_acessos" value="sim" {{ 'checked' if preferencias.novos_acessos }}> Novos acessos no portal</label></p>
+        <p><label class="portal-opcao"><input type="checkbox" name="email_acessos" value="sim" {{ 'checked' if preferencias.email_acessos }}> Novos acessos por e-mail</label></p>
+        <p><label class="portal-opcao"><input type="checkbox" name="assinatura" value="sim" {{ 'checked' if preferencias.assinatura }}> Situação da assinatura no portal</label></p>
+        <button class="painel-botao">Salvar preferências</button>
+      </form>
+      {% if preferencias.novos_acessos %}<p>Acessos identificados nos últimos 7 dias: {{ novos_acessos }}</p>{% endif %}
+      {% if preferencias.assinatura %}<p>Assinatura: {{ rotulo_assinatura }}</p>{% endif %}
+    </section>
+    <section class="painel-cartao" id="seguranca">
+      <h2>Segurança</h2>
+      <p>Use uma senha exclusiva e mantenha o acesso ao e-mail do cadastro.</p>
+      <a class="painel-botao" href="{{ url_for('editar_empresa') }}#senha">Alterar senha</a>
+    </section>
+    <section class="painel-cartao" id="sugestoes">
+      <h2>Sugestões</h2>
+      {% set opcoes = [('sugestao', 'Enviar sugestão')] %}
+      {% include '_portal_solicitacoes.html' %}
+    </section>
+  {% elif secao == 'acessos' %}
+    <h1>Acessos ao perfil</h1>
+    <section class="painel-cartao">
+      <h2>Contatos dos últimos 90 dias</h2>
+      <ul class="portal-registros">
+        {% for item in acessos %}
+          <li><strong>{{ item.dados.nome }}</strong> · {{ item.dados.email }} · {{ item.criado_em.strftime('%d/%m/%Y') }}</li>
+        {% else %}<li>Nenhum acesso identificado.</li>{% endfor %}
+      </ul>
+      <a class="painel-acao" href="{{ url_for('performance_acesso') }}">Consultar métricas do perfil</a>
+    </section>
+  {% elif secao == 'suporte' %}
+    <h1>Central de Ajuda</h1>
+    {% set opcoes = [('chamado', 'Abrir chamado')] %}
+    {% include '_portal_solicitacoes.html' %}
+    <section class="painel-cartao">
+      <details><summary>Como publico meus teares?</summary><p>Cadastre o tear pelo botão + Novo Tear. A assinatura ativa é necessária para aparecer na busca.</p></details>
+      <details><summary>Onde vejo o vencimento?</summary><p>Abra Financeiro no menu do portal para consultar sua assinatura.</p></details>
+      <p><a class="painel-acao" href="mailto:gestao.achetece@gmail.com">Fale por e-mail</a> ·
+      <a class="painel-acao" href="https://wa.me/5547991120670">Fale pelo WhatsApp</a></p>
+    </section>
+  {% else %}
+    <h1>{{ nome_empresa }}</h1>
+    {% if situacao_assinatura == 'ativa' and mostrar_pagamento %}
+      <p class="assinatura-alerta">Sua assinatura vence nos próximos 7 dias.</p>
+    {% endif %}
+    {% if not session.get('portal_membro') %}
+    <p><a class="painel-acao" href="{{ url_for('painel_malharia', secao='financeiro') }}">Assinatura · {{ rotulo_assinatura }}</a>
+      {% if fim_vigencia %} · {{ fim_vigencia.strftime('%d/%m/%Y') }}{% endif %}</p>
+    {% endif %}
+    {% set teares = teares|selectattr('id', 'in', publicados)|list if secao == 'ativos' else teares|rejectattr('id', 'in', publicados)|list if secao == 'inativos' else teares %}
     <section id="teares" class="painel-cartao" aria-labelledby="teares-titulo">
       <div class="painel-cabecalho">
         <div>
-          <h2 id="teares-titulo">Meus teares</h2>
+          <h2 id="teares-titulo">{{ 'Teares ativos' if secao == 'ativos' else 'Teares inativos' if secao == 'inativos' else 'Teares cadastrados' }}</h2>
           <p class="painel-resumo">
             {{ teares|length }} {{ 'cadastrado' if teares|length == 1 else 'cadastrados' }} ·
             {{ publicados|length }} {{ 'publicado' if publicados|length == 1 else 'publicados' }}
           </p>
         </div>
-        <a class="painel-botao" href="{{ url_for('teares_form') }}">Cadastrar tear</a>
+
       </div>
 
       {% if teares %}
@@ -427,19 +248,5 @@
         <p class="painel-resumo">Cadastre seu primeiro tear para começar a montar sua lista.</p>
       {% endif %}
     </section>
-  </main>
-  {% include '_rodape_site.html' %}
-  <script>
-    const perfil = document.querySelector('.portal-perfil');
-    document.addEventListener('click', (event) => {
-      if (perfil.open && !perfil.contains(event.target)) perfil.open = false;
-    });
-    perfil.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && perfil.open) {
-        perfil.open = false;
-        perfil.querySelector('summary').focus();
-      }
-    });
-  </script>
-</body>
-</html>
+  {% endif %}
+{% endblock %}

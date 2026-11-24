@@ -93,7 +93,7 @@
     <ul class="card-grid tear-results">
       {% for tear in resultados %}
         {% set empresa = tear.empresa %}
-        {% set destino = url_for('empresa_perfil', empresa_id=empresa.id, pagina=pagina, pp=por_pagina, **filtros) %}
+        {% set destino = url_for('portal_identificar_visitante', empresa_id=empresa.id, pagina=pagina, pp=por_pagina, **filtros) %}
         <li class="card">
           <h3><a href="{{ destino }}">{{ empresa.apelido or empresa.nome }}</a></h3>
           <p class="search-note">{{ [empresa.cidade, empresa.estado]|select|join(' / ') }}</p>

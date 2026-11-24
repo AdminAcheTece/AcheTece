@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Portal da Malharia{% endblock %} | AcheTece</title>
+  <link rel="icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='portal_malharia.css') }}">
+</head>
+<body class="portal-malharia">
+  <a class="portal-skip" href="#conteudo">Ir para o conteúdo</a>
+  <header class="portal-topo">
+    <a href="{{ url_for('painel_malharia') }}" class="portal-marca">
+      {% include '_marca_cabecalho.html' %}
+      <span>Portal da Malharia</span>
+    </a>
+    <a class="painel-botao" href="{{ url_for('teares_form') }}">+ Novo Tear</a>
+  </header>
+  {% set secao = request.args.get('secao', 'teares') %}
+  {% set em_cadastro = request.endpoint == 'editar_empresa' %}
+  {% macro portal_link(label, chave) %}
+    <a href="{{ url_for('painel_malharia', secao=chave) }}"{% if not em_cadastro and secao == chave %} aria-current="page"{% endif %}>{{ label }}</a>
+  {% endmacro %}
+  <div class="portal-layout">
+    <aside class="portal-lateral">
+      <details class="portal-navegacao">
+        <summary>Menu do portal</summary>
+        <nav aria-label="Portal da Malharia">
+          <details{% if em_cadastro or secao in ('perfil','equipe','configuracoes') %} open{% endif %}>
+            <summary class="portal-conta">{{ nome_empresa|default(session.get('empresa_apelido') or 'Minha malharia') }}</summary>
+            {% if not session.get("portal_membro") %}
+            {{ portal_link('Perfil', 'perfil') }}
+            {{ portal_link('Equipe', 'equipe') }}
+            {{ portal_link('Configurações', 'configuracoes') }}
+            {% endif %}
+            <a href="{{ url_for('logout') }}">Sair</a>
+          </details>
+          <details{% if not em_cadastro and secao in ('teares','ativos','inativos') %} open{% endif %}>
+            <summary>Teares cadastrados</summary>
+            <a href="{{ url_for('teares_form') }}">Cadastro</a>
+            {{ portal_link('Todos os teares', 'teares') }}
+            {{ portal_link('Teares ativos', 'ativos') }}
+            {{ portal_link('Teares inativos', 'inativos') }}
+          </details>
+          {% if not session.get("portal_membro") %}
+          {{ portal_link('Acessos ao perfil', 'acessos') }}
+          {{ portal_link('Financeiro', 'financeiro') }}
+          <details{% if not em_cadastro and secao == 'suporte' %} open{% endif %}>
+            <summary>Suporte</summary>
+            {{ portal_link('Central de Ajuda', 'suporte') }}
+            <a href="mailto:gestao.achetece@gmail.com">E-mail</a>
+            <a href="https://wa.me/5547991120670">WhatsApp</a>
+          </details>
+          {% endif %}
+        </nav>
+      </details>
+    </aside>
+    <main id="conteudo" class="painel-conteudo" tabindex="-1">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+  {% include '_rodape_site.html' %}
+  <script>
+    const navegacao = document.querySelector('.portal-navegacao');
+    const desktop = matchMedia('(min-width: 801px)');
+    const ajustarMenu = () => { navegacao.open = desktop.matches; };
+    ajustarMenu();
+    desktop.addEventListener('change', ajustarMenu);
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
