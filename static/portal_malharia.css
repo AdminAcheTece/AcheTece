@@ -6,8 +6,8 @@
 
 .painel-conteudo {
   display:grid;
-  gap:16px;
-  max-width:1160px;
+  gap:12px;
+  max-width:64rem;
   margin:0 auto;
 }
 .painel-salto:focus {
@@ -26,14 +26,14 @@
 }
 .painel-cartao {
   border:1px solid #dce2e6;
-  border-radius:16px;
+  border-radius:10px;
   background:#fff;
-  padding:clamp(14px, 3vw, 24px);
+  padding:16px;
   min-width:0;
 }
 .painel-conteudo h1, .painel-conteudo h2, .painel-conteudo h3 { margin:0; }
-.painel-conteudo h1 { font-size:clamp(1.6rem, 4vw, 2.4rem); }
-.painel-conteudo h2 { font-size:1.3rem; }
+.painel-conteudo h1 { font-size:1.375rem; line-height:1.25; overflow-wrap:anywhere; }
+.painel-conteudo h2 { font-size:1.0625rem; }
 .painel-conteudo p { margin:6px 0 0; }
 .painel-resumo { color:#46545f; }
 .painel-cabecalho, .perfil-identidade {
@@ -63,14 +63,14 @@
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  min-height:44px;
+  min-height:36px;
   font:inherit;
 }
 .painel-acao { color:#2368a8; text-decoration:underline; }
 .painel-botao {
-  padding:8px 14px;
+  padding:6px 12px;
   border:1px solid var(--achetece-action-blue);
-  border-radius:10px;
+  border-radius:7px;
   background:var(--achetece-action-blue);
   color:#fff;
   font-weight:700;
@@ -133,7 +133,7 @@
 .tear-acoes button {
   display:inline-flex;
   align-items:center;
-  min-height:44px;
+  min-height:36px;
   border:0;
   background:transparent;
   padding:0;
@@ -147,7 +147,7 @@
 body.portal-malharia {
   background:#f4f6f7;
   color:#111827;
-  font:1rem/1.5 Inter, system-ui, sans-serif;
+  font:.875rem/1.45 Inter, system-ui, sans-serif;
   min-height:100vh;
   display:flex;
   flex-direction:column;
@@ -155,8 +155,8 @@ body.portal-malharia {
 .painel-conteudo {
   flex:1;
   align-content:start;
-  width:min(100% - 2rem, 72.5rem);
-  padding:clamp(20px, 4vw, 44px) 0 40px;
+  width:calc(100% - 2rem);
+  padding:22px 0 26px;
 }
 .portal-contexto { color:#46545f; font-weight:700; }
 .portal-identidade h1 { overflow-wrap:anywhere; }
@@ -174,35 +174,26 @@ body.portal-malharia {
 }
 
 .portal-malharia { margin: 0; }
-.portal-topo {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px clamp(12px, 3vw, 36px);
-  background: #0b0d0e;
-  color: white;
-}
-.portal-marca { display: flex; align-items: center; gap: 8px; color: white; text-decoration: none; }
-.portal-topo .painel-botao { white-space: nowrap; }
 .portal-layout {
   display: grid;
-  grid-template-columns: 15rem minmax(0, 1fr);
+  grid-template-columns: 13.5rem minmax(0, 1fr);
   flex: 1;
 }
 .portal-lateral {
-  padding: 20px 14px;
+  padding: 14px 10px;
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100dvh;
+  overflow: auto;
   background: #eaf0f6;
   border-right: 1px solid #d5e0eb;
 }
-.portal-lateral nav { display: grid; gap: 7px; }
+.portal-lateral nav { display: grid; gap: 3px; }
 .portal-lateral a, .portal-lateral summary {
   display: block;
   color: #173b60;
-  padding: 10px 12px;
+  padding: 7px 8px;
   border-radius: 6px;
   text-decoration: none;
   overflow-wrap: anywhere;
@@ -216,13 +207,13 @@ body.portal-malharia {
 .portal-formulario {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  gap: 10px 14px;
 }
 .portal-formulario label { display: block; font-weight: 700; margin-bottom: 4px; }
 .portal-formulario input, .portal-formulario select {
   width: 100%;
-  min-height: 44px;
-  padding: 8px;
+  min-height: 36px;
+  padding: 6px 8px;
   font: inherit;
   color: inherit;
   background: #fff;
@@ -236,12 +227,13 @@ body.portal-malharia {
 .portal-dados dd { margin: 0 0 14px; overflow-wrap: anywhere; }
 @media (max-width: 800px) {
   .portal-layout { display: block; }
-  .portal-lateral { padding: 4px 12px; border-right: 0; }
+  .portal-lateral { position: static; height: auto; padding: 8px 12px; border-right: 0; }
   .portal-navegacao > summary { display: list-item; }
 }
 @media (max-width: 600px) {
   .portal-formulario { grid-template-columns: 1fr; }
-  .portal-topo { font-size: .85rem; }
+    .portal-formulario :is(input:not([type=checkbox]), select, textarea) { font-size: 16px; min-height: 44px; }
+  .painel-botao, .portal-lateral nav :is(a, summary) { min-height: 44px; }
 }
 
 .portal-campo-largo { grid-column: 1 / -1; }
@@ -260,3 +252,31 @@ body.portal-malharia {
 .portal-registros { padding-inline-start: 20px; overflow-wrap: anywhere; }
 .portal-registros li + li { margin-top: 12px; }
 .painel-alerta { overflow-wrap: anywhere; }
+
+.portal-lateral .portal-marca {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+  color: #152c45;
+}
+.portal-marca img {
+  flex: none;
+  background: #0b0d0e;
+  border-radius: 7px;
+  padding: 3px;
+}
+.portal-marca strong, .portal-marca small { display: block; }
+.portal-marca small { color: #46545f; }
+.portal-lateral .portal-novo {
+  display: flex;
+  color: white;
+  margin: 0 2px 12px;
+}
+.portal-lateral .portal-novo:hover { background: var(--achetece-action-hover); }
+.portal-lateral [aria-current="page"] { box-shadow: inset 3px 0 var(--achetece-action-blue); }
+.portal-formulario button[type=submit] { justify-self: start; }
+@media (max-width: 800px) {
+  .portal-lateral .portal-marca, .portal-lateral .portal-novo { display: inline-flex; vertical-align: middle; margin-bottom: 0; }
+  .portal-lateral .portal-novo { margin-inline-start: 4px; }
+}
