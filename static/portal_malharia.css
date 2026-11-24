@@ -331,3 +331,6 @@ body.portal-malharia {
   .portal-endereco { grid-template-columns: 1fr; }
   .portal-rua { grid-column: auto; }
 }
+
+.portal-sugestao-topo { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid #dce2e6; }
+#nova-sugestao:not([hidden]) { margin-bottom: 14px; }
