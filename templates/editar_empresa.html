@@ -2,12 +2,23 @@
 {% set nome_empresa = apelido or nome %}
 {% block title %}Dados da empresa{% endblock %}
 {% block content %}
-  <h1>Dados da empresa</h1>
-  {% include '_portal_config_links.html' %}
+  <h1>{{ icone('empresa') }} Dados da empresa</h1>
   <section class="painel-cartao">
+    <div class="portal-foto-linha">
+      {% if foto_empresa %}<img class="portal-foto" src="{{ foto_empresa }}" alt="Foto da malharia">{% else %}<span class="portal-foto">{{ icone('empresa') }}</span>{% endif %}
+      <form method="post" action="{{ url_for('perfil_foto_upload') }}" enctype="multipart/form-data">
+        <input type="hidden" name="destino" value="empresa">
+        <input type="hidden" name="csrf_token" value="{{ foto_csrf }}">
+        <label for="foto">Foto ou logomarca da empresa</label>
+        <input id="foto" type="file" name="foto" accept="image/jpeg,image/png,image/webp" required>
+        <button class="painel-botao">Enviar foto</button>
+      </form>
+    </div>
+    {% for mensagem in get_flashed_messages() %}<p role="status">{{ mensagem }}</p>{% endfor %}
     {% if request.args.get('ok') == '1' %}<p role="status">Alterações salvas com sucesso.</p>{% endif %}
     {% if erro %}<p class="mensagem-erro" role="alert">{{ erro }}</p>{% endif %}
         <form method="POST" action="{{ url_for('editar_empresa') }}" class="portal-formulario" id="formulario" autocomplete="off">
+          <input type="hidden" name="csrf_token" value="{{ foto_csrf }}">
           <div>
           <label for="cep">CEP <span style="color:#d00000">*</span></label>
           <input type="text" id="cep" name="cep" required
@@ -27,22 +38,6 @@
           <label for="apelido">Apelido da Empresa</label>
           <input type="text" id="apelido" name="apelido" value="{{ apelido or '' }}" class="{% if erros and erros.get('apelido') %}erro-campo{% endif %}">
           {% if erros and erros.get('apelido') %}<div class="mensagem-campo">{{ erros.get('apelido') }}</div>{% endif %}
-
-          </div>
-          <div>
-          <label for="responsavel_nome">Nome do responsável *</label>
-          <input type="text" id="responsavel_nome" name="responsavel_nome"
-                 value="{{ responsavel_nome or '' }}" placeholder="Ex.: Maria"
-                 class="{% if erros and erros.get('responsavel_nome') %}erro-campo{% endif %}">
-          {% if erros and erros.get('responsavel_nome') %}<div class="mensagem-campo">{{ erros.get('responsavel_nome') }}</div>{% endif %}
-
-          </div>
-          <div>
-          <label for="responsavel_sobrenome">Sobrenome do responsável (opcional)</label>
-          <input type="text" id="responsavel_sobrenome" name="responsavel_sobrenome"
-                 value="{{ responsavel_sobrenome or '' }}" placeholder="Ex.: Silva"
-                 class="{% if erros and erros.get('responsavel_sobrenome') %}erro-campo{% endif %}">
-          {% if erros and erros.get('responsavel_sobrenome') %}<div class="mensagem-campo">{{ erros.get('responsavel_sobrenome') }}</div>{% endif %}
 
           </div>
           <div>
@@ -92,12 +87,7 @@
           {% if erros and erros.get('email') %}<div class="mensagem-campo">{{ erros.get('email') }}</div>{% endif %}
 
           </div>
-          <div>
-          <label for="senha">Nova Senha (opcional)</label>
-          <input type="password" id="senha" name="senha" autocomplete="new-password" placeholder="Deixe em branco para manter a atual">
-
-          </div>
-          <button type="submit" class="painel-botao">Salvar Alterações</button>
+          <div class="portal-acoes-fim"><button type="submit" class="painel-botao">Salvar alterações</button></div>
         </form>
   </section>
 {% endblock %}

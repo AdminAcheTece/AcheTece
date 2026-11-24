@@ -2,18 +2,27 @@
   {% if secao == 'sugestoes' %}<details><summary class="painel-acao">+ Nova sugestão</summary>{% endif %}
   <form class="portal-formulario" method="post" action="{{ url_for('portal_acao', secao=secao) }}">
     <input type="hidden" name="csrf_token" value="{{ portal_csrf }}">
+    {% if secao == 'sugestoes' %}
+    <input type="hidden" name="tipo" value="sugestao">
+    <label>Categoria<select name="categoria" required>
+      <option value="">Selecione</option>
+      {% for categoria in categorias_sugestao %}<option>{{ categoria }}</option>{% endfor %}
+    </select></label>
+    {% else %}
     <label>Tipo<select name="tipo">
       {% for valor, rotulo in opcoes %}<option value="{{ valor }}">{{ rotulo }}</option>{% endfor %}
     </select></label>
-    <label>Assunto<input name="titulo" required maxlength="100"></label>
-    <label class="portal-campo-largo">Detalhes<textarea name="mensagem" required maxlength="2000" rows="4"></textarea></label>
-    <button class="painel-botao">Enviar solicitação</button>
+    {% endif %}
+    <label>{{ 'Título' if secao == 'sugestoes' else 'Assunto' }}<input name="titulo" required maxlength="100"></label>
+    <label class="portal-campo-largo">Detalhes<textarea name="mensagem" required {% if secao == 'sugestoes' %}minlength="20"{% endif %} maxlength="2000" rows="4"></textarea></label>
+    <div class="portal-acoes-fim"><button class="painel-botao">{{ 'Enviar sugestão' if secao == 'sugestoes' else 'Enviar solicitação' }}</button></div>
   </form>
   {% if secao == 'sugestoes' %}</details>{% endif %}
   <h2>{{ 'Histórico de sugestões' if secao == 'sugestoes' else 'Histórico' }}</h2>
   <ul class="portal-registros">
     {% for item in historico if item.tipo in (opcoes|map(attribute=0)|list) %}
       <li><strong>#{{ item.id }} · {{ item.dados.titulo }}</strong> · {{ item.criado_em.strftime('%d/%m/%Y') }}
+        {% if item.dados.categoria %}<p>{{ item.dados.categoria }}</p>{% endif %}
         <p>{{ item.dados.mensagem }}</p>
       </li>
     {% else %}<li>Nenhuma solicitação enviada.</li>{% endfor %}

@@ -78,17 +78,20 @@
     <form class="painel-cartao painel-acoes" method="GET" action="{{ url_for('checkout') }}">
       <label><input type="radio" name="plano" value="mensal" {{ 'checked' if plano != 'anual' }}> Mensal · {{ preco_mensal }}</label>
       <label><input type="radio" name="plano" value="anual" {{ 'checked' if plano == 'anual' }}> Anual · {{ preco_anual }}{% if desconto_anual %} (15% de desconto){% endif %}</label>
-      {% if not arquivada %}<button class="painel-botao">Pagar no Mercado Pago</button>{% endif %}
+      {% if not arquivada %}<button class="painel-botao">Pagar no Mercado Pago <img class="portal-mp" src="{{ url_for('static', filename='mercado-pago-icone.png') }}" alt="" width="23" height="16"></button>{% endif %}
     </form>
   {% elif secao == 'perfil' %}
-    <h1>Perfil</h1>
+    <h1>{{ icone('pessoa') }} Administrador</h1>
     <section class="painel-cartao">
-      <h2>{{ nome_empresa }}</h2>
-      <dl class="portal-dados">
-        <dt>Responsável</dt><dd>{{ empresa.responsavel_nome or '' }} {{ empresa.responsavel_sobrenome or '' }}</dd>
-        <dt>E-mail</dt><dd>{{ empresa.email }}</dd>
-      </dl>
-      <a class="painel-botao" href="{{ url_for('editar_empresa') }}#responsavel_nome">Editar dados do responsável</a>
+      <h2>Responsável pela malharia</h2>
+      <p class="painel-resumo">Conta de acesso: {{ empresa.email }}</p>
+      <form class="portal-formulario" method="post" action="{{ url_for('portal_acao', secao='perfil') }}">
+        <input type="hidden" name="csrf_token" value="{{ portal_csrf }}">
+        <input type="hidden" name="tipo" value="administrador">
+        <label>Nome do responsável<input name="responsavel_nome" required maxlength="80" value="{{ empresa.responsavel_nome or '' }}"></label>
+        <label>Sobrenome<input name="responsavel_sobrenome" maxlength="80" value="{{ empresa.responsavel_sobrenome or '' }}"></label>
+        <div class="portal-acoes-fim"><button class="painel-botao">Salvar alterações</button></div>
+      </form>
     </section>
   {% elif secao == 'equipe' %}
     <h1>Equipe</h1>
@@ -122,31 +125,41 @@
     {% include '_portal_config_links.html' %}
     {% if secao in ('configuracoes', 'notificacoes') %}
     <section class="painel-cartao" id="notificacoes">
-      <h2>Notificações</h2>
+      <h2>{{ icone('notificacoes') }} Notificações</h2>
       <form method="post" action="{{ url_for('portal_acao', secao='notificacoes') }}">
         <input type="hidden" name="csrf_token" value="{{ portal_csrf }}">
         <input type="hidden" name="tipo" value="preferencias">
-        <p><label class="portal-opcao"><input type="checkbox" name="novos_acessos" value="sim" {{ 'checked' if preferencias.novos_acessos }}> Novos acessos no portal</label></p>
-        <p><label class="portal-opcao"><input type="checkbox" name="email_acessos" value="sim" {{ 'checked' if preferencias.email_acessos }}> Novos acessos por e-mail</label></p>
-        <p><label class="portal-opcao"><input type="checkbox" name="assinatura" value="sim" {{ 'checked' if preferencias.assinatura }}> Situação da assinatura no portal</label></p>
-        <button class="painel-botao">Salvar preferências</button>
+        <fieldset class="portal-bloco"><legend>Canais de notificação</legend>
+          <label class="portal-opcao"><input type="checkbox" name="email_acessos" value="sim" {{ 'checked' if preferencias.email_acessos }}> E-mail para novos acessos</label>
+          <p class="painel-resumo">WhatsApp · envio automático indisponível</p>
+        </fieldset>
+        <fieldset class="portal-bloco"><legend>Alertas no portal</legend>
+          <label class="portal-opcao"><input type="checkbox" name="novos_acessos" value="sim" {{ 'checked' if preferencias.novos_acessos }}> {{ icone('acessos') }} Novos acessos identificados</label>
+          <label class="portal-opcao"><input type="checkbox" name="assinatura" value="sim" {{ 'checked' if preferencias.assinatura }}> {{ icone('financeiro') }} Situação da assinatura</label>
+        </fieldset>
+        <div class="portal-acoes-fim"><button class="painel-botao">Salvar preferências</button></div>
       </form>
       {% if preferencias.novos_acessos %}<p>Acessos identificados nos últimos 7 dias: {{ novos_acessos }}</p>{% endif %}
       {% if preferencias.assinatura %}<p>Assinatura: {{ rotulo_assinatura }}</p>{% endif %}
     </section>
     {% elif secao == 'seguranca' %}
     <section class="painel-cartao" id="seguranca">
-      <h2>Segurança</h2>
+      <h2>{{ icone('seguranca') }} Segurança</h2>
+      <div class="portal-bloco portal-linha"><div><h3>Senha</h3><p>Use a recuperação de acesso para definir outra senha.</p></div>
+      <a class="painel-botao" href="{{ url_for('esqueci_senha') }}">Alterar senha</a></div>
+      <div class="portal-bloco portal-dicas">
       <h3>Dicas de segurança</h3>
       <ul><li>Use uma senha longa e exclusiva.</li><li>Ative a autenticação em dois fatores no seu e-mail.</li><li>Compartilhe convites apenas com a pessoa convidada.</li></ul>
-      <h3>Sessão atual</h3>
+      </div>
+      <div class="portal-bloco"><h3>Autenticação em dois fatores</h3><p>Indisponível no portal.</p></div>
+      <div class="portal-bloco"><h3>Sessão atual</h3>
       <dl class="portal-dados"><dt>Último login registrado nesta sessão</dt><dd>{{ session.get('portal_login_em') or 'Indisponível nesta sessão' }}</dd>
       <dt>Dispositivo</dt><dd>{{ 'Celular ou tablet' if 'mobile' in request.user_agent.string|lower or 'ipad' in request.user_agent.string|lower else 'Computador ou dispositivo não identificado' }}</dd></dl>
-      <a class="painel-botao" href="{{ url_for('esqueci_senha') }}">Alterar senha</a>
+      </div>
     </section>
     {% else %}
     <section class="painel-cartao" id="sugestoes">
-      <h2>Sugestões</h2>
+      <h2>{{ icone('mensagem') }} Sugestões de melhoria</h2>
       {% set opcoes = [('sugestao', 'Enviar sugestão')] %}
       {% include '_portal_solicitacoes.html' %}
     </section>
