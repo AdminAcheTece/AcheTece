@@ -10,21 +10,19 @@
 </head>
 <body class="portal-malharia">
   <a class="portal-skip" href="#conteudo">Ir para o conteúdo</a>
-  <header class="portal-topo">
-    <a href="{{ url_for('painel_malharia') }}" class="portal-marca">
-      {% include '_marca_cabecalho.html' %}
-      <span>Portal da Malharia</span>
-    </a>
-    <a class="painel-botao" href="{{ url_for('teares_form') }}">+ Novo Tear</a>
-  </header>
   {% set secao = request.args.get('secao', 'teares') %}
   {% set em_cadastro = request.endpoint == 'editar_empresa' %}
   {% macro portal_link(label, chave) %}
-    <a href="{{ url_for('painel_malharia', secao=chave) }}"{% if not em_cadastro and secao == chave %} aria-current="page"{% endif %}>{{ label }}</a>
+    <a href="{{ url_for('painel_malharia', secao=chave) }}"{% if request.endpoint == 'painel_malharia' and secao == chave %} aria-current="page"{% endif %}>{{ label }}</a>
   {% endmacro %}
   <div class="portal-layout">
     <aside class="portal-lateral">
-      <details class="portal-navegacao">
+      <a href="{{ url_for('painel_malharia') }}" class="portal-marca">
+        <img src="{{ url_for('static', filename='achetece-simbolo-oficial.png') }}" alt="" width="30" height="30">
+        <span><strong>AcheTece</strong><small>Portal da Malharia</small></span>
+      </a>
+      <a class="painel-botao portal-novo" href="{{ url_for('teares_form') }}">+ Novo Tear</a>
+      <details class="portal-navegacao" open>
         <summary>Menu do portal</summary>
         <nav aria-label="Portal da Malharia">
           <details{% if em_cadastro or secao in ('perfil','equipe','configuracoes') %} open{% endif %}>
@@ -38,7 +36,7 @@
           </details>
           <details{% if not em_cadastro and secao in ('teares','ativos','inativos') %} open{% endif %}>
             <summary>Teares cadastrados</summary>
-            <a href="{{ url_for('teares_form') }}">Cadastro</a>
+            <a href="{{ url_for('teares_form') }}"{% if request.endpoint in ('teares_form','cadastrar_teares') %} aria-current="page"{% endif %}>Cadastro</a>
             {{ portal_link('Todos os teares', 'teares') }}
             {{ portal_link('Teares ativos', 'ativos') }}
             {{ portal_link('Teares inativos', 'inativos') }}
@@ -60,7 +58,6 @@
       {% block content %}{% endblock %}
     </main>
   </div>
-  {% include '_rodape_site.html' %}
   <script>
     const navegacao = document.querySelector('.portal-navegacao');
     const desktop = matchMedia('(min-width: 801px)');

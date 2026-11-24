@@ -1,277 +1,15 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-  <meta charset="UTF-8">
-  <title>Editar Tear</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- Favicons -->
-  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
-  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
-
-  <!-- CSS global (opcional) -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
-  <style>
-    :root{
-      /* Paleta OLIVE (padrão novo) */
-      --olive:#101214;
-      --olive-600:#202528;
-      --olive-dark:#101214;
-      --olive-50:#F5F6F6;
-      --line-olive:#E1E5E7;
-
-      /* Destaque neon para CTAs */
-      --lime:#A8E63D;
-      --lime-700:#95D32B;
-
-      /* Fundo global (igual à index) */
-      --site-bg:#F5F6F6;
-
-      /* Neutros */
-      --text:#111827;
-      --muted:#5b5b5b;
-      --line:#e8ecf5;
-
-      /* Aliases p/ CSS legado */
-      --roxo:var(--olive);
-      --roxo-hover:var(--olive-600);
-    }
-
-    html, body{ max-width:100%; overflow-x:hidden; }
-    *, *::before, *::after{ box-sizing:border-box; }
-
-    body{
-      margin:0;
-      background:#fff;
-      color:var(--text);
-      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-    }
-
-    /* Miolo cinza + container */
-    .faixa-cinza{ background:var(--site-bg); padding:18px 0 42px; }
-    .page-outer{ max-width:980px; margin:0 auto; padding:0 16px; }
-
-    /* ===== TOPO (Voltar ao painel) — padrão PERFORMANCE ===== */
-    .top{
-      display:flex;
-      align-items:center;
-      justify-content:center; /* igual ao visual da performance */
-      margin: 2px 0 14px;
-    }
-    .btn-outline{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      height:40px;
-      padding:0 16px;
-      border-radius:9999px;
-      border:1.5px solid #e3e3e7;
-      background:#fff;
-      color:#1f1f1f;
-      font-weight:800;
-      text-decoration:none;
-      transition: background .15s ease, color .15s ease, border-color .15s ease, transform .12s ease;
-      box-shadow:none !important;
-      white-space:nowrap;
-    }
-    .btn-outline:hover{
-      background:var(--olive);
-      color:#fff;
-      border-color:var(--olive);
-      transform:translateY(-1px);
-    }
-    .btn-outline:active{
-      background:var(--olive-600);
-      border-color:var(--olive-600);
-      transform:translateY(0);
-    }
-    .btn-outline:focus{ outline:none; }
-    .btn-outline:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
-
-    /* Card */
-    .card{
-      width:100%;
-      max-width:620px;
-      margin: 0 auto;
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:16px;
-      padding:22px 20px 18px;
-      box-shadow:none !important;
-    }
-    @media (max-width:560px){
-      .card{ padding:18px 14px 16px; }
-    }
-
-    h1.titulo{
-      margin:0 0 14px;
-      font-size:22px;
-      font-weight:800;
-      color:var(--olive-dark);
-      letter-spacing:-0.01em;
-    }
-
-    /* Form */
-    .formulario label{
-      display:block;
-      margin:10px 0 6px;
-      font-weight:700;
-      color:#2a233a;
-      font-size:14px;
-    }
-    .formulario input,
-    .formulario select{
-      width:100%;
-      height:44px;
-      border:1px solid #cfd3dc;
-      border-radius:12px;
-      padding:0 12px;
-      background:#fff;
-      font-size:14px;
-      outline:0;
-      transition:border-color .15s ease, box-shadow .15s ease;
-    }
-    .formulario input:focus,
-    .formulario select:focus{
-      border-color:var(--olive);
-      box-shadow:0 0 0 3px rgba(123,116,36,.15);
-    }
-
-    /* Remover “azulado/amarelo” de autofill */
-    input:-webkit-autofill,
-    select:-webkit-autofill{
-      -webkit-text-fill-color:#101214;
-      box-shadow:0 0 0 1000px #fff inset !important;
-      border:1px solid var(--line-olive);
-      transition:background-color 9999s ease-in-out 0s;
-    }
-
-    /* Ações */
-    .acoes{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      flex-wrap:wrap;
-      margin-top:14px;
-    }
-
-    /* Botão padrão global (preto -> lime) */
-    .btn{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      height:44px;
-      padding:0 18px;
-      border:0;
-      border-radius:9999px;
-      font-weight:800;
-      font-size:14px;
-      cursor:pointer;
-      text-decoration:none;
-      background:#000;
-      color:var(--lime);
-      transition: background-color .15s ease, color .15s ease, transform .12s ease;
-      box-shadow:none !important;
-    }
-    .btn:hover{ background:var(--lime); color:#000; transform:translateY(-2px); }
-    .btn:active{ background:var(--lime-700); color:#000; transform:translateY(0); }
-    .btn:focus{ outline:none; }
-    .btn:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
-    .btn:disabled{ opacity:.5; cursor:not-allowed; transform:none; }
-
-    /* Suavização tipográfica (desktop) */
-    @media (min-width:901px){
-      h1.titulo{ font-weight:700 !important; }
-      .formulario label{ font-weight:600 !important; }
-      .btn, .btn-outline{ font-weight:700 !important; }
-    }
-
-    /* ===== CTA + FOOTER padrão (igual index) ===== */
-    .cta-bar{
-      background:#000; color:#fff; padding:20px 16px;
-      display:flex; align-items:center; gap:16px; flex-wrap:wrap;
-      border-top:1px solid rgba(255,255,255,0.06);
-      justify-content:flex-start;
-    }
-    .cta-text h3{ margin:0 0 4px 0; font-size:18px; font-weight:800; line-height:1.2; }
-    .cta-text p{ margin:0; font-size:15px; opacity:.9; }
-    .cta-bar .cta-btn{
-      display:inline-flex !important;
-      align-items:center !important;
-      justify-content:center !important;
-      height:44px !important;
-      padding:0 22px !important;
-      border-radius:9999px !important;
-      font-weight:800 !important;
-      text-decoration:none !important;
-      white-space:nowrap !important;
-      background:#fff !important;
-      color:#000 !important;
-      border:0 !important;
-      box-shadow:none !important;
-      line-height:1 !important;
-      cursor:pointer;
-      transition: background-color .15s ease, color .15s ease, transform .15s ease;
-    }
-    .cta-bar .cta-btn:hover{ background:var(--lime) !important; color:#111 !important; transform:translateY(-1px); }
-    .cta-bar .cta-btn:active{ background:var(--lime-700) !important; color:#111 !important; transform:translateY(0); }
-    .cta-bar .cta-btn:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
-
-    .site-footer{
-      background:#fff;color:#101214;border-top:1px solid #eee;padding:18px 16px 28px;
-    }
-    .footer-inner{
-      max-width:980px;margin:0 auto;display:grid;grid-template-columns:auto 1fr;
-      gap:20px 28px;align-items:start;
-    }
-    .footer-brand img{ height:44px;width:auto;display:block; }
-    .footer-cols{ display:grid;grid-template-columns: repeat(2, minmax(180px, 240px));gap:12px 28px; }
-    .footer-col h4{ margin:0 0 8px 0;font-size:14px;font-weight:800;color:#101214; }
-    .footer-col ul{ list-style:none;margin:0;padding:0; }
-    .footer-col li+li{ margin-top:6px; }
-    .footer-col a{ color:#101214;text-decoration:none;font-size:14px; }
-    .footer-col a:hover{ text-decoration:underline; }
-
-    @media (max-width:900px){
-      .footer-inner{ grid-template-columns:1fr; }
-      .footer-cols{ grid-template-columns:1fr; }
-    }
-
-    @media (prefers-color-scheme: dark){
-      html, body{ background:#fff !important; color:var(--text); }
-    }
-  </style>
-
-  <!-- ✅ Header padrão (SEMPRE o último do head) -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
-</head>
-
-<body class="achetece-site header-v1">
-  {% include '_cabecalho_site.html' %}
-
-  <!-- ===== HEADER PADRÃO ===== -->
-
-
-  <!-- ===== MENU MOBILE (SÓ NO MOBILE) ===== -->
-
-
-
-
-  <!-- ===== CONTEÚDO ===== -->
-  <div class="faixa-cinza">
-    <div class="page-outer">
-
-      <!-- ✅ Voltar ao painel (padrão Performance) -->
-      <div class="top">
-        <a class="btn-outline" href="{{ url_for('painel_malharia') }}">← Voltar ao painel</a>
-      </div>
-
-      <div class="card">
-        <h1 class="titulo">Editar Tear</h1>
-
-        {# Valores atuais normalizados #}
+{% extends '_portal_base.html' %}
+{% set nome_empresa = empresa.apelido or empresa.nome %}
+{% block title %}Editar tear{% endblock %}
+{% block content %}
+  <div>
+    <h1>Editar tear</h1>
+    <p class="painel-resumo">Preencha as características do tear.</p>
+  </div>
+  {% for mensagem in get_flashed_messages() %}
+    <p class="painel-alerta" role="status">{{ mensagem }}</p>
+  {% endfor %}
+  <section class="painel-cartao">
         {% set _tipo_atual = (tear.tipo or '')|string|upper %}
         {% set _raw_el = tear.elastano if (tear.elastano is not none) else tear.kit_elastano %}
         {% set _el_str = (_raw_el|string).strip().lower() %}
@@ -282,13 +20,18 @@
         {% set _sel_tipo = (request.form.get('tipo') or _tipo_atual)|upper %}
         {% set _sel_el   = (request.form.get('elastano') or ('Sim' if _el_sim else 'Não' if _el_nao else ''))|lower %}
 
-        <form method="POST" class="formulario" action="{{ url_for('editar_tear', id=tear.id) }}">
+    <form method="POST" class="portal-formulario" action="{{ url_for('editar_tear', id=tear.id) }}">
+          <div>
           <label for="marca">Marca</label>
           <input type="text" id="marca" name="marca" value="{{ request.form.get('marca', tear.marca or '') }}" required>
 
+          </div>
+          <div>
           <label for="modelo">Modelo</label>
           <input type="text" id="modelo" name="modelo" value="{{ request.form.get('modelo', tear.modelo or '') }}" required>
 
+          </div>
+          <div>
           <label for="tipo">Tipo</label>
           <select id="tipo" name="tipo" required>
             <option value="">-- Selecione --</option>
@@ -296,21 +39,33 @@
             <option value="DUPLA" {% if _sel_tipo == 'DUPLA' %}selected{% endif %}>DUPLA</option>
           </select>
 
+          </div>
+          <div>
           <label for="finura">Finura</label>
           <input type="number" id="finura" name="finura" value="{{ request.form.get('finura', tear.finura or tear.galga or '') }}" required>
 
+          </div>
+          <div>
           <label for="diametro">Diâmetro</label>
           <input type="number" id="diametro" name="diametro" value="{{ request.form.get('diametro', tear.diametro or '') }}" required>
 
+          </div>
+          <div>
           <label for="pistas_cilindro">Pistas Cilindro</label>
           <input type="number" id="pistas_cilindro" name="pistas_cilindro" value="{{ request.form.get('pistas_cilindro', tear.pistas_cilindro or '') }}" required>
 
+          </div>
+          <div>
           <label for="pistas_disco">Pistas Disco</label>
           <input type="number" id="pistas_disco" name="pistas_disco" value="{{ request.form.get('pistas_disco', tear.pistas_disco if tear.pistas_disco is not none else '') }}" required>
 
+          </div>
+          <div>
           <label for="alimentadores">Alimentadores</label>
           <input type="number" id="alimentadores" name="alimentadores" value="{{ request.form.get('alimentadores', tear.alimentadores or '') }}" required>
 
+          </div>
+          <div>
           <label for="elastano">Elastano</label>
           <select id="elastano" name="elastano" required>
             <option value="">-- Selecione --</option>
@@ -318,42 +73,11 @@
             <option value="Não" {% if _sel_el == 'não' or _sel_el == 'nao' %}selected{% endif %}>Não</option>
           </select>
 
+          </div>
           <div class="acoes">
-            <button type="submit" class="btn">Salvar</button>
+            <button type="submit" class="painel-botao">Salvar</button>
           </div>
         </form>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ===== Rodapé ===== -->
-  {% include '_rodape_site.html' %}
-
-  <!-- ===== JS: Menu mobile (padrão) ===== -->
-  <script>
-    (function(){
-      const openBtn = document.getElementById('openMenuBtn');
-      const closeBtn = document.getElementById('closeMenuBtn');
-      const backdrop = document.getElementById('menuBackdrop');
-
-      function openMenu(){
-        document.body.classList.add('menu-open');
-        if(openBtn) openBtn.setAttribute('aria-expanded','true');
-      }
-      function closeMenu(){
-        document.body.classList.remove('menu-open');
-        if(openBtn) openBtn.setAttribute('aria-expanded','false');
-      }
-
-      if(openBtn) openBtn.addEventListener('click', openMenu);
-      if(closeBtn) closeBtn.addEventListener('click', closeMenu);
-      if(backdrop) backdrop.addEventListener('click', closeMenu);
-
-      document.addEventListener('keydown', (e)=>{
-        if(e.key === 'Escape') closeMenu();
-      });
-    })();
-  </script>
-</body>
-</html>
+  </section>
+  <a class="painel-acao" href="{{ url_for('painel_malharia') }}">Voltar para teares cadastrados</a>
+{% endblock %}
