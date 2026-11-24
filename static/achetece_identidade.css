@@ -9,8 +9,8 @@
   position: relative;
   place-items: center;
   flex: none;
-  width: 184px;
-  height: 56px;
+  width: 128.8px;
+  height: 39.2px;
   overflow: hidden;
   vertical-align: middle;
   border-radius: 7px;
@@ -23,9 +23,9 @@ body.header-v1 .mobile-menu .achetece-brand > img {
   position: absolute !important;
   display: block !important;
   inset: 50% auto auto 50% !important;
-  width: 184px !important;
+  width: 128.8px !important;
   max-width: none !important;
-  height: 92px !important;
+  height: 64.4px !important;
   max-height: none !important;
   object-fit: contain !important;
   transform: translate(-50%, -50%) !important;
@@ -33,14 +33,14 @@ body.header-v1 .mobile-menu .achetece-brand > img {
 
 @media (max-width: 600px) {
   .achetece-brand {
-    width: 48px;
-    height: 48px;
+    width: 33.6px;
+    height: 33.6px;
   }
   body .achetece-brand > img,
 body.header-v1 .achetece-brand > img,
 body.header-v1 .mobile-menu .achetece-brand > img {
-    width: 45px !important;
-    height: 45px !important;
+    width: 31.5px !important;
+    height: 31.5px !important;
   }
 }
 
@@ -163,4 +163,10 @@ body.achetece-site.header-v1 .navbar {
     padding: .35rem .75rem;
   }
   .achetece-mobile-menu nav a { display: flex; }
+}
+
+.achetece-site-header a, .achetece-site-footer nav a { font-size: .7rem; }
+@media (min-width: 601px) {
+  .achetece-site-header a, .achetece-site-footer nav a { min-height: 31px; }
+  .achetece-site-header .achetece-area-link { padding-inline: .525rem; }
 }

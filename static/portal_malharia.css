@@ -280,3 +280,15 @@ body.portal-malharia {
   .portal-lateral .portal-marca, .portal-lateral .portal-novo { display: inline-flex; vertical-align: middle; margin-bottom: 0; }
   .portal-lateral .portal-novo { margin-inline-start: 4px; }
 }
+
+/* Densidade do portal em telas com mouse; em telas pequenas os alvos continuam confortáveis. */
+@media (min-width: 801px) and (pointer: fine) {
+  .portal-layout { font-size: .7rem; }
+  .portal-lateral .portal-marca { font-size: .875rem; }
+  .portal-layout .painel-conteudo h1 { font-size: 1rem; }
+  .portal-layout .painel-conteudo h2 { font-size: .8rem; }
+  .portal-layout :is(.painel-acao, .painel-botao, .portal-formulario input, .portal-formulario select, .painel-acoes select) { min-height: 27px; }
+  .portal-layout .painel-status { font-size: .65rem; }
+  .portal-layout .painel-cartao { padding: 12px; }
+  .portal-layout .portal-formulario { gap: 7px 10px; }
+}
