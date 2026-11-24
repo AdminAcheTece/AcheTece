@@ -9,6 +9,15 @@
     {% if erro %}<p class="mensagem-erro" role="alert">{{ erro }}</p>{% endif %}
         <form method="POST" action="{{ url_for('editar_empresa') }}" class="portal-formulario" id="formulario" autocomplete="off">
           <div>
+          <label for="cep">CEP <span style="color:#d00000">*</span></label>
+          <input type="text" id="cep" name="cep" required
+                 inputmode="numeric" pattern="\d{5}-?\d{3}" title="Digite no formato 00000-000 ou 00000000"
+                 autocomplete="postal-code" placeholder="00000-000"
+                 value="{{ cep or '' }}" class="{% if erros and erros.get('cep') %}erro-campo{% endif %}">
+          {% if erros and erros.get('cep') %}<div class="mensagem-campo">{{ erros.get('cep') }}</div>{% endif %}
+
+          </div>
+          <div>
           <label for="nome">Nome da Empresa:</label>
           <input type="text" id="nome" name="nome" value="{{ nome or '' }}" class="{% if erros and erros.get('nome') %}erro-campo{% endif %}">
           {% if erros and erros.get('nome') %}<div class="mensagem-campo">{{ erros.get('nome') }}</div>{% endif %}
@@ -65,15 +74,6 @@
                  autocomplete="street-address" placeholder="Rua, número, complemento, bairro"
                  value="{{ endereco or '' }}" class="{% if erros and erros.get('endereco') %}erro-campo{% endif %}">
           {% if erros and erros.get('endereco') %}<div class="mensagem-campo">{{ erros.get('endereco') }}</div>{% endif %}
-
-          </div>
-          <div>
-          <label for="cep">CEP <span style="color:#d00000">*</span></label>
-          <input type="text" id="cep" name="cep" required
-                 inputmode="numeric" pattern="\d{5}-?\d{3}" title="Digite no formato 00000-000 ou 00000000"
-                 autocomplete="postal-code" placeholder="00000-000"
-                 value="{{ cep or '' }}" class="{% if erros and erros.get('cep') %}erro-campo{% endif %}">
-          {% if erros and erros.get('cep') %}<div class="mensagem-campo">{{ erros.get('cep') }}</div>{% endif %}
 
           </div>
           <div>
@@ -135,11 +135,12 @@
         }
       }
 
-      ufSelect.addEventListener('change', () => carregarCidades(ufSelect.value));
+      ufSelect.addEventListener('change', () => carregarCidades(ufSelect.value, cidadeSelect.dataset.cepCidade || ''));
 
       const ufInicial = ufSelect.value;
       const cidadeInicial = cidadeSelect.getAttribute('data-inicial') || '';
       if (ufInicial) carregarCidades(ufInicial, cidadeInicial);
     });
   </script>
+<script defer src="{{ url_for('static', filename='consulta_cep.js') }}"></script>
 {% endblock %}

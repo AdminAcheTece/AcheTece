@@ -25,7 +25,7 @@
       <details class="portal-navegacao" open>
         <summary>Menu do portal</summary>
         <nav aria-label="Portal da Malharia">
-          <details{% if em_cadastro or secao in ('perfil','equipe','configuracoes') %} open{% endif %}>
+          <details{% if em_cadastro or secao in ('perfil','equipe','configuracoes','notificacoes','seguranca','sugestoes') %} open{% endif %}>
             <summary class="portal-conta">{{ nome_empresa|default(session.get('empresa_apelido') or 'Minha malharia') }}</summary>
             {% if not session.get("portal_membro") %}
             {{ portal_link('Perfil', 'perfil') }}

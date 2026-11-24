@@ -1,4 +1,5 @@
 <div class="painel-cartao">
+  {% if secao == 'sugestoes' %}<details><summary class="painel-acao">+ Nova sugestão</summary>{% endif %}
   <form class="portal-formulario" method="post" action="{{ url_for('portal_acao', secao=secao) }}">
     <input type="hidden" name="csrf_token" value="{{ portal_csrf }}">
     <label>Tipo<select name="tipo">
@@ -8,8 +9,8 @@
     <label class="portal-campo-largo">Detalhes<textarea name="mensagem" required maxlength="2000" rows="4"></textarea></label>
     <button class="painel-botao">Enviar solicitação</button>
   </form>
-  {% if secao == 'financeiro' %}<p>O suporte analisa a solicitação antes de qualquer alteração na assinatura.</p>{% endif %}
-  <h2>Histórico</h2>
+  {% if secao == 'sugestoes' %}</details>{% endif %}
+  <h2>{{ 'Histórico de sugestões' if secao == 'sugestoes' else 'Histórico' }}</h2>
   <ul class="portal-registros">
     {% for item in historico if item.tipo in (opcoes|map(attribute=0)|list) %}
       <li><strong>#{{ item.id }} · {{ item.dados.titulo }}</strong> · {{ item.criado_em.strftime('%d/%m/%Y') }}

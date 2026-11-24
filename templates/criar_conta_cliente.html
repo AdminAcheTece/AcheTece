@@ -27,6 +27,9 @@
 
       <form method="POST" style="display:grid;gap:12px;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label>CEP
+          <input id="cep" autocomplete="postal-code" inputmode="numeric" maxlength="9" placeholder="00000-000">
+        </label>
         <label>Nome*
           <input type="text" name="nome" value="{{ nome or '' }}" required style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;">
           {% if erros and erros.get('nome') %}<small style="color:#b00020">{{erros.get('nome')}}</small>{% endif %}
@@ -64,5 +67,6 @@
   </main>
 
   {% include '_rodape_site.html' %}
+<script defer src="{{ url_for('static', filename='consulta_cep.js') }}"></script>
 </body>
 </html>

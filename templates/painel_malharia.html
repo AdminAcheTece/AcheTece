@@ -74,26 +74,12 @@
       {% if situacao_assinatura == 'ativa' and mostrar_pagamento %}
         <p class="assinatura-alerta">Sua assinatura vence nos próximos 7 dias.</p>
       {% endif %}
-      {% if mostrar_pagamento %}
-        <form class="painel-acoes" method="GET" action="{{ url_for('checkout') }}">
-          {% if situacao_assinatura == 'ativa' %}
-            <input type="hidden" name="plano" value="{{ plano }}">
-          {% else %}
-            <label for="painel-plano">Plano para pagamento</label>
-            <select name="plano" id="painel-plano">
-              <option value="mensal" {{ 'selected' if plano == 'mensal' }}>Mensal</option>
-              <option value="anual" {{ 'selected' if plano == 'anual' }}>Anual</option>
-            </select>
-          {% endif %}
-          <button type="submit" class="painel-botao">
-            {{ 'Renovar no Mercado Pago' if situacao_assinatura in ('ativa', 'vencida') else 'Continuar para pagamento' }}
-          </button>
-        </form>
-      {% endif %}
     </section>
-
-    {% set opcoes = [('troca_plano', 'Solicitar troca de plano'), ('cancelamento', 'Solicitar cancelamento')] %}
-    {% include '_portal_solicitacoes.html' %}
+    <form class="painel-cartao painel-acoes" method="GET" action="{{ url_for('checkout') }}">
+      <label><input type="radio" name="plano" value="mensal" {{ 'checked' if plano != 'anual' }}> Mensal · {{ preco_mensal }}</label>
+      <label><input type="radio" name="plano" value="anual" {{ 'checked' if plano == 'anual' }}> Anual · {{ preco_anual }}{% if desconto_anual %} (15% de desconto){% endif %}</label>
+      {% if not arquivada %}<button class="painel-botao">Pagar no Mercado Pago</button>{% endif %}
+    </form>
   {% elif secao == 'perfil' %}
     <h1>Perfil</h1>
     <section class="painel-cartao">
@@ -131,12 +117,13 @@
         {% else %}<li>Nenhum membro convidado.</li>{% endfor %}
       </ul>
     </section>
-  {% elif secao == 'configuracoes' %}
+  {% elif secao in ('configuracoes', 'notificacoes', 'seguranca', 'sugestoes') %}
     <h1>Configurações</h1>
     {% include '_portal_config_links.html' %}
+    {% if secao in ('configuracoes', 'notificacoes') %}
     <section class="painel-cartao" id="notificacoes">
       <h2>Notificações</h2>
-      <form method="post" action="{{ url_for('portal_acao', secao='configuracoes') }}">
+      <form method="post" action="{{ url_for('portal_acao', secao='notificacoes') }}">
         <input type="hidden" name="csrf_token" value="{{ portal_csrf }}">
         <input type="hidden" name="tipo" value="preferencias">
         <p><label class="portal-opcao"><input type="checkbox" name="novos_acessos" value="sim" {{ 'checked' if preferencias.novos_acessos }}> Novos acessos no portal</label></p>
@@ -147,16 +134,23 @@
       {% if preferencias.novos_acessos %}<p>Acessos identificados nos últimos 7 dias: {{ novos_acessos }}</p>{% endif %}
       {% if preferencias.assinatura %}<p>Assinatura: {{ rotulo_assinatura }}</p>{% endif %}
     </section>
+    {% elif secao == 'seguranca' %}
     <section class="painel-cartao" id="seguranca">
       <h2>Segurança</h2>
-      <p>Use uma senha exclusiva e mantenha o acesso ao e-mail do cadastro.</p>
-      <a class="painel-botao" href="{{ url_for('editar_empresa') }}#senha">Alterar senha</a>
+      <h3>Dicas de segurança</h3>
+      <ul><li>Use uma senha longa e exclusiva.</li><li>Ative a autenticação em dois fatores no seu e-mail.</li><li>Compartilhe convites apenas com a pessoa convidada.</li></ul>
+      <h3>Sessão atual</h3>
+      <dl class="portal-dados"><dt>Último login registrado nesta sessão</dt><dd>{{ session.get('portal_login_em') or 'Indisponível nesta sessão' }}</dd>
+      <dt>Dispositivo</dt><dd>{{ 'Celular ou tablet' if 'mobile' in request.user_agent.string|lower or 'ipad' in request.user_agent.string|lower else 'Computador ou dispositivo não identificado' }}</dd></dl>
+      <a class="painel-botao" href="{{ url_for('esqueci_senha') }}">Alterar senha</a>
     </section>
+    {% else %}
     <section class="painel-cartao" id="sugestoes">
       <h2>Sugestões</h2>
       {% set opcoes = [('sugestao', 'Enviar sugestão')] %}
       {% include '_portal_solicitacoes.html' %}
     </section>
+    {% endif %}
   {% elif secao == 'acessos' %}
     <h1>Acessos ao perfil</h1>
     <section class="painel-cartao">
