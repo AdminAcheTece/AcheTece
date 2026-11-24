@@ -309,3 +309,25 @@ body.portal-malharia {
 .portal-dicas { background: #fff8e8; }
 .config-links [aria-current] { box-shadow: inset 0 -2px #2368a8; font-weight: 700; }
 .portal-mp { object-fit: contain; margin-inline-start: 8px; border-radius: 2px; }
+
+.portal-endereco {
+  grid-column: 1 / -1;
+  min-inline-size: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 14px;
+  border: 0;
+  border-top: 1px solid #dce2e6;
+  padding: 12px 0 0;
+  margin: 6px 0;
+}
+.portal-endereco legend { padding-inline-end: 8px; font-weight: 700; }
+.portal-rua { grid-column: span 2; }
+.portal-canais { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+.portal-tabela-wrap { overflow-x: auto; margin-top: 8px; }
+.portal-tabela { width: 100%; border-collapse: collapse; text-align: left; }
+.portal-tabela :is(td, th) { border-bottom: 1px solid #dce2e6; padding: 8px; overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  .portal-endereco { grid-template-columns: 1fr; }
+  .portal-rua { grid-column: auto; }
+}

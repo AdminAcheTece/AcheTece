@@ -1,7 +1,7 @@
 const cep = document.querySelector('#cep');
 const formulario = cep?.form;
 if (formulario) {
-  const { estado, cidade, endereco } = formulario.elements;
+  const { estado, cidade, endereco, rua, bairro } = formulario.elements;
   const aviso = document.createElement('small');
   aviso.setAttribute('role', 'status');
   aviso.id = 'cep-status';
@@ -20,7 +20,7 @@ if (formulario) {
     const atual = new AbortController();
     consulta = atual;
     const timeout = setTimeout(() => atual.abort(), 5000);
-    const valores = [estado.value, cidade.value, endereco?.value];
+    const valores = [estado.value, cidade.value, endereco?.value, rua?.value, bairro?.value];
     aviso.textContent = 'Consultando CEP…';
     try {
       const resposta = await fetch('https://viacep.com.br/ws/' + codigo + '/json/', {
@@ -43,6 +43,8 @@ if (formulario) {
       if (endereco && endereco.value === valores[2] && dados.logradouro) {
         endereco.value = [dados.logradouro, dados.bairro].filter(Boolean).join(', ');
       }
+      if (rua && rua.value === valores[3]) rua.value = dados.logradouro || '';
+      if (bairro && bairro.value === valores[4]) bairro.value = dados.bairro || '';
       cepConsultado = codigo;
       aviso.textContent = 'Confira os dados e informe o número e o complemento, se aplicável.';
     } catch {
