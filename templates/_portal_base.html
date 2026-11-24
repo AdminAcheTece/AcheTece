@@ -45,7 +45,11 @@
             {{ portal_link('Teares inativos', 'inativos', 'tear') }}
           </details>
           {% if not session.get("portal_membro") %}
-          {{ portal_link('Acessos ao perfil', 'acessos', 'acessos') }}
+          <details{% if secao in ('acessos', 'visitas', 'contatos') %} open{% endif %}>
+            <summary>{{ icone('acessos') }} Performance da malharia</summary>
+            {{ portal_link('Visitas ao perfil', 'visitas', 'acessos') }}
+            {{ portal_link('Contatos recebidos', 'contatos', 'mensagem') }}
+          </details>
           {{ portal_link('Financeiro', 'financeiro', 'financeiro') }}
           <details{% if not em_cadastro and secao == 'suporte' %} open{% endif %}>
             <summary>{{ icone('mensagem') }} Suporte</summary>

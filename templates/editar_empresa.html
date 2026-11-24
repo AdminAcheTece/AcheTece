@@ -20,6 +20,38 @@
         <form method="POST" action="{{ url_for('editar_empresa') }}" class="portal-formulario" id="formulario" autocomplete="off">
           <input type="hidden" name="csrf_token" value="{{ foto_csrf }}">
           <div>
+          <label for="nome">{{ icone('empresa') }} Razão social</label>
+          <input type="text" id="nome" name="nome" value="{{ nome or '' }}" class="{% if erros and erros.get('nome') %}erro-campo{% endif %}">
+          {% if erros and erros.get('nome') %}<div class="mensagem-campo">{{ erros.get('nome') }}</div>{% endif %}
+
+          </div>
+          <div>
+          <label for="apelido">{{ icone('empresa') }} Nome fantasia</label>
+          <input type="text" id="apelido" name="apelido" value="{{ apelido or '' }}" class="{% if erros and erros.get('apelido') %}erro-campo{% endif %}">
+          {% if erros and erros.get('apelido') %}<div class="mensagem-campo">{{ erros.get('apelido') }}</div>{% endif %}
+
+          </div>
+<div><label for="cnpj">{{ icone('empresa') }} CNPJ</label><input id="cnpj" name="cnpj" inputmode="numeric" maxlength="18" value="{{ detalhes.get('cnpj', '') }}">
+{% if erros and erros.get('cnpj') %}<p class="mensagem-campo">{{ erros.cnpj }}</p>{% endif %}</div>
+<div><label for="linkedin">{{ icone('acessos') }} LinkedIn</label><input type="url" id="linkedin" name="linkedin" maxlength="240" value="{{ detalhes.get('linkedin', '') }}">
+{% if erros and erros.get('linkedin') %}<p class="mensagem-campo">{{ erros.linkedin }}</p>{% endif %}</div>
+          <div>
+          <label for="telefone">{{ icone('pessoa') }} Telefone</label>
+          <input type="tel" id="telefone" name="telefone"
+                 pattern="[0-9]{10,13}" placeholder="47999991234"
+                 title="Digite apenas números, ex: 47999991234"
+                 value="{{ telefone or '' }}"
+                 class="{% if erros and erros.get('telefone') %}erro-campo{% endif %}">
+          {% if erros and erros.get('telefone') %}<div class="mensagem-campo">{{ erros.get('telefone') }}</div>{% endif %}
+
+          </div>
+          <div>
+          <label for="email">{{ icone('mensagem') }} E-mail</label>
+          <input type="email" id="email" name="email" value="{{ email or '' }}" class="{% if erros and erros.get('email') %}erro-campo{% endif %}">
+          {% if erros and erros.get('email') %}<div class="mensagem-campo">{{ erros.get('email') }}</div>{% endif %}
+
+          </div>
+<fieldset class="portal-endereco"><legend>{{ icone('empresa') }} Endereço</legend>          <div>
           <label for="cep">CEP <span style="color:#d00000">*</span></label>
           <input type="text" id="cep" name="cep" required
                  inputmode="numeric" pattern="\d{5}-?\d{3}" title="Digite no formato 00000-000 ou 00000000"
@@ -28,29 +60,12 @@
           {% if erros and erros.get('cep') %}<div class="mensagem-campo">{{ erros.get('cep') }}</div>{% endif %}
 
           </div>
-          <div>
-          <label for="nome">Nome da Empresa:</label>
-          <input type="text" id="nome" name="nome" value="{{ nome or '' }}" class="{% if erros and erros.get('nome') %}erro-campo{% endif %}">
-          {% if erros and erros.get('nome') %}<div class="mensagem-campo">{{ erros.get('nome') }}</div>{% endif %}
-
-          </div>
-          <div>
-          <label for="apelido">Apelido da Empresa</label>
-          <input type="text" id="apelido" name="apelido" value="{{ apelido or '' }}" class="{% if erros and erros.get('apelido') %}erro-campo{% endif %}">
-          {% if erros and erros.get('apelido') %}<div class="mensagem-campo">{{ erros.get('apelido') }}</div>{% endif %}
-
-          </div>
-          <div>
-          <label for="estado">Estado:</label>
-          <select id="estado" name="estado" class="{% if erros and erros.get('estado') %}erro-campo{% endif %}">
-            <option value="">Selecione o estado</option>
-            {% for uf in estados %}
-              <option value="{{ uf }}" {% if estado == uf %}selected{% endif %}>{{ uf }}</option>
-            {% endfor %}
-          </select>
-          {% if erros and erros.get('estado') %}<div class="mensagem-campo">{{ erros.get('estado') }}</div>{% endif %}
-
-          </div>
+<div class="portal-rua"><label for="rua">Rua</label>
+<input name="rua" id="rua" autocomplete="address-line1" maxlength="180" required value="{{ detalhes.get('rua') or endereco or '' }}">
+{% if erros and erros.get('endereco') %}<p class="mensagem-campo">{{ erros.endereco }}</p>{% endif %}</div>
+{% for chave, rotulo in [('numero','Número'),('complemento','Complemento'),('bairro','Bairro')] %}
+<div><label for="{{ chave }}">{{ rotulo }}</label><input id="{{ chave }}" name="{{ chave }}" maxlength="100" value="{{ detalhes.get(chave, '') }}"></div>
+{% endfor %}
           <div>
           <label for="cidade">Cidade:</label>
           <select id="cidade" name="cidade" data-inicial="{{ cidade or '' }}"
@@ -64,29 +79,17 @@
 
           </div>
           <div>
-          <label for="endereco">Endereço completo <span style="color:#d00000">*</span></label>
-          <input type="text" id="endereco" name="endereco" required
-                 autocomplete="street-address" placeholder="Rua, número, complemento, bairro"
-                 value="{{ endereco or '' }}" class="{% if erros and erros.get('endereco') %}erro-campo{% endif %}">
-          {% if erros and erros.get('endereco') %}<div class="mensagem-campo">{{ erros.get('endereco') }}</div>{% endif %}
+          <label for="estado">Estado:</label>
+          <select id="estado" name="estado" class="{% if erros and erros.get('estado') %}erro-campo{% endif %}">
+            <option value="">Selecione o estado</option>
+            {% for uf in estados %}
+              <option value="{{ uf }}" {% if estado == uf %}selected{% endif %}>{{ uf }}</option>
+            {% endfor %}
+          </select>
+          {% if erros and erros.get('estado') %}<div class="mensagem-campo">{{ erros.get('estado') }}</div>{% endif %}
 
           </div>
-          <div>
-          <label for="telefone">Telefone:</label>
-          <input type="tel" id="telefone" name="telefone"
-                 pattern="[0-9]{10,13}" placeholder="47999991234"
-                 title="Digite apenas números, ex: 47999991234"
-                 value="{{ telefone or '' }}"
-                 class="{% if erros and erros.get('telefone') %}erro-campo{% endif %}">
-          {% if erros and erros.get('telefone') %}<div class="mensagem-campo">{{ erros.get('telefone') }}</div>{% endif %}
-
-          </div>
-          <div>
-          <label for="email">E-mail:</label>
-          <input type="email" id="email" name="email" value="{{ email or '' }}" class="{% if erros and erros.get('email') %}erro-campo{% endif %}">
-          {% if erros and erros.get('email') %}<div class="mensagem-campo">{{ erros.get('email') }}</div>{% endif %}
-
-          </div>
+</fieldset>
           <div class="portal-acoes-fim"><button type="submit" class="painel-botao">Salvar alterações</button></div>
         </form>
   </section>

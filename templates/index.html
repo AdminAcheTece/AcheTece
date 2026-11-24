@@ -115,7 +115,7 @@
           <div class="search-actions result-actions">
             <a href="{{ destino }}">Ver malharia</a>
             {% if tem_whatsapp(empresa) %}
-              <a class="contact-link" href="{{ url_for('empresa_whatsapp', empresa_id=empresa.id) }}">Entrar em contato</a>
+              <a class="contact-link" href="{{ url_for('portal_identificar_visitante', empresa_id=empresa.id, acao='whatsapp') }}">Entrar em contato</a>
             {% endif %}
           </div>
         </li>

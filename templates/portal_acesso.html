@@ -11,7 +11,7 @@
   {% include '_cabecalho_site.html' %}
   <main class="painel-conteudo" style="padding-top: 88px; max-width: 34rem">
     <section class="painel-cartao">
-      <h1>{{ 'Ver malharia' if modo == 'visitante' else 'Ativar acesso à equipe' if modo == 'convite' else 'Entrar como membro da equipe' }}</h1>
+      <h1>{{ ('Identifique-se para abrir o WhatsApp' if contato else 'Ver malharia') if modo == 'visitante' else 'Ativar acesso à equipe' if modo == 'convite' else 'Entrar como membro da equipe' }}</h1>
       {% for texto in get_flashed_messages() %}<p role="alert">{{ texto }}</p>{% endfor %}
       <form method="post" class="portal-formulario">
         <input type="hidden" name="csrf_token" value="{{ portal_csrf }}">

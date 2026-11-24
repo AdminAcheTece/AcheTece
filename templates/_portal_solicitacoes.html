@@ -18,13 +18,13 @@
     <div class="portal-acoes-fim"><button class="painel-botao">{{ 'Enviar sugestão' if secao == 'sugestoes' else 'Enviar solicitação' }}</button></div>
   </form>
   {% if secao == 'sugestoes' %}</details>{% endif %}
-  <h2>{{ 'Histórico de sugestões' if secao == 'sugestoes' else 'Histórico' }}</h2>
+  <h2>{{ ('Histórico de sugestões (' ~ historico|length ~ ')') if secao == 'sugestoes' else 'Histórico' }}</h2>
   <ul class="portal-registros">
     {% for item in historico if item.tipo in (opcoes|map(attribute=0)|list) %}
       <li><strong>#{{ item.id }} · {{ item.dados.titulo }}</strong> · {{ item.criado_em.strftime('%d/%m/%Y') }}
         {% if item.dados.categoria %}<p>{{ item.dados.categoria }}</p>{% endif %}
         <p>{{ item.dados.mensagem }}</p>
       </li>
-    {% else %}<li>Nenhuma solicitação enviada.</li>{% endfor %}
+    {% else %}<li>{{ 'Você ainda não enviou sugestões.' if secao == 'sugestoes' else 'Nenhuma solicitação enviada.' }}</li>{% endfor %}
   </ul>
 </div>
