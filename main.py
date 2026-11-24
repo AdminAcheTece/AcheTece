@@ -4512,6 +4512,12 @@ def checkout():
         session.clear()
         return redirect(url_for('login'))
 
+    token = (os.environ.get("MP_ACCESS_TOKEN") or os.environ.get("MERCADO_PAGO_TOKEN") or "").strip()
+    if not token:
+        app.logger.error("[CHECKOUT] credencial do Mercado Pago ausente")
+        flash("Pagamento indisponível neste ambiente. A conexão com o Mercado Pago ainda não está configurada.")
+        return redirect(url_for("painel_malharia", secao="financeiro"))
+
     base = _public_base_url()
 
     # plano
@@ -4560,9 +4566,10 @@ def checkout():
     }
 
     try:
-        sdk = mercadopago.SDK(os.environ.get("MP_ACCESS_TOKEN", ""))
+        sdk = mercadopago.SDK(token)
         preference_response = sdk.preference().create(preference_data)
-        preference = preference_response.get("response", {}) if isinstance(preference_response, dict) else {}
+        preference = (preference_response.get("response") or {}) if isinstance(preference_response, dict) else {}
+        preference = preference if isinstance(preference, dict) else {}
         init_point = preference.get("init_point") or preference.get("sandbox_init_point")
 
         if _ed02_registro_checkout:
@@ -4578,9 +4585,11 @@ def checkout():
                 return "<h2>Erro ao iniciar pagamento.</h2>", 503
 
         if not init_point:
-            app.logger.error("[CHECKOUT] init_point ausente" if _ed02_registro_checkout
-                             else f"[CHECKOUT] init_point ausente. Resposta MP: {preference_response}")
-            return "<h2>Erro ao iniciar pagamento (init_point ausente).</h2>", 500
+            status_mp = preference_response.get("status") if isinstance(preference_response, dict) else None
+            app.logger.error("[CHECKOUT] link de pagamento ausente; status HTTP=%s",
+                             status_mp if isinstance(status_mp, int) else "indisponível")
+            flash("O Mercado Pago não abriu o pagamento. Tente novamente ou fale com o suporte.")
+            return redirect(url_for("painel_malharia", secao="financeiro"))
 
         return redirect(init_point)
 

@@ -120,8 +120,9 @@ def instalar(app, db, Empresa, empresa_publicavel, identificar, enviar_email, li
             conferir_csrf()
             nome = request.form.get("nome", "").strip()
             email = request.form.get("email", "").strip().lower()
-            if 2 <= len(nome) <= 100 and len(email) <= 254 and EMAIL.fullmatch(email) and request.form.get("autorizar") == "sim":
-                registrar(empresa.id, "contato" if contato else "acesso", {"nome": nome, "email": email})
+            telefone = re.sub(r"\D", "", request.form.get("telefone", ""))
+            if 2 <= len(nome) <= 100 and len(email) <= 254 and EMAIL.fullmatch(email) and len(telefone) in (10, 11) and request.form.get("autorizar") == "sim":
+                registrar(empresa.id, "contato" if contato else "acesso", {"nome": nome, "email": email, "telefone": telefone})
                 if contato:
                     return redirect(url_for("empresa_whatsapp", empresa_id=empresa.id))
                 if preferencia(empresa.id).get("email_acessos"):
@@ -131,7 +132,7 @@ def instalar(app, db, Empresa, empresa_publicavel, identificar, enviar_email, li
                                         pagina=request.args.get("pagina", 1, type=int),
                                         pp=request.args.get("pp", 20, type=int),
                                         **{k: v for k, v in filtros_busca().items() if v}))
-            flash("Preencha nome, e-mail e confirme o compartilhamento.")
+            flash("Preencha nome, e-mail, telefone com DDD e confirme o compartilhamento.")
         return render_template("portal_acesso.html", modo="visitante", contato=contato, empresa=empresa, portal_csrf=csrf()), 200, {
             "Cache-Control": "no-store",
         }
