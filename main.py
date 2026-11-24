@@ -1297,6 +1297,7 @@ def _get_empresa_usuario_da_sessao():
         emp = Empresa.query.filter_by(user_id=uid).first()
         if emp:
             session["empresa_id"] = emp.id
+            session.setdefault("portal_login_em", datetime.now(ZoneInfo("America/Sao_Paulo") if ZoneInfo else None).strftime("%d/%m/%Y às %H:%M"))
             session["empresa_apelido"] = emp.apelido or emp.nome or (emp.email.split("@")[0] if emp.email else "")
             u = emp.usuario or Usuario.query.filter_by(email=emp.email).first()
             return emp, u
@@ -1305,6 +1306,7 @@ def _get_empresa_usuario_da_sessao():
         emp = Empresa.query.filter(func.lower(Empresa.email) == email.lower()).first()
         if emp:
             session["empresa_id"] = emp.id
+            session.setdefault("portal_login_em", datetime.now(ZoneInfo("America/Sao_Paulo") if ZoneInfo else None).strftime("%d/%m/%Y às %H:%M"))
             session["empresa_apelido"] = emp.apelido or emp.nome or (emp.email.split("@")[0] if emp.email else "")
             u = emp.usuario or Usuario.query.filter_by(email=emp.email).first()
             # se não houver vínculo user_id e já temos um Usuario, vincule
@@ -2180,6 +2182,7 @@ def validate_login_code():
     emp = Empresa.query.filter(func.lower(Empresa.email) == email).first()
     if emp:
         session["empresa_id"] = emp.id
+        session["portal_login_em"] = datetime.now(ZoneInfo("America/Sao_Paulo") if ZoneInfo else None).strftime("%d/%m/%Y às %H:%M")
         session["empresa_apelido"] = emp.apelido or emp.nome or emp.email.split("@")[0]
         flash("Bem-vindo!", "success")
         return redirect(url_for("painel_malharia"))
@@ -2223,6 +2226,7 @@ def post_login_password():
     # ED01: login privado independente do pagamento. A vigencia controla
     # exclusivamente a exposicao publica da malharia e de seus teares.
     session["empresa_id"] = user.id
+    session["portal_login_em"] = datetime.now(ZoneInfo("America/Sao_Paulo") if ZoneInfo else None).strftime("%d/%m/%Y às %H:%M")
     session["empresa_apelido"] = user.apelido or user.nome or user.email.split("@")[0]
     return redirect(url_for("painel_malharia"))
 
@@ -2399,6 +2403,7 @@ def criar_conta_cliente():
 def logout():
     session.pop("cliente_user_id", None)
     session.pop("cliente_csrf", None)
+    session.pop("portal_login_em", None)
     session.pop("portal_membro", None)
     session.pop("portal_csrf", None)
     session.pop("tear_csrf", None)
@@ -2616,6 +2621,7 @@ def painel_malharia():
         notificacoes_lista=notif_lista,
         foto_url=_empresa_avatar_url(emp),
         **contexto_portal(emp.id, request.args.get("secao", "teares")),
+        **_precos_portal(),
     ))
     resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     resp.headers["Pragma"] = "no-cache"
@@ -4447,6 +4453,17 @@ def _processar_pagamento(payment_id: str):
 
     return {"ok": True, "empresa_id": empresa.id, "ativou": False, "status": status}
 
+def _precos_portal():
+    def moeda(valor):
+        return f"R$ {valor:.2f}".replace(".", ",")
+    return {
+        "preco_mensal": moeda(PLAN_MONTHLY),
+        "preco_anual": moeda(PLAN_YEARLY),
+        "equivalente_mensal": moeda(PLAN_YEARLY / 12),
+        "desconto_anual": PLAN_MONTHLY > 0 and round(PLAN_MONTHLY * 12 * .85, 2) == PLAN_YEARLY,
+    }
+
+
 @app.route('/checkout')
 def checkout():
     # exige sessão da empresa
@@ -4820,7 +4837,7 @@ def static_alias_whatsapp():
 def malharia_info():
     return render_template(
         'malharia_info.html',
-        exibir_precos=(PLAN_MONTHLY, PLAN_YEARLY) == (37.00, 377.40),
+        **_precos_portal(),
     )
 
 # --- Perfil público da empresa ---

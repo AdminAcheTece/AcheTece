@@ -11,8 +11,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 SECOES = {
     "suporte": {"chamado"},
-    "configuracoes": {"sugestao"},
-    "financeiro": {"troca_plano", "cancelamento"},
+    "sugestoes": {"sugestao"},
 }
 EMAIL = re.compile(r"[^\s@]+@[^\s@]+\.[^\s@]+")
 
@@ -162,8 +161,23 @@ def instalar(app, db, Empresa, empresa_publicavel, identificar, enviar_email, li
                 flash("Esse e-mail já está associado a uma equipe.")
             else:
                 link = url_for("portal_equipe_convite", token=token, _external=True, _scheme="https")
-                flash(f"Envie este convite ao membro. Válido por 48 horas: {link}")
-        elif secao == "configuracoes" and tipo == "preferencias":
+                empresa_nome = empresa.apelido or empresa.nome
+                texto = (
+                    f"Olá, {nome}!\n\n"
+                    f"{empresa_nome} convidou você para o Portal da Malharia AcheTece.\n"
+                    f"Aceite o convite e crie sua senha: {link}\n\n"
+                    "O link é de uso único e vence em 48 horas. Depois de criar uma senha com pelo menos "
+                    "12 caracteres, entre como membro da equipe com este e-mail e a senha que definiu. "
+                    "Você poderá cadastrar e editar teares. Nenhuma etapa adicional de cadastro é necessária.\n\n"
+                    "Se você não esperava este convite, ignore a mensagem."
+                )
+                enviado = enviar_email(email, "Convite para o Portal da Malharia AcheTece",
+                                       f'<p>{escape(texto)}</p><p><a href="{escape(link)}">Aceitar convite e criar senha</a></p>', texto)
+                if enviado and not app.config.get("MAIL_SUPPRESS_SEND"):
+                    flash("Convite encaminhado por e-mail. O link vence em 48 horas.")
+                else:
+                    flash(f"Envio de e-mail indisponível neste ambiente. Compartilhe o link, válido por 48 horas: {link}")
+        elif secao in {"configuracoes", "notificacoes"} and tipo == "preferencias":
             dados = {chave: request.form.get(chave) == "sim" for chave in ("novos_acessos", "assinatura", "email_acessos")}
             registrar(empresa.id, tipo, dados)
             flash("Preferências salvas.")
@@ -181,6 +195,29 @@ def instalar(app, db, Empresa, empresa_publicavel, identificar, enviar_email, li
             abort(400)
         return redirect(url_for("painel_malharia", secao=secao))
 
+    @app.cli.command("enviar-lembretes-assinatura")
+    def enviar_lembretes_assinatura():
+        """Enviar um lembrete por vigência, nos sete dias anteriores ao fim."""
+        if app.config.get("MAIL_SUPPRESS_SEND"):
+            return
+        agora = datetime.utcnow()
+        ids = db.session.query(Empresa.id).filter(empresa_publicavel()).all()
+        for empresa_id, in ids:
+            empresa = Empresa.query.filter(Empresa.id == empresa_id, empresa_publicavel()).with_for_update().first()
+            if empresa:
+                fim = empresa.assinatura_expira_em
+                if fim and agora < fim <= agora + timedelta(days=7):
+                    anterior = registros(empresa_id, {"lembrete_vigencia"}).order_by(Registro.id.desc()).first()
+                    if not anterior or anterior.dados.get("vigencia") != fim.isoformat():
+                        corpo = (
+                            f"Olá! Sua assinatura AcheTece está vigente até {fim:%d/%m/%Y}. "
+                            "Renove pelo Financeiro no Portal da Malharia para manter seus teares visíveis na busca."
+                        )
+                        if enviar_email(empresa.email, "Sua assinatura AcheTece vence em breve",
+                                        f"<p>{escape(corpo)}</p>", corpo):
+                            registrar(empresa_id, "lembrete_vigencia", {"vigencia": fim.isoformat()})
+            db.session.rollback()
+
     def contexto(empresa_id, secao):
         if session.get("portal_membro"):
             return {}
@@ -193,7 +230,7 @@ def instalar(app, db, Empresa, empresa_publicavel, identificar, enviar_email, li
             dados["acessos"] = registros(empresa_id, {"acesso"}).filter(
                 Registro.criado_em >= datetime.utcnow() - timedelta(days=90),
             ).order_by(Registro.id.desc()).limit(100).all()
-        if secao == "configuracoes":
+        if secao in {"configuracoes", "notificacoes"}:
             dados["preferencias"] = preferencia(empresa_id)
             if dados["preferencias"].get("novos_acessos"):
                 dados["novos_acessos"] = registros(empresa_id, {"acesso"}).filter(
