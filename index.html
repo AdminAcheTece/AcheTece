@@ -1,0 +1,142 @@
+{% extends "institucional_base.html" %}
+{% block head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='achetece_busca.css') }}">
+  <script src="{{ url_for('static', filename='achetece_busca.js') }}" defer></script>
+{% endblock %}
+{%- macro opcoes(campo, valores, prefixo='', sufixo='') %}
+  {% set selecionado = filtros[campo] %}
+  <select id="{{ campo }}" name="{{ campo }}">
+    <option value="">Todos</option>
+    {% if selecionado and selecionado not in valores|map('string')|list %}
+      <option value="{{ selecionado }}" selected>{{ selecionado }}</option>
+    {% endif %}
+    {% for valor in valores %}
+      <option value="{{ valor }}" {% if selecionado == valor|string %}selected{% endif %}>{{ prefixo }}{{ valor }}{{ sufixo }}</option>
+    {% endfor %}
+  </select>
+{% endmacro %}
+{% block conteudo %}
+<section class="search-intro" aria-labelledby="page-title">
+  <h1 id="page-title">Encontre a <strong>malharia certa</strong> para sua produção.</h1>
+  <p>Pesquise teares por tipo, galga, diâmetro e localização. Encontre fornecedores e fale diretamente com a malharia.</p>
+</section>
+
+<form method="get" action="{{ url_for('index') }}#resultados" class="card search-form" id="filtros">
+  <input type="hidden" name="buscar" value="1">
+  <input type="hidden" name="pp" value="{{ por_pagina }}">
+  <p class="search-note">Busca gratuita, sem necessidade de cadastro.</p>
+  <div class="search-fields search-main-fields">
+    <label for="tipo">Tipo de tear {{ opcoes('tipo', tipos) }}</label>
+    <label for="galga">Galga / Finura {{ opcoes('galga', galgas, 'E') }}</label>
+    <label for="diametro">Diâmetro {{ opcoes('diametro', diametros, '', '″') }}</label>
+    <label for="estado">Estado {{ opcoes('estado', cidades) }}</label>
+    <label for="cidade">Cidade
+      <select id="cidade" name="cidade" {% if not filtros.estado %}disabled{% endif %}>
+        <option value="">{{ 'Todas' if filtros.estado else 'Selecione o estado' }}</option>
+        {% set municipios = cidades.get(filtros.estado, []) %}
+        {% if filtros.cidade and filtros.cidade not in municipios %}
+          <option value="{{ filtros.cidade }}" selected>{{ filtros.cidade }}</option>
+        {% endif %}
+        {% for nome in municipios %}
+          <option value="{{ nome }}" {% if filtros.cidade == nome %}selected{% endif %}>{{ nome }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </div>
+
+  {% set adicionais = [('alimentadores', 'Alimentadores'), ('elastano', 'Elastano'),
+                        ('pistas_cilindro', 'Pistas do cilindro'), ('pistas_disco', 'Pistas do disco')] %}
+  <details {% if filtros.alimentadores or filtros.pistas_cilindro or filtros.pistas_disco or filtros.elastano %}open{% endif %}>
+    <summary>Filtros técnicos adicionais</summary>
+    <div class="search-fields search-extra-fields">
+      {% for key, label in adicionais %}
+        <label for="{{ key }}">{{ label }}
+          {% if key == 'elastano' %}
+            {{ opcoes(key, ['Sim', 'Não']) }}
+          {% else %}
+            <input id="{{ key }}" name="{{ key }}" type="number" min="0" max="999999999" value="{{ filtros[key] }}">
+          {% endif %}
+        </label>
+      {% endfor %}
+    </div>
+  </details>
+
+  <div class="search-actions">
+    <button class="button" type="submit">Buscar teares</button>
+    <a href="{{ url_for('index') }}">Limpar filtros</a>
+    <span role="status" id="busca-status"></span>
+  </div>
+  <script type="application/json" id="cidades-por-uf">{{ cidades|tojson }}</script>
+</form>
+
+<section class="search-results" id="resultados" aria-labelledby="results-title">
+  <header class="results-heading">
+    <h2 id="results-title">{{ 'Teares encontrados' if filtrada else 'Teares cadastrados' }}</h2>
+    <p>{{ total }} {{ 'tear' if total == 1 else 'teares' }} em {{ malharias }} {{ 'malharia' if malharias == 1 else 'malharias' }}</p>
+  </header>
+  {% if filtrada %}
+    {% set rotulos = {'tipo': 'Tipo', 'galga': 'Galga', 'diametro': 'Diâmetro',
+      'estado': 'Estado', 'cidade': 'Cidade', 'alimentadores': 'Alimentadores',
+      'pistas_cilindro': 'Pistas do cilindro', 'pistas_disco': 'Pistas do disco', 'elastano': 'Elastano'} %}
+    <ul class="filter-chips" aria-label="Filtros aplicados">
+      {% for chave, rotulo in rotulos.items() if filtros[chave] %}
+        {% set valor = ('E' if chave == 'galga' else '') ~ filtros[chave] ~ ('″' if chave == 'diametro' else '') %}
+        <li><a href="{{ url_for('index', pp=por_pagina, **dict(filtros, **{chave: ''})) }}#resultados"
+              aria-label="Remover filtro {{ rotulo }} {{ valor }}">{{ rotulo }} {{ valor }} <span aria-hidden="true">×</span></a></li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+  {% if not resultados %}
+    <p class="card">{{ 'Nenhum tear encontrado com esses critérios. Experimente alterar a galga, ampliar a localização ou remover algum filtro.' if filtrada else 'Ainda não há teares publicados para consulta.' }}</p>
+  {% else %}
+    <p class="search-note">Exibindo {{ inicio + 1 }}–{{ inicio + resultados|length }} de {{ total }} {{ 'tear' if total == 1 else 'teares' }}.</p>
+    <ul class="card-grid tear-results">
+      {% for tear in resultados %}
+        {% set empresa = tear.empresa %}
+        {% set destino = url_for('portal_identificar_visitante', empresa_id=empresa.id, pagina=pagina, pp=por_pagina, **filtros) %}
+        <li class="card">
+          <h3><a href="{{ destino }}">{{ empresa.apelido or empresa.nome }}</a></h3>
+          <p class="search-note">{{ [empresa.cidade, empresa.estado]|select|join(' / ') }}</p>
+          <dl>
+            <div><dt>Tipo</dt><dd>{{ tear.tipo }}</dd></div>
+            <div><dt>Galga / Finura</dt><dd>E{{ tear.finura }}</dd></div>
+            <div><dt>Diâmetro</dt><dd>{{ tear.diametro }}″</dd></div>
+            <div><dt>Alimentadores</dt><dd>{{ tear.alimentadores }}</dd></div>
+            <div><dt>Elastano</dt><dd>{{ tear.elastano or '—' }}</dd></div>
+          </dl>
+          {% if tear.pistas_cilindro is not none or tear.pistas_disco is not none %}
+            <details><summary>Dados complementares</summary>
+              <dl>
+              {% if tear.pistas_cilindro is not none %}<div><dt>Pistas do cilindro</dt><dd>{{ tear.pistas_cilindro }}</dd></div>{% endif %}
+              {% if tear.pistas_disco is not none %}<div><dt>Pistas do disco</dt><dd>{{ tear.pistas_disco }}</dd></div>{% endif %}
+              </dl>
+            </details>
+          {% endif %}
+          <div class="search-actions result-actions">
+            <a href="{{ destino }}">Ver malharia</a>
+            {% if tem_whatsapp(empresa) %}
+              <a class="contact-link" href="{{ url_for('empresa_whatsapp', empresa_id=empresa.id) }}">Entrar em contato</a>
+            {% endif %}
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+    <nav class="search-actions" aria-label="Paginação e exportação">
+      {% if pagina > 1 %}
+        <a href="{{ url_for('index', pagina=pagina-1, pp=por_pagina, **filtros) }}#resultados" rel="prev">Anterior</a>
+      {% endif %}
+      <span>Página {{ pagina }} de {{ paginas }}</span>
+      {% if pagina < paginas %}
+        <a href="{{ url_for('index', pagina=pagina+1, pp=por_pagina, **filtros) }}#resultados" rel="next">Próxima</a>
+      {% endif %}
+      <a href="{{ url_for('exportar', **filtros) }}">Baixar CSV</a>
+    </nav>
+  {% endif %}
+</section>
+
+<aside class="card search-promo" aria-labelledby="divulgar">
+  <div><h2 id="divulgar">Sua malharia também pode ser encontrada aqui.</h2>
+  <p>Cadastre seus teares e apresente sua estrutura produtiva a empresas que procuram fornecedores.</p></div>
+  <a class="button" href="{{ url_for('malharia_info') }}">Divulgar minha malharia</a>
+</aside>
+{% endblock %}

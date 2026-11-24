@@ -1,0 +1,252 @@
+{% extends '_portal_base.html' %}
+{% set nome_empresa = empresa.apelido or empresa.nome %}
+{% block content %}
+{% set nome_empresa = empresa.apelido or empresa.nome %}
+{% set assinatura_tom = {
+  'ativa': 'ok',
+  'pendente': 'warn',
+  'processamento': 'warn',
+  'vencida': 'danger',
+  'bloqueada': 'danger'
+} %}
+{% set assinatura_descricao = {
+  'pendente': 'O cadastro aguarda a confirmação do pagamento.',
+  'processamento': 'O pagamento está em processamento. Aguarde a confirmação.',
+  'vencida': 'A vigência encerrou. A publicação depende de uma assinatura ativa.',
+  'cancelada': 'A assinatura foi cancelada. Escolha um plano para solicitar nova ativação.',
+  'bloqueada': 'Entre em contato com o suporte para verificar a situação.',
+  'sem_assinatura': 'Escolha um plano para ativar a publicação dos teares.',
+  'nao_confirmada': 'Fale com o suporte para verificar a vigência da assinatura.'
+} %}
+
+{% macro tear_acoes(tear) %}
+  <div class="tear-acoes">
+    <a class="painel-acao" href="{{ url_for('editar_tear', id=tear.id) }}"
+       aria-label="Editar {{ tear.marca }} {{ tear.modelo }}">Editar</a>
+    {% if not session.get("portal_membro") %}
+    <form method="POST" action="{{ url_for('excluir_tear', id=tear.id) }}"
+          onsubmit="return confirm('Confirma excluir este tear? Essa ação é irreversível.');">
+      <input type="hidden" name="csrf_token" value="{{ tear_csrf }}">
+      <button type="submit" aria-label="Excluir {{ tear.marca }} {{ tear.modelo }}">Excluir</button>
+    </form>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+{% macro tear_publicacao(tear) %}
+  {% if tear.id in publicados %}
+    <span class="painel-status ok">Publicado</span>
+  {% else %}
+    <span class="painel-status">Não publicado</span>
+  {% endif %}
+  {% if tear.id in dados_incompletos %}<p>Dados técnicos incompletos</p>{% endif %}
+{% endmacro %}
+
+    {% for mensagem in get_flashed_messages() %}
+      <p class="painel-alerta" role="status">{{ mensagem }}</p>
+    {% endfor %}
+    {% if not perfil_ok and not session.get("portal_membro") %}
+      <p class="painel-alerta">
+        <a class="painel-acao" href="{{ url_for('editar_empresa') }}">Complete o cadastro da malharia</a>
+        com o responsável, a localização e o telefone.
+      </p>
+    {% endif %}
+
+  {% if secao == 'financeiro' %}
+    <h1>Financeiro</h1>
+    <section id="assinatura" class="assinatura-resumo" aria-labelledby="assinatura-titulo">
+      <div class="painel-cabecalho">
+        <h2 id="assinatura-titulo">Assinatura</h2>
+        <span class="painel-status {{ assinatura_tom.get(situacao_assinatura, '') }}">{{ rotulo_assinatura }}</span>
+      </div>
+      {% if fim_vigencia %}
+        <p>Plano {{ 'anual' if plano == 'anual' else 'mensal' }} ·
+          {{ 'Vigente até' if situacao_assinatura == 'ativa' else 'Vigência encerrada em' }}
+          <time datetime="{{ fim_vigencia.date().isoformat() }}">{{ fim_vigencia.strftime('%d/%m/%Y') }}</time>
+        </p>
+      {% endif %}
+      {% if arquivada %}
+        <p class="painel-resumo">A malharia está arquivada. Fale com o suporte para revisar a publicação.</p>
+      {% elif situacao_assinatura in assinatura_descricao %}
+        <p class="painel-resumo">{{ assinatura_descricao[situacao_assinatura] }}</p>
+      {% endif %}
+
+      {% if situacao_assinatura == 'ativa' and mostrar_pagamento %}
+        <p class="assinatura-alerta">Sua assinatura vence nos próximos 7 dias.</p>
+      {% endif %}
+      {% if mostrar_pagamento %}
+        <form class="painel-acoes" method="GET" action="{{ url_for('checkout') }}">
+          {% if situacao_assinatura == 'ativa' %}
+            <input type="hidden" name="plano" value="{{ plano }}">
+          {% else %}
+            <label for="painel-plano">Plano para pagamento</label>
+            <select name="plano" id="painel-plano">
+              <option value="mensal" {{ 'selected' if plano == 'mensal' }}>Mensal</option>
+              <option value="anual" {{ 'selected' if plano == 'anual' }}>Anual</option>
+            </select>
+          {% endif %}
+          <button type="submit" class="painel-botao">
+            {{ 'Renovar no Mercado Pago' if situacao_assinatura in ('ativa', 'vencida') else 'Continuar para pagamento' }}
+          </button>
+        </form>
+      {% endif %}
+    </section>
+
+    {% set opcoes = [('troca_plano', 'Solicitar troca de plano'), ('cancelamento', 'Solicitar cancelamento')] %}
+    {% include '_portal_solicitacoes.html' %}
+  {% elif secao == 'perfil' %}
+    <h1>Perfil</h1>
+    <section class="painel-cartao">
+      <h2>{{ nome_empresa }}</h2>
+      <dl class="portal-dados">
+        <dt>Responsável</dt><dd>{{ empresa.responsavel_nome or '' }} {{ empresa.responsavel_sobrenome or '' }}</dd>
+        <dt>E-mail</dt><dd>{{ empresa.email }}</dd>
+      </dl>
+      <a class="painel-botao" href="{{ url_for('editar_empresa') }}#responsavel_nome">Editar dados do responsável</a>
+    </section>
+  {% elif secao == 'equipe' %}
+    <h1>Equipe</h1>
+    <section class="painel-cartao">
+      <h2>Responsável pelo acesso</h2>
+      <p>{{ empresa.email }}</p>
+      <p>Membros podem cadastrar e editar teares da sua malharia.</p>
+      <form method="post" class="portal-formulario" action="{{ url_for('portal_acao', secao='equipe') }}">
+        <input type="hidden" name="csrf_token" value="{{ portal_csrf }}">
+        <input type="hidden" name="tipo" value="convidar">
+        <label>Nome<input name="nome" required maxlength="100"></label>
+        <label>E-mail<input name="email" type="email" required maxlength="254"></label>
+        <button class="painel-botao">Gerar convite</button>
+      </form>
+      <ul class="portal-registros">
+        {% for membro in membros %}
+          <li>
+            <strong>{{ membro.nome }}</strong> · {{ membro.email }} · {{ 'Ativo' if membro.senha else 'Convite pendente' }}
+            <form method="post" action="{{ url_for('portal_acao', secao='equipe') }}">
+              <input type="hidden" name="csrf_token" value="{{ portal_csrf }}">
+              <input type="hidden" name="tipo" value="revogar">
+              <input type="hidden" name="membro" value="{{ membro.id }}">
+              <button class="painel-botao">Remover acesso</button>
+            </form>
+          </li>
+        {% else %}<li>Nenhum membro convidado.</li>{% endfor %}
+      </ul>
+    </section>
+  {% elif secao == 'configuracoes' %}
+    <h1>Configurações</h1>
+    {% include '_portal_config_links.html' %}
+    <section class="painel-cartao" id="notificacoes">
+      <h2>Notificações</h2>
+      <form method="post" action="{{ url_for('portal_acao', secao='configuracoes') }}">
+        <input type="hidden" name="csrf_token" value="{{ portal_csrf }}">
+        <input type="hidden" name="tipo" value="preferencias">
+        <p><label class="portal-opcao"><input type="checkbox" name="novos_acessos" value="sim" {{ 'checked' if preferencias.novos_acessos }}> Novos acessos no portal</label></p>
+        <p><label class="portal-opcao"><input type="checkbox" name="email_acessos" value="sim" {{ 'checked' if preferencias.email_acessos }}> Novos acessos por e-mail</label></p>
+        <p><label class="portal-opcao"><input type="checkbox" name="assinatura" value="sim" {{ 'checked' if preferencias.assinatura }}> Situação da assinatura no portal</label></p>
+        <button class="painel-botao">Salvar preferências</button>
+      </form>
+      {% if preferencias.novos_acessos %}<p>Acessos identificados nos últimos 7 dias: {{ novos_acessos }}</p>{% endif %}
+      {% if preferencias.assinatura %}<p>Assinatura: {{ rotulo_assinatura }}</p>{% endif %}
+    </section>
+    <section class="painel-cartao" id="seguranca">
+      <h2>Segurança</h2>
+      <p>Use uma senha exclusiva e mantenha o acesso ao e-mail do cadastro.</p>
+      <a class="painel-botao" href="{{ url_for('editar_empresa') }}#senha">Alterar senha</a>
+    </section>
+    <section class="painel-cartao" id="sugestoes">
+      <h2>Sugestões</h2>
+      {% set opcoes = [('sugestao', 'Enviar sugestão')] %}
+      {% include '_portal_solicitacoes.html' %}
+    </section>
+  {% elif secao == 'acessos' %}
+    <h1>Acessos ao perfil</h1>
+    <section class="painel-cartao">
+      <h2>Contatos dos últimos 90 dias</h2>
+      <ul class="portal-registros">
+        {% for item in acessos %}
+          <li><strong>{{ item.dados.nome }}</strong> · {{ item.dados.email }} · {{ item.criado_em.strftime('%d/%m/%Y') }}</li>
+        {% else %}<li>Nenhum acesso identificado.</li>{% endfor %}
+      </ul>
+      <a class="painel-acao" href="{{ url_for('performance_acesso') }}">Consultar métricas do perfil</a>
+    </section>
+  {% elif secao == 'suporte' %}
+    <h1>Central de Ajuda</h1>
+    {% set opcoes = [('chamado', 'Abrir chamado')] %}
+    {% include '_portal_solicitacoes.html' %}
+    <section class="painel-cartao">
+      <details><summary>Como publico meus teares?</summary><p>Cadastre o tear pelo botão + Novo Tear. A assinatura ativa é necessária para aparecer na busca.</p></details>
+      <details><summary>Onde vejo o vencimento?</summary><p>Abra Financeiro no menu do portal para consultar sua assinatura.</p></details>
+      <p><a class="painel-acao" href="mailto:gestao.achetece@gmail.com">Fale por e-mail</a> ·
+      <a class="painel-acao" href="https://wa.me/5547991120670">Fale pelo WhatsApp</a></p>
+    </section>
+  {% else %}
+    <h1>{{ nome_empresa }}</h1>
+    {% if situacao_assinatura == 'ativa' and mostrar_pagamento %}
+      <p class="assinatura-alerta">Sua assinatura vence nos próximos 7 dias.</p>
+    {% endif %}
+    {% if not session.get('portal_membro') %}
+    <p><a class="painel-acao" href="{{ url_for('painel_malharia', secao='financeiro') }}">Assinatura · {{ rotulo_assinatura }}</a>
+      {% if fim_vigencia %} · {{ fim_vigencia.strftime('%d/%m/%Y') }}{% endif %}</p>
+    {% endif %}
+    {% set teares = teares|selectattr('id', 'in', publicados)|list if secao == 'ativos' else teares|rejectattr('id', 'in', publicados)|list if secao == 'inativos' else teares %}
+    <section id="teares" class="painel-cartao" aria-labelledby="teares-titulo">
+      <div class="painel-cabecalho">
+        <div>
+          <h2 id="teares-titulo">{{ 'Teares ativos' if secao == 'ativos' else 'Teares inativos' if secao == 'inativos' else 'Teares cadastrados' }}</h2>
+          <p class="painel-resumo">
+            {{ teares|length }} {{ 'cadastrado' if teares|length == 1 else 'cadastrados' }} ·
+            {{ publicados|length }} {{ 'publicado' if publicados|length == 1 else 'publicados' }}
+          </p>
+        </div>
+
+      </div>
+
+      {% if teares %}
+        <table class="tabela-teares">
+          <caption class="sr-only">Teares e situação de publicação</caption>
+          <thead>
+            <tr>
+              <th scope="col">Tear</th>
+              <th scope="col">Tipo</th>
+              <th scope="col">Galga</th>
+              <th scope="col">Diâmetro</th>
+              <th scope="col">Alimentadores</th>
+              <th scope="col">Publicação</th>
+              <th scope="col">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for tear in teares %}
+              <tr>
+                <th scope="row">{{ tear.marca or '—' }} · {{ tear.modelo or '—' }}</th>
+                <td>{{ tear.tipo or '—' }}</td>
+                <td>{{ tear.finura or '—' }}</td>
+                <td>{{ tear.diametro or '—' }}</td>
+                <td>{{ tear.alimentadores or '—' }}</td>
+                <td>{{ tear_publicacao(tear) }}</td>
+                <td>{{ tear_acoes(tear) }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <div class="teares-cards">
+          {% for tear in teares %}
+            <article class="tear-card">
+              <h3>{{ tear.marca or '—' }} · {{ tear.modelo or '—' }}</h3>
+              <div>{{ tear_publicacao(tear) }}</div>
+              <dl>
+                <div><dt>Tipo</dt><dd>{{ tear.tipo or '—' }}</dd></div>
+                <div><dt>Galga</dt><dd>{{ tear.finura or '—' }}</dd></div>
+                <div><dt>Diâmetro</dt><dd>{{ tear.diametro or '—' }}</dd></div>
+                <div><dt>Alimentadores</dt><dd>{{ tear.alimentadores or '—' }}</dd></div>
+              </dl>
+              {{ tear_acoes(tear) }}
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="painel-resumo">Cadastre seu primeiro tear para começar a montar sua lista.</p>
+      {% endif %}
+    </section>
+  {% endif %}
+{% endblock %}

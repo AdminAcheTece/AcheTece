@@ -1,0 +1,56 @@
+{% extends "institucional_base.html" %}
+{% set titulo_pagina = 'Área da Malharia' %}
+{% block conteudo %}
+<div class="malharia-access">
+  <section class="card access-form" aria-labelledby="acesso-titulo">
+    <h1 id="acesso-titulo">Acesse sua malharia</h1>
+    {% if no_account %}
+      <p class="access-error" role="alert">Nenhuma malharia foi encontrada com esse e-mail.</p>
+    {% elif error %}
+      <p class="access-error" role="alert">{{ error }}</p>
+    {% endif %}
+    <form method="post" action="{{ url_for('login') }}">
+      <label for="email">E-mail</label>
+      <input id="email" name="email" type="email" autocomplete="email" required value="{{ email or '' }}">
+      {% if request.args.get('next') %}
+        <input type="hidden" name="next" value="{{ request.args.get('next') }}">
+      {% endif %}
+      <button type="submit" class="button">Acessar meu painel</button>
+    </form>
+    <div class="oauth">
+      <a class="access-google" href="{{ url_for('oauth_google', ctx='empresa', next=request.args.get('next')) }}">
+        <img src="{{ url_for('static', filename='icone_google.png') }}" width="20" height="20" alt="">
+        Entrar com Google
+      </a>
+    </div>
+    <div class="access-help">
+      <a href="{{ url_for('esqueci_senha') }}">Esqueci minha senha</a>
+      <a href="{{ url_for('portal_equipe_login') }}">Entrar como membro da equipe</a>
+      <a href="{{ url_for('contato') }}">Preciso de ajuda</a>
+    </div>
+    <div class="access-register">
+      <p>Sua malharia ainda não está cadastrada?</p>
+      <a class="access-secondary" href="{{ url_for('cadastrar_empresa') }}">Cadastrar minha malharia</a>
+    </div>
+    <p class="access-legal">Ao continuar, você concorda com os <a href="{{ url_for('termos') }}">termos de uso e a política de privacidade</a>.</p>
+  </section>
+  <section class="access-benefits" aria-labelledby="beneficios-titulo">
+    <h2 id="beneficios-titulo">Seus teares visíveis para quem procura produzir malhas.</h2>
+    <p>Apresente sua estrutura produtiva em uma plataforma especializada e amplie suas possibilidades de conexão comercial.</p>
+    <ul>
+      <li>Divulgue as características técnicas dos seus teares.</li>
+      <li>Seja encontrado em pesquisas especializadas.</li>
+      <li>Receba contatos diretamente na malharia.</li>
+      <li>Gerencie seus equipamentos em um único painel.</li>
+    </ul>
+  </section>
+</div>
+<script>
+  if (/iphone|ipad|ipod|android/i.test(navigator.userAgent)) {
+    const link = document.querySelector('.oauth a');
+    const target = new URL(link.href);
+    target.searchParams.set('force_login', '1');
+    link.href = target.href;
+  }
+</script>
+{% endblock %}
