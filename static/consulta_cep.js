@@ -1,58 +1,95 @@
-const cep = document.querySelector('#cep');
-const formulario = cep?.form;
-if (formulario) {
-  const { estado, cidade, endereco, rua, bairro } = formulario.elements;
+// CEP: consulta ao completar oito digitos; preenchimento manual sempre permitido.
+(() => {
+  const cep = document.querySelector('#cep');
+  const form = cep?.form;
+  if (!form) return;
+  const { estado, cidade, endereco, rua, bairro } = form.elements;
+  if (!estado || !cidade) return;
   const aviso = document.createElement('small');
   aviso.setAttribute('role', 'status');
   aviso.id = 'cep-status';
   cep.setAttribute('aria-describedby', aviso.id);
   cep.insertAdjacentElement('afterend', aviso);
-  let consulta;
-  let cepConsultado = cep.value.replace(/\D/g, '');
-  cep.addEventListener('input', () => {
-    consulta?.abort();
-    aviso.textContent = '';
-  });
-  cep.addEventListener('blur', async () => {
-    const codigo = cep.value.replace(/\D/g, '');
-    if (codigo.length !== 8 || codigo === cepConsultado) return;
-    consulta?.abort();
-    const atual = new AbortController();
-    consulta = atual;
-    const timeout = setTimeout(() => atual.abort(), 5000);
-    const valores = [estado.value, cidade.value, endereco?.value, rua?.value, bairro?.value];
+  const digitos = () => cep.value.replace(/\D/g, '');
+  let timer, controller, consultado = '', emConsulta = '';
+  let geracao = 0;
+  const campos = [estado, cidade, endereco, rua, bairro].filter(Boolean);
+  const automaticos = new Map();
+  function cancelar() {
+    clearTimeout(timer);
+    controller?.abort();
+    geracao++;
+    emConsulta = '';
+  }
+  function limparAutomaticos() {
+    for (const [campo, valor] of automaticos) {
+      if (campo.value === valor) campo.value = '';
+    }
+    automaticos.clear();
+  }
+  async function consultar() {
+    const codigo = digitos();
+    if (codigo.length !== 8 || codigo === consultado || codigo === emConsulta) return;
+    cancelar();
+    const atual = ++geracao;
+    const controle = new AbortController();
+    controller = controle;
+    emConsulta = codigo;
+    const prazo = setTimeout(() => controle.abort(), 8000);
+    const antes = new Map(campos.map(c => [c, c.value]));
+    const editados = new Set();
+    const marcar = e => editados.add(e.currentTarget);
+    campos.forEach(c => c.addEventListener('input', marcar));
+    campos.forEach(c => c.addEventListener('change', marcar));
+    const intacto = c => c && !editados.has(c) && c.value === antes.get(c);
+    function preencher(c, valor) {
+      if (intacto(c) && valor) { c.value = valor; automaticos.set(c, c.value); }
+    }
     aviso.textContent = 'Consultando CEP…';
     try {
       const resposta = await fetch('https://viacep.com.br/ws/' + codigo + '/json/', {
-        signal: atual.signal, referrerPolicy: 'no-referrer',
+        signal: controle.signal, referrerPolicy: 'no-referrer'
       });
-      if (!resposta.ok) throw Error();
+      if (!resposta.ok) throw Error('HTTP');
       const dados = await resposta.json();
-      if (dados.erro || !dados.uf || !dados.localidade) throw Error();
-      if (consulta !== atual || cep.value.replace(/\D/g, '') !== codigo) return;
-      if (estado.value === valores[0] && cidade.value === valores[1]) {
+      if (dados.erro || !dados.uf || !dados.localidade) throw Error('CEP');
+      if (atual !== geracao || digitos() !== codigo) return;
+      if (intacto(estado) && intacto(cidade)) {
         estado.value = dados.uf;
+        automaticos.set(estado, estado.value);
         if (cidade instanceof HTMLSelectElement) {
           cidade.dataset.cepCidade = dados.localidade;
           estado.dispatchEvent(new Event('change'));
           delete cidade.dataset.cepCidade;
-        } else {
-          cidade.value = dados.localidade;
-        }
+          if (cidade.value) automaticos.set(cidade, cidade.value);
+        } else preencher(cidade, dados.localidade);
       }
-      if (endereco && endereco.value === valores[2] && dados.logradouro) {
-        endereco.value = [dados.logradouro, dados.bairro].filter(Boolean).join(', ');
-      }
-      if (rua && rua.value === valores[3]) rua.value = dados.logradouro || '';
-      if (bairro && bairro.value === valores[4]) bairro.value = dados.bairro || '';
-      cepConsultado = codigo;
-      aviso.textContent = 'Confira os dados e informe o número e o complemento, se aplicável.';
+      preencher(endereco, [dados.logradouro, dados.bairro].filter(Boolean).join(', '));
+      preencher(rua, dados.logradouro);
+      preencher(bairro, dados.bairro);
+      consultado = codigo;
+      aviso.textContent = 'Confira o endereço. Complete os campos que faltarem e informe o número.';
     } catch {
-      if (consulta === atual && cep.value.replace(/\D/g, '') === codigo) {
-        aviso.textContent = 'CEP indisponível. Você pode preencher a localização manualmente.';
+      if (atual === geracao && digitos() === codigo) {
+        aviso.textContent = 'Não foi possível consultar o CEP. Tente novamente ou preencha manualmente.';
       }
     } finally {
-      clearTimeout(timeout);
+      clearTimeout(prazo);
+      campos.forEach(c => c.removeEventListener('input', marcar));
+      campos.forEach(c => c.removeEventListener('change', marcar));
+      if (atual === geracao) emConsulta = '';
     }
+  }
+  cep.addEventListener('input', () => {
+    cancelar();
+    if (digitos() !== consultado) { limparAutomaticos(); consultado = ''; }
+    aviso.textContent = '';
+    if (digitos().length === 8) timer = setTimeout(consultar, 300);
   });
-}
+  cep.addEventListener('blur', () => { clearTimeout(timer); consultar(); });
+  const tentar = document.createElement('button');
+  tentar.type = 'button';
+  tentar.textContent = 'Consultar CEP';
+  tentar.addEventListener('click', () => { consultado = ''; cancelar(); consultar(); });
+  aviso.insertAdjacentElement('afterend', tentar);
+})();

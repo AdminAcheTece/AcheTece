@@ -11,7 +11,7 @@
 
   <!-- CSS global -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-  <link href="l="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
 
   <style>
     :root{
@@ -355,6 +355,24 @@
   <!-- ✅ Header padrão (SEMPRE o último do head) -->
   <link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
+<style id="po031_empresa_visitante_styles">
+  .main-area .card { border-radius: 12px; padding: 16px; margin: 12px 0; }
+  .main-area .title { font-size: 19px; line-height: 1.3; }
+  .main-area h2.sec { font-size: 16px; line-height: 1.35; }
+  .main-area .sub, .main-area .dados dd, .main-area .v, .main-area .maps-link { font-size: 13px; }
+  .main-area .dados dt { font-size: 11px; }
+  .main-area .teares-table th, .main-area .teares-table td { font-size: 12px; padding: 10px 12px; }
+  .main-area .table-wrap { overflow-x: auto; }
+  .main-area .pill, .main-area .mapa small { font-size: 11px; }
+  .main-area .dados a, .main-area .maps-link { color: #2368A8; }
+  .top-back-area .btn-top-back { font-size: 13px; height: 34px; }
+  @media (max-width: 640px) {
+    .main-area .card { padding: 12px; }
+    .main-area .title { font-size: 17px; }
+    .main-area h2.sec { font-size: 15px; }
+  }
+</style>
+
 </head>
 
 <body class="achetece-site header-v1">
@@ -427,7 +445,7 @@
 
       <section class="card">
         <div class="sec-head">
-          <h2 class="sec">Informações da empresa</h2>
+          <h2 class="sec">Informações da malharia</h2>
           {% if tem_end %}
             <a class="maps-link" href="{{ map_url }}" target="_blank" rel="noopener">
               <svg class="svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -509,7 +527,7 @@
 
       <!-- Teares -->
       <section class="card">
-        <h2 class="sec" style="margin-bottom:10px">Teares desta malharia</h2>
+        <h2 class="sec" style="margin-bottom:10px">Teares disponíveis desta malharia</h2>
 
         {% if teares and teares|length %}
           <div class="table-wrap" role="region" aria-label="Tabela de teares">

@@ -23,13 +23,13 @@
   <div class="tear-acoes">
     <a class="painel-acao" href="{{ url_for('editar_tear', id=tear.id) }}"
        aria-label="Editar {{ tear.marca }} {{ tear.modelo }}">Editar</a>
-    {% if not session.get("portal_membro") %}
     <form method="post" action="{{ url_for('situacao_tear', id=tear.id) }}">
       <input type="hidden" name="csrf_token" value="{{ tear_csrf }}">
       <input type="hidden" name="ativo" value="{{ 0 if tear.ativo else 1 }}">
       <input type="hidden" name="situacao" value="{{ request.args.get('situacao','todos') }}">
       <button>{{ 'Desativar' if tear.ativo else 'Ativar' }}</button>
     </form>
+    {% if not session.get("portal_membro") %}
     <form method="POST" action="{{ url_for('excluir_tear', id=tear.id) }}"
           onsubmit="return confirm('Confirma excluir este tear? Essa ação é irreversível.');">
       <input type="hidden" name="csrf_token" value="{{ tear_csrf }}">
@@ -98,13 +98,8 @@
     </div>
   {% elif secao == 'pagamentos' %}
     <h1>Histórico de pagamentos</h1>
-    <section class="painel-cartao portal-tabela-wrap">
-      <table class="portal-tabela"><thead><tr><th>Data do pagamento (UTC)</th><th>Plano</th><th>Valor</th><th>Vigência até</th></tr></thead>
-      <tbody>{% for item in pagamentos %}
-        <tr><td>{{ item.pago_em.strftime('%d/%m/%Y') }}</td><td>{{ (item.plano or 'Indisponível')|capitalize }}</td>
-        <td>{{ ('R$ %.2f'|format(item.valor))|replace('.', ',') if item.valor is not none else '—' }}</td>
-        <td>{{ item.vigente_ate.strftime('%d/%m/%Y') if item.vigente_ate else '—' }}</td></tr>
-      {% else %}<tr><td colspan="4">Nenhum pagamento confirmado registrado no histórico.</td></tr>{% endfor %}</tbody></table>
+    <section class="painel-cartao">
+      <p>O histórico detalhado de pagamentos ainda não está disponível neste portal. Consulte seus comprovantes no Mercado Pago ou fale com o suporte.</p>
     </section>
   {% elif secao == 'perfil' %}
     <h1>{{ icone('pessoa') }} Administrador</h1>
@@ -244,6 +239,8 @@
       {% if fim_vigencia %} · {{ fim_vigencia.strftime('%d/%m/%Y') }}{% endif %}</p>
     {% endif %}
     {% set filtro = request.args.get('situacao', secao if secao in ('ativos','inativos') else 'todos') %}
+    {% set total_teares = teares|length %}
+    {% set total_ativos = teares|selectattr('ativo','equalto',true)|list|length %}
     {% if filtro in ('ativos','inativos') %}{% set teares = teares|selectattr('ativo','equalto', filtro == 'ativos')|list %}{% endif %}
     <section id="teares" class="painel-cartao" aria-labelledby="teares-titulo">
       <div class="painel-cabecalho">
@@ -254,8 +251,7 @@
             <button class="painel-botao">Filtrar</button>
           </form>
           <p class="painel-resumo">
-            {{ teares|length }} {{ 'cadastrado' if teares|length == 1 else 'cadastrados' }} ·
-            {{ publicados|length }} {{ 'publicado' if publicados|length == 1 else 'publicados' }}
+            {{ total_teares }} cadastrados · {{ total_ativos }} ativos · {{ total_teares - total_ativos }} inativos · {{ publicados|length }} publicados · {{ teares|length }} no filtro
           </p>
         </div>
 

@@ -80,7 +80,7 @@ class PublicoUX2Tests(unittest.TestCase):
             m.db.session.commit()
 
         inicial = self.client.get("/").get_data(as_text=True)
-        self.assertIn("Teares cadastrados", inicial)
+        self.assertIn("Teares encontrados", inicial)
         self.assertIn("2 teares em 1 malharia", inicial)
         self.assertIn("Elegível", inicial)
         self.assertNotIn("Oculta", inicial)

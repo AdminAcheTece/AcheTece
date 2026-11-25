@@ -79,7 +79,7 @@ def instalar(app, db, Empresa, empresa_publicavel, identificar, enviar_email, li
         if not membro or not membro.senha or membro.empresa_id != session.get("empresa_id"):
             session.clear()
             return redirect(url_for("login"))
-        permitidos = {"painel_malharia", "teares_form", "cadastrar_teares", "editar_tear", "logout", "static", "api_cidades"}
+        permitidos = {"painel_malharia", "teares_form", "cadastrar_teares", "editar_tear", "situacao_tear", "logout", "static", "api_cidades", "portal_foto_empresa"}
         if request.endpoint not in permitidos:
             abort(403)
         if request.endpoint == "painel_malharia" and request.args.get("secao", "teares") not in {"teares", "ativos", "inativos"}:
@@ -134,12 +134,20 @@ def instalar(app, db, Empresa, empresa_publicavel, identificar, enviar_email, li
             email = request.form.get("email", "").strip().lower()
             telefone = re.sub(r"\D", "", request.form.get("telefone", ""))
             endereco = {campo: request.form.get(campo, "").strip() for campo in ("cep", "endereco", "numero", "cidade", "estado")}
+            endereco["rua"] = request.form.get("rua", "").strip()
+            endereco["bairro"] = request.form.get("bairro", "").strip()
+            endereco["endereco"] = ", ".join(filter(None, (endereco["rua"], endereco["bairro"])))
+            endereco["estado"] = endereco["estado"].upper()
             organizacao = request.form.get("empresa_visitante", "").strip()
             endereco_ok = (re.fullmatch(r"[0-9]{5}-?[0-9]{3}", endereco["cep"])
-                           and 0 < len(endereco["endereco"]) <= 200 and 0 < len(endereco["numero"]) <= 20
-                           and 0 < len(endereco["cidade"]) <= 100 and re.fullmatch("[a-zA-Z]{2}", endereco["estado"]))
+                           and 0 < len(endereco["rua"]) <= 140 and 0 < len(endereco["bairro"]) <= 60
+                           and 0 < len(endereco["endereco"]) <= 202 and 0 < len(endereco["numero"]) <= 20
+                           and 0 < len(endereco["cidade"]) <= 100
+                           and endereco["estado"] in set("AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO".split()))
             if endereco_ok and len(organizacao) <= 120 and 2 <= len(nome) <= 100 and len(email) <= 254 and EMAIL.fullmatch(email) and len(telefone) in (10, 11) and request.form.get("autorizar") == "sim":
-                registrar(empresa.id, "contato" if contato else "acesso", {"nome": nome, "email": email, "telefone": telefone, "endereco": endereco, "empresa": organizacao})
+                registrar(empresa.id, "contato" if contato else "acesso", {"nome": nome, "email": email, "telefone": telefone, "endereco": endereco, "empresa": organizacao,
+                    "consentimento": {"versao": "PO024-v1", "autorizado_em_utc": datetime.utcnow().isoformat() + "Z",
+                                      "finalidade": "compartilhamento com a malharia selecionada para contato comercial"}})
                 if contato:
                     return redirect(url_for("empresa_whatsapp", empresa_id=empresa.id))
                 if preferencia(empresa.id).get("email_acessos"):
@@ -180,7 +188,8 @@ def instalar(app, db, Empresa, empresa_publicavel, identificar, enviar_email, li
                     flash("Dados do administrador salvos.")
         elif secao == "equipe" and tipo == "revogar":
             membro_id = request.form.get("membro", type=int)
-            Membro.query.filter_by(id=membro_id, empresa_id=empresa.id).delete()
+            if not Membro.query.filter_by(id=membro_id, empresa_id=empresa.id).delete():
+                abort(404)
             db.session.commit()
             flash("Acesso removido.")
         elif secao == "equipe" and tipo == "convidar":
@@ -239,28 +248,12 @@ def instalar(app, db, Empresa, empresa_publicavel, identificar, enviar_email, li
             abort(400)
         return redirect(url_for("painel_malharia", secao=secao))
 
-    @app.cli.command("enviar-lembretes-assinatura")
-    def enviar_lembretes_assinatura():
-        """Enviar um lembrete por vigência, nos sete dias anteriores ao fim."""
-        if app.config.get("MAIL_SUPPRESS_SEND"):
-            return
-        agora = datetime.utcnow()
-        ids = db.session.query(Empresa.id).filter(empresa_publicavel()).all()
-        for empresa_id, in ids:
-            empresa = Empresa.query.filter(Empresa.id == empresa_id, empresa_publicavel()).with_for_update().first()
-            if empresa:
-                fim = empresa.assinatura_expira_em
-                if fim and agora < fim <= agora + timedelta(days=7):
-                    anterior = registros(empresa_id, {"lembrete_vigencia"}).order_by(Registro.id.desc()).first()
-                    if not anterior or anterior.dados.get("vigencia") != fim.isoformat():
-                        corpo = (
-                            f"Olá! Sua assinatura AcheTece está vigente até {fim:%d/%m/%Y}. "
-                            "Renove em Assinatura e planos no Portal da Malharia para manter seus teares visíveis na busca."
-                        )
-                        if enviar_email(empresa.email, "Sua assinatura AcheTece vence em breve",
-                                        f"<p>{escape(corpo)}</p>", corpo):
-                            registrar(empresa_id, "lembrete_vigencia", {"vigencia": fim.isoformat()})
-            db.session.rollback()
+
+    @app.cli.command("auditar-retencao-visitantes")
+    def auditar_retencao_visitantes():
+        limite = datetime.utcnow() - timedelta(days=90)
+        total = Registro.query.filter(Registro.tipo.in_({"acesso", "contato"}), Registro.criado_em < limite).count()
+        print(f"RETENCAO_PREVIA: {total} registros anteriores a 90 dias. Nenhuma exclusao executada.")
 
     def dados_cadastrais(empresa_id, tipo):
         registro = registros(empresa_id, {tipo}).order_by(Registro.id.desc()).first()

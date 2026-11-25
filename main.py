@@ -1169,14 +1169,12 @@ class Tear(db.Model):
     # (Opcional) se existir flag de tear
     ativo = db.Column(db.Boolean, nullable=False, default=True, server_default=db.true())
 
-class PagamentoPortal(db.Model):
-    __tablename__ = "portal_pagamento"
-    payment_id = db.Column(db.String(64), primary_key=True)
-    empresa_id = db.Column(db.ForeignKey("empresa.id", ondelete="CASCADE"), nullable=False, index=True)
-    pago_em = db.Column(db.DateTime, nullable=False)
-    plano = db.Column(db.String(10))
-    valor = db.Column(db.Numeric(12, 2))
-    vigente_ate = db.Column(db.DateTime)
+
+
+class FotoEmpresaPortal(db.Model):
+    __tablename__ = "portal_foto_empresa"
+    empresa_id = db.Column(db.Integer, db.ForeignKey("empresa.id", ondelete="CASCADE"), primary_key=True)
+    conteudo = db.Column(db.LargeBinary, nullable=False)
 
 
 class ClienteProfile(db.Model):
@@ -2610,9 +2608,6 @@ def painel_malharia():
         empresa=emp,
         teares=teares,
         publicados=publicados,
-        pagamentos=PagamentoPortal.query.filter_by(empresa_id=emp.id).order_by(
-            PagamentoPortal.pago_em.desc(), PagamentoPortal.payment_id.desc()
-        ).all() if request.args.get("secao") == "pagamentos" else [],
         tear_csrf=session["tear_csrf"],
         dados_incompletos=dados_incompletos,
         perfil_ok=_empresa_basica_completa(emp),
@@ -3087,138 +3082,83 @@ def treinamento_quiz(module_key, lesson_key):
 
 @app.route("/perfil/foto_upload", methods=["POST"], endpoint="perfil_foto_upload")
 def perfil_foto_upload():
+    from io import BytesIO
+    from PIL import Image, ImageOps, UnidentifiedImageError
     emp, u = _get_empresa_usuario_da_sessao()
     if not emp or not u:
         return redirect(url_for("login"))
-
-    if request.form.get("destino") == "empresa":
-        from io import BytesIO
-        from PIL import Image, ImageOps, UnidentifiedImageError
-        token = session.get("empresa_edicao_csrf")
-        if not token or not secrets.compare_digest(token, request.form.get("csrf_token", "")):
-            abort(400)
-        foto = request.files.get("foto")
-        try:
-            if not foto:
+    if session.get("portal_membro"):
+        abort(403)
+    token = session.get("empresa_edicao_csrf")
+    if not token or not secrets.compare_digest(token.encode(), request.form.get("csrf_token", "").encode()):
+        abort(400)
+    foto = next((f for f in request.files.getlist("foto") if f and f.filename), None)
+    try:
+        if not foto:
+            raise ValueError()
+        dados = foto.stream.read(2 * 1024 * 1024 + 1)
+        if not dados or len(dados) > 2 * 1024 * 1024:
+            raise ValueError()
+        with Image.open(BytesIO(dados), formats=("JPEG", "PNG", "WEBP")) as imagem:
+            if imagem.width * imagem.height > 16_000_000 or getattr(imagem, "is_animated", False):
                 raise ValueError()
-            dados = foto.stream.read(2 * 1024 * 1024 + 1)
-            if len(dados) > 2 * 1024 * 1024:
-                raise ValueError()
-            with Image.open(BytesIO(dados), formats=("JPEG", "PNG", "WEBP")) as imagem:
-                if imagem.width * imagem.height > 16_000_000:
-                    raise ValueError()
-                imagem = ImageOps.exif_transpose(imagem)
-                imagem.thumbnail((512, 512))
-                saida = BytesIO()
-                imagem.convert("RGBA").save(saida, format="WEBP", quality=85)
-            arquivo = f"avatars/empresa_{emp.id}_{secrets.token_hex(8)}.webp"
-            caminho = os.path.join(app.static_folder, arquivo)
-            os.makedirs(os.path.dirname(caminho), exist_ok=True)
-            with open(caminho, "wb") as destino:
-                destino.write(saida.getvalue())
-            emp.foto_url = url_for("static", filename=arquivo)
-            db.session.commit()
-            session["avatar_url"] = emp.foto_url
-            flash("Foto da empresa salva.")
-        except (ValueError, UnidentifiedImageError, Image.DecompressionBombError, OSError):
-            flash("Selecione uma imagem JPG, PNG ou WebP de até 2 MB.")
+            imagem = ImageOps.exif_transpose(imagem)
+            imagem.thumbnail((512, 512))
+            # Copy pixels into a fresh image; do not retain EXIF/ICC/XMP.
+            limpa = Image.new("RGBA", imagem.size)
+            limpa.paste(imagem.convert("RGBA"))
+            saida = BytesIO()
+            limpa.save(saida, format="WEBP", quality=85)
+        conteudo = saida.getvalue()
+        if len(conteudo) > 512 * 1024:
+            raise ValueError()
+    except (ValueError, UnidentifiedImageError, Image.DecompressionBombError, OSError):
+        flash("Selecione uma imagem JPG, PNG ou WebP valida de ate 2 MB.")
         return redirect(url_for("editar_empresa"))
-
-    # Existem até 3 inputs <input type="file" name="foto"> (lib, cam, file).
-    # Precisamos pegar o primeiro que REALMENTE tenha arquivo.
-    file = None
     try:
-        candidatos = request.files.getlist("foto")
-    except Exception:
-        candidatos = [request.files.get("foto")]
-
-    for f in candidatos:
-        if f and getattr(f, "filename", "").strip():
-            file = f
-            break
-
-    if not file or not file.filename.strip():
-        flash("Nenhuma foto selecionada.", "erro")
-        app.logger.info({
-            "rota": "perfil_foto_upload",
-            "empresa_id": emp.id,
-            "motivo": "sem_arquivo",
-            "candidatos": [getattr(f, "filename", None) for f in candidatos],
-        })
-        return _back_to_panel(int(datetime.utcnow().timestamp()))
-
-    # extensão do arquivo original
-    filename_orig = secure_filename(file.filename)
-    _, ext = os.path.splitext(filename_orig)
-    ext = (ext or "").lower()
-
-    # se quiser ser bem permissivo, aceita tudo como .jpg
-    if ext not in (".jpg", ".jpeg", ".png", ".webp"):
-        # fallback: trata como .jpg mesmo assim
-        ext = ".jpg"
-
-    # Pasta alvo: static/avatars
-    avatars_dir = os.path.join(app.static_folder, "avatars")
-    try:
-        os.makedirs(avatars_dir, exist_ok=True)
-    except Exception as e:
-        app.logger.error(f"[avatar] erro ao criar pasta avatars: {e}")
-        flash("Erro ao preparar pasta de imagens.", "erro")
-        return _back_to_panel(int(datetime.utcnow().timestamp()))
-
-    # Nome fixo por empresa (sobrescreve qualquer anterior)
-    base_name = f"empresa_{emp.id}"
-    filename = base_name + ext
-    filepath = os.path.join(avatars_dir, filename)
-
-    # Remove versões antigas com outras extensões
-    for old_ext in (".jpg", ".jpeg", ".png", ".webp"):
-        old_path = os.path.join(avatars_dir, base_name + old_ext)
-        if old_path != filepath and os.path.exists(old_path):
-            try:
-                os.remove(old_path)
-            except OSError:
-                pass
-
-    try:
-        file.save(filepath)
-    except Exception as e:
-        app.logger.error(f"[avatar] erro ao salvar arquivo: {e}")
-        flash("Erro ao salvar a imagem enviada.", "erro")
-        return _back_to_panel(int(datetime.utcnow().timestamp()))
-
-    # Monta URL pública
-    rel_path = f"avatars/{filename}"
-    novo_url = url_for("static", filename=rel_path)
-
-    # Atualiza empresa + sessão
-    emp.foto_url = novo_url
-    try:
+        # Serializa substituicoes da mesma empresa; nenhuma gravacao em disco.
+        emp = Empresa.query.filter_by(id=emp.id).with_for_update().one()
+        registro = db.session.get(FotoEmpresaPortal, emp.id)
+        if registro is None:
+            registro = FotoEmpresaPortal(empresa_id=emp.id, conteudo=conteudo)
+            db.session.add(registro)
+        else:
+            registro.conteudo = conteudo
+        emp.foto_url = url_for("portal_foto_empresa", empresa_id=emp.id)
         db.session.commit()
-    except Exception as e:
+    except Exception:
         db.session.rollback()
-        app.logger.error(f"[avatar] erro ao gravar foto_url no banco: {e}")
-        flash("Erro ao salvar a imagem no cadastro.", "erro")
-        return _back_to_panel(int(datetime.utcnow().timestamp()))
+        app.logger.error("[foto] falha ao persistir imagem")
+        flash("Nao foi possivel salvar a foto. Tente novamente.")
+        return redirect(url_for("editar_empresa"))
+    session["avatar_url"] = emp.foto_url
+    flash("Foto da empresa salva.")
+    return redirect(url_for("editar_empresa"))
 
-    session["avatar_url"] = novo_url
 
-    app.logger.info({
-        "rota": "perfil_foto_upload",
-        "empresa_id": emp.id,
-        "foto_url_salva": novo_url,
-    })
-
-    ts = int(datetime.utcnow().timestamp())
-    return _back_to_panel(ts)
-
+@app.get("/portal/foto-empresa/<int:empresa_id>")
+def portal_foto_empresa(empresa_id):
+    from io import BytesIO
+    # Foto do painel privado; sem enumeracao publica ou acesso entre empresas.
+    if session.get("empresa_id") != empresa_id:
+        abort(404)
+    registro = db.session.get(FotoEmpresaPortal, empresa_id)
+    if registro is None:
+        abort(404)
+    resposta = send_file(BytesIO(registro.conteudo), mimetype="image/webp", conditional=False)
+    resposta.headers["Cache-Control"] = "private, no-store"
+    resposta.headers["X-Content-Type-Options"] = "nosniff"
+    return resposta
 @app.context_processor
 def inject_avatar_url():
     url = None
     try:
         uid, _ = _whoami()
-        # 1) Arquivo físico salvo como <uid>.webp
-        if uid:
+        emp_atual = _pegar_empresa_do_usuario(required=False)
+        if emp_atual is not None and getattr(emp_atual, "foto_url", None) == url_for("portal_foto_empresa", empresa_id=emp_atual.id):
+            url = emp_atual.foto_url
+        # 1) Arquivo físico legado, somente se nao houver foto persistente.
+        if uid and not url:
             filename  = f"{uid}.webp"
             dest_path = os.path.join(AVATAR_DIR, filename)
             if os.path.exists(dest_path):
@@ -3232,7 +3172,9 @@ def inject_avatar_url():
             if emp is not None:
                 rel = getattr(emp, 'foto_url', None) or getattr(emp, 'logo_url', None)
             if rel:
-                if rel.startswith('http://') or rel.startswith('https://'):
+                if rel == url_for('portal_foto_empresa', empresa_id=emp.id):
+                    url = rel
+                elif rel.startswith('http://') or rel.startswith('https://'):
                     url = rel
                 else:
                     # normaliza quando o DB guarda "/static/..."
@@ -3247,6 +3189,24 @@ def inject_avatar_url():
     return {'avatar_url': url}
 
 # --- CADASTRAR / LISTAR / SALVAR TEARES (SEM GATE DE ASSINATURA) ---
+def _validar_form_tear():
+    token = session.get("tear_csrf")
+    if not token or not secrets.compare_digest(token.encode(), request.form.get("csrf_token", "").encode()):
+        abort(400, "Abra novamente o formulario do tear.")
+    for campo in ("marca", "modelo"):
+        if not 1 <= len(request.form.get(campo, "").strip()) <= 100:
+            abort(400, "Confira marca e modelo.")
+    if request.form.get("tipo", "").strip().upper() not in {"MONO", "DUPLA"}:
+        abort(400, "Tipo de tear invalido.")
+    if request.form.get("elastano", "").strip().lower() not in {"sim", "não", "nao"}:
+        abort(400, "Informe o elastano.")
+    for campo in ("finura", "diametro", "alimentadores", "pistas_cilindro", "pistas_disco"):
+        valor = request.form.get(campo, "").strip()
+        minimo = 0 if campo.startswith("pistas_") else 1
+        if not re.fullmatch(r"[0-9]{1,9}", valor) or int(valor) < minimo:
+            abort(400, "Confira os valores numericos do tear.")
+
+
 @app.route("/teares/cadastrar", methods=["GET", "POST"], endpoint="cadastrar_teares")
 def cadastrar_teares():
     """
@@ -3258,7 +3218,9 @@ def cadastrar_teares():
         flash("Faça login para continuar.", "warning")
         return redirect(url_for("login"))
 
+    session.setdefault("tear_csrf", secrets.token_urlsafe(32))
     if request.method == "POST":
+        _validar_form_tear()
         def _to_int(val):
             try:
                 return int(float(str(val).replace(",", ".").strip()))
@@ -3417,7 +3379,9 @@ def editar_tear(id):
     if tear.empresa_id != emp.id:
         abort(403)
 
+    session.setdefault("tear_csrf", secrets.token_urlsafe(32))
     if request.method == "POST":
+        _validar_form_tear()
         def _to_int(val):
             try:
                 if val is None:
@@ -4232,7 +4196,7 @@ def utils_empresas_json():
     empresas = q.order_by(Empresa.id.desc()).all()
     data = []
     for e in empresas:
-        cnt = Tear.query.filter_by(empresa_id=e.id).count()
+        cnt = Tear.query.filter_by(empresa_id=e.id, ativo=True).count()
         data.append({
             "id": e.id,
             "apelido": e.apelido or e.nome or getattr(e, "nome_fantasia", "") or "",
@@ -4420,24 +4384,6 @@ def _make_magic_link(empresa_id: int) -> str:
     base = _public_base_url()  # você já usa essa função
     return f"{base}/magic/{token}"
 
-def _registrar_pagamento_portal(empresa, payment, payment_id):
-    from datetime import timezone
-    from sqlalchemy.dialects.postgresql import insert
-    plano = (payment.get("metadata") or {}).get("plano")
-    if plano not in {"mensal", "anual"}:
-        itens = (payment.get("additional_info") or {}).get("items") or []
-        titulos = {item.get("title") for item in itens}
-        plano = next((p for p in ("mensal", "anual") if f"Assinatura {p} AcheTece" in titulos), None)
-    data = payment.get("date_approved")
-    pago_em = datetime.fromisoformat(data.replace("Z", "+00:00")) if data else datetime.utcnow()
-    if pago_em.tzinfo:
-        pago_em = pago_em.astimezone(timezone.utc).replace(tzinfo=None)
-    registro = insert(PagamentoPortal).values(
-        payment_id=str(payment_id), empresa_id=empresa.id, pago_em=pago_em,
-        plano=plano, valor=payment.get("transaction_amount"),
-        vigente_ate=empresa.assinatura_expira_em,
-    ).on_conflict_do_nothing(index_elements=["payment_id"])
-    db.session.execute(registro)
 
 
 def _processar_pagamento(payment_id: str):
@@ -4486,9 +4432,6 @@ def _processar_pagamento(payment_id: str):
     if _env_bool("ED02_EXACT_ONCE_HOMOLOG", False):
         from ed02_payment_idempotency import process_verified_payment_exact_once
         result = process_verified_payment_exact_once(db, payment, empresa.id)
-        if status == "approved":
-            _registrar_pagamento_portal(empresa, payment, payment_id)
-            db.session.commit()
         if result["primeira_ativacao"]:
             try:
                 link = _make_magic_link(empresa.id)
@@ -4514,18 +4457,10 @@ def _processar_pagamento(payment_id: str):
     status_atual = (empresa.status_pagamento or "").strip().lower()
 
     if status == "approved":
-        empresa = Empresa.query.filter_by(id=empresa.id).populate_existing().with_for_update().one()
-        if db.session.get(PagamentoPortal, str(payment_id)):
-            db.session.rollback()
-            return {"ok": True, "empresa_id": empresa.id, "duplicado": True}
         status_atual = (empresa.status_pagamento or "").strip().lower()
-        plano_pago = (payment.get("metadata") or {}).get("plano")
-        if plano_pago in {"mensal", "anual"}:
-            empresa.plano = plano_pago
     
         empresa.status_pagamento = "ativo"
         empresa.data_pagamento = datetime.utcnow()
-        _registrar_pagamento_portal(empresa, payment, payment_id)
         db.session.commit()
     
         # envia e-mail só na transição (evita spam por webhooks repetidos)
@@ -4565,12 +4500,6 @@ def checkout():
         session.clear()
         return redirect(url_for('login'))
 
-    token = (os.environ.get("MP_ACCESS_TOKEN") or os.environ.get("MERCADO_PAGO_TOKEN") or "").strip()
-    if not token:
-        app.logger.error("[CHECKOUT] credencial do Mercado Pago ausente")
-        flash("Pagamento indisponível neste ambiente. A conexão com o Mercado Pago ainda não está configurada.")
-        return redirect(url_for("painel_malharia", secao="financeiro"))
-
     base = _public_base_url()
 
     # plano
@@ -4600,7 +4529,6 @@ def checkout():
             return "<h2>Erro ao iniciar pagamento.</h2>", 503
 
     preference_data = {
-        "metadata": {"plano": plano},
         "items": [{
             "title": titulo_plano,
             "quantity": 1,
@@ -4620,10 +4548,9 @@ def checkout():
     }
 
     try:
-        sdk = mercadopago.SDK(token)
+        sdk = mercadopago.SDK(os.environ.get("MP_ACCESS_TOKEN", ""))
         preference_response = sdk.preference().create(preference_data)
-        preference = (preference_response.get("response") or {}) if isinstance(preference_response, dict) else {}
-        preference = preference if isinstance(preference, dict) else {}
+        preference = preference_response.get("response", {}) if isinstance(preference_response, dict) else {}
         init_point = preference.get("init_point") or preference.get("sandbox_init_point")
 
         if _ed02_registro_checkout:
@@ -4639,11 +4566,9 @@ def checkout():
                 return "<h2>Erro ao iniciar pagamento.</h2>", 503
 
         if not init_point:
-            status_mp = preference_response.get("status") if isinstance(preference_response, dict) else None
-            app.logger.error("[CHECKOUT] link de pagamento ausente; status HTTP=%s",
-                             status_mp if isinstance(status_mp, int) else "indisponível")
-            flash("O Mercado Pago não abriu o pagamento. Tente novamente ou fale com o suporte.")
-            return redirect(url_for("painel_malharia", secao="financeiro"))
+            app.logger.error("[CHECKOUT] init_point ausente" if _ed02_registro_checkout
+                             else f"[CHECKOUT] init_point ausente. Resposta MP: {preference_response}")
+            return "<h2>Erro ao iniciar pagamento (init_point ausente).</h2>", 500
 
         return redirect(init_point)
 

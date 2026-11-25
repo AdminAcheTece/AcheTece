@@ -11,6 +11,7 @@
   {% endfor %}
   <section class="painel-cartao">
     <form method="POST" class="portal-formulario">
+      <input type="hidden" name="csrf_token" value="{{ session['tear_csrf'] }}">
               <div>
                 <label for="marca">Marca</label>
                 <input type="text" id="marca" name="marca" required
