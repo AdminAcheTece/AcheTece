@@ -1867,17 +1867,6 @@ def index():
     filtrada = any(filtros.values())
     try:
         base = _teares_publicados()
-        cidades = {}
-        localidades = (
-            base.with_entities(Empresa.estado, Empresa.cidade)
-            .filter(Empresa.estado.isnot(None))
-            .distinct().order_by(Empresa.estado, Empresa.cidade).all()
-        )
-        for uf, cidade in localidades:
-            if uf:
-                municipios = cidades.setdefault(uf.upper(), [])
-                if cidade and cidade not in municipios:
-                    municipios.append(cidade)
         tipos = [
             tipo for tipo, in base.with_entities(Tear.tipo).distinct().order_by(Tear.tipo)
             if tipo
@@ -1900,7 +1889,7 @@ def index():
         return render_template(
             "index.html", titulo_pagina="Buscar teares", filtros=filtros, tipos=tipos,
             galgas=galgas, diametros=diametros, filtrada=filtrada, malharias=malharias,
-            cidades=cidades, resultados=resultados, total=total, pagina=pagina, paginas=paginas,
+            cidades=_CIDADES_ESTATICO, resultados=resultados, total=total, pagina=pagina, paginas=paginas,
             inicio=inicio, por_pagina=pp, tem_whatsapp=_numero_comercial,
         )
     except Exception:
