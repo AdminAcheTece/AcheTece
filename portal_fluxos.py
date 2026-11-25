@@ -255,7 +255,7 @@ def instalar(app, db, Empresa, empresa_publicavel, identificar, enviar_email, li
                     if not anterior or anterior.dados.get("vigencia") != fim.isoformat():
                         corpo = (
                             f"Olá! Sua assinatura AcheTece está vigente até {fim:%d/%m/%Y}. "
-                            "Renove pelo Financeiro no Portal da Malharia para manter seus teares visíveis na busca."
+                            "Renove em Assinatura e planos no Portal da Malharia para manter seus teares visíveis na busca."
                         )
                         if enviar_email(empresa.email, "Sua assinatura AcheTece vence em breve",
                                         f"<p>{escape(corpo)}</p>", corpo):
