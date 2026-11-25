@@ -29,7 +29,7 @@
       <details class="portal-navegacao" open>
         <summary>Menu do portal</summary>
         <nav aria-label="Portal da Malharia">
-          <details open>
+          <details>
             <summary class="portal-conta">{{ icone('pessoa') }} Perfil da Malharia</summary>
             {% if not session.get("portal_membro") %}
             {{ portal_link('Administrador', 'perfil', 'pessoa') }}
@@ -39,24 +39,24 @@
             {% endif %}
             <a href="{{ url_for('logout') }}">{{ icone('sair') }} Sair</a>
           </details>
-          <details open>
+          <details>
             <summary><span class="portal-icone portal-tear" aria-hidden="true"></span> Teares cadastrados</summary>
             <a href="{{ url_for('teares_form') }}"{% if request.endpoint in ('teares_form','cadastrar_teares') %} aria-current="page"{% endif %}>{{ icone('adicionar') }} Cadastrar teares</a>
             {{ portal_link('Consultar teares', 'teares', 'tear') }}
           </details>
           {% if not session.get("portal_membro") %}
-          <details open>
+          <details>
             <summary>{{ icone('grafico') }} Performance da malharia</summary>
             {{ portal_link('Visitas ao perfil', 'visitas', 'acessos') }}
             {{ portal_link('Contatos recebidos', 'contatos', 'mensagem') }}
           </details>
-          <details open>
+          <details>
             <summary>{{ icone('assinatura_planos') }} Assinatura e planos</summary>
             {{ portal_link('Status da assinatura', 'financeiro', 'status_assinatura') }}
             {{ portal_link('Planos e valores', 'planos', 'planos_valores') }}
             {{ portal_link('Histórico de pagamentos', 'pagamentos', 'historico_pagamentos') }}
           </details>
-          <details open>
+          <details>
             <summary>{{ icone('suporte') }} Suporte</summary>
             {{ portal_link('Central de Ajuda', 'suporte', 'mensagem') }}
             <a href="{{ url_for('contato') }}#mensagem">{{ icone('email') }} E-mail</a>
