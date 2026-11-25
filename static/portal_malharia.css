@@ -334,3 +334,13 @@ body.portal-malharia {
 
 .portal-sugestao-topo { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid #dce2e6; }
 #nova-sugestao:not([hidden]) { margin-bottom: 14px; }
+
+.portal-lateral .portal-marca { display:flex; background:#f8fafc; border-bottom:1px solid #cbd8e3; padding:10px; border-radius:6px 6px 0 0; }
+.portal-malharia-nome { font-size:1.09em; margin-bottom:2px; }
+.portal-usuario { margin:0 8px 9px 2.8em; font-size:.8em; font-weight:400; color:#465767; overflow-wrap:anywhere; }
+.portal-tear { display:inline-block; background:currentColor; mask:url(tear-menu.png) center / contain no-repeat; }
+.planos-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:14px;max-width:760px; }
+.plano-card { display:flex;flex-direction:column;align-items:flex-start;gap:8px; }
+.plano-card ul { padding-inline-start:18px; flex:1; }
+.plano-preco { font-size:1.6em; }
+@media(max-width:800px){.portal-lateral .portal-novo {min-height:30px;padding:4px 9px;font-size:.83em;}}

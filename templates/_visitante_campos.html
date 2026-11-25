@@ -1,0 +1,13 @@
+<input type="hidden" name="csrf_token" value="{{ csrf_visitante() }}">
+<div class="visitante-campos">
+  <label>CEP *<input id="cep" name="cep" inputmode="numeric" autocomplete="postal-code" required maxlength="9" pattern="[0-9]{5}-?[0-9]{3}" placeholder="00000-000" value="{{ request.form.get('cep','') }}"></label>
+  <label>Nome *<input name="nome" autocomplete="name" minlength="2" maxlength="100" required value="{{ request.form.get('nome','') }}"></label>
+  <label class="visitante-largo">Rua e bairro *<input name="endereco" autocomplete="address-line1" maxlength="200" required value="{{ request.form.get('endereco','') }}"></label>
+  <label>Número *<input name="numero" maxlength="20" required placeholder="Número ou s/n" value="{{ request.form.get('numero','') }}"></label>
+  <label>Cidade *<input name="cidade" autocomplete="address-level2" maxlength="100" required value="{{ request.form.get('cidade','') }}"></label>
+  <label>UF *<input name="estado" autocomplete="address-level1" maxlength="2" pattern="[A-Za-z]{2}" required value="{{ request.form.get('estado','') }}"></label>
+  <label>Telefone *<input name="telefone" type="tel" autocomplete="tel-national" maxlength="18" required placeholder="(XX) XXXXX-XXXX" value="{{ request.form.get('telefone','') }}"></label>
+  <label>E-mail *<input name="email" type="email" autocomplete="email" maxlength="254" required value="{{ request.form.get('email','') }}"></label>
+  <label>Empresa (opcional)<input name="empresa_visitante" autocomplete="organization" maxlength="120" value="{{ request.form.get('empresa_visitante','') }}"></label>
+</div>
+<label class="visitante-consentimento"><input name="autorizar" type="checkbox" value="sim" required> Autorizo compartilhar os dados informados com a malharia selecionada.</label>

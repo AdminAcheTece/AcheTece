@@ -1,9 +1,9 @@
 {% extends '_portal_base.html' %}
 {% set nome_empresa = empresa.apelido or empresa.nome %}
-{% block title %}Novo tear{% endblock %}
+{% block title %}Cadastrar novo tear{% endblock %}
 {% block content %}
   <div>
-    <h1>Novo tear</h1>
+    <h1>Cadastrar novo tear</h1>
     <p class="painel-resumo">Preencha as características do tear.</p>
   </div>
   {% for mensagem in get_flashed_messages() %}
@@ -62,7 +62,7 @@
                        value="{{ tear.pistas_disco if tear and tear.pistas_disco is not none else '' }}">
               </div>
 
-              <div class="portal-campo-largo">
+              <div>
                 <label for="elastano">Kit Elastano</label>
                 <select id="elastano" name="elastano" required>
                   <option value="">-- Selecione --</option>
@@ -80,7 +80,7 @@
                 </select>
               </div>
 
-            <button type="submit" class="painel-botao">{{ 'Salvar alterações' if tear else 'Salvar tear' }}</button>
+            <button style="grid-column:1/-1" type="submit" class="painel-botao">{{ 'Salvar alterações' if tear else 'Salvar tear' }}</button>
           </form>
   </section>
   <a class="painel-acao" href="{{ url_for('painel_malharia') }}">Voltar para teares cadastrados</a>

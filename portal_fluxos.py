@@ -41,6 +41,18 @@ def instalar(app, db, Empresa, empresa_publicavel, identificar, enviar_email, li
             session["portal_csrf"] = secrets.token_urlsafe(32)
         return session["portal_csrf"]
 
+    app.jinja_env.globals["csrf_visitante"] = csrf
+
+    @app.template_global()
+    def nome_usuario_portal():
+        if session.get("portal_membro"):
+            membro = db.session.get(Membro, session["portal_membro"])
+            return membro.nome if membro else ""
+        empresa = db.session.get(Empresa, session["empresa_id"]) if session.get("empresa_id") else None
+        if empresa:
+            return " ".join(filter(None, [empresa.responsavel_nome, empresa.responsavel_sobrenome])) or empresa.email
+        return ""
+
     def conferir_csrf():
         if not secrets.compare_digest(csrf().encode(), request.form.get("csrf_token", "").encode()):
             abort(400)
@@ -121,8 +133,13 @@ def instalar(app, db, Empresa, empresa_publicavel, identificar, enviar_email, li
             nome = request.form.get("nome", "").strip()
             email = request.form.get("email", "").strip().lower()
             telefone = re.sub(r"\D", "", request.form.get("telefone", ""))
-            if 2 <= len(nome) <= 100 and len(email) <= 254 and EMAIL.fullmatch(email) and len(telefone) in (10, 11) and request.form.get("autorizar") == "sim":
-                registrar(empresa.id, "contato" if contato else "acesso", {"nome": nome, "email": email, "telefone": telefone})
+            endereco = {campo: request.form.get(campo, "").strip() for campo in ("cep", "endereco", "numero", "cidade", "estado")}
+            organizacao = request.form.get("empresa_visitante", "").strip()
+            endereco_ok = (re.fullmatch(r"[0-9]{5}-?[0-9]{3}", endereco["cep"])
+                           and 0 < len(endereco["endereco"]) <= 200 and 0 < len(endereco["numero"]) <= 20
+                           and 0 < len(endereco["cidade"]) <= 100 and re.fullmatch("[a-zA-Z]{2}", endereco["estado"]))
+            if endereco_ok and len(organizacao) <= 120 and 2 <= len(nome) <= 100 and len(email) <= 254 and EMAIL.fullmatch(email) and len(telefone) in (10, 11) and request.form.get("autorizar") == "sim":
+                registrar(empresa.id, "contato" if contato else "acesso", {"nome": nome, "email": email, "telefone": telefone, "endereco": endereco, "empresa": organizacao})
                 if contato:
                     return redirect(url_for("empresa_whatsapp", empresa_id=empresa.id))
                 if preferencia(empresa.id).get("email_acessos"):
@@ -132,7 +149,7 @@ def instalar(app, db, Empresa, empresa_publicavel, identificar, enviar_email, li
                                         pagina=request.args.get("pagina", 1, type=int),
                                         pp=request.args.get("pp", 20, type=int),
                                         **{k: v for k, v in filtros_busca().items() if v}))
-            flash("Preencha nome, e-mail, telefone com DDD e confirme o compartilhamento.")
+            flash("Confira o endereço, nome, e-mail e telefone com DDD e confirme o compartilhamento.")
         return render_template("portal_acesso.html", modo="visitante", contato=contato, empresa=empresa, portal_csrf=csrf()), 200, {
             "Cache-Control": "no-store",
         }

@@ -23,6 +23,8 @@
         <span><strong>AcheTece</strong><small>Portal da Malharia</small></span>
       </a>
       <p class="portal-malharia-nome">{{ icone('empresa') }} <strong>{{ nome_empresa|default(session.get('empresa_apelido') or 'Minha malharia') }}</strong></p>
+      {% set usuario_portal = nome_usuario_portal() %}
+      {% if usuario_portal %}<p class="portal-usuario">{{ usuario_portal }}</p>{% endif %}
       <a class="painel-botao portal-novo" href="{{ url_for('teares_form') }}">+ Novo Tear</a>
       <details class="portal-navegacao" open>
         <summary>Menu do portal</summary>
@@ -38,11 +40,9 @@
             <a href="{{ url_for('logout') }}">{{ icone('sair') }} Sair</a>
           </details>
           <details open>
-            <summary>{{ icone('tear') }} Teares cadastrados</summary>
-            <a href="{{ url_for('teares_form') }}"{% if request.endpoint in ('teares_form','cadastrar_teares') %} aria-current="page"{% endif %}>Cadastro</a>
-            {{ portal_link('Todos os teares', 'teares', 'tear') }}
-            {{ portal_link('Teares ativos', 'ativos', 'tear') }}
-            {{ portal_link('Teares inativos', 'inativos', 'tear') }}
+            <summary><span class="portal-icone portal-tear" aria-hidden="true"></span> Teares cadastrados</summary>
+            <a href="{{ url_for('teares_form') }}"{% if request.endpoint in ('teares_form','cadastrar_teares') %} aria-current="page"{% endif %}>{{ icone('adicionar') }} Cadastrar teares</a>
+            {{ portal_link('Consultar teares', 'teares', 'tear') }}
           </details>
           {% if not session.get("portal_membro") %}
           <details open>
@@ -50,11 +50,16 @@
             {{ portal_link('Visitas ao perfil', 'visitas', 'acessos') }}
             {{ portal_link('Contatos recebidos', 'contatos', 'mensagem') }}
           </details>
-          {{ portal_link('Financeiro', 'financeiro', 'financeiro') }}
+          <details open>
+            <summary>{{ icone('financeiro') }} Financeiro</summary>
+            {{ portal_link('Status da assinatura', 'financeiro', 'financeiro') }}
+            {{ portal_link('Planos e valores', 'planos', 'financeiro') }}
+            {{ portal_link('Histórico de pagamentos', 'pagamentos', 'financeiro') }}
+          </details>
           <details open>
             <summary>{{ icone('suporte') }} Suporte</summary>
             {{ portal_link('Central de Ajuda', 'suporte', 'mensagem') }}
-            <a href="mailto:gestao.achetece@gmail.com">{{ icone('email') }} E-mail</a>
+            <a href="{{ url_for('contato') }}#mensagem">{{ icone('email') }} E-mail</a>
             <a href="https://wa.me/5547991120670">{{ icone('whatsapp') }} WhatsApp</a>
           </details>
           {% endif %}

@@ -24,6 +24,12 @@
     <a class="painel-acao" href="{{ url_for('editar_tear', id=tear.id) }}"
        aria-label="Editar {{ tear.marca }} {{ tear.modelo }}">Editar</a>
     {% if not session.get("portal_membro") %}
+    <form method="post" action="{{ url_for('situacao_tear', id=tear.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ tear_csrf }}">
+      <input type="hidden" name="ativo" value="{{ 0 if tear.ativo else 1 }}">
+      <input type="hidden" name="situacao" value="{{ request.args.get('situacao','todos') }}">
+      <button>{{ 'Desativar' if tear.ativo else 'Ativar' }}</button>
+    </form>
     <form method="POST" action="{{ url_for('excluir_tear', id=tear.id) }}"
           onsubmit="return confirm('Confirma excluir este tear? Essa ação é irreversível.');">
       <input type="hidden" name="csrf_token" value="{{ tear_csrf }}">
@@ -34,7 +40,7 @@
 {% endmacro %}
 
 {% macro tear_publicacao(tear) %}
-  {% if tear.id in publicados %}
+  {{ 'Ativo' if tear.ativo else 'Inativo' }} · {% if tear.id in publicados %}
     <span class="painel-status ok">Publicado</span>
   {% else %}
     <span class="painel-status">Não publicado</span>
@@ -53,7 +59,7 @@
     {% endif %}
 
   {% if secao == 'financeiro' %}
-    <h1>Financeiro</h1>
+    <h1>Status da assinatura</h1>
     <section id="assinatura" class="assinatura-resumo" aria-labelledby="assinatura-titulo">
       <div class="painel-cabecalho">
         <h2 id="assinatura-titulo">Assinatura</h2>
@@ -75,11 +81,31 @@
         <p class="assinatura-alerta">Sua assinatura vence nos próximos 7 dias.</p>
       {% endif %}
     </section>
-    <form class="painel-cartao painel-acoes" method="GET" action="{{ url_for('checkout') }}">
-      <label><input type="radio" name="plano" value="mensal" {{ 'checked' if plano != 'anual' }}> Mensal · {{ preco_mensal }}</label>
-      <label><input type="radio" name="plano" value="anual" {{ 'checked' if plano == 'anual' }}> Anual · {{ preco_anual }}{% if desconto_anual %} (15% de desconto){% endif %}</label>
-      {% if not arquivada %}<button class="painel-botao">Pagar no Mercado Pago <img class="portal-mp" src="{{ url_for('static', filename='mercado-pago-icone.png') }}" alt="" width="23" height="16"></button>{% endif %}
-    </form>
+    <a class="painel-acao" href="{{ url_for('painel_malharia', secao='planos') }}">Consultar planos e valores</a>
+  {% elif secao == 'planos' %}
+    <h1>Planos e valores</h1>
+    <div class="planos-grid">
+    {% for chave,valor in [('mensal',preco_mensal),('anual',preco_anual)] %}
+      <article class="painel-cartao plano-card">
+        <h2>Plano {{ chave }}</h2>
+        <p>{{ 'Divulgue sua malharia mês a mês.' if chave == 'mensal' else 'Garanta a divulgação da sua malharia pelo ano.' }}</p>
+        <ul><li>Teares disponíveis na busca durante a vigência</li><li>Acompanhamento das visitas e dos contatos</li>
+          {% if chave == 'anual' and desconto_anual %}<li>Economia de 15% sobre 12 mensalidades</li>{% endif %}</ul>
+        <div><strong class="plano-preco">{{ valor }}</strong> / {{ 'mês' if chave == 'mensal' else 'ano' }}</div>
+        {% if not arquivada %}<a class="painel-botao" href="{{ url_for('checkout', plano=chave) }}">Pagar no Mercado Pago <img class="portal-mp" src="{{ url_for('static', filename='mercado-pago-icone.png') }}" alt="" width="23" height="16"></a>{% endif %}
+      </article>
+    {% endfor %}
+    </div>
+  {% elif secao == 'pagamentos' %}
+    <h1>Histórico de pagamentos</h1>
+    <section class="painel-cartao portal-tabela-wrap">
+      <table class="portal-tabela"><thead><tr><th>Data do pagamento (UTC)</th><th>Plano</th><th>Valor</th><th>Vigência até</th></tr></thead>
+      <tbody>{% for item in pagamentos %}
+        <tr><td>{{ item.pago_em.strftime('%d/%m/%Y') }}</td><td>{{ (item.plano or 'Indisponível')|capitalize }}</td>
+        <td>{{ ('R$ %.2f'|format(item.valor))|replace('.', ',') if item.valor is not none else '—' }}</td>
+        <td>{{ item.vigente_ate.strftime('%d/%m/%Y') if item.vigente_ate else '—' }}</td></tr>
+      {% else %}<tr><td colspan="4">Nenhum pagamento confirmado registrado no histórico.</td></tr>{% endfor %}</tbody></table>
+    </section>
   {% elif secao == 'perfil' %}
     <h1>{{ icone('pessoa') }} Administrador</h1>
     <section class="painel-cartao">
@@ -217,11 +243,16 @@
     <p><a class="painel-acao" href="{{ url_for('painel_malharia', secao='financeiro') }}">Assinatura · {{ rotulo_assinatura }}</a>
       {% if fim_vigencia %} · {{ fim_vigencia.strftime('%d/%m/%Y') }}{% endif %}</p>
     {% endif %}
-    {% set teares = teares|selectattr('id', 'in', publicados)|list if secao == 'ativos' else teares|rejectattr('id', 'in', publicados)|list if secao == 'inativos' else teares %}
+    {% set filtro = request.args.get('situacao', secao if secao in ('ativos','inativos') else 'todos') %}
+    {% if filtro in ('ativos','inativos') %}{% set teares = teares|selectattr('ativo','equalto', filtro == 'ativos')|list %}{% endif %}
     <section id="teares" class="painel-cartao" aria-labelledby="teares-titulo">
       <div class="painel-cabecalho">
         <div>
-          <h2 id="teares-titulo">{{ 'Teares ativos' if secao == 'ativos' else 'Teares inativos' if secao == 'inativos' else 'Teares cadastrados' }}</h2>
+          <h2 id="teares-titulo">Consultar teares</h2>
+          <form method="get"><input type="hidden" name="secao" value="teares">
+            <label>Situação <select name="situacao">{% for valor in ('todos','ativos','inativos') %}<option value="{{ valor }}" {{ 'selected' if filtro == valor }}>{{ valor|capitalize }}</option>{% endfor %}</select></label>
+            <button class="painel-botao">Filtrar</button>
+          </form>
           <p class="painel-resumo">
             {{ teares|length }} {{ 'cadastrado' if teares|length == 1 else 'cadastrados' }} ·
             {{ publicados|length }} {{ 'publicado' if publicados|length == 1 else 'publicados' }}
@@ -275,7 +306,7 @@
           {% endfor %}
         </div>
       {% else %}
-        <p class="painel-resumo">Cadastre seu primeiro tear para começar a montar sua lista.</p>
+        <p class="painel-resumo">{{ 'Nenhum tear corresponde ao filtro.' if filtro != 'todos' else 'Cadastre seu primeiro tear para começar a montar sua lista.' }}</p>
       {% endif %}
     </section>
   {% endif %}

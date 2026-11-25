@@ -684,6 +684,9 @@ def _ensure_teares_pistas_cols():
     insp = inspect(db.engine)
     existentes = {c["name"] for c in insp.get_columns(tbl)}
     stmts = []
+    if "ativo" not in existentes:
+        optional = "IF NOT EXISTS " if db.engine.dialect.name == "postgresql" else ""
+        stmts.append(text(f"ALTER TABLE {tbl} ADD COLUMN {optional}ativo BOOLEAN NOT NULL DEFAULT TRUE"))
     if "pistas_cilindro" not in existentes:
         stmts.append(text(f'ALTER TABLE {tbl} ADD COLUMN pistas_cilindro INTEGER'))
     if "pistas_disco" not in existentes:
@@ -1164,7 +1167,17 @@ class Tear(db.Model):
     elastano = db.Column(db.String(10), nullable=False)
     empresa_id = db.Column(db.Integer, db.ForeignKey('empresa.id'), nullable=False)
     # (Opcional) se existir flag de tear
-    # ativo = db.Column(db.Boolean, default=True, index=True)
+    ativo = db.Column(db.Boolean, nullable=False, default=True, server_default=db.true())
+
+class PagamentoPortal(db.Model):
+    __tablename__ = "portal_pagamento"
+    payment_id = db.Column(db.String(64), primary_key=True)
+    empresa_id = db.Column(db.ForeignKey("empresa.id", ondelete="CASCADE"), nullable=False, index=True)
+    pago_em = db.Column(db.DateTime, nullable=False)
+    plano = db.Column(db.String(10))
+    valor = db.Column(db.Numeric(12, 2))
+    vigente_ate = db.Column(db.DateTime)
+
 
 class ClienteProfile(db.Model):
     __tablename__ = 'cliente_profile'
@@ -1822,7 +1835,7 @@ def _filtros_teares():
 
 
 def _teares_publicados():
-    return Tear.query.join(Empresa).filter(empresa_publicavel())
+    return Tear.query.join(Empresa).filter(Tear.ativo.is_(True), empresa_publicavel())
 
 
 def _aplicar_filtros_teares(query, filtros):
@@ -2582,7 +2595,7 @@ def painel_malharia():
     publicados = {
         tear_id for tear_id, in
         db.session.query(Tear.id).join(Empresa).filter(
-            Tear.empresa_id == emp.id, empresa_publicavel(),
+            Tear.empresa_id == emp.id, Tear.ativo.is_(True), empresa_publicavel(),
         )
     }
     dados_incompletos = {
@@ -2608,6 +2621,9 @@ def painel_malharia():
         empresa=emp,
         teares=teares,
         publicados=publicados,
+        pagamentos=PagamentoPortal.query.filter_by(empresa_id=emp.id).order_by(
+            PagamentoPortal.pago_em.desc(), PagamentoPortal.payment_id.desc()
+        ).all() if request.args.get("secao") == "pagamentos" else [],
         tear_csrf=session["tear_csrf"],
         dados_incompletos=dados_incompletos,
         perfil_ok=_empresa_basica_completa(emp),
@@ -3464,6 +3480,22 @@ def editar_tear(id):
     # GET
     return render_template("editar_tear.html", empresa=emp, tear=tear)
 
+@app.post("/tear/<int:id>/situacao")
+def situacao_tear(id):
+    empresa = _pegar_empresa_do_usuario(required=True)
+    if not isinstance(empresa, Empresa):
+        return empresa
+    tear = Tear.query.filter_by(id=id, empresa_id=empresa.id).first_or_404()
+    token = session.get("tear_csrf")
+    valor = request.form.get("ativo")
+    if not token or not secrets.compare_digest(request.form.get("csrf_token", "").encode(), token.encode()) or valor not in {"0", "1"}:
+        abort(400)
+    tear.ativo = valor == "1"
+    db.session.commit()
+    flash("Situação do tear atualizada.")
+    return redirect(url_for("painel_malharia", secao="teares", situacao=request.form.get("situacao", "todos")))
+
+
 @app.post("/tear/<int:id>/excluir")
 def excluir_tear(id):
     empresa = _pegar_empresa_do_usuario(required=True)
@@ -3851,7 +3883,8 @@ def _consulta_admin_empresas(argumentos):
         .correlate(Empresa)
         .scalar_subquery()
     )
-    publicados = db.case((publicavel, total_teares), else_=0)
+    ativos = db.select(func.count(Tear.id)).where(Tear.empresa_id == Empresa.id, Tear.ativo.is_(True)).correlate(Empresa).scalar_subquery()
+    publicados = db.case((publicavel, ativos), else_=0)
     query = db.session.query(Empresa, arquivada, total_teares, publicados)
     if filtros['q']:
         query = query.filter(or_(
@@ -3917,7 +3950,7 @@ def admin_empresas():
 
     indicadores = {
         'empresas': Empresa.query.count(),
-        'publicados': Tear.query.join(Empresa).filter(empresa_publicavel()).count(),
+        'publicados': Tear.query.join(Empresa).filter(Tear.ativo.is_(True), empresa_publicavel()).count(),
         'pendencias': Empresa.query.filter(
             ~empresa_arquivada(),
             _situacao_assinatura_admin_sql().in_(('pendente', 'processamento')),
@@ -3976,7 +4009,7 @@ def admin_empresa_ficha(empresa_id):
     return render_template(
         'admin_empresa_ficha.html', empresa=empresa, teares=teares, registro=registro,
         historico=historico,
-        visibilidade=_visibilidade_admin(registro is not None, publicavel and bool(teares)),
+        visibilidade=_visibilidade_admin(registro is not None, publicavel and any(t.ativo for t in teares)),
         situacao_assinatura=_situacao_assinatura(empresa)[1], csrf_token=_csrf_admin(),
     )
 
@@ -4398,6 +4431,26 @@ def _make_magic_link(empresa_id: int) -> str:
     base = _public_base_url()  # você já usa essa função
     return f"{base}/magic/{token}"
 
+def _registrar_pagamento_portal(empresa, payment, payment_id):
+    from datetime import timezone
+    from sqlalchemy.dialects.postgresql import insert
+    plano = (payment.get("metadata") or {}).get("plano")
+    if plano not in {"mensal", "anual"}:
+        itens = (payment.get("additional_info") or {}).get("items") or []
+        titulos = {item.get("title") for item in itens}
+        plano = next((p for p in ("mensal", "anual") if f"Assinatura {p} AcheTece" in titulos), None)
+    data = payment.get("date_approved")
+    pago_em = datetime.fromisoformat(data.replace("Z", "+00:00")) if data else datetime.utcnow()
+    if pago_em.tzinfo:
+        pago_em = pago_em.astimezone(timezone.utc).replace(tzinfo=None)
+    registro = insert(PagamentoPortal).values(
+        payment_id=str(payment_id), empresa_id=empresa.id, pago_em=pago_em,
+        plano=plano, valor=payment.get("transaction_amount"),
+        vigente_ate=empresa.assinatura_expira_em,
+    ).on_conflict_do_nothing(index_elements=["payment_id"])
+    db.session.execute(registro)
+
+
 def _processar_pagamento(payment_id: str):
     """
     Consulta no MP e atualiza Empresa.status_pagamento / data_pagamento.
@@ -4444,6 +4497,9 @@ def _processar_pagamento(payment_id: str):
     if _env_bool("ED02_EXACT_ONCE_HOMOLOG", False):
         from ed02_payment_idempotency import process_verified_payment_exact_once
         result = process_verified_payment_exact_once(db, payment, empresa.id)
+        if status == "approved":
+            _registrar_pagamento_portal(empresa, payment, payment_id)
+            db.session.commit()
         if result["primeira_ativacao"]:
             try:
                 link = _make_magic_link(empresa.id)
@@ -4469,10 +4525,18 @@ def _processar_pagamento(payment_id: str):
     status_atual = (empresa.status_pagamento or "").strip().lower()
 
     if status == "approved":
+        empresa = Empresa.query.filter_by(id=empresa.id).populate_existing().with_for_update().one()
+        if db.session.get(PagamentoPortal, str(payment_id)):
+            db.session.rollback()
+            return {"ok": True, "empresa_id": empresa.id, "duplicado": True}
         status_atual = (empresa.status_pagamento or "").strip().lower()
+        plano_pago = (payment.get("metadata") or {}).get("plano")
+        if plano_pago in {"mensal", "anual"}:
+            empresa.plano = plano_pago
     
         empresa.status_pagamento = "ativo"
         empresa.data_pagamento = datetime.utcnow()
+        _registrar_pagamento_portal(empresa, payment, payment_id)
         db.session.commit()
     
         # envia e-mail só na transição (evita spam por webhooks repetidos)
@@ -4547,6 +4611,7 @@ def checkout():
             return "<h2>Erro ao iniciar pagamento.</h2>", 503
 
     preference_data = {
+        "metadata": {"plano": plano},
         "items": [{
             "title": titulo_plano,
             "quantity": 1,
@@ -4900,7 +4965,7 @@ def empresa_perfil(empresa_id):
     empresa = Empresa.query.filter(
         Empresa.id == empresa_id, empresa_publicavel()
     ).first_or_404()
-    teares = Tear.query.filter_by(empresa_id=empresa_id).order_by(Tear.tipo.asc()).all()
+    teares = Tear.query.filter_by(empresa_id=empresa_id, ativo=True).order_by(Tear.tipo.asc()).all()
 
     # registra analytics de visita ao perfil público
     try:
