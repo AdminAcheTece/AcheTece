@@ -11,7 +11,7 @@
 
   <!-- CSS global -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-  <link href="l="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
 
   <style>
     :root{
@@ -355,6 +355,24 @@
   <!-- ✅ Header padrão (SEMPRE o último do head) -->
   <link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
+<style id="po031_empresa_visitante_styles">
+  .main-area .card { border-radius: 12px; padding: 16px; margin: 12px 0; }
+  .main-area .title { font-size: 19px; line-height: 1.3; }
+  .main-area h2.sec { font-size: 16px; line-height: 1.35; }
+  .main-area .sub, .main-area .dados dd, .main-area .v, .main-area .maps-link { font-size: 13px; }
+  .main-area .dados dt { font-size: 11px; }
+  .main-area .teares-table th, .main-area .teares-table td { font-size: 12px; padding: 10px 12px; }
+  .main-area .table-wrap { overflow-x: auto; }
+  .main-area .pill, .main-area .mapa small { font-size: 11px; }
+  .main-area .dados a, .main-area .maps-link { color: #2368A8; }
+  .top-back-area .btn-top-back { font-size: 13px; height: 34px; }
+  @media (max-width: 640px) {
+    .main-area .card { padding: 12px; }
+    .main-area .title { font-size: 17px; }
+    .main-area h2.sec { font-size: 15px; }
+  }
+</style>
+
 </head>
 
 <body class="achetece-site header-v1">
@@ -396,7 +414,7 @@
 
           <div class="actions">
             {% if tem_whatsapp %}
-              <a class="btn btn-ghost btn-icon" href="{{ url_for('empresa_whatsapp', empresa_id=empresa.id) }}" target="_blank" rel="noopener" aria-label="WhatsApp" title="WhatsApp">
+              <a class="btn btn-ghost btn-icon" href="{{ url_for('portal_identificar_visitante', empresa_id=empresa.id, acao='whatsapp') }}" target="_blank" rel="noopener" aria-label="WhatsApp" title="WhatsApp">
                 <svg class="svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <path d="M20.52 3.48A11.77 11.77 0 0 0 12.01 0C5.4 0 .03 5.37.03 12c0 2.11.55 4.17 1.6 5.99L0 24l6.19-1.61A11.93 11.93 0 0 0 12 24c6.62 0 12-5.37 12-12 0-3.21-1.25-6.23-3.48-8.52Zm-8.51 18.2a9.9 9.9 0 0 1-5.05-1.39l-.36-.21-3.68.96.98-3.58-.23-.37A9.92 9.92 0 1 1 21.9 12c0 5.46-4.44 9.68-9.89 9.68Zm5.68-7.25c-.31-.16-1.83-.9-2.11-1.01-.28-.11-.48-.16-.68.16-.2.31-.78 1.01-.96 1.22-.18.21-.36.23-.66.08-.31-.16-1.31-.48-2.49-1.52-.92-.82-1.54-1.82-1.72-2.13-.18-.31-.02-.48.13-.64.14-.14.31-.36.47-.54.16-.18.21-.31.31-.52.1-.21.05-.39-.03-.55-.08-.16-.68-1.63-.93-2.24-.24-.58-.49-.5-.68-.51l-.58-.01c-.2 0-.52.08-.79.39-.27.31-1.04 1.02-1.04 2.49 0 1.47 1.07 2.9 1.22 3.1.15.2 2.12 3.24 5.14 4.54.72.31 1.28.5 1.71.64.72.23 1.38.2 1.9.12.58-.09 1.83-.75 2.09-1.47.26-.72.26-1.33.18-1.46-.08-.13-.28-.21-.59-.37Z"/>
                 </svg>
@@ -427,7 +445,7 @@
 
       <section class="card">
         <div class="sec-head">
-          <h2 class="sec">Informações da empresa</h2>
+          <h2 class="sec">Informações da malharia</h2>
           {% if tem_end %}
             <a class="maps-link" href="{{ map_url }}" target="_blank" rel="noopener">
               <svg class="svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -509,7 +527,7 @@
 
       <!-- Teares -->
       <section class="card">
-        <h2 class="sec" style="margin-bottom:10px">Teares desta malharia</h2>
+        <h2 class="sec" style="margin-bottom:10px">Teares disponíveis desta malharia</h2>
 
         {% if teares and teares|length %}
           <div class="table-wrap" role="region" aria-label="Tabela de teares">
@@ -553,15 +571,6 @@
 
     </div>
   </main>
-
-  <!-- ===== Faixa preta (CTA) ===== -->
-  <section class="cta-bar">
-    <div class="cta-text">
-      <h3>É proprietário de uma malharia?</h3>
-      <p>Cadastre sua malharia e comece a receber novos pedidos.</p>
-    </div>
-    <a href="{{ url_for('cadastrar_empresa') }}" class="cta-btn">Cadastrar</a>
-  </section>
 
   <!-- ===== Rodapé ===== -->
   {% include '_rodape_site.html' %}

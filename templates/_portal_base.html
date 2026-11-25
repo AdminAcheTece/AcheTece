@@ -1,0 +1,75 @@
+{% from '_portal_icones.html' import icone %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Portal da Malharia{% endblock %} | AcheTece</title>
+  <link rel="icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='portal_malharia.css') }}">
+</head>
+<body class="portal-malharia">
+  <a class="portal-skip" href="#conteudo">Ir para o conteúdo</a>
+  {% set secao = request.args.get('secao', 'teares') %}
+  {% set em_cadastro = request.endpoint == 'editar_empresa' %}
+  {% macro portal_link(label, chave, simbolo) %}
+    <a href="{{ url_for('painel_malharia', secao=chave) }}"{% if request.endpoint == 'painel_malharia' and secao == chave %} aria-current="page"{% endif %}>{{ icone(simbolo) }} {{ label }}</a>
+  {% endmacro %}
+  <div class="portal-layout">
+    <aside class="portal-lateral">
+      <a href="{{ url_for('painel_malharia') }}" class="portal-marca">
+        <img src="{{ url_for('static', filename='achetece-simbolo-oficial.png') }}" alt="" width="30" height="30">
+        <span><strong>AcheTece</strong><small>Portal da Malharia</small></span>
+      </a>
+      <p class="portal-malharia-nome">{{ icone('empresa') }} <strong>{{ nome_empresa|default(session.get('empresa_apelido') or 'Minha malharia') }}</strong></p>
+      {% set usuario_portal = nome_usuario_portal() %}
+      {% if usuario_portal %}<p class="portal-usuario">{{ usuario_portal }}</p>{% endif %}
+      <a class="painel-botao portal-novo" href="{{ url_for('teares_form') }}">+ Novo Tear</a>
+      <details class="portal-navegacao" open>
+        <summary>Menu do portal</summary>
+        <nav aria-label="Portal da Malharia">
+          <details>
+            <summary class="portal-conta">{{ icone('pessoa') }} Perfil da Malharia</summary>
+            {% if not session.get("portal_membro") %}
+            {{ portal_link('Administrador', 'perfil', 'pessoa') }}
+            {{ portal_link('Equipe', 'equipe', 'equipe')}}
+            <a href="{{ url_for('editar_empresa') }}"{% if em_cadastro %} aria-current="page"{% endif %}>{{ icone('empresa') }} Empresa</a>
+            {{ portal_link('Configurações', 'configuracoes', 'config') }}
+            {% endif %}
+            <a href="{{ url_for('logout') }}">{{ icone('sair') }} Sair</a>
+          </details>
+          <details>
+            <summary><span class="portal-icone portal-tear" aria-hidden="true"></span> Teares cadastrados</summary>
+            <a href="{{ url_for('teares_form') }}"{% if request.endpoint in ('teares_form','cadastrar_teares') %} aria-current="page"{% endif %}>{{ icone('adicionar') }} Cadastrar teares</a>
+            {{ portal_link('Consultar teares', 'teares', 'tear') }}
+          </details>
+          {% if not session.get("portal_membro") %}
+          <details>
+            <summary>{{ icone('grafico') }} Performance da malharia</summary>
+            {{ portal_link('Visitas ao perfil', 'visitas', 'acessos') }}
+            {{ portal_link('Contatos recebidos', 'contatos', 'mensagem') }}
+          </details>
+          <details>
+            <summary>{{ icone('assinatura_planos') }} Assinatura e planos</summary>
+            {{ portal_link('Status da assinatura', 'financeiro', 'status_assinatura') }}
+            {{ portal_link('Planos e valores', 'planos', 'planos_valores') }}
+            {{ portal_link('Histórico de pagamentos', 'pagamentos', 'historico_pagamentos') }}
+          </details>
+          <details>
+            <summary>{{ icone('suporte') }} Suporte</summary>
+            {{ portal_link('Central de Ajuda', 'suporte', 'mensagem') }}
+            <a href="{{ url_for('contato') }}#mensagem">{{ icone('email') }} E-mail</a>
+            <a href="https://wa.me/5547991120670">{{ icone('whatsapp') }} WhatsApp</a>
+          </details>
+          {% endif %}
+        </nav>
+      </details>
+    </aside>
+    <main id="conteudo" class="painel-conteudo" tabindex="-1">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

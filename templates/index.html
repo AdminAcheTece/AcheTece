@@ -71,7 +71,7 @@
 
 <section class="search-results" id="resultados" aria-labelledby="results-title">
   <header class="results-heading">
-    <h2 id="results-title">{{ 'Teares encontrados' if filtrada else 'Teares cadastrados' }}</h2>
+    <h2 id="results-title">{{ 'Teares encontrados' if filtrada else 'Teares encontrados' }}</h2>
     <p>{{ total }} {{ 'tear' if total == 1 else 'teares' }} em {{ malharias }} {{ 'malharia' if malharias == 1 else 'malharias' }}</p>
   </header>
   {% if filtrada %}
@@ -93,9 +93,9 @@
     <ul class="card-grid tear-results">
       {% for tear in resultados %}
         {% set empresa = tear.empresa %}
-        {% set destino = url_for('empresa_perfil', empresa_id=empresa.id, pagina=pagina, pp=por_pagina, **filtros) %}
+        {% set destino = url_for('portal_identificar_visitante', empresa_id=empresa.id, pagina=pagina, pp=por_pagina, **filtros) %}
         <li class="card">
-          <h3><a href="{{ destino }}">{{ empresa.apelido or empresa.nome }}</a></h3>
+          <h3><a data-identificar="{{ empresa.apelido or empresa.nome }}" href="{{ destino }}">{{ empresa.apelido or empresa.nome }}</a></h3>
           <p class="search-note">{{ [empresa.cidade, empresa.estado]|select|join(' / ') }}</p>
           <dl>
             <div><dt>Tipo</dt><dd>{{ tear.tipo }}</dd></div>
@@ -113,9 +113,9 @@
             </details>
           {% endif %}
           <div class="search-actions result-actions">
-            <a href="{{ destino }}">Ver malharia</a>
+            <a data-identificar="{{ empresa.apelido or empresa.nome }}" href="{{ destino }}">Ver malharia</a>
             {% if tem_whatsapp(empresa) %}
-              <a class="contact-link" href="{{ url_for('empresa_whatsapp', empresa_id=empresa.id) }}">Entrar em contato</a>
+              <a data-identificar="{{ empresa.apelido or empresa.nome }}" class="contact-link" href="{{ url_for('portal_identificar_visitante', empresa_id=empresa.id, acao='whatsapp') }}">WhatsApp</a>
             {% endif %}
           </div>
         </li>
@@ -133,6 +133,19 @@
     </nav>
   {% endif %}
 </section>
+
+
+{% if resultados %}
+<dialog class="visitante-dialog" id="cadastro-visitante" aria-labelledby="cadastro-titulo">
+  <header><h2 id="cadastro-titulo">Seus dados de contato</h2><button type="button" data-fechar aria-label="Fechar">×</button></header>
+  <p data-destino></p>
+  <form method="post">
+    {% include '_visitante_campos.html' %}
+    <footer><button class="button" type="submit">Continuar</button></footer>
+  </form>
+</dialog>
+<script defer src="{{ url_for('static', filename='consulta_cep.js') }}"></script>
+{% endif %}
 
 <aside class="card search-promo" aria-labelledby="divulgar">
   <div><h2 id="divulgar">Sua malharia também pode ser encontrada aqui.</h2>

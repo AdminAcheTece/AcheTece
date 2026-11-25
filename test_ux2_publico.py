@@ -80,7 +80,7 @@ class PublicoUX2Tests(unittest.TestCase):
             m.db.session.commit()
 
         inicial = self.client.get("/").get_data(as_text=True)
-        self.assertIn("Teares cadastrados", inicial)
+        self.assertIn("Teares encontrados", inicial)
         self.assertIn("2 teares em 1 malharia", inicial)
         self.assertIn("Elegível", inicial)
         self.assertNotIn("Oculta", inicial)
@@ -137,12 +137,12 @@ class PublicoUX2Tests(unittest.TestCase):
 
     def test_precos_comerciais_dependem_da_configuracao_do_checkout(self):
         rota = "/malharia_info"
-        for mensal, anual, mostra in ((2.0, 2.0, False), (37.0, 2.0, False), (47.0, 479.4, False), (37.0, 377.4, True)):
+        for mensal, anual, mostra in ((2.0, 2.0, False), (37.0, 2.0, False), (47.0, 479.4, True), (37.0, 377.4, True)):
             with self.subTest(mensal=mensal, anual=anual), patch.multiple(
                 self.m, PLAN_MONTHLY=mensal, PLAN_YEARLY=anual,
             ):
                 pagina = self.client.get(rota).get_data(as_text=True)
-                self.assertEqual("R$37,00" in pagina, mostra)
-                self.assertEqual("R$377,40" in pagina, mostra)
-                self.assertEqual("R$31,45" in pagina, mostra)
+                self.assertIn(f"R$ {mensal:.2f}".replace(".", ","), pagina)
+                self.assertIn(f"R$ {anual:.2f}".replace(".", ","), pagina)
+                self.assertEqual("Economia de 15%" in pagina, mostra)
                 self.assertNotIn("12x", pagina)

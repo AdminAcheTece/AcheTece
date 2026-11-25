@@ -684,6 +684,9 @@ def _ensure_teares_pistas_cols():
     insp = inspect(db.engine)
     existentes = {c["name"] for c in insp.get_columns(tbl)}
     stmts = []
+    if "ativo" not in existentes:
+        optional = "IF NOT EXISTS " if db.engine.dialect.name == "postgresql" else ""
+        stmts.append(text(f"ALTER TABLE {tbl} ADD COLUMN {optional}ativo BOOLEAN NOT NULL DEFAULT TRUE"))
     if "pistas_cilindro" not in existentes:
         stmts.append(text(f'ALTER TABLE {tbl} ADD COLUMN pistas_cilindro INTEGER'))
     if "pistas_disco" not in existentes:
@@ -1164,7 +1167,15 @@ class Tear(db.Model):
     elastano = db.Column(db.String(10), nullable=False)
     empresa_id = db.Column(db.Integer, db.ForeignKey('empresa.id'), nullable=False)
     # (Opcional) se existir flag de tear
-    # ativo = db.Column(db.Boolean, default=True, index=True)
+    ativo = db.Column(db.Boolean, nullable=False, default=True, server_default=db.true())
+
+
+
+class FotoEmpresaPortal(db.Model):
+    __tablename__ = "portal_foto_empresa"
+    empresa_id = db.Column(db.Integer, db.ForeignKey("empresa.id", ondelete="CASCADE"), primary_key=True)
+    conteudo = db.Column(db.LargeBinary, nullable=False)
+
 
 class ClienteProfile(db.Model):
     __tablename__ = 'cliente_profile'
@@ -1297,6 +1308,7 @@ def _get_empresa_usuario_da_sessao():
         emp = Empresa.query.filter_by(user_id=uid).first()
         if emp:
             session["empresa_id"] = emp.id
+            session.setdefault("portal_login_em", datetime.now(ZoneInfo("America/Sao_Paulo") if ZoneInfo else None).strftime("%d/%m/%Y às %H:%M"))
             session["empresa_apelido"] = emp.apelido or emp.nome or (emp.email.split("@")[0] if emp.email else "")
             u = emp.usuario or Usuario.query.filter_by(email=emp.email).first()
             return emp, u
@@ -1305,6 +1317,7 @@ def _get_empresa_usuario_da_sessao():
         emp = Empresa.query.filter(func.lower(Empresa.email) == email.lower()).first()
         if emp:
             session["empresa_id"] = emp.id
+            session.setdefault("portal_login_em", datetime.now(ZoneInfo("America/Sao_Paulo") if ZoneInfo else None).strftime("%d/%m/%Y às %H:%M"))
             session["empresa_apelido"] = emp.apelido or emp.nome or (emp.email.split("@")[0] if emp.email else "")
             u = emp.usuario or Usuario.query.filter_by(email=emp.email).first()
             # se não houver vínculo user_id e já temos um Usuario, vincule
@@ -1820,7 +1833,7 @@ def _filtros_teares():
 
 
 def _teares_publicados():
-    return Tear.query.join(Empresa).filter(empresa_publicavel())
+    return Tear.query.join(Empresa).filter(Tear.ativo.is_(True), empresa_publicavel())
 
 
 def _aplicar_filtros_teares(query, filtros):
@@ -1852,17 +1865,6 @@ def index():
     filtrada = any(filtros.values())
     try:
         base = _teares_publicados()
-        cidades = {}
-        localidades = (
-            base.with_entities(Empresa.estado, Empresa.cidade)
-            .filter(Empresa.estado.isnot(None))
-            .distinct().order_by(Empresa.estado, Empresa.cidade).all()
-        )
-        for uf, cidade in localidades:
-            if uf:
-                municipios = cidades.setdefault(uf.upper(), [])
-                if cidade and cidade not in municipios:
-                    municipios.append(cidade)
         tipos = [
             tipo for tipo, in base.with_entities(Tear.tipo).distinct().order_by(Tear.tipo)
             if tipo
@@ -1885,7 +1887,7 @@ def index():
         return render_template(
             "index.html", titulo_pagina="Buscar teares", filtros=filtros, tipos=tipos,
             galgas=galgas, diametros=diametros, filtrada=filtrada, malharias=malharias,
-            cidades=cidades, resultados=resultados, total=total, pagina=pagina, paginas=paginas,
+            cidades=_CIDADES_ESTATICO, resultados=resultados, total=total, pagina=pagina, paginas=paginas,
             inicio=inicio, por_pagina=pp, tem_whatsapp=_numero_comercial,
         )
     except Exception:
@@ -2180,6 +2182,7 @@ def validate_login_code():
     emp = Empresa.query.filter(func.lower(Empresa.email) == email).first()
     if emp:
         session["empresa_id"] = emp.id
+        session["portal_login_em"] = datetime.now(ZoneInfo("America/Sao_Paulo") if ZoneInfo else None).strftime("%d/%m/%Y às %H:%M")
         session["empresa_apelido"] = emp.apelido or emp.nome or emp.email.split("@")[0]
         flash("Bem-vindo!", "success")
         return redirect(url_for("painel_malharia"))
@@ -2223,6 +2226,7 @@ def post_login_password():
     # ED01: login privado independente do pagamento. A vigencia controla
     # exclusivamente a exposicao publica da malharia e de seus teares.
     session["empresa_id"] = user.id
+    session["portal_login_em"] = datetime.now(ZoneInfo("America/Sao_Paulo") if ZoneInfo else None).strftime("%d/%m/%Y às %H:%M")
     session["empresa_apelido"] = user.apelido or user.nome or user.email.split("@")[0]
     return redirect(url_for("painel_malharia"))
 
@@ -2399,6 +2403,9 @@ def criar_conta_cliente():
 def logout():
     session.pop("cliente_user_id", None)
     session.pop("cliente_csrf", None)
+    session.pop("portal_login_em", None)
+    session.pop("portal_membro", None)
+    session.pop("portal_csrf", None)
     session.pop("tear_csrf", None)
     session.pop("empresa_id", None)
     session.pop("empresa_apelido", None)
@@ -2575,7 +2582,7 @@ def painel_malharia():
     publicados = {
         tear_id for tear_id, in
         db.session.query(Tear.id).join(Empresa).filter(
-            Tear.empresa_id == emp.id, empresa_publicavel(),
+            Tear.empresa_id == emp.id, Tear.ativo.is_(True), empresa_publicavel(),
         )
     }
     dados_incompletos = {
@@ -2613,6 +2620,9 @@ def painel_malharia():
         notificacoes=notif_count,
         notificacoes_lista=notif_lista,
         foto_url=_empresa_avatar_url(emp),
+        **contexto_portal(emp.id, request.args.get("secao", "teares")),
+        metricas=get_performance(emp.id) if request.args.get("secao") in {"acessos", "visitas", "contatos"} else None,
+        **_precos_portal(),
     ))
     resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     resp.headers["Pragma"] = "no-cache"
@@ -3072,105 +3082,83 @@ def treinamento_quiz(module_key, lesson_key):
 
 @app.route("/perfil/foto_upload", methods=["POST"], endpoint="perfil_foto_upload")
 def perfil_foto_upload():
+    from io import BytesIO
+    from PIL import Image, ImageOps, UnidentifiedImageError
     emp, u = _get_empresa_usuario_da_sessao()
     if not emp or not u:
         return redirect(url_for("login"))
-
-    # Existem até 3 inputs <input type="file" name="foto"> (lib, cam, file).
-    # Precisamos pegar o primeiro que REALMENTE tenha arquivo.
-    file = None
+    if session.get("portal_membro"):
+        abort(403)
+    token = session.get("empresa_edicao_csrf")
+    if not token or not secrets.compare_digest(token.encode(), request.form.get("csrf_token", "").encode()):
+        abort(400)
+    foto = next((f for f in request.files.getlist("foto") if f and f.filename), None)
     try:
-        candidatos = request.files.getlist("foto")
-    except Exception:
-        candidatos = [request.files.get("foto")]
-
-    for f in candidatos:
-        if f and getattr(f, "filename", "").strip():
-            file = f
-            break
-
-    if not file or not file.filename.strip():
-        flash("Nenhuma foto selecionada.", "erro")
-        app.logger.info({
-            "rota": "perfil_foto_upload",
-            "empresa_id": emp.id,
-            "motivo": "sem_arquivo",
-            "candidatos": [getattr(f, "filename", None) for f in candidatos],
-        })
-        return _back_to_panel(int(datetime.utcnow().timestamp()))
-
-    # extensão do arquivo original
-    filename_orig = secure_filename(file.filename)
-    _, ext = os.path.splitext(filename_orig)
-    ext = (ext or "").lower()
-
-    # se quiser ser bem permissivo, aceita tudo como .jpg
-    if ext not in (".jpg", ".jpeg", ".png", ".webp"):
-        # fallback: trata como .jpg mesmo assim
-        ext = ".jpg"
-
-    # Pasta alvo: static/avatars
-    avatars_dir = os.path.join(app.static_folder, "avatars")
+        if not foto:
+            raise ValueError()
+        dados = foto.stream.read(2 * 1024 * 1024 + 1)
+        if not dados or len(dados) > 2 * 1024 * 1024:
+            raise ValueError()
+        with Image.open(BytesIO(dados), formats=("JPEG", "PNG", "WEBP")) as imagem:
+            if imagem.width * imagem.height > 16_000_000 or getattr(imagem, "is_animated", False):
+                raise ValueError()
+            imagem = ImageOps.exif_transpose(imagem)
+            imagem.thumbnail((512, 512))
+            # Copy pixels into a fresh image; do not retain EXIF/ICC/XMP.
+            limpa = Image.new("RGBA", imagem.size)
+            limpa.paste(imagem.convert("RGBA"))
+            saida = BytesIO()
+            limpa.save(saida, format="WEBP", quality=85)
+        conteudo = saida.getvalue()
+        if len(conteudo) > 512 * 1024:
+            raise ValueError()
+    except (ValueError, UnidentifiedImageError, Image.DecompressionBombError, OSError):
+        flash("Selecione uma imagem JPG, PNG ou WebP valida de ate 2 MB.")
+        return redirect(url_for("editar_empresa"))
     try:
-        os.makedirs(avatars_dir, exist_ok=True)
-    except Exception as e:
-        app.logger.error(f"[avatar] erro ao criar pasta avatars: {e}")
-        flash("Erro ao preparar pasta de imagens.", "erro")
-        return _back_to_panel(int(datetime.utcnow().timestamp()))
-
-    # Nome fixo por empresa (sobrescreve qualquer anterior)
-    base_name = f"empresa_{emp.id}"
-    filename = base_name + ext
-    filepath = os.path.join(avatars_dir, filename)
-
-    # Remove versões antigas com outras extensões
-    for old_ext in (".jpg", ".jpeg", ".png", ".webp"):
-        old_path = os.path.join(avatars_dir, base_name + old_ext)
-        if old_path != filepath and os.path.exists(old_path):
-            try:
-                os.remove(old_path)
-            except OSError:
-                pass
-
-    try:
-        file.save(filepath)
-    except Exception as e:
-        app.logger.error(f"[avatar] erro ao salvar arquivo: {e}")
-        flash("Erro ao salvar a imagem enviada.", "erro")
-        return _back_to_panel(int(datetime.utcnow().timestamp()))
-
-    # Monta URL pública
-    rel_path = f"avatars/{filename}"
-    novo_url = url_for("static", filename=rel_path)
-
-    # Atualiza empresa + sessão
-    emp.foto_url = novo_url
-    try:
+        # Serializa substituicoes da mesma empresa; nenhuma gravacao em disco.
+        emp = Empresa.query.filter_by(id=emp.id).with_for_update().one()
+        registro = db.session.get(FotoEmpresaPortal, emp.id)
+        if registro is None:
+            registro = FotoEmpresaPortal(empresa_id=emp.id, conteudo=conteudo)
+            db.session.add(registro)
+        else:
+            registro.conteudo = conteudo
+        emp.foto_url = url_for("portal_foto_empresa", empresa_id=emp.id)
         db.session.commit()
-    except Exception as e:
+    except Exception:
         db.session.rollback()
-        app.logger.error(f"[avatar] erro ao gravar foto_url no banco: {e}")
-        flash("Erro ao salvar a imagem no cadastro.", "erro")
-        return _back_to_panel(int(datetime.utcnow().timestamp()))
+        app.logger.error("[foto] falha ao persistir imagem")
+        flash("Nao foi possivel salvar a foto. Tente novamente.")
+        return redirect(url_for("editar_empresa"))
+    session["avatar_url"] = emp.foto_url
+    flash("Foto da empresa salva.")
+    return redirect(url_for("editar_empresa"))
 
-    session["avatar_url"] = novo_url
 
-    app.logger.info({
-        "rota": "perfil_foto_upload",
-        "empresa_id": emp.id,
-        "foto_url_salva": novo_url,
-    })
-
-    ts = int(datetime.utcnow().timestamp())
-    return _back_to_panel(ts)
-
+@app.get("/portal/foto-empresa/<int:empresa_id>")
+def portal_foto_empresa(empresa_id):
+    from io import BytesIO
+    # Foto do painel privado; sem enumeracao publica ou acesso entre empresas.
+    if session.get("empresa_id") != empresa_id:
+        abort(404)
+    registro = db.session.get(FotoEmpresaPortal, empresa_id)
+    if registro is None:
+        abort(404)
+    resposta = send_file(BytesIO(registro.conteudo), mimetype="image/webp", conditional=False)
+    resposta.headers["Cache-Control"] = "private, no-store"
+    resposta.headers["X-Content-Type-Options"] = "nosniff"
+    return resposta
 @app.context_processor
 def inject_avatar_url():
     url = None
     try:
         uid, _ = _whoami()
-        # 1) Arquivo físico salvo como <uid>.webp
-        if uid:
+        emp_atual = _pegar_empresa_do_usuario(required=False)
+        if emp_atual is not None and getattr(emp_atual, "foto_url", None) == url_for("portal_foto_empresa", empresa_id=emp_atual.id):
+            url = emp_atual.foto_url
+        # 1) Arquivo físico legado, somente se nao houver foto persistente.
+        if uid and not url:
             filename  = f"{uid}.webp"
             dest_path = os.path.join(AVATAR_DIR, filename)
             if os.path.exists(dest_path):
@@ -3184,7 +3172,9 @@ def inject_avatar_url():
             if emp is not None:
                 rel = getattr(emp, 'foto_url', None) or getattr(emp, 'logo_url', None)
             if rel:
-                if rel.startswith('http://') or rel.startswith('https://'):
+                if rel == url_for('portal_foto_empresa', empresa_id=emp.id):
+                    url = rel
+                elif rel.startswith('http://') or rel.startswith('https://'):
                     url = rel
                 else:
                     # normaliza quando o DB guarda "/static/..."
@@ -3199,6 +3189,24 @@ def inject_avatar_url():
     return {'avatar_url': url}
 
 # --- CADASTRAR / LISTAR / SALVAR TEARES (SEM GATE DE ASSINATURA) ---
+def _validar_form_tear():
+    token = session.get("tear_csrf")
+    if not token or not secrets.compare_digest(token.encode(), request.form.get("csrf_token", "").encode()):
+        abort(400, "Abra novamente o formulario do tear.")
+    for campo in ("marca", "modelo"):
+        if not 1 <= len(request.form.get(campo, "").strip()) <= 100:
+            abort(400, "Confira marca e modelo.")
+    if request.form.get("tipo", "").strip().upper() not in {"MONO", "DUPLA"}:
+        abort(400, "Tipo de tear invalido.")
+    if request.form.get("elastano", "").strip().lower() not in {"sim", "não", "nao"}:
+        abort(400, "Informe o elastano.")
+    for campo in ("finura", "diametro", "alimentadores", "pistas_cilindro", "pistas_disco"):
+        valor = request.form.get(campo, "").strip()
+        minimo = 0 if campo.startswith("pistas_") else 1
+        if not re.fullmatch(r"[0-9]{1,9}", valor) or int(valor) < minimo:
+            abort(400, "Confira os valores numericos do tear.")
+
+
 @app.route("/teares/cadastrar", methods=["GET", "POST"], endpoint="cadastrar_teares")
 def cadastrar_teares():
     """
@@ -3210,7 +3218,9 @@ def cadastrar_teares():
         flash("Faça login para continuar.", "warning")
         return redirect(url_for("login"))
 
+    session.setdefault("tear_csrf", secrets.token_urlsafe(32))
     if request.method == "POST":
+        _validar_form_tear()
         def _to_int(val):
             try:
                 return int(float(str(val).replace(",", ".").strip()))
@@ -3369,7 +3379,9 @@ def editar_tear(id):
     if tear.empresa_id != emp.id:
         abort(403)
 
+    session.setdefault("tear_csrf", secrets.token_urlsafe(32))
     if request.method == "POST":
+        _validar_form_tear()
         def _to_int(val):
             try:
                 if val is None:
@@ -3420,6 +3432,22 @@ def editar_tear(id):
 
     # GET
     return render_template("editar_tear.html", empresa=emp, tear=tear)
+
+@app.post("/tear/<int:id>/situacao")
+def situacao_tear(id):
+    empresa = _pegar_empresa_do_usuario(required=True)
+    if not isinstance(empresa, Empresa):
+        return empresa
+    tear = Tear.query.filter_by(id=id, empresa_id=empresa.id).first_or_404()
+    token = session.get("tear_csrf")
+    valor = request.form.get("ativo")
+    if not token or not secrets.compare_digest(request.form.get("csrf_token", "").encode(), token.encode()) or valor not in {"0", "1"}:
+        abort(400)
+    tear.ativo = valor == "1"
+    db.session.commit()
+    flash("Situação do tear atualizada.")
+    return redirect(url_for("painel_malharia", secao="teares", situacao=request.form.get("situacao", "todos")))
+
 
 @app.post("/tear/<int:id>/excluir")
 def excluir_tear(id):
@@ -3588,6 +3616,12 @@ def editar_empresa():
 
     estados = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO']
 
+    foto_csrf = session.setdefault("empresa_edicao_csrf", secrets.token_urlsafe(32))
+    foto_empresa = empresa.foto_url
+    detalhes = dados_cadastrais_portal(empresa.id, "dados_empresa")
+    if request.method == "POST" and not secrets.compare_digest(foto_csrf, request.form.get("csrf_token", "")):
+        abort(400)
+
     if request.method == 'GET':
         # tenta montar valores atuais de endereço/CEP, independente do nome da coluna
         endereco_atual = getattr(empresa, 'endereco', None) or getattr(empresa, 'logradouro', None) or getattr(empresa, 'endereco_completo', '')
@@ -3601,7 +3635,7 @@ def editar_empresa():
 
         return render_template(
             'editar_empresa.html',
-            estados=estados,
+            detalhes=detalhes, foto_csrf=foto_csrf, foto_empresa=foto_empresa, estados=estados,
             nome=empresa.nome or '',
             apelido=empresa.apelido or '',
             email=empresa.email or '',
@@ -3619,15 +3653,15 @@ def editar_empresa():
     nome  = (request.form.get('nome','') or '').strip()
     apelido = (request.form.get('apelido','') or '').strip()
     email = (request.form.get('email','') or '').strip().lower()
-    senha = (request.form.get('senha','') or '').strip()
     cidade = (request.form.get('cidade','') or '').strip()
     estado = (request.form.get('estado','') or '').strip()
     telefone = _only_digits(request.form.get('telefone',''))
-    responsavel_nome = (request.form.get('responsavel_nome') or '').strip()
-    responsavel_sobrenome = (request.form.get('responsavel_sobrenome') or '').strip()
 
     # NOVOS CAMPOS
-    endereco_full = (request.form.get('endereco') or '').strip()
+    detalhes = {campo: request.form.get(campo, "").strip() for campo in ("rua", "numero", "complemento", "bairro", "linkedin")}
+    detalhes["cnpj"] = _only_digits(request.form.get("cnpj", ""))
+    endereco_full = ", ".join(detalhes[campo] for campo in ("rua", "numero", "complemento", "bairro") if detalhes[campo])
+    endereco_full = endereco_full or request.form.get("endereco", "").strip()
     cep_raw = (request.form.get('cep') or '').strip()
 
     # Normaliza CEP para apenas dígitos (ex.: '00000-000' -> '00000000')
@@ -3635,6 +3669,18 @@ def editar_empresa():
     cep_digits = re.sub(r'\D', '', cep_raw)
 
     erros = {}
+    if detalhes["cnpj"] and len(detalhes["cnpj"]) != 14:
+        erros["cnpj"] = "Informe os 14 dígitos do CNPJ."
+    linkedin = detalhes["linkedin"]
+    try:
+        link = urlparse(linkedin)
+        linkedin_valido = link.scheme == "https" and link.hostname in {"linkedin.com", "www.linkedin.com", "br.linkedin.com"} and link.path not in {"", "/"} and not link.username
+    except ValueError:
+        linkedin_valido = False
+    if linkedin and (len(linkedin) > 240 or not linkedin_valido):
+        erros["linkedin"] = "Informe um link HTTPS do LinkedIn."
+    if len(endereco_full) > 240:
+        erros["endereco"] = "O endereço completo deve ter até 240 caracteres."
     if telefone and (len(telefone) < 10 or len(telefone) > 13):
         erros['telefone'] = 'Telefone inválido.'
     if nome and nome != (empresa.nome or '') and Empresa.query.filter_by(nome=nome).first():
@@ -3645,8 +3691,6 @@ def editar_empresa():
         erros['email'] = 'E-mail já cadastrado.'
     if estado and estado not in estados:
         erros['estado'] = 'Estado inválido.'
-    if not responsavel_nome or len(re.sub(r'[^A-Za-zÀ-ÿ]', '', responsavel_nome)) < 2:
-        erros['responsavel_nome'] = 'Informe o primeiro nome do responsável.'
     # endereço/CEP obrigatórios na edição
     if not endereco_full:
         erros['endereco'] = 'Informe o endereço completo.'
@@ -3660,7 +3704,7 @@ def editar_empresa():
             cidades = []
         return render_template(
             'editar_empresa.html',
-            erro='Corrija os campos.', erros=erros, estados=estados,
+            erro='Corrija os campos.', erros=erros, estados=estados, detalhes=detalhes, foto_csrf=foto_csrf, foto_empresa=foto_empresa,
             nome=nome or empresa.nome, apelido=apelido or empresa.apelido,
             email=email or empresa.email, cidade=cidade or empresa.cidade,
             estado=estado or empresa.estado, telefone=telefone or empresa.telefone,
@@ -3678,17 +3722,13 @@ def editar_empresa():
     empresa.cidade = cidade or empresa.cidade
     empresa.estado = estado or empresa.estado
     empresa.telefone = telefone or empresa.telefone
-    empresa.responsavel_nome = responsavel_nome or empresa.responsavel_nome
-    empresa.responsavel_sobrenome = responsavel_sobrenome or None
 
     # grava Endereço completo e CEP (com nomes alternativos de coluna)
     _set_if_has(empresa, ["endereco","logradouro","endereco_completo"], endereco_full)
     # Armazena CEP somente com dígitos (padrão unificado no banco)
     _set_if_has(empresa, ["cep","CEP"], cep_digits)
 
-    if senha:
-        empresa.senha = generate_password_hash(senha)
-
+    guardar_dados_empresa(empresa.id, detalhes)
     db.session.commit()
     session['empresa_apelido'] = empresa.apelido or empresa.nome or empresa.email.split('@')[0]
     return redirect(url_for('editar_empresa', ok=1))
@@ -3700,16 +3740,7 @@ def performance_acesso():
     if not emp or not u:
         return redirect(url_for('login'))
 
-    # Usa o agregador de analytics (A.1) já adicionado acima
-    total_visitas, total_contatos, series = get_performance(emp.id)
-
-    return render_template(
-        'performance_acesso.html',
-        empresa=emp,
-        series=series,
-        total_visitas=total_visitas,
-        total_contatos=total_contatos
-    )
+    return redirect(url_for("painel_malharia", secao="visitas"))
 
 # --------------------------------------------------------------------
 # Admin: empresas
@@ -3805,7 +3836,8 @@ def _consulta_admin_empresas(argumentos):
         .correlate(Empresa)
         .scalar_subquery()
     )
-    publicados = db.case((publicavel, total_teares), else_=0)
+    ativos = db.select(func.count(Tear.id)).where(Tear.empresa_id == Empresa.id, Tear.ativo.is_(True)).correlate(Empresa).scalar_subquery()
+    publicados = db.case((publicavel, ativos), else_=0)
     query = db.session.query(Empresa, arquivada, total_teares, publicados)
     if filtros['q']:
         query = query.filter(or_(
@@ -3871,7 +3903,7 @@ def admin_empresas():
 
     indicadores = {
         'empresas': Empresa.query.count(),
-        'publicados': Tear.query.join(Empresa).filter(empresa_publicavel()).count(),
+        'publicados': Tear.query.join(Empresa).filter(Tear.ativo.is_(True), empresa_publicavel()).count(),
         'pendencias': Empresa.query.filter(
             ~empresa_arquivada(),
             _situacao_assinatura_admin_sql().in_(('pendente', 'processamento')),
@@ -3930,7 +3962,7 @@ def admin_empresa_ficha(empresa_id):
     return render_template(
         'admin_empresa_ficha.html', empresa=empresa, teares=teares, registro=registro,
         historico=historico,
-        visibilidade=_visibilidade_admin(registro is not None, publicavel and bool(teares)),
+        visibilidade=_visibilidade_admin(registro is not None, publicavel and any(t.ativo for t in teares)),
         situacao_assinatura=_situacao_assinatura(empresa)[1], csrf_token=_csrf_admin(),
     )
 
@@ -4164,7 +4196,7 @@ def utils_empresas_json():
     empresas = q.order_by(Empresa.id.desc()).all()
     data = []
     for e in empresas:
-        cnt = Tear.query.filter_by(empresa_id=e.id).count()
+        cnt = Tear.query.filter_by(empresa_id=e.id, ativo=True).count()
         data.append({
             "id": e.id,
             "apelido": e.apelido or e.nome or getattr(e, "nome_fantasia", "") or "",
@@ -4352,6 +4384,8 @@ def _make_magic_link(empresa_id: int) -> str:
     base = _public_base_url()  # você já usa essa função
     return f"{base}/magic/{token}"
 
+
+
 def _processar_pagamento(payment_id: str):
     """
     Consulta no MP e atualiza Empresa.status_pagamento / data_pagamento.
@@ -4443,6 +4477,17 @@ def _processar_pagamento(payment_id: str):
         db.session.commit()
 
     return {"ok": True, "empresa_id": empresa.id, "ativou": False, "status": status}
+
+def _precos_portal():
+    def moeda(valor):
+        return f"R$ {valor:.2f}".replace(".", ",")
+    return {
+        "preco_mensal": moeda(PLAN_MONTHLY),
+        "preco_anual": moeda(PLAN_YEARLY),
+        "equivalente_mensal": moeda(PLAN_YEARLY / 12),
+        "desconto_anual": PLAN_MONTHLY > 0 and round(PLAN_MONTHLY * 12 * .85, 2) == PLAN_YEARLY,
+    }
+
 
 @app.route('/checkout')
 def checkout():
@@ -4817,7 +4862,7 @@ def static_alias_whatsapp():
 def malharia_info():
     return render_template(
         'malharia_info.html',
-        exibir_precos=(PLAN_MONTHLY, PLAN_YEARLY) == (37.00, 377.40),
+        **_precos_portal(),
     )
 
 # --- Perfil público da empresa ---
@@ -4834,7 +4879,7 @@ def empresa_perfil(empresa_id):
     empresa = Empresa.query.filter(
         Empresa.id == empresa_id, empresa_publicavel()
     ).first_or_404()
-    teares = Tear.query.filter_by(empresa_id=empresa_id).order_by(Tear.tipo.asc()).all()
+    teares = Tear.query.filter_by(empresa_id=empresa_id, ativo=True).order_by(Tear.tipo.asc()).all()
 
     # registra analytics de visita ao perfil público
     try:
@@ -4859,6 +4904,7 @@ def empresa_whatsapp(empresa_id):
     numero = _numero_comercial(empresa)
     if numero is None:
         abort(404)
+    track_event("CONTACT_CLICK_WHATSAPP", company_id=empresa.id)
     resposta = redirect(f"https://wa.me/{numero}")
     resposta.headers["Cache-Control"] = "no-store"
     return resposta
@@ -4870,6 +4916,11 @@ def empresas_redirect(empresa_id):
     return redirect(url_for("empresa_perfil", empresa_id=empresa_id), code=301)
 
 # --------------------------------------------------------------------
+# Fluxos de gestão do Portal da Malharia
+from portal_fluxos import instalar
+
+contexto_portal, dados_cadastrais_portal, guardar_dados_empresa = instalar(app, db, Empresa, empresa_publicavel, _get_empresa_usuario_da_sessao, send_email, _limitar_consulta_publica, _filtros_teares)
+
 # Entry point local
 # --------------------------------------------------------------------
 if __name__ == '__main__':

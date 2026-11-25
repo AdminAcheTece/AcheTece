@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AcheTece | Acesso</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='portal_malharia.css') }}">
+</head>
+<body class="portal-malharia">
+  {% include '_cabecalho_site.html' %}
+  <main class="painel-conteudo" style="padding-top: 88px; max-width: 34rem">
+    <section class="painel-cartao">
+      <h1>{{ 'Ver malharia' if modo == 'visitante' else 'Ativar acesso à equipe' if modo == 'convite' else 'Entrar como membro da equipe' }}</h1>
+      {% for texto in get_flashed_messages() %}<p role="alert">{{ texto }}</p>{% endfor %}
+      <form method="post" class="portal-formulario">
+        <input type="hidden" name="csrf_token" value="{{ portal_csrf }}">
+        {% if modo == 'visitante' %}
+          <p>Seu nome e e-mail serão compartilhados com {{ empresa.apelido or empresa.nome }} para que ela possa entrar em contato.</p>
+          <label>Nome<input name="nome" required maxlength="100" autocomplete="name"></label>
+        {% endif %}
+        {% if modo != 'convite' %}<label>E-mail<input name="email" type="email" required maxlength="254" autocomplete="email"></label>{% endif %}
+        {% if modo == 'visitante' %}
+          <label class="portal-opcao"><input type="checkbox" name="autorizar" value="sim" required> Autorizo o compartilhamento com esta malharia.</label>
+        {% else %}
+          <label>Senha<input name="senha" type="password" required maxlength="128" autocomplete="{{ 'new-password' if modo == 'convite' else 'current-password' }}"></label>
+        {% endif %}
+        <button class="painel-botao" type="submit">Continuar</button>
+      </form>
+    </section>
+  </main>
+</body>
+</html>

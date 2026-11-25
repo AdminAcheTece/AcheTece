@@ -1,0 +1,145 @@
+{% extends '_portal_base.html' %}
+{% set nome_empresa = apelido or nome %}
+{% block title %}Dados da empresa{% endblock %}
+{% block content %}
+  <h1>Dados da empresa</h1>
+  {% include '_portal_config_links.html' %}
+  <section class="painel-cartao">
+    {% if request.args.get('ok') == '1' %}<p role="status">Alterações salvas com sucesso.</p>{% endif %}
+    {% if erro %}<p class="mensagem-erro" role="alert">{{ erro }}</p>{% endif %}
+        <form method="POST" action="{{ url_for('editar_empresa') }}" class="portal-formulario" id="formulario" autocomplete="off">
+          <div>
+          <label for="nome">Nome da Empresa:</label>
+          <input type="text" id="nome" name="nome" value="{{ nome or '' }}" class="{% if erros and erros.get('nome') %}erro-campo{% endif %}">
+          {% if erros and erros.get('nome') %}<div class="mensagem-campo">{{ erros.get('nome') }}</div>{% endif %}
+
+          </div>
+          <div>
+          <label for="apelido">Apelido da Empresa</label>
+          <input type="text" id="apelido" name="apelido" value="{{ apelido or '' }}" class="{% if erros and erros.get('apelido') %}erro-campo{% endif %}">
+          {% if erros and erros.get('apelido') %}<div class="mensagem-campo">{{ erros.get('apelido') }}</div>{% endif %}
+
+          </div>
+          <div>
+          <label for="responsavel_nome">Nome do responsável *</label>
+          <input type="text" id="responsavel_nome" name="responsavel_nome"
+                 value="{{ responsavel_nome or '' }}" placeholder="Ex.: Maria"
+                 class="{% if erros and erros.get('responsavel_nome') %}erro-campo{% endif %}">
+          {% if erros and erros.get('responsavel_nome') %}<div class="mensagem-campo">{{ erros.get('responsavel_nome') }}</div>{% endif %}
+
+          </div>
+          <div>
+          <label for="responsavel_sobrenome">Sobrenome do responsável (opcional)</label>
+          <input type="text" id="responsavel_sobrenome" name="responsavel_sobrenome"
+                 value="{{ responsavel_sobrenome or '' }}" placeholder="Ex.: Silva"
+                 class="{% if erros and erros.get('responsavel_sobrenome') %}erro-campo{% endif %}">
+          {% if erros and erros.get('responsavel_sobrenome') %}<div class="mensagem-campo">{{ erros.get('responsavel_sobrenome') }}</div>{% endif %}
+
+          </div>
+          <div>
+          <label for="estado">Estado:</label>
+          <select id="estado" name="estado" class="{% if erros and erros.get('estado') %}erro-campo{% endif %}">
+            <option value="">Selecione o estado</option>
+            {% for uf in estados %}
+              <option value="{{ uf }}" {% if estado == uf %}selected{% endif %}>{{ uf }}</option>
+            {% endfor %}
+          </select>
+          {% if erros and erros.get('estado') %}<div class="mensagem-campo">{{ erros.get('estado') }}</div>{% endif %}
+
+          </div>
+          <div>
+          <label for="cidade">Cidade:</label>
+          <select id="cidade" name="cidade" data-inicial="{{ cidade or '' }}"
+                  class="{% if erros and erros.get('cidade') %}erro-campo{% endif %}">
+            <option value="">Selecione a cidade</option>
+            {% for c in cidades %}
+              <option value="{{ c }}" {% if cidade == c %}selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+          </select>
+          {% if erros and erros.get('cidade') %}<div class="mensagem-campo">{{ erros.get('cidade') }}</div>{% endif %}
+
+          </div>
+          <div>
+          <label for="endereco">Endereço completo <span style="color:#d00000">*</span></label>
+          <input type="text" id="endereco" name="endereco" required
+                 autocomplete="street-address" placeholder="Rua, número, complemento, bairro"
+                 value="{{ endereco or '' }}" class="{% if erros and erros.get('endereco') %}erro-campo{% endif %}">
+          {% if erros and erros.get('endereco') %}<div class="mensagem-campo">{{ erros.get('endereco') }}</div>{% endif %}
+
+          </div>
+          <div>
+          <label for="cep">CEP <span style="color:#d00000">*</span></label>
+          <input type="text" id="cep" name="cep" required
+                 inputmode="numeric" pattern="\d{5}-?\d{3}" title="Digite no formato 00000-000 ou 00000000"
+                 autocomplete="postal-code" placeholder="00000-000"
+                 value="{{ cep or '' }}" class="{% if erros and erros.get('cep') %}erro-campo{% endif %}">
+          {% if erros and erros.get('cep') %}<div class="mensagem-campo">{{ erros.get('cep') }}</div>{% endif %}
+
+          </div>
+          <div>
+          <label for="telefone">Telefone:</label>
+          <input type="tel" id="telefone" name="telefone"
+                 pattern="[0-9]{10,13}" placeholder="47999991234"
+                 title="Digite apenas números, ex: 47999991234"
+                 value="{{ telefone or '' }}"
+                 class="{% if erros and erros.get('telefone') %}erro-campo{% endif %}">
+          {% if erros and erros.get('telefone') %}<div class="mensagem-campo">{{ erros.get('telefone') }}</div>{% endif %}
+
+          </div>
+          <div>
+          <label for="email">E-mail:</label>
+          <input type="email" id="email" name="email" value="{{ email or '' }}" class="{% if erros and erros.get('email') %}erro-campo{% endif %}">
+          {% if erros and erros.get('email') %}<div class="mensagem-campo">{{ erros.get('email') }}</div>{% endif %}
+
+          </div>
+          <div>
+          <label for="senha">Nova Senha (opcional)</label>
+          <input type="password" id="senha" name="senha" autocomplete="new-password" placeholder="Deixe em branco para manter a atual">
+
+          </div>
+          <button type="submit" class="painel-botao">Salvar Alterações</button>
+        </form>
+  </section>
+{% endblock %}
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const ufSelect = document.getElementById('estado');
+      const cidadeSelect = document.getElementById('cidade');
+
+      async function carregarCidades(uf, preselecionada = '') {
+        if (!uf) {
+          cidadeSelect.innerHTML = '<option value="">Selecione a cidade</option>';
+          cidadeSelect.disabled = true;
+          return;
+        }
+        cidadeSelect.disabled = true;
+        cidadeSelect.innerHTML = '<option value="">Carregando...</option>';
+        try {
+          const resp = await fetch(`/api/cidades?uf=${encodeURIComponent(uf)}`);
+          if (!resp.ok) throw new Error('Falha na resposta da API');
+          const cidades = await resp.json();
+
+          const options = ['<option value="">Selecione a cidade</option>']
+            .concat(cidades.map(c => {
+              const safe = String(c).replace(/"/g,'&quot;');
+              const sel  = (preselecionada && preselecionada === c) ? ' selected' : '';
+              return `<option value="${safe}"${sel}>${c}</option>`;
+            }));
+          cidadeSelect.innerHTML = options.join('');
+          cidadeSelect.disabled = false;
+        } catch (err) {
+          console.error(err);
+          cidadeSelect.innerHTML = '<option value="">Falha ao carregar cidades</option>';
+          cidadeSelect.disabled = false;
+        }
+      }
+
+      ufSelect.addEventListener('change', () => carregarCidades(ufSelect.value));
+
+      const ufInicial = ufSelect.value;
+      const cidadeInicial = cidadeSelect.getAttribute('data-inicial') || '';
+      if (ufInicial) carregarCidades(ufInicial, cidadeInicial);
+    });
+  </script>
+{% endblock %}

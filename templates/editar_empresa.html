@@ -1,265 +1,72 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-  <meta charset="UTF-8">
-  <title>Editar Dados da Malharia</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_final.ico') }}">
-  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon_final.png') }}">
-
-  <!-- CSS principal -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet" />
-
-  <style>
-    :root{
-      /* Paleta OLIVE + CTA */
-      --olive:#101214;
-      --olive-600:#202528;
-      --olive-dark:#101214;
-      --olive-50:#F5F6F6;
-      --line-olive:#E1E5E7;
-
-      --lime:#A8E63D;
-      --lime-700:#95D32B;
-
-      /* Fundo do miolo (igual ao padrão) */
-      --site-bg:#F5F6F6;
-
-      /* Aliases p/ legado */
-      --roxo:var(--olive);
-      --roxo-hover:var(--olive-600);
-
-      --text:#111;
-      --line:#cfd3dc;
-
-      --maxw:1280px;
-    }
-
-    html, body{ max-width:100%; overflow-x:hidden; }
-    *, *::before, *::after{ box-sizing:border-box; }
-
-    /* ✅ Mantém a “faixa branca” abaixo do header (padrão do quem_somos) */
-    body{
-      background:#fff !important;
-      color:var(--text);
-      margin:0;
-      font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
-    }
-
-    /* ✅ Miolo cinza ÚNICO (remove a “listra” extra) */
-    .faixa-cinza{
-      background: var(--site-bg);
-      padding: 16px 0 48px;
-    }
-    .page-outer{
-      max-width: var(--maxw);
-      margin: 0 auto;
-      padding: 0 16px;
-    }
-
-    /* Botão “Voltar ao painel” no topo (estilo da performance) */
-    .top-back{
-      display:flex;
-      justify-content:center;
-      margin: 10px 0 18px; /* sem criar faixa extra */
-    }
-    .btn-back{
-      display:inline-flex;
-      align-items:center;
-      gap:10px;
-      height:40px;
-      padding:0 18px;
-      border-radius:9999px;
-      background:#fff;
-      color:#111;
-      border:1px solid rgba(0,0,0,.14);
-      text-decoration:none;
-      font-weight:800;
-      box-shadow:none !important;
-      transition: background-color .15s ease, border-color .15s ease, transform .12s ease, color .15s ease;
-      line-height:1;
-      white-space:nowrap;
-    }
-    .btn-back:hover{
-      background: var(--lime);
-      border-color: var(--lime);
-      color:#000;
-      transform: translateY(-1px);
-      text-decoration:none;
-    }
-    .btn-back:active{
-      background: var(--lime-700);
-      border-color: var(--lime-700);
-      color:#000;
-      transform: translateY(0);
-    }
-    .btn-back:focus{ outline:none; }
-    .btn-back:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
-
-    /* ===== CARD / CONTEÚDO ===== */
-    .container{
-      width:100%;
-      max-width:600px;
-      margin: 0 auto;              /* ✅ evita “quebrar” o fundo com margens externas */
-      background:#fff;
-      border:1px solid #e8ecf5;
-      border-radius:14px;
-      padding:24px 20px;
-      box-shadow:none !important;
-    }
-    h1.titulo{
-      text-align:center;
-      font-size:24px;
-      font-weight:700;
-      margin:0 0 18px;
-      color:var(--olive-dark);
-    }
-
-    /* Mensagens */
-    .mensagem-sucesso{
-      background:#e8f5e9; color:#1b5e20; border:1px solid #81c784;
-      padding:14px; border-radius:10px; margin-bottom:16px; text-align:center;
-    }
-    .mensagem-erro{
-      background:#ffe6e6; color:#b30000; border:1px solid #ff4d4d;
-      padding:16px; border-radius:10px; margin-bottom:16px; text-align:center;
-    }
-    .mensagem-erro .icone{ font-size:26px; display:block; margin-bottom:6px; }
-
-    /* ===== FORM ===== */
-    .formulario label{
-      display:block; margin:10px 0 6px;
-      font-weight:700; font-size:14px; color:#2a233a;
-    }
-    .formulario input,.formulario select{
-      width:100%;
-      padding:12px;
-      border:1px solid var(--line);
-      border-radius:10px;
-      font-size:14px;
-      background:#fff;
-      margin-bottom:16px;
-      transition:border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
-    }
-    .formulario input:focus,.formulario select:focus{
-      outline:0;
-      border-color:var(--olive);
-      box-shadow:0 0 0 3px rgba(123,116,36,.15);
-      background:#fff;
-    }
-    input:-webkit-autofill, select:-webkit-autofill{
-      -webkit-text-fill-color:#101214;
-      box-shadow:0 0 0 1000px #fff inset !important;
-      border:1px solid var(--line-olive);
-      transition:background-color 9999s ease-in-out 0s;
-    }
-
-    /* ===== BOTÃO (padrão global PRETO → LIME) ===== */
-    .botao-roxo{
-      width:100%;
-      height:46px;
-      border:0;
-      border-radius:9999px;
-      background:#000;
-      color:var(--lime);
-      font-weight:700;
-      font-size:14px;
-      cursor:pointer;
-      margin-top:4px;
-      transition: background-color .15s ease, color .15s ease, transform .12s ease;
-      box-shadow:none !important;
-    }
-    .botao-roxo:hover{ background:var(--lime); color:#000; transform:translateY(-2px); }
-    .botao-roxo:active{ background:var(--lime-700); color:#000; transform:translateY(0); }
-    .botao-roxo:focus{ outline:none; }
-    .botao-roxo:focus-visible{ outline:2px solid var(--lime); outline-offset:2px; }
-
-    @media (max-width:560px){
-      .container{ padding:20px 16px; }
-      .top-back{ margin: 8px 0 16px; }
-    }
-
-    /* Mantém claro em dark mode */
-    @media (prefers-color-scheme: dark){
-      html, body{ background:#fff !important; color:#111; }
-    }
-  </style>
-
-  <!-- ✅ Header padrão deve ser o ÚLTIMO do head -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='achetece_identidade.css') }}">
-</head>
-
-<body class="achetece-site header-v1">
-  {% include '_cabecalho_site.html' %}
-
-  <!-- ===== Cabeçalho padrão (igual quem_somos) ===== -->
-
-
-  <!-- ===== MENU MOBILE (SÓ NO MOBILE) ===== -->
-
-
-
-
-  <!-- ✅ TODO o conteúdo dentro do “miolo cinza” (sem listras extras) -->
-  <div class="faixa-cinza">
-    <div class="page-outer">
-
-      <!-- ✅ Botão no TOPO do miolo cinza -->
-      <div class="top-back">
-        <a class="btn-back" href="{{ url_for('painel_malharia') }}">← Voltar ao painel</a>
-      </div>
-
-      <div class="container">
-        <h1 class="titulo">Editar Dados da Malharia</h1>
-
-        {% if request.args.get('ok') == '1' %}
-          <div class="mensagem-sucesso">Alterações salvas com sucesso! Redirecionando…</div>
-        {% endif %}
-
-        {% if erro %}
-          <div class="mensagem-erro">
-            <div class="icone">⚠️</div>
-            <p><strong>Erro:</strong> {{ erro }}</p>
-            <a href="#formulario" class="botao-voltar">← Corrigir dados</a>
-          </div>
-        {% endif %}
-
-        <form method="POST" action="{{ url_for('editar_empresa') }}" class="formulario" id="formulario" autocomplete="off">
-          <label for="nome">Nome da Empresa:</label>
+{% extends '_portal_base.html' %}
+{% set nome_empresa = apelido or nome %}
+{% block title %}Dados da empresa{% endblock %}
+{% block content %}
+  <h1>{{ icone('empresa') }} Dados da empresa</h1>
+  <section class="painel-cartao">
+    <div class="portal-foto-linha">
+      {% if foto_empresa %}<img class="portal-foto" src="{{ foto_empresa }}" alt="Foto da malharia">{% else %}<span class="portal-foto">{{ icone('empresa') }}</span>{% endif %}
+      <form method="post" action="{{ url_for('perfil_foto_upload') }}" enctype="multipart/form-data">
+        <input type="hidden" name="destino" value="empresa">
+        <input type="hidden" name="csrf_token" value="{{ foto_csrf }}">
+        <label for="foto">Foto ou logomarca da empresa</label>
+        <input id="foto" type="file" name="foto" accept="image/jpeg,image/png,image/webp" required>
+        <button class="painel-botao">Enviar foto</button>
+      </form>
+    </div>
+    {% for mensagem in get_flashed_messages() %}<p role="status">{{ mensagem }}</p>{% endfor %}
+    {% if request.args.get('ok') == '1' %}<p role="status">Alterações salvas com sucesso.</p>{% endif %}
+    {% if erro %}<p class="mensagem-erro" role="alert">{{ erro }}</p>{% endif %}
+        <form method="POST" action="{{ url_for('editar_empresa') }}" class="portal-formulario" id="formulario" autocomplete="off">
+          <input type="hidden" name="csrf_token" value="{{ foto_csrf }}">
+          <div>
+          <label for="nome">{{ icone('empresa') }} Razão social</label>
           <input type="text" id="nome" name="nome" value="{{ nome or '' }}" class="{% if erros and erros.get('nome') %}erro-campo{% endif %}">
           {% if erros and erros.get('nome') %}<div class="mensagem-campo">{{ erros.get('nome') }}</div>{% endif %}
 
-          <label for="apelido">Apelido da Empresa</label>
+          </div>
+          <div>
+          <label for="apelido">{{ icone('empresa') }} Nome fantasia</label>
           <input type="text" id="apelido" name="apelido" value="{{ apelido or '' }}" class="{% if erros and erros.get('apelido') %}erro-campo{% endif %}">
           {% if erros and erros.get('apelido') %}<div class="mensagem-campo">{{ erros.get('apelido') }}</div>{% endif %}
 
-          <label for="responsavel_nome">Nome do responsável *</label>
-          <input type="text" id="responsavel_nome" name="responsavel_nome"
-                 value="{{ responsavel_nome or '' }}" placeholder="Ex.: Maria"
-                 class="{% if erros and erros.get('responsavel_nome') %}erro-campo{% endif %}">
-          {% if erros and erros.get('responsavel_nome') %}<div class="mensagem-campo">{{ erros.get('responsavel_nome') }}</div>{% endif %}
+          </div>
+<div><label for="cnpj">{{ icone('empresa') }} CNPJ</label><input id="cnpj" name="cnpj" inputmode="numeric" maxlength="18" value="{{ detalhes.get('cnpj', '') }}">
+{% if erros and erros.get('cnpj') %}<p class="mensagem-campo">{{ erros.cnpj }}</p>{% endif %}</div>
+<div><label for="linkedin">{{ icone('linkedin') }} LinkedIn</label><input type="url" id="linkedin" name="linkedin" maxlength="240" value="{{ detalhes.get('linkedin', '') }}">
+{% if erros and erros.get('linkedin') %}<p class="mensagem-campo">{{ erros.linkedin }}</p>{% endif %}</div>
+          <div>
+          <label for="telefone">{{ icone('pessoa') }} Telefone</label>
+          <input type="tel" id="telefone" name="telefone"
+                 pattern="[0-9]{10,13}" placeholder="47999991234"
+                 title="Digite apenas números, ex: 47999991234"
+                 value="{{ telefone or '' }}"
+                 class="{% if erros and erros.get('telefone') %}erro-campo{% endif %}">
+          {% if erros and erros.get('telefone') %}<div class="mensagem-campo">{{ erros.get('telefone') }}</div>{% endif %}
 
-          <label for="responsavel_sobrenome">Sobrenome do responsável (opcional)</label>
-          <input type="text" id="responsavel_sobrenome" name="responsavel_sobrenome"
-                 value="{{ responsavel_sobrenome or '' }}" placeholder="Ex.: Silva"
-                 class="{% if erros and erros.get('responsavel_sobrenome') %}erro-campo{% endif %}">
-          {% if erros and erros.get('responsavel_sobrenome') %}<div class="mensagem-campo">{{ erros.get('responsavel_sobrenome') }}</div>{% endif %}
+          </div>
+          <div>
+          <label for="email">{{ icone('mensagem') }} E-mail</label>
+          <input type="email" id="email" name="email" value="{{ email or '' }}" class="{% if erros and erros.get('email') %}erro-campo{% endif %}">
+          {% if erros and erros.get('email') %}<div class="mensagem-campo">{{ erros.get('email') }}</div>{% endif %}
 
-          <label for="estado">Estado:</label>
-          <select id="estado" name="estado" class="{% if erros and erros.get('estado') %}erro-campo{% endif %}">
-            <option value="">Selecione o estado</option>
-            {% for uf in estados %}
-              <option value="{{ uf }}" {% if estado == uf %}selected{% endif %}>{{ uf }}</option>
-            {% endfor %}
-          </select>
-          {% if erros and erros.get('estado') %}<div class="mensagem-campo">{{ erros.get('estado') }}</div>{% endif %}
+          </div>
+<fieldset class="portal-endereco"><legend>{{ icone('empresa') }} Endereço</legend>          <div>
+          <label for="cep">CEP <span style="color:#d00000">*</span></label>
+          <input type="text" id="cep" name="cep" required
+                 inputmode="numeric" pattern="\d{5}-?\d{3}" title="Digite no formato 00000-000 ou 00000000"
+                 autocomplete="postal-code" placeholder="00000-000"
+                 value="{{ cep or '' }}" class="{% if erros and erros.get('cep') %}erro-campo{% endif %}">
+          {% if erros and erros.get('cep') %}<div class="mensagem-campo">{{ erros.get('cep') }}</div>{% endif %}
 
+          </div>
+<div class="portal-rua"><label for="rua">Rua</label>
+<input name="rua" id="rua" autocomplete="address-line1" maxlength="180" required value="{{ detalhes.get('rua') or endereco or '' }}">
+{% if erros and erros.get('endereco') %}<p class="mensagem-campo">{{ erros.endereco }}</p>{% endif %}</div>
+{% for chave, rotulo in [('numero','Número'),('complemento','Complemento'),('bairro','Bairro')] %}
+<div><label for="{{ chave }}">{{ rotulo }}</label><input id="{{ chave }}" name="{{ chave }}" maxlength="100" value="{{ detalhes.get(chave, '') }}"></div>
+{% endfor %}
+          <div>
           <label for="cidade">Cidade:</label>
           <select id="cidade" name="cidade" data-inicial="{{ cidade or '' }}"
                   class="{% if erros and erros.get('cidade') %}erro-campo{% endif %}">
@@ -270,69 +77,25 @@
           </select>
           {% if erros and erros.get('cidade') %}<div class="mensagem-campo">{{ erros.get('cidade') }}</div>{% endif %}
 
-          <label for="endereco">Endereço completo <span style="color:#d00000">*</span></label>
-          <input type="text" id="endereco" name="endereco" required
-                 autocomplete="street-address" placeholder="Rua, número, complemento, bairro"
-                 value="{{ endereco or '' }}" class="{% if erros and erros.get('endereco') %}erro-campo{% endif %}">
-          {% if erros and erros.get('endereco') %}<div class="mensagem-campo">{{ erros.get('endereco') }}</div>{% endif %}
+          </div>
+          <div>
+          <label for="estado">Estado:</label>
+          <select id="estado" name="estado" class="{% if erros and erros.get('estado') %}erro-campo{% endif %}">
+            <option value="">Selecione o estado</option>
+            {% for uf in estados %}
+              <option value="{{ uf }}" {% if estado == uf %}selected{% endif %}>{{ uf }}</option>
+            {% endfor %}
+          </select>
+          {% if erros and erros.get('estado') %}<div class="mensagem-campo">{{ erros.get('estado') }}</div>{% endif %}
 
-          <label for="cep">CEP <span style="color:#d00000">*</span></label>
-          <input type="text" id="cep" name="cep" required
-                 inputmode="numeric" pattern="\d{5}-?\d{3}" title="Digite no formato 00000-000 ou 00000000"
-                 autocomplete="postal-code" placeholder="00000-000"
-                 value="{{ cep or '' }}" class="{% if erros and erros.get('cep') %}erro-campo{% endif %}">
-          {% if erros and erros.get('cep') %}<div class="mensagem-campo">{{ erros.get('cep') }}</div>{% endif %}
-
-          <label for="telefone">Telefone:</label>
-          <input type="tel" id="telefone" name="telefone"
-                 pattern="[0-9]{10,13}" placeholder="47999991234"
-                 title="Digite apenas números, ex: 47999991234"
-                 value="{{ telefone or '' }}"
-                 class="{% if erros and erros.get('telefone') %}erro-campo{% endif %}">
-          {% if erros and erros.get('telefone') %}<div class="mensagem-campo">{{ erros.get('telefone') }}</div>{% endif %}
-
-          <label for="email">E-mail:</label>
-          <input type="email" id="email" name="email" value="{{ email or '' }}" class="{% if erros and erros.get('email') %}erro-campo{% endif %}">
-          {% if erros and erros.get('email') %}<div class="mensagem-campo">{{ erros.get('email') }}</div>{% endif %}
-
-          <label for="senha">Nova Senha (opcional)</label>
-          <input type="password" id="senha" name="senha" autocomplete="new-password" placeholder="Deixe em branco para manter a atual">
-
-          <button type="submit" class="botao-roxo">Salvar Alterações</button>
+          </div>
+</fieldset>
+          <div class="portal-acoes-fim"><button type="submit" class="painel-botao">Salvar alterações</button></div>
         </form>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ===== JS: Menu mobile (igual index/quem_somos) ===== -->
-  <script>
-    (function(){
-      const openBtn = document.getElementById('openMenuBtn');
-      const closeBtn = document.getElementById('closeMenuBtn');
-      const backdrop = document.getElementById('menuBackdrop');
-
-      function openMenu(){
-        document.body.classList.add('menu-open');
-        if(openBtn) openBtn.setAttribute('aria-expanded','true');
-      }
-      function closeMenu(){
-        document.body.classList.remove('menu-open');
-        if(openBtn) openBtn.setAttribute('aria-expanded','false');
-      }
-
-      if(openBtn) openBtn.addEventListener('click', openMenu);
-      if(closeBtn) closeBtn.addEventListener('click', closeMenu);
-      if(backdrop) backdrop.addEventListener('click', closeMenu);
-
-      document.addEventListener('keydown', (e)=>{
-        if(e.key === 'Escape') closeMenu();
-      });
-    })();
-  </script>
-
-  <!-- ===== Script: cidades dinâmicas por UF ===== -->
-  <script>
+  </section>
+{% endblock %}
+{% block scripts %}
+<script>
     document.addEventListener('DOMContentLoaded', () => {
       const ufSelect = document.getElementById('estado');
       const cidadeSelect = document.getElementById('cidade');
@@ -365,26 +128,12 @@
         }
       }
 
-      ufSelect.addEventListener('change', () => carregarCidades(ufSelect.value));
+      ufSelect.addEventListener('change', () => carregarCidades(ufSelect.value, cidadeSelect.dataset.cepCidade || ''));
 
       const ufInicial = ufSelect.value;
       const cidadeInicial = cidadeSelect.getAttribute('data-inicial') || '';
       if (ufInicial) carregarCidades(ufInicial, cidadeInicial);
     });
   </script>
-
-  <!-- Redirect opcional após ok=1 -->
-  <script>
-    (function(){
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('ok') === '1') {
-        setTimeout(function(){
-          window.location.assign("{{ url_for('painel_malharia') }}");
-        }, 800);
-      }
-    })();
-  </script>
-
-  {% include '_rodape_site.html' %}
-</body>
-</html>
+<script defer src="{{ url_for('static', filename='consulta_cep.js') }}"></script>
+{% endblock %}

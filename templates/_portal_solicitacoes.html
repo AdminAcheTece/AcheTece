@@ -1,0 +1,36 @@
+<div class="painel-cartao">
+  {% if secao == 'sugestoes' %}
+  <div class="portal-sugestao-topo">
+    <h2>{{ icone('mensagem') }} Sugestões de melhoria</h2>
+    <button type="button" class="painel-botao" aria-controls="nova-sugestao" aria-expanded="false" onclick="const form = document.getElementById('nova-sugestao'); form.hidden = !form.hidden; this.setAttribute('aria-expanded', String(!form.hidden)); if (!form.hidden) form.querySelector('select').focus();">+ Nova sugestão</button>
+  </div>
+  <div id="nova-sugestao" hidden>
+  {% endif %}
+  <form class="portal-formulario" method="post" action="{{ url_for('portal_acao', secao=secao) }}">
+    <input type="hidden" name="csrf_token" value="{{ portal_csrf }}">
+    {% if secao == 'sugestoes' %}
+    <input type="hidden" name="tipo" value="sugestao">
+    <label>Categoria<select name="categoria" required>
+      <option value="">Selecione</option>
+      {% for categoria in categorias_sugestao %}<option>{{ categoria }}</option>{% endfor %}
+    </select></label>
+    {% else %}
+    <label>Tipo<select name="tipo">
+      {% for valor, rotulo in opcoes %}<option value="{{ valor }}">{{ rotulo }}</option>{% endfor %}
+    </select></label>
+    {% endif %}
+    <label>{{ 'Título' if secao == 'sugestoes' else 'Assunto' }}<input name="titulo" required maxlength="100"></label>
+    <label class="portal-campo-largo">Detalhes<textarea name="mensagem" required {% if secao == 'sugestoes' %}minlength="20"{% endif %} maxlength="2000" rows="4"></textarea></label>
+    <div class="portal-acoes-fim"><button class="painel-botao">{{ 'Enviar sugestão' if secao == 'sugestoes' else 'Enviar solicitação' }}</button></div>
+  </form>
+  {% if secao == 'sugestoes' %}</div>{% endif %}
+  <h2>{{ ('Histórico de sugestões (' ~ historico|length ~ ')') if secao == 'sugestoes' else 'Histórico' }}</h2>
+  <ul class="portal-registros">
+    {% for item in historico if item.tipo in (opcoes|map(attribute=0)|list) %}
+      <li><strong>#{{ item.id }} · {{ item.dados.titulo }}</strong> · {{ item.criado_em.strftime('%d/%m/%Y') }}
+        {% if item.dados.categoria %}<p>{{ item.dados.categoria }}</p>{% endif %}
+        <p>{{ item.dados.mensagem }}</p>
+      </li>
+    {% else %}<li>{{ 'Você ainda não enviou sugestões.' if secao == 'sugestoes' else 'Nenhuma solicitação enviada.' }}</li>{% endfor %}
+  </ul>
+</div>

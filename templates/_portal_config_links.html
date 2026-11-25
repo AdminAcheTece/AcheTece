@@ -1,0 +1,6 @@
+{% from '_portal_icones.html' import icone %}
+<nav class="config-links" aria-label="Configurações">
+  {% for chave, nome, simbolo in [('notificacoes','Notificações','notificacoes'), ('seguranca','Segurança','seguranca'), ('sugestoes','Sugestões','mensagem')] %}
+    <a class="painel-acao" href="{{ url_for('painel_malharia', secao=chave) }}"{% if chave == secao or (chave == 'notificacoes' and secao == 'configuracoes') %} aria-current="page"{% endif %}>{{ icone(simbolo) }} {{ nome }}</a>
+  {% endfor %}
+</nav>

@@ -19,3 +19,19 @@ searchForm.addEventListener('submit', () => {
 window.addEventListener('pageshow', () => {
   searchStatus.textContent = '';
 });
+
+const cadastro = document.getElementById('cadastro-visitante');
+if (cadastro && typeof cadastro.showModal === 'function') {
+  document.querySelectorAll('[data-identificar]').forEach(link => {
+    link.addEventListener('click', event => {
+      if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      cadastro.querySelector('form').action = link.href;
+      cadastro.querySelector('[data-destino]').textContent = link.dataset.identificar;
+      cadastro.querySelector('[type=submit]').textContent =
+        link.classList.contains('contact-link') ? 'Abrir WhatsApp' : 'Ver malharia';
+      cadastro.showModal();
+    });
+  });
+  cadastro.querySelector('[data-fechar]').addEventListener('click', () => cadastro.close());
+}
